@@ -1,0 +1,163 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion",
+  "title": "Recover Per Operation Without Losing Valid State",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Position of try Determines Which Operation Is Abandoned"
+        },
+        {
+          "type": "paragraph",
+          "text": "If try surrounds an entire session, a failure in one order can end the whole traversal. If try is inside the loop and surrounds the current order, a catch can handle that failure and then allow the loop to visit the next order. Neither policy is automatic or always correct: decide which unit of work may be abandoned based on the requirement."
+        },
+        {
+          "type": "output_prediction",
+          "id": "try_fuera_de_sesion",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{2, 11, 3};\n    int aceptados{0};\n    int total{0};\n    try {\n        for (int piezas : pedidos) {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        }\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Stopped:\";\n    }\n    std::cout << aceptados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Stopped:1:7"
+          ],
+          "explanation": "The order with 2 items is included; the failure for 11 abandons the loop inside try. The order with 3 items is never visited."
+        },
+        {
+          "type": "paragraph",
+          "text": "The summary of orders already included remains intact: aceptados and total live outside the scopes that were abandoned. This is not enough for a policy that requires visiting the entire session. For that policy, put the operation for each order and its handler inside the loop."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Rejected Operation Followed by Another Valid One"
+        },
+        {
+          "type": "output_prediction",
+          "id": "try_por_pedido",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{1, 12, 4};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:16"
+          ],
+          "explanation": "Orders of 1 and 4 items are accepted for 5 and 11 minutes; 12 is rejected, and the loop continues."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_real_de_recuperacion",
+          "question": "Which test shows that processing continues with another order after rejecting one?",
+          "options": [
+            "A session containing only valid inputs.",
+            "A session with a valid input, an invalid input, and another valid input, also checking the last one.",
+            "A single invalid input that displays a message."
+          ],
+          "correctIndex": 1,
+          "explanation": "Displaying the message proves that the rejection was reported. The later valid operation proves that processing resumed from a known state."
+        },
+        {
+          "type": "output_prediction",
+          "id": "todos_fallan_y_se_visitan",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int rechazados{0};\n    for (int piezas : std::vector<int>{-1, 11}) {\n        try {\n            std::cout << estimar(piezas);\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Rejected=\" << rechazados;\n    return 0;\n}\n",
+          "answers": [
+            "Rejected=2"
+          ],
+          "explanation": "Each failure is handled locally, so both inputs are visited."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Do Not Update the Summary Before the Operation Succeeds"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you increment aceptados before calling a function that might fail, the counter can record a rejected order as accepted. If you add minutes only after obtaining a valid result, there is no need to undo an update that never happened. This ordering rule also applies to error codes; exceptions do not change the meaning of the summary."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_antes_del_fallo",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    try {\n        ++aceptados;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rejected:\";\n    }\n    std::cout << aceptados;\n    return 0;\n}\n",
+          "answers": [
+            "Rejected:1"
+          ],
+          "explanation": "The increment has already happened, and catch does not reverse it. That counter no longer matches its name."
+        },
+        {
+          "type": "order_code",
+          "id": "orden_pedido_con_aceptacion",
+          "question": "Arrange the program so that only a calculation that returns normally is counted as accepted. Keep the function definition before main.",
+          "fragments": [
+            "    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rejected:\";\n    }",
+            "#include <iostream>\n#include <stdexcept>\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { throw std::invalid_argument{\"Input\"}; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\nint main() {\n    int aceptados{0};\n    try {",
+            "        int minutos{estimar(11)};",
+            "    std::cout << aceptados;\n    return 0;\n}",
+            "        ++aceptados;\n        std::cout << minutos;"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            4,
+            0,
+            3
+          ],
+          "explanation": "Obtain the result first, then apply the effects of acceptance. The catch leaves the counter unchanged if the call fails."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Complete Policy Needs Tests"
+        },
+        {
+          "type": "note",
+          "text": "Use the default Clang 23 compiler to practice throw/catch; the alternative Clang 21 does not support this exercise. Inputs are prepared in the code; change the specified values before running."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a session that continues after every invalid order. Use estimar with exceptions and the inputs {0,11,2,-1,5}. Display each rejected input, the number accepted, the number rejected, and the total minutes. Predict first. Test an empty session, a session with only rejections, and a rejection followed by a valid order. Only valid results contribute to the total, and each session contains at most six inputs."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Input=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. For {0,11,2,-1,5}, three orders are accepted, two are rejected, and the total is 20 minutes. The rejected inputs, 11 and -1, are identified. In the reference, the final summary is 3:2:20. {} produces 0:0:0; {11,-1} produces 0:2:0; {11,2} produces 1:1:7. The field order is accepted:rejected:minutes; another labeled format is valid. The rejection-then-valid case must test continued processing and preservation of the summary."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, 11, 2, -1, 5}) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n            std::cout << \"Rejected=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The try/catch handles one order at a time inside the loop. Only after minutes are obtained does success affect the summary; a rejection contributes no normal result. Replace the collection with the other cases and keep at most six inputs. Displaying an error message is not enough: compare the counter, the total, and the valid order after a rejection."
+        }
+      ]
+    }
+  ]
+}

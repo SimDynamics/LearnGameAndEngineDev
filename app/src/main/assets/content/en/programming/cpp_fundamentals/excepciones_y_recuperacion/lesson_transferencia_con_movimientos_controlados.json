@@ -1,0 +1,130 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__transferencia_con_movimientos_controlados",
+  "title": "Transfer Contracts and Recovery to Controlled Movements",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A State-Based Problem with Two Categories of Rejection"
+        },
+        {
+          "type": "paragraph",
+          "text": "A courier occupies a cell on a 3-by-3 board, with x and y coordinates between 0 and 2. Commands are integers: 1 increases x, 2 decreases x, 3 increases y, and 4 decreases y. Any other command is an invalid argument. A move that leaves the board is an out-of-range failure. Both kinds of rejection must preserve the previous position and allow the next command to be processed. We do not need a graphical interface to check these rules."
+        },
+        {
+          "type": "paragraph",
+          "text": "The mover function receives a command and references to x and y. It first computes a proposed position in local variables, then checks the command and the boundaries before modifying the references. After an accepted move, it copies the proposal into the actual state. The precondition requires x and y to refer to two distinct objects, each initially holding a value between 0 and 2. Two separate objects may both contain zero and still satisfy it; two references to the same object do not represent independent coordinates and fall outside the contract. The caller must set up this state; mover is not required to detect shared references. All values and changes in this exercise are small."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "propuesta_antes_de_modificar",
+          "question": "Which organization protects the position if a proposed move is outside the board?",
+          "options": [
+            "Modify x first and assume that catch will undo the change.",
+            "Change every negative number to zero without reporting a rejection.",
+            "Compute and validate using local variables; only then assign to x and y."
+          ],
+          "correctIndex": 2,
+          "explanation": "Validating before modifying preserves the earlier position on the failing path."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pruebas_de_movimiento",
+          "question": "Starting at (0,0), which tests distinguish a valid move, a boundary violation, and an unknown command?",
+          "options": [
+            "Commands 1, 1, 9 from the initial state in separate tests.",
+            "Commands 1, 2, 9 from the initial state in separate tests.",
+            "Commands 1, 2, 1 from the initial state in separate tests."
+          ],
+          "correctIndex": 1,
+          "explanation": "1 moves onto the board, 2 attempts to leave it, and 9 is not among the recognized commands."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build from the Requirements Before Reading Solved Code"
+        },
+        {
+          "type": "note",
+          "text": "Use the default Clang 23 compiler for throw/catch practice; the alternative Clang 21 does not support this exercise. Data are set in the code; change the specified values before running."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement mover with the interface void mover(int orden, int& x, int& y). Use invalid_argument for an unknown command and out_of_range for moving off the board. Process {1,3,3,3,9,2} starting at (0,0), catching errors for each command and showing the position after every attempt. Trace each proposed position before running. Also keep a test in which an invalid command is followed by a valid one. The next page compares a different sequence; do not consult it to copy the implementation."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Command=\" << orden << \" Position=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Against a Different Sequence"
+        },
+        {
+          "type": "output_prediction",
+          "id": "movimientos_con_rechazos",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    int propuestoX{x};\n    int propuestoY{y};\n    switch (orden) {\n    case 1: ++propuestoX; break;\n    case 2: --propuestoX; break;\n    case 3: ++propuestoY; break;\n    case 4: --propuestoY; break;\n    default: throw std::invalid_argument{\"Command\"};\n    }\n    if (propuestoX < 0 || propuestoX > 2 || propuestoY < 0 || propuestoY > 2) {\n        throw std::out_of_range{\"Board\"};\n    }\n    x = propuestoX;\n    y = propuestoY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{2, 1, 9, 3}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "L0,0;A1,0;O1,0;A1,1;"
+          ],
+          "explanation": "The first command moves outside the board toward negative x; the second advances, the third is unknown, and the fourth advances along y. Rejected commands preserve the state."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "promesa_del_estado",
+          "question": "After catching a rejected command, which postcondition must hold under these requirements?",
+          "options": [
+            "x and y retain their previous values and remain inside the board.",
+            "x and y must always return to (0,0), even if they were in a different cell before.",
+            "The unknown command must count as an accepted move."
+          ],
+          "correctIndex": 0,
+          "explanation": "Preserving state means preserving the previous valid position, not resetting to an arbitrary one."
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to this function several days later with a 4-by-4 board. Identify which domain rules and tests change; preserve the rejection policy and the tests for unknown commands. Recovery is not demonstrated merely by displaying a message: check the state and a subsequent valid operation."
+        },
+        {
+          "type": "note",
+          "text": "The conceptual foundation of errors and recovery is covered in the main source (Stroustrup, 2024, sections 4.5–4.7 and 6.7). These examples and the project are original. For these labs, use the default Clang 23 compiler, which supports exceptions; the alternative Clang 21 does not support this exercise."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. The call satisfies the precondition of an initial position from 0 to 2 and references to distinct objects. x and y may have equal values; it is their storage objects that must differ. The following guarantees apply to calls that satisfy both conditions. An unknown command throws invalid_argument; a proposed move off the board throws out_of_range. Assign x and y only after validating. For {1,3,3,3,9,2}, the positions are (1,0),(1,1),(1,2),(1,2),(1,2),(0,2), with statuses A,A,A,L,O,A: A means accepted, L means boundary, and O means unknown command. Starting at (0,0), {9,1} must first preserve (0,0) and then advance to (1,0). Other labels are acceptable if they distinguish the two kinds of rejection and show each state."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondition: x and y are between 0 and 2; references identify distinct objects.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Command\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Board\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{1, 3, 3, 3, 9, 2}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The proposed positions for the recognized moves are (1,0),(1,1),(1,2),(1,3), and, after the unknown command is rejected, (0,2). The proposal (1,3) is rejected and never copied into the actual state; command 9 has no valid proposal. try is inside the loop to handle each attempt. For a 4-by-4 board, change the upper boundary from 2 to 3, update the precondition, and test {1,1,1,1,9,3}: A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;. Also retain tests at both boundaries and an unknown command followed by a valid one."
+        }
+      ]
+    }
+  ]
+}

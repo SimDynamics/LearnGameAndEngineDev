@@ -1,0 +1,130 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__transferencia_con_movimientos_controlados",
+  "title": "Transférer les contrats et la récupération aux mouvements contrôlés",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un problème avec état et deux catégories de rejet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un coursier occupe une case d'un plateau de 3 cases sur 3, avec des coordonnées x et y entre 0 et 2. Les commandes sont des entiers : 1 augmente x, 2 diminue x, 3 augmente y et 4 diminue y. Toute autre commande constitue un argument invalide. Un déplacement qui sort du plateau est une erreur de dépassement des limites. Ces deux types de rejet doivent préserver la position précédente et permettre de traiter la commande suivante. Aucune interface graphique n'est nécessaire pour vérifier ces règles."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction mover reçoit une commande et des références vers x et y. Elle calcule d'abord une position proposée dans des variables locales, puis vérifie la commande et les limites avant de modifier les références. Après un déplacement accepté, elle copie la proposition dans l'état réel. La précondition exige que x et y désignent deux objets distincts dont les valeurs initiales sont comprises entre 0 et 2. Deux objets différents peuvent tous deux contenir zéro et la respecter ; deux références vers un même objet ne représentent pas des coordonnées indépendantes et sortent du contrat. L'appelant doit préparer cet état ; mover n'est pas tenue de détecter les références vers un objet commun. Toutes les valeurs et modifications de cet exercice sont petites."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "propuesta_antes_de_modificar",
+          "question": "Quelle organisation protège la position si le déplacement proposé sort du plateau ?",
+          "options": [
+            "Modifier d'abord x en supposant que catch annulera le changement.",
+            "Remplacer tous les nombres négatifs par zéro sans signaler de rejet.",
+            "Calculer et valider dans des variables locales ; n'affecter x et y qu'ensuite."
+          ],
+          "correctIndex": 2,
+          "explanation": "Valider avant de modifier préserve la position précédente si l'opération échoue."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pruebas_de_movimiento",
+          "question": "Depuis (0,0), quels tests distinguent un déplacement valide, une limite et une commande inconnue ?",
+          "options": [
+            "Les commandes 1, 1 et 9, chacune depuis la position initiale dans des tests distincts.",
+            "Les commandes 1, 2 et 9, chacune depuis la position initiale dans des tests distincts.",
+            "Les commandes 1, 2 et 1, chacune depuis la position initiale dans des tests distincts."
+          ],
+          "correctIndex": 1,
+          "explanation": "1 entre dans le plateau, 2 tente d'en sortir et 9 ne fait pas partie des commandes reconnues."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire à partir des exigences avant de lire le code résolu"
+        },
+        {
+          "type": "note",
+          "text": "Utilise le compilateur Clang 23 par défaut pour pratiquer throw/catch ; l'autre compilateur Clang 21 ne prend pas en charge cet exercice. Les données sont préparées dans le code ; modifie les valeurs indiquées avant l'exécution."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implémente mover avec l'interface void mover(int orden, int& x, int& y). Utilise invalid_argument pour une commande inconnue et out_of_range pour une sortie du plateau. Traite {1,3,3,3,9,2} à partir de (0,0), en interceptant les erreurs commande par commande et en affichant la position après chaque tentative. Retrace chaque position proposée avant l'exécution. Conserve aussi un test avec une commande invalide suivie d'une commande valide. La page suivante compare une autre séquence ; ne la consulte pas pour recopier l'implémentation."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Ordre=\" << orden << \" Position=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer avec une séquence différente"
+        },
+        {
+          "type": "output_prediction",
+          "id": "movimientos_con_rechazos",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    int propuestoX{x};\n    int propuestoY{y};\n    switch (orden) {\n    case 1: ++propuestoX; break;\n    case 2: --propuestoX; break;\n    case 3: ++propuestoY; break;\n    case 4: --propuestoY; break;\n    default: throw std::invalid_argument{\"Ordre\"};\n    }\n    if (propuestoX < 0 || propuestoX > 2 || propuestoY < 0 || propuestoY > 2) {\n        throw std::out_of_range{\"Plateau\"};\n    }\n    x = propuestoX;\n    y = propuestoY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{2, 1, 9, 3}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "L0,0;A1,0;O1,0;A1,1;"
+          ],
+          "explanation": "La première commande sort du plateau vers les x négatifs ; la deuxième avance, la troisième est inconnue et la quatrième avance suivant y. Les rejets préservent l'état."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "promesa_del_estado",
+          "question": "Après avoir intercepté une commande rejetée, quelle postcondition doit rester vraie selon les exigences ?",
+          "options": [
+            "x et y conservent leurs valeurs précédentes et restent dans le plateau.",
+            "x et y doivent toujours revenir à (0,0), même si la position précédente était une autre case.",
+            "La commande inconnue doit être comptée comme un déplacement accepté."
+          ],
+          "correctIndex": 0,
+          "explanation": "Préserver l'état signifie conserver la dernière position valide, pas réinitialiser à une position arbitraire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends cette fonction quelques jours plus tard avec un plateau de 4 cases sur 4. Repère quelles règles du domaine et quels tests changent ; conserve la politique de rejet et les tests de commandes inconnues. La récupération n'est pas démontrée par le seul affichage d'un message : vérifie l'état et une opération valide ultérieure."
+        },
+        {
+          "type": "note",
+          "text": "Les fondements des erreurs et de la récupération sont abordés dans la source principale (Stroustrup, 2024, sections 4.5–4.7 et 6.7). Les exemples et le projet sont originaux. Pour ces laboratoires, utilise le compilateur Clang 23 par défaut, qui prend en charge les exceptions ; l'autre compilateur Clang 21 ne permet pas cet exercice."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. C'est une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. L'appel respecte la précondition d'une position initiale comprise entre 0 et 2 et de références vers des objets distincts. x et y peuvent avoir la même valeur ; ce sont les objets de stockage qui doivent être différents. Les garanties suivantes concernent les appels respectant ces deux conditions. Une commande inconnue lance invalid_argument ; une proposition hors du plateau lance out_of_range. On n'affecte x et y qu'après validation. Pour {1,3,3,3,9,2}, les positions sont (1,0),(1,1),(1,2),(1,2),(1,2),(0,2), avec les états A,A,A,L,O,A : A pour accepté, L pour limite et O pour ordre inconnu. Depuis (0,0), {9,1} doit d'abord conserver (0,0), puis avancer à (1,0). D'autres étiquettes sont admises si elles distinguent les deux rejets et affichent chaque état."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Précondition : x et y entre 0 et 2 ; références vers des objets distincts.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Ordre\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Plateau\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{1, 3, 3, 3, 9, 2}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les propositions correspondant aux commandes reconnues sont (1,0),(1,1),(1,2),(1,3) puis, après le rejet de la commande inconnue, (0,2). La proposition (1,3) est rejetée sans jamais être copiée dans l'état réel ; la commande 9 n'a pas de proposition valide. try se trouve dans la boucle pour traiter chaque tentative. Pour un plateau de 4 cases sur 4, porte la borne supérieure de 2 à 3, mets à jour la précondition et teste {1,1,1,1,9,3} : A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;. Conserve également des tests aux deux bornes et une commande inconnue suivie d'une commande valide."
+        }
+      ]
+    }
+  ]
+}

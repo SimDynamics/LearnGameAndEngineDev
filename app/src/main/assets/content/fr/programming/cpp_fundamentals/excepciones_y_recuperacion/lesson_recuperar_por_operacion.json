@@ -1,0 +1,163 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion",
+  "title": "Récupérer opération par opération sans perdre l'état valide",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La position de try détermine l'opération abandonnée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le try englobe toute une session, l'échec d'une commande peut interrompre l'ensemble du parcours. Si le try se trouve dans la boucle et englobe la commande en cours, un catch peut traiter cet échec, puis laisser la boucle passer à la commande suivante. Aucune de ces politiques n'est automatique ni toujours correcte : décide quelle unité de travail peut être abandonnée selon les exigences."
+        },
+        {
+          "type": "output_prediction",
+          "id": "try_fuera_de_sesion",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{2, 11, 3};\n    int aceptados{0};\n    int total{0};\n    try {\n        for (int piezas : pedidos) {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        }\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Arrêt:\";\n    }\n    std::cout << aceptados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Arrêt:1:7"
+          ],
+          "explanation": "La commande de 2 pièces est prise en compte ; l'échec de celle de 11 quitte la boucle contenue dans try. La commande de 3 pièces n'est jamais traitée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le bilan des commandes déjà comptabilisées est conservé : aceptados et total se trouvent en dehors des portées abandonnées. Cela ne suffit pas si la politique exige de parcourir toute la session. Dans ce cas, place le traitement d'une commande et son gestionnaire d'erreur à l'intérieur de la boucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une opération rejetée suivie d'une autre opération valide"
+        },
+        {
+          "type": "output_prediction",
+          "id": "try_por_pedido",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{1, 12, 4};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:16"
+          ],
+          "explanation": "Les commandes de 1 et 4 pièces sont acceptées, pour 5 et 11 minutes ; celle de 12 est rejetée et la boucle continue."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_real_de_recuperacion",
+          "question": "Quel test montre qu'une commande rejetée permet de poursuivre avec une autre ?",
+          "options": [
+            "Une session composée uniquement de données valides.",
+            "Une session avec une donnée valide, une donnée invalide, puis une autre donnée valide, en vérifiant aussi cette dernière.",
+            "Une seule donnée invalide qui affiche un message."
+          ],
+          "correctIndex": 1,
+          "explanation": "Afficher le message prouve que le rejet a été signalé. L'opération valide suivante démontre que le traitement a repris depuis un état connu."
+        },
+        {
+          "type": "output_prediction",
+          "id": "todos_fallan_y_se_visitan",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int rechazados{0};\n    for (int piezas : std::vector<int>{-1, 11}) {\n        try {\n            std::cout << estimar(piezas);\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Rejetés=\" << rechazados;\n    return 0;\n}\n",
+          "answers": [
+            "Rejetés=2"
+          ],
+          "explanation": "Chaque échec est traité localement et les deux données sont visitées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ne rien comptabiliser avant la réussite de l'opération"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu incrémentes aceptados avant d'appeler la fonction susceptible d'échouer, le compteur peut enregistrer une commande rejetée comme acceptée. Si tu ajoutes les minutes seulement après avoir obtenu un résultat valide, tu n'as pas besoin d'annuler une mise à jour qui n'a pas eu lieu. Cette règle sur l'ordre des actions s'applique également aux codes d'erreur ; les exceptions ne changent pas la signification du bilan."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_antes_del_fallo",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    try {\n        ++aceptados;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rejeté:\";\n    }\n    std::cout << aceptados;\n    return 0;\n}\n",
+          "answers": [
+            "Rejeté:1"
+          ],
+          "explanation": "L'incrémentation a déjà eu lieu et le catch ne l'annule pas. Ce compteur ne correspond donc plus à son nom."
+        },
+        {
+          "type": "order_code",
+          "id": "orden_pedido_con_aceptacion",
+          "question": "Remets le programme dans l'ordre afin de ne compter comme accepté qu'un calcul qui se termine normalement. Conserve la définition de la fonction avant main.",
+          "fragments": [
+            "    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rejeté:\";\n    }",
+            "#include <iostream>\n#include <stdexcept>\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { throw std::invalid_argument{\"Donnée\"}; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\nint main() {\n    int aceptados{0};\n    try {",
+            "        int minutos{estimar(11)};",
+            "    std::cout << aceptados;\n    return 0;\n}",
+            "        ++aceptados;\n        std::cout << minutos;"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            4,
+            0,
+            3
+          ],
+          "explanation": "On obtient d'abord le résultat, puis on applique les effets de l'acceptation. Si l'appel échoue, le catch conserve le compteur inchangé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une politique complète exige des tests"
+        },
+        {
+          "type": "note",
+          "text": "Utilise le compilateur Clang 23 par défaut pour pratiquer throw/catch ; l'autre compilateur Clang 21 ne prend pas en charge cet exercice. Les données sont préparées dans le code ; modifie les valeurs indiquées avant l'exécution."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une session qui continue après chaque commande invalide. Utilise estimar avec des exceptions et les données {0,11,2,-1,5}. Affiche la donnée rejetée, le nombre de commandes acceptées et rejetées, et le total des minutes. Commence par prédire les résultats. Vérifie une session vide, une session ne contenant que des rejets et une commande rejetée suivie d'une commande valide. Le total ne comprend que les résultats valides et la session contient au maximum six données."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Donnée=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. Il s'agit d'une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Pour {0,11,2,-1,5}, trois commandes sont acceptées, deux rejetées et le total atteint 20 minutes. Les données rejetées, 11 et -1, sont identifiées. Dans la référence, le bilan final est 3:2:20. {} produit 0:0:0 ; {11,-1} donne 0:2:0 ; {11,2} donne 1:1:7. L'ordre des champs est acceptées:rejetées:minutes ; un autre format explicite est valide. Le cas rejet suivi d'une donnée valide doit vérifier la poursuite du traitement et la conservation du bilan."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantité hors de 0 à 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, 11, 2, -1, 5}) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n            std::cout << \"Rejeté=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le try/catch correspond à une commande à l'intérieur de la boucle. La réussite n'est comptabilisée qu'après l'obtention des minutes ; un rejet n'ajoute aucun résultat normal. Remplace la collection par les autres cas et ne dépasse pas six données. Afficher un message d'erreur ne suffit pas : compare également le compteur, le total et la commande valide qui suit un rejet."
+        }
+      ]
+    }
+  ]
+}
