@@ -1,0 +1,167 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__etiquetas_y_alcance_de_los_identificadores",
+  "title": "Labels and Scope of Identifiers",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Names in the File and IDs in the Program"
+        },
+        {
+          "type": "paragraph",
+          "text": "The inspection station's format names its groups red, green, and blue. In memory, we assign them IDs 0, 1, and 2. The name is a textual representation; the ID enables lookup at a small position. The table defines the correspondence: we do not assume that the name of a color is a number."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The order of this table is part of the agreed correspondence. Changing it without adapting the in-memory data would change what each ID means. We can look up a name by index only after checking 0..2; to obtain the index from a name, we need a search."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "buscar_o_indexar",
+          "question": "The text \"blue\" arrives, and we need its ID. Which operation is appropriate?",
+          "options": [
+            "Use the number of letters in the name as the index.",
+            "Search for an exact match in the table.",
+            "Read the text as if it were a decimal integer."
+          ],
+          "correctIndex": 1,
+          "explanation": "The matching position for blue is 2. Neither its length nor numeric conversion defines the correspondence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Failed Search Does Not Invent an ID"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int id{9};\n    bool encontrado = buscar_grupo(\"blue\", id);\n    std::cout << encontrado << ':' << id << '\\n';\n    encontrado = buscar_grupo(\"gray\", id);\n    std::cout << encontrado << ':' << id;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output consists of two lines: 1:2 and 0:2. On false, the parameter keeps its previous value. Therefore, inspecting id alone is not enough: we must use the bool to determine whether the current search succeeded."
+        },
+        {
+          "type": "fill_code",
+          "id": "validar_antes_de_buscar_nombre",
+          "question": "Fill in only the operator that rejects ID 3 and higher, along with the negative-ID check, before calling at().",
+          "language": "cpp",
+          "code": "bool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id ___ 3) { return false; }\n    destino = nombres_grupos.at(id);\n    return true;\n}",
+          "answers": [
+            ">="
+          ],
+          "explanation": "The domain includes 0, 1, and 2. The upper bound excludes 3; it is rejected before the table is accessed."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "igualdad_del_nombre",
+          "question": "The search compares entire strings without changing letter case. What happens with \"Blue\"?",
+          "options": [
+            "It is accepted as 2 because comparison ignores uppercase letters.",
+            "It is accepted as 0 because it is the first inexact name.",
+            "It is rejected, and the destination retains its value."
+          ],
+          "correctIndex": 2,
+          "explanation": "Blue and blue are different strings. Accepting alternative spellings would require defining and applying another policy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Identity May Depend on the Group"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each group contains records with IDs 0..9 and a Recuento. Record 7 in red and record 7 in blue are different entities: their complete identity is the group plus the record ID. We do not reject an ID simply because it exists in another group. Within a single group, however, each ID may appear at most once."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "repetido_local",
+          "question": "We receive (red,7), (blue,7), and (red,7), in that order. If each group forbids duplicate IDs, what is the first conflict?",
+          "options": [
+            "The second record, because ID 7 appears again anywhere.",
+            "The third record, because ID 7 repeats within red.",
+            "None, because all three IDs are within 0..9."
+          ],
+          "correctIndex": 1,
+          "explanation": "A valid numeric range is not sufficient. The first blue–7 association is new; the second red–7 association repeats an identity within its group."
+        },
+        {
+          "type": "paragraph",
+          "text": "A flat collection of records would also need to retain the group. A Grupo structure containing its own records represents that scope directly. Do not confuse this identity of the data with the scope of a name declared in the code: these are separate decisions."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_direcciones_de_la_tabla",
+          "question": "Predict both output lines. Each bool indicates the result of the current conversion.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    std::string nombre{\"previous\"};\n    bool obtenido = nombre_grupo(1, nombre);\n    std::cout << obtenido << ':' << nombre << '\\n';\n    obtenido = nombre_grupo(3, nombre);\n    std::cout << obtenido << ':' << nombre;\n    return 0;\n}\n",
+          "answers": [
+            "1:green\n0:green"
+          ],
+          "explanation": "ID 1 converts to green. ID 3 is outside the domain and does not change the previous text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rebuild and Check Both Conversions"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a review exercise, rebuild buscar_grupo and nombre_grupo without copying them from the earlier examples. Preserve these contracts: an exact name or an ID in 0..2; true updates the destination and false preserves it. Test every name and confirm that the conversion name → ID → name recovers the original. Then test gray, an empty string, Red, and IDs -1 and 3 with different initial destinations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Decide on the expected outputs before running. A destination that retains a permitted ID after false does not make an unknown input valid. Do not call the inverse conversion as though a failed search had succeeded."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\n// Define both functions and tests of their contracts.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Consult the reference on the following page after building your own solution. Use at() only with a validated index; this exercise does not require a new container."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Change of Representation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previous\"};\n        bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) { convertido = nombre_grupo(id, recuperado); }\n        std::cout << original << ':' << encontrado << ':'\n                  << convertido << ':' << (recuperado == original) << '\\n';\n    }\n    int id{8};\n    bool encontrado = buscar_grupo(\"gray\", id);\n    std::string nombre{\"previous\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << encontrado << ':' << id << ':' << convertido << ':' << nombre;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference produces red:1:1:1, green:1:1:1, and blue:1:1:1, one line per name; it ends with 0:8:0:previous. Criteria: consistent conversions in both directions, checked domain, exact matches, and preserved destinations on false. Also complete the boundary tests requested in the lab."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a new format version accepts more names or synonyms, we must decide whether the inverse conversion writes the name received or a chosen canonical form. Recovering the data and recovering every original character are not the same goal. The next part defines its own format and closing markers."
+        },
+        {
+          "type": "note",
+          "text": "Representations and reading structures are covered in the primary source (Stroustrup, 2024, sections 9.9.1–9.9.3, pp. 270–275). The model, format, and activities are original; they review tables, searches, contracts, and presence from this learning path."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__leer_un_grupo_con_cierre_propio",
+  "title": "Lire un groupe avec son propre délimiteur de fermeture",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regrouper des enregistrements change le sens de la fin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le format d'un groupe commence par { groupe NOM, contient zéro ou plusieurs enregistrements et se termine par }. Chaque enregistrement possède un ID entre 0 et 9, suivi d'un Recuento [aceptados;rechazados] dont les quantités vont de 0 à 10. Les noms valides sont rouge, vert et bleu. Exemple : { groupe rouge 7[0;0] 2[3;1] }. Un ID ne peut pas se répéter dans le groupe et l'ordre des enregistrements est conservé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les étiquettes et les noms sont lus comme des chaînes avec >> : ils doivent être séparés du token suivant par un caractère blanc. Ainsi, { groupe rouge } accepte un groupe vide, mais { groupe rouge} ne respecte pas le format : le nom lu serait rouge}. Les blancs peuvent être des espaces, tabulations ou sauts de ligne ignorés par l'extraction habituelle du flux. Aucun blanc n'est exigé entre un ID et [ ; les quantités sont lues comme des entiers décimaux autorisant le signe + et les zéros initiaux. Ce lecteur reconnaît uniquement le format décrit."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cierre_del_grupo",
+          "question": "Un lecteur a commencé { groupe rouge et atteint EOF après 7[2;1], sans }. Quel est le résultat pour le groupe ?",
+          "options": [
+            "Valide, car l'enregistrement est complet.",
+            "Valide si le flux possède eofbit.",
+            "Invalide : le groupe commencé n'a pas été fermé."
+          ],
+          "correctIndex": 2,
+          "explanation": "EOF termine la source de caractères. Il ne complète pas un objet dont le délimiteur de fermeture manque encore."
+        },
+        {
+          "type": "paragraph",
+          "text": "leer_grupo reçoit un flux emprunté et une destination Grupo. Il renvoie true après avoir consommé exactement un groupe complet ; il n'exige pas EOF et ne consomme rien après }. En cas de false, il préserve la destination, mais ne restitue pas les caractères déjà consommés. Un rejet de domaine ou d'étiquette peut aussi laisser le flux sans failbit : il faut consulter le bool de la fonction. Ces exercices utilisent des flux neufs dans leur configuration habituelle : extraction décimale, saut des blancs et aucun masque d'exceptions supplémentaire. Le lecteur n'adapte pas automatiquement un flux configuré autrement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Examiner la fermeture avant de lire un autre enregistrement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le lecteur de ligne complète précédent exigeait qu'aucune donnée ne subsiste après son Registro. Cela ne convient pas ici : après un enregistrement peut venir un autre enregistrement ou }. Nous réutilisons operator>> de Recuento et vérifions l'ID séparément. Pour savoir s'il y a une fermeture, nous sautons les blancs avec ws et examinons le caractère suivant avec peek(). peek() observe sans extraire ; get() consomme un caractère lorsque nous décidons de le faire."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mirar_no_consume",
+          "question": "Prédis la sortie. Cet exemple a déjà vérifié que des caractères sont disponibles.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::istringstream entrada{\"  } suite\"};\n    entrada >> std::ws;\n    bool cierre = entrada.peek() == '}';\n    std::cout << cierre << ':';\n    char caracter{0};\n    entrada.get(caracter);\n    std::string siguiente;\n    entrada >> siguiente;\n    std::cout << caracter << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:}:suite"
+          ],
+          "explanation": "peek a observé }, mais get l'a extrait. La chaîne suivante reste disponible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant peek, le lecteur doit vérifier !entrada et entrada.eof() après ws. S'il n'y a plus de caractère fermant disponible, il renvoie false. Il n'efface pas l'état d'un enregistrement mal formé pour le considérer comme une fin autorisée : reconnaître un délimiteur de fermeture diffère d'une extraction échouée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cierre_o_error_de_registro",
+          "question": "Après avoir sauté les blancs, le caractère suivant est [ alors qu'on attendait l'ID d'un autre Registro. Que doit faire le lecteur ?",
+          "options": [
+            "Essayer d'extraire l'enregistrement, puis le rejeter faute d'un ID valide.",
+            "Interpréter tout échec comme si } avait été rencontré.",
+            "Effacer l'état et enregistrer un objet avec l'ID initial 0."
+          ],
+          "correctIndex": 0,
+          "explanation": "Seul } constitue une fermeture autorisée. Une extraction invalide ne crée aucun enregistrement et ne justifie pas l'acceptation du groupe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une valeur candidate et protéger la destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis leer_grupo. Vérifie le caractère ouvrant, l'étiquette, le nom et l'ID du groupe. Prépare une nouvelle valeur candidate Grupo, sans enregistrements. À chaque tour : saute les blancs ; rejette si le flux ne permet plus de poursuivre ou a atteint EOF ; consomme } et accepte la valeur candidate si c'était le caractère suivant ; sinon, essaie de lire un nouveau Registro, vérifie son ID et son absence dans cette valeur candidate, puis ajoute-le. Ne modifie pas la destination avant de reconnaître la fermeture."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis quatre tests avec une destination initiale bleu contenant 9[1;1] : un groupe rouge avec 7[0;0] et 2[3;1] ; un groupe vert vide ; un groupe rouge avec l'ID 7 répété ; et un groupe rouge avec un enregistrement complet mais sans fermeture. Affiche bool:ID_du_groupe:nombre_d_enregistrements suivi des enregistrements obtenus. Prédis avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rouge\", \"vert\", \"bleu\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\n// Définis leer_grupo et les tests avant de consulter la référence.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La page suivante contient la référence. L'exercice consiste à construire le contrôle du lecteur, pas à copier un corps complet. Le modèle conserve zéro comme valeur valide et un groupe vide comme groupe présent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : la fermeture confirme la valeur candidate"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rouge\", \"vert\", \"bleu\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"groupe\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    Grupo grupo{2, {{9, {1, 1}}}};\n    bool aceptado = leer_grupo(entrada, grupo);\n    std::cout << aceptado << ':' << grupo.id << ':' << grupo.registros.size();\n    for (const Registro& registro : grupo.registros) {\n        std::cout << ' ' << registro.id << registro.recuento;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    probar(\"{ groupe rouge 7[0;0] 2[3;1] }\");\n    probar(\"{ groupe vert }\");\n    probar(\"{ groupe rouge 7[0;0] 7[3;1] }\");\n    probar(\"{ groupe rouge 7[0;0]\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes attendues sont 1:0:2 7[0;0] 2[3;1], 1:1:0, 0:2:1 9[1;1] et 0:2:1 9[1;1]. Le groupe vide remplace la destination par un groupe valide sans enregistrements. Dans les deux rejets, l'ancien groupe est entièrement préservé, même si un premier enregistrement correct avait déjà été lu."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : nouvel état pour chaque lecture, doublons vérifiés dans leur groupe, fermeture exacte, domaines vérifiés avant l'utilisation des données, ordre conservé et destination inchangée en cas de false. Teste aussi les quantités -1 et 11, les ID -1 et 10, un nom inconnu, une autre étiquette et une entrée tronquée à chaque champ du premier enregistrement. Un rejet sémantique n'est pas obligé de modifier les indicateurs d'état du flux."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un tour valide consomme un enregistrement ; la fermeture termine le groupe ; un échec le rejette. En outre, il existe seulement dix ID distincts admissibles dans un groupe. Cette limite ne remplace pas celles de l'environnement concernant le temps, la mémoire ou la taille des caractères reçus par un programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un groupe complet n'est pas encore un fichier d'essai complet"
+        },
+        {
+          "type": "output_prediction",
+          "id": "sufijo_para_el_llamador",
+          "question": "Prédis la sortie. leer_grupo ne consomme que le groupe et laisse le reste à l'appelant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rouge\", \"vert\", \"bleu\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"groupe\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nint main() {\n    std::istringstream entrada{\"{ groupe bleu } reste\"};\n    Grupo grupo{0, {}};\n    bool aceptado = leer_grupo(entrada, grupo);\n    std::string siguiente;\n    entrada >> siguiente;\n    std::cout << aceptado << ':' << grupo.id << ':'\n              << grupo.registros.size() << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:0:reste"
+          ],
+          "explanation": "Le groupe bleu vide est valide ; reste demeure disponible. La validation de tout le fichier d'essai doit décider si ce suffixe est autorisé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mismo_id_otro_grupo",
+          "question": "L'enregistrement 7[0;0] a été lu correctement dans rouge. En lisant un nouveau groupe bleu, on rencontre 7[3;1]. Quelle vérification des doublons convient ?",
+          "options": [
+            "Chercher cet ID dans tous les groupes précédents et le rejeter.",
+            "Ne pas vérifier les doublons parce que le nom est déjà valide.",
+            "Chercher cet ID dans la valeur candidate du groupe bleu actuel."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'identité d'un enregistrement inclut son groupe. La collection extérieure vérifiera que le groupe lui-même n'est pas répété."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfert : ajoute des sauts de ligne entre les enregistrements et un suffixe après }. Le premier changement conserve les données ; le lecteur de groupe laisse le suffixe en attente. Retirer } doit provoquer un rejet même si les quantités et les ID sont valides. Dans la leçon suivante, l'appelant aura son propre délimiteur de fermeture."
+        },
+        {
+          "type": "note",
+          "text": "La lecture des structures est abordée dans la source principale (Stroustrup, 2024, sections 9.8–9.9.2, pp. 267–274). La grammaire, les garanties et les exercices sont originaux dans ce parcours."
+        }
+      ]
+    }
+  ]
+}
