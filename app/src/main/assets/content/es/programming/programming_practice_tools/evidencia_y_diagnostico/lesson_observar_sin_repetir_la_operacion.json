@@ -1,0 +1,358 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__observar_sin_repetir_la_operacion",
+  "title": "Observar sin repetir la operación (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una observación también necesita un contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes relacionar una salida con su fuente y elegir una prueba que contraste una hipótesis. Ahora investigaremos una dificultad del propio diagnóstico: añadir código para observar puede introducir una operación que antes no existía. Antes de confiar en una traza, hay que precisar qué observa y qué cambios permite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera un servicio de visitas. Cada llamada a registrar_visita registra exactamente una visita nueva, incrementa numero_visita y devuelve el número alcanzado. El contador empieza en cero al iniciar cada programa. Guardar el resultado de una llamada permite consultar después ese dato sin volver a registrar la visita. Conservar historia es parte de este contrato; no vamos a reparar el servicio eliminándola."
+        },
+        {
+          "type": "paragraph",
+          "text": "El experimento de referencia solicita dos visitas, en instrucciones separadas y en ese orden. La línea R reúne sus resultados. Calcula primero esos valores desde el contrato, antes de utilizar una ejecución como referencia."
+        },
+        {
+          "type": "output_prediction",
+          "id": "obs_predecir_dos_operaciones_de_trabajo",
+          "language": "cpp",
+          "question": "Predice la salida exacta del programa de referencia. No hay espacios ni salto final.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "R:1:2"
+          ],
+          "explanation": "La primera llamada registra la visita 1 y devuelve 1. La segunda registra la visita 2 y devuelve 2. Los dos resultados guardados producen R:1:2; imprimirlos no llama otra vez al servicio.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "note",
+          "text": "Cada programa de la lección comienza en una ejecución nueva. En los programas de visitas mostrados hacemos como máximo cuatro llamadas, de modo que estos valores caben en int. Conserva el orden de las instrucciones; una ejecución anterior no aporta visitas a la siguiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una llamada para imprimir sigue siendo una llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Queremos añadir una observación entre las dos visitas de trabajo. La etiqueta DIAG identifica ese mensaje; R sigue identificando los resultados de las visitas solicitadas. El siguiente autor escribió una llamada al servicio dentro de la expresión que imprime el diagnóstico. Estudia lo que realmente ejecuta: la intención de observar no modifica el contrato de la función."
+        },
+        {
+          "type": "output_prediction",
+          "id": "obs_predecir_diagnostico_que_repite",
+          "language": "cpp",
+          "question": "Predice las dos líneas de esta revisión. Conserva el salto entre DIAG y R; no hay salto final.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:2\nR:1:3"
+          ],
+          "explanation": "La primera visita deja el contador en 1. La llamada dentro de cout registra otra visita y devuelve 2, que se imprime en DIAG. La segunda visita de trabajo ocurre después y devuelve 3. La salida es DIAG:2, salto de línea, R:1:3; la revisión ejecutó tres operaciones de registro.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_identificar_la_operacion_anadida",
+          "question": "La revisión incluye una etiqueta DIAG. ¿Qué permite decidir si esa línea sólo muestra un resultado o también registra otra visita?",
+          "options": [
+            "Que se imprime únicamente un valor retornado: utilizar ese valor en cout demostraría que la llamada no modifica el estado.",
+            "Las operaciones de su expresión: registrar_visita() conserva sus efectos aunque se llame para imprimir.",
+            "Que R usa resultados guardados: conservar esas variables demostraría que no hubo ninguna operación adicional del servicio."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una etiqueta indica cómo queremos interpretar el mensaje, pero no elimina las operaciones necesarias para calcularlo. En este código hay una nueva llamada al mismo servicio con el mismo efecto de registro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay dos preguntas distintas: qué valores produjeron las operaciones de trabajo y qué texto añadió el diagnóstico. Una línea extra cambia la salida completa del programa. Además, esta revisión cambia el estado del servicio: no podemos tratarla como si fuera el experimento original con una explicación escrita al margen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Definir qué debe conservar el diagnóstico"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica queremos observar el resultado de la primera visita sin registrar otra. La versión instrumentada puede añadir una línea DIAG, pero las dos operaciones de trabajo deben conservar su orden, sus resultados y el estado que dejan. Comparamos la línea R y las operaciones del servicio por separado del texto extra; no exigimos ni afirmamos que toda la salida sea idéntica a la del programa sin diagnóstico."
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegir observaciones dirigidas a una hipótesis, utilizar etiquetas distintas y mantener un formato constante ayuda a comparar ejecuciones. Las comprobaciones internas también necesitan una condición clara: más información no es automáticamente mejor evidencia. Aplicaremos esa estrategia comprobando además qué operaciones introduce nuestro propio diagnóstico; los programas y casos de esta lección son originales (Kernighan & Pike, 1999, pp. 124–125)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_conservar_el_experimento_al_comparar",
+          "question": "Quieres comprobar si el diagnóstico explica el cambio en R. ¿Qué comparación mantiene controladas las condiciones relevantes?",
+          "options": [
+            "Usar el mismo estado inicial y las mismas visitas de trabajo, en su orden; comparar revisiones que difieren sólo en el diagnóstico.",
+            "Cambiar registrar_visita para que no incremente el contador y comparar esa nueva función con la anterior.",
+            "Cambiar a la vez el diagnóstico y el número de visitas de trabajo; cualquier coincidencia final distinguirá sus efectos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Mantener las operaciones de trabajo y el estado inicial permite investigar el efecto del código añadido. Si también cambias el servicio o el número de visitas, ya no sabes qué modificación explica la diferencia."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_const_no_elimina_los_efectos",
+          "question": "Después de const int guardada = registrar_visita();, ¿qué garantiza const sobre esta operación?",
+          "options": [
+            "Que registrar_visita no puede modificar numero_visita al calcular el inicializador.",
+            "Que guardada irá recibiendo automáticamente los nuevos valores del contador global.",
+            "Que guardada conserva su valor después de inicializarse; la llamada todavía puede modificar el servicio."
+          ],
+          "correctIndex": 2,
+          "explanation": "const se aplica al objeto guardada. No transforma en lectura la llamada usada para obtener su valor ni crea una conexión automática con el contador. Se registra una visita y se conserva una copia de su resultado."
+        },
+        {
+          "type": "note",
+          "text": "Identifica la revisión que ejecutas y empieza cada comparación desde el mismo estado inicial. Las herramientas y el perfil también deben ser pertinentes al contraste. Cambiar una condición externa o ejecutar un artefacto anterior no es una nueva observación del mismo experimento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar la observación sin reparar el servicio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este laboratorio comienza con el diagnóstico que repite la llamada. Primero predice y ejecuta esa revisión para confirmar qué operaciones hace. Después modifica únicamente la expresión que obtiene el dato de DIAG: debe mostrar el resultado ya obtenido por la primera visita de trabajo sin registrar otra visita."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva registrar_visita, su estado inicial y las dos llamadas de trabajo en su orden. Mantén ambas etiquetas y utiliza resultados calculados, no constantes que imiten la salida. La revisión corregida debe producir DIAG:1, un salto de línea y R:1:2, sin salto final. Contrasta también la línea R con el programa de referencia sin diagnóstico. Es una investigación del código de observación; quitar el incremento de la función o borrar una visita cambia el contrato."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Registra en comentarios qué llamada introducía el diagnóstico, qué cambio hiciste y qué observaron ambas revisiones. Al reconstruir, atribuye cada salida a su fuente. Consulta la referencia de la página siguiente después de intentar y comprobar tu reparación; una coincidencia obtenida cambiando también el servicio no cumple estos criterios."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer un resultado conservado no vuelve a ejecutar la operación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia mantiene el servicio y las visitas de trabajo. La expresión de DIAG utiliza un resultado guardado, después de que su operación ya haya terminado. Compárala con tu reparación y explica por qué ahora no se registra una visita adicional."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera llamada conserva su resultado en primera; el diagnóstico lee ese dato y después se realiza la segunda visita. R mantiene los resultados de las dos operaciones. La línea DIAG sigue siendo una salida adicional: la conservación afirmada se refiere al estado del servicio y a los resultados de trabajo, no a que toda la secuencia de bytes sea la misma."
+        },
+        {
+          "type": "fill_code",
+          "id": "obs_recuperar_el_resultado_tras_otra_operacion",
+          "language": "cpp",
+          "question": "La observación se ha retrasado hasta después de la segunda visita. Completa únicamente el nombre del objeto que conserva el resultado de la primera; no escribas una constante ni otra llamada.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera_guardada = registrar_visita();\n    const int posterior = registrar_visita();\n    std::cout << \"DIAG:\" << ___ << \"\\n\";\n    std::cout << \"R:\" << primera_guardada << \":\" << posterior;\n    return 0;\n}\n",
+          "answers": [
+            "primera_guardada"
+          ],
+          "explanation": "primera_guardada conserva el resultado 1 aunque el contador ya haya avanzado a 2. posterior y numero_visita representan otros datos en este punto. La observación pedida es DIAG:1, seguida de R:1:2, sin ejecutar una tercera operación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los resultados guardados pueden ocultar un efecto posterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ampliamos el experimento a tres visitas de trabajo. Esta vez el diagnóstico se imprime después de todas ellas, pero debe describir el resultado de la segunda. La línea R reúne los tres resultados guardados y C muestra numero_visita después del diagnóstico. La intención nueva distingue el dato histórico pedido del estado actual del servicio."
+        },
+        {
+          "type": "output_prediction",
+          "id": "obs_predecir_efecto_despues_del_trabajo",
+          "language": "cpp",
+          "question": "Predice las tres líneas. Hay saltos entre DIAG, R y C, pero no después de C. Cuenta también la llamada escrita dentro del diagnóstico.",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:4\nR:1:2:3\nC:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las visitas de trabajo guardan 1, 2 y 3. La llamada posterior del diagnóstico registra la visita 4. R conserva sus valores anteriores, pero el estado final mostrado en C es 4; conservar R no demuestra que se hayan conservado las operaciones del experimento."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este laboratorio modifica sólo cómo se obtiene el dato de DIAG. Debe mostrar el resultado de la segunda visita sin registrar otra. Conserva las tres visitas de trabajo, R y la lectura de C. Calcula sus valores requeridos antes de ejecutar tu reparación; comprueba tanto los resultados guardados como el estado final. No escribas constantes para simularlos."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_distinguir_estado_y_significado_del_diagnostico",
+          "question": "Una reparación produce DIAG:1, R:1:2:3 y C:3. ¿Qué juicio está respaldado por esa ejecución y el contrato de la observación?",
+          "options": [
+            "Sí: conservar R y C basta, aunque el diagnóstico describa una visita distinta de la solicitada.",
+            "No conserva el trabajo: C:3 demuestra una visita adicional, aunque se solicitaron tres visitas de trabajo.",
+            "No: conserva resultados y estado de trabajo, pero DIAG no describe la segunda visita solicitada."
+          ],
+          "correctIndex": 2,
+          "explanation": "El contrato del diagnóstico tiene dos requisitos: no añadir una operación y mostrar el dato pedido. Esta revisión conserva las visitas de trabajo, pero muestra el resultado de la primera, no el de la segunda. Revisa la procedencia del dato además de los efectos de obtenerlo. Una referencia de reparación sustituye la llamada del diagnóstico por segunda: muestra DIAG:2, R:1:2:3 y C:3, en sus tres líneas, sin registrar otra visita. No es la única expresión válida si otra conserva los mismos contratos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recalcular no es siempre repetir una operación con efectos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sería incorrecto convertir el caso de visitas en la regla «ninguna función puede llamarse dos veces». Considera piezas_de_cajas: cada caja aporta tres piezas y cajas es un entero entre 0 y 6. Con el cuerpo mostrado, el resultado depende sólo de ese argumento; la función no modifica objetos externos ni lee o escribe mediante entrada/salida. En este dominio el producto cabe en int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamaremos pura a esta función bajo esas condiciones: obtener su resultado no produce efectos observables adicionales y, con los mismos argumentos, devuelve el mismo valor. El nombre de una función o que guardemos su retorno en un objeto const no demuestra esa propiedad; hay que examinar su comportamiento y su contexto. La impresión del diagnóstico se realiza en main, fuera de piezas_de_cajas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "obs_predecir_recalculo_sin_efectos",
+          "language": "cpp",
+          "question": "Predice las dos líneas de este programa. Hay un salto entre DIAG y R, sin salto final.",
+          "code": "#include <iostream>\n\nint piezas_de_cajas(int cajas) {\n    return 3 * cajas;\n}\n\nint main() {\n    const int preparadas = piezas_de_cajas(4);\n    std::cout << \"DIAG:\" << piezas_de_cajas(4) << \"\\n\";\n    std::cout << \"R:\" << preparadas;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:12\nR:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cada llamada calcula 3 por 4 y devuelve 12 sin registrar visitas ni modificar un resumen externo. La segunda llamada no cambia preparadas. main imprime DIAG:12, un salto y R:12; la impresión sí añade una línea a la salida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_evitar_una_regla_absoluta_sobre_repeticion",
+          "question": "¿Qué conclusión respeta el comportamiento y el alcance de este caso?",
+          "options": [
+            "Toda función que devuelve un entero puede repetirse sin efectos, como el servicio de visitas.",
+            "Esta función puede recalcular el mismo dato sin cambiar el trabajo; imprimir DIAG sigue añadiendo salida.",
+            "Toda segunda llamada añade necesariamente una visita, aunque su cuerpo sólo calcule el producto de sus argumentos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una llamada puede calcular o producir efectos, y no se distingue por el tipo int del retorno ni por contar llamadas sin mirar qué hacen. piezas_de_cajas permite este recálculo en el dominio declarado; registrar_visita registra otra visita. En ambos programas main realiza la impresión adicional."
+        },
+        {
+          "type": "note",
+          "text": "No inferimos que repetir sea siempre útil o que cualquier revisión futura sea pura. Si cambia el cuerpo, los argumentos o una condición relevante, vuelve a comprobar el contrato. Aquí contrastamos un cálculo pequeño y un servicio con historia; no estamos certificando todas las funciones del lenguaje."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir la investigación a un servicio que consume unidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este servicio tiene otro significado: unidades empieza en 4 y retirar_unidad retira exactamente una, disminuye el estado y devuelve cuántas quedan. Su precondición es que quede al menos una unidad antes de cada llamada. El programa inicial cumple esa precondición incluso con la operación añadida por el diagnóstico; el problema no es un dato inválido, sino cuántas retiradas realiza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se solicitan dos retiradas de trabajo, en su orden. DIAG debe mostrar el resultado ya obtenido por la primera; R reúne los resultados de ambas. Predice primero la revisión inicial sin corregirla. Que el estado disminuya ahora no convierte en lectura una llamada escrita para diagnosticar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "obs_predecir_una_retirada_anadida",
+          "language": "cpp",
+          "question": "Predice DIAG y R. Conserva el salto entre ambas líneas; no hay salto final.",
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "DIAG:2\nR:3:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera retirada deja 3 unidades. El diagnóstico vuelve a retirar y muestra 2. La segunda retirada de trabajo deja 1. La revisión produjo DIAG:2 y R:3:1 porque realizó tres retiradas, aunque sólo se solicitaron dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara el siguiente laboratorio cambiando únicamente la obtención del dato de DIAG. Conserva el servicio, las dos llamadas de trabajo, su orden y las etiquetas. Los valores deben proceder de las operaciones, no de constantes que imiten la salida. Desde 4 unidades, la observación correcta es DIAG:3, salto de línea, R:3:2, sin salto final; el estado debe terminar en 2. Después cambia sólo la preparación a 6 unidades, calcula primero sus esperados, reconstruye y comprueba ambos registros. Consulta la referencia después de intentar esa variación."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar evidencia del trabajo y evidencia de la observación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta es una referencia de la reparación de las retiradas. Compárala con tu investigación después del intento. El dato de DIAG se obtiene sin ejecutar otra retirada; la función sigue consumiendo una unidad cuando una operación de trabajo la solicita."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << primera << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde 4 unidades, las retiradas dejan 3 y después 2: DIAG muestra 3 y R reúne 3:2. Desde 6, dejan 5 y después 4: DIAG muestra 5 y R reúne 5:4. Esa variación descarta una impresión fija que sólo imite el primer caso. Otra reparación puede ser válida si conserva el servicio, las operaciones y el dato solicitado en ambas preparaciones; no basta conservar sólo la etiqueta o el resultado final."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_limitar_la_afirmacion_de_transparencia",
+          "question": "Tras comprobar las revisiones de referencia, ¿qué afirmación expresa la conservación realmente examinada?",
+          "options": [
+            "En los casos probados se conservaron las operaciones y sus resultados; se añadió texto diagnóstico que debe cumplir su propio contrato.",
+            "El programa instrumentado produce exactamente los mismos bytes que el programa sin DIAG, porque las retiradas coinciden.",
+            "Cualquier expresión de diagnóstico será válida si el programa termina con código 0, aunque ejecute nuevas retiradas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La observación puede conservar el estado y los resultados del trabajo y aun añadir bytes a la salida. Lo comprobado depende también del dato que debía mostrarse, los casos y la revisión ejecutada. Un retorno 0 no demuestra esos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva el esperado independiente, la revisión, la preparación inicial, el orden de las operaciones y lo observado antes y después del cambio. Comparar ejecuciones y guardar lo que se intentó evita confundir una posibilidad examinada con otra pendiente; esa estrategia procede de la fuente, mientras los casos de visitas, cajas y retiradas son propios (Kernighan & Pike, 1999, p. 127)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "obs_recuperar_el_control_sin_confundir_las_revisiones",
+          "question": "La salida guardada procede de la revisión que repetía la retirada, pero el editor ya muestra tu reparación. ¿Cómo obtienes evidencia de la reparación?",
+          "options": [
+            "Cambiar el registro anterior a mano para que muestre los valores requeridos.",
+            "Construir y ejecutar esa fuente con la misma preparación y operaciones, conservando separados ambos registros.",
+            "Tratar la salida anterior como nueva porque los dos programas utilizan el mismo nombre de función."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una fuente editada necesita una ejecución atribuible a ella. Mantener preparación y operaciones hace pertinente el contraste; separar registros conserva qué revisión produjo cada observación. La recuperación reutiliza el método de procedencia sin convertir la salida guardada en evidencia nueva."
+        }
+      ]
+    }
+  ]
+}
