@@ -1,0 +1,247 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__colecciones_de_registros_asociados",
+  "title": "Collections of Related Records",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Associations Must Survive Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "We could store locations and counts in two parallel vectors. That requires keeping their sizes and index-based correspondence in sync. If we sort only the locations, the indices may still exist and the program may compile, but each label becomes associated with the wrong count. A vector of Lectura keeps each pair together in one element."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"South\", 3}, {\"North\", 7}};\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each element is a Lectura. The form {{...}, {...}} contains two member initializer lists, one per object. Iterating through registros visits complete observations; the dot operator then selects the member we need."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Broken Association Can Produce Plausible Output"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "This program changes only the order of the location labels. Predict its actual output, even though the resulting report associates the counts incorrectly.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> sitios{\"South\", \"North\"};\n    std::vector<int> cantidades{3, 7};\n    std::sort(sitios.begin(), sitios.end());\n    for (std::size_t i = 0; i < sitios.size(); ++i) {\n        std::cout << sitios[i] << \":\" << cantidades[i] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "North:3;South:7;"
+          ],
+          "explanation": "This is the output produced by the code, but it does not preserve the original pairs South/3 and North/7."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What problem does this parallel-vector version demonstrate?",
+          "options": [
+            "An unavoidable out-of-range access in every case.",
+            "A mismatch between related data, even though the accesses are valid.",
+            "That sort cannot sort strings."
+          ],
+          "correctIndex": 1,
+          "explanation": "Valid indices do not guarantee that the fields still describe the same record."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will not yet use sort to order Lectura objects: first we would need to specify how two records should be compared. To demonstrate the association, it is enough to exchange positions by copying entire objects or to preserve their order of arrival."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Move an Entire Observation"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Courtyard\", 2}, {\"Room\", 8}};\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Room:8;Courtyard:2;"
+          ],
+          "explanation": "Entire objects are swapped; each location travels with its own count."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "To swap two records while preserving their association, what must we exchange?",
+          "options": [
+            "Only their labels.",
+            "Only their counts, leaving the labels in their positions.",
+            "The complete records, with all their members."
+          ],
+          "correctIndex": 2,
+          "explanation": "The unit we move must represent the observation we want to preserve."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Summarize One Member from Each Record"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"East\", 4}, {\"West\", 6}, {\"East\", 2}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n    std::cout << registros.size() << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "3 12"
+          ],
+          "explanation": "Three observations add up to twelve people; a repeated label does not remove an observation."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the numeric member that is accumulated.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"A\", 3}, {\"B\", 5}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.___;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "The total uses the count from each object, not its label."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A label appears twice in records from different sessions. Should we automatically discard one?",
+          "options": [
+            "Yes, because a vector only allows distinct values.",
+            "No; they may be separate observations according to the requirements.",
+            "Yes, every repeated label is an error."
+          ],
+          "correctIndex": 1,
+          "explanation": "The meaning of the data determines what a repeated value represents."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modify a Member of the Original Element"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Courtyard\", 2}, {\"Room\", 5}};\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Courtyard\") {\n            registro.personas += 3;\n        }\n    }\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Courtyard:5;Room:5;"
+          ],
+          "explanation": "auto& allows us to change a member of the observation stored in the vector."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If the first loop used auto registro by value, what change would be stored?",
+          "options": [
+            "None of those increases: copies of the records would be modified.",
+            "The same increases in the vector.",
+            "Only the change made during the first visit."
+          ],
+          "correctIndex": 0,
+          "explanation": "Copying by value also applies to objects with multiple members."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty Collections, Single Elements, and Filtering"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros;\n    int total = 0;\n    for (const auto& registro : registros) { total += registro.personas; }\n    std::cout << registros.size() << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "No invented observation is created to represent an empty collection."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"South\", 0}};\n    std::vector<Lectura> elegidos;\n    for (const auto& registro : registros) {\n        if (registro.personas > 0) { elegidos.push_back(registro); }\n    }\n    std::cout << registros.size() << \" \" << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "An observation with zero people exists, but it does not pass the positive-count filter."
+        },
+        {
+          "type": "paragraph",
+          "text": "When registro is added to another vector, the complete observation is copied. The result retains the chosen associations and the order in which they were visited. We grow a different collection, not the one currently being traversed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Report with Associated Records"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a vector of Registro objects with codigo and unidades members. Use {\"A\", 2}, {\"B\", 7}, and {\"A\", 4}. Display all three records in order and the total of thirteen. Create another vector containing records with at least four units: B:7;A:4;. Check an empty collection, a record with zero units, and two records with the same code but different counts. You are not asked to remove repeated codes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For review, copy the entire vector and increase one count in the original. Predict the output of both versions. Explain why a collection of structs reduces the work required to keep data associated compared with two parallel vectors."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Checking Copies"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{{\"A\", 2}, {\"B\", 7}, {\"A\", 4}};\n    int total = 0;\n    std::vector<Registro> elegidos;\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> original{{\"Room\", 4}};\n    auto copia = original;\n    original.at(0).personas = 9;\n    std::cout << copia.at(0).sitio << \":\" << copia.at(0).personas << \" \" << original.at(0).personas;\n    return 0;\n}\n",
+          "answers": [
+            "Room:4 9"
+          ],
+          "explanation": "The copied vector contains copies of its Lectura objects, preserving each association and the earlier state."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What distinguishes checking the association from checking only the total?",
+          "options": [
+            "Compare only the sets of labels and counts separately.",
+            "Check each label/count pair, as well as the total.",
+            "Check only that the record count and total match."
+          ],
+          "correctIndex": 1,
+          "explanation": "A total can stay the same even when two counts are associated with the wrong locations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: each code retains its count when records are traversed, copied, or selected; the total includes every observation, including repeated codes; the filter preserves order; an empty collection produces a total of zero without accessing a nonexistent element; changing the original does not change the copy."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,253 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__asociar_datos_en_un_struct",
+  "title": "Group Related Data in a struct",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Idea May Need Several Pieces of Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "An attendance observation contains a location label and a number of people. The pair represents a single observation: that count belongs to that location. We can create a type that keeps the association intact. A user-defined type describes how an idea is represented and which operations it will support; here we begin by grouping data."
+        },
+        {
+          "type": "paragraph",
+          "text": "struct Lectura { std::string sitio; int personas; }; defines a type named Lectura. sitio and personas are data members. Each Lectura object contains its own members. The semicolon after the final brace ends the type definition; the semicolons inside end the member declarations."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura una{\"Courtyard\", 4};\n    std::cout << una.sitio << \":\" << una.personas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The braces used to initialize una provide the members in declaration order: sitio first and personas second. Defining the type does not create that observation yet; declaring una creates the actual object."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Type, Object, and Member"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In Lectura registro{\"North\", 6};, what does Lectura represent?",
+          "options": [
+            "The specific object holding North and six.",
+            "The member that counts people.",
+            "The user-defined type that describes the observation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The type is Lectura, the object is registro, and its numeric member is personas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two Lectura objects named a and b…",
+          "options": [
+            "Can exist only if their location labels differ.",
+            "Each has its own members, even though both follow the same structure.",
+            "Must share the same count because they have the same type."
+          ],
+          "correctIndex": 1,
+          "explanation": "Sharing a type does not mean sharing the objects' state."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the member name that holds the number of people.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"East\", 8};\n    std::cout << registro.___;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "The dot operator identifies a member of the indicated object."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Dot Names a Member of That Object"
+        },
+        {
+          "type": "paragraph",
+          "text": "registro.sitio accesses registro's location label; registro.personas accesses its count. Reading one member does not change the other. If we assign registro.personas = 7;, we change one member of the same object while keeping its label."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura a{\"Room\", 3};\n    Lectura b{\"Workshop\", 9};\n    a.personas += 2;\n    std::cout << a.sitio << \":\" << a.personas << \" \" << b.sitio << \":\" << b.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Room:5 Workshop:9"
+          ],
+          "explanation": "Only a.personas changes; b retains its state."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What is the difference between registro.personas and \"registro.personas\" in output?",
+          "options": [
+            "The first reads a member; the second prints those characters as text.",
+            "The first represents the type name.",
+            "Both always read the object's count."
+          ],
+          "correctIndex": 0,
+          "explanation": "Recall the difference between a program expression and a string literal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copy the Entire Observation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lectura copia = original; creates another object whose members are copies of the original members. The label and count are copied together. Changing original.personas afterward does not change copia.personas. With these string and int members, copying by value has that straightforward meaning."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"South\", 5};\n    Lectura copia = original;\n    original.sitio = \"Courtyard\";\n    original.personas = 7;\n    std::cout << copia.sitio << \":\" << copia.personas << \" \" << original.sitio << \":\" << original.personas;\n    return 0;\n}\n",
+          "answers": [
+            "South:5 Courtyard:7"
+          ],
+          "explanation": "The copy retains both members as they were when it was created."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complete only the type name and the name of the object being copied.",
+          "template": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"A\", 2};\n    [] copia = [];\n    std::cout << copia.sitio << \":\" << copia.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Lectura",
+            "original"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What This Structure Guarantees, and What Remains to Decide"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous solution copies a Lectura object called original. Grouping fields prevents them from becoming accidentally separated when you copy the whole object. However, this struct leaves its members accessible. The int type allows a negative count, even though that would not represent valid attendance. Association and validity rules are separate problems; we will develop those rules before designing a class that protects them."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You assign -2 to registro.personas in this public struct. What follows?",
+          "options": [
+            "The privacy of struct prevents writing to that member.",
+            "The compiler rejects every negative integer because it represents a number of people.",
+            "int permits -2; the attendance domain has still not been checked."
+          ],
+          "correctIndex": 2,
+          "explanation": "The name personas does not introduce domain validation."
+        },
+        {
+          "type": "paragraph",
+          "text": "A struct is a class whose members are public by default. It can contain functions and constructors; it is not a mechanism restricted to data. We use it as a simple structure here because we still want to inspect and directly manipulate the association."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Initialize Before Reading"
+        },
+        {
+          "type": "paragraph",
+          "text": "In these first observations, we write both initial values. We will not declare a local Lectura without preparing its integer member and then print it. The existence of a struct does not make reading an uninitialized member safe. Later, member initializers and constructors will establish a construction policy for the type."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which initialization lets us read all the members of our Lectura?",
+          "options": [
+            "Declare Lectura registro; and assign only sitio before reading both members.",
+            "Declare Lectura registro; and read personas before assigning any value.",
+            "Use Lectura registro{\"Courtyard\", 0};."
+          ],
+          "correctIndex": 2,
+          "explanation": "Lectura registro{\"Courtyard\", 0}; initializes sitio with \"Courtyard\" and personas with zero. The other two choices do not initialize personas before reading it."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"North\", 0};\n    std::cout << registro.personas << \" \" << registro.sitio;\n    return 0;\n}\n",
+          "answers": [
+            "0 North"
+          ],
+          "explanation": "Zero is an explicitly written initial value; it is not inferred from the member name."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Program from a Specification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define a Registro type with two members: codigo as string and unidades as int. Construct an object with codigo \"R4\" and six units; display R4:6. Copy the object, increase only the original's units by three, and display both versions on separate lines: Original R4:9 and Copy R4:6. Then use a different code and zero units to verify that the program reads its members."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before each statement, write down which object it changes. The solution does not require a single global label or two separate variables that must be kept synchronized. Define the type before declaring its objects."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Review of Functions"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    Registro original{\"R4\", 6};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copy \" << copia.codigo << \":\" << copia.unidades;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    Lectura registro{\"East\", 4};\n    int total = doble(registro.personas);\n    std::cout << registro.personas << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "4 8"
+          ],
+          "explanation": "The function receives a copy of the integer and calculates eight without changing the original member."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What can we represent by keeping an observation in a single object?",
+          "options": [
+            "Prevent two observations from referring to the same location.",
+            "Copy the observation's fields together.",
+            "Automatically guarantee every business rule."
+          ],
+          "correctIndex": 1,
+          "explanation": "The association is a reason to create the type; constraints require additional design."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the type keeps codigo and unidades together; the copy is made before the increase; only the original object's units change; both reports read the actual object members; all members are initialized before use. Other implementations are acceptable if they meet these conditions and the requested format."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__colecciones_de_registros_asociados",
+  "title": "Collections d'enregistrements associés",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'association doit résister aux modifications"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pourrions conserver les lieux et les quantités dans deux vecteurs parallèles. Il faudrait alors maintenir leurs tailles et leur correspondance par indice. Si l'on trie seulement les lieux, les indices peuvent toujours exister et le programme peut compiler, mais chaque étiquette se trouve associée à la mauvaise quantité. Un vector de Lectura conserve chaque paire dans un même élément."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sud\", 3}, {\"Nord\", 7}};\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque élément est un objet Lectura. La forme {{...}, {...}} contient deux listes d'initialisation de membres, une par objet. Parcourir registros revient à visiter des observations complètes ; l'opérateur point permet ensuite de choisir le membre nécessaire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une association incorrecte peut produire une sortie plausible"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Ce programme modifie uniquement l'ordre des lieux. Prédis sa sortie réelle, même si le rapport obtenu associe mal les quantités.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> sitios{\"Sud\", \"Nord\"};\n    std::vector<int> cantidades{3, 7};\n    std::sort(sitios.begin(), sitios.end());\n    for (std::size_t i = 0; i < sitios.size(); ++i) {\n        std::cout << sitios[i] << \":\" << cantidades[i] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Nord:3;Sud:7;"
+          ],
+          "explanation": "Le code produit bien cette sortie, mais elle ne conserve pas les associations initiales Sud/3 et Nord/7."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel problème cette version à vecteurs parallèles met-elle en évidence ?",
+          "options": [
+            "Un accès hors limites inévitable dans tous les cas.",
+            "Une erreur d'association entre les données, même si tous les accès sont valides.",
+            "L'impossibilité de trier des chaînes avec sort."
+          ],
+          "correctIndex": 1,
+          "explanation": "Des indices valides ne garantissent pas que les champs décrivent encore le même enregistrement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous ne trierons pas encore les objets Lectura avec sort : il faudrait d'abord définir comment comparer deux enregistrements. Pour montrer que l'association est préservée, il suffit d'échanger des positions en copiant des objets entiers ou de conserver leur ordre d'arrivée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Déplacer une observation entière"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Cour\", 2}, {\"Salle\", 8}};\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Salle:8;Cour:2;"
+          ],
+          "explanation": "On échange des objets entiers ; chaque lieu se déplace avec son propre nombre de personnes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour échanger la position de deux enregistrements en préservant l'association, que devons-nous échanger ?",
+          "options": [
+            "Uniquement leurs étiquettes.",
+            "Uniquement leurs quantités, en laissant les étiquettes à leur place.",
+            "Les enregistrements entiers, avec tous leurs membres."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'unité déplacée doit représenter l'observation que nous voulons conserver."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Faire le bilan d'un membre de chaque enregistrement"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Est\", 4}, {\"Ouest\", 6}, {\"Est\", 2}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n    std::cout << registros.size() << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "3 12"
+          ],
+          "explanation": "Trois observations totalisent douze personnes ; une étiquette répétée ne supprime pas une observation."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le membre numérique dont les valeurs sont additionnées.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"A\", 3}, {\"B\", 5}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.___;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "Le total utilise la quantité de chaque objet, pas son étiquette."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une étiquette apparaît deux fois dans des enregistrements provenant de sessions différentes. Faut-il automatiquement en supprimer une ?",
+          "options": [
+            "Oui, car un vector n'accepte que des valeurs différentes.",
+            "Non ; il peut s'agir d'observations distinctes selon les exigences.",
+            "Oui, toute étiquette répétée constitue une erreur."
+          ],
+          "correctIndex": 1,
+          "explanation": "La signification des données détermine ce que représente une répétition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier un membre de l'élément original"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Cour\", 2}, {\"Salle\", 5}};\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Cour\") {\n            registro.personas += 3;\n        }\n    }\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Cour:5;Salle:5;"
+          ],
+          "explanation": "auto& permet de modifier un membre de l'observation conservée dans le vecteur."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si la première boucle utilisait auto registro par valeur, quelle modification serait enregistrée ?",
+          "options": [
+            "Aucune de ces augmentations : ce seraient les copies des enregistrements qui seraient modifiées.",
+            "Les mêmes augmentations dans le vecteur.",
+            "Uniquement la modification lors de la première visite."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copie par valeur s'applique aussi aux objets contenant plusieurs membres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Collections vides, élément unique et filtrage"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros;\n    int total = 0;\n    for (const auto& registro : registros) { total += registro.personas; }\n    std::cout << registros.size() << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "On ne crée pas d'observation fictive pour représenter l'absence de données."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sud\", 0}};\n    std::vector<Lectura> elegidos;\n    for (const auto& registro : registros) {\n        if (registro.personas > 0) { elegidos.push_back(registro); }\n    }\n    std::cout << registros.size() << \" \" << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "Une observation avec zéro personne existe, mais elle ne satisfait pas le filtre des quantités positives."
+        },
+        {
+          "type": "paragraph",
+          "text": "Quand registro est ajouté à un autre vecteur, l'observation entière est copiée. Le résultat conserve les associations sélectionnées et leur ordre de visite. Nous agrandissons une autre collection, pas celle que nous sommes en train de parcourir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un rapport avec des données associées"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un vector de Registro comportant codigo et unidades. Utilise {\"A\", 2}, {\"B\", 7} et {\"A\", 4}. Affiche les trois enregistrements dans l'ordre et le total de treize. Crée un autre vecteur avec les enregistrements ayant au moins quatre unités : B:7;A:4;. Vérifie une collection vide, un enregistrement de zéro unité et deux enregistrements portant le même code, mais des quantités différentes. Il n'est pas demandé de supprimer les codes répétés."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construis ici le programme décrit dans la consigne.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour réviser, copie tout le vecteur et augmente une quantité dans l'original. Prédis la sortie des deux versions. Explique pourquoi une collection de structs réduit les efforts nécessaires pour maintenir les associations par rapport à deux vecteurs parallèles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et vérification des copies"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{{\"A\", 2}, {\"B\", 7}, {\"A\", 4}};\n    int total = 0;\n    std::vector<Registro> elegidos;\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> original{{\"Salle\", 4}};\n    auto copia = original;\n    original.at(0).personas = 9;\n    std::cout << copia.at(0).sitio << \":\" << copia.at(0).personas << \" \" << original.at(0).personas;\n    return 0;\n}\n",
+          "answers": [
+            "Salle:4 9"
+          ],
+          "explanation": "La copie du vecteur contient des copies de ses objets Lectura ; elle conserve l'association et l'état antérieur."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle différence y a-t-il entre vérifier l'association et vérifier uniquement le total ?",
+          "options": [
+            "Comparer seulement les ensembles d'étiquettes et de quantités séparément.",
+            "Vérifier chaque paire étiquette/quantité, en plus du total.",
+            "Vérifier uniquement que le nombre d'enregistrements et le total coïncident."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un total peut rester identique même si deux quantités sont associées aux mauvais lieux."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : chaque code conserve sa quantité pendant le parcours, la copie et la sélection ; le total comprend toutes les observations, y compris les codes répétés ; le filtre préserve l'ordre ; la collection vide donne un total de zéro sans accéder à un élément inexistant ; modifier l'original ne modifie pas la copie."
+        }
+      ]
+    }
+  ]
+}
