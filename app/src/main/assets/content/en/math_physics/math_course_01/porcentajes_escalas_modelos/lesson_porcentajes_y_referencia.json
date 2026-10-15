@@ -1,0 +1,605 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__porcentajes_y_referencia",
+  "title": "Percentages and Reference Quantities",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "A percentage is a ratio expressed per hundred units of a reference quantity. 15% equals \\(\\frac{15}{100}=0.15\\). To find 15% of 240, multiply 240 by 0.15 to get 36. The quantity 240 is the base: it represents 100%. Without the reference quantity, a percentage does not determine a specific amount."
+        },
+        {
+          "type": "paragraph",
+          "text": "The % symbol modifies the number it follows. 15% means 0.15, not 15. That is why 15% of 240 is not 15×240. You can write the calculation as 240×15/100 or as 240×0.15. Both use the same rational factor. An estimate is helpful: 10% is 24 and 5% is 12; these amounts add up to 36."
+        },
+        {
+          "type": "paragraph",
+          "text": "If 36 of the 240 tickets to an event were free, the fraction that was free is 36/240 = 0.15. To express it as a percentage, multiply by one hundred and say 15%. By contrast, 36 free tickets compared with 204 paid tickets give a different ratio. The percentage of free tickets within the total uses 240 as the reference, not 204."
+        },
+        {
+          "type": "note",
+          "text": "In a field labeled \"percentage,\" enter the numerical value without the % symbol: for fifteen percent, enter 15. In a field labeled \"factor,\" enter 0.15. Always identify which quantity represents 100%."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calculate Parts Using Simple References"
+        },
+        {
+          "type": "paragraph",
+          "text": "10% is one tenth; 1% is one hundredth; 25% is one quarter; and 50% is one half. These equivalences let us calculate without losing the base. For example, 15% of 80 is 10% plus 5%: 8+4 = 12. First identify the parts of the same reference quantity, then add them."
+        },
+        {
+          "type": "paragraph",
+          "text": "2.5% equals 0.025 = 1/40. It is not 2.5 times the base. A fractional percentage is still a rational factor; dividing by one hundred preserves its value. When the percentage exceeds one hundred, the amount being compared may exceed the base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "partes_mentales",
+          "prompt": "A batch contains 120 items. Calculate how many correspond to 10%, 25%, and 15% of the same batch.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diez",
+              "type": "math_numeric_input",
+              "label": "10% of the batch",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              }
+            },
+            {
+              "id": "cuarto",
+              "type": "math_numeric_input",
+              "label": "25% of the batch",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            },
+            {
+              "id": "quince",
+              "type": "math_numeric_input",
+              "label": "15% of the batch",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "18"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10% gives 12; 25% gives 30; 15% gives 12+6 = 18. All these parts use 120 as their base.",
+            "incorrect": "The % symbol means division by one hundred. For 15%, the 5% is half of 10%; it does not necessarily mean five items."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_porcentaje_decimal",
+          "prompt": "A container holds 240 g of material. 2.5% of its mass is pigment. How many grams of pigment does it contain?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Pigment",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "2.5% = 1/40; 240/40 = 6 g.",
+            "incorrect": "60 g corresponds to 25%, ten times the requested rate. The figure 2.5 g cannot be inferred from the percentage without using the base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_mayor_base",
+          "prompt": "The goal is to produce 48 items. Actual production equals 125% of the goal. How many items were produced?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Production",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "125% = 1+1/4: 48+12 = 60 items.",
+            "incorrect": "12 items represent only the 25% excess. The question asks for all production, including 100% of the goal."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "We may know the base and percentage and calculate the part, know the part and base and calculate the percentage, or know the part and percentage and recover the base. In all three cases, \\(\\text{part}=\\text{base}\\times\\text{factor}\\). The factor is the percentage divided by one hundred. What we seek changes, but the relationship between the quantities remains the same."
+        },
+        {
+          "type": "paragraph",
+          "text": "Example: 21 out of 140 flowerpots have yellow flowers. The quotient 21/140 is 0.15, so they represent 15%. If we only knew that 21 pots were 15% of the total, we would divide 21 by 0.15 and get 140. Dividing by a factor smaller than one increases the result, as it should when recovering a total larger than its part."
+        },
+        {
+          "type": "paragraph",
+          "text": "A percentage can exceed 100 when the reference is not a whole containing the amount. If a tank was designed for 200 units and production of 250 is compared with that reference capacity, production equals 125% of capacity. This does not mean that a part contained within 200 is 250; two quantities are being compared."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencias",
+          "prompt": "Match each factor to its percentage. Every target is different. Remember that a percentage expresses the same rational value using a reference of one hundred.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factores",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "0.08"
+                },
+                {
+                  "id": "b",
+                  "label": "0.35"
+                },
+                {
+                  "id": "c",
+                  "label": "3/4"
+                },
+                {
+                  "id": "d",
+                  "label": "1.2"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "t1",
+                  "label": "75%"
+                },
+                {
+                  "id": "t2",
+                  "label": "120%"
+                },
+                {
+                  "id": "t3",
+                  "label": "8%"
+                },
+                {
+                  "id": "t4",
+                  "label": "35%"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "t3",
+                  "b": "t4",
+                  "c": "t1",
+                  "d": "t2"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The factors correspond to 8%, 35%, 75%, and 120%. A factor greater than one gives a percentage greater than one hundred.",
+            "incorrect": "Multiply each factor by one hundred to name it as a percentage. 0.08 does not mean 0.08%; three quarters equal 75 per hundred, not 3%."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Relationship, Three Questions"
+        },
+        {
+          "type": "paragraph",
+          "text": "In part = base×factor, finding the part means multiplying; finding the factor means dividing part/base; finding the base means dividing part/factor. You can check each answer by performing the multiplication again. Do not choose an operation just because you see the % symbol: first identify which of the three quantities is missing."
+        },
+        {
+          "type": "paragraph",
+          "text": "If 45 items make up 75% of a batch, 45 is not the base. Dividing 45 by 3/4 gives 60. The check 60×3/4 = 45 shows why the base must be greater than that part."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "base_por_fraccion",
+          "prompt": "The 54 printed labels represent 60% of an order. How many labels are in the complete order?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Complete order",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "90"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "54÷3/5 = 90, and 3/5 of 90 is 54.",
+            "incorrect": "Multiplying 54 by 60% calculates a part of what has already been printed. To recover the total, undo the factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_tres_operaciones",
+          "prompt": "Select all statements that use the base and operation correctly.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuentas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "30% of 90 is calculated as 90×0.30.",
+                  "reviewFeedback": "Identify the base and percentage converted to a ratio in your expression. Check which amount the product represents and preserve the units of the total."
+                },
+                {
+                  "id": "b",
+                  "label": "If 27 is 30% of a total, that total is 27÷0.30.",
+                  "reviewFeedback": "Relate the known part to the percentage ratio and the total being sought. Check your operation by reconstructing the part from the resulting total."
+                },
+                {
+                  "id": "c",
+                  "label": "27 out of 90 represents 27÷90×100 percent.",
+                  "reviewFeedback": "Check the order of the quotient of part to total. Then connect the resulting ratio to its expression per hundred reference units."
+                },
+                {
+                  "id": "d",
+                  "label": "If 27 is 30% of a total, the total is 27×0.30.",
+                  "reviewFeedback": "Check whether multiplying the part by the percentage recovers the total. Test the proposed operation by reconstructing the part from its base."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first three statements reconstruct the same relationship: part 27, base 90, and factor 0.30.",
+            "incorrect": "The last statement takes another part of 27, which is already the part. It does not recover 100%."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vary Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "participacion",
+          "prompt": "In an activity, 240 people registered and 180 attended. What percentage of registrants attended, and what percentage did not? The base is the same group of 240.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "asistencia",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "si",
+                  "type": "numeric",
+                  "label": "Percentage who attended"
+                },
+                {
+                  "id": "no",
+                  "type": "numeric",
+                  "label": "Percentage who did not attend"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "si": {
+                    "type": "numeric",
+                    "expected": "75"
+                  },
+                  "no": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "180/240 = 0.75, or 75%. The 60 absentees represent 60/240 = 25%. The two percentages make up 100% of the group.",
+            "incorrect": "Do not use only the 180 attendees or the 60 absentees as the base. Divide each part by the total number registered and express the quotient per hundred."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "total",
+          "prompt": "There are 18 blue-covered notebooks, which represent 12% of all the notebooks. How many notebooks are there in total? The goal is to recover the reference quantity.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Total notebooks",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "150"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "18 = total×0.12, so total = 18/0.12 = 150. The check is 150×0.12 = 18.",
+            "incorrect": "18×0.12 calculates 12% of the part rather than recovering the total. Dividing by 12 omits the conversion from percentage to factor 0.12."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Do Not Add Percentages from Different Groups"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two percentages add up to one hundred when they describe nonoverlapping parts that exhaust the same base. 40% of one group and 60% of another do not necessarily make a total of one hundred units. To combine groups, add their amounts first and then construct the combined base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_grupos_base_conjunta",
+          "prompt": "In one group of 20 people, 50% attend; in another group of 80, 25% attend. Calculate total attendees and the attendance percentage for both groups together.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Total attendees",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Combined percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10+20 = 30 out of 100 people attend: 30%.",
+            "incorrect": "37.5% averages rates while giving equal weight to groups of different sizes. 75% adds percentages that have different bases."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_dato_complementario",
+          "prompt": "Of a batch of 150 items, 20% need repair. The rest are ready. How many are ready?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Ready items",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The complement is 80% of the same base: 150×0.80 = 120.",
+            "incorrect": "30 is the number of items requiring repair. The complement applies to the total, not to that part."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bases",
+          "prompt": "Two teams scored 18 points. The first team's possible maximum was 60, and the second team's was 90. Calculate each team's percentage relative to its own maximum.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "porcentajes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Percentage relative to 60"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Percentage relative to 90"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "30"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18/60 = 30%; 18/90 = 20%. The same amount represents different percentages when the bases change.",
+            "incorrect": "The amount achieved is the same, but the reference for 100% changes. Do not conclude the percentages are equal merely because both teams earned 18 points."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mayorcien",
+          "prompt": "A workshop planned to produce 160 items and produced 200. What percentage of the planned production does the result represent? Then choose the correct interpretation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "porcentaje",
+              "type": "math_numeric_input",
+              "label": "Percentage relative to the plan",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "125"
+              }
+            },
+            {
+              "id": "significado",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It produced 25% of what was planned.",
+                  "reviewFeedback": "Identify which amount is being compared with planned production. Distinguish the entire production from the portion exceeding the plan."
+                },
+                {
+                  "id": "b",
+                  "label": "It fulfilled the whole plan and produced an additional quarter.",
+                  "reviewFeedback": "Check how the result breaks down into the plan and the excess. Relate both parts to the reference before interpreting the percentage."
+                },
+                {
+                  "id": "c",
+                  "label": "The percentage is impossible because it exceeds 100.",
+                  "reviewFeedback": "Consider what it means for the compared amount to exceed the base. The definition of percentage requires a reference, not an arbitrary limit on its size."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "200/160 = 1.25 = 125%. The additional portion is 40 items, or 25% of the 160 planned.",
+            "incorrect": "125% compares production with the plan. It is not a part contained within 160. 25% is only the excess, not all production."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer",
+          "prompt": "Select all values exactly equivalent to 7.5%. No approximation is requested.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valores",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.075",
+                  "reviewFeedback": "For the selected value, check the decimal place when converting the percentage. Interpret the percent symbol as a ratio per hundred, preserving exactness."
+                },
+                {
+                  "id": "b",
+                  "label": "3/40",
+                  "reviewFeedback": "Relate the selected fraction to an equivalent percentage ratio. Verify it with exact transformations rather than replacing equality with approximation."
+                },
+                {
+                  "id": "c",
+                  "label": "0.75",
+                  "reviewFeedback": "For the selected decimal, check its conversion to a ratio per hundred. Pay attention to the decimal point and the magnitude."
+                },
+                {
+                  "id": "d",
+                  "label": "75/100",
+                  "reviewFeedback": "Interpret the numerator and denominator of your selection literally. Check which percentage this ratio represents, respecting the requirement of exact equivalence."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7.5/100 = 0.075 = 3/40. Both representations preserve the exact value.",
+            "incorrect": "0.75 and 75/100 equal 75%, ten times the requested percentage. Preserve the decimal place when dividing by one hundred."
+          }
+        }
+      ]
+    }
+  ]
+}

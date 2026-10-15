@@ -1,0 +1,571 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__sintesis_proporcionalidad",
+  "title": "Summary: Choosing a Relationship and Checking It",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "You are no longer told in advance which method to use. Read what the problem asks, identify the quantities, and name their units. A part-to-part ratio, a fraction of the total, and a rate answer different questions. A table organizes data, but the context determines which relationships can be extended to new cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "You can compare against one unit, look for a common factor, or keep a product constant. You may also decide that neither type of proportionality applies. A fixed charge, a constant loss, or changing conditions may require a different calculation. Explain your decision using the relationship that remains constant; merely checking that the answer \"looks reasonable\" is not enough."
+        },
+        {
+          "type": "paragraph",
+          "text": "In activities with several fields, the answers belong to the same situation. Check that they agree: parts must add up to the total, a rate multiplied by its reference must recover the quantity, and the products in an inverse relationship must be equal. If a calculation involves estimation, first check whether the value should increase or decrease."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine Information Expressed in Different Units"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_receta_unidades",
+          "prompt": "Four equal servings require 3/5 L of sauce. Ten servings will be prepared, and each container holds 250 mL. Use 1 L = 1000 mL. Calculate the liters needed and the minimum number of whole containers needed to store the sauce.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "l",
+              "type": "math_numeric_input",
+              "label": "Sauce needed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Minimum number of containers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "You need 3/2 L = 1500 mL, which fits exactly into six containers.",
+            "incorrect": "The ratio connects servings and sauce; the capacity connects liters and containers. Dividing liters by 250 without converting mixes units."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_datos_insuficientes",
+          "prompt": "A service charged 84 pesos for six items. We want to calculate the price for ten. Which answer respects the available information?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Necessarily 140 pesos.",
+                  "reviewFeedback": "Identify the pricing rule assumed by the selected payment. Check whether one recorded purchase is enough to guarantee that rule for another quantity."
+                },
+                {
+                  "id": "b",
+                  "label": "Necessarily 88 pesos.",
+                  "reviewFeedback": "Review how the stated payment is obtained and what pricing relationship would support it. Distinguish a possible calculation from enough information to guarantee it."
+                },
+                {
+                  "id": "c",
+                  "label": "We need to know whether there is a constant price per item, a fixed fee, or another pricing rule.",
+                  "reviewFeedback": "Consider which pricing rules are consistent with the available information. Justify why you need to know how the price behaves before increasing the purchase."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The payment for six items does not determine the service's pricing rule.",
+            "incorrect": "84/6 is an average for that purchase. Before extending it, the constancy of the rate must be justified."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before answering, return to the question. The same situation may ask for a quantity, a rate, a fraction of the total, or a duration. Changing the reference changes the calculation. If you can explain what stays constant, check it against the data, and preserve the units, you are ready to approach percentages and scales using the same reasoning."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "huerto",
+          "prompt": "A garden has foliage plants and flowering plants in the ratio foliage:flowers = 5:3. There are 64 plants. Determine the quantities and the fraction of the total that are flowering plants. The composition of the entire garden remains the same.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "plantas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "hoja",
+                  "type": "numeric",
+                  "label": "Foliage plants"
+                },
+                {
+                  "id": "flor",
+                  "type": "numeric",
+                  "label": "Flowering plants"
+                },
+                {
+                  "id": "parte",
+                  "type": "numeric",
+                  "label": "Fraction of flowering plants in the total"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "hoja": {
+                    "type": "numeric",
+                    "expected": "40"
+                  },
+                  "flor": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "parte": {
+                    "type": "numeric",
+                    "expected": "3/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "There are eight parts of eight plants each: 40 foliage plants and 24 flowering plants. Flowering plants are 24/64 = 3/8 of the total.",
+            "incorrect": "5:3 compares two parts. For the total, add the eight parts; 3/5 would compare flowers with foliage. Check that 40+24 equals 64."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review Divisibility and Fraction Operations"
+        },
+        {
+          "type": "paragraph",
+          "text": "A common multiple can express the first time cycles coincide. A common denominator expresses parts of the same unit. In both cases, a shared unit is organized; the operations depend on what the problem means."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos_sincronizados",
+          "prompt": "Two checks are performed every 6 and every 8 minutes. They have just coincided. How many minutes will pass until they first coincide again?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Time",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "min"
+            }
+          ],
+          "feedback": {
+            "correct": "The multiples of 6 are 6, 12, 18, 24; those of 8 are 8, 16, 24. The first new coincidence occurs after 24 min.",
+            "incorrect": "48 is also a coincidence, but not the first. 2 is a common divisor, not the interval we are looking for."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_suma_resta",
+          "prompt": "There are 5/4 m of ribbon. Then 1/3 m is used, and 1/6 m is added. What length remains available?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Available length",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/12"
+              },
+              "unit": "m"
+            }
+          ],
+          "feedback": {
+            "correct": "In twelfths: 15/12−4/12+2/12 = 13/12 m.",
+            "incorrect": "Do not add denominators. Using ribbon subtracts length and adding ribbon increases it; keep the sign of each change."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vary Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta",
+          "prompt": "A uniform ribbon 6 m long has a mass of 150 g. Without adding packaging, calculate the mass of 2.4 m and the rate in g/m. Choose the condition that allows us to extend the data.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "masa",
+              "type": "math_numeric_input",
+              "label": "Mass",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "g",
+              "calculator": true
+            },
+            {
+              "id": "tasa",
+              "type": "math_numeric_input",
+              "label": "Rate",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              },
+              "unit": "g/m"
+            },
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The ribbon has the same mass per meter throughout its length.",
+                  "reviewFeedback": "Relate the selected uniformity to the mass of each unit of length. Check how it allows the rate to be extended to a different length."
+                },
+                {
+                  "id": "b",
+                  "label": "Every ribbon always weighs 150 grams.",
+                  "reviewFeedback": "Review what the recorded mass means for a specific length. Distinguish that quantity from a property that could remain true for every segment."
+                },
+                {
+                  "id": "c",
+                  "label": "Length and mass must be whole numbers.",
+                  "reviewFeedback": "Consider whether requiring whole-number values guarantees a uniform ribbon. The model's assumption should concern mass distribution along the length."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The rate is 150/6 = 25 g/m, and the mass is 25×2.4 = 60 g. Uniformity allows us to preserve that rate.",
+            "incorrect": "150 g is the mass of six meters, not of every segment. Fractions of a meter also follow the relationship when the material is uniform."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "viaje",
+          "prompt": "Two trips cover the same distance of 96 km without stops. One is made at 32 km/h and the other at 48 km/h, at constant speed. Calculate both times and decide what is preserved.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Hours at 32 km/h"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Hours at 48 km/h"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "fijo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The time/speed quotient.",
+                  "reviewFeedback": "Interpret the units of the selected quotient and calculate its value on both trips. Check its relationship to the quantity stated to be fixed."
+                },
+                {
+                  "id": "b",
+                  "label": "The speed×time product.",
+                  "reviewFeedback": "Relate the units of the chosen product to the distance traveled. Check that quantity using the data from each trip."
+                },
+                {
+                  "id": "c",
+                  "label": "The speed+time sum.",
+                  "reviewFeedback": "Check whether the quantities you propose to add have compatible units. Look for physical meaning before claiming the combination remains constant."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The trips take 3 h and 2 h. Both speed×time products equal 96 km, the fixed distance.",
+            "incorrect": "Distance is the fixed reference. Adding km/h and hours does not represent a distance; the quotient does not preserve the journey either."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tarifa",
+          "prompt": "One workshop charges a 20-peso setup fee plus 12 pesos for each item. Another charges only 17 pesos per item. For five items, calculate both payments and choose the lower one. Assume equal quality and that both workshops accept the order.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "First workshop's payment",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "80"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Second workshop's payment",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "85"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "menor",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "First workshop",
+                  "reviewFeedback": "Calculate the selected workshop's complete payment for the requested number of items. Include the initial fee and distinguish total cost from price per item."
+                },
+                {
+                  "id": "b",
+                  "label": "Second workshop",
+                  "reviewFeedback": "Calculate the chosen workshop's payment for the given quantity. Justify the comparison using total costs under the order's conditions."
+                },
+                {
+                  "id": "igual",
+                  "label": "Equal payments",
+                  "reviewFeedback": "Check the proposed equality of payments by evaluating each rule for the same order. Include fixed charges where applicable."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first charges 20+12×5 = 80; the second charges 17×5 = 85. For this order, the first is better in terms of total payment.",
+            "incorrect": "A lower variable rate does not decide the outcome by itself when there is a fixed fee. A price of 160 pesos would repeat the setup charge for every item: (20+12)×5. That fee is paid only once. Compare the totals for the same number of items."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leerplano",
+          "prompt": "This graph represents identical boxes: the horizontal axis shows the number of boxes, and the vertical axis shows the number of bottles. Identify how many bottles are in three boxes and the number of bottles per box. The point's label is in the order (boxes, bottles).",
+          "representations": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "scatter",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 5,
+                "yMin": 0,
+                "yMax": 20
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 4
+                },
+                {
+                  "x": 2,
+                  "y": 8
+                },
+                {
+                  "x": 3,
+                  "y": 12
+                },
+                {
+                  "x": 4,
+                  "y": 16
+                }
+              ],
+              "showLabels": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "q",
+                  "type": "numeric",
+                  "label": "Bottles in 3 boxes"
+                },
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Bottles per box"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "q": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "k": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The point (3, 12) indicates 12 bottles. Since the boxes are identical, 12/3 = 4 bottles per box.",
+            "incorrect": "Do not read the horizontal coordinate as bottles. The graph preserves the order of the quantities; calculate the rate after interpreting the point."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modeloerroneo",
+          "prompt": "A candle is 20 cm long when lit and loses 1 cm each hour while it burns. After 2 h it measures 18 cm, and after 4 h it measures 16 cm. Select the explanation that correctly describes the relationship between time and remaining length.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is direct because time doubles.",
+                  "reviewFeedback": "Check whether doubling the time is sufficient for direct proportionality. Examine how the remaining length changes and test the constant-ratio criterion."
+                },
+                {
+                  "id": "b",
+                  "label": "It is inverse because the candle gets shorter.",
+                  "reviewFeedback": "Check whether a decreasing trend guarantees an inverse relationship. Test the constant-product condition with the recorded times and lengths."
+                },
+                {
+                  "id": "c",
+                  "label": "Neither: neither length/time nor time×length stays constant.",
+                  "reviewFeedback": "Test the two conditions described in your explanation separately. The classification must account for all the data within the burning interval."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18/2 and 16/4 are different; 2×18 and 4×16 are different too. A constant loss requires subtracting from the initial value.",
+            "incorrect": "Doubling only one quantity does not establish direct proportionality. Decreasing does not establish inverse proportionality. Check the relevant invariant rather than choosing based on the direction of change."
+          }
+        }
+      ]
+    }
+  ]
+}

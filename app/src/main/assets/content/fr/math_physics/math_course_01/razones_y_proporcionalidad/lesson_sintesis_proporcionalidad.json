@@ -1,0 +1,571 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__sintesis_proporcionalidad",
+  "title": "Synthèse : choisir une relation et la vérifier",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprendre la relation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Désormais, la méthode à utiliser n'est plus indiquée à l'avance. Lis la question du problème, identifie les grandeurs et nomme leurs unités. Un rapport partie-partie, une fraction du total et un taux répondent à des questions différentes. Un tableau organise les données, mais le contexte détermine quelles relations peuvent être étendues à de nouveaux cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux comparer à une unité, chercher un facteur commun ou conserver un produit. Tu peux aussi décider qu'aucune proportionnalité ne convient. Des frais fixes, une perte constante ou un changement de conditions peuvent nécessiter un calcul différent. Explique ton choix à l'aide de la relation qui se conserve ; vérifier seulement que la réponse « semble raisonnable » ne suffit pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les activités à plusieurs champs, les réponses concernent une même situation. Vérifie leur cohérence : les parties doivent former le total, un taux multiplié par sa référence doit redonner la quantité et les produits d'une relation inverse doivent être égaux. Si un calcul exige une estimation, vérifie d'abord si la valeur devrait augmenter ou diminuer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réunir des informations exprimées dans différentes unités"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_receta_unidades",
+          "prompt": "Pour quatre portions égales, on utilise 3/5 L de sauce. On préparera dix portions et chaque récipient peut contenir 250 mL. Utilise 1 L = 1000 mL. Calcule les litres nécessaires et le nombre minimal de récipients entiers permettant de les conserver.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "l",
+              "type": "math_numeric_input",
+              "label": "Sauce nécessaire",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Nombre minimal de récipients",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Il faut 3/2 L = 1500 mL, qui tiennent exactement dans six récipients.",
+            "incorrect": "Le rapport relie les portions à la sauce ; la capacité relie les litres aux récipients. Diviser des litres par 250 sans conversion mélange des unités."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_datos_insuficientes",
+          "prompt": "Un service a facturé 84 pesos pour six pièces. On veut calculer le paiement pour dix. Quelle réponse respecte les informations disponibles ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Nécessairement 140 pesos.",
+                  "reviewFeedback": "Identifie la règle tarifaire supposée par le paiement choisi. Vérifie si un seul achat enregistré permet de garantir cette règle pour une autre quantité."
+                },
+                {
+                  "id": "b",
+                  "label": "Nécessairement 88 pesos.",
+                  "reviewFeedback": "Revois comment est obtenu le paiement que tu affirmes et quelle règle tarifaire le justifierait. Distingue un calcul possible d'informations suffisantes pour le garantir."
+                },
+                {
+                  "id": "c",
+                  "label": "Il faut savoir si le prix par pièce est constant, s'il y a des frais fixes ou si une autre règle s'applique.",
+                  "reviewFeedback": "Examine quelles règles tarifaires sont compatibles avec la donnée disponible. Justifie pourquoi il faut connaître l'évolution du prix avant d'augmenter la commande."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le paiement de six pièces ne détermine pas la règle de tarification du service.",
+            "incorrect": "84/6 est une moyenne pour cet achat. Avant de l'étendre, il faut justifier que le taux reste constant."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Références, conditions et premier essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de répondre, reviens à la question. Une même situation peut demander une quantité, un taux, une fraction du total ou une durée. Changer la référence modifie le calcul. Si tu peux expliquer ce qui reste constant, le vérifier avec les données et conserver les unités, tu es prêt à aborder les pourcentages et les échelles avec le même raisonnement."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "huerto",
+          "prompt": "Un jardin comporte des plantes à feuillage et des plantes à fleurs dans le rapport feuillage:fleurs = 5:3. Il y a 64 plantes. Détermine les quantités et la fraction du total correspondant aux plantes à fleurs. La composition de tout le jardin reste la même.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "plantas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "hoja",
+                  "type": "numeric",
+                  "label": "Plantes à feuillage"
+                },
+                {
+                  "id": "flor",
+                  "type": "numeric",
+                  "label": "Plantes à fleurs"
+                },
+                {
+                  "id": "parte",
+                  "type": "numeric",
+                  "label": "Fraction des plantes à fleurs dans le total"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "hoja": {
+                    "type": "numeric",
+                    "expected": "40"
+                  },
+                  "flor": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "parte": {
+                    "type": "numeric",
+                    "expected": "3/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Il y a huit parts de huit plantes chacune : 40 plantes à feuillage et 24 plantes à fleurs. Les plantes à fleurs représentent 24/64 = 3/8 du total.",
+            "incorrect": "5:3 compare deux parties. Pour le total, on additionne huit parts ; 3/5 comparerait les fleurs au feuillage. Vérifie que 40+24 vaut 64."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver la divisibilité et les opérations sur les fractions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un multiple commun peut indiquer la première coïncidence de cycles. Un dénominateur commun représente des parts d'une même unité. Dans les deux cas, on organise une unité partagée ; on choisit les opérations selon le sens du problème."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos_sincronizados",
+          "prompt": "Deux contrôles sont effectués toutes les 6 et toutes les 8 minutes. Ils viennent de coïncider. Combien de minutes s'écouleront avant leur première nouvelle coïncidence ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Temps",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "min"
+            }
+          ],
+          "feedback": {
+            "correct": "Les multiples de 6 sont 6,12,18,24 ; ceux de 8 sont 8,16,24. La première nouvelle coïncidence se produit après 24 min.",
+            "incorrect": "48 correspond aussi à une coïncidence, mais pas à la première. 2 est un diviseur commun, pas l'intervalle recherché."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_suma_resta",
+          "prompt": "On dispose de 5/4 m de ruban. On utilise 1/3 m, puis on ajoute 1/6 m. Quelle longueur reste disponible ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longueur disponible",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/12"
+              },
+              "unit": "m"
+            }
+          ],
+          "feedback": {
+            "correct": "En douzièmes : 15/12−4/12+2/12 = 13/12 m.",
+            "incorrect": "N'additionne pas les dénominateurs. L'utilisation du ruban soustrait une longueur et l'ajout en ajoute une ; conserve le signe de chaque changement."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Faire varier sans perdre le sens"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta",
+          "prompt": "Un ruban uniforme de 6 m a une masse de 150 g. Sans ajouter d'emballage, calcule la masse de 2,4 m et le taux en g/m. Choisis la condition qui permet d'étendre les données.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "masa",
+              "type": "math_numeric_input",
+              "label": "Masse",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "g",
+              "calculator": true
+            },
+            {
+              "id": "tasa",
+              "type": "math_numeric_input",
+              "label": "Taux",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              },
+              "unit": "g/m"
+            },
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le ruban possède la même masse par mètre sur toute sa longueur.",
+                  "reviewFeedback": "Relie l'uniformité choisie à la masse de chaque unité de longueur. Vérifie comment elle permet d'appliquer le taux à un segment différent."
+                },
+                {
+                  "id": "b",
+                  "label": "Tout ruban pèse toujours 150 grammes.",
+                  "reviewFeedback": "Revois ce que signifie la masse enregistrée pour une longueur précise. Distingue cette quantité d'une propriété qui pourrait être conservée pour tout segment."
+                },
+                {
+                  "id": "c",
+                  "label": "La longueur et la masse doivent être des nombres entiers.",
+                  "reviewFeedback": "Examine si exiger des valeurs entières garantit l'uniformité du ruban. L'hypothèse du modèle doit porter sur la répartition de la masse sur la longueur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le taux vaut 150/6 = 25 g/m et la masse vaut 25×2,4 = 60 g. L'uniformité permet de conserver ce taux.",
+            "incorrect": "150 g est la masse de six mètres, pas de n'importe quel segment. Les fractions de mètre suivent aussi la relation lorsque le matériau est uniforme."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "viaje",
+          "prompt": "Deux trajets couvrent la même distance de 96 km, sans arrêt. L'un s'effectue à 32 km/h et l'autre à 48 km/h, à vitesse constante. Calcule les deux durées et détermine ce qui se conserve.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Heures à 32 km/h"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Heures à 48 km/h"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "fijo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le quotient temps/vitesse.",
+                  "reviewFeedback": "Interprète les unités du quotient choisi et calcule sa valeur pour les deux trajets. Vérifie son lien avec la grandeur déclarée fixe."
+                },
+                {
+                  "id": "b",
+                  "label": "Le produit vitesse×temps.",
+                  "reviewFeedback": "Relie les unités du produit choisi à la distance parcourue. Vérifie cette quantité à partir des données de chaque trajet."
+                },
+                {
+                  "id": "c",
+                  "label": "La somme vitesse+temps.",
+                  "reviewFeedback": "Vérifie si les quantités que tu proposes d'additionner ont des unités compatibles. Cherche leur sens physique avant d'affirmer que leur somme est constante."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les trajets durent 3 h et 2 h. Les deux produits vitesse×temps valent 96 km, la distance fixe.",
+            "incorrect": "La distance est la référence fixe. Ajouter des km/h et des heures ne représente pas une distance ; le quotient ne conserve pas non plus le trajet."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combiner et vérifier"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tarifa",
+          "prompt": "Un atelier facture 20 pesos de préparation, plus 12 par pièce. Un autre facture uniquement 17 par pièce. Pour cinq pièces, calcule les deux paiements et choisis le plus faible. On suppose la même qualité et que les deux ateliers acceptent la commande.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Paiement du premier atelier",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "80"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Paiement du deuxième atelier",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "85"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "menor",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Premier atelier",
+                  "reviewFeedback": "Calcule le paiement complet de l'atelier choisi pour le nombre de pièces demandé. Inclus les frais initiaux et distingue le coût total du prix par pièce."
+                },
+                {
+                  "id": "b",
+                  "label": "Deuxième atelier",
+                  "reviewFeedback": "Calcule le paiement de l'atelier choisi pour la quantité indiquée. Justifie la comparaison en utilisant les coûts complets selon les conditions de la commande."
+                },
+                {
+                  "id": "igual",
+                  "label": "Paiements égaux",
+                  "reviewFeedback": "Vérifie l'égalité proposée des paiements en appliquant chaque règle à la même commande. Inclus les frais fixes lorsqu'ils s'appliquent."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le premier facture 20+12×5 = 80 ; le deuxième facture 17×5 = 85. Pour cette commande, le premier est plus avantageux en coût total.",
+            "incorrect": "Un taux variable plus faible ne suffit pas si des frais fixes s'appliquent. Un prix de 160 pesos répéterait les frais de préparation pour chaque pièce : (20+12)×5. Ces frais ne sont payés qu'une fois. Compare les totaux pour une même quantité de pièces."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leerplano",
+          "prompt": "Ce graphique représente des boîtes identiques : sur l'axe horizontal, le nombre de boîtes ; sur l'axe vertical, la quantité de bouteilles. Identifie le nombre de bouteilles dans trois boîtes et le nombre de bouteilles par boîte. L'étiquette du point suit l'ordre (boîtes, bouteilles).",
+          "representations": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "scatter",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 5,
+                "yMin": 0,
+                "yMax": 20
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 4
+                },
+                {
+                  "x": 2,
+                  "y": 8
+                },
+                {
+                  "x": 3,
+                  "y": 12
+                },
+                {
+                  "x": 4,
+                  "y": 16
+                }
+              ],
+              "showLabels": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "q",
+                  "type": "numeric",
+                  "label": "Bouteilles dans 3 boîtes"
+                },
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Bouteilles par boîte"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "q": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "k": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le point (3,12) indique 12 bouteilles. Comme les boîtes sont identiques, 12/3 = 4 bouteilles par boîte.",
+            "incorrect": "Ne lis pas la coordonnée horizontale comme un nombre de bouteilles. Le graphique conserve l'ordre des grandeurs ; calcule le taux après avoir interprété le point."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modeloerroneo",
+          "prompt": "Une bougie mesure 20 cm lorsqu'on l'allume et perd 1 cm chaque heure tant qu'elle brûle. Après 2 h, elle mesure 18 cm, et après 4 h, elle mesure 16 cm. Sélectionne la justification décrivant correctement la relation entre le temps et la longueur restante.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle est directe parce que le temps double.",
+                  "reviewFeedback": "Examine si doubler le temps suffit à établir une proportionnalité directe. Vérifie comment change la longueur restante et applique le critère du rapport constant."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle est inverse parce que la bougie raccourcit.",
+                  "reviewFeedback": "Vérifie si une tendance décroissante garantit un modèle inverse. Applique le critère du produit constant aux durées et aux longueurs enregistrées."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucune des deux : ni longueur/temps ni temps×longueur ne reste constant.",
+                  "reviewFeedback": "Vérifie séparément les deux conditions de ta justification. La classification doit décrire toutes les données pendant la durée de combustion."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18/2 et 16/4 sont différents ; 2×18 et 4×16 le sont aussi. Une perte constante impose de soustraire de la valeur initiale.",
+            "incorrect": "Doubler une seule quantité n'établit pas une proportionnalité directe. Une diminution n'établit pas une proportionnalité inverse. Il faut vérifier l'invariant pertinent et non choisir selon le sens de la variation."
+          }
+        }
+      ]
+    }
+  ]
+}
