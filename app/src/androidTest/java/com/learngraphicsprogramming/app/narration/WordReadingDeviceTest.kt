@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +30,7 @@ import com.learngraphicsprogramming.app.LessonRepository
 import com.learngraphicsprogramming.app.PremiumRepository
 import com.learngraphicsprogramming.app.ProgressRepository
 import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
@@ -48,11 +50,12 @@ class WordReadingDeviceTest {
     private val preferences = linkedMapOf<String, Map<String, *>>()
     private var preferenceNames = emptySet<String>()
     private var captured = false
+    private var originalAppLocale: String? = null
     private var scenario: ActivityScenario<LessonActivity>? = null
     private val postResumed = java.util.WeakHashMap<Activity, Long>()
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
-            if (activity.packageName == QA_PACKAGE) activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            if (activity.packageName in setOf(QA_PACKAGE, REAL_DOWNLOADS_QA_PACKAGE)) activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         override fun onActivityPostResumed(activity: Activity) { postResumed[activity] = SystemClock.uptimeMillis() }
         override fun onActivityResumed(activity: Activity) {
@@ -66,8 +69,9 @@ class WordReadingDeviceTest {
     }
 
     @Before fun isolateQaAndPreserveOriginalPreferences() {
-        assertEquals("Never test against the ordinary application", QA_PACKAGE, context.packageName)
-        assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
+        assertTrue("Never test against the ordinary application", context.packageName in setOf(QA_PACKAGE, REAL_DOWNLOADS_QA_PACKAGE))
+        assertEquals(context.packageName, BuildConfig.APPLICATION_ID)
+        assertTrue("These visual reader tests target LDPlayer exclusively", Build.SUPPORTED_ABIS.any { it == "x86" || it == "x86_64" })
         val lock = context.getSystemService(KeyguardManager::class.java)
         assertFalse("Unlock LDPlayer before native visual checks", lock.isDeviceLocked || lock.isKeyguardLocked)
         preferenceNames = preferenceFiles()
@@ -77,6 +81,8 @@ class WordReadingDeviceTest {
             }
         }
         captured = true
+        originalAppLocale = UiLanguageSettings.selectedTag(context)
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
         (context.applicationContext as Application).registerActivityLifecycleCallbacks(screenGuard)
         assertTrue(context.getSharedPreferences("lesson_narration_resume_bounded_v1", Context.MODE_PRIVATE).edit().clear().commit())
         NarrationSettingsRepository.saveEnabled(context, false)
@@ -100,6 +106,7 @@ class WordReadingDeviceTest {
             } }
         } finally {
             (context.applicationContext as Application).unregisterActivityLifecycleCallbacks(screenGuard)
+            originalAppLocale?.let { original -> instrumentation.runOnMainSync { UiLanguageSettings.select(context, original) } }
             (preferenceFiles() + preferences.keys).forEach { name ->
                 if (name !in preferenceNames) context.deleteSharedPreferences(name)
                 else {
@@ -289,7 +296,7 @@ class WordReadingDeviceTest {
             val beforeRewind = field<Long>(reader, "offset")
             reader.seekBy(-jumpSeconds)
             assertTrue(field<Long>(reader, "offset") < beforeRewind)
-            assertFalse("Rewind preserves the words intentionally skipped earlier", skipped in pending(activity))
+            assertTrue("Rewind restores pending words beyond the actual source-audio position", skipped in pending(activity))
             assertSameCachedAudio(audio, hash, initialAudioIdentity, cacheKey, initialGenerationEvents)
             assertFacts(originalFacts)
             reader.restart()
@@ -445,7 +452,8 @@ class WordReadingDeviceTest {
             var ready = false
             host.onActivity { activity ->
                 ready = field<Int>(controller(activity), "index") > paragraphLastSegment &&
-                    controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady")
+                    controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady") &&
+                    requireNotNull(field<MediaPlayer?>(controller(activity), "player")).currentPosition >= 1_600
             }
             ready
         }
@@ -458,10 +466,14 @@ class WordReadingDeviceTest {
             capture("published-cpp-after-complete-paragraph")
             saveParagraph(paragraph, "published-cpp-after-complete-native")
             val secondParagraphIndex = field<Int>(reader, "index")
+            val pendingBeforeBack = pending(activity, 2).size
             assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick())
             backIndex = field(reader, "index")
             assertTrue("The real -3 button crosses back over the paragraph boundary", backIndex < secondParagraphIndex)
             val pendingNextParagraph = pending(activity, 2).size
+            capture("published-cpp-after-back-three")
+            saveParagraph(texts(activity).single { it.text.toString().startsWith("Una prueba combina") }, "published-second-paragraph-rewound-native")
+            assertTrue("A rewind across paragraphs restores the newly pending words", pendingNextParagraph > pendingBeforeBack)
             assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardFive).performClick())
             assertTrue("A paused +5 crossing marks the next paragraph's skipped prefix before playback resumes",
                 pending(activity, 2).size < pendingNextParagraph)
@@ -493,8 +505,7 @@ class WordReadingDeviceTest {
             assertTrue("Intentional forward navigation clears words in the skipped interval",
                 afterForward.size < beforeForward.size)
             assertTrue(activity.findViewById<View>(R.id.buttonLessonBackFive).performClick())
-            assertTrue("Rewind never resurrects pending glyphs already read or deliberately skipped",
-                pending(activity, 2).toSet().all { it in afterForward })
+            assertTrue("Rewind restores pending glyphs beyond the source-audio cursor", pending(activity, 2).toSet().size > afterForward.size)
             assertEquals("A manual visual advance never credits puzzle feedback as heard", heardFeedback, gate.heardThrough)
             assertEquals("The existing unanswered-feedback boundary remains enforced", feedbackBoundary, gate.boundary())
             assertNull("Every paused seek keeps the released-player architecture", field<MediaPlayer?>(reader, "player"))
@@ -650,6 +661,206 @@ class WordReadingDeviceTest {
         }
     }
 
+    @Test fun actualPageFourQuestionKeepsItsUnspokenTailGrayAndReplaysWordsAfterFloatingRewinds() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados"
+        val original = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val authored = original.toString()
+        val question = original.getJSONArray("pages").getJSONObject(3).getJSONArray("blocks")
+            .getJSONObject(3).getString("question")
+        assertEquals("El requisito es mostrar «Caja preparada». ¿Qué comprobación responde directamente a él?", question)
+        ProgressRepository.saveCurrentPage(context, "programming", lesson, 3)
+        NarrationSettingsRepository.saveRate(context, 2f)
+        val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", "programming").putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lesson)
+            .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)).also { scenario = it }
+        await("The actual fourth page is focused before reading the original question", 15_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == 3 &&
+                    texts(activity).any { it.text.toString() == question } && !content(activity).isLayoutRequested
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            NarrationSettingsRepository.saveEnabled(activity, true)
+            invoke(activity, "renderCurrentPage")
+        }
+        awaitLayout(host, lesson)
+        lateinit var view: ReadingTextView
+        lateinit var originalFacts: List<TextFact>
+        val tail = question.indexOf("directamente")
+        val questionStart = question.indexOf('¿')
+        var pendingGray = 0
+        var spokenQuestion = -1
+        host.onActivity { activity ->
+            view = texts(activity).single { it.text.toString() == question } as ReadingTextView
+            originalFacts = facts(content(activity))
+            pendingGray = field<Int>(view, "unreadColor").takeIf { it != 0 } ?: view.currentTextColor
+            view.requestRectangleOnScreen(Rect(0, 0, view.width, view.height), true)
+            assertTrue("The actual authored question is visible in LDPlayer", view.getGlobalVisibleRect(Rect()))
+            assertGlyphColor(view, tail, "directamente".length, pendingGray)
+            saveParagraph(view, "actual-page-four-question-before-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Actual Kokoro reaches the interrogative sentence of the original question", 240_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val sentences = field<List<Any>>(reader, "segments")
+                spokenQuestion = sentences.indexOfFirst {
+                    ManualEnglishSpeech.strip(field(it, "text")).contains("comprobación responde directamente")
+                }
+                val player = field<MediaPlayer?>(reader, "player")
+                ready = spokenQuestion >= 0 && field<Int>(reader, "index") == spokenQuestion && reader.isPlaying &&
+                    field<Boolean>(reader, "playerReady") && player != null && player.currentPosition >= 450
+            }
+            ready
+        }
+        var pausedPosition = 0L
+        var pendingAtFirstPause = 0
+        lateinit var audio: File
+        lateinit var hash: String
+        lateinit var fileIdentity: List<Long>
+        lateinit var key: String
+        var generations = 0
+        val steps = JSONArray()
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            assertTrue("The actual floating playback control is visible", activity.findViewById<View>(R.id.buttonLessonListen).isShown)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            assertNull("Pause preserves position while releasing MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            pausedPosition = field(reader, "offset")
+            pendingAtFirstPause = pending(activity, 3).size
+            val actualMask = field<List<ReadingTextRange>>(view, "unreadRanges")
+            capture("actual-page-four-question-during")
+            saveParagraph(view, "actual-page-four-question-during-native")
+            File(evidence(), "actual-page-four-question-first-observation.json").writeText(JSONObject()
+                .put("question", question).put("segment", spokenQuestion).put("positionMs", pausedPosition)
+                .put("pendingQuestionWords", pendingAtFirstPause).put("nativeMaskRanges", JSONArray(actualMask.map {
+                    JSONArray().put(it.start).put(it.endExclusive)
+                })).toString(2))
+            assertTrue("The still-unspoken question tail must keep its gray native draw mask",
+                actualMask.any { tail in it.start until it.endExclusive })
+            assertTrue("The pending closing question mark stays gray until its final spoken word",
+                actualMask.any { question.lastIndex in it.start until it.endExclusive })
+            assertGlyphColor(view, tail, "directamente".length, pendingGray)
+            assertGlyphColor(view, question.lastIndex, 1, pendingGray)
+            assertMixedPixels(view)
+            assertTrue("An earlier complete sentence stays read", actualMask.none { it.start < questionStart })
+            assertTrue("The real question has reliable word mapping, not a whole-block fallback",
+                pageMappings(activity)[spokenQuestion]?.blockIndex == 3)
+            assertNotNull("Exact source-audio word timing is available", alignment(activity))
+            val source = field<List<Any>>(reader, "segments")[spokenQuestion]
+            audio = requireNotNull(field<File?>(source, "file"))
+            hash = sha256(audio)
+            fileIdentity = audioIdentity(audio)
+            key = KokoroNarrationCache.key("es", "ef_dora", field(source, "text"))
+            generations = generationEvents(key)
+            assertFacts(originalFacts)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Only real continued playback reveals subsequent question words", 12_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady") &&
+                    (field<Int>(controller(activity), "index") > spokenQuestion || pending(activity, 3).size < pendingAtFirstPause)
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            assertNull(field<MediaPlayer?>(reader, "player"))
+            val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+            val feedback = gate.heardThrough
+            val boundary = gate.boundary()
+            listOf(R.id.buttonLessonBackThree, R.id.buttonLessonBackFive, R.id.buttonLessonBackThree).forEachIndexed { ordinal, button ->
+                assertTrue(activity.findViewById<View>(button).performClick())
+                assertNull("Paused repeated rewind never retains a decoder", field<MediaPlayer?>(reader, "player"))
+                val segment = field<Int>(reader, "index")
+                val position = field<Long>(reader, "offset")
+                val mask = field<List<ReadingTextRange>>(view, "unreadRanges")
+                steps.put(JSONObject().put("button", button).put("segment", segment).put("positionMs", position)
+                    .put("pendingQuestionWords", pending(activity, 3).size))
+                assertSourceFrontier(activity, setOf(1, 2, 3))
+                capture("actual-question-rewind-${ordinal + 1}")
+                saveParagraph(view, "actual-question-rewind-${ordinal + 1}-native")
+                if (segment < spokenQuestion) {
+                    assertTrue("Rewinding before the interrogative sentence restores all its pending glyphs",
+                        mask.any { it.start <= questionStart && it.endExclusive == question.length })
+                    assertGlyphColor(view, tail, "directamente".length, pendingGray)
+                }
+                assertEquals("Visual rewinds never credit unheard feedback", feedback, gate.heardThrough)
+                assertEquals("Question restrictions remain intact", boundary, gate.boundary())
+            }
+            assertSameCachedAudio(audio, hash, fileIdentity, key, generations)
+            assertFacts(originalFacts)
+            assertEquals("No question is answered by playback controls", 0, field<Int>(activity, "completedExercises"))
+            assertEquals(authored, field<JSONObject>(activity, "lessonJson").toString())
+            File(evidence(), "actual-page-four-question-regression.json").writeText(JSONObject()
+                .put("lessonId", lesson).put("pageIndex", 3).put("question", question)
+                .put("engine", "KOKORO").put("voice", "ef_dora").put("firstPauseMs", pausedPosition)
+                .put("pendingWordsInsideCurrentQuestion", pendingAtFirstPause).put("rewinds", steps)
+                .put("audioSha256", hash).put("sameCachedAudioReused", true)
+                .put("sourceJsonAndNativeLayoutUnchanged", true).toString(2))
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Real resumed Kokoro reaches the same question after all three floating rewinds", 30_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                ready = field<Int>(reader, "index") == spokenQuestion && reader.isPlaying &&
+                    field<Boolean>(reader, "playerReady") && player != null && player.currentPosition >= 450
+            }
+            ready
+        }
+        var replayOffset = 0L
+        var replayPending = 0
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            assertNull("The replay inspection pause releases the actual decoder", field<MediaPlayer?>(reader, "player"))
+            replayOffset = field(reader, "offset")
+            replayPending = pending(activity, 3).size
+            assertTrue("Replaying the question starts with a still-pending suffix", replayPending > 0)
+            assertSourceFrontier(activity, setOf(1, 2, 3))
+            assertMixedPixels(view)
+            assertGlyphColor(view, questionStart + 1, "Qué".length, view.currentTextColor)
+            assertGlyphColor(view, tail, "directamente".length, pendingGray)
+            assertGlyphColor(view, question.lastIndex, 1, pendingGray)
+            assertSameCachedAudio(audio, hash, fileIdentity, key, generations)
+            assertFacts(originalFacts)
+            capture("actual-question-replayed-mixed-after-rewinds")
+            saveParagraph(view, "actual-question-replayed-mixed-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("A second real listening pass gradually clears the question after rewind", 12_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = controller(activity).isPlaying && field<Int>(controller(activity), "index") > spokenQuestion &&
+                    field<Boolean>(controller(activity), "playerReady") && pending(activity, 3).isEmpty()
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            assertNull(field<MediaPlayer?>(controller(activity), "player"))
+            assertTrue("The spoken closing question mark becomes read only after playback finishes the question",
+                field<List<ReadingTextRange>>(view, "unreadRanges").isEmpty())
+            assertGlyphColor(view, question.lastIndex, 1, view.currentTextColor)
+            assertSameCachedAudio(audio, hash, fileIdentity, key, generations)
+            assertFacts(originalFacts)
+            capture("actual-question-read-after-replaying")
+            saveParagraph(view, "actual-question-read-after-replaying-native")
+            val report = File(evidence(), "actual-page-four-question-regression.json")
+            report.writeText(JSONObject(report.readText()).put("replayOffsetMs", replayOffset)
+                .put("replayPendingWords", replayPending).put("replayWordByWordCompleted", true)
+                .put("cacheUnchangedAfterReplay", true).toString(2))
+        }
+    }
+
     private fun fixture(): JSONObject {
         val published = LessonRepository.loadLessonJson(context, ROUTE,
             "math_geometria_plana__fundamentos_geometricos__del_trazo_a_la_figura_geometrica")
@@ -716,6 +927,34 @@ class WordReadingDeviceTest {
     private fun pageMappings(activity: LessonActivity): Map<Int, NarrationWordMapping> {
         val words = field<Any>(field<LessonReadingProgressModel>(activity, "readingProgress"), "words")
         return field(field<Map<String, Any>>(words, "pages").getValue(identity(activity)), "mapping")
+    }
+    private fun assertSourceFrontier(activity: LessonActivity, blocks: Set<Int>) {
+        val reader = controller(activity)
+        val current = field<Int>(reader, "index")
+        val position = field<Long>(reader, "offset") * 24L
+        val words = field<Any>(field<LessonReadingProgressModel>(activity, "readingProgress"), "words")
+        val page = field<Map<String, Any>>(words, "pages").getValue(identity(activity))
+        val alignments = field<Map<Int, NarrationWordAlignment>>(page, "alignments")
+        pageMappings(activity).filterValues { it.blockIndex in blocks }.forEach { (segment, mapping) ->
+            var checked = mapping.displayed
+            val expected = when {
+                segment < current -> emptyList()
+                segment > current -> mapping.displayed
+                else -> {
+                    val actual = requireNotNull(alignments[segment]) { "Previously heard source audio retains its exact alignment" }
+                    // A released paused seek may conservatively shade the single word cut
+                    // by the destination until decoding resumes. Fully earlier/later words
+                    // still have strict boundaries independent of that partial word.
+                    checked = mapping.displayed.filterIndexed { ordinal, _ ->
+                        actual.words[ordinal].endSample <= position || actual.words[ordinal].startSample > position
+                    }
+                    mapping.displayed.filterIndexed { ordinal, _ -> actual.words[ordinal].startSample > position }
+                }
+            }
+            val actual = pending(activity, mapping.blockIndex).filter { it in checked }
+            assertEquals("Visual glyphs follow actual segment $current/sample $position, including rewound segment $segment",
+                expected, actual)
+        }
     }
     private fun assertGlyphColor(view: ReadingTextView, start: Int, length: Int, color: Int) {
         val bitmap = paragraphBitmap(view)
@@ -804,6 +1043,7 @@ class WordReadingDeviceTest {
 
     companion object {
         private const val QA_PACKAGE = "com.learngraphicsprogramming.app.curricularqa"
+        private const val REAL_DOWNLOADS_QA_PACKAGE = "com.learngraphicsprogramming.app.realdownloadsqa"
         private const val ROUTE = "math_physics"
         private const val SOURCE_LESSON = "math_course_01__estructura_y_divisibilidad__divisibilidad_y_primos"
         private const val PROSE = "Esta lectura conserva cada palabra original mientras la voz avanza con calma por el mismo párrafo y permite observar cómo unas palabras recuperan su color habitual y otras siguen pendientes sin alterar las fórmulas los controles ni el contenido de la página."

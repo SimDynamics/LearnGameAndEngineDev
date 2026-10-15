@@ -4,7 +4,7 @@ package com.learngraphicsprogramming.app.narration
 data class NarrationWordMapping(val blockIndex: Int, val spoken: List<ReadingTextRange>,
                                 val displayed: List<ReadingTextRange>)
 
-/** Visual evidence only: listened intervals and explicitly skipped intervals stay distinct. */
+/** Position-bound presentation: listened and explicitly skipped visual intervals stay distinct. */
 internal class LessonWordReadingProgress {
     private data class Interval(val start: Long, val end: Long)
     private class Page(val mapping: Map<Int, NarrationWordMapping>) {
@@ -89,6 +89,9 @@ internal class LessonWordReadingProgress {
                 page.stop()
             }
             NarrationPlaybackPhase.POSITION_CHANGED -> {
+                // Replaying a passage makes its future pending again. These intervals are
+                // presentation only; the reader's separate feedback permissions are untouched.
+                trimToPosition(page, segment, position)
                 event.manualForwardFrom?.let { from ->
                     if (from.segment in 0..segment && from.positionMs >= 0 &&
                         (from.segment < segment || from.positionMs < event.positionMs)) {
@@ -110,6 +113,27 @@ internal class LessonWordReadingProgress {
             }
             NarrationPlaybackPhase.STOPPED -> { page.stop(); page.visible = false }
             NarrationPlaybackPhase.UNAVAILABLE -> { page.stop(); page.visible = false }
+        }
+    }
+
+    private fun trimToPosition(page: Page, segment: Int, position: Long) {
+        fun trim(intervals: MutableMap<Int, MutableList<Interval>>) {
+            intervals.keys.removeAll { it > segment }
+            val current = intervals[segment] ?: return
+            val prefix = current.mapNotNull { interval ->
+                val end = minOf(interval.end, position)
+                if (end > interval.start) Interval(interval.start, end) else null
+            }
+            if (prefix.isEmpty()) intervals.remove(segment)
+            else { current.clear(); current.addAll(prefix) }
+        }
+        trim(page.covered)
+        trim(page.skipped)
+        page.completed.removeAll { it >= segment }
+        page.unknown.keys.removeAll { it > segment }
+        page.unknown[segment]?.let { prefix ->
+            if (position == 0L) page.unknown.remove(segment)
+            else page.unknown[segment] = minOf(prefix, position)
         }
     }
 

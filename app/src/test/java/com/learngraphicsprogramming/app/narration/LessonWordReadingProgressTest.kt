@@ -62,7 +62,7 @@ class LessonWordReadingProgressTest {
         assertTrue(progress.pending().isEmpty()) // Target word is current; no hearing milestone was fabricated.
         progress.update(event(NarrationPlaybackPhase.ADVANCED, 1_250, 1_470))
         progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 100, 1_480))
-        assertTrue(progress.pending().isEmpty()) // Rewinding retains explicit visual coverage.
+        assertEquals(ranges, progress.pending()) // The skipped future becomes pending again.
         progress.update(event(NarrationPlaybackPhase.RESTARTED))
         assertEquals(ranges, progress.pending())
     }
@@ -221,9 +221,9 @@ class LessonWordReadingProgressTest {
         assertEquals(ranges.drop(2), progress.pending())
     }
 
-    @Test fun separatelyPlayedIntervalsAreUnionedAcrossARewindWithoutLosingHeardWords() {
+    @Test fun replayedIntervalsMergeOnlyUpToTheCurrentPositionAfterARewind() {
         val progress = model()
-        // First listen to 0..200, later 400..650, then fill the gap 200..400.
+        // Listen to 0..200, later 400..650, then rewind and replay only 200..350.
         progress.update(event(NarrationPlaybackPhase.PLAYING))
         progress.update(event(NarrationPlaybackPhase.PAUSED, 200, 1_200))
         progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 400, 2_000))
@@ -231,9 +231,9 @@ class LessonWordReadingProgressTest {
         progress.update(event(NarrationPlaybackPhase.PAUSED, 650, 2_250))
         progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 200, 3_000))
         progress.update(event(NarrationPlaybackPhase.PLAYING, 200, 3_000))
-        progress.update(event(NarrationPlaybackPhase.PAUSED, 400, 3_200))
-        // The first word spans 100..300, crossing the two now-adjacent observed intervals.
-        assertEquals(ranges.drop(2), progress.pending())
+        progress.update(event(NarrationPlaybackPhase.PAUSED, 350, 3_150))
+        // The prefix is replayed; the former 400..650 coverage remains in the future.
+        assertEquals(ranges.drop(1), progress.pending())
     }
 
     @Test fun restoringAnObservedPageDoesNotTurnItsKnownSkippedPrefixIntoHeardWords() {

@@ -141,6 +141,10 @@ class LessonReadingProgressModel {
             }
             NarrationPlaybackPhase.POSITION_CHANGED -> {
                 page.available = true
+                // Keep block fallback consistent with the current visual cursor too.
+                // These sets never grant puzzle permissions or persist reader positions.
+                page.heard.removeAll { it >= event.segmentIndex }
+                page.uncertain.removeAll { it >= event.segmentIndex }
                 page.cancelCoverage()
             }
             NarrationPlaybackPhase.SEGMENT_COMPLETED -> {

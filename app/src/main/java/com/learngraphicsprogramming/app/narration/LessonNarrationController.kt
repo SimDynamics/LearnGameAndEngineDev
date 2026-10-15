@@ -132,8 +132,17 @@ class LessonNarrationController(
         publishProgress(progressSnapshot(phase))
 
     private fun publishPositionChanged() {
+        if (offset < 0L) {
+            // The unresolved offset is relative to a previous WAV's end. Never present
+            // a fabricated zero while its measured duration is still being recovered.
+            val projection = NarrationVisualSeek.resolveBackward(NarrationGatePosition(index, offset),
+                segments.map { it.duration })
+            if (projection.resolved) publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
+                segmentIndex = projection.destination.segment, positionMs = projection.destination.positionMs))
+            return
+        }
         val from = pendingManualForward
-        if (from == null || offset < 0L) {
+        if (from == null && offset == 0L) {
             publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
             return
         }
@@ -143,6 +152,14 @@ class LessonNarrationController(
         val projection = NarrationVisualSeek.resolve(NarrationGatePosition(index, offset),
             segments.map { it.duration }) { edge, proposed -> playbackGate?.seek(edge, proposed) ?: proposed }
         val destination = projection.destination
+        if (from == null) {
+            // MediaPlayer normalizes an oversized seek one segment at a time. Each
+            // visual callback must retain its final measured destination, not regress
+            // to an intermediate segment and erase the user's explicit forward skip.
+            if (projection.resolved) publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
+                segmentIndex = destination.segment, positionMs = destination.positionMs))
+            return
+        }
         val forward = destination.segment > from.segment ||
             (destination.segment == from.segment && destination.positionMs > from.positionMs)
         if (forward) publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
@@ -879,7 +896,8 @@ class LessonNarrationController(
                 if (pending.isEmpty()) releaseSynthesisCpu()
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
-                if (pendingManualForward != null) publishPositionChanged()
+                if (pendingManualForward != null || offset < 0L || (request.index == index && player == null))
+                    publishPositionChanged()
                 if (playing && request.index == index && player == null) preparePlayer(segments[index])
                 prepareWordAlignment(request)
                 if (request.settings.engine != NarrationEngine.ANDROID) {

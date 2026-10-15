@@ -248,7 +248,8 @@ class LessonReadingProgressModelTest {
         model.update(event(NarrationPlaybackPhase.POSITION_CHANGED))
         model.hear(0)
         assertEquals(ReadingBlockState.READ, model.states(page)[0])
-        assertNull(model.states(page)[1])
+        // The explicit rewind makes that restored future pending again.
+        assertEquals(ReadingBlockState.UNREAD, model.states(page)[1])
         model.update(event(NarrationPlaybackPhase.PREPARED, generation = 2))
         assertTrue(model.states(page).values.all { it == ReadingBlockState.UNREAD })
     }
@@ -262,7 +263,7 @@ class LessonReadingProgressModelTest {
         assertTrue(model.states(page).isEmpty())
     }
 
-    @Test fun replayMarksAnAlreadyReadBlockCurrentWithoutErasingOtherReadBlocks() {
+    @Test fun replayMarksTheCurrentBlockAndRestoresFutureBlocksToUnread() {
         val model = LessonReadingProgressModel()
         model.bind(page, plan(0, 1, 2), key)
         model.hear(0)
@@ -270,7 +271,7 @@ class LessonReadingProgressModelTest {
         model.update(event(NarrationPlaybackPhase.POSITION_CHANGED))
         model.update(event(NarrationPlaybackPhase.PLAYING))
         assertEquals(ReadingBlockState.CURRENT, model.states(page)[0])
-        assertEquals(ReadingBlockState.READ, model.states(page)[1])
+        assertEquals(ReadingBlockState.UNREAD, model.states(page)[1])
     }
 
     @Test fun readerRecoveryToZeroAfterEvictionClearsOldVisualPosition() {

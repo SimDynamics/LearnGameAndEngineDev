@@ -80,7 +80,7 @@ class LessonReadingTextColors {
             val view = candidates.single().view as? ReadingTextView ?: return@forEach
             if (!view.safeSupportsWordReading) return@forEach
             val segments = origins.indices.filter { origins[it].blockIndex == block && !origins[it].feedback }
-            result += NarrationWordMappings.forBlock(block, view.text,
+            result += NarrationWordMappings.forView(block, view.text,
                 segments.associateWith { parts[it] })
         }
         return result
