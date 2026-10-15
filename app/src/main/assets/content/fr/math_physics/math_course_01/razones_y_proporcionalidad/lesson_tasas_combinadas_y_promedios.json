@@ -1,0 +1,279 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__tasas_combinadas_y_promedios",
+  "title": "Taux combinés et moyennes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Additionner les quantités avant de comparer"
+        },
+        {
+          "type": "paragraph",
+          "text": "La vitesse moyenne sur tout un trajet est la distance totale divisée par le temps total. Si tu parcours 6 km en une heure, puis 12 km en une autre, tu parcours 18 km en 2 h et la moyenne vaut 9 km/h. La moyenne simple des vitesses convient ici parce que les deux intervalles ont la même durée. Cette égalité des durées est une condition, pas une règle générale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu marches une heure à 6 km/h et deux heures à 3 km/h, les tronçons représentent 6 km et 6 km. La vitesse moyenne vaut 12/3 = 4 km/h. Faire la moyenne de 6 et 3 donnerait 4,5 et attribuerait le même poids à des intervalles de durées différentes. Reconstituer la distance et la durée totales montre l'erreur."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_iguales",
+          "prompt": "Un chariot roule pendant une heure à 4 km/h, puis pendant une autre à 8 km/h, sans pause. Calcule la distance totale et la vitesse moyenne.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Distance totale",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km"
+            },
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Vitesse moyenne",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Les distances totalisent 12 km et les durées 2 h ; la moyenne est de 6 km/h.",
+            "incorrect": "La vitesse moyenne se calcule avec les quantités totales. La moyenne simple des vitesses coïncide ici parce que les durées sont égales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_distintos",
+          "prompt": "Un cycliste roule 1 h à 12 km/h et 2 h à 6 km/h, sans pause. Calcule sa vitesse moyenne et choisis la justification.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Vitesse moyenne",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              },
+              "unit": "km/h"
+            },
+            {
+              "id": "razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "On calcule la moyenne de 12 et 6 puisqu'il y a deux tronçons.",
+                  "reviewFeedback": "Examine le poids attribué à chaque vitesse dans la moyenne proposée. Pour des tronçons de durées différentes, il faut relier la distance totale au temps total."
+                },
+                {
+                  "id": "b",
+                  "label": "On divise les 24 km parcourus au total par les 3 h totales.",
+                  "reviewFeedback": "Vérifie les distances et les durées indiquées dans ton choix. Relie le quotient proposé à la définition de la vitesse moyenne sur tout le trajet."
+                },
+                {
+                  "id": "c",
+                  "label": "On utilise uniquement la vitesse du tronçon le plus long.",
+                  "reviewFeedback": "Examine les informations sur le trajet que l'on omet en ne prenant qu'un tronçon. La vitesse moyenne doit représenter toute la distance et toute la durée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cela fait 12+12 = 24 km en 3 h : 8 km/h.",
+            "incorrect": "9 km/h donne la moyenne simple des vitesses sans tenir compte du fait que l'une dure deux fois plus longtemps. 6 km/h ignore le premier tronçon."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distances égales, pauses et données suffisantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Parcourir des distances égales à des vitesses différentes n'implique pas des durées égales. On calcule le temps de chaque tronçon avec distance/vitesse, puis on divise la somme des distances par la somme des durées. Une pause ajoute du temps sans ajouter de distance. Si la moyenne de tout le trajet est demandée, la pause fait partie du dénominateur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Connaître deux vitesses sans connaître la durée ou la distance de chaque tronçon ne permet pas de déterminer une moyenne unique. La donnée manquante change le poids de chaque vitesse. Une réponse rigoureuse peut consister à reconnaître que les informations sont insuffisantes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_distancias_iguales",
+          "prompt": "On parcourt 12 km à 6 km/h puis encore 12 km à 3 km/h, sans pause. Quelle est la vitesse moyenne sur tout le trajet ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Vitesse moyenne",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Les durées sont de 2 h et de 4 h ; 24 km/6 h = 4 km/h.",
+            "incorrect": "4,5 km/h supposerait des durées égales, alors qu'ici les distances sont égales. Calcule le temps de chaque tronçon."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_con_pausa",
+          "prompt": "Une excursion parcourt 12 km en 2 h puis s'arrête pendant 1 h avant de se terminer. Quelle est la vitesse moyenne depuis le départ jusqu'à la fin de cette pause ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Vitesse moyenne du trajet complet",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Cela représente 12 km en 3 h, déplacement et pause compris : 4 km/h.",
+            "incorrect": "6 km/h décrit uniquement la moyenne pendant le déplacement. La question inclut la pause, qui ajoute du temps sans distance."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_sin_intervalos",
+          "prompt": "Nous savons seulement qu'une personne s'est déplacée d'abord à 4 km/h puis à 8 km/h. Peut-on déterminer la vitesse moyenne du trajet ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui, elle vaut toujours 6 km/h.",
+                  "reviewFeedback": "Repère l'hypothèse sur la durée des tronçons nécessaire pour la moyenne choisie. Vérifie si elle figure parmi les données fournies."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui, elle vaut toujours 12 km/h.",
+                  "reviewFeedback": "Interprète l'opération qui donne la vitesse proposée. Compare-la à la définition de la vitesse moyenne à partir de la distance totale et du temps total."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : il manque les durées ou les distances des tronçons.",
+                  "reviewFeedback": "Vérifie quelles quantités sont nécessaires pour calculer la vitesse moyenne. Distingue connaître les vitesses partielles de savoir quelle contribution chaque tronçon apporte au trajet complet."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les vitesses seules n'indiquent pas la distance ni la durée apportées par chaque tronçon.",
+            "incorrect": "La moyenne simple exige des durées égales. La somme 12 km/h ne représente pas non plus la vitesse moyenne du trajet."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les unités et choisir une référence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour combiner des taux, commence par les convertir dans une même unité et reconstitue les quantités de chaque intervalle. Additionner des taux ne revient pas à calculer une moyenne. Additionner des débits peut être valable lorsque deux entrées fonctionnent simultanément et que leurs volumes s'additionnent sans perte."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "velocidad_unidad_inversa",
+          "prompt": "Un véhicule roule à 10 m/s. Exprime cette même vitesse en km/h en utilisant 1 km = 1000 m et 1 h = 3600 s.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Vitesse",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "En une heure, il parcourt 36000 m, soit 36 km.",
+            "incorrect": "Diviser par 3600 reviendrait à traiter une durée d'une heure comme si elle valait une seconde. Vérifie la distance parcourue en une heure."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caudales_simultaneos",
+          "prompt": "Deux arrivées fournissent simultanément 1/2 L/min et 1/3 L/min à un récipient, sans perte. Combien de litres entrent en 6 min ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volume",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "Le débit total est de 3/6+2/6 = 5/6 L/min ; en 6 min, il entre 5 L.",
+            "incorrect": "N'additionne pas les dénominateurs : 1/2+1/3 ne vaut pas 2/5. Ici, les débits s'additionnent parce que les deux arrivées fonctionnent pendant le même intervalle."
+          }
+        }
+      ]
+    }
+  ]
+}

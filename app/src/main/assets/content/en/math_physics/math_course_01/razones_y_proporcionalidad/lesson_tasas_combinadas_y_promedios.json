@@ -1,0 +1,279 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__tasas_combinadas_y_promedios",
+  "title": "Combined Rates and Averages",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Add Quantities Before Comparing"
+        },
+        {
+          "type": "paragraph",
+          "text": "The average speed over an entire journey is the total distance divided by the total time. If you travel 6 km in one hour and 12 km in another, you cover 18 km in 2 h, so the average is 9 km/h. The simple average of the speeds works here because both intervals have the same duration. Equal durations are a condition, not a general rule."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you walk for one hour at 6 km/h and two hours at 3 km/h, the segments cover 6 km and 6 km. The average speed is 12/3 = 4 km/h. Averaging 6 and 3 would give 4.5 and would assign equal weight to intervals of different lengths. Reconstructing the total distance and time reveals the error."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_iguales",
+          "prompt": "A cart travels for one hour at 4 km/h and another hour at 8 km/h, without stopping. Calculate the total distance and average speed.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Total distance",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km"
+            },
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Average speed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "The distances add up to 12 km and the times to 2 h; the average is 6 km/h.",
+            "incorrect": "Average speed uses total quantities. The simple average of the speeds coincides here because the durations are equal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_distintos",
+          "prompt": "A cyclist rides for 1 h at 12 km/h and 2 h at 6 km/h, without stopping. Calculate the average speed and choose the justification.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Average speed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              },
+              "unit": "km/h"
+            },
+            {
+              "id": "razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Average 12 and 6 because there are two segments.",
+                  "reviewFeedback": "Consider the weight assigned to each speed in the average you propose. Segments of different duration require relating total distance to total time."
+                },
+                {
+                  "id": "b",
+                  "label": "Divide the total 24 km by the total 3 h.",
+                  "reviewFeedback": "Check the distances and times in your selected statement. Connect the proposed quotient to the definition of average speed for the entire trip."
+                },
+                {
+                  "id": "c",
+                  "label": "Use only the speed of the longer segment.",
+                  "reviewFeedback": "Consider what information about the trip is lost by using only one segment. An average speed must represent the entire distance and duration."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The segments cover 12+12 = 24 km in 3 h: 8 km/h.",
+            "incorrect": "9 km/h averages the speeds while ignoring that one is maintained for twice as long. 6 km/h ignores the first segment."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Equal Distances, Stops, and Sufficient Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "Covering equal distances at different speeds does not mean spending equal amounts of time. Calculate each segment's time as distance/speed, then divide the total distance by the total time. A stop adds time without adding distance. If the average over the entire journey is requested, the stop belongs in the denominator."
+        },
+        {
+          "type": "paragraph",
+          "text": "Knowing two speeds without knowing each segment's duration or distance is not enough to determine a unique average. The missing information changes the weight of each speed. A rigorous answer may be to recognize that the available information is insufficient."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_distancias_iguales",
+          "prompt": "Travel 12 km at 6 km/h and another 12 km at 3 km/h, without stopping. What is the average speed for the entire journey?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Average speed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "The times are 2 h and 4 h; 24 km/6 h = 4 km/h.",
+            "incorrect": "4.5 km/h assumes equal durations, but the distances are equal here. Calculate how long each segment takes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_con_pausa",
+          "prompt": "An excursion covers 12 km in 2 h and then stops for 1 h before finishing. What is the average speed from departure through the end of the stop?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Average speed for the full trip",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "That is 12 km in 3 h, including movement and the stop: 4 km/h.",
+            "incorrect": "6 km/h is only the average while moving. The question includes the stop, which adds time but no distance."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_sin_intervalos",
+          "prompt": "We only know that a person traveled first at 4 km/h and then at 8 km/h. Can the average speed for the trip be determined?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes, it is always 6 km/h.",
+                  "reviewFeedback": "Identify the assumption about the segments' durations needed for your proposed average. Check whether that assumption is in the information provided."
+                },
+                {
+                  "id": "b",
+                  "label": "Yes, it is always 12 km/h.",
+                  "reviewFeedback": "Interpret the calculation that yields your proposed speed. Compare it with the definition of average speed using total distance and total time."
+                },
+                {
+                  "id": "c",
+                  "label": "No: the durations or distances of the segments are missing.",
+                  "reviewFeedback": "Review which quantities are needed to calculate average speed. Distinguish knowing the partial speeds from knowing how much each segment contributes to the entire journey."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The speeds alone do not tell us how much distance or time each segment contributes.",
+            "incorrect": "The simple average requires equal durations. Adding the speeds to obtain 12 km/h does not represent the trip's average rate either."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit Units and Choose a Reference"
+        },
+        {
+          "type": "paragraph",
+          "text": "When combining rates, first convert them to a common unit and reconstruct the quantities for each interval. Adding rates is not the same as calculating an average. Adding flow rates can be valid when two inlets operate simultaneously and their volumes add without loss."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "velocidad_unidad_inversa",
+          "prompt": "A vehicle maintains a speed of 10 m/s. Express that speed in km/h, using 1 km = 1000 m and 1 h = 3600 s.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Speed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "In one hour it travels 36000 m, equivalent to 36 km.",
+            "incorrect": "Dividing by 3600 would treat an hour-long interval as though it were one second. Check the distance traveled in one hour."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caudales_simultaneos",
+          "prompt": "Two inlets simultaneously deliver 1/2 L/min and 1/3 L/min into a container without losses. How many liters enter in 6 min?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volume",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "The total flow is 3/6+2/6 = 5/6 L/min; over 6 min, 5 L enter.",
+            "incorrect": "Do not add denominators: 1/2+1/3 is not 2/5. Here the flow rates are added because both inlets operate during the same interval."
+          }
+        }
+      ]
+    }
+  ]
+}
