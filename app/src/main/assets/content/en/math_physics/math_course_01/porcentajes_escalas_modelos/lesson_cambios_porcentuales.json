@@ -1,0 +1,553 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__cambios_porcentuales",
+  "title": "Percentage Changes and Inverse Operations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "An 18% increase keeps the whole original amount and adds 18% of it. The factor is 1+0.18 = 1.18. An 18% discount leaves 1−0.18 = 0.82. These factors show the remaining amount at once: \\(\\text{final}=\\text{initial}\\times\\text{factor}\\). The reference for the change is the amount that existed before it was applied."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a price of 500 pesos increases by 18%, the increase is 90 and the new price is 590. We also obtain 500×1.18 = 590. If it decreases by 18%, the result is 410. Do not confuse the amount of the change with the final amount: 90 describes the increase or discount, while 590 and 410 describe the resulting prices."
+        },
+        {
+          "type": "paragraph",
+          "text": "To recover the starting amount, undo the multiplication through division. If 590 is the price after an 18% increase, the initial amount is 590/1.18 = 500. Subtracting 18% of 590 would give 483.8 because it would use a different base. The reciprocal of the factor 1.18 is 1/1.18, not 0.82."
+        },
+        {
+          "type": "note",
+          "text": "A difference between percentages is measured in percentage points. Moving from 40% to 50% is an increase of ten percentage points, but a relative increase of 10/40 = 25% compared with the value 40."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate the Change from the Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "A 25% increase on a quantity of 160 adds 40 and produces 200. The change is 40; the final amount is 200. Decreasing it by 25% leaves 120. The base is the amount before the change. These three quantities must be distinguished before combining several operations."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you know the starting and final amounts, find the relative change as difference/starting amount. Going from 80 to 100 adds 20, and 20/80 = 25%. Using the final amount as the denominator answers what fraction of the final amount the difference represents; that is another reference."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aumento_cambio_final",
+          "prompt": "A tank contained 240 L and receives an additional amount equal to 15% of what it contained. Calculate the liters added and the final number of liters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "delta",
+              "type": "math_numeric_input",
+              "label": "Liters added",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Final liters",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "276"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "An additional 36 L is added, leaving 276 L. The final factor is 1.15.",
+            "incorrect": "36 is the amount added, not all the final contents. An answer of 15 L would treat the percentage number as an amount of liters."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "descuento_simple",
+          "prompt": "A price of 120 pesos receives a 15% discount. What is the final price?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Final price",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "102"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "The discount is 18, leaving 102 pesos; the factor is 0.85.",
+            "incorrect": "18 is the discount. A price of 105 pesos would subtract 15 pesos, although the requested change is a percentage of 120."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_desde_extremos",
+          "prompt": "A price changes from 125 to 150 pesos. What is the percentage increase relative to the previous price?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Percentage increase",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The difference is 25; 25/125×100 = 20%.",
+            "incorrect": "Dividing by 150 uses the final price as the base. The question uses the previous price, 125, as its reference."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consider 1000 pesos with a 25% discount followed by an 8% increase on the discounted price. The first result is 750. The second is 750×1.08 = 810. The combined factor is 0.75×1.08 = 0.81: the final amount is 81% of the original, an overall reduction of 19%."
+        },
+        {
+          "type": "paragraph",
+          "text": "We cannot automatically add −25% and +8% to get −17%. The second percentage is calculated on 750, not 1000. The monetary amounts of the changes can be added after calculating them correctly: 250 was subtracted and 60 was added. Percentages with different bases require keeping their references."
+        },
+        {
+          "type": "paragraph",
+          "text": "A 20% increase followed by a 20% decrease does not restore the starting amount either. Starting with 100 units: 100×1.20 = 120, then 120×0.80 = 96. The combined factor 0.96 shows a 4% reduction. To return from 120 to 100, we must divide by 1.20. Checking against an estimate helps avoid accepting an answer based only on the names of the percentages."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "multiplicadores",
+          "prompt": "Match each change to the factor that transforms the starting amount into the final amount. Use each target once.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambios",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "12% increase"
+                },
+                {
+                  "id": "b",
+                  "label": "12% discount"
+                },
+                {
+                  "id": "c",
+                  "label": "5% increase"
+                },
+                {
+                  "id": "d",
+                  "label": "5% discount"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "t1",
+                  "label": "0.95"
+                },
+                {
+                  "id": "t2",
+                  "label": "1.12"
+                },
+                {
+                  "id": "t3",
+                  "label": "0.88"
+                },
+                {
+                  "id": "t4",
+                  "label": "1.05"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "t2",
+                  "b": "t3",
+                  "c": "t4",
+                  "d": "t1"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Increases use 1.12 and 1.05; discounts use 0.88 and 0.95. Add or subtract the change factor from the original one.",
+            "incorrect": "0.12 and 0.05 describe only the part that changes. The final amount includes what was already there: add to one for an increase and subtract from one for a discount."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Undo Discounts and Recover Starting Amounts"
+        },
+        {
+          "type": "paragraph",
+          "text": "After a 20% discount, 80% of the original price remains. If the final amount is 72, the original was 72/0.80 = 90. Adding 20% to 72 gives 86.4 and does not reverse the discount. To undo it, use the reciprocal of the complete factor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Applying the same factor repeatedly requires multiplying it once for every change. Two 10% increases produce a factor of 1.10×1.10 = 1.21. That is not a 20% increase because the second 10% uses the updated base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inicial_tras_descuento",
+          "prompt": "After a 30% discount, an item costs 84 pesos. What was its previous price?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Previous price",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "84/0.70 = 120; subtracting 36 from 120 gives back 84.",
+            "incorrect": "109.2 adds 30% of the final price and uses a different base. Divide by the factor 0.70."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_repetido",
+          "prompt": "A value of 200 increases by 10%, then increases again by 10% of its new value. Calculate the final amount and the total percentage increase from the start.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "f",
+              "type": "math_numeric_input",
+              "label": "Final value",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "242"
+              }
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Total percentage increase",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "21"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "200×1.10×1.10 = 242. The total factor of 1.21 represents a 21% increase.",
+            "incorrect": "240 adds percentages calculated from different bases. The second addition is 22, not 20."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vary Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sucesivos",
+          "prompt": "An item costs 800 pesos. A 20% discount is applied, followed by a 10% surcharge on the discounted price. Calculate the final payment and the total percentage reduction relative to 800.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Final payment",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "704"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "reduccion",
+              "type": "math_numeric_input",
+              "label": "Total percentage reduction",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "800×0.80×1.10 = 704. The difference is 96, and 96/800 = 0.12: a 12% reduction.",
+            "incorrect": "A price of 720 pesos comes from adding percentages with different bases. The surcharge applies to 640, not 800. The total reduction uses the original price as its base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volver",
+          "prompt": "An amount of 200 increases by 20% and then decreases by 20% of its new value. Calculate the result and choose the explanation for why it does not return to its starting amount.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidad",
+              "type": "math_numeric_input",
+              "label": "Final amount",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "192"
+              }
+            },
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The changes have the same percentage but different bases.",
+                  "reviewFeedback": "Identify which amount is the base for each percentage change. Check whether the chosen explanation takes that reference into account at both steps."
+                },
+                {
+                  "id": "b",
+                  "label": "The changes cancel because their signs are opposite.",
+                  "reviewFeedback": "Check whether opposite signs are enough to cancel percentage changes. Express each change in relation to the amount to which it is applied."
+                },
+                {
+                  "id": "c",
+                  "label": "Every decrease wipes out the preceding increase.",
+                  "reviewFeedback": "Test this claim about all decreases. Track the amounts and the bases of both changes before deciding on their combined effect."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "200×1.20×0.80 = 192. The first change added 40 and the second subtracted 48, because its base was 240.",
+            "incorrect": "Opposite signs are not enough to cancel percentages. The discount uses the increased value, so its amount is larger."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Percentage Points with New Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "A rate that falls from 30% to 24% loses six percentage points. Relative to 30, it loses 6/30 = 20% of its initial value. A percentage point expresses a difference between rates; relative change is a ratio with a base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "puntos_y_reduccion",
+          "prompt": "The proportion of defective items drops from 25% to 20%. State the reduction in percentage points and the relative reduction compared with the initial rate.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pp",
+              "type": "math_numeric_input",
+              "label": "Percentage points of reduction",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              }
+            },
+            {
+              "id": "rel",
+              "type": "math_numeric_input",
+              "label": "Relative percentage reduction",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "It falls by five percentage points and by 20% of the earlier rate.",
+            "incorrect": "5 points does not mean a relative reduction of 5%. Both answers describe the same change with different references."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inicial",
+          "prompt": "A price ended up at 936 pesos after a 17% increase. What was the initial price? You may use a calculator to check the inverse operation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "antes",
+              "type": "math_numeric_input",
+              "label": "Initial price",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "800"
+              },
+              "unit": "pesos",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "The final price is 1.17 times the initial one: 936/1.17 = 800. Checking 800×1.17 recovers 936.",
+            "incorrect": "Subtracting 17% of 936 uses the final price as the reference and does not reverse the increase. Divide by the complete factor 1.17."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden",
+          "prompt": "A final amount of 960 was obtained by increasing an unknown amount by 20%. Arrange the steps to recover and verify the initial amount.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "factor",
+                  "label": "Convert the increase into a factor of 1.20."
+                },
+                {
+                  "id": "dividir",
+                  "label": "Divide the final amount by 1.20."
+                },
+                {
+                  "id": "comprobar",
+                  "label": "Multiply the result by 1.20 to recover 960."
+                }
+              ],
+              "initialOrder": [
+                "comprobar",
+                "factor",
+                "dividir"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "factor",
+                  "dividir",
+                  "comprobar"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "First identify the multiplication applied, then reverse it, and finally verify. The initial amount is 960/1.20 = 800.",
+            "incorrect": "You cannot choose the division before identifying the factor. Verifying means repeating the increase using the calculated result, not discounting it by the same percentage."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "puntos",
+          "prompt": "Participation changes from 40% to 50%. State the increase in percentage points and the percentage increase relative to the original 40.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diferencias",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "puntos",
+                  "type": "numeric",
+                  "label": "Percentage points"
+                },
+                {
+                  "id": "relativo",
+                  "type": "numeric",
+                  "label": "Relative percentage increase"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "puntos": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "relativo": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The difference is 50−40 = 10 percentage points. Relative to 40, the increase is 10/40 = 25%.",
+            "incorrect": "10 percentage points does not mean a relative increase of 10%. For a relative comparison, divide the change by the initial reference."
+          }
+        }
+      ]
+    }
+  ]
+}

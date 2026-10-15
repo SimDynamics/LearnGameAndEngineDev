@@ -1,0 +1,507 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__escalas_y_dimensiones",
+  "title": "Length, Area, and Volume Scales",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "A scale factor k indicates how many times each new length measures compared with the original. If k = 3, every side triples. If k = 1/2, every side is halved. For a comparison, first use the same unit before dividing new length by original length. Changing size uniformly means applying the factor to every length."
+        },
+        {
+          "type": "paragraph",
+          "text": "On a drawing at a scale of 1:2000, one centimeter represents 2000 actual centimeters. Since 100 cm = 1 m, that centimeter represents 20 meters. A segment measuring 3 cm represents 60 m. The ratio 1:2000 compares lengths in the same unit; it does not mean one centimeter for every 2000 meters."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a model measures 8 cm and the real object measures 2 m, first express 2 m as 200 cm. The model:real ratio is 8:200 = 1:25. The real object has lengths 25 times greater. To go from real to model, divide by 25; to go from model to real, multiply. The direction of comparison determines which factor to use."
+        },
+        {
+          "type": "note",
+          "text": "Schematic drawings must not be measured based on their appearance. Use the stated measurements and distinguish length, area, and volume; their change factors are different."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Go from the Object to the Drawing and Find the Scale"
+        },
+        {
+          "type": "paragraph",
+          "text": "A scale of 1:250 divides each real length by 250 to obtain the drawn length, in the same unit. A real segment of 5 m equals 500 cm: on the drawing it measures 500/250 = 2 cm. To recover the real length, multiply by 250. The direction of change determines which operation to use."
+        },
+        {
+          "type": "paragraph",
+          "text": "If 3 cm on a model represents 90 real cm, model:real = 3:90 = 1:30. The real/model factor is 30, and the model/real factor is 1/30. Simplifying the ratio requires converting units before comparing."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "real_a_plano",
+          "prompt": "A real segment measures 18 m. The drawing has a scale of 1:300. Use 1 m = 100 cm. How many centimeters long is the segment on the drawing?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Length on the drawing",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "1800 cm/300 = 6 cm. Multiplying 6 by 300 recovers the real length in cm.",
+            "incorrect": "Multiplying 18 by 300 goes in the opposite direction; dividing meters and labeling the result as centimeters skips the conversion."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escala_desde_medidas",
+          "prompt": "A model measures 12 cm along a length that measures 3 m in the real object. Use 1 m = 100 cm. The scale is written 1:n. What is n?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Denominator n",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12:300 = 1:25. The real/model factor is 25.",
+            "incorrect": "3/12 mixes meters and centimeters. 1/25 is the reduction factor; n is its denominator in the form 1:n."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "The area of a rectangle is found by multiplying length by width. A rectangle measuring 5 m by 3 m has an area of 15 m². If both lengths are multiplied by 1.5, the new length is 7.5 and the width is 4.5. Its area is 7.5×4.5 = 33.75 m². The factor 1.5 appears twice because two lengths were changed: 1.5×1.5 = 2.25."
+        },
+        {
+          "type": "paragraph",
+          "text": "In general, \\((k\\times l)\\times(k\\times a)=k^{2}\\times(l\\times a)\\). This formula summarizes the two products; it does not introduce an unexplained rule. When k = 2, every length doubles and area quadruples. When k = 1/2, the area becomes 1/4. If only the length changes, area gets just one factor k and the shape is no longer scaled uniformly. In that expression, l represents length and a represents width."
+        },
+        {
+          "type": "paragraph",
+          "text": "A rectangular box has volume equal to length×width×height. When all three lengths are multiplied by k, the product contains k three times: volume changes by k³. With k = 2, the volume becomes eight times the original. This also explains units: a square 1 m by 1 m has 100×100 = 10000 cm², while a cube with 1 m sides has 100×100×100 = 1000000 cm³."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mapa",
+          "prompt": "A drawing uses a scale of 1:5000. A segment on the drawing measures 2.4 cm. How many meters does it represent? Use 100 cm = 1 m and first express both lengths in centimeters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "real",
+              "type": "math_numeric_input",
+              "label": "Real length",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "2.4×5000 = 12000 cm = 120 m. The scale compares centimeters on the drawing with real centimeters.",
+            "incorrect": "A result of 12 meters misses a zero in the factor. A result of 12000 meters forgets to convert centimeters into meters. Keep the unit at every step."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recover a Factor and Check How Many Dimensions Change"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a uniformly enlarged rectangle has nine times the original area, its length factor is three: 3×3 = 9. You do not need to measure the drawing or apply nine to the sides. Find factors whose product gives the area change."
+        },
+        {
+          "type": "paragraph",
+          "text": "With different factors for length and width, the area factor is their product. Doubling length and halving width preserves area but changes shape. Equal area alone does not prove that two figures have the same shape."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_desde_area",
+          "prompt": "A rectangle is enlarged uniformly and its area changes from 8 to 72 square units. What factor must be applied to each side?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "k",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9.",
+                  "reviewFeedback": "Check what the selected factor represents: an area change or a change to each length. Uniform enlargement affects both dimensions."
+                },
+                {
+                  "id": "b",
+                  "label": "3.",
+                  "reviewFeedback": "Relate the factor of each side to the product defining the area. Check that the product reproduces the given area change."
+                },
+                {
+                  "id": "c",
+                  "label": "18.",
+                  "reviewFeedback": "Review how you obtained the proposed factor. Comparing areas and enlarging lengths requires relating two dimensions by multiplication."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72/8 = 9 is the area factor. The length factor is 3 because 3² = 9.",
+            "incorrect": "Applying 9 to each side would multiply area by 81. Distinguish the ratio of areas from the ratio of lengths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalas_independientes",
+          "prompt": "A rectangle measuring 6 cm by 4 cm doubles its length and halves its width. Calculate the final area and choose the interpretation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Final area",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "forma",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is a uniform scale by a factor of 2.",
+                  "reviewFeedback": "Examine the factors applied to length and width. Check whether they satisfy the same condition required by uniform enlargement."
+                },
+                {
+                  "id": "b",
+                  "label": "It preserves area but uses different factors and changes shape.",
+                  "reviewFeedback": "Calculate the effect of each factor on the sides and on their product separately. Distinguish preserving area from preserving shape."
+                },
+                {
+                  "id": "c",
+                  "label": "Its area must quadruple.",
+                  "reviewFeedback": "Check both length factors before inferring the area change. Do not apply a uniform enlargement rule without checking its condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The new sides are 12 and 2; the area is 24 cm², equal to 6×4. The product of the factors is 2×1/2 = 1.",
+            "incorrect": "The k² rule requires the same factor on both sides. Equal area does not imply uniform enlargement."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vary Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "slider",
+          "prompt": "The original rectangle has length 3 units and width 2. Adjust the uniform factor so that its area becomes 54 square units. Before moving it, determine how much each length must change: multiplying the area by the linear factor alone is not enough.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escala",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "k",
+                  "label": "Uniform scale factor",
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "value": 1
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "scaleParameter": "k",
+                "baseWidth": 3,
+                "baseHeight": 2
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The original area is 6. With factor 3, the sides are 9 and 6, and the area is 54. Area changes by 3² = 9.",
+            "incorrect": "Choosing factor 9 would confuse the area factor with the length factor and lies outside the allowed range. Factor 2 gives area 24, and factor 4 gives 96; compare products of the new sides."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area",
+          "prompt": "A rectangle measuring 4 m by 6 m is reduced uniformly by a factor of 1/2. Calculate the new lengths and the new area.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "New first side, m"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "New second side, m"
+                },
+                {
+                  "id": "area",
+                  "type": "numeric",
+                  "label": "New area, m²"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "area": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sides become 2 m and 3 m. Their area is 6 m², one quarter of 24 m².",
+            "incorrect": "Halving each side introduces two factors of 1/2. The area is not 12 m²: that would be the effect of halving only one side."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen",
+          "prompt": "The diagram represents a rectangular box: read length 2 cm, width 3 cm, and height 4 cm from its labels. The perspective is only a guide; do not measure the image. If the box is enlarged uniformly by a factor of 2, determine its original and new volumes.",
+          "representations": [
+            {
+              "type": "geometry_3d_diagram",
+              "shape": "prism",
+              "labels": [
+                "Length: 2 cm",
+                "Width: 3 cm",
+                "Height: 4 cm"
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cajas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "viejo",
+                  "type": "numeric",
+                  "label": "Original volume, cm³"
+                },
+                {
+                  "id": "nuevo",
+                  "type": "numeric",
+                  "label": "New volume, cm³"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "viejo": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "nuevo": {
+                    "type": "numeric",
+                    "expected": "192"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The original volume is 2×3×4 = 24 cm³. The new sides are 4, 6, and 8; the volume is 192 cm³, eight times 24.",
+            "incorrect": "48 cm³ uses only one factor of 2; 96 uses two. Three lengths have changed, so the volume factor is 2×2×2 = 8."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversionarea",
+          "prompt": "How many square centimeters are in a square with a side of one meter? Calculate the area using 1 m = 100 cm and choose the explanation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cm2",
+              "type": "math_numeric_input",
+              "label": "Area",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "10000"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "producto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Multiply 100 by 100 because two lengths are changing.",
+                  "reviewFeedback": "Relate the conversion of each side to the calculation of area. Check the units produced when multiplying the two lengths."
+                },
+                {
+                  "id": "b",
+                  "label": "Only the unit name needs to change; the number remains unchanged.",
+                  "reviewFeedback": "Check whether the square unit retains the same size after conversion. The number must express the area in the new unit."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiply by 100 because every conversion is linear.",
+                  "reviewFeedback": "Distinguish a unit of length from a unit of area. Determine how many lengths appear in the product before applying the proposed factor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The square measures 100 cm by 100 cm, so it contains 10000 cm².",
+            "incorrect": "100 cm² applies the factor to only one dimension. The product of lengths determines the square unit; not all conversions use the same factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unlado",
+          "prompt": "A rectangular sign measures 8 cm by 5 cm. Only its length doubles, while its width stays the same. Select the correct statement.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "efecto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The area quadruples because the number two appears.",
+                  "reviewFeedback": "Check which dimension changes and which stays the same. The effect on area depends on the product of the factors applied to both dimensions."
+                },
+                {
+                  "id": "b",
+                  "label": "The area doubles, but it is not a uniform enlargement.",
+                  "reviewFeedback": "Check separately the area factor and the condition for uniform enlargement. Justify both statements using the changes in length and width."
+                },
+                {
+                  "id": "c",
+                  "label": "The volume is multiplied by eight.",
+                  "reviewFeedback": "Identify the quantity describing the sign. Check how many dimensions are specified before applying a rule for volume change."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The area changes from 40 to 80 cm²: 16×5. Only one length changed, so there is a factor of 2.",
+            "incorrect": "The k² rule assumes both lengths receive the same factor. Here the width does not change. The described sign is a flat region, not a volume."
+          }
+        }
+      ]
+    }
+  ]
+}

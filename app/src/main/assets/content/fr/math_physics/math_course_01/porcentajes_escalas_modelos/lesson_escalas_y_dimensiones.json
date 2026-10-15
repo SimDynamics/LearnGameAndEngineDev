@@ -1,0 +1,507 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__escalas_y_dimensiones",
+  "title": "Échelles de longueur, d'aire et de volume",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprendre la relation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un facteur d'échelle k indique combien de fois chaque nouvelle longueur mesure la longueur d'origine. Si k = 3, chaque côté est triplé. Si k = 1/2, chaque côté est réduit de moitié. Pour comparer, utilise d'abord la même unité avant de diviser la nouvelle longueur par l'ancienne. Modifier uniformément la taille exige d'appliquer le facteur à toutes les longueurs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur un plan à l'échelle 1:2000, un centimètre représente 2000 centimètres réels. Comme 100 cm = 1 m, ce centimètre représente 20 mètres. Un segment de 3 cm représente 60 m. Le rapport 1:2000 compare des longueurs dans la même unité ; il ne signifie pas un centimètre pour chaque 2000 mètres."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si une maquette mesure 8 cm et que l'objet réel mesure 2 m, on exprime d'abord 2 m sous la forme 200 cm. Le rapport modèle:réel est 8:200 = 1:25. L'objet réel possède des longueurs 25 fois plus grandes. Pour passer du réel au modèle, on divise par 25 ; pour passer du modèle au réel, on multiplie. Le sens de la comparaison détermine le facteur à employer."
+        },
+        {
+          "type": "note",
+          "text": "Les dessins schématiques ne doivent pas être mesurés d'après leur apparence. Utilise les mesures indiquées et distingue longueur, aire et volume ; leurs facteurs de variation sont différents."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Passer de l'objet au plan et retrouver l'échelle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une échelle 1:250 divise chaque longueur réelle par 250 pour obtenir la longueur dessinée, dans la même unité. Un segment réel de 5 m correspond à 500 cm : sur le plan, il mesure 500/250 = 2 cm. Pour retrouver la longueur réelle, on multiplie par 250. Le sens du changement détermine l'opération à utiliser."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 3 cm sur la maquette représentent 90 cm réels, modèle:réel = 3:90 = 1:30. Le facteur réel/modèle vaut 30 et le facteur modèle/réel vaut 1/30. Simplifier le rapport exige de convertir les unités avant de comparer."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "real_a_plano",
+          "prompt": "Un segment réel mesure 18 m. Le plan a une échelle de 1:300. Utilise 1 m = 100 cm. Combien de centimètres mesure ce segment sur le plan ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longueur sur le plan",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "1800 cm/300 = 6 cm. Multiplier 6 par 300 permet de retrouver la longueur réelle en cm.",
+            "incorrect": "Multiplier 18 par 300 va dans le sens contraire ; diviser des mètres puis indiquer des centimètres sans conversion omet une étape."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escala_desde_medidas",
+          "prompt": "Une maquette mesure 12 cm sur une longueur qui mesure 3 m dans l'objet réel. Utilise 1 m = 100 cm. L'échelle s'écrit 1:n. Quelle est la valeur de n ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Dénominateur n",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12:300 = 1:25. Le facteur réel/modèle vaut 25.",
+            "incorrect": "3/12 mélange mètres et centimètres. 1/25 est le facteur de réduction ; n est son dénominateur dans l'écriture 1:n."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Références, conditions et premier essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'aire d'un rectangle s'obtient en multipliant la longueur par la largeur. Un rectangle de 5 m sur 3 m possède une aire de 15 m². Si les deux longueurs sont multipliées par 1,5, la nouvelle longueur vaut 7,5 et la largeur 4,5. Son aire vaut 7,5×4,5 = 33,75 m². Le facteur 1,5 apparaît deux fois parce que deux longueurs ont changé : 1,5×1,5 = 2,25."
+        },
+        {
+          "type": "paragraph",
+          "text": "En général, \\((k\\times l)\\times(k\\times a)=k^{2}\\times(l\\times a)\\). Cette formule résume les deux produits ; elle n'ajoute pas une règle inexpliquée. Lorsque k = 2, chaque longueur double et l'aire quadruple. Lorsque k = 1/2, l'aire devient 1/4. Si seule la longueur change, l'aire reçoit un seul facteur k et la forme n'est plus agrandie uniformément. Dans cette expression, l représente la longueur et a la largeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boîte rectangulaire possède un volume longueur×largeur×hauteur. En multipliant les trois longueurs par k, le produit contient trois fois k : le volume varie selon k³. Avec k = 2, il devient huit fois le volume initial. Cela explique aussi les unités : un carré de 1 m sur 1 m contient 100×100 = 10000 cm², et un cube dont le côté mesure 1 m contient 100×100×100 = 1000000 cm³."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mapa",
+          "prompt": "Un plan utilise l'échelle 1:5000. Un segment du plan mesure 2,4 cm. Combien de mètres représente-t-il ? Utilise 100 cm = 1 m et commence par exprimer les deux longueurs en centimètres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "real",
+              "type": "math_numeric_input",
+              "label": "Longueur réelle",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "2,4×5000 = 12000 cm = 120 m. L'échelle compare les centimètres du plan aux centimètres réels.",
+            "incorrect": "Un résultat de 12 mètres oublie un zéro du facteur. Un résultat de 12000 mètres oublie de convertir les centimètres en mètres. Conserve l'unité à chaque étape."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver un facteur et déterminer combien de dimensions changent"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un rectangle agrandi uniformément a une aire neuf fois supérieure à l'aire initiale, son facteur de longueur vaut trois : 3×3 = 9. Il n'est pas nécessaire de mesurer le dessin ni d'appliquer neuf aux côtés. Cherche des facteurs dont le produit donne la variation d'aire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec des facteurs différents pour la longueur et la largeur, le facteur d'aire est leur produit. Doubler la longueur et réduire la largeur de moitié conserve l'aire, mais change la forme. Une même aire ne prouve pas à elle seule que deux figures ont la même forme."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_desde_area",
+          "prompt": "Un rectangle est agrandi uniformément et son aire passe de 8 à 72 unités carrées. Quel facteur faut-il appliquer à chaque côté ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "k",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9.",
+                  "reviewFeedback": "Vérifie ce que représente le facteur choisi : variation d'aire ou variation de chaque longueur. L'agrandissement uniforme affecte les deux dimensions."
+                },
+                {
+                  "id": "b",
+                  "label": "3.",
+                  "reviewFeedback": "Relie le facteur de chaque côté au produit qui détermine l'aire. Vérifie que ce produit reproduit la variation d'aire indiquée."
+                },
+                {
+                  "id": "c",
+                  "label": "18.",
+                  "reviewFeedback": "Revois comment tu as obtenu le facteur proposé. Comparer des aires et agrandir des longueurs exige de relier deux dimensions par un produit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72/8 = 9 est le facteur d'aire. Le facteur de longueur vaut 3 parce que 3² = 9.",
+            "incorrect": "Appliquer 9 à chaque côté multiplierait l'aire par 81. Distingue le rapport des aires du rapport des longueurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalas_independientes",
+          "prompt": "Un rectangle de 6 cm sur 4 cm double sa longueur et réduit sa largeur de moitié. Calcule l'aire finale et choisis l'interprétation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Aire finale",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "forma",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "C'est une mise à l'échelle uniforme de facteur 2.",
+                  "reviewFeedback": "Examine les facteurs appliqués à la longueur et à la largeur. Vérifie s'ils satisfont la même condition qu'un agrandissement uniforme."
+                },
+                {
+                  "id": "b",
+                  "label": "Il conserve son aire, mais utilise des facteurs différents et change de forme.",
+                  "reviewFeedback": "Calcule séparément l'effet de chaque facteur sur les côtés et sur leur produit. Distingue la conservation de l'aire de celle de la forme."
+                },
+                {
+                  "id": "c",
+                  "label": "Son aire doit quadrupler.",
+                  "reviewFeedback": "Vérifie les deux facteurs de longueur avant de déduire la variation d'aire. N'applique pas une règle d'agrandissement uniforme sans vérifier sa condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les nouveaux côtés valent 12 et 2 ; l'aire vaut 24 cm², comme 6×4. Le produit des facteurs vaut 2×1/2 = 1.",
+            "incorrect": "La règle k² exige le même facteur sur les deux côtés. La conservation de l'aire n'implique pas un agrandissement uniforme."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Faire varier sans perdre le sens"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "slider",
+          "prompt": "Le rectangle initial mesure 3 unités de long et 2 de large. Ajuste le facteur uniforme pour que son aire soit de 54 unités carrées. Avant de le déplacer, détermine comment chaque longueur doit changer : il ne suffit pas de multiplier l'aire par le facteur linéaire.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escala",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "k",
+                  "label": "Facteur uniforme",
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "value": 1
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "scaleParameter": "k",
+                "baseWidth": 3,
+                "baseHeight": 2
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'aire initiale vaut 6. Avec le facteur 3, les côtés mesurent 9 et 6 et l'aire vaut 54. L'aire varie selon 3² = 9.",
+            "incorrect": "Choisir le facteur 9 confondrait le facteur d'aire avec celui des longueurs et se situe hors de l'intervalle autorisé. Le facteur 2 donne une aire de 24 et le facteur 4 donne 96 ; compare les produits des nouveaux côtés."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area",
+          "prompt": "Un rectangle de 4 m sur 6 m est réduit uniformément par un facteur de 1/2. Calcule les nouvelles longueurs et l'aire nouvelle.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Nouveau premier côté, m"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Nouveau deuxième côté, m"
+                },
+                {
+                  "id": "area",
+                  "type": "numeric",
+                  "label": "Aire nouvelle, m²"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "area": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les côtés deviennent 2 m et 3 m. Leur aire vaut 6 m², soit le quart de 24 m².",
+            "incorrect": "Réduire chaque côté de moitié introduit deux facteurs 1/2. L'aire n'est pas 12 m² : ce serait le résultat si l'on réduisait un seul côté."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combiner et vérifier"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen",
+          "prompt": "Le schéma représente une boîte rectangulaire : lis une longueur de 2 cm, une largeur de 3 cm et une hauteur de 4 cm sur ses étiquettes. La perspective sert seulement de repère ; ne mesure pas l'image. Si la boîte est agrandie uniformément par un facteur 2, détermine ses volumes initial et final.",
+          "representations": [
+            {
+              "type": "geometry_3d_diagram",
+              "shape": "prism",
+              "labels": [
+                "Longueur : 2 cm",
+                "Largeur : 3 cm",
+                "Hauteur : 4 cm"
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cajas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "viejo",
+                  "type": "numeric",
+                  "label": "Volume initial, cm³"
+                },
+                {
+                  "id": "nuevo",
+                  "type": "numeric",
+                  "label": "Volume nouveau, cm³"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "viejo": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "nuevo": {
+                    "type": "numeric",
+                    "expected": "192"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le volume initial vaut 2×3×4 = 24 cm³. Les nouveaux côtés mesurent 4, 6 et 8 ; le volume vaut 192 cm³, soit huit fois 24.",
+            "incorrect": "48 cm³ ne tient compte que d'un facteur 2 ; 96 en utilise deux. Trois longueurs ont changé, donc le facteur de volume vaut 2×2×2 = 8."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversionarea",
+          "prompt": "Combien de centimètres carrés contient un carré d'un mètre de côté ? Calcule l'aire avec 1 m = 100 cm et choisis l'explication.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cm2",
+              "type": "math_numeric_input",
+              "label": "Aire",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "10000"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "producto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il faut multiplier 100 par 100 parce que deux longueurs changent.",
+                  "reviewFeedback": "Relie la conversion de chaque côté au calcul d'une aire. Vérifie les unités obtenues en multipliant les deux longueurs."
+                },
+                {
+                  "id": "b",
+                  "label": "Il suffit de changer le nom de l'unité sans changer le nombre.",
+                  "reviewFeedback": "Vérifie si l'unité carrée garde la même taille après la conversion. Le nombre doit exprimer l'aire dans la nouvelle unité."
+                },
+                {
+                  "id": "c",
+                  "label": "On multiplie par 100 parce que toutes les conversions sont linéaires.",
+                  "reviewFeedback": "Distingue une unité de longueur d'une unité d'aire. Examine combien de longueurs interviennent dans le produit avant d'appliquer le facteur proposé."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le carré mesure 100 cm sur 100 cm et contient donc 10000 cm².",
+            "incorrect": "100 cm² applique le facteur à une seule dimension. Le produit des longueurs détermine l'unité carrée ; toutes les conversions n'utilisent pas le même facteur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unlado",
+          "prompt": "Un panneau rectangulaire mesure 8 cm sur 5 cm. Seule sa longueur double et sa largeur ne change pas. Sélectionne l'affirmation correcte.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "efecto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'aire quadruple parce que le nombre deux apparaît.",
+                  "reviewFeedback": "Vérifie quelle dimension change et laquelle reste identique. L'effet sur l'aire dépend du produit des facteurs appliqués aux deux dimensions."
+                },
+                {
+                  "id": "b",
+                  "label": "L'aire double, mais ce n'est pas un agrandissement uniforme.",
+                  "reviewFeedback": "Vérifie séparément le facteur d'aire et la condition d'agrandissement uniforme. Justifie chaque affirmation à partir des variations de longueur et de largeur."
+                },
+                {
+                  "id": "c",
+                  "label": "Le volume est multiplié par huit.",
+                  "reviewFeedback": "Identifie la grandeur décrivant le panneau. Vérifie combien de dimensions sont définies avant d'appliquer une règle sur la variation de volume."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'aire passe de 40 à 80 cm² : 16×5. Une seule longueur a changé, donc le facteur est 2.",
+            "incorrect": "La règle k² suppose que les deux longueurs reçoivent le même facteur. Ici, la largeur ne change pas. Le panneau décrit est une surface plane, pas un volume."
+          }
+        }
+      ]
+    }
+  ]
+}
