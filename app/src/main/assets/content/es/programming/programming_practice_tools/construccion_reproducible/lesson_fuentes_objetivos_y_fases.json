@@ -35,7 +35,12 @@
             "Sólo en el nombre elegido para la carpeta de construcción."
           ],
           "correctIndex": 1,
-          "explanation": "La descripción mantenida es entrada de la configuración. Una regla generada puede volver a producirse; editarla como única versión de una decisión pierde la relación con la fuente que la originaba. Cambiar un nombre de carpeta tampoco selecciona archivos C++."
+          "explanation": "La descripción mantenida es entrada de la configuración. Una regla generada puede volver a producirse; editarla como única versión de una decisión pierde la relación con la fuente que la originaba. Cambiar un nombre de carpeta tampoco selecciona archivos C++.",
+          "reviewFeedback": [
+            "Piensa qué ocurriría con esa edición al volver a generar las reglas desde las entradas conservadas. Comprueba de qué dependería recuperar tu decisión en una construcción nueva.",
+            "Comprueba que tu criterio permita recuperar la elección de fuentes desde el proyecto mantenido, sin depender de los productos de una construcción anterior.",
+            "Separa el nombre de una carpeta del contenido que utiliza la herramienta para decidir qué construir. Explica cómo ese nombre conservaría la elección de fuentes."
+          ]
         }
       ]
     },
@@ -63,7 +68,12 @@
             "La configuración creó consulta.exe, aunque todavía no conocemos su comportamiento."
           ],
           "correctIndex": 0,
-          "explanation": "El éxito pertenece a las fases realizadas. Puede incluir pruebas internas del compilador, pero no demuestra que se haya construido o ejecutado nuestro programa ni que cumpla su contrato."
+          "explanation": "El éxito pertenece a las fases realizadas. Puede incluir pruebas internas del compilador, pero no demuestra que se haya construido o ejecutado nuestro programa ni que cumpla su contrato.",
+          "reviewFeedback": [
+            "Relaciona cada conclusión con la fase efectivamente realizada. Comprueba qué evidencia tienes sobre el objetivo solicitado y sobre sus casos.",
+            "Identifica qué archivo utilizó la comprobación del compilador y cuál contiene tu aplicación. Revisa si has atribuido a ambos la misma operación sin comprobarlo.",
+            "Busca qué operación habría producido el archivo ejecutable que mencionas. Vincula su existencia y su revisión con un registro concreto, no sólo con un mensaje de configuración."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -75,7 +85,12 @@
             "Si llamó al compilador, la aplicación ya pasó la construcción aunque aún no haya reglas generadas."
           ],
           "correctIndex": 1,
-          "explanation": "Las comprobaciones de herramientas tienen sus propios programas y propósito. Hay que distinguirlos de main.cpp y del objetivo que describe nuestra aplicación."
+          "explanation": "Las comprobaciones de herramientas tienen sus propios programas y propósito. Hay que distinguirlos de main.cpp y del objetivo que describe nuestra aplicación.",
+          "reviewFeedback": [
+            "Examina qué fuente intervino en esa llamada al compilador. Distingue comprobar una herramienta de actualizar el objetivo que quieres investigar.",
+            "Comprueba qué finalidad tiene el programa utilizado en la comprobación y qué trabajo de tu propio proyecto está documentado hasta ahora.",
+            "Identifica el propósito de esa invocación del compilador antes de darle el alcance de una construcción completa de la aplicación. La presencia de una herramienta en el registro no basta para atribuirle cualquier tarea."
+          ]
         }
       ]
     },
@@ -108,7 +123,12 @@
             "consulta, porque add_executable define con ese nombre el objetivo ejecutable."
           ],
           "correctIndex": 2,
-          "explanation": "project y add_executable tienen papeles distintos. consulta identifica el objetivo; main.cpp es una de sus entradas. El nombre del archivo resultante depende también de la plataforma y de posibles propiedades."
+          "explanation": "project y add_executable tienen papeles distintos. consulta identifica el objetivo; main.cpp es una de sus entradas. El nombre del archivo resultante depende también de la plataforma y de posibles propiedades.",
+          "reviewFeedback": [
+            "Revisa el papel de main.cpp dentro de los argumentos de la instrucción que lo utiliza. Distingue una entrada de construcción del nombre con el que solicitas un producto.",
+            "Examina qué nombra project y qué decisión sobre un producto ejecutable estás atribuyéndole. Justifica esa relación a partir de los argumentos de la descripción.",
+            "Relaciona el nombre elegido con el papel que ocupa en su instrucción. Comprueba después qué le pedirías a la herramienta sin confundir objetivo y archivo resultante."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -120,7 +140,12 @@
             "CMake interpreta ambos archivos; el compilador sólo elige el nombre de consulta.exe."
           ],
           "correctIndex": 0,
-          "explanation": "Son lenguajes y papeles distintos. Añadir CMakeLists.txt a un editor de archivos no significa que el compilador C++ interprete sus instrucciones. Las decisiones de ese archivo sólo quedan comprobadas cuando participa CMake."
+          "explanation": "Son lenguajes y papeles distintos. Añadir CMakeLists.txt a un editor de archivos no significa que el compilador C++ interprete sus instrucciones. Las decisiones de ese archivo sólo quedan comprobadas cuando participa CMake.",
+          "reviewFeedback": [
+            "Sigue el recorrido de cada archivo: qué lenguaje contiene, qué herramienta lo procesa y para qué fase lo utiliza. Mantén separadas esas tres preguntas.",
+            "Examina la sintaxis de CMakeLists.txt y el tipo de instrucciones que atribuyes al compilador C++. Comprueba qué lenguaje está preparado para interpretar esa herramienta.",
+            "Localiza las instrucciones de C++ del programa y explica qué trabajo debe realizarse sobre ellas para obtener código ejecutable. Revisa el alcance que dejas al compilador."
+          ]
         },
         {
           "type": "paragraph",
@@ -169,7 +194,12 @@
             "target_compile_features(consulta PRIVATE cxx_std_20)"
           ],
           "correctIndex": 2,
-          "explanation": "El requisito de características se asocia al objetivo mediante target_compile_features. Revisa qué decisión expresa cada argumento antes de trasladarlo a otro proyecto."
+          "explanation": "El requisito de características se asocia al objetivo mediante target_compile_features. Revisa qué decisión expresa cada argumento antes de trasladarlo a otro proyecto.",
+          "reviewFeedback": [
+            "Revisa qué información aporta LANGUAGES CXX. Separa habilitar un lenguaje de exigir un conjunto de características de ese lenguaje.",
+            "Examina la propiedad CXX_EXTENSIONS que elegiste. Explica qué decisión expresa sobre extensiones y qué afirmación estás haciendo sobre las características requeridas.",
+            "Comprueba cómo se relacionan el nombre del objetivo, el alcance y la característica pedida en la instrucción seleccionada."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -181,7 +211,12 @@
             "cmake_minimum_required debe cambiar al número de ese estándar de C++."
           ],
           "correctIndex": 0,
-          "explanation": "cxx_std_20 expresa un mínimo. Si un proyecto necesita otras restricciones, deben declararse y comprobarse; no se deducen de este nombre."
+          "explanation": "cxx_std_20 expresa un mínimo. Si un proyecto necesita otras restricciones, deben declararse y comprobarse; no se deducen de este nombre.",
+          "reviewFeedback": [
+            "Contrasta las capacidades del modo utilizado con el alcance de la exigencia declarada. Mantén separadas la versión de CMake y las características de C++.",
+            "Vuelve al significado de mínimo en la exigencia de características. Comprueba qué restricción añades al interpretar el número como una prohibición de modos posteriores.",
+            "Identifica a qué herramienta pertenece la versión de cmake_minimum_required antes de relacionarla con un modo del lenguaje C++."
+          ]
         }
       ]
     },
@@ -209,7 +244,12 @@
             "0:1:1"
           ],
           "correctIndex": 1,
-          "explanation": "4 y 5 satisfacen la relación menor o igual respecto de 5; 6 no. El esperado procede del requisito, no de la implementación que vayamos a investigar."
+          "explanation": "4 y 5 satisfacen la relación menor o igual respecto de 5; 6 no. El esperado procede del requisito, no de la implementación que vayamos a investigar.",
+          "reviewFeedback": [
+            "Vuelve a aplicar el criterio del contrato al caso de igualdad. Justifica cómo esa llamada ocupa su posición en la cadena que elegiste.",
+            "Comprueba cada pareja por separado con el criterio de reposición. Conserva el orden y los separadores al reunir tus resultados.",
+            "Comprueba el sentido de la comparación entre disponibles y minimo en los casos a ambos lados de la frontera. Mantén los argumentos en el orden de cada llamada."
+          ]
         },
         {
           "type": "paragraph",
@@ -225,7 +265,12 @@
             "Que ese artefacto coincide con el contrato en esas llamadas y condiciones concretas."
           ],
           "correctIndex": 2,
-          "explanation": "Relaciona la evidencia con los casos efectivamente observados. Para otras entradas o una fuente modificada necesitas razonamiento y comprobaciones pertinentes."
+          "explanation": "Relaciona la evidencia con los casos efectivamente observados. Para otras entradas o una fuente modificada necesitas razonamiento y comprobaciones pertinentes.",
+          "reviewFeedback": [
+            "Examina qué entradas se observaron y qué revisión se ejecutó. Justifica el salto que haces desde esas observaciones hacia entradas o cambios que todavía no has comprobado.",
+            "Identifica qué acción produjo la salida observada. Revisa qué relación estás suponiendo entre esa observación y lo que haría una configuración por sí sola.",
+            "Vincula tu conclusión con el artefacto, las llamadas y las condiciones concretas del ensayo. Explica qué evidencia necesitarías para ampliar su alcance."
+          ]
         }
       ]
     },
@@ -276,7 +321,12 @@
             "Ejecutar el objetivo vigente y comparar su salida y terminación con el oráculo."
           ],
           "correctIndex": 2,
-          "explanation": "La construcción produjo el programa, pero todavía no observaste su comportamiento en esas llamadas. Mantén la relación entre artefacto y casos al ejecutarlo."
+          "explanation": "La construcción produjo el programa, pero todavía no observaste su comportamiento en esas llamadas. Mantén la relación entre artefacto y casos al ejecutarlo.",
+          "reviewFeedback": [
+            "Identifica qué afirma el resultado de la construcción sobre el producto obtenido. Revisa de dónde procedería la evidencia sobre el comportamiento de sus llamadas.",
+            "Explica qué relación tiene el nombre del proyecto con el comportamiento que quieres comprobar. Antes de editarlo, identifica qué duda resolvería ese cambio.",
+            "Define qué observarías y con qué referencia lo contrastarías. Comprueba que los casos y el artefacto de tu propuesta corresponden a la misma revisión."
+          ]
         },
         {
           "type": "paragraph",
@@ -303,7 +353,8 @@
           "answers": [
             "1:0:0"
           ],
-          "explanation": "4 es menor que 5; 5 no es menor que 5 y 6 tampoco. El cambio afecta a la frontera de igualdad: esa discrepancia puede existir aunque la construcción termine correctamente."
+          "explanation": "4 es menor que 5; 5 no es menor que 5 y 6 tampoco. El cambio afecta a la frontera de igualdad: esa discrepancia puede existir aunque la construcción termine correctamente.",
+          "reviewFeedback": "Traza las tres llamadas usando la comparación escrita en esta revisión, especialmente en la frontera. Reúne después sus valores bool con el formato de cout, separando lo que hace el código de lo que exige el contrato original."
         },
         {
           "type": "paragraph",
@@ -338,7 +389,12 @@
             "El cumplimiento del contrato, porque terminar con código 0 acredita todas las consultas."
           ],
           "correctIndex": 0,
-          "explanation": "Una construcción satisfactoria no decide qué relación pide el requisito. La segunda llamada permite contrastar la frontera de igualdad sin culpar a una fase que sí terminó correctamente."
+          "explanation": "Una construcción satisfactoria no decide qué relación pide el requisito. La segunda llamada permite contrastar la frontera de igualdad sin culpar a una fase que sí terminó correctamente.",
+          "reviewFeedback": [
+            "Relaciona el resultado observado con la llamada que permite investigar la frontera. Justifica qué clase de evidencia estás utilizando para formular el diagnóstico.",
+            "Distingue si cuestionas la sintaxis aceptada por el compilador o el significado de la relación. Contrasta tu diagnóstico con el registro de construcción que da la consigna.",
+            "Examina qué informa el código de terminación y qué pide el contrato para cada llamada. Justifica por qué una terminación normal cubriría el significado de los resultados."
+          ]
         }
       ]
     },
@@ -361,7 +417,8 @@
           "answers": [
             "<="
           ],
-          "explanation": "La igualdad pertenece al conjunto que debe reponer. La expresión menor o igual representa ese requisito con los dos argumentos en su orden original."
+          "explanation": "La igualdad pertenece al conjunto que debe reponer. La expresión menor o igual representa ese requisito con los dos argumentos en su orden original.",
+          "reviewFeedback": "Expresa con palabras cuándo debe reponerse, manteniendo disponibles y minimo en su orden. Prueba si el operador que escribiste cubre los casos a ambos lados y en la frontera, sin cambiar las llamadas."
         },
         {
           "type": "paragraph",
@@ -412,7 +469,12 @@
             "Usar el resultado guardado del artefacto anterior, porque la nueva configuración pasó."
           ],
           "correctIndex": 1,
-          "explanation": "El fallo observado pertenece a la construcción de la revisión investigada. Reparar su fuente y reconstruir permite obtener una evidencia nueva; la configuración no sustituye ese paso."
+          "explanation": "El fallo observado pertenece a la construcción de la revisión investigada. Reparar su fuente y reconstruir permite obtener una evidencia nueva; la configuración no sustituye ese paso.",
+          "reviewFeedback": [
+            "Localiza dónde se conserva la sentencia señalada y qué cambiaría al repetir la configuración sin editarla. Explica qué mecanismo repararía ese texto según tu propuesta.",
+            "Identifica la fuente y la fase del diagnóstico antes de planear una intervención. Comprueba cómo vincularías la siguiente evidencia con esa revisión.",
+            "Comprueba a qué versión corresponde el artefacto guardado. Revisa si la construcción que falló llegó a actualizarlo antes de atribuir sus resultados al intento actual."
+          ]
         },
         {
           "type": "paragraph",
@@ -463,7 +525,12 @@
             "Que inventario.cpp esté en una carpeta llamada comprobar, que determinaría el objetivo."
           ],
           "correctIndex": 0,
-          "explanation": "Relaciona la petición con el objetivo que add_executable realmente crea. Los nombres de variables del programa y el nombre del proyecto tienen otros papeles; no resuelven esa petición de construcción."
+          "explanation": "Relaciona la petición con el objetivo que add_executable realmente crea. Los nombres de variables del programa y el nombre del proyecto tienen otros papeles; no resuelven esa petición de construcción.",
+          "reviewFeedback": [
+            "Relaciona la petición con los nombres y papeles que conserva la descripción. Comprueba dónde se declara el producto al que atribuyes la observación.",
+            "Distingue la agrupación que nombra project de los productos que se solicitan construir. Justifica por qué cambiar ese argumento resolvería la petición que estás analizando.",
+            "Explica qué información de construcción aporta el nombre de una carpeta en la descripción mostrada. Separa la organización de archivos de la identidad que utilizas en la petición."
+          ]
         }
       ]
     },
@@ -496,7 +563,12 @@
             "Construir un objetivo con otro nombre sin comprobar la descripción modificada."
           ],
           "correctIndex": 1,
-          "explanation": "La descripción es entrada de la configuración. Después de cambiarla, genera reglas vigentes, construye el objetivo pedido y comprueba el programa obtenido."
+          "explanation": "La descripción es entrada de la configuración. Después de cambiarla, genera reglas vigentes, construye el objetivo pedido y comprueba el programa obtenido.",
+          "reviewFeedback": [
+            "Vincula la salida anterior con los archivos que la produjeron. Revisa qué evidencia habría sobre el cambio que acabas de guardar si conservas sólo esa observación.",
+            "Para cada acción de tu propuesta, identifica qué entrada utiliza y qué revisión produce. Comprueba que la observación pueda atribuirse a los archivos actuales.",
+            "Identifica qué producto representa el nombre alternativo que elegiste y por qué permitiría observar la decisión modificada. Conserva la relación entre la petición y la descripción."
+          ]
         },
         {
           "type": "output_prediction",
@@ -507,7 +579,8 @@
           "answers": [
             "1:1:1"
           ],
-          "explanation": "40 coincide con el mínimo 40; cero está por debajo de 1; 1 coincide con 1. Las tres llamadas requieren reponer. El valor 0 de existencias está permitido: no lo confundas con un mínimo 0, excluido del dominio."
+          "explanation": "40 coincide con el mínimo 40; cero está por debajo de 1; 1 coincide con 1. Las tres llamadas requieren reponer. El valor 0 de existencias está permitido: no lo confundas con un mínimo 0, excluido del dominio.",
+          "reviewFeedback": "Comprueba el dominio de cada argumento, distinguiendo existencias disponibles y mínimo exigido. Aplica la condición a cada pareja extrema y reúne los valores en el orden exacto de las inserciones de cout."
         },
         {
           "type": "paragraph",

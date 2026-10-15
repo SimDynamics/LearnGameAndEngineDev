@@ -34,7 +34,12 @@
             "El fallo demuestra que se ejecutó una versión antigua, aunque no conocemos su ruta ni sus fuentes."
           ],
           "correctIndex": 1,
-          "explanation": "La igualdad está incluida: el resultado esperado es true, impreso como 1. El dato demuestra una discrepancia bajo el requisito y el dominio; por sí solo no distingue una comparación equivocada de un ejecutable equivocado."
+          "explanation": "La igualdad está incluida: el resultado esperado es true, impreso como 1. El dato demuestra una discrepancia bajo el requisito y el dominio; por sí solo no distingue una comparación equivocada de un ejecutable equivocado.",
+          "reviewFeedback": [
+            "Separa la regla solicitada del resultado observado. Reconsidera de dónde tendría que proceder un cambio de requisito y qué parte del informe describe sólo una ejecución.",
+            "Relaciona el caso observado con la regla y distingue lo medido de la explicación de su causa. Comprueba qué evidencia respalda cada afirmación de tu respuesta.",
+            "Para atribuir una salida a una revisión necesitas evidencia de procedencia. Revisa qué datos del informe identifican el programa y cuáles todavía no se conocen."
+          ]
         }
       ]
     },
@@ -66,7 +71,12 @@
             "Basta que el archivo ejecutable tenga el mismo nombre que antes."
           ],
           "correctIndex": 0,
-          "explanation": "El éxito de construcción acredita que se obtuvo un programa en ese proceso; el retorno 0 acredita cómo terminó esa ejecución. Ninguno calcula por nosotros qué decisión de reposición era correcta. Un nombre de archivo tampoco identifica su contenido."
+          "explanation": "El éxito de construcción acredita que se obtuvo un programa en ese proceso; el retorno 0 acredita cómo terminó esa ejecución. Ninguno calcula por nosotros qué decisión de reposición era correcta. Un nombre de archivo tampoco identifica su contenido.",
+          "reviewFeedback": [
+            "Separa obtener un ejecutable, terminar una ejecución y comprobar una decisión del programa. Relee cuál de esas afirmaciones debe acreditar la prueba.",
+            "Construir y terminar sin error describen etapas concretas. Revisa qué información aportan sobre las decisiones que exige el requisito para sus datos.",
+            "El nombre identifica un archivo dentro de una carpeta, pero no resume su comportamiento. Reconsidera qué observación comprobaría la regla de reposición."
+          ]
         }
       ]
     },
@@ -89,7 +99,8 @@
           "answers": [
             "1:0:0"
           ],
-          "explanation": "La implementación usa <: 4<5 es verdadero, 5<5 es falso y 6<5 es falso. El programa produce 1:0:0, mientras el requisito exige 1:1:0. No ajustes la salida esperada para hacer coincidir la función sospechosa."
+          "explanation": "La implementación usa <: 4<5 es verdadero, 5<5 es falso y 6<5 es falso. El programa produce 1:0:0, mientras el requisito exige 1:1:0. No ajustes la salida esperada para hacer coincidir la función sospechosa.",
+          "reviewFeedback": "Sigue las llamadas en el orden mostrado y aplica la comparación escrita, sin repararla durante la predicción. Anota sus valores bool y después reproduce los separadores de cout."
         },
         {
           "type": "multiple_choice",
@@ -101,7 +112,12 @@
             "Disponibles=5, porque pertenece al dominio y las reglas discrepan exactamente allí."
           ],
           "correctIndex": 2,
-          "explanation": "La igualdad es el caso discriminante. El caso 4 sigue siendo un control útil, pero no separa estas hipótesis. El 41 incumple la precondición y no es evidencia sobre el contrato declarado."
+          "explanation": "La igualdad es el caso discriminante. El caso 4 sigue siendo un control útil, pero no separa estas hipótesis. El 41 incumple la precondición y no es evidencia sobre el contrato declarado.",
+          "reviewFeedback": [
+            "Que un dato pertenezca al dominio lo hace pertinente, pero revisa si las dos reglas en disputa producirían resultados distintos en ese caso.",
+            "Comprueba la precondición antes de usar ese dato como evidencia del contrato. Una llamada fuera del dominio plantea una pregunta diferente de la comparación solicitada.",
+            "Un caso discriminante debe pertenecer al dominio y permitir contrastar las dos reglas. Aplica ambos criterios al dato que elegiste."
+          ]
         }
       ]
     },
@@ -129,7 +145,12 @@
             "Hay que cambiar el requisito para aceptar 1:0:0 y conservar cualquier ejecutable disponible."
           ],
           "correctIndex": 1,
-          "explanation": "Se conserva la procedencia de la observación. No se debe atribuir al texto B una ejecución de A. Resolver el error de construcción permitirá estudiar B; comparar su salida con el requisito será todavía necesario."
+          "explanation": "Se conserva la procedencia de la observación. No se debe atribuir al texto B una ejecución de A. Resolver el error de construcción permitirá estudiar B; comparar su salida con el requisito será todavía necesario.",
+          "reviewFeedback": [
+            "Localiza de qué construcción procede la ejecución observada. Reconsidera si su resultado permite atribuir un comportamiento al texto que acabas de editar.",
+            "Revisa que tu conclusión conserve el vínculo entre revisión, resultado de construcción y ejecución. No des por comprobado un programa sólo por haber guardado su fuente.",
+            "Mantén separado lo que pide el requisito de lo que produjo una ejecución concreta. Revisa qué evidencia justificaría cambiar la regla en vez de investigar la discrepancia."
+          ]
         },
         {
           "type": "paragraph",
@@ -145,7 +166,12 @@
             "Ejecutar la copia de salida/ identificada, con los mismos datos, y contrastarla con el requisito."
           ],
           "correctIndex": 2,
-          "explanation": "Conservar los datos controla esa parte de la comparación; elegir la copia construida de B controla la versión. Renombrar o repetir una copia equivocada no aporta esa evidencia."
+          "explanation": "Conservar los datos controla esa parte de la comparación; elegir la copia construida de B controla la versión. Renombrar o repetir una copia equivocada no aporta esa evidencia.",
+          "reviewFeedback": [
+            "Repetir una ejecución aporta observaciones de la copia elegida. Comprueba primero si esa copia procede de la revisión sobre la que quieres concluir.",
+            "Cambiar un nombre no reconstruye su contenido ni establece su procedencia. Reconsidera cómo identificarías la copia usada al recoger el resultado.",
+            "Contrasta en tu elección la procedencia de la copia, los datos de prueba y la regla con la que evaluarás la salida."
+          ]
         }
       ]
     },
@@ -181,7 +207,12 @@
             "Imprimir las tres llamadas y declarar que la salida observada siempre es la correcta."
           ],
           "correctIndex": 1,
-          "explanation": "Duplicar la llamada duplica la misma interpretación equivocada. El oráculo de estos tres casos es la regla independiente del requisito; imprimir sin comparar sólo produce observaciones."
+          "explanation": "Duplicar la llamada duplica la misma interpretación equivocada. El oráculo de estos tres casos es la regla independiente del requisito; imprimir sin comparar sólo produce observaciones.",
+          "reviewFeedback": [
+            "Examina si tu esperado puede discrepar de la función sospechosa cuando ésta interpreta mal la regla. Volver a usar esa interpretación necesita una justificación independiente.",
+            "Revisa que cada esperado proceda del requisito y que la prueba lo compare con una observación identificada. Así podrás explicar qué desacuerdo detectaría.",
+            "Imprimir muestra lo que ocurrió. Reconsidera de dónde obtendrías un criterio independiente para decidir si ese resultado satisface el contrato."
+          ]
         }
       ]
     },
@@ -218,7 +249,12 @@
             "Conservar los tres casos y añadir (7,8),(8,8),(9,8), con esperados true,true,false obtenidos de la misma regla."
           ],
           "correctIndex": 2,
-          "explanation": "La regla vale para todos los mínimos del dominio. Una igualdad que pasó con mínimo 5 no certifica la igualdad con mínimo 8; omitirla podría ocultar una corrección ajustada a la primera muestra. Conservar los casos previos comprueba además que el cambio no estropeó decisiones antes correctas. La variación aporta evidencia nueva, aunque estos seis casos no prueban por sí solos todo el dominio."
+          "explanation": "La regla vale para todos los mínimos del dominio. Una igualdad que pasó con mínimo 5 no certifica la igualdad con mínimo 8; omitirla podría ocultar una corrección ajustada a la primera muestra. Conservar los casos previos comprueba además que el cambio no estropeó decisiones antes correctas. La variación aporta evidencia nueva, aunque estos seis casos no prueban por sí solos todo el dominio.",
+          "reviewFeedback": [
+            "Un caso que pasó con un mínimo aporta evidencia de esa llamada. Revisa qué parte de la frontera queda sin examinar al variar el mínimo con la selección propuesta.",
+            "Reconsidera para qué sirven los controles anteriores después de modificar o ampliar una prueba. Sustituirlos cambia qué comportamientos seguirás observando.",
+            "Comprueba que tu registro conserve controles previos y examine la nueva frontera desde la regla, sin confundir una muestra con todo el dominio."
+          ]
         },
         {
           "type": "paragraph",

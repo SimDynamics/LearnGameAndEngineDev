@@ -30,7 +30,8 @@
             "R:1:2"
           ],
           "explanation": "La primera llamada registra la visita 1 y devuelve 1. La segunda registra la visita 2 y devuelve 2. Los dos resultados guardados producen R:1:2; imprimirlos no llama otra vez al servicio.",
-          "outputComparison": "exact"
+          "outputComparison": "exact",
+          "reviewFeedback": "Distingue las llamadas al servicio de las lecturas de resultados ya guardados. Sigue los valores de esos objetos en orden y compón únicamente lo que envía cada expresión a cout."
         },
         {
           "type": "note",
@@ -58,7 +59,8 @@
             "DIAG:2\nR:1:3"
           ],
           "explanation": "La primera visita deja el contador en 1. La llamada dentro de cout registra otra visita y devuelve 2, que se imprime en DIAG. La segunda visita de trabajo ocurre después y devuelve 3. La salida es DIAG:2, salto de línea, R:1:3; la revisión ejecutó tres operaciones de registro.",
-          "outputComparison": "exact"
+          "outputComparison": "exact",
+          "reviewFeedback": "Anota el estado antes y después de cada llamada escrita, incluida la que aparece al calcular el diagnóstico. Después sitúa cada resultado en su impresión y conserva los saltos del código."
         },
         {
           "type": "multiple_choice",
@@ -70,7 +72,12 @@
             "Que R usa resultados guardados: conservar esas variables demostraría que no hubo ninguna operación adicional del servicio."
           ],
           "correctIndex": 1,
-          "explanation": "Una etiqueta indica cómo queremos interpretar el mensaje, pero no elimina las operaciones necesarias para calcularlo. En este código hay una nueva llamada al mismo servicio con el mismo efecto de registro."
+          "explanation": "Una etiqueta indica cómo queremos interpretar el mensaje, pero no elimina las operaciones necesarias para calcularlo. En este código hay una nueva llamada al mismo servicio con el mismo efecto de registro.",
+          "reviewFeedback": [
+            "Inspecciona qué hace la función para obtener ese retorno. Utilizar su valor en una impresión no determina por sí mismo los efectos del cálculo.",
+            "Relaciona la expresión del diagnóstico con el cuerpo que ejecuta y los objetos que modifica. Juzga sus efectos desde esas operaciones, además de leer la etiqueta del mensaje.",
+            "Los objetos guardados conservan resultados, pero no registran por sí solos todo lo ocurrido después. Examina también las expresiones que se ejecutan al preparar el diagnóstico."
+          ]
         },
         {
           "type": "paragraph",
@@ -102,7 +109,12 @@
             "Cambiar a la vez el diagnóstico y el número de visitas de trabajo; cualquier coincidencia final distinguirá sus efectos."
           ],
           "correctIndex": 0,
-          "explanation": "Mantener las operaciones de trabajo y el estado inicial permite investigar el efecto del código añadido. Si también cambias el servicio o el número de visitas, ya no sabes qué modificación explica la diferencia."
+          "explanation": "Mantener las operaciones de trabajo y el estado inicial permite investigar el efecto del código añadido. Si también cambias el servicio o el número de visitas, ya no sabes qué modificación explica la diferencia.",
+          "reviewFeedback": [
+            "Identifica la diferencia que quieres investigar y comprueba qué condiciones mantienes constantes en tu comparación. Cada cambio adicional necesitaría distinguirse del efecto del diagnóstico.",
+            "Revisa si modificar el servicio conserva las operaciones de trabajo del experimento inicial. La comparación necesita poder atribuir una diferencia a la causa que investiga.",
+            "Si cambias varias condiciones, una coincidencia final puede tener explicaciones diferentes. Reconsidera cómo aislarías el efecto del diagnóstico de los cambios en el trabajo."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -114,7 +126,12 @@
             "Que guardada conserva su valor después de inicializarse; la llamada todavía puede modificar el servicio."
           ],
           "correctIndex": 2,
-          "explanation": "const se aplica al objeto guardada. No transforma en lectura la llamada usada para obtener su valor ni crea una conexión automática con el contador. Se registra una visita y se conserva una copia de su resultado."
+          "explanation": "const se aplica al objeto guardada. No transforma en lectura la llamada usada para obtener su valor ni crea una conexión automática con el contador. Se registra una visita y se conserva una copia de su resultado.",
+          "reviewFeedback": [
+            "Localiza a qué objeto se aplica const. Distingue la propiedad de ese objeto de las acciones que puede ejecutar la expresión usada para inicializarlo.",
+            "Comprueba si el código establece una copia de un retorno o un mecanismo que actualice ese objeto. Sigue por separado el objeto guardado y el contador al continuar la ejecución.",
+            "Separa la inicialización, los posibles efectos de su llamada y el uso posterior del objeto. Revisa qué parte de esas operaciones describe la declaración const."
+          ]
         },
         {
           "type": "note",
@@ -175,7 +192,8 @@
           "answers": [
             "primera_guardada"
           ],
-          "explanation": "primera_guardada conserva el resultado 1 aunque el contador ya haya avanzado a 2. posterior y numero_visita representan otros datos en este punto. La observación pedida es DIAG:1, seguida de R:1:2, sin ejecutar una tercera operación."
+          "explanation": "primera_guardada conserva el resultado 1 aunque el contador ya haya avanzado a 2. posterior y numero_visita representan otros datos en este punto. La observación pedida es DIAG:1, seguida de R:1:2, sin ejecutar una tercera operación.",
+          "reviewFeedback": "Relaciona cada objeto guardado con la llamada que le dio su valor. Busca la procedencia del resultado pedido, no sólo el valor actual del servicio; responde con un nombre ya declarado, sin añadir operaciones."
         }
       ]
     },
@@ -199,7 +217,8 @@
             "DIAG:4\nR:1:2:3\nC:4"
           ],
           "outputComparison": "exact",
-          "explanation": "Las visitas de trabajo guardan 1, 2 y 3. La llamada posterior del diagnóstico registra la visita 4. R conserva sus valores anteriores, pero el estado final mostrado en C es 4; conservar R no demuestra que se hayan conservado las operaciones del experimento."
+          "explanation": "Las visitas de trabajo guardan 1, 2 y 3. La llamada posterior del diagnóstico registra la visita 4. R conserva sus valores anteriores, pero el estado final mostrado en C es 4; conservar R no demuestra que se hayan conservado las operaciones del experimento.",
+          "reviewFeedback": "Registra por separado los resultados copiados y el estado que permanece en el servicio. Sigue también las operaciones posteriores a esas copias antes de componer cada línea de salida."
         },
         {
           "type": "paragraph",
@@ -220,7 +239,12 @@
             "No: conserva resultados y estado de trabajo, pero DIAG no describe la segunda visita solicitada."
           ],
           "correctIndex": 2,
-          "explanation": "El contrato del diagnóstico tiene dos requisitos: no añadir una operación y mostrar el dato pedido. Esta revisión conserva las visitas de trabajo, pero muestra el resultado de la primera, no el de la segunda. Revisa la procedencia del dato además de los efectos de obtenerlo. Una referencia de reparación sustituye la llamada del diagnóstico por segunda: muestra DIAG:2, R:1:2:3 y C:3, en sus tres líneas, sin registrar otra visita. No es la única expresión válida si otra conserva los mismos contratos."
+          "explanation": "El contrato del diagnóstico tiene dos requisitos: no añadir una operación y mostrar el dato pedido. Esta revisión conserva las visitas de trabajo, pero muestra el resultado de la primera, no el de la segunda. Revisa la procedencia del dato además de los efectos de obtenerlo. Una referencia de reparación sustituye la llamada del diagnóstico por segunda: muestra DIAG:2, R:1:2:3 y C:3, en sus tres líneas, sin registrar otra visita. No es la única expresión válida si otra conserva los mismos contratos.",
+          "reviewFeedback": [
+            "El diagnóstico tiene un requisito sobre el dato que debe describir. Comprueba esa procedencia además de examinar qué se conservó en las operaciones de trabajo.",
+            "Construye un registro de las llamadas de trabajo solicitadas y del estado que dejan. Úsalo para juzgar si el valor de C implica una operación añadida.",
+            "Comprueba las dos condiciones de la observación: qué dato describe y qué efectos introduce obtenerlo. Apoya cada parte del juicio en el registro correspondiente."
+          ]
         }
       ]
     },
@@ -248,7 +272,8 @@
             "DIAG:12\nR:12"
           ],
           "outputComparison": "exact",
-          "explanation": "Cada llamada calcula 3 por 4 y devuelve 12 sin registrar visitas ni modificar un resumen externo. La segunda llamada no cambia preparadas. main imprime DIAG:12, un salto y R:12; la impresión sí añade una línea a la salida."
+          "explanation": "Cada llamada calcula 3 por 4 y devuelve 12 sin registrar visitas ni modificar un resumen externo. La segunda llamada no cambia preparadas. main imprime DIAG:12, un salto y R:12; la impresión sí añade una línea a la salida.",
+          "reviewFeedback": "Calcula cada llamada a partir de sus argumentos y examina qué objetos puede modificar su cuerpo. Distingue ese cálculo de la impresión realizada en main y reconstruye sus separadores."
         },
         {
           "type": "multiple_choice",
@@ -260,7 +285,12 @@
             "Toda segunda llamada añade necesariamente una visita, aunque su cuerpo sólo calcule el producto de sus argumentos."
           ],
           "correctIndex": 1,
-          "explanation": "Una llamada puede calcular o producir efectos, y no se distingue por el tipo int del retorno ni por contar llamadas sin mirar qué hacen. piezas_de_cajas permite este recálculo en el dominio declarado; registrar_visita registra otra visita. En ambos programas main realiza la impresión adicional."
+          "explanation": "Una llamada puede calcular o producir efectos, y no se distingue por el tipo int del retorno ni por contar llamadas sin mirar qué hacen. piezas_de_cajas permite este recálculo en el dominio declarado; registrar_visita registra otra visita. En ambos programas main realiza la impresión adicional.",
+          "reviewFeedback": [
+            "El tipo del retorno describe el valor entregado, no todos los efectos de obtenerlo. Examina el cuerpo y su contexto antes de usar ese tipo como prueba de que repetir es inocuo.",
+            "Revisa el cálculo y sus efectos bajo las condiciones declaradas. Limita tu conclusión a lo que se examinó y distingue la función de la impresión que la rodea.",
+            "Una llamada ejecuta el cuerpo de la función elegida. Reconsidera si ser la segunda llamada determina por sí solo que se registre una visita, sin mirar qué operaciones contiene."
+          ]
         },
         {
           "type": "note",
@@ -292,7 +322,8 @@
             "DIAG:2\nR:3:1"
           ],
           "outputComparison": "exact",
-          "explanation": "La primera retirada deja 3 unidades. El diagnóstico vuelve a retirar y muestra 2. La segunda retirada de trabajo deja 1. La revisión produjo DIAG:2 y R:3:1 porque realizó tres retiradas, aunque sólo se solicitaron dos."
+          "explanation": "La primera retirada deja 3 unidades. El diagnóstico vuelve a retirar y muestra 2. La segunda retirada de trabajo deja 1. La revisión produjo DIAG:2 y R:3:1 porque realizó tres retiradas, aunque sólo se solicitaron dos.",
+          "reviewFeedback": "Sigue cuántas unidades quedan antes y después de cada llamada, también dentro del diagnóstico. Conserva por separado los retornos guardados y usa el estado vigente cuando ocurra la siguiente retirada."
         },
         {
           "type": "paragraph",
@@ -334,7 +365,12 @@
             "Cualquier expresión de diagnóstico será válida si el programa termina con código 0, aunque ejecute nuevas retiradas."
           ],
           "correctIndex": 0,
-          "explanation": "La observación puede conservar el estado y los resultados del trabajo y aun añadir bytes a la salida. Lo comprobado depende también del dato que debía mostrarse, los casos y la revisión ejecutada. Un retorno 0 no demuestra esos contratos."
+          "explanation": "La observación puede conservar el estado y los resultados del trabajo y aun añadir bytes a la salida. Lo comprobado depende también del dato que debía mostrarse, los casos y la revisión ejecutada. Un retorno 0 no demuestra esos contratos.",
+          "reviewFeedback": [
+            "Separa operaciones, resultados y texto producido. Comprueba que tu afirmación identifique lo observado y sus condiciones, sin convertir esos casos en una garantía sobre cualquier revisión.",
+            "La salida completa incluye también las impresiones de diagnóstico. Revisa qué parte comparaste y qué exigiría afirmar identidad de todos los bytes del programa.",
+            "El código de terminación comunica cómo finalizó la ejecución, pero no enumera sus operaciones. Revisa qué criterio examinaría los efectos y el dato solicitado por el diagnóstico."
+          ]
         },
         {
           "type": "paragraph",
@@ -350,7 +386,12 @@
             "Tratar la salida anterior como nueva porque los dos programas utilizan el mismo nombre de función."
           ],
           "correctIndex": 1,
-          "explanation": "Una fuente editada necesita una ejecución atribuible a ella. Mantener preparación y operaciones hace pertinente el contraste; separar registros conserva qué revisión produjo cada observación. La recuperación reutiliza el método de procedencia sin convertir la salida guardada en evidencia nueva."
+          "explanation": "Una fuente editada necesita una ejecución atribuible a ella. Mantener preparación y operaciones hace pertinente el contraste; separar registros conserva qué revisión produjo cada observación. La recuperación reutiliza el método de procedencia sin convertir la salida guardada en evidencia nueva.",
+          "reviewFeedback": [
+            "Un registro debe conservar lo que ocurrió. Reconsidera qué ejecución respaldaría el valor nuevo antes de modificar una observación atribuida a otra revisión.",
+            "Comprueba el vínculo entre la fuente, su construcción y la ejecución registrada. Mantén identificables las condiciones de cada contraste y la revisión que produjo cada salida.",
+            "Un nombre de función puede mantenerse mientras cambia su cuerpo o la forma de llamarla. Revisa qué evidencia une el resultado guardado con la revisión que quieres comprobar."
+          ]
         }
       ]
     }

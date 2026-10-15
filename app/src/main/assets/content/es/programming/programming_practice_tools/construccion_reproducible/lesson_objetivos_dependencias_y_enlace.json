@@ -30,7 +30,8 @@
             "3:0:0"
           ],
           "outputComparison": "exact",
-          "explanation": "Faltan tres unidades en la primera llamada. En la igualdad y cuando sobra disponibilidad, faltan cero. El programa imprime los tres resultados en ese orden; una construcción satisfactoria necesitará además contrastarlos con este contrato."
+          "explanation": "Faltan tres unidades en la primera llamada. En la igualdad y cuando sobra disponibilidad, faltan cero. El programa imprime los tres resultados en ese orden; una construcción satisfactoria necesitará además contrastarlos con este contrato.",
+          "reviewFeedback": "Separa las llamadas que terminan por la rama condicional de las que alcanzan la resta. Calcula el retorno de cada llamada antes de ordenar los caracteres que inserta cout."
         }
       ]
     },
@@ -85,7 +86,12 @@
             "La firma y el código objeto de faltantes.cpp, aunque esa fuente no se haya compilado."
           ],
           "correctIndex": 0,
-          "explanation": "La cabecera declara la interfaz. El cuerpo está en otra fuente y su código debe obtenerse e incorporarse mediante la construcción. Incluir una declaración no selecciona por sí solo la implementación ni crea su producto."
+          "explanation": "La cabecera declara la interfaz. El cuerpo está en otra fuente y su código debe obtenerse e incorporarse mediante la construcción. Incluir una declaración no selecciona por sí solo la implementación ni crea su producto.",
+          "reviewFeedback": [
+            "Identifica qué información de la llamada conoce el compilador después de leer la cabecera. Distingue esa información de los productos que esperas reunir al construir.",
+            "Separa la inclusión textual de la cabecera de la elección de entradas de un objetivo. Explica dónde quedaría conservada la selección automática de fuentes que estás suponiendo.",
+            "Examina qué contiene la cabecera mostrada y qué pasos serían necesarios para obtener código objeto de una implementación. Comprueba de dónde procedería el producto que atribuyes al texto incluido."
+          ]
         }
       ]
     },
@@ -122,7 +128,12 @@
             "Se obtuvo una cabecera con declaraciones; la implementación no participa hasta ejecutar revisar."
           ],
           "correctIndex": 1,
-          "explanation": "Una biblioteca estática reúne código objeto. Construirla no ejecuta main ni acredita el enlace del cliente o el cumplimiento de su contrato. La cabecera mantenida no es el producto generado por add_library."
+          "explanation": "Una biblioteca estática reúne código objeto. Construirla no ejecuta main ni acredita el enlace del cliente o el cumplimiento de su contrato. La cabecera mantenida no es el producto generado por add_library.",
+          "reviewFeedback": [
+            "Ubica main dentro de los archivos del proyecto y revisa qué entradas pertenecen al objetivo que acabas de construir. Explica qué producto estás atribuyendo a esa petición.",
+            "Vincula el producto con el objetivo solicitado y con lo que efectivamente indica su registro. Revisa qué observación justificaría una afirmación sobre la salida del cliente.",
+            "Distingue los archivos mantenidos de los productos que se generan al traducir la implementación. Sitúa la cabecera de tu respuesta en ese recorrido."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -134,7 +145,12 @@
             "Porque la descripción debe seleccionar las fuentes o dependencias que aportan la definición; la presencia de un archivo no establece esa relación."
           ],
           "correctIndex": 2,
-          "explanation": "La descripción identifica qué productos se construyen y qué entradas utilizan. En nuestro diseño faltantes.cpp pertenece a su biblioteca; el cliente debe utilizar ese producto. No copiamos la implementación dentro de main para reemplazar una dependencia ausente."
+          "explanation": "La descripción identifica qué productos se construyen y qué entradas utilizan. En nuestro diseño faltantes.cpp pertenece a su biblioteca; el cliente debe utilizar ese producto. No copiamos la implementación dentro de main para reemplazar una dependencia ausente.",
+          "reviewFeedback": [
+            "Distingue incorporar texto mediante #include de pedir que una herramienta traduzca una fuente. Comprueba qué condición has impuesto a la compilación al elegir esa explicación.",
+            "Separa el lenguaje que procesa el cuerpo de una función de la descripción que configura el proyecto. Revisa qué relación has supuesto entre el nombre de una función y el del proyecto.",
+            "Lee qué entradas y relaciones conserva la descripción para el cliente. Justifica cómo participaría la definición que sus llamadas requieren."
+          ]
         }
       ]
     },
@@ -171,7 +187,12 @@
             "La relación de enlace se establece para revisar; no es una regla de acceso a funciones de C++."
           ],
           "correctIndex": 2,
-          "explanation": "PRIVATE pertenece al lenguaje de construcción y al alcance de la relación de un objetivo. El cliente sigue usando la declaración de la función; la biblioteca estática sigue aportando su producto. No deducimos reglas avanzadas de propagación a partir de este par de objetivos."
+          "explanation": "PRIVATE pertenece al lenguaje de construcción y al alcance de la relación de un objetivo. El cliente sigue usando la declaración de la función; la biblioteca estática sigue aportando su producto. No deducimos reglas avanzadas de propagación a partir de este par de objetivos.",
+          "reviewFeedback": [
+            "Determina si PRIVATE aparece en una declaración de C++ o en una instrucción de construcción. Revisa qué mecanismo establece la accesibilidad de una llamada en cada lenguaje.",
+            "Comprueba qué operación de construcción afecta esa palabra. Relaciónala con el tipo de producto solicitado para la biblioteca, sin confundirlo con los archivos que mantienes.",
+            "Explica el alcance que atribuyes a la relación del objetivo en este par concreto. Evita deducir reglas de acceso o de propagación que todavía no has estudiado."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -183,7 +204,12 @@
             "Ejecutar faltantes para generar la definición y después compilar main.cpp."
           ],
           "correctIndex": 0,
-          "explanation": "La relación conecta los productos requeridos para construir el cliente. Crear una biblioteca estática no la ejecuta. La dependencia exige disponer de su producto al enlazar, pero no convierte el texto de las instrucciones en una agenda fija para todas las compilaciones."
+          "explanation": "La relación conecta los productos requeridos para construir el cliente. Crear una biblioteca estática no la ejecuta. La dependencia exige disponer de su producto al enlazar, pero no convierte el texto de las instrucciones en una agenda fija para todas las compilaciones.",
+          "reviewFeedback": [
+            "Identifica los productos que necesita el enlace y cómo se relacionan con el objetivo solicitado. Revisa qué tareas dependen entre sí y cuáles podrían ser independientes.",
+            "Sigue la relación declarada por target_link_libraries desde el objetivo solicitado. Comprueba si tu interpretación permite disponer de los productos que necesita para completarse.",
+            "Examina qué producto estático has propuesto ejecutar y dónde se encuentra main en este proyecto. Distingue obtener ese producto de iniciar un programa."
+          ]
         }
       ]
     },
@@ -207,7 +233,12 @@
             "El enlace crea revisar sin esa definición y la ejecución completa la biblioteca cuando se llama a la función."
           ],
           "correctIndex": 1,
-          "explanation": "La declaración permite compilar las llamadas. El enlace del ejecutable necesita su definición. En esta descripción los archivos y objetivos son válidos para configurar; falta relacionar el producto de la biblioteca con el cliente."
+          "explanation": "La declaración permite compilar las llamadas. El enlace del ejecutable necesita su definición. En esta descripción los archivos y objetivos son válidos para configurar; falta relacionar el producto de la biblioteca con el cliente.",
+          "reviewFeedback": [
+            "Examina cómo se incorpora la declaración de la cabecera al procesar una fuente C++. Revisa por qué atribuyes esa operación a una relación entre productos de construcción.",
+            "Sigue por separado la comprobación de la llamada y la reunión de productos del ejecutable. Contrasta las necesidades de cada una con lo que aporta esta descripción.",
+            "Localiza cuándo debe estar disponible la definición llamada para obtener el ejecutable de este proyecto. Explica con qué producto llegaría a iniciarse la ejecución que supones."
+          ]
         },
         {
           "type": "paragraph",
@@ -274,7 +305,8 @@
             "4:0:0"
           ],
           "outputComparison": "exact",
-          "explanation": "Sólo la llamada que necesita unidades alcanza la expresión modificada: devuelve cuatro en lugar de tres. La igualdad y el exceso de disponibilidad siguen retornando cero. El programa puede compilar y enlazar, pero esta revisión ya no cumple el contrato original de cantidades faltantes."
+          "explanation": "Sólo la llamada que necesita unidades alcanza la expresión modificada: devuelve cuatro en lugar de tres. La igualdad y el exceso de disponibilidad siguen retornando cero. El programa puede compilar y enlazar, pero esta revisión ya no cumple el contrato original de cantidades faltantes.",
+          "reviewFeedback": "Traza hasta el retorno que alcanza cada llamada. Comprueba cuándo interviene el término añadido y mantén separados el comportamiento de esta revisión y el resultado exigido por el contrato original."
         },
         {
           "type": "paragraph",
@@ -290,7 +322,12 @@
             "La coincidencia obliga a cambiar el contrato de cantidades faltantes para que la revisión sea correcta."
           ],
           "correctIndex": 0,
-          "explanation": "Predecir lo que hace un programa y definir lo que debe hacer son tareas distintas. La revisión suma una unidad en su rama positiva. Una predicción acertada no convierte esa modificación en una reparación del contrato."
+          "explanation": "Predecir lo que hace un programa y definir lo que debe hacer son tareas distintas. La revisión suma una unidad en su rama positiva. Una predicción acertada no convierte esa modificación en una reparación del contrato.",
+          "reviewFeedback": [
+            "Separa qué esperabas de esta revisión y qué exige el problema original. Justifica de qué información procede cada uno de esos criterios.",
+            "Identifica qué comprueba la operación de enlace sobre los productos disponibles. Pregúntate cómo esa comprobación abarcaría el significado del cálculo en todas las entradas.",
+            "Antes de modificar un requisito, determina de dónde procede y por qué se acordó. Examina si observar el comportamiento de una revisión basta para justificar ese cambio."
+          ]
         },
         {
           "type": "paragraph",
@@ -345,7 +382,12 @@
             "Corregir la sintaxis de la implementación y volver a construir el cliente con la dependencia conservada."
           ],
           "correctIndex": 2,
-          "explanation": "La construcción tiene que compilar la fuente de la biblioteca antes de utilizar su producto. Un error dentro de esa fuente no se repara eliminando la relación de enlace ni atribuyendo el diagnóstico al cliente. La misma construcción puede incluir varias tareas: identifica el archivo y el paso que realmente fallaron."
+          "explanation": "La construcción tiene que compilar la fuente de la biblioteca antes de utilizar su producto. Un error dentro de esa fuente no se repara eliminando la relación de enlace ni atribuyendo el diagnóstico al cliente. La misma construcción puede incluir varias tareas: identifica el archivo y el paso que realmente fallaron.",
+          "reviewFeedback": [
+            "Relaciona el diagnóstico de return con el archivo y la instrucción de C++ que lo originaron. Pregúntate cómo la relación entre objetivos corregiría esa sintaxis.",
+            "Localiza qué fuente contiene la instrucción indicada y en qué paso se traduce su cuerpo. Revisa qué cambiaría ese diagnóstico si sólo editaras el cliente.",
+            "Identifica el lugar al que corresponde el diagnóstico y qué revisión obtendrías tras intervenir allí. Conserva la relación entre los archivos que se construyen y el cliente que quieres comprobar."
+          ]
         },
         {
           "type": "paragraph",
@@ -372,7 +414,8 @@
           "answers": [
             "soporte"
           ],
-          "explanation": "soporte es el objetivo de biblioteca definido por add_library. calculo.cpp es una entrada de ese objetivo, Inspeccion nombra el proyecto y mirar es el cliente. La relación utiliza el objetivo que aporta el producto, sin adivinar el nombre físico de su archivo."
+          "explanation": "soporte es el objetivo de biblioteca definido por add_library. calculo.cpp es una entrada de ese objetivo, Inspeccion nombra el proyecto y mirar es el cliente. La relación utiliza el objetivo que aporta el producto, sin adivinar el nombre físico de su archivo.",
+          "reviewFeedback": "Clasifica los nombres del fragmento según su papel: proyecto, objetivo o fuente. Después comprueba qué producto necesita el cliente en la relación de enlace que estás completando."
         },
         {
           "type": "paragraph",
@@ -460,7 +503,8 @@
             "1:0:0"
           ],
           "outputComparison": "exact",
-          "explanation": "Los puntos 12 superan 8, pero 8 no supera 8; 5 tampoco supera 8. La variante cambia sólo la frontera de igualdad. Conservar nombres y firma no garantiza conservar el contrato que el cliente espera."
+          "explanation": "Los puntos 12 superan 8, pero 8 no supera 8; 5 tampoco supera 8. La variante cambia sólo la frontera de igualdad. Conservar nombres y firma no garantiza conservar el contrato que el cliente espera.",
+          "reviewFeedback": "Aplica la comparación escrita a cada pareja, sin reemplazarla por la política que usaba otra revisión. Revisa la frontera de igualdad y el orden de impresión."
         },
         {
           "type": "paragraph",
@@ -488,7 +532,8 @@
             "0:30:0"
           ],
           "outputComparison": "exact",
-          "explanation": "Si no se necesita ninguna unidad, faltan cero. Con disponibilidad cero y necesidad treinta faltan treinta. Con disponibilidad treinta y necesidad cero faltan cero. Todos los argumentos pertenecen al dominio; comparar estos casos recupera el contrato propio de esta función."
+          "explanation": "Si no se necesita ninguna unidad, faltan cero. Con disponibilidad cero y necesidad treinta faltan treinta. Con disponibilidad treinta y necesidad cero faltan cero. Todos los argumentos pertenecen al dominio; comparar estos casos recupera el contrato propio de esta función.",
+          "reviewFeedback": "Comprueba qué representan los dos argumentos de cada llamada: disponibilidad y necesidad. Sigue el camino que toma cada pareja extrema y revisa el formato sin trasladar resultados del proyecto de admisión."
         },
         {
           "type": "order_code",
@@ -506,7 +551,8 @@
             0,
             2
           ],
-          "explanation": "La descripción actual determina las reglas; su construcción produce el ejecutable que se utilizará. Después se obtiene la salida y se contrasta con el oráculo ya calculado. No deducimos el comportamiento de esta revisión a partir de una ejecución anterior."
+          "explanation": "La descripción actual determina las reglas; su construcción produce el ejecutable que se utilizará. Después se obtiene la salida y se contrasta con el oráculo ya calculado. No deducimos el comportamiento de esta revisión a partir de una ejecución anterior.",
+          "reviewFeedback": "Para cada acción de tu orden, anota qué entrada necesita y qué evidencia produce. Comprueba que ninguna utilice un producto o un resultado que todavía no está disponible."
         },
         {
           "type": "multiple_choice",
@@ -518,7 +564,12 @@
             "La compilación del cliente prueba que cualquier cambio futuro de la implementación conservará esos resultados."
           ],
           "correctIndex": 1,
-          "explanation": "Los resultados pertenecen a los archivos, herramientas, opciones y casos utilizados. Una biblioteca estática no se convierte en ejecutable, y los cambios futuros necesitan su propia evidencia. Este trabajo inicia dependencias locales; no acredita instalación, paquetes, exportación ni cadenas generales de requisitos."
+          "explanation": "Los resultados pertenecen a los archivos, herramientas, opciones y casos utilizados. Una biblioteca estática no se convierte en ejecutable, y los cambios futuros necesitan su propia evidencia. Este trabajo inicia dependencias locales; no acredita instalación, paquetes, exportación ni cadenas generales de requisitos.",
+          "reviewFeedback": [
+            "Vuelve al tipo de producto que genera el objetivo de biblioteca y a los casos que se ejecutaron. Justifica el salto que haces de esa observación al conjunto de bibliotecas.",
+            "Relaciona cada conclusión con la revisión y las llamadas de las que procede la evidencia. Indica qué necesitarías para sostener afirmaciones más amplias.",
+            "Distingue el producto construido ahora de los que resultarían tras otras ediciones. Explica qué evidencia tienes sobre el efecto de esos cambios todavía no realizados."
+          ]
         }
       ]
     }

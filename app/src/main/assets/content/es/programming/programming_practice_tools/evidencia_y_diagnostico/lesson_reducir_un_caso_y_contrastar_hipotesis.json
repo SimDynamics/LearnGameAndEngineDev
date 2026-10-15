@@ -30,7 +30,12 @@
             "2, porque debe contar cualquier elemento presente."
           ],
           "correctIndex": 1,
-          "explanation": "El contrato exige un recuento independiente por llamada. Ni 0 ni 3 alcanzan 5; el resultado anterior no forma parte de esta consulta."
+          "explanation": "El contrato exige un recuento independiente por llamada. Ni 0 ni 3 alcanzan 5; el resultado anterior no forma parte de esta consulta.",
+          "reviewFeedback": [
+            "Identifica qué datos pertenecen a la consulta actual. Reconsidera si el resultado de una llamada anterior forma parte de lo que el contrato pide contar ahora.",
+            "Aplica a cada dato de esta consulta la condición del contrato y mantén separado el recuento de cualquier llamada anterior.",
+            "Distingue el tamaño del vector del número de elementos que cumplen la condición. Revisa qué comprobación necesita superar cada dato para contarlo."
+          ]
         }
       ]
     },
@@ -58,7 +63,12 @@
             "Las dos hipótesis siguen siendo compatibles con esa observación."
           ],
           "correctIndex": 2,
-          "explanation": "6 está por encima del límite y es la primera llamada. La prueba no examina ni la igualdad con el mínimo ni la posible dependencia de llamadas anteriores."
+          "explanation": "6 está por encima del límite y es la primera llamada. La prueba no examina ni la igualdad con el mínimo ni la posible dependencia de llamadas anteriores.",
+          "reviewFeedback": [
+            "Una comparación puede coincidir con otra para ciertos datos. Revisa si la consulta observada pone a prueba precisamente la diferencia entre las reglas de frontera.",
+            "La primera llamada no tiene una consulta anterior con la que contrastar una dependencia. Revisa qué observación respaldaría la inicialización que estás suponiendo.",
+            "Calcula por separado lo que predice cada hipótesis para ese mismo experimento. Distingue una coincidencia observada de una explicación identificada."
+          ]
         },
         {
           "type": "paragraph",
@@ -90,7 +100,12 @@
             "Consultar dos vectores vacíos con mínimo 2, comenzando un proceso nuevo para cada uno."
           ],
           "correctIndex": 1,
-          "explanation": "El primer dato está justo en la frontera y la segunda llamada no tiene datos que contar. Las otras propuestas no combinan una igualdad que deba contar con una consulta posterior dentro del mismo proceso."
+          "explanation": "El primer dato está justo en la frontera y la segunda llamada no tiene datos que contar. Las otras propuestas no combinan una igualdad que deba contar con una consulta posterior dentro del mismo proceso.",
+          "reviewFeedback": [
+            "Examina qué propiedad investiga el dato elegido y qué historia conserva cada proceso. Reconsidera si repetirlo con un reinicio permite observar dependencia entre llamadas.",
+            "Comprueba que el experimento elegido examine las dos propiedades solicitadas: la condición de frontera y la relación entre consultas dentro de una misma ejecución.",
+            "Revisa qué información pueden aportar consultas sin datos y procesos separados sobre una cuenta dejada por una llamada anterior. Cada hipótesis necesita una condición que la ponga a prueba."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -102,7 +117,12 @@
             "H_frontera: 0:1; H_arrastre: 1:0."
           ],
           "correctIndex": 0,
-          "explanation": "Con >, el 2 no cuenta y el vacío tampoco. Con >= y un total conservado, el 2 incrementa ese total a 1 y la segunda llamada lo devuelve sin incrementarlo. Estas predicciones son distintas y se fijan antes de ejecutar."
+          "explanation": "Con >, el 2 no cuenta y el vacío tampoco. Con >= y un total conservado, el 2 incrementa ese total a 1 y la segunda llamada lo devuelve sin incrementarlo. Estas predicciones son distintas y se fijan antes de ejecutar.",
+          "reviewFeedback": [
+            "Aplica por separado las reglas de los dos modelos a la secuencia completa. No mezcles sus predicciones con los resultados exigidos por el contrato.",
+            "La predicción de una hipótesis procede de su regla, aunque contradiga el requisito. Recalcula cada consulta bajo el modelo correspondiente en lugar de copiar los esperados del contrato.",
+            "Anota para cada modelo qué comparación usa y qué conserva entre llamadas. Después revisa qué podría cambiar al recibir una colección sin elementos."
+          ]
         },
         {
           "type": "paragraph",
@@ -133,7 +153,8 @@
           "answers": [
             "1:1"
           ],
-          "explanation": "La primera llamada encuentra un dato válido e incrementa acumulado de 0 a 1. El vector de la segunda está vacío, así que no hay incrementos; sin embargo, la función devuelve el 1 conservado. El requisito pedía 1:0. La observación coincide con H_arrastre y contradice H_frontera para esta prueba."
+          "explanation": "La primera llamada encuentra un dato válido e incrementa acumulado de 0 a 1. El vector de la segunda está vacío, así que no hay incrementos; sin embargo, la función devuelve el 1 conservado. El requisito pedía 1:0. La observación coincide con H_arrastre y contradice H_frontera para esta prueba.",
+          "reviewFeedback": "Sigue la preparación del contador y sus cambios a lo largo de las dos llamadas. Distingue no ejecutar incrementos de preparar de nuevo el contador; predice la implementación mostrada antes de juzgar su contrato."
         },
         {
           "type": "multiple_choice",
@@ -145,7 +166,12 @@
             "La respuesta incluye un recuento que no procede de los datos de esta llamada."
           ],
           "correctIndex": 2,
-          "explanation": "Un vector vacío tiene cero datos que puedan calificar, tanto con > como con >=. El 1 procede de la llamada anterior: cambiar sólo la comparación no explica por qué se devuelve un recuento para una consulta sin datos."
+          "explanation": "Un vector vacío tiene cero datos que puedan calificar, tanto con > como con >=. El 1 procede de la llamada anterior: cambiar sólo la comparación no explica por qué se devuelve un recuento para una consulta sin datos.",
+          "reviewFeedback": [
+            "Comprueba en el dominio declarado si una colección vacía está admitida. No añadas una precondición sólo para explicar el resultado que apareció.",
+            "Revisa qué instrucciones del recorrido llegarían a ejecutarse al no haber elementos. Justifica cómo afectaría ese cambio de comparación al valor devuelto en esta consulta.",
+            "Relaciona el recuento devuelto con los datos que realmente recibió esta llamada. Comprueba qué información podría proceder de fuera de su consulta."
+          ]
         }
       ]
     },
@@ -173,7 +199,12 @@
             "Consultar {2}, mínimo 2; después {}, mínimo 2, sin reiniciar el proceso."
           ],
           "correctIndex": 2,
-          "explanation": "La primera propuesta inicia otro proceso entre consultas: requiere 1:0 y devuelve 1:0, por lo que ya no reproduce el fallo. En la segunda, ambas colecciones están vacías y el contador permanece a cero: produce 0:0. La tercera conserva las llamadas dentro del mismo proceso: requiere 1:0, pero devuelve 1:1 y sí reproduce el recuento arrastrado. Una reproducción pequeña debe conservar la situación que causaba la contradicción."
+          "explanation": "La primera propuesta inicia otro proceso entre consultas: requiere 1:0 y devuelve 1:0, por lo que ya no reproduce el fallo. En la segunda, ambas colecciones están vacías y el contador permanece a cero: produce 0:0. La tercera conserva las llamadas dentro del mismo proceso: requiere 1:0, pero devuelve 1:1 y sí reproduce el recuento arrastrado. Una reproducción pequeña debe conservar la situación que causaba la contradicción.",
+          "reviewFeedback": [
+            "Reducir exige conservar la condición que exponía el problema. Revisa qué historia queda disponible si comienzas otro proceso entre las consultas.",
+            "Sigue qué instrucciones podrían modificar el contador en la secuencia que elegiste. Una reproducción debe producir la contradicción, no sólo contener varias llamadas.",
+            "Comprueba desde una preparación conocida que la secuencia conserve la clase de contradicción investigada. El tamaño pequeño no basta por sí solo para acreditarla."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -185,7 +216,12 @@
             "La segunda devuelve 1 porque el programa conserva el valor de minimo."
           ],
           "correctIndex": 0,
-          "explanation": "Con dos vectores vacíos el contador permanece a cero. Para esta implementación, la reproducción necesita una llamada que incremente el total y otra posterior que muestre el recuento indebido. Hay otras reproducciones pequeñas válidas con un dato que califique; no imponemos {2} como única forma posible."
+          "explanation": "Con dos vectores vacíos el contador permanece a cero. Para esta implementación, la reproducción necesita una llamada que incremente el total y otra posterior que muestre el recuento indebido. Hay otras reproducciones pequeñas válidas con un dato que califique; no imponemos {2} como única forma posible.",
+          "reviewFeedback": [
+            "Vuelve a seguir el contador con los datos que quedaron después de la reducción. Juzga si todavía aparece una diferencia frente al contrato, sin asumir que quitar datos conserva el fallo.",
+            "Una llamada sólo modifica el recuento cuando se ejecutan las instrucciones que lo cambian. Revisa qué trabajo realiza cada recorrido tras quitar ese dato.",
+            "Distingue el argumento usado para comparar del objeto usado para contar. Localiza qué instrucciones pueden copiar, incrementar o devolver cada valor."
+          ]
         },
         {
           "type": "note",
@@ -212,7 +248,8 @@
           "answers": [
             "0:1"
           ],
-          "explanation": "El vacío inicial no incrementa acumulado y devuelve 0. Después, el dato 2 incrementa el total a 1 y devuelve 1. En este orden concreto la salida coincide con lo requerido, aunque el código sigue siendo el mismo que fallaba con el orden anterior."
+          "explanation": "El vacío inicial no incrementa acumulado y devuelve 0. Después, el dato 2 incrementa el total a 1 y devuelve 1. En este orden concreto la salida coincide con lo requerido, aunque el código sigue siendo el mismo que fallaba con el orden anterior.",
+          "reviewFeedback": "Comienza con la preparación indicada y sigue las consultas en su nuevo orden. No traslades a este experimento el contador final de otra ejecución ni reinicies entre las llamadas de ésta."
         },
         {
           "type": "multiple_choice",
@@ -224,7 +261,12 @@
             "Es un problema de igualdad; sustituye >= por > y prueba ese mismo orden."
           ],
           "correctIndex": 1,
-          "explanation": "El contador arrastrado sólo contradice este contrato cuando un recuento anterior contamina una consulta posterior. El control ayuda a entender la dependencia del orden, pero no modifica la implementación ni invalida el caso que falla."
+          "explanation": "El contador arrastrado sólo contradice este contrato cuando un recuento anterior contamina una consulta posterior. El control ayuda a entender la dependencia del orden, pero no modifica la implementación ni invalida el caso que falla.",
+          "reviewFeedback": [
+            "Revisa si el contrato impone ese orden de consultas o si lo elegiste para el control. Una modificación de la prueba debe distinguirse de una modificación de la función.",
+            "Identifica qué cambió entre el caso y su control, y conserva la evidencia de ambos. Limita tu conclusión al comportamiento que examinó cada uno.",
+            "Comprueba qué hipótesis pretendía aislar el cambio de orden. Cambiar también la comparación añade una modificación de la implementación que necesita su propia justificación."
+          ]
         },
         {
           "type": "paragraph",
@@ -289,7 +331,12 @@
             "La primera conserva la causa; la segunda prueba la independencia entre llamadas."
           ],
           "correctIndex": 0,
-          "explanation": "El requisito permite varias consultas en una misma ejecución. La reparación debe funcionar en ese contexto. Reiniciar el programa entre consultas puede hacer que la versión defectuosa parezca correcta, porque borra la condición que la prueba tenía que conservar."
+          "explanation": "El requisito permite varias consultas en una misma ejecución. La reparación debe funcionar en ese contexto. Reiniciar el programa entre consultas puede hacer que la versión defectuosa parezca correcta, porque borra la condición que la prueba tenía que conservar.",
+          "reviewFeedback": [
+            "Compara qué cambia en la función y qué cambia en las condiciones de ejecución. Examina cuál de esas decisiones permite probar varias consultas dentro del contexto exigido.",
+            "Relee en qué contexto debe funcionar la consulta. Reconsidera si imponer procesos separados conserva ese contexto o elimina la condición que se quería examinar.",
+            "Sigue cuándo se ejecuta la preparación del contador y qué historia existe entre consultas. Revisa si tu propuesta de prueba llega a observar una llamada después de otra en el mismo proceso."
+          ]
         }
       ]
     },
@@ -312,7 +359,8 @@
           "answers": [
             "2:4"
           ],
-          "explanation": "La primera llamada cuenta 8 y 5 y deja acumulado en 2. La segunda cuenta 6 y 7, los añade a ese total y devuelve 4. El contrato exige 2:2. El caso vacío pasó por una salida especial; la dependencia que contaminaba otras consultas permaneció."
+          "explanation": "La primera llamada cuenta 8 y 5 y deja acumulado en 2. La segunda cuenta 6 y 7, los añade a ese total y devuelve 4. El contrato exige 2:2. El caso vacío pasó por una salida especial; la dependencia que contaminaba otras consultas permaneció.",
+          "reviewFeedback": "Determina si las consultas mostradas pasan por el retorno especial. Sigue después el contador en las dos llamadas efectivas, separando lo que ejecuta esa reparación parcial de lo que pide el requisito."
         },
         {
           "type": "multiple_choice",
@@ -324,7 +372,12 @@
             "Conservar el código y sustituir el resultado esperado de la segunda consulta por el total observado."
           ],
           "correctIndex": 0,
-          "explanation": "El resultado esperado procede del requisito: en {6, 7} sólo hay dos datos. Una reparación debe explicar y corregir la causa, además de conservar el caso que detectó el fallo. Ajustar el oráculo al resultado defectuoso haría que la prueba dejara de examinar el contrato."
+          "explanation": "El resultado esperado procede del requisito: en {6, 7} sólo hay dos datos. Una reparación debe explicar y corregir la causa, además de conservar el caso que detectó el fallo. Ajustar el oráculo al resultado defectuoso haría que la prueba dejara de examinar el contrato.",
+          "reviewFeedback": [
+            "Relaciona la reparación propuesta con la causa que explicaba el caso inicial. Comprueba qué controles y variaciones conservarías para examinar esa explicación.",
+            "Una prueba que pasa examina las condiciones que ejercita. Reconsidera qué evidencia quedaría sobre consultas no vacías si dejaras de probarlas.",
+            "Distingue el resultado observado del criterio con que lo juzgas. Revisa de dónde procede el esperado antes de sustituirlo por el valor de la implementación investigada."
+          ]
         },
         {
           "type": "paragraph",
@@ -355,7 +408,8 @@
           "answers": [
             "1:2:3"
           ],
-          "explanation": "Cada llamada incrementa el mismo numero_visita y devuelve el total alcanzado. Ahora conservar esa historia expresa precisamente el requisito; preparar a cero en cada llamada haría que todas devolvieran 1."
+          "explanation": "Cada llamada incrementa el mismo numero_visita y devuelve el total alcanzado. Ahora conservar esa historia expresa precisamente el requisito; preparar a cero en cada llamada haría que todas devolvieran 1.",
+          "reviewFeedback": "Sigue las llamadas de este programa y cuándo se prepara su contador. Calcula primero lo que hace el cuerpo mostrado; después contrasta esa historia con el nuevo contrato de visitas."
         },
         {
           "type": "multiple_choice",
@@ -367,7 +421,12 @@
             "contar_altos necesita independencia por consulta; registrar_visita necesita continuidad entre llamadas."
           ],
           "correctIndex": 2,
-          "explanation": "No juzgamos una organización sólo por su apariencia. Contrastamos el resultado con el contrato y con el contexto de uso. La misma conservación de historia que contaminaba una consulta es necesaria para numerar las visitas de una ejecución."
+          "explanation": "No juzgamos una organización sólo por su apariencia. Contrastamos el resultado con el contrato y con el contexto de uso. La misma conservación de historia que contaminaba una consulta es necesaria para numerar las visitas de una ejecución.",
+          "reviewFeedback": [
+            "La ubicación de un contador no establece por sí sola su corrección. Contrasta qué relación entre llamadas exige cada contrato antes de justificar conservar historia en ambos.",
+            "Reconsidera qué información necesita una operación que numera visitas desde el comienzo. Una reparación útil para otro contrato no se convierte automáticamente en una regla universal.",
+            "Explica qué debe pertenecer a una consulta y qué debe continuar entre operaciones en cada programa. Usa sus contratos para juzgar la organización elegida."
+          ]
         },
         {
           "type": "paragraph",

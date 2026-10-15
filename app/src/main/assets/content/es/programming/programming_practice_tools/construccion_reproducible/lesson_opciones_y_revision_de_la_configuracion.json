@@ -48,7 +48,12 @@
             "La firma bool admitir garantiza las dos políticas a la vez, sin necesidad de elegir una implementación."
           ],
           "correctIndex": 1,
-          "explanation": "Una frontera estricta es correcta cuando forma parte del contrato acordado. La firma fija tipos y nombre, pero no decide la política de igualdad. La elección debe conservarse junto con los archivos, la construcción y los casos."
+          "explanation": "Una frontera estricta es correcta cuando forma parte del contrato acordado. La firma fija tipos y nombre, pero no decide la política de igualdad. La elección debe conservarse junto con los archivos, la construcción y los casos.",
+          "reviewFeedback": [
+            "Vuelve a escribir en símbolos qué relación describe la palabra «mayores» en el acuerdo. Examina aparte qué ocurre con un par empatado y decide si su rechazo corresponde a lo acordado.",
+            "Separa la política acordada del resultado observado. Elige un par que ponga a prueba la frontera y justifica qué debería ocurrir antes de contrastarlo con la implementación.",
+            "Distingue la información que aporta la declaración de la que determina el cuerpo. Justifica dónde encontrarías el trato de puntos iguales sin atribuírselo sólo al nombre o a los tipos de la función."
+          ]
         }
       ]
     },
@@ -85,7 +90,12 @@
             "Es la entrada que std::cin entregará al programa para decidir la igualdad."
           ],
           "correctIndex": 0,
-          "explanation": "La cadena es un argumento de ayuda en la declaración de la opción. La selección requiere instrucciones de CMake y el comportamiento requiere una implementación C++. Los datos de ejecución se proporcionan por otro mecanismo."
+          "explanation": "La cadena es un argumento de ayuda en la declaración de la opción. La selección requiere instrucciones de CMake y el comportamiento requiere una implementación C++. Los datos de ejecución se proporcionan por otro mecanismo.",
+          "reviewFeedback": [
+            "Explica cómo relacionarías ese texto con la opción y qué necesitarías examinar para justificar el comportamiento del programa. Apoya cada papel en la instrucción que lo utiliza.",
+            "Localiza en qué archivo está la definición de admitir y qué sintaxis describe su cuerpo. Revisa qué haría falta para que el texto que has señalado pudiera desempeñar esa parte.",
+            "Traza el camino de los datos hasta la instrucción que los lee. Antes de atribuirle esa tarea a una cadena de la descripción, localiza qué instrucción la entregaría a la entrada del programa."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -97,7 +107,12 @@
             "El valor elegido OFF; el valor inicial no reemplaza por sí solo esa elección."
           ],
           "correctIndex": 2,
-          "explanation": "option proporciona un valor inicial cuando corresponde. Una elección explícita de esa opción no desaparece porque el código de la descripción siga mostrando ON. Registra el valor utilizado al configurar."
+          "explanation": "option proporciona un valor inicial cuando corresponde. Una elección explícita de esa opción no desaparece porque el código de la descripción siga mostrando ON. Registra el valor utilizado al configurar.",
+          "reviewFeedback": [
+            "Separa el argumento que propone un valor inicial de la elección que recibe esta configuración. Revisa bajo qué condición se utiliza ese inicial antes de atribuirle una imposición en todos los casos.",
+            "Distingue el texto destinado a describir una decisión de las instrucciones que la consultan. Para convertir palabras en una condición ejecutable tendría que existir una operación que realizase esa tarea; localízala antes de suponerla.",
+            "Reconstruye el registro de esta configuración: identifica qué dato es inicial y cuál se ha proporcionado expresamente. Justifica su relación mediante la regla de inicialización de option."
+          ]
         }
       ]
     },
@@ -134,7 +149,12 @@
             "Se ejecuta como parte de admitir y decide si std::cin entrega ON u OFF."
           ],
           "correctIndex": 1,
-          "explanation": "La descripción prepara una construcción. La elección selecciona una implementación al configurar; los argumentos de una llamada no vuelven a interpretar CMakeLists.txt. Si se quiere otra elección de construcción, habrá que configurar y construir esa revisión."
+          "explanation": "La descripción prepara una construcción. La elección selecciona una implementación al configurar; los argumentos de una llamada no vuelven a interpretar CMakeLists.txt. Si se quiere otra elección de construcción, habrá que configurar y construir esa revisión.",
+          "reviewFeedback": [
+            "Separa una llamada de C++ del procesamiento de la descripción. Antes de atribuir la elección a cada llamada, indica qué haría que el programa volviera a leer CMakeLists.txt.",
+            "Ubica cada decisión en su fase y explica qué evidencia permitiría relacionarla con el programa que se ejecuta. Después sigue los datos de una llamada sin mezclar esos dos recorridos.",
+            "Sigue la entrada preparada hasta la instrucción que la lee. Identifica también qué herramienta interpreta ese if y qué recibe; cada conexión entre ambos recorridos necesita una instrucción que la realice."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -146,7 +166,12 @@
             "Una de las dos implementaciones según la elección; el cliente main.cpp pertenece a revisar."
           ],
           "correctIndex": 2,
-          "explanation": "Cada rama procesa un add_library diferente para la misma biblioteca. La presencia de otros archivos no los selecciona automáticamente. La cabecera declara la interfaz; la fuente elegida aporta la definición al producto que el cliente enlaza."
+          "explanation": "Cada rama procesa un add_library diferente para la misma biblioteca. La presencia de otros archivos no los selecciona automáticamente. La cabecera declara la interfaz; la fuente elegida aporta la definición al producto que el cliente enlaza.",
+          "reviewFeedback": [
+            "Busca la instrucción concreta que agrega una fuente al objetivo. Compara esa acción con el simple hecho de que un archivo exista en el directorio y justifica cómo se selecciona para construirlo.",
+            "Revisa si ese archivo contiene una declaración o una definición de la función llamada. Pregúntate qué debe encontrar el enlazador para resolver la llamada y dónde se aportaría.",
+            "Anota por separado los objetivos y los archivos que les asigna cada instrucción. Recorre la descripción con una elección concreta y justifica qué instrucciones se procesan en ese recorrido."
+          ]
         }
       ]
     },
@@ -170,7 +195,8 @@
             "0:1:0"
           ],
           "outputComparison": "exact",
-          "explanation": "La igualdad no satisface >; nueve supera seis y cuatro no lo supera. La salida sigue el orden de las llamadas. Leer ON en option no justificaría atribuir la otra política a esta configuración que eligió OFF."
+          "explanation": "La igualdad no satisface >; nueve supera seis y cuatro no lo supera. La salida sigue el orden de las llamadas. Leer ON en option no justificaría atribuir la otra política a esta configuración que eligió OFF.",
+          "reviewFeedback": "Usa el cuerpo de esta revisión, aunque recuerdes otra política. Resuelve cada par por separado, comprueba cómo muestra cout un bool y vuelve a ensamblar los fragmentos de la salida con su puntuación exacta."
         },
         {
           "type": "paragraph",
@@ -252,7 +278,8 @@
             "1:1:0"
           ],
           "outputComparison": "exact",
-          "explanation": "La igualdad satisface >=; nueve también alcanza el mínimo de seis y cuatro no lo alcanza. Las llamadas son las mismas que con OFF. La diferencia del primer resultado corresponde a la elección y a la implementación que se construyó."
+          "explanation": "La igualdad satisface >=; nueve también alcanza el mínimo de seis y cuatro no lo alcanza. Las llamadas son las mismas que con OFF. La diferencia del primer resultado corresponde a la elección y a la implementación que se construyó.",
+          "reviewFeedback": "En cada comparación, separa el caso de igualdad de los de mayor y menor. Aplica el operador que está escrito y lleva los valores obtenidos a las inserciones de cout, sin copiar una salida anterior."
         },
         {
           "type": "multiple_choice",
@@ -264,7 +291,12 @@
             "No distingue las dos políticas: ambas aceptan ese caso; la igualdad ofrece una comparación que las separa."
           ],
           "correctIndex": 2,
-          "explanation": "Cuando los puntos superan el mínimo, ambas implementaciones devuelven true. Una coincidencia puede ser compatible con más de una explicación. Elegir la igualdad recupera el método de los casos que discriminan hipótesis."
+          "explanation": "Cuando los puntos superan el mínimo, ambas implementaciones devuelven true. Una coincidencia puede ser compatible con más de una explicación. Elegir la igualdad recupera el método de los casos que discriminan hipótesis.",
+          "reviewFeedback": [
+            "Separa que una implementación acepte el caso de que ese caso permita identificarla. Justifica qué parte de tu afirmación se apoya en la observación y qué propiedad de la frontera se puso realmente a prueba.",
+            "Descompón tu afirmación en dos partes: que la regla acepta esos datos y que el ensayo la identifica. Justifica cada parte con la evidencia disponible, sin convertir una coincidencia en una identificación automática.",
+            "Anota qué propiedad de la frontera querías examinar y si el par utilizado deja que se manifieste. Justifica tu conclusión con la relación y el caso, no sólo con la palabra true."
+          ]
         },
         {
           "type": "paragraph",
@@ -305,7 +337,12 @@
             "Ninguno, porque sin -D no puede existir una opción en la caché."
           ],
           "correctIndex": 0,
-          "explanation": "La caché conserva ON bajo las condiciones dadas. El inicial OFF serviría cuando no existiese ya esa elección. Cambiar u omitir argumentos y renovar la configuración son decisiones diferentes; no hay que confundirlas."
+          "explanation": "La caché conserva ON bajo las condiciones dadas. El inicial OFF serviría cuando no existiese ya esa elección. Cambiar u omitir argumentos y renovar la configuración son decisiones diferentes; no hay que confundirlas.",
+          "reviewFeedback": [
+            "Reconstruye la historia del directorio: qué valor se guardó, qué se entrega ahora y qué operaciones se han realizado sobre la caché. Explica tu decisión a partir de esa historia.",
+            "Separa un valor que ya está guardado del que se propone para crearlo. Relee si las condiciones incluyen una renovación y explica qué operación respaldaría sustituir el valor conservado.",
+            "Antes de inferir ausencia, revisa si el directorio ya contiene un valor y qué operación indicaría su retirada. Razona la omisión del argumento a partir de ese estado previo."
+          ]
         }
       ]
     },
@@ -337,7 +374,12 @@
             "La elección de la primera ejecución de revisar, aunque el campo y la descripción hayan cambiado."
           ],
           "correctIndex": 1,
-          "explanation": "Se renueva la configuración y se proporciona ON de forma explícita. El inicial OFF no reemplaza esa elección. Renovar la caché y eliminar el campo son acciones distintas; hay que registrar cuáles se realizaron."
+          "explanation": "Se renueva la configuración y se proporciona ON de forma explícita. El inicial OFF no reemplaza esa elección. Renovar la caché y eliminar el campo son acciones distintas; hay que registrar cuáles se realizaron.",
+          "reviewFeedback": [
+            "Distingue lo que se descarta del directorio anterior de lo que se está entregando en esta configuración. Ubica el valor inicial y la opción escrita ahora antes de resolver su relación.",
+            "Reconstruye la configuración a partir de los datos actuales. Explica por qué participa cada uno y qué supuesto haría falta para conservar una elección histórica.",
+            "Antes de usar una corrida como origen de esta elección, localiza dónde habría quedado registrada y qué operación la llevaría a la nueva configuración. Contrasta ese recorrido con los datos que se proporcionan ahora."
+          ]
         }
       ]
     },
@@ -404,7 +446,12 @@
             "Cambiar el texto de ayuda de option para que sus palabras pasen a std::cin."
           ],
           "correctIndex": 0,
-          "explanation": "El cliente lee puntos y minimo de su entrada de ejecución. La opción selecciona la implementación antes de construirla. El texto de ayuda no se entrega automáticamente a std::cin; sus papeles son distintos."
+          "explanation": "El cliente lee puntos y minimo de su entrada de ejecución. La opción selecciona la implementación antes de construirla. El texto de ayuda no se entrega automáticamente a std::cin; sus papeles son distintos.",
+          "reviewFeedback": [
+            "Sigue cada entero desde el campo editable hasta la extracción de main. Comprueba además qué has mantenido fijo para atribuir una diferencia a los datos de esa corrida.",
+            "Compara la modificación que propones con el lugar desde el que main obtiene puntos y minimo. Distingue una decisión utilizada para construir de un dato consumido al ejecutar antes de relacionarlos.",
+            "Localiza qué instrucción haría llegar las palabras de la ayuda a la lectura de main. Justifica ese recorrido a partir del programa, sin suponer una conexión sólo porque ambos textos sean editables."
+          ]
         }
       ]
     },
@@ -428,7 +475,12 @@
             "El cliente ejecutó su comprobación de entrada y rechazó esos datos antes de llamar a la función."
           ],
           "correctIndex": 2,
-          "explanation": "El código 2 pertenece a la rama de rechazo del cliente ejecutado. Sus datos no satisfacen la preparación exigida. La descripción puede configurar y el programa puede construir correctamente, aunque una ejecución rechace un caso de entrada."
+          "explanation": "El código 2 pertenece a la rama de rechazo del cliente ejecutado. Sus datos no satisfacen la preparación exigida. La descripción puede configurar y el programa puede construir correctamente, aunque una ejecución rechace un caso de entrada.",
+          "reviewFeedback": [
+            "Ubica en una línea de tiempo la ausencia de una fuente y la salida de un proceso ya iniciado. Contrasta tu diagnóstico con las fases que el enunciado declara terminadas y con el canal que produjo el mensaje.",
+            "Revisa qué producto debe existir para que un proceso escriba en stderr y termine con un código. Relaciona ese hecho con la fase a la que has atribuido el problema, sin confundir un diagnóstico de herramienta con un mensaje del programa.",
+            "Localiza la rama que escribe ese mensaje y sigue su recorrido. Comprueba cómo se relacionan los canales, la terminación y las llamadas que sí alcanzó a realizar."
+          ]
         },
         {
           "type": "paragraph",
@@ -463,7 +515,8 @@
           "answers": [
             "ELEGIR_AMPLIA"
           ],
-          "explanation": "if(ELEGIR_AMPLIA) consulta la decisión nombrada por option. criterio es el objetivo de biblioteca y amplia.cpp es la fuente de su rama verdadera. El inicial OFF no cambia el nombre de la decisión ni garantiza que nunca se proporcione otra elección."
+          "explanation": "if(ELEGIR_AMPLIA) consulta la decisión nombrada por option. criterio es el objetivo de biblioteca y amplia.cpp es la fuente de su rama verdadera. El inicial OFF no cambia el nombre de la decisión ni garantiza que nunca se proporcione otra elección.",
+          "reviewFeedback": "Relaciona la condición con la declaración que introduce la decisión. Distingue un identificador del texto de ayuda y de los nombres de archivos u objetivos; después revisa que tu respuesta cumpla la forma solicitada."
         },
         {
           "type": "paragraph",
@@ -550,7 +603,8 @@
             "0:6:15"
           ],
           "outputComparison": "exact",
-          "explanation": "Se utiliza la tarifa normal, tres por unidad. Cero cuesta cero, dos cuestan seis y cinco cuestan quince. La salida se contrasta con esa elección actual, sin atribuirle la tarifa especial del intento anterior."
+          "explanation": "Se utiliza la tarifa normal, tres por unidad. Cero cuesta cero, dos cuestan seis y cinco cuestan quince. La salida se contrasta con esa elección actual, sin atribuirle la tarifa especial del intento anterior.",
+          "reviewFeedback": "Sustituye cada argumento en la definición que figura aquí, sin arrastrar la tarifa de la ejecución anterior. Calcula cada llamada por separado y reconstruye después las inserciones de cout con el formato solicitado."
         },
         {
           "type": "multiple_choice",
@@ -562,7 +616,12 @@
             "Demuestra que ninguna implementación se enlazó, porque todo precio válido es positivo."
           ],
           "correctIndex": 1,
-          "explanation": "Ambas funciones multiplican las unidades y producen cero cuando reciben cero. La coincidencia no identifica una tarifa. Elegir una cantidad positiva y conservar la configuración permite contrastar la diferencia sin cambiar el contrato."
+          "explanation": "Ambas funciones multiplican las unidades y producen cero cuando reciben cero. La coincidencia no identifica una tarifa. Elegir una cantidad positiva y conservar la configuración permite contrastar la diferencia sin cambiar el contrato.",
+          "reviewFeedback": [
+            "Sustituye el dato de ese ensayo en la regla de la tarifa que estás descartando. Revisa si tu afirmación sobre un cobro mínimo aparece en esa regla o si la has añadido al interpretarla.",
+            "Escribe qué información aporta el caso observado y qué afirmación más amplia quieres sostener. Propón una comprobación que pueda poner a prueba esa afirmación y justifica por qué la elegiste.",
+            "Separa la existencia de una definición enlazada del valor que devuelve para unos datos concretos. Examina qué resultado permite la expresión de cálculo cuando recibe el argumento del ensayo."
+          ]
         }
       ]
     },
@@ -586,7 +645,8 @@
             "0:1:0"
           ],
           "outputComparison": "exact",
-          "explanation": "Cero no supera cero; veinte supera cero; cero no supera veinte. Los tres pares pertenecen al dominio. La política es estricta aunque el primer y el último valor estén en límites válidos."
+          "explanation": "Cero no supera cero; veinte supera cero; cero no supera veinte. Los tres pares pertenecen al dominio. La política es estricta aunque el primer y el último valor estén en límites válidos.",
+          "reviewFeedback": "Comprueba por separado la pertenencia al dominio y el resultado de la relación escrita: un dato permitido no fija por sí solo la respuesta de una comparación. Evalúa las llamadas en su orden y revisa qué caracteres agrega cout."
         },
         {
           "type": "order_code",
@@ -604,7 +664,8 @@
             0,
             2
           ],
-          "explanation": "La elección participa en la configuración; la construcción utiliza la implementación elegida. Después se ejecuta ese producto y se contrasta su salida con un oráculo correspondiente. Una salida anterior no demuestra la revisión nueva."
+          "explanation": "La elección participa en la configuración; la construcción utiliza la implementación elegida. Después se ejecuta ese producto y se contrasta su salida con un oráculo correspondiente. Una salida anterior no demuestra la revisión nueva.",
+          "reviewFeedback": "Para cada acción, escribe qué necesita recibir y qué evidencia deja disponible. Examina si tu orden usa algún producto antes de disponer de la revisión correspondiente; no confundas repetir una salida antigua con contrastar la revisión que acaba de prepararse."
         },
         {
           "type": "multiple_choice",
@@ -616,7 +677,12 @@
             "Fuentes, descripción, herramientas, elección efectiva, construcción, salida y terminación; guardar los datos iniciales del laboratorio como entrada de todas las corridas."
           ],
           "correctIndex": 0,
-          "explanation": "La procedencia incluye decisiones de construcción y datos de ejecución. El valor inicial puede diferir de la elección efectiva y el mismo nombre puede corresponder a revisiones distintas. Este registro recupera el método de evidencia y comparación del principio del curso."
+          "explanation": "La procedencia incluye decisiones de construcción y datos de ejecución. El valor inicial puede diferir de la elección efectiva y el mismo nombre puede corresponder a revisiones distintas. Este registro recupera el método de evidencia y comparación del principio del curso.",
+          "reviewFeedback": [
+            "Toma dos corridas del mismo programa y localiza en tu registro qué permite asociar cada salida con sus propios antecedentes. Justifica si permitiría reconstruirlas sin suponer que compartieron las mismas decisiones o datos.",
+            "Comprueba qué evidencia usarías para afirmar que el valor inicial coincidió con el efectivo en una construcción concreta. Revisa si tu registro permite justificar esa identificación en vez de darla por hecha.",
+            "Imagina que editaste sólo los datos antes de volver a ejecutar. Intenta reconstruir qué recibió cada corrida usando el registro que propones y observa dónde tendrías que introducir una suposición."
+          ]
         }
       ]
     }
