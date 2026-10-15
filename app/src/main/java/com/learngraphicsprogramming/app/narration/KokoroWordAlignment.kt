@@ -80,9 +80,11 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         val key = digest("$VERSION\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
         val sidecar = File(metadataDirectory, "$key.json")
         read(sidecar, text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
+        // Ordinary-prose timings from the previous format remain exact. Validate their
+        // offsets against today's atoms and the same immutable audio before reusing them.
+        val compatibleKey = digest("1\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
+        read(File(metadataDirectory, "$compatibleKey.json"), text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
         checkActive(isCancelled)
-        if (ManualEnglishSpeech.spans(text).isNotEmpty()) return null
-        val prose = text.removePrefix(ManualEnglishSpeech.PREPARED.toString())
         val store = modelStore ?: KokoroModelStore(app).also { modelStore = it }
         val root = store.directory()
         val dictionary = lexicon ?: run {
@@ -92,7 +94,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
             checkActive(isCancelled)
             SpanishFluidG2P.loadLexicon(file).also { lexicon = it }
         }
-        val trace = SpanishFluidG2P.traceWords(prose, dictionary) ?: return null
+        val trace = MixedSpanishG2P.traceWordsPrepared(text, dictionary) ?: return null
         // The exact production frontend remains the authority, including prepared-speech rules.
         if (trace.phonemes != MixedSpanishG2P.phonemizePrepared(text, dictionary)) return null
         val chunks = KokoroPhonemeChunks.split(trace.phonemes)
@@ -116,7 +118,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
     ): NarrationWordAlignment? = runCatching {
         if (!file.isFile || file.length() !in 1L..524_288L) return@runCatching null
         val data = JSONObject(file.readText(Charsets.UTF_8))
-        if (data.getInt("version") != VERSION || data.getString("model") != KokoroModelManifest.revision ||
+        if (data.getInt("version") !in setOf(1, VERSION) || data.getString("model") != KokoroModelManifest.revision ||
             data.getString("sourceSha256") != sourceHash || data.getString("voice") != voice ||
             data.getString("audioSha256") != audioHash || data.getLong("sampleCount") != sampleCount) return@runCatching null
         val rows = data.getJSONArray("words")
@@ -200,5 +202,5 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         thread.quitSafely()
     }
 
-    companion object { private const val VERSION = 1 }
+    companion object { private const val VERSION = 2 }
 }

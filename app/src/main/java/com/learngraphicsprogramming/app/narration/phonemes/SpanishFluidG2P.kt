@@ -120,6 +120,90 @@ object SpanishFluidG2P {
 
     internal data class PhonemeSpan(val phonemes: String, val foreign: Boolean)
 
+    /**
+     * Observes the same contextual tokens and joins as [phonemizeWithForeignTokens]. Each
+     * foreign placeholder owns its reviewed phones as one atom, even when those phones
+     * contain spaces. This metadata path never changes the production phonemizer.
+     */
+    internal fun traceWordsWithForeignTokens(
+        text: String,
+        lexicon: Map<String, String>,
+        foreignTokens: Map<Char, String>,
+        foreignWords: Map<Char, String>
+    ): SpanishPhoneTrace? {
+        if (text.isBlank() || text.length > 32_768 || foreignTokens.keys != foreignWords.keys) return null
+        return runCatching {
+            val source = nfc(text)
+            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
+            val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
+            val cppRanges = cpp.findAll(source).map { it.range }.toList()
+            if (source.indices.any { index ->
+                    val char = source[index]
+                    !char.isLetterOrDigit() && !char.isWhitespace() && char !in prosePunctuation &&
+                        char != '−' &&
+                        char !in foreignTokens && !(char == '+' && cppRanges.any { index in it })
+                }) return null
+            val pattern = Regex("\\p{L}+|[−-]?\\d+(?:[.,]\\d+)?|[\\uE100-\\uF8FF]")
+            fun words(value: String) = pattern.findAll(nfc(value)).map {
+                it.value.singleOrNull()?.let(foreignWords::get) ?: it.value.lowercase(Locale.ROOT)
+            }.toList()
+            val sourceWords = words(source)
+            if (sourceWords.isEmpty()) return null
+            val normalized = normalizeText(source)
+            val expected = mutableListOf<String>()
+            val owners = mutableListOf<Int>()
+            pattern.findAll(source).forEachIndexed { index, match ->
+                val expanded = when {
+                    cppRanges.any { it.first == match.range.first } -> "ce más más"
+                    match.value.any(Char::isDigit) -> normalizeText(match.value)
+                    else -> match.value
+                }
+                val lexical = words(expanded)
+                if (lexical.isEmpty()) return null
+                expected += lexical
+                owners += List(lexical.size) { index }
+            }
+            // Individual expansion supplies ownership only. The whole-context normalization
+            // remains authoritative, and any changed formula/code context fails closed.
+            if (words(normalized) != expected) return null
+            val tokens = normalizedTokens(normalized, lexicon, foreignTokens)
+            if (tokens.count { it.word } != owners.size) return null
+            val joined = StringBuilder()
+            val starts = IntArray(sourceWords.size) { -1 }
+            val ends = IntArray(sourceWords.size)
+            var wordIndex = 0
+            for (token in tokens) {
+                if (token.text == "¿" || token.text == "¡") continue
+                if (!token.word && token.text in attachLeft && joined.isNotEmpty()) {
+                    while (joined.lastOrNull()?.isWhitespace() == true) joined.deleteCharAt(joined.lastIndex)
+                    joined.append(token.text).append(' ')
+                } else {
+                    val start = joined.length
+                    joined.append(token.text)
+                    if (token.word) {
+                        val owner = owners[wordIndex++]
+                        if (starts[owner] < 0) starts[owner] = start
+                        ends[owner] = joined.length
+                    }
+                    if (token.word || token.text !in attachRight) joined.append(' ')
+                }
+            }
+            val raw = joined.toString()
+            val first = raw.indexOfFirst { !it.isWhitespace() }
+            if (first < 0) return null
+            val phonemes = raw.trim()
+            val production = phonemizeWithForeignTokens(text, lexicon, foreignTokens)
+                .joinToString("") { it.phonemes }
+            if (phonemes != production) return null
+            val mapped = sourceWords.indices.map { index ->
+                if (starts[index] < first || ends[index] > first + phonemes.length) return null
+                SpanishWordPhoneRange(sourceWords[index], starts[index] - first, ends[index] - first)
+            }
+            if (mapped.any { it.start >= it.endExclusive }) return null
+            SpanishPhoneTrace(phonemes, mapped)
+        }.getOrNull()
+    }
+
     /** Foreign tokens are selected by an explicit term list before Spanish normalization.
      * Their phones bypass Spanish spelling and allophones; surrounding Spanish retains
      * the same sentence-level stress and linking rules as the ordinary frontend.

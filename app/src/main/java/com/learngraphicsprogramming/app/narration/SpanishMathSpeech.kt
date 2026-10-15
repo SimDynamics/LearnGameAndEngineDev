@@ -80,26 +80,50 @@ object SpanishMathSpeech {
         text, mathMode, ::speak, "expresión matemática no interpretable"
     )
 
+    /** Observes the existing replacements; source and emitted speech remain unchanged. */
+    internal fun textObserved(text: String, mathMode: String = "auto",
+                              onPiece: (Int, Int, String) -> Unit): String = renderMathText(
+        text, mathMode, ::speak, "expresión matemática no interpretable", onPiece
+    )
+
     /** Shared parsing boundary: callers provide an AST visitor, never translated Spanish speech. */
     internal fun renderMathText(
-        text: String, mathMode: String, render: (MathExpression) -> String, unreadable: String
+        text: String, mathMode: String, render: (MathExpression) -> String, unreadable: String,
+        onPiece: ((Int, Int, String) -> Unit)? = null
     ): String {
         if (text.isBlank()) return ""
-        if (mathMode == "text") return clean(text)
+        if (mathMode == "text") {
+            onPiece?.invoke(0, text.length, text)
+            return clean(text)
+        }
         val forced = mathMode == "inline" || mathMode == "block"
         val trimmed = text.trim()
         if (!trimmed.contains('\\') && !trimmed.contains('$') && protectedToken.find(trimmed) == null &&
             inlineCode.find(trimmed) == null && wholeMath.matches(trimmed) &&
             (forced || trimmed.length <= 100 && !Regex("[a-zA-Z]{2,}").containsMatchIn(trimmed))) {
-            parse(trimmed, content = forced && Regex("[a-zA-Z]{2,}").containsMatchIn(trimmed))?.let { return render(it) }
+            parse(trimmed, content = forced && Regex("[a-zA-Z]{2,}").containsMatchIn(trimmed))?.let {
+                val spoken = render(it)
+                onPiece?.invoke(0, text.length, spoken)
+                return spoken
+            }
         }
         if (forced && trimmed.contains('\\') && !trimmed.contains("\\(") &&
             !trimmed.contains("\\[") && !trimmed.contains('$')) {
-            return parse(trimmed, content = true)?.let(render) ?: unreadable
+            val spoken = parse(trimmed, content = true)?.let(render) ?: unreadable
+            onPiece?.invoke(0, text.length, spoken)
+            return spoken
         }
         val protected = (protectedToken.findAll(text) + inlineCode.findAll(text)).map { it.range }.toList()
         val output = StringBuilder()
         var index = 0
+        var plainStart = 0
+        fun observeReplacement(start: Int, end: Int, spoken: String) {
+            if (onPiece != null) {
+                if (plainStart < start) onPiece(plainStart, start, text.substring(plainStart, start))
+                onPiece(start, end, spoken)
+            }
+            plainStart = end
+        }
         while (index < text.length) {
             val token = protected.firstOrNull { index == it.first }
             if (token != null) {
@@ -112,7 +136,9 @@ object SpanishMathSpeech {
                 val end = text.indexOf(delimiters.second, index + delimiters.first.length)
                 if (end >= index + delimiters.first.length) {
                     val source = text.substring(index + delimiters.first.length, end)
-                    output.append(' ').append(parse(source, content = forced)?.let(render) ?: unreadable).append(' ')
+                    val spoken = parse(source, content = forced)?.let(render) ?: unreadable
+                    output.append(' ').append(spoken).append(' ')
+                    observeReplacement(index, end + delimiters.second.length, " $spoken ")
                     index = end + delimiters.second.length
                     continue
                 }
@@ -124,15 +150,22 @@ object SpanishMathSpeech {
                 protected.none { it.first <= candidate.range.last && it.last >= index }) {
                 val parsed = parse(candidate.value)
                 if (parsed != null) {
-                    output.append(' ').append(render(parsed)).append(' ')
+                    val spoken = render(parsed)
+                    output.append(' ').append(spoken).append(' ')
+                    observeReplacement(index, candidate.range.last + 1, " $spoken ")
                     index = candidate.range.last + 1
                     continue
                 }
             }
-            if (text[index] in "×÷≤≥≠≈π∞∈") output.append(' ').append(render(MathExpression.Symbol(text[index].toString()))).append(' ')
+            if (text[index] in "×÷≤≥≠≈π∞∈") {
+                val spoken = render(MathExpression.Symbol(text[index].toString()))
+                output.append(' ').append(spoken).append(' ')
+                observeReplacement(index, index + 1, " $spoken ")
+            }
             else output.append(text[index])
             index++
         }
+        if (plainStart < text.length) onPiece?.invoke(plainStart, text.length, text.substring(plainStart))
         return clean(output.toString())
     }
 

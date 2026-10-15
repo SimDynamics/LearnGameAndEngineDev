@@ -17,6 +17,45 @@ object MixedSpanishG2P {
         return plan(text, lexicon, ManualEnglishPronunciations::phonemes).joinToString("") { it.phonemes }
     }
 
+    /** Observational ownership of the exact continuous production frontend, never new audio. */
+    internal fun traceWordsPrepared(
+        text: String,
+        lexicon: Map<String, String> = emptyMap()
+    ): SpanishFluidG2P.SpanishPhoneTrace? = runCatching {
+        val selected = ManualEnglishSpeech.spans(text)
+        val trace = if (!text.startsWith(ManualEnglishSpeech.PREPARED) || selected.isEmpty()) {
+            val prose = text.removePrefix(ManualEnglishSpeech.PREPARED.toString())
+            SpanishFluidG2P.traceWords(prose, lexicon) ?: SpanishFluidG2P.traceWordsWithForeignTokens(
+                prose, lexicon, emptyMap(), emptyMap())
+        } else {
+            require(selected.size <= 6_000)
+            val foreign = linkedMapOf<Char, String>()
+            val words = linkedMapOf<Char, String>()
+            val occupied = text.toHashSet()
+            var nextMarker = '\uE100'.code
+            var last = 0
+            // Exactly the production mask, retaining sentence context across languages.
+            val masked = buildString {
+                selected.forEach { span ->
+                    append(text.substring(last, span.start).replace(ManualEnglishSpeech.PREPARED.toString(), ""))
+                    while (nextMarker <= '\uF8FF'.code && nextMarker.toChar() in occupied) nextMarker++
+                    require(nextMarker <= '\uF8FF'.code)
+                    val marker = nextMarker++.toChar()
+                    foreign[marker] = ManualEnglishPronunciations.phonemes(span.entry)
+                    words[marker] = NarrationSpokenWords.lexemes(text.substring(span.start, span.endExclusive))
+                        .single().canonical
+                    append(marker)
+                    last = span.endExclusive
+                }
+                append(text.substring(last).replace(ManualEnglishSpeech.PREPARED.toString(), ""))
+            }
+            SpanishFluidG2P.traceWordsWithForeignTokens(masked, lexicon, foreign, words)
+        } ?: return@runCatching null
+        if (trace.phonemes != phonemizePrepared(text, lexicon) ||
+            trace.words.map { it.word } != NarrationSpokenWords.lexemes(text).map { it.canonical }) return@runCatching null
+        trace
+    }.getOrNull()
+
     fun phonemize(text: String, lexicon: Map<String, String>,
                   englishPhonemize: (ManualEnglishTerms.Entry) -> String): String =
         plan(text, lexicon, englishPhonemize).joinToString("") { it.phonemes }

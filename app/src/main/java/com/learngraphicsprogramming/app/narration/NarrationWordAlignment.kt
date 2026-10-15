@@ -1,8 +1,6 @@
 package com.learngraphicsprogramming.app.narration
 
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
-import java.text.Normalizer
-import java.util.Locale
 
 /** UTF-16 ranges refer to the exact spoken segment supplied to the controller. */
 data class NarrationWordTiming(
@@ -22,7 +20,6 @@ data class NarrationWordAlignment(
 internal object NarrationWordTimingBuilder {
     const val SAMPLES_PER_FRAME = 600L
     const val MAX_SAMPLES = 24_000L * 120L
-    private val wordPattern = Regex("\\p{L}[\\p{L}\\p{M}]*")
 
     fun build(
         text: String,
@@ -62,15 +59,14 @@ internal object NarrationWordTimingBuilder {
             cursor = start + chunk.length
         }
         if (trace.phonemes.substring(cursor).any { !it.isWhitespace() } || totalSamples != sampleCount) return null
-        val visibleWords = wordPattern.findAll(text).toList()
+        val visibleWords = NarrationSpokenWords.lexemes(text)
         if (visibleWords.size != trace.words.size || visibleWords.isEmpty()) return null
         val words = visibleWords.zip(trace.words).map { (visible, phone) ->
-            val canonical = Normalizer.normalize(visible.value, Normalizer.Form.NFC).lowercase(Locale.ROOT)
-            if (canonical != phone.word || phone.start < 0 || phone.endExclusive > trace.phonemes.length ||
+            if (visible.canonical != phone.word || phone.start < 0 || phone.endExclusive > trace.phonemes.length ||
                 phone.start >= phone.endExclusive) return null
             val chunk = timedChunks.singleOrNull { phone.start >= it.start && phone.endExclusive <= it.end } ?: return null
             // Token zero is the actual leading model token; never subtract a guessed delay.
-            NarrationWordTiming(visible.range.first, visible.range.last + 1,
+            NarrationWordTiming(visible.start, visible.endExclusive,
                 chunk.sampleBase + chunk.frames[phone.start - chunk.start + 1] * SAMPLES_PER_FRAME,
                 chunk.sampleBase + chunk.frames[phone.endExclusive - chunk.start + 1] * SAMPLES_PER_FRAME)
         }
@@ -79,11 +75,11 @@ internal object NarrationWordTimingBuilder {
     }
 
     fun valid(text: String, sampleCount: Long, words: List<NarrationWordTiming>): Boolean {
-        val actual = wordPattern.findAll(text).map { it.range }.toList()
+        val actual = NarrationSpokenWords.lexemes(text)
         if (sampleCount !in 1L..MAX_SAMPLES || words.isEmpty() || words.size != actual.size) return false
         return words.indices.all { index ->
             val word = words[index]
-            word.start == actual[index].first && word.endExclusive == actual[index].last + 1 &&
+            word.start == actual[index].start && word.endExclusive == actual[index].endExclusive &&
                 word.startSample >= 0L && word.startSample < word.endSample && word.endSample <= sampleCount &&
                 (index == 0 || words[index - 1].endSample <= word.startSample)
         }

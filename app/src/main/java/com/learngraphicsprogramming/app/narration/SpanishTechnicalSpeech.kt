@@ -19,10 +19,25 @@ object SpanishTechnicalSpeech {
         return prepared.copy(text = ManualEnglishSpeech.PREPARED + prepared.text)
     }
 
+    /** Optional source provenance for presentation; the established preparation remains authoritative. */
+    internal fun prepareForReading(text: String, mathMode: String = "auto",
+                                   onPiece: (Int, Int, String) -> Unit): Preparation {
+        if (text.isBlank() || ManualEnglishSpeech.isPrepared(text) || ManualEnglishSpeech.spans(text).isNotEmpty()) {
+            val result = prepareForKokoro(text, mathMode)
+            onPiece(0, text.length, result.text)
+            return result
+        }
+        onPiece(0, 0, ManualEnglishSpeech.PREPARED.toString())
+        val selected = ManualEnglishTerms.select(text, mathMode).associateBy { it.start }
+        val result = prepareImpl(text, mathMode, selected, onPiece)
+        return result.copy(text = ManualEnglishSpeech.PREPARED + result.text)
+    }
+
     private fun prepareImpl(
         text: String,
         mathMode: String,
-        selected: Map<Int, ManualEnglishTerms.Match>
+        selected: Map<Int, ManualEnglishTerms.Match>,
+        onPiece: ((Int, Int, String) -> Unit)? = null
     ): Preparation {
         if (text.isBlank()) return Preparation(text, false)
         val forcedMath = mathMode == "inline" || mathMode == "block"
@@ -35,6 +50,10 @@ object SpanishTechnicalSpeech {
         var changed = false
         var index = 0
         while (index < text.length) {
+            val sourceStart = index
+            val outputStart = output.length
+            var observedChildren = false
+            try {
             if (text[index] == '`') {
                 val delimiter = if (text.startsWith("```", index)) "```" else "`"
                 val end = text.indexOf(delimiter, index + delimiter.length)
@@ -90,7 +109,8 @@ object SpanishTechnicalSpeech {
 
             val technicalEnd = codeEnd(text, index)
             if (technicalEnd != null) {
-                output.append(readCode(text.substring(index, technicalEnd), index, selected))
+                output.append(readCode(text.substring(index, technicalEnd), index, selected, onPiece))
+                observedChildren = onPiece != null
                 index = technicalEnd
                 changed = true
                 continue
@@ -125,6 +145,11 @@ object SpanishTechnicalSpeech {
                 changed = true
             } else output.append(text[index])
             index++
+            } finally {
+                if (onPiece != null && !observedChildren && (index > sourceStart || output.length > outputStart)) {
+                    onPiece(sourceStart, index, output.substring(outputStart))
+                }
+            }
         }
         return Preparation(if (changed) output.toString().replace(Regex("[ \\t]+"), " ")
             .replace(Regex(" +([,.;:!?])"), "$1").trim()
@@ -259,7 +284,8 @@ object SpanishTechnicalSpeech {
     private fun readCode(
         source: String,
         baseOffset: Int = 0,
-        selected: Map<Int, ManualEnglishTerms.Match> = emptyMap()
+        selected: Map<Int, ManualEnglishTerms.Match> = emptyMap(),
+        onPiece: ((Int, Int, String) -> Unit)? = null
     ): String {
         val result = mutableListOf<String>()
         var index = 0
@@ -267,7 +293,11 @@ object SpanishTechnicalSpeech {
         var previousIdentifier = ""
         var qualified = false
         var include = header.matches(source.trim())
+        var observedOutput = false
         while (index < source.length) {
+            val sourceStart = index
+            val resultStart = result.size
+            try {
             val char = source[index]
             if (char.isWhitespace()) { index++; continue }
             if (char == '\'' || char == '"') {
@@ -339,6 +369,15 @@ object SpanishTechnicalSpeech {
             qualified = false
             previousIdentifier = ""
             index++
+            } finally {
+                if (onPiece != null && index > sourceStart) {
+                    val added = result.subList(resultStart, result.size).filter(String::isNotEmpty)
+                        .joinToString(" ")
+                    val spoken = if (observedOutput && added.isNotEmpty()) " $added" else added
+                    onPiece(baseOffset + sourceStart, baseOffset + index, spoken)
+                    if (added.isNotEmpty()) observedOutput = true
+                }
+            }
         }
         return result.filter(String::isNotEmpty).joinToString(" ")
     }

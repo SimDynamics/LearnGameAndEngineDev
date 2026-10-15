@@ -493,6 +493,48 @@ class MasterReaderDeviceTest {
             .put("errors", JSONArray(errors.toList())))
     }
 
+    @Test fun h_interruptedRealCurriculumIteratorStopsBeforeItsFirstLazyScanAndKeepsInterruptFlag() {
+        val preferencesBefore = (preferenceNames() + KNOWN_PREFERENCES).associateWith(::preference)
+        val filesBefore = listOf(KokoroPagePreparationQueue.FILE_NAME, NarrationAudioPlanner.FILE_NAME).associateWith { name ->
+            File(app.filesDir, name).takeIf(File::isFile)?.readBytes()
+        }
+        val authoredBefore = app.assets.open(PROGRAMMING_ASSET).use { it.readBytes() }
+        val failure = AtomicReference<Throwable?>(null)
+        val interruptRetained = AtomicReference(false)
+        val yielded = AtomicReference(false)
+        val thread = Thread({
+            Thread.currentThread().interrupt()
+            try {
+                yielded.set(NarrationCurriculum.pages(app).iterator().hasNext())
+            } catch (error: Throwable) {
+                failure.set(error)
+            } finally {
+                interruptRetained.set(Thread.currentThread().isInterrupted)
+            }
+        }, "QaCancelledCurriculumIterator")
+        thread.start()
+        thread.join(5_000)
+        assertFalse("The already-cancelled real catalog must finish rather than scan lesson assets", thread.isAlive)
+        assertTrue("The lazy iterator must propagate the existing cancellation contract, not yield a page: ${failure.get()}",
+            failure.get() is InterruptedException)
+        assertTrue("Cancellation must preserve the worker interrupt flag for its owner", interruptRetained.get())
+        assertFalse("An interrupted iterator cannot return a page ready for synthesis", yielded.get())
+        assertEquals("Inspecting a cancelled catalog cannot change preferences, progress or three page positions",
+            preferencesBefore, (preferenceNames() + KNOWN_PREFERENCES).associateWith(::preference))
+        filesBefore.forEach { (name, bytes) ->
+            val file = File(app.filesDir, name)
+            if (bytes == null) assertFalse("A cancelled catalog cannot create $name", file.exists())
+            else assertArrayEquals("A cancelled catalog cannot rewrite $name", bytes, file.readBytes())
+        }
+        assertArrayEquals("The actual packaged lesson remains byte-for-byte intact", authoredBefore,
+            app.assets.open(PROGRAMMING_ASSET).use { it.readBytes() })
+        writeReport("h-interrupted-real-curriculum.json", JSONObject()
+            .put("alreadyInterruptedBeforeIteratorHasNext", true)
+            .put("exception", requireNotNull(failure.get()).javaClass.name)
+            .put("interruptFlagRetained", interruptRetained.get()).put("pageYielded", yielded.get())
+            .put("preferencesQueuePlannerAndAuthoredJsonUnchanged", true))
+    }
+
     private fun launchLesson(): ActivityScenario<LessonActivity> = ActivityScenario.launch<LessonActivity>(
         Intent(app, LessonActivity::class.java).putExtra("routeId", AppearanceSettingsRepository.ROUTE_PROGRAMMING)
             .putExtra("courseId", "cpp_fundamentals").putExtra("unitId", "programas_y_ejecucion")
@@ -679,6 +721,19 @@ class MasterReaderDeviceTest {
             if (condition()) return
             SystemClock.sleep(50)
         }
+        val stacks = Thread.getAllStackTraces().entries.sortedBy { it.key.name }.map { (thread, frames) ->
+            JSONObject().put("name", thread.name).put("id", thread.id).put("alive", thread.isAlive)
+                .put("state", thread.state.name).put("interrupted", thread.isInterrupted)
+                .put("priority", thread.priority).put("frames", JSONArray(frames.map { it.toString() }))
+        }
+        val diagnostic = JSONObject().put("condition", message).put("timeoutMs", timeout)
+            .put("uptimeMs", SystemClock.uptimeMillis()).put("threads", JSONArray(stacks))
+            .put("narrationSettings", JSONObject(preference("lesson_narration_settings")))
+        listOf(KokoroNarrationDiagnostics.STATUS_FILE, KokoroNarrationDiagnostics.EVENTS_FILE).forEach { name ->
+            diagnostic.put(name, runCatching { File(app.filesDir, name).readLines().takeLast(80).joinToString("\n") }
+                .getOrElse { it.toString() })
+        }
+        writeReport("timeout-${System.currentTimeMillis()}.json", diagnostic)
         fail(message)
     }
     private fun <A : Activity> awaitLocale(scenario: ActivityScenario<A>, tag: String, previous: Activity?) {

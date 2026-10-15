@@ -18,6 +18,17 @@ object MultilingualMathSpeech {
             if (language == NarrationLanguage.FRENCH) "expression mathématique illisible" else "unreadable mathematical expression")
     }
 
+    /** Carries the exact parser replacement boundaries to the visual reading projection. */
+    internal fun textObserved(text: String, mathMode: String = "auto",
+                              language: NarrationLanguage = NarrationLanguage.SPANISH,
+                              onPiece: (Int, Int, String) -> Unit): String {
+        if (language == NarrationLanguage.SPANISH) return SpanishMathSpeech.textObserved(text, mathMode, onPiece)
+        val visitor = Visitor(language)
+        return SpanishMathSpeech.renderMathText(text, mathMode, visitor::speak,
+            if (language == NarrationLanguage.FRENCH) "expression mathématique illisible" else "unreadable mathematical expression",
+            onPiece)
+    }
+
     private class Visitor(private val language: NarrationLanguage) {
         private val french = language == NarrationLanguage.FRENCH
         private fun word(english: String, french: String): String = if (this.french) french else english

@@ -47,7 +47,8 @@ class LessonReadingTextColors {
                 }
                 view.setUnreadWordRanges(null, 0)
             }
-            val unread = enabled && states[entry.block] == ReadingBlockState.UNREAD
+            // Missing safe word provenance is never permission to whiten an entire current block.
+            val unread = enabled && states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)
             val background = if (unread) backgroundColor(view) else null
             val color = background?.let { unreadColors.getOrPut(it) { LessonReadingColor.unread(it) } }
             if (color == null || view.isClickable || view.isLongClickable || hasForegroundSpans(view)) {
