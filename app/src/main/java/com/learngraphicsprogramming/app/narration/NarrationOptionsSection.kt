@@ -332,6 +332,7 @@ class NarrationOptionsSection(private val activity: Activity) {
             s(R.string.narration_license_apache) to R.raw.french_fluidaudio_license,
             s(R.string.narration_license_siwis) to R.raw.french_siwis_attribution,
             s(R.string.narration_license_french_resources) to R.raw.french_fluid_resources_notices,
+            s(R.string.narration_license_french_rules) to R.raw.french_rule_g2p_notice,
             s(R.string.narration_license_bart) to R.raw.misaki_bart_attribution,
             s(R.string.narration_license_spacy_pos) to R.raw.spacy_pos_attribution,
             s(R.string.narration_license_spacy) to R.raw.spacy_pos_spacy_license,

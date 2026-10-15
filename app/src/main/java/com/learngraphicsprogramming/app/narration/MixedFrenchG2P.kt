@@ -19,9 +19,9 @@ internal object MixedFrenchG2P {
 
     fun phonemizePrepared(text: String, french: FrenchFluidG2P): String {
         // Durable queues created before this feature retain their original audio/cache contract.
-        if (!text.startsWith(ManualEnglishSpeech.PREPARED)) return french.phonemize(text)
+        if (!text.startsWith(ManualEnglishSpeech.PREPARED)) return french.phonemize(FrenchSpeechSymbols.normalize(text))
         val selected = ManualEnglishSpeech.spans(text)
-        if (selected.isEmpty()) return french.phonemize(ManualEnglishSpeech.strip(text))
+        if (selected.isEmpty()) return french.phonemize(FrenchSpeechSymbols.normalize(ManualEnglishSpeech.strip(text)))
         require(selected.size <= 6_000) { "Trop de termes techniques dans une phrase" }
         val occupied = text.toHashSet()
         val foreign = linkedMapOf<Char, String>()
@@ -52,6 +52,6 @@ internal object MixedFrenchG2P {
             .replace(Regex("#\\s*(?=$marker)"), "dièse ")
             .replace(Regex("<\\s*($marker)\\s*>"), "chevron ouvrant $1 chevron fermant")
             .replace("`", "")
-        return french.phonemizeWithForeignTokens(notation, foreign)
+        return french.phonemizeWithForeignTokens(FrenchSpeechSymbols.normalize(notation), foreign)
     }
 }

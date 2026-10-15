@@ -7,7 +7,7 @@ import java.text.Normalizer
 import java.util.Locale
 import org.json.JSONObject
 
-/** Only the Charsiu ByT5 fallback selected by FluidAudio belongs behind this interface. */
+/** Explicit French word pronunciation; independent of audio, voices and distribution. */
 fun interface FrenchWordG2P {
     fun phonemizeWord(word: String): String?
 }
@@ -26,7 +26,7 @@ class FrenchFluidG2P private constructor(
     private val fallback: FrenchWordG2P?,
     private val vocabulary: Set<Char>?
 ) {
-    constructor(resourcesDirectory: File, kokoroTokenizer: File, fallback: FrenchWordG2P? = null) : this(
+    constructor(resourcesDirectory: File, kokoroTokenizer: File, fallback: FrenchWordG2P? = FrenchRuleBasedG2P) : this(
         loadLexicon(resourcesDirectory), fallback, loadVocabulary(kokoroTokenizer)
     )
 
@@ -34,7 +34,7 @@ class FrenchFluidG2P private constructor(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 256
     }
 
-    /** Must be called on a worker. Unknown words require the real Charsiu fallback. */
+    /** Must be called on a worker. The verified dictionary always precedes the OOV rules. */
     @Synchronized fun phonemize(text: String): String = phonemizeImpl(text, emptyMap())
 
     /**
@@ -65,8 +65,9 @@ class FrenchFluidG2P private constructor(
                 ?: if (word.all { it.isLetter() }) {
                     val raw = fallbackCache[word] ?: fallback?.phonemizeWord(word)?.takeIf { it.isNotBlank() }
                         ?.also { fallbackCache[word] = it }
-                        ?: throw FrenchG2PException("La palabra francesa «$word» requiere el modelo Charsiu G2P instalado")
-                    FrenchPronunciation.Raw(raw)
+                        ?: throw FrenchG2PException("No se pudo obtener una pronunciación francesa para «$word»")
+                    // The installed h-aspiré list also applies to absent inflections.
+                    FrenchPronunciation.Raw(if (word in lexicon.hAspire && !raw.startsWith("ʼ")) "ʼ$raw" else raw)
                 } else null
         }
         vocabulary?.let { allowed ->
