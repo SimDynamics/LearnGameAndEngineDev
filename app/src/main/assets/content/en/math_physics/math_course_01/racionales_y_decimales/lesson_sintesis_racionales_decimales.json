@@ -1,0 +1,585 @@
+{
+  "id": "math_course_01__racionales_y_decimales__sintesis_racionales_decimales",
+  "title": "Summary: Calculating and Choosing Precision",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Value, Operation, and Precision"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can now use fractions or decimals to represent the same number, calculate products and quotients, and decide which approximation meets a requirement. Before calculating, identify the question. \"How many whole portions\" requires a whole-number count and may leave a remainder; \"how much does each receive\" may result in a fractional amount. The same numerical division has different interpretations depending on the context."
+        },
+        {
+          "type": "paragraph",
+          "text": "If an exact value is requested, keep fractions when the decimal expansion does not terminate. If a specific rounded value is requested, report that value and distinguish exact equality between its equivalent representations from its approximation to the original quantity. If a maximum error is given, check the allowed distance. A screen showing many digits cannot replace these decisions."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the following problems, also review signs, common factors, common denominators, and units. Use a calculator where offered to obtain digits; in short calculations, the important thing is being able to explain the method. To check, multiply a quotient by its divisor, examine whether the sign makes sense, and see whether the result fits within the available quantity."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "envases_completos",
+          "prompt": "There are 2.4 L of liquid. Each full container holds 3/8 L. How many full containers can be filled, and how many liters remain?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "completos",
+              "type": "math_numeric_input",
+              "label": "Full containers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            },
+            {
+              "id": "sobrante",
+              "type": "math_numeric_input",
+              "label": "Liters remaining",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2.4 = 12/5 L, and (12/5) ÷ (3/8) = 32/5 = 6.4. Six full containers fit; they use 18/8 = 9/4 L, leaving 12/5 − 9/4 = 3/20 L.",
+            "incorrect": "6.4 is the number of portions if a partial one is allowed, but the question asks for full containers. Seven would require more liquid than is available. The leftover amount is not 0.4 L: 0.4 is a fraction of one 3/8 L container."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve Exactness and Detect False Equivalence"
+        },
+        {
+          "type": "paragraph",
+          "text": "A correct transformation preserves the value at every step. When an expression combines a terminating decimal and a fraction, converting the decimal to a fraction can reveal factors and avoid rounding. Identify which part is a sum and which is a product before canceling. The fraction bar or parentheses group the entire expression being divided."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_mixta",
+          "prompt": "Calculate exactly (0.75 − 1/5) ÷ (11/10). Any equivalent numerical representation is accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Exact result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0.75 = 3/4; 3/4 − 1/5 = 11/20. Dividing by 11/10 is the same as multiplying by 10/11, giving 1/2.",
+            "incorrect": "Cancel the eleven only after completing the subtraction and expressing the dividend as 11/20. Inverting the dividend instead of the divisor gives a different calculation. A terminating decimal can be converted exactly."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "afirmaciones_exactas",
+          "prompt": "Select all exact equalities. Do not treat an approximation as though it were the same number.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exactas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−0.125 = −1/8.",
+                  "reviewFeedback": "For the selected equality, convert the decimal to a fraction while preserving its sign. Check that simplifying both terms preserves the value."
+                },
+                {
+                  "id": "b",
+                  "label": "0.4 = 2/5.",
+                  "reviewFeedback": "For the selected equality, identify the decimal place of the digit and verify the reduction of the corresponding fraction."
+                },
+                {
+                  "id": "c",
+                  "label": "0.333 = 1/3.",
+                  "reviewFeedback": "For the selected equality, distinguish a terminating decimal from an expansion that continues. Check the relationship exactly using a product or a fraction."
+                },
+                {
+                  "id": "d",
+                  "label": "The reciprocal of 2/3 is −2/3.",
+                  "reviewFeedback": "For the selected statement, review the definition of a multiplicative inverse and check the product with the original number. Distinguish reciprocal from opposite."
+                },
+                {
+                  "id": "e",
+                  "label": "0.045 = 9/200.",
+                  "reviewFeedback": "For the selected equality, count the decimal places, including the initial zero. Then check which factor simplifies the fraction without changing it."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−125/1000 simplifies to −1/8; 4/10 to 2/5; and 45/1000 to 9/200. All these conversions preserve the exact value.",
+            "incorrect": "0.333 is 333/1000, which is less than 1/3. −2/3 is the opposite of 2/3; its reciprocal is 3/2, because the product must equal one."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Justify Division and Check Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "Taking the reciprocal of a sum does not mean taking the reciprocal of each addend. For example, if the divisor is 2/3 + 1/6, it first equals five sixths; its reciprocal is six fifths. The reciprocal applies to one number: the value of the entire sum. Checking that their product equals one reveals the mistake without memorizing a list of exceptions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inverso_de_suma",
+          "prompt": "Calculate 1÷(3/10+1/5) and choose the valid explanation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Quotient",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "First calculate the entire divisor, then take the reciprocal of that single number.",
+                  "reviewFeedback": "Review what the parentheses group and to which single value the reciprocal is applied. Check that multiplying by that divisor reconstructs the dividend."
+                },
+                {
+                  "id": "b",
+                  "label": "Add 10/3 and five, the reciprocals of the addends.",
+                  "reviewFeedback": "Your explanation applies the reciprocal separately to the terms of a sum. Multiply to check whether inverting each term preserves the value of the full divisor."
+                },
+                {
+                  "id": "c",
+                  "label": "Cancel the one against the numerator one in 1/5.",
+                  "reviewFeedback": "Your argument removes a one that belongs to an addend. Consider whether that one is really a factor of the entire expression you want to cancel."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The entire divisor is 5/10 = 1/2, which is nonzero. Its reciprocal is two; 2×1/2 = 1 verifies the result.",
+            "incorrect": "The reciprocal of a sum is not the sum of the reciprocals. The one in an addend does not multiply the entire divisor and cannot be canceled against the dividend."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_racional_decimal",
+          "prompt": "Arrange the values from least to greatest. Use equivalence or benchmarks, keeping the order of negative numbers in mind.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "−0.9"
+                },
+                {
+                  "id": "b",
+                  "label": "−7/8"
+                },
+                {
+                  "id": "c",
+                  "label": "−0.8"
+                },
+                {
+                  "id": "d",
+                  "label": "0"
+                },
+                {
+                  "id": "e",
+                  "label": "1/6"
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "e",
+                "b",
+                "d",
+                "a"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−0.9 < −7/8 < −0.8 < 0 < 1/6. Seven eighths equals 0.875, so its opposite lies between −0.900 and −0.800.",
+            "incorrect": "When comparing negatives, farther from zero means smaller. A decimal with more digits does not determine the order by itself: compare place values or equivalent fractions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Exact Answer and Another Useful for Reporting"
+        },
+        {
+          "type": "paragraph",
+          "text": "A rational length can be expressed exactly and then approximated to inform someone who does not need so much detail. Keeping both answers shows what was lost through approximation. Error is measured in the agreed unit and cannot be inferred solely from the number of visible decimal places. In an activity with a maximum error, several answers may be valid."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "longitud_precision",
+          "prompt": "Seven meters are divided equally among nine teams. Enter the exact length per team and an approximation with a maximum absolute error of 0.001 m. Then select all proposed decimals satisfying that same limit; a calculator may help.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exacta",
+              "type": "math_numeric_input",
+              "label": "Exact length in meters",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/9"
+              }
+            },
+            {
+              "id": "aproximada",
+              "type": "math_numeric_input",
+              "label": "Approximation in meters",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "7/9",
+                "tolerance": 0.001
+              },
+              "calculator": true
+            },
+            {
+              "id": "candidatos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.777 m",
+                  "reviewFeedback": "For the selected length, calculate its distance from the exact share per team. Check whether the error in thousandths of a meter meets the tolerance."
+                },
+                {
+                  "id": "b",
+                  "label": "0.778 m",
+                  "reviewFeedback": "For the selected length, check the absolute error against the exact share. Do not require the decimal to lie on the same side of the value as the approximation you entered."
+                },
+                {
+                  "id": "c",
+                  "label": "0.780 m",
+                  "reviewFeedback": "For the selected length, use the exact fraction of the share when calculating the distance. Having three decimal places does not replace comparing that distance with the limit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The exact length is 7/9 m. The errors of 0.777 and 0.778 are 7/9000 m and 1/4500 m; both meet 0.001 m. The error of 0.780 is 1/450 m, which exceeds the maximum.",
+            "incorrect": "The exact answer must preserve 7/9. Selecting decimals requires checking distance: 0.777 and 0.778 qualify on opposite sides; 0.780 exceeds the limit. Counting digits does not replace that check."
+          }
+        },
+        {
+          "type": "note",
+          "text": "Before finishing, revisit an answer that was difficult and state why it is valid: preserving a unit, multiplying by the reciprocal, maintaining equality, or meeting a precision requirement. That reason will be useful in problems involving rates and proportionality."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review Structure, Remainders, and Precision"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_y_signos",
+          "prompt": "Calculate exactly −9/14+2/21 in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-23"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "42"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "The LCM is 42: −27/42+4/42 = −23/42. The positive increase does not offset the negative magnitude.",
+            "incorrect": "Changing denominators without adjusting numerators changes the addends. Check the sign by comparing their magnitudes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_divisor_cero",
+          "prompt": "Someone proposes canceling the divisor in 4÷(3/5−6/10). Which decision is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The result is four because the numerator is a whole number.",
+                  "reviewFeedback": "Your argument treats the whole-number numerator as determining the quotient. Calculate the entire divisor first and check the condition that permits division by it."
+                },
+                {
+                  "id": "b",
+                  "label": "The division is undefined: the entire divisor is zero.",
+                  "reviewFeedback": "Check the subtraction forming the divisor and the condition it must satisfy before division."
+                },
+                {
+                  "id": "c",
+                  "label": "The result is zero because the fractions cancel.",
+                  "reviewFeedback": "Your argument goes from a difference becoming zero to assigning a value to the quotient. Check whether that value could reconstruct the dividend when multiplied by the divisor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/5 = 6/10, so their difference is zero. No number multiplied by zero equals four.",
+            "incorrect": "Canceling equal terms in a subtraction identifies a zero divisor; it does not allow you to continue the division or assign zero as its result."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_nuevo",
+          "prompt": "When dividing 4/15: 40 = 2×15+10 and 100 = 6×15+10. Choose its exact decimal expansion.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.262626… with 26 repeating.",
+                  "reviewFeedback": "Your choice includes the first digit in the repeating block. Identify the state that starts each step and check when a previous state returns."
+                },
+                {
+                  "id": "b",
+                  "label": "0.266666… with an initial two followed by repeating sixes.",
+                  "reviewFeedback": "Check which digit the repeated state produces and which digits were written before that cycle."
+                },
+                {
+                  "id": "c",
+                  "label": "0.2101010… because ten is the repeated remainder.",
+                  "reviewFeedback": "Your choice writes the remainder as part of the decimal. Distinguish the quotient digit produced at each step from the amount left over."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Remainder ten returns after writing six and will continue producing six. The initial two appears before the cycle.",
+            "incorrect": "The digits are not the remainders. Returning to remainder ten repeats the second step, not the entire sequence from the first step."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_y_precision",
+          "prompt": "A sheet measures 5/6 m by 3/7 m. Enter the exact area and select its rounded value to thousandths.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Exact area, in m²",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/14"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.357 m²",
+                  "reviewFeedback": "Check the exact area before rounding. Identify the thousandths place and examine the following digit that determines the rounding."
+                },
+                {
+                  "id": "b",
+                  "label": "0.358 m²",
+                  "reviewFeedback": "Check whether the neighbor you chose is the one required by the rounding rule. Keep the product exact until deciding which places to report."
+                },
+                {
+                  "id": "c",
+                  "label": "0.35 m²",
+                  "reviewFeedback": "Your choice uses a different precision from the one requested. Identify the thousandths place and distinguish truncation from rounding."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The area is 5/14 m² = 0.357142… m². The rounded value to thousandths is 0.357 m²; keeping the fraction throughout multiplication avoids intermediate error.",
+            "incorrect": "0.358 rounds toward the more distant neighbor in this case; 0.35 truncates to hundredths. Area is found by multiplying lengths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "hipotesis_recuperada",
+          "prompt": "For rational numbers k, u, and v, we want to conclude u=v from k×u = k×v. What condition on k permits cancellation without imposing unnecessary additional restrictions?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "k must be a positive integer.",
+                  "reviewFeedback": "Your condition requires a particular sign and number form. Consider what the inverse operation justifying cancellation really needs."
+                },
+                {
+                  "id": "b",
+                  "label": "u and v must be written with the same denominator.",
+                  "reviewFeedback": "Your condition concerns the representation of the other factors. Check whether writing them with a shared denominator makes the common factor invertible."
+                },
+                {
+                  "id": "c",
+                  "label": "k must be nonzero, so its reciprocal exists.",
+                  "reviewFeedback": "Check how the chosen condition allows the same inverse operation on both sides and whether it introduces any unnecessary restrictions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cancellation requires a nonzero common factor, whether positive, negative, integer, or fractional.",
+            "incorrect": "Requiring a positive integer is more restrictive than necessary. The representations of u and v do not determine whether k can be canceled."
+          }
+        }
+      ]
+    }
+  ]
+}

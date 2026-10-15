@@ -1,0 +1,457 @@
+{
+  "id": "math_course_01__racionales_y_decimales__control_del_error",
+  "title": "Arrondir et maîtriser l'erreur dans une décision",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Arrondis, retenues et égalités de distance"
+        },
+        {
+          "type": "paragraph",
+          "text": "Arrondir aux centièmes consiste à choisir le multiple de 0,01 le plus proche. Le nombre décimal 0,998 se situe entre 0,99 et 1,00 et est plus proche de 1,00 : une retenue peut traverser plusieurs chiffres. La valeur arrondie peut s'écrire un ou 1,00 ; ce ne sont pas des valeurs différentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cas d'égalité exacte des distances, nous adoptons la convention suivante pour les nombres positifs et négatifs : choisir le voisin le plus éloigné de zéro. Ainsi, 0,245 s'arrondit à 0,25 et −0,245 à −0,25. Sans égalité des distances, on choisit toujours le voisin le plus proche : −0,244 s'arrondit à −0,24. Dire « augmenter le cinq » sans expliquer le signe peut rendre la décision ambiguë."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "acarreo_redondeo",
+          "prompt": "Arrondis 1,995 aux centièmes et 0,0496 aux millièmes en appliquant la convention adoptée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "1,995 aux centièmes"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "0,0496 aux millièmes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "1/20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1,995 est exactement à mi-chemin entre 1,99 et 2,00 ; on choisit 2,00. 0,0496 est plus proche de 0,050 que de 0,049 ; on choisit 0,050.",
+            "incorrect": "Dans le premier cas, on applique la convention de l'égalité des distances. Dans le second, le six impose d'avancer d'un millième et la retenue transforme 49 en 50 millièmes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_negativo",
+          "prompt": "Arrondis −1,235 et −1,234 aux centièmes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "empate",
+                  "type": "numeric",
+                  "label": "−1,235 aux centièmes"
+                },
+                {
+                  "id": "cercano",
+                  "type": "numeric",
+                  "label": "−1,234 aux centièmes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "empate": {
+                    "type": "numeric",
+                    "expected": "-31/25"
+                  },
+                  "cercano": {
+                    "type": "numeric",
+                    "expected": "-123/100"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1,235 se trouve à égale distance des deux arrondis possibles et on choisit −1,24, plus éloigné de zéro. −1,234 est plus proche de −1,23.",
+            "incorrect": "Le même mot « augmenter » peut désigner l'augmentation d'un chiffre ou de la valeur du nombre, d'où une ambiguïté. Compare les distances et n'applique la convention que si elles sont égales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "truncar_o_redondear",
+          "prompt": "Pour 5/9 = 0,555555…, écris la troncature à deux décimales et l'arrondi aux centièmes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "recorte",
+                  "type": "numeric",
+                  "label": "Troncature à deux décimales"
+                },
+                {
+                  "id": "redondeo",
+                  "type": "numeric",
+                  "label": "Arrondi aux centièmes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "recorte": {
+                    "type": "numeric",
+                    "expected": "11/20"
+                  },
+                  "redondeo": {
+                    "type": "numeric",
+                    "expected": "14/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La troncature vaut 0,55 ; l'arrondi vaut 0,56. Le développement périodique continue et la valeur est plus proche de 0,56.",
+            "incorrect": "Tronquer supprime des chiffres ; arrondir choisit la valeur voisine la plus proche. Ces deux méthodes ne sont pas interchangeables."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver les valeurs exactes pendant les calculs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trois morceaux de 1/6 m totalisent exactement 1/2 m. Si l'on approxime d'abord chaque morceau par 0,17 m, la somme communiquée vaut 0,51 m. Si l'on conserve 1/6 jusqu'à l'addition et que l'on arrondit à la fin, on obtient 0,50 m. Les erreurs intermédiaires peuvent s'accumuler ; une calculatrice ne rend pas non plus exactes les valeurs déjà arrondies."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondear_antes_o_despues",
+          "prompt": "On additionne sept quantités de 2/9 m. Méthode A : arrondir chaque quantité aux centièmes, puis additionner. Méthode B : additionner exactement, puis arrondir la somme aux centièmes. Calcule les deux résultats.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "antes",
+                  "type": "numeric",
+                  "label": "Résultat de la méthode A, en m"
+                },
+                {
+                  "id": "despues",
+                  "type": "numeric",
+                  "label": "Résultat de la méthode B, en m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "antes": {
+                    "type": "numeric",
+                    "expected": "77/50"
+                  },
+                  "despues": {
+                    "type": "numeric",
+                    "expected": "39/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A utilise sept fois 0,22 m et obtient 1,54 m. B conserve 14/9 = 1,555… m, puis arrondit à 1,56 m. Les valeurs communiquées diffèrent de 0,02 m.",
+            "incorrect": "Un arrondi ne préserve pas une égalité exacte. Les sept substitutions peuvent accumuler leur erreur ; conserver la valeur exacte jusqu'à la fin évite cette modification particulière."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cota_suma_errores",
+          "prompt": "On additionne trois mesures. Chacune a une erreur absolue maximale de 0,002 m. Sans savoir si les erreurs sont par excès ou par défaut, quelle erreur maximale prudente peut-on garantir pour la somme ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 m, car les erreurs se compensent toujours.",
+                  "reviewFeedback": "Ton argument garantit une compensation sans connaître le sens des erreurs. Examine si les données permettent d'affirmer que les écarts ont des signes opposés."
+                },
+                {
+                  "id": "b",
+                  "label": "0,002 m, car les trois mesures utilisent la même précision.",
+                  "reviewFeedback": "Ton argument conserve la limite d'erreur d'une seule mesure pour la somme entière. Réfléchis à ce qui arriverait si plusieurs mesures avaient des écarts dans le même sens."
+                },
+                {
+                  "id": "c",
+                  "label": "0,006 m : dans le pire des cas, les trois erreurs vont dans le même sens.",
+                  "reviewFeedback": "Vérifie que ta limite couvre toutes les combinaisons de sens possibles. Distingue une erreur qui pourrait se produire d'une erreur qui doit se produire."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La somme des trois limites est 0,006 m. Les erreurs pourraient se compenser, mais on ne peut pas le garantir sans information supplémentaire.",
+            "incorrect": "Avoir la même précision ne fait pas disparaître les erreurs. La limite couvre le cas possible où les trois écarts s'accumulent."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pantalla_no_exactitud",
+          "prompt": "Une calculatrice affiche 0,142857142857143 pour 1/7. Sélectionne toutes les affirmations correctes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'écran prouve que le développement décimal se termine par trois.",
+                  "reviewFeedback": "Pour l'affirmation choisie, distingue le dernier chiffre visible de la fin d'un développement. Vérifie ce qui limite le nombre de chiffres d'un écran."
+                },
+                {
+                  "id": "b",
+                  "label": "Pour un calcul exact ultérieur, mieux vaut conserver 1/7.",
+                  "reviewFeedback": "Pour l'affirmation choisie, examine les informations qu'une fraction conserve lorsqu'il faut ensuite calculer sans arrondi."
+                },
+                {
+                  "id": "c",
+                  "label": "Le résultat affiché est une approximation du nombre décimal périodique.",
+                  "reviewFeedback": "Pour l'affirmation choisie, compare la valeur exacte au nombre fini de positions affichées. Vérifie ce que signifie « approximation »."
+                },
+                {
+                  "id": "d",
+                  "label": "L'approximation ne peut servir à aucune décision.",
+                  "reviewFeedback": "Pour l'affirmation choisie, examine l'utilité d'une approximation. Relie cette utilité à la précision requise par une décision concrète."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1/7 a un développement décimal périodique ; l'écran l'arrondit selon sa capacité. Cette valeur décimale peut servir si son erreur respecte le besoin, et la fraction conserve la valeur exacte.",
+            "incorrect": "La limite de l'écran ne change pas le nombre. Une approximation peut être utile, mais il faut vérifier la précision demandée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une précision adaptée au contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'unité de la tolérance compte. Une erreur de 0,002 m correspond à deux millimètres ; elle ne correspond pas automatiquement à 0,002 cm ni à un pourcentage. Une décision d'achat peut aussi imposer d'arrondir par excès pour couvrir un besoin : l'entier le plus proche ne garantit pas assez de matériel."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "metros_y_milimetros",
+          "prompt": "La longueur exacte est 7/12 m. L'erreur absolue maximale exigée est de 0,002 m. Sélectionne toutes les approximations acceptables.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,580 m",
+                  "reviewFeedback": "Pour la mesure choisie, calcule la distance absolue à la valeur exacte avant de décider. Conserve le mètre comme unité lorsque tu compares à la tolérance."
+                },
+                {
+                  "id": "b",
+                  "label": "0,582 m",
+                  "reviewFeedback": "Pour la mesure choisie, exprime le nombre décimal sous forme de fraction et compare exactement la grandeur de la différence à l'erreur autorisée."
+                },
+                {
+                  "id": "c",
+                  "label": "0,584 m",
+                  "reviewFeedback": "Pour la mesure choisie, vérifie la différence avec la longueur exacte. Le signe de cette différence ne remplace pas la comparaison de sa valeur absolue."
+                },
+                {
+                  "id": "d",
+                  "label": "0,590 m",
+                  "reviewFeedback": "Pour la mesure choisie, utilise la donnée exacte pour mesurer son écart. Ne décide pas seulement parce que les nombres ont autant de décimales."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "milimetros",
+              "type": "math_numeric_input",
+              "label": "Erreur maximale autorisée, en millimètres",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/12 ≈ 0,583333 m. Les erreurs de 0,582 et de 0,584 valent 1/750 m et 1/1500 m ; les deux sont inférieures à 0,002 m, soit 2 mm.",
+            "incorrect": "0,580 a une erreur de 1/300 m et 0,590 une erreur de 1/150 m : les deux dépassent deux millimètres. Pour convertir les unités, rappelle-toi qu'un mètre contient mille millimètres."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cubrir_necesidad",
+          "prompt": "On a besoin de 37/8 m de ruban, vendu par paquets entiers de 1/4 m. Quel est le nombre minimal de paquets à acheter et quelle longueur restera-t-il ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paquetes",
+                  "type": "numeric",
+                  "label": "Nombre minimal de paquets"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Longueur restante, en m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paquetes": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "1/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le besoin correspond à 37/2 = 18,5 paquets. Dix-huit ne suffisent pas ; on en achète dix-neuf et il reste 1/8 m.",
+            "incorrect": "Le but est de couvrir le besoin, pas d'exprimer le quotient avec peu de chiffres. La longueur restante se mesure en mètres, et non en recopiant la partie décimale du nombre de paquets."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_precision",
+          "prompt": "Un prix calculé exact vaut 15,625 pesos. On le communique au centime en appliquant la convention d'arrondi en cas d'égalité des distances. Choisis le prix et calcule l'erreur absolue de l'arrondi.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "15,62 pesos.",
+                  "reviewFeedback": "Vérifie comment ton choix applique la convention adoptée lorsque le prix est exactement à mi-chemin entre deux centimes. Distingue l'égalité des distances de la troncature."
+                },
+                {
+                  "id": "b",
+                  "label": "15,63 pesos.",
+                  "reviewFeedback": "Vérifie quelle position décimale doit être conservée pour communiquer des centimes et comment l'égalité des distances est résolue selon la convention de cette leçon."
+                },
+                {
+                  "id": "c",
+                  "label": "15,60 pesos.",
+                  "reviewFeedback": "Ton choix modifie la précision du prix communiqué. Détermine la position décimale correspondant à un centime et la quantité de détails conservés."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Erreur absolue, en pesos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/200"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'égalité des distances entre 15,62 et 15,63 se résout en s'éloignant de zéro : 15,63. L'erreur vaut 0,005 peso, soit un demi-centime.",
+            "incorrect": "15,62 suivrait une autre convention d'arrondi. 15,60 arrondit aux dixièmes, pas aux centimes ; l'erreur doit être calculée par rapport au prix exact."
+          }
+        }
+      ]
+    }
+  ]
+}

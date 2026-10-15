@@ -1,0 +1,585 @@
+{
+  "id": "math_course_01__racionales_y_decimales__sintesis_racionales_decimales",
+  "title": "Synthèse : calculer et choisir la précision",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir la valeur, l'opération et la précision"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux maintenant utiliser des fractions ou des nombres décimaux pour représenter un même nombre, calculer des produits et des quotients, et choisir une approximation qui répond à un besoin. Avant de calculer, identifie la question. « Combien de portions entières ? » exige un nombre entier et peut laisser un reste ; « quelle quantité reçoit chacun ? » peut donner une quantité fractionnaire. Une même division numérique demande des interprétations différentes selon le contexte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si une valeur exacte est demandée, conserve les fractions lorsqu'un développement décimal ne se termine pas. Si un arrondi précis est demandé, communique cette valeur et distingue l'égalité entre ses différentes écritures équivalentes de son approximation de la donnée initiale. Si une erreur maximale est indiquée, vérifie la distance autorisée. Un écran affichant beaucoup de chiffres ne remplace aucune de ces décisions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les problèmes suivants, revois aussi les signes, les facteurs communs, les dénominateurs communs et l'unité. Utilise la calculatrice lorsqu'elle est proposée pour obtenir des chiffres ; pour les calculs courts, il est important de savoir expliquer la méthode. Pour vérifier, multiplie un quotient par son diviseur, contrôle si son signe est cohérent et regarde si le résultat tient dans la quantité disponible."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "envases_completos",
+          "prompt": "On dispose de 2,4 L de liquide. Chaque récipient plein contient 3/8 L. Combien de récipients peut-on remplir complètement et combien de litres reste-t-il ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "completos",
+              "type": "math_numeric_input",
+              "label": "Récipients complètement remplis",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            },
+            {
+              "id": "sobrante",
+              "type": "math_numeric_input",
+              "label": "Litres restants",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2,4 = 12/5 L et (12/5) ÷ (3/8) = 32/5 = 6,4. On peut remplir six récipients ; ils utilisent 18/8 = 9/4 L et il reste 12/5 − 9/4 = 3/20 L.",
+            "incorrect": "6,4 est le nombre de portions si l'on autorise une portion incomplète, mais la question demande des récipients pleins. Sept exigeraient plus de liquide que la quantité disponible. Le reste n'est pas 0,4 L : 0,4 représente une fraction d'un récipient de 3/8 L."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver l'exactitude et déceler les fausses équivalences"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une transformation correcte conserve la valeur à chaque étape. Quand une expression mélange un décimal fini et une fraction, convertir le décimal en fraction peut révéler les facteurs et éviter les arrondis. Détermine quelle partie est une somme et quelle partie est un produit avant de simplifier. La barre de fraction ou les parenthèses regroupent toute l'expression à diviser."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_mixta",
+          "prompt": "Calcule exactement (0,75 − 1/5) ÷ (11/10). Toute écriture numérique équivalente est acceptée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Résultat exact",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,75 = 3/4 ; 3/4 − 1/5 = 11/20. Diviser par 11/10 revient à multiplier par 10/11, ce qui donne 1/2.",
+            "incorrect": "Ne simplifie par onze qu'après avoir terminé la soustraction et écrit le dividende sous la forme 11/20. Inverser le dividende au lieu du diviseur produit un autre calcul. Un décimal fini se convertit exactement."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "afirmaciones_exactas",
+          "prompt": "Sélectionne toutes les égalités exactes. N'accepte pas une approximation comme s'il s'agissait du même nombre.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exactas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−0,125 = −1/8.",
+                  "reviewFeedback": "Pour l'égalité choisie, convertis le décimal en fraction en conservant son signe. Vérifie que la simplification des deux termes conserve la valeur."
+                },
+                {
+                  "id": "b",
+                  "label": "0,4 = 2/5.",
+                  "reviewFeedback": "Pour l'égalité choisie, repère l'unité décimale du chiffre et vérifie la simplification de la fraction correspondante."
+                },
+                {
+                  "id": "c",
+                  "label": "0,333 = 1/3.",
+                  "reviewFeedback": "Pour l'égalité choisie, distingue un décimal fini d'un développement qui se poursuit. Vérifie exactement la relation par un produit ou une fraction."
+                },
+                {
+                  "id": "d",
+                  "label": "L'inverse de 2/3 est −2/3.",
+                  "reviewFeedback": "Pour l'affirmation choisie, revois la définition de l'inverse multiplicatif et vérifie le produit avec le nombre initial. Distingue l'inverse de l'opposé."
+                },
+                {
+                  "id": "e",
+                  "label": "0,045 = 9/200.",
+                  "reviewFeedback": "Pour l'égalité choisie, compte les positions décimales, y compris le zéro initial. Vérifie ensuite quel facteur permet de simplifier la fraction sans changer sa valeur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−125/1000 se simplifie en −1/8 ; 4/10 en 2/5 ; 45/1000 en 9/200. Toutes ces conversions conservent exactement la valeur.",
+            "incorrect": "0,333 vaut 333/1000, inférieur à 1/3. −2/3 est l'opposé de 2/3 ; son inverse vaut 3/2, car le produit doit donner un."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Justifier une division et vérifier l'ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Inverser une somme ne consiste pas à inverser chacun de ses termes. Par exemple, si le diviseur est 2/3 + 1/6, il vaut d'abord cinq sixièmes ; son inverse est six cinquièmes. L'inverse concerne un seul nombre : la valeur de toute la somme. Vérifier que le produit des deux vaut un permet de repérer l'erreur sans mémoriser une liste d'exceptions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inverso_de_suma",
+          "prompt": "Calcule 1÷(3/10+1/5) et choisis l'argument valable.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Quotient",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "On calcule d'abord le diviseur entier, puis on prend l'inverse de ce seul nombre.",
+                  "reviewFeedback": "Revois ce que regroupent les parenthèses et à quelle valeur unique s'applique l'inversion. Vérifie que le produit avec ce diviseur redonne le dividende."
+                },
+                {
+                  "id": "b",
+                  "label": "On additionne 10/3 et cinq, les inverses des termes de la somme.",
+                  "reviewFeedback": "Ton raisonnement applique l'inversion à chaque terme d'une somme. Vérifie par un produit si inverser chaque terme conserve la valeur du diviseur entier."
+                },
+                {
+                  "id": "c",
+                  "label": "On supprime le un avec le numérateur un de 1/5.",
+                  "reviewFeedback": "Ton argument élimine un un appartenant à un terme de la somme. Vérifie si ce un est réellement un facteur de toute l'expression que tu souhaites simplifier."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le diviseur entier vaut 5/10 = 1/2, non nul. Son inverse est deux ; 2×1/2 = 1 vérifie le résultat.",
+            "incorrect": "L'inverse d'une somme n'est pas la somme des inverses. Le un d'un terme ne multiplie pas tout le diviseur et ne peut pas être simplifié avec le dividende."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_racional_decimal",
+          "prompt": "Classe les valeurs de la plus petite à la plus grande. Utilise les équivalences ou des repères en respectant le sens de l'ordre des nombres négatifs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "−0,9"
+                },
+                {
+                  "id": "b",
+                  "label": "−7/8"
+                },
+                {
+                  "id": "c",
+                  "label": "−0,8"
+                },
+                {
+                  "id": "d",
+                  "label": "0"
+                },
+                {
+                  "id": "e",
+                  "label": "1/6"
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "e",
+                "b",
+                "d",
+                "a"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−0,9 < −7/8 < −0,8 < 0 < 1/6. Sept huitièmes valent 0,875 ; leur opposé se situe donc entre −0,900 et −0,800.",
+            "incorrect": "Lorsqu'on compare des nombres négatifs, une plus grande distance à zéro signifie un nombre plus petit. Le nombre de chiffres d'un décimal ne détermine pas seul l'ordre : compare les valeurs de position ou des fractions équivalentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une réponse exacte et une autre utile pour communiquer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une longueur rationnelle peut s'exprimer exactement, puis s'approximer pour informer quelqu'un qui n'a pas besoin d'autant de détails. Conserver les deux réponses permet de savoir ce qui a été perdu lors de l'approximation. L'erreur se mesure dans l'unité convenue et ne se déduit pas seulement du nombre de décimales visibles. Dans une activité avec une erreur maximale, plusieurs réponses peuvent être valables."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "longitud_precision",
+          "prompt": "Sept mètres sont répartis également entre neuf équipes. Écris la longueur exacte par équipe et une approximation dont l'erreur absolue est au maximum 0,001 m. Sélectionne ensuite tous les décimaux proposés qui respectent cette même limite ; la calculatrice peut aider.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exacta",
+              "type": "math_numeric_input",
+              "label": "Longueur exacte en mètres",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/9"
+              }
+            },
+            {
+              "id": "aproximada",
+              "type": "math_numeric_input",
+              "label": "Approximation en mètres",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "7/9",
+                "tolerance": 0.001
+              },
+              "calculator": true
+            },
+            {
+              "id": "candidatos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,777 m",
+                  "reviewFeedback": "Pour la longueur choisie, calcule la distance à la portion exacte par équipe. Vérifie si l'erreur en millièmes de mètre respecte la tolérance."
+                },
+                {
+                  "id": "b",
+                  "label": "0,778 m",
+                  "reviewFeedback": "Pour la longueur choisie, vérifie l'erreur absolue par rapport au partage exact. N'exige pas que le décimal se situe du même côté de la valeur que l'approximation écrite."
+                },
+                {
+                  "id": "c",
+                  "label": "0,780 m",
+                  "reviewFeedback": "Pour la longueur choisie, utilise la fraction exacte du partage pour calculer la distance. Écrire trois décimales ne remplace pas la comparaison de cette distance avec la limite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La longueur exacte est 7/9 m. Les erreurs de 0,777 et 0,778 valent 7/9000 m et 1/4500 m ; les deux respectent 0,001 m. 0,780 présente une erreur de 1/450 m et dépasse la limite.",
+            "incorrect": "La réponse exacte doit conserver 7/9. Pour sélectionner les décimaux, vérifie les distances : 0,777 et 0,778 respectent la limite de part et d'autre ; 0,780 la dépasse. Compter les chiffres ne remplace pas cette vérification."
+          }
+        },
+        {
+          "type": "note",
+          "text": "Avant de terminer, revois une réponse qui t'a posé problème et formule ce qui la rend valable : conserver une unité, multiplier par l'inverse, maintenir l'égalité ou respecter une précision. Cette justification sera utile pour les problèmes de taux et de proportionnalité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les structures, les restes et la précision"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_y_signos",
+          "prompt": "Calcule exactement −9/14+2/21 sous forme irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-23"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "42"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Le PPCM est 42 : −27/42+4/42 = −23/42. L'augmentation positive ne compense pas la valeur absolue négative.",
+            "incorrect": "Changer les dénominateurs sans transformer les numérateurs modifie les termes additionnés. Vérifie le signe en comparant leurs valeurs absolues."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_divisor_cero",
+          "prompt": "On propose de simplifier le diviseur dans 4÷(3/5−6/10). Quelle décision est correcte ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le résultat vaut quatre parce que le numérateur est entier.",
+                  "reviewFeedback": "Ton argument détermine un quotient d'après la nature entière du numérateur. Calcule d'abord tout le diviseur et vérifie la condition qui permet de diviser par lui."
+                },
+                {
+                  "id": "b",
+                  "label": "La division n'est pas définie : le diviseur entier vaut zéro.",
+                  "reviewFeedback": "Vérifie la soustraction qui constitue le diviseur et la condition qu'il doit remplir avant de diviser."
+                },
+                {
+                  "id": "c",
+                  "label": "Le résultat vaut zéro parce que les fractions se simplifient.",
+                  "reviewFeedback": "Ton raisonnement passe de l'annulation d'une différence à l'attribution d'une valeur au quotient. Vérifie si cette valeur redonnerait le dividende en la multipliant par le diviseur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/5 = 6/10, leur différence est donc nulle. Aucun nombre multiplié par zéro ne peut donner quatre.",
+            "incorrect": "Annuler les deux termes égaux d'une soustraction révèle un diviseur nul ; cela n'autorise ni à poursuivre la division ni à lui attribuer zéro comme résultat."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_nuevo",
+          "prompt": "Dans la division de 4/15 : 40 = 2×15+10 et 100 = 6×15+10. Choisis son développement décimal exact.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,262626… avec 26 qui se répète.",
+                  "reviewFeedback": "Ton choix inclut le premier chiffre dans la période. Détermine quel état commence chaque étape et vérifie quand un état antérieur réapparaît."
+                },
+                {
+                  "id": "b",
+                  "label": "0,266666… avec un deux initial suivi de six répétés.",
+                  "reviewFeedback": "Vérifie quel chiffre produit l'état qui réapparaît et quels chiffres ont été écrits avant ce cycle."
+                },
+                {
+                  "id": "c",
+                  "label": "0,2101010… parce que dix est le reste qui se répète.",
+                  "reviewFeedback": "Ton choix écrit le reste dans le développement décimal. Distingue le chiffre du quotient obtenu à une étape de la quantité restante."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le reste dix revient après l'écriture de six et continuera à produire des six. Le deux initial précède la période.",
+            "incorrect": "Les chiffres ne sont pas les restes. Le retour au reste dix répète la deuxième étape et non toute la suite depuis la première."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_y_precision",
+          "prompt": "Une feuille mesure 5/6 m sur 3/7 m. Écris l'aire exacte et sélectionne son arrondi aux millièmes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Aire exacte, en m²",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/14"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,357 m²",
+                  "reviewFeedback": "Vérifie l'aire exacte avant d'arrondir. Identifie la position des millièmes et vérifie quel chiffre suivant décide de l'arrondi."
+                },
+                {
+                  "id": "b",
+                  "label": "0,358 m²",
+                  "reviewFeedback": "Vérifie si la valeur voisine choisie est celle qu'exige la règle d'arrondi. Conserve le produit exact jusqu'au choix des positions à communiquer."
+                },
+                {
+                  "id": "c",
+                  "label": "0,35 m²",
+                  "reviewFeedback": "Ton choix conserve une précision différente de celle demandée. Repère les millièmes et distingue la troncature de l'arrondi."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'aire est de 5/14 m² = 0,357142… m². L'arrondi aux millièmes est 0,357 m² ; conserver la fraction pendant la multiplication évite une erreur intermédiaire.",
+            "incorrect": "0,358 arrondit ici vers la valeur voisine la plus éloignée ; 0,35 tronque aux centièmes. L'aire s'obtient en multipliant les longueurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "hipotesis_recuperada",
+          "prompt": "Pour des nombres rationnels k, u et v, on souhaite conclure u=v à partir de k×u = k×v. Quelle condition sur k permet de simplifier sans imposer de restrictions supplémentaires inutiles ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Que k soit un entier positif.",
+                  "reviewFeedback": "Ta condition impose un signe et une forme de nombre particuliers. Examine ce dont l'opération inverse justifiant la simplification a réellement besoin."
+                },
+                {
+                  "id": "b",
+                  "label": "Que u et v soient écrits avec le même dénominateur.",
+                  "reviewFeedback": "Ta condition concerne l'écriture des autres facteurs. Vérifie si les écrire avec un dénominateur commun garantit que le facteur partagé possède un inverse."
+                },
+                {
+                  "id": "c",
+                  "label": "Que k ne soit pas nul ; ainsi, son inverse existe.",
+                  "reviewFeedback": "Vérifie comment la condition choisie permet d'appliquer la même opération inverse aux deux membres et si elle introduit des restrictions supplémentaires inutiles."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La simplification exige un facteur commun non nul, qu'il soit positif, négatif, entier ou fractionnaire.",
+            "incorrect": "Exiger un entier positif est plus restrictif que nécessaire. Les écritures de u et de v ne déterminent pas si k peut être simplifié."
+          }
+        }
+      ]
+    }
+  ]
+}

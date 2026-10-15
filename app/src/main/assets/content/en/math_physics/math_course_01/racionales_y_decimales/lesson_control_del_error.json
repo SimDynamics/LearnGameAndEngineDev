@@ -1,0 +1,457 @@
+{
+  "id": "math_course_01__racionales_y_decimales__control_del_error",
+  "title": "Rounding and Controlling Error in a Decision",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rounding, Carrying, and Ties"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rounding to hundredths chooses the nearest multiple of 0.01. The decimal 0.998 lies between 0.99 and 1.00 and is closer to 1.00: carrying can affect several digits. The rounded value can be written as one or as 1.00; these are not different values."
+        },
+        {
+          "type": "paragraph",
+          "text": "For an exact tie, we adopt this convention for positive and negative numbers: choose the neighbor farther from zero. Thus, 0.245 rounds to 0.25 and −0.245 to −0.25. Without a tie, always choose the nearest neighbor: −0.244 rounds to −0.24. Saying \"round five up\" without explaining the sign can make the decision confusing."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "acarreo_redondeo",
+          "prompt": "Round 1.995 to hundredths and 0.0496 to thousandths using the agreed convention.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "1.995 to hundredths"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "0.0496 to thousandths"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "1/20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1.995 is exactly halfway between 1.99 and 2.00; choose 2.00. 0.0496 is closer to 0.050 than to 0.049; choose 0.050.",
+            "incorrect": "In the first case, apply the tie-breaking convention. In the second, the six requires increasing by one thousandth, and carrying changes 49 into 50 thousandths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_negativo",
+          "prompt": "Round −1.235 and −1.234 to hundredths.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "empate",
+                  "type": "numeric",
+                  "label": "−1.235 to hundredths"
+                },
+                {
+                  "id": "cercano",
+                  "type": "numeric",
+                  "label": "−1.234 to hundredths"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "empate": {
+                    "type": "numeric",
+                    "expected": "-31/25"
+                  },
+                  "cercano": {
+                    "type": "numeric",
+                    "expected": "-123/100"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1.235 is a tie, so choose −1.24, farther from zero. −1.234 is closer to −1.23.",
+            "incorrect": "The same word \"up\" could describe increasing a digit or increasing the value of the number, which is ambiguous. Compare distances and use the convention only for ties."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "truncar_o_redondear",
+          "prompt": "For 5/9 = 0.555555…, enter the truncation to two decimal places and the rounded value to hundredths.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "recorte",
+                  "type": "numeric",
+                  "label": "Truncation to two decimal places"
+                },
+                {
+                  "id": "redondeo",
+                  "type": "numeric",
+                  "label": "Rounding to hundredths"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "recorte": {
+                    "type": "numeric",
+                    "expected": "11/20"
+                  },
+                  "redondeo": {
+                    "type": "numeric",
+                    "expected": "14/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The truncation is 0.55; the rounded value is 0.56. The repeating expansion continues, and the value is closer to 0.56.",
+            "incorrect": "Truncating removes digits; rounding chooses the nearest neighbor. The two procedures are not interchangeable."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep Exact Values During Calculations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Three pieces of 1/6 m add up to exactly 1/2 m. If each piece is first approximated as 0.17 m, the reported sum becomes 0.51 m. Keeping 1/6 until after adding and then rounding gives 0.50 m. Intermediate errors can accumulate; a calculator does not make already rounded values exact either."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondear_antes_o_despues",
+          "prompt": "Seven quantities of 2/9 m are added. Method A: round each quantity to hundredths, then add. Method B: add exactly and round the sum to hundredths. Calculate both results.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "antes",
+                  "type": "numeric",
+                  "label": "Result of method A, in m"
+                },
+                {
+                  "id": "despues",
+                  "type": "numeric",
+                  "label": "Result of method B, in m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "antes": {
+                    "type": "numeric",
+                    "expected": "77/50"
+                  },
+                  "despues": {
+                    "type": "numeric",
+                    "expected": "39/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A uses 0.22 m seven times and gives 1.54 m. B keeps 14/9 = 1.555… m and rounds to 1.56 m. The reported values differ by 0.02 m.",
+            "incorrect": "Rounding does not preserve exact equality. The seven substitutions can accumulate their errors; keeping the exact value until the end avoids this particular change."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cota_suma_errores",
+          "prompt": "Three measurements are added. Each has a maximum absolute error of 0.002 m. Without knowing whether the errors are positive or negative, what conservative maximum error can be guaranteed for the sum?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 m, because errors always cancel out.",
+                  "reviewFeedback": "Your argument guarantees cancellation without knowing the direction of the errors. Check whether the information given ensures that the deviations have opposite signs."
+                },
+                {
+                  "id": "b",
+                  "label": "0.002 m, because all three use the same precision.",
+                  "reviewFeedback": "Your argument applies the error bound for one measurement to the entire sum. Consider what happens if several measurements deviate in the same direction."
+                },
+                {
+                  "id": "c",
+                  "label": "0.006 m: in the worst case, all three errors go in the same direction.",
+                  "reviewFeedback": "Check that your bound covers every allowed combination of directions. Distinguish an error that could occur from one that must occur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The three bounds add up to 0.006 m. Errors could cancel, but that cannot be guaranteed without more information.",
+            "incorrect": "Having equal precision does not make errors disappear. The bound includes the possible case in which all three deviations accumulate."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pantalla_no_exactitud",
+          "prompt": "A calculator displays 0.142857142857143 for 1/7. Select all correct statements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The display proves that the decimal expansion ends in three.",
+                  "reviewFeedback": "For the selected statement, distinguish the last visible digit from the end of an expansion. Check what limits the number of digits shown on a display."
+                },
+                {
+                  "id": "b",
+                  "label": "For a later exact calculation, it is better to keep 1/7.",
+                  "reviewFeedback": "For the selected statement, consider what information a fraction preserves when you later need to calculate without rounding."
+                },
+                {
+                  "id": "c",
+                  "label": "The displayed result is an approximation of the repeating decimal.",
+                  "reviewFeedback": "For the selected statement, compare the exact value with the finite number of displayed places. Consider what \"approximation\" means."
+                },
+                {
+                  "id": "d",
+                  "label": "The approximation cannot be used for any decision.",
+                  "reviewFeedback": "For the selected statement, consider what an approximation is for. Relate its usefulness to the precision required by a particular decision."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1/7 has a repeating decimal expansion; the display rounds to its capacity. That decimal can be useful if its error meets the requirement, while the fraction preserves the exact value.",
+            "incorrect": "The display's limit does not change the number. An approximation can be useful, but you must check the required precision."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Precision That Fits the Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "The unit of the tolerance matters. An error of 0.002 m equals two millimeters; it does not automatically mean 0.002 cm or a percentage. A purchasing decision may also require rounding up to cover a need: the nearest whole number does not guarantee enough material."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "metros_y_milimetros",
+          "prompt": "The exact length is 7/12 m. A maximum absolute error of 0.002 m is required. Select all acceptable approximations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.580 m",
+                  "reviewFeedback": "For the selected measurement, calculate the absolute distance from the exact value before deciding. Keep meters as the unit when comparing it with the tolerance."
+                },
+                {
+                  "id": "b",
+                  "label": "0.582 m",
+                  "reviewFeedback": "For the selected measurement, express the decimal as a fraction and compare the exact size of the difference with the allowed error."
+                },
+                {
+                  "id": "c",
+                  "label": "0.584 m",
+                  "reviewFeedback": "For the selected measurement, check the difference from the exact length. The sign of that difference does not replace checking its magnitude."
+                },
+                {
+                  "id": "d",
+                  "label": "0.590 m",
+                  "reviewFeedback": "For the selected measurement, use the exact value when calculating its distance. Do not decide solely from having the same number of decimal places."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "milimetros",
+              "type": "math_numeric_input",
+              "label": "Maximum allowed error, in millimeters",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/12 ≈ 0.583333 m. The errors of 0.582 and 0.584 are 1/750 m and 1/1500 m; both are below 0.002 m, or 2 mm.",
+            "incorrect": "0.580 has an error of 1/300 m, and 0.590 has an error of 1/150 m: both exceed two millimeters. Converting units requires remembering that one meter contains one thousand millimeters."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cubrir_necesidad",
+          "prompt": "You need 37/8 m of ribbon, sold in whole packages of 1/4 m. What is the minimum number of packages to buy, and how much ribbon will be left over?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paquetes",
+                  "type": "numeric",
+                  "label": "Minimum packages"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Remainder, in m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paquetes": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "1/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The requirement corresponds to 37/2 = 18.5 packages. Eighteen are not enough; buy nineteen, leaving 1/8 m.",
+            "incorrect": "The goal is to cover the need, not to report the quotient with fewer digits. The leftover length is measured in meters, not by copying the decimal part of the package count."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_precision",
+          "prompt": "An exact calculated price is 15.625 pesos. It is reported to cents using the agreed tie-breaking convention. Choose the price and calculate the absolute rounding error.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "15.62 pesos.",
+                  "reviewFeedback": "Check how your choice applies the agreed convention when the value lies exactly halfway between two cents. Distinguish a tie from truncation."
+                },
+                {
+                  "id": "b",
+                  "label": "15.63 pesos.",
+                  "reviewFeedback": "Check which decimal place must be retained when reporting cents and how a tie is resolved under this lesson's convention."
+                },
+                {
+                  "id": "c",
+                  "label": "15.60 pesos.",
+                  "reviewFeedback": "Your choice changes the precision of the reported price. Identify the decimal place corresponding to one cent and how much detail you are keeping."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Absolute error, in pesos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/200"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The tie between 15.62 and 15.63 is resolved away from zero: 15.63. The error is 0.005 pesos, half a cent.",
+            "incorrect": "15.62 would use a different tie-breaking convention. 15.60 rounds to tenths, not cents; the error must be measured against the exact price."
+          }
+        }
+      ]
+    }
+  ]
+}
