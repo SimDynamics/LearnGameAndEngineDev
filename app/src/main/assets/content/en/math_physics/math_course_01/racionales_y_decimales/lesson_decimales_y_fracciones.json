@@ -1,0 +1,647 @@
+{
+  "id": "math_course_01__racionales_y_decimales__decimales_y_fracciones",
+  "title": "Decimals and Fractions: Value and Representation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Each Place Has a Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a decimal, each place to the right of the decimal point is worth one tenth of the previous place. In 0.247 there are two tenths, four hundredths, and seven thousandths. You can also combine them as 247 thousandths: \\(0.247=\\frac{247}{1000}\\). The zero before the decimal point shows that there are no whole units; zeros within the decimal may be essential for identifying the place value."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, 0.045 means forty-five thousandths, not forty-five hundredths. Its fraction is 45/1000, which simplifies to 9/200. By contrast, 0.45 = 45/100 = 9/20. A trailing zero does not change the value: 0.450 = 450/1000 = 0.45. A zero between the decimal point and a nonzero digit can change the value."
+        },
+        {
+          "type": "paragraph",
+          "text": "Every terminating decimal is rational: it can be written as an integer divided by a power of ten and simplified if convenient. For negative numbers, the sign belongs to the entire value. −0.084 = −84/1000 = −21/250. Distinguishing place value from simplification prevents choosing a denominator based on the count of nonzero digits."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "decimal_reducido",
+          "prompt": "Write −0.072 as a fraction in simplest form, with a positive denominator. Count all the decimal places.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "125"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−0.072 = −72/1000. Dividing numerator and denominator by eight gives −9/125.",
+            "incorrect": "−72/100 omits one decimal place. 9/125 loses the negative sign; −72/1000 preserves the value but is not yet in simplest form."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Terminating and Repeating Decimals"
+        },
+        {
+          "type": "paragraph",
+          "text": "To convert a fraction into a decimal, divide the numerator by the denominator. If the remainder becomes zero, the expansion terminates. For example, 3/8 = 0.375 exactly. If a remainder appears again during division, the following steps repeat: the decimal is repeating. One third gives 0.3333…; the dots indicate that the digit three continues without end."
+        },
+        {
+          "type": "paragraph",
+          "text": "A repeating expansion represents an exact value when its full repetition is specified, but writing only a few digits gives an approximation. 0.333 is exactly 333/1000, and that number is less than 1/3. More digits may bring the approximation closer; no finite truncation of this expansion becomes equal to one third merely by seeming very precise."
+        },
+        {
+          "type": "paragraph",
+          "text": "There is a useful rule for fractions in simplest form: their decimal expansion terminates if the positive denominator has only two and five as prime factors. These are the factors of ten, one hundred, one thousand, and their powers. For example, 7/40 terminates because 40 = 2 × 2 × 2 × 5. The denominator twelve contains a factor of three, so 5/12 has a repeating expansion. Check the simplified form: 6/15 = 2/5 terminates even though fifteen contains a factor of three."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "emparejar_decimales",
+          "prompt": "Match each fraction to its exact decimal. All three quotients have terminating expansions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "5/16"
+                },
+                {
+                  "id": "b",
+                  "label": "7/20"
+                },
+                {
+                  "id": "c",
+                  "label": "2/5"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "x",
+                  "label": "0.4"
+                },
+                {
+                  "id": "y",
+                  "label": "0.3125"
+                },
+                {
+                  "id": "z",
+                  "label": "0.35"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "y",
+                  "b": "z",
+                  "c": "x"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/16 = 0.3125; 7/20 = 0.35; 2/5 = 0.4. Multiplying each decimal by its denominator recovers the numerator.",
+            "incorrect": "The denominator counts equal-sized parts, not decimal places. Convert to a power of ten or divide: 7/20 = 35/100."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "terminan",
+          "prompt": "Select all fractions whose decimal expansions terminate. Simplify before examining the denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9/45",
+                  "reviewFeedback": "For the selected fraction, first simplify using common factors of its terms. Apply the termination criterion to the remaining denominator."
+                },
+                {
+                  "id": "b",
+                  "label": "13/60",
+                  "reviewFeedback": "For the selected fraction, check whether it can be simplified and factor the resulting denominator. Distinguish prime factors of powers of ten from other prime factors."
+                },
+                {
+                  "id": "c",
+                  "label": "7/28",
+                  "reviewFeedback": "For the selected fraction, review how simplification affects the factors in the denominator. Do not apply the criterion to a representation before that step."
+                },
+                {
+                  "id": "d",
+                  "label": "4/21",
+                  "reviewFeedback": "For the selected fraction, examine which factors remain after any valid simplification. Check whether they can be factors of a power of ten."
+                },
+                {
+                  "id": "e",
+                  "label": "9/80",
+                  "reviewFeedback": "For the selected fraction, factor the reduced denominator and relate its factors to the construction of a power of ten."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/45 = 1/5 and 7/28 = 1/4 terminate. So does 9/80, because 80 has only factors of two and five. 13/60 still has a factor of three, and 4/21 still has factors of three and seven.",
+            "incorrect": "The criterion uses the simplified denominator. Seeing a three or seven in the original expression is not enough to exclude 9/45 or 7/28."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose a Representation That Makes Things Clear"
+        },
+        {
+          "type": "paragraph",
+          "text": "A fraction and a decimal are two ways to represent a number. One eighth is easy to recognize as part of a unit; 0.125 makes it easy to align with prices or decimal measurements. For exact calculations involving thirds, fractions usually avoid rounding. Choose a representation that fits the problem and check again that the conversion has not changed the value."
+        },
+        {
+          "type": "paragraph",
+          "text": "When comparing decimals, mentally align their places by adding trailing zeros: 0.9 = 0.900 and 0.125 = 0.125. Nine tenths exceed one hundred twenty-five thousandths, even though \"125\" is larger than \"9\" as a whole number. Comparing numbers without regard to place value causes errors much like comparing numerators of fractions with different denominators."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igualdad_periodica",
+          "prompt": "What is the exact relationship between 0.1666 and 1/6?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "They are equal because there are four decimal places.",
+                  "reviewFeedback": "Your argument uses the number of decimal places as proof of equality. Check whether writing more places turns a finite truncation into an unlimited repetition."
+                },
+                {
+                  "id": "b",
+                  "label": "0.1666 < 1/6: multiplying it by six gives 0.9996, which is less than one.",
+                  "reviewFeedback": "Check the product in your justification and how its relationship to one supports the original comparison."
+                },
+                {
+                  "id": "c",
+                  "label": "0.1666 > 1/6 because 1666 is greater than one.",
+                  "reviewFeedback": "Your argument compares a string of digits as an integer. Write the decimal using its place values to recover the actual size of the number."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product 0.1666×6 = 0.9996 shows that a positive amount is missing before reaching one. The truncated decimal is less than one sixth.",
+            "incorrect": "The number of decimal places does not turn a truncation into the exact value. Comparing 1666 with one ignores the denominator 10000."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "In long division, multiplying the remainder by ten moves to the next decimal place. For example, for 1/4: ten tenths divided by four gives two tenths with remainder two; twenty hundredths divided by four gives five hundredths with remainder zero. The result is 0.25. The digits are built one place at a time, and the remainder tells us whether to continue."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversion_exacta",
+          "prompt": "Complete the four decimal digits of 3/16 and the final remainder. The first division uses 30: bringing down a zero expresses the remainder in parts ten times smaller.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Place value",
+                "Quantity divided by 16"
+              ],
+              "rows": [
+                [
+                  "Tenths",
+                  "30"
+                ],
+                [
+                  "Hundredths",
+                  "140"
+                ],
+                [
+                  "Thousandths",
+                  "120"
+                ],
+                [
+                  "Ten-thousandths",
+                  "80"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "decimas",
+                  "type": "numeric",
+                  "label": "Tenths digit"
+                },
+                {
+                  "id": "centesimas",
+                  "type": "numeric",
+                  "label": "Hundredths digit"
+                },
+                {
+                  "id": "milesimas",
+                  "type": "numeric",
+                  "label": "Thousandths digit"
+                },
+                {
+                  "id": "diezmilesimas",
+                  "type": "numeric",
+                  "label": "Ten-thousandths digit"
+                },
+                {
+                  "id": "residuo",
+                  "type": "numeric",
+                  "label": "Final remainder"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "decimas": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "centesimas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "milesimas": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "diezmilesimas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30÷16 gives digit 1 and remainder 14; 140÷16 gives 8 and remainder 12; 120÷16 gives 7 and remainder 8; 80÷16 gives 5 and remainder zero. Thus 3/16 = 0.1875 exactly.",
+            "incorrect": "Each digit comes from dividing ten times the previous remainder by sixteen. Stopping at 0.18 leaves remainder twelve and only approximates the value; the process terminates when the remainder reaches zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_decimal",
+          "prompt": "Order these values from least to greatest. One card is written as a fraction; convert it or compare it using a common unit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "0.09"
+                },
+                {
+                  "id": "b",
+                  "label": "0.1"
+                },
+                {
+                  "id": "c",
+                  "label": "0.125"
+                },
+                {
+                  "id": "d",
+                  "label": "3/20"
+                },
+                {
+                  "id": "e",
+                  "label": "0.8"
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "e",
+                "a",
+                "d",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0.09 < 0.1 < 0.125 < 3/20 < 0.8. Three twentieths equal 0.15; adding trailing zeros lets us compare places.",
+            "incorrect": "0.09 does not exceed 0.1: nine hundredths are fewer than ten hundredths. 0.125 does not exceed 0.8 merely because it has more digits; compare 125 thousandths with 800 thousandths."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Why the Denominator Determines Whether It Terminates"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a fraction in simplest form p/q has a terminating decimal with n places, it can be written as an integer divided by 10ⁿ. Because the fraction is in simplest form, its denominator q must divide that power of ten; therefore, its only possible prime factors are two and five."
+        },
+        {
+          "type": "paragraph",
+          "text": "The converse constructs the decimal: if q = 2ᵃ×5ᵇ, choose n as the greater of a and b. Multiply q by the missing factors to obtain 2ⁿ×5ⁿ = 10ⁿ, and multiply p by the same factor. For example, 3/20 needs another factor of five: 3/20 = 15/100 = 0.15. The explanation uses factorization and equivalence learned earlier."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_potencia_diez",
+          "prompt": "For 11/40, change the denominator to the smallest possible power of ten. Enter that power as a number and the equivalent numerator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominator as a power of ten"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Equivalent numerator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "den": {
+                    "type": "numeric",
+                    "expected": "1000"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "275"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "40 = 2³×5. The smallest suitable power is 10³ = 1000; multiplying both terms by 25 gives 275/1000 = 0.275.",
+            "incorrect": "100 is not divisible by forty. Changing the denominator without changing the numerator does not preserve the value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cifras_y_factores",
+          "prompt": "A fraction in simplest form has denominator 400 = 2⁴×5². How many decimal places suffice to express its value exactly?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Two: there are two factors of five.",
+                  "reviewFeedback": "Your argument only considers the factors of five. Check whether the proposed power of ten also contains all the required factors of two."
+                },
+                {
+                  "id": "b",
+                  "label": "Four: four factors of each kind are needed to reach 10⁴.",
+                  "reviewFeedback": "Check the factorization of the proposed power of ten and whether the denominator divides it. Also check why that number of places is sufficient."
+                },
+                {
+                  "id": "c",
+                  "label": "Six: the exponents four and two must be added.",
+                  "reviewFeedback": "Your argument adds the exponents. Examine how many factors of each kind a power of ten provides and which ones must be supplied."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10⁴ contains 2⁴×5⁴. Two additional factors of five are enough: 400×25 = 10000. Fewer places cannot accommodate the four required factors of two.",
+            "incorrect": "Powers of ten require equal numbers of factors of two and five. The number of places is the greater exponent, not their sum."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_interiores",
+          "prompt": "Write 0.0405 as a fraction in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "81"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "2000"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "0.0405 is 405 ten-thousandths: 405/10000 = 81/2000. The internal zeros determine the places.",
+            "incorrect": "405/100 or 405/1000 changes the scale. A trailing zero can be omitted, but internal zeros cannot be removed without changing the number."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_y_comparacion",
+          "prompt": "Select all exact equalities.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.070 = 0.07",
+                  "reviewFeedback": "For the selected equality, identify the contribution of each zero and each nonzero digit. Check whether any place value changed."
+                },
+                {
+                  "id": "b",
+                  "label": "0.070 = 0.7",
+                  "reviewFeedback": "For the selected equality, track the position of the nonzero digit before and after the decimal point. Check whether both expressions represent the same fractional unit."
+                },
+                {
+                  "id": "c",
+                  "label": "0.204 = 204/1000",
+                  "reviewFeedback": "For the selected equality, write the decimal as a number of parts of a power of ten. Check the position of the last digit."
+                },
+                {
+                  "id": "d",
+                  "label": "2.04 = 204/100",
+                  "reviewFeedback": "For the selected equality, include the whole units when converting to a fraction. Check the denominator that corresponds to the decimal places."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The trailing zero in 0.070 does not change seven hundredths. 0.204 uses thousandths, while 2.04 includes whole units and hundredths.",
+            "incorrect": "0.7 means seven tenths, ten times 0.07. The position of each digit determines the corresponding denominator."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_posiciones",
+          "prompt": "Calculate exactly 2.4+0.036.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "609/250"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2.400+0.036 = 2.436. Aligning the places with trailing zeros lets you add thousandths.",
+            "incorrect": "Do not align the last digits: align the decimal points and place values. 2.76 would incorrectly combine tenths with hundredths."
+          }
+        }
+      ]
+    }
+  ]
+}

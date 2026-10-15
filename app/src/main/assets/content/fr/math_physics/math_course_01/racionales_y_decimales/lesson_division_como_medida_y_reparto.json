@@ -1,0 +1,504 @@
+{
+  "id": "math_course_01__racionales_y_decimales__division_como_medida_y_reparto",
+  "title": "Diviser : mesurer, partager et vérifier",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'unité de la réponse dépend de la question"
+        },
+        {
+          "type": "paragraph",
+          "text": "Diviser peut servir à répartir un total entre des groupes ou à mesurer combien de portions il contient. Un litre partagé entre quatre personnes donne 1/4 L par personne. Un litre réparti en portions de 1/4 L donne quatre portions. On choisit l'opération après avoir interprété ce que représentent le dividende et le diviseur."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_y_medida",
+          "prompt": "Cas A : on partage 2/3 L entre quatre personnes. Cas B : on dispose de 2/3 L et chaque portion mesure 1/6 L. Réponds aux deux questions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Litres par personne dans A"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Nombre de portions dans B"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1/6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A donne 1/6 L par personne ; B donne quatre portions. Une réponse est un volume et l'autre un nombre de portions.",
+            "incorrect": "Intervertir le total et le diviseur inverse la relation. Même lorsque les quantités sont liées, la question détermine l'unité de la réponse."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "porciones_con_sobrante",
+          "prompt": "On dispose de 7/3 L et chaque récipient plein peut contenir 2/9 L. Calcule le nombre de récipients complètement remplis et les litres restants.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "completos",
+                  "type": "numeric",
+                  "label": "Récipients complètement remplis"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Litres restants"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "completos": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "1/9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le quotient est 21/2 = 10,5 récipients si l'on accepte d'en remplir un partiellement. Dix récipients utilisent 20/9 L et il reste 1/9 L.",
+            "incorrect": "10,5 n'est pas un nombre de récipients complètement remplis. La partie décimale 0,5 correspond à un demi-récipient, pas à un demi-litre ; onze récipients pleins dépasseraient le total."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tiempo_fraccionario",
+          "prompt": "Une machine avance à vitesse constante de 2/3 m par minute. Combien de minutes lui faut-il pour parcourir 3/5 m ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "9/10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Temps = longueur/vitesse = (3/5)÷(2/3) = 9/10 min. Le produit (2/3 m/min)×(9/10 min) redonne 3/5 m.",
+            "incorrect": "Multiplier la longueur par la vitesse ne donne pas un temps. Un trajet plus court que la distance parcourue en une minute doit prendre moins d'une minute."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prévoir le signe et la grandeur avant d'inverser"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour un dividende positif, diviser par un nombre positif inférieur à un augmente le quotient ; diviser par un le conserve ; diviser par un nombre supérieur à un le réduit. Avec un dividende négatif, il est plus précis de comparer les valeurs absolues : augmenter sa valeur absolue le rend plus négatif. Zéro divisé par n'importe quel nombre non nul reste zéro."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "magnitud_del_cociente",
+          "prompt": "Calcule (3/4)÷2 et (3/4)÷(1/2). Choisis la comparaison correcte.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "dos",
+                  "type": "numeric",
+                  "label": "Quotient de la division par 2"
+                },
+                {
+                  "id": "mitad",
+                  "type": "numeric",
+                  "label": "Quotient de la division par 1/2"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "dos": {
+                    "type": "numeric",
+                    "expected": "3/8"
+                  },
+                  "mitad": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux quotients sont inférieurs à 3/4 parce que diviser réduit toujours une quantité.",
+                  "reviewFeedback": "Ton argument affirme que diviser réduit toujours. Interprète la taille d'une unité du diviseur avant de décider comment change un dividende positif."
+                },
+                {
+                  "id": "b",
+                  "label": "Diviser par deux réduit le dividende positif ; diviser par un demi l'augmente.",
+                  "reviewFeedback": "Vérifie chaque comparaison en interprétant ce que signifie compter des unités de la taille du diviseur. Conserve la distinction entre partager et mesurer."
+                },
+                {
+                  "id": "c",
+                  "label": "Les deux quotients sont égaux parce qu'ils ont le même dividende.",
+                  "reviewFeedback": "Ton argument utilise le dividende commun comme preuve d'égalité. Vérifie si compter des unités de tailles différentes devrait produire le même nombre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Diviser par deux partage la quantité en deux ; diviser par un demi compte des unités deux fois plus petites. Les quotients sont 3/8 et 3/2.",
+            "incorrect": "Le mot « diviser » n'impose pas à lui seul le sens de la variation. Il faut examiner la valeur et le signe du diviseur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "division_todos_signos",
+          "prompt": "Calcule les trois quotients ; aucun diviseur n'est nul.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ambos",
+                  "type": "numeric",
+                  "label": "(−5/8)÷(−3/4)"
+                },
+                {
+                  "id": "un_signo",
+                  "type": "numeric",
+                  "label": "(3/10)÷(−9/5)"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "0÷(−3/7)"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ambos": {
+                    "type": "numeric",
+                    "expected": "5/6"
+                  },
+                  "un_signo": {
+                    "type": "numeric",
+                    "expected": "-1/6"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les quotients sont 5/6, −1/6 et zéro. Des signes égaux donnent un résultat positif ; des signes différents, un résultat négatif ; un dividende nul reste nul.",
+            "incorrect": "Prendre l'inverse ne change pas le signe du diviseur. Zéro divisé par un nombre négatif ne devient pas négatif et la division reste définie."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_cociente",
+          "prompt": "Pour (−7/12)÷(2/3), une personne a obtenu −7/8. Choisis le produit et la relation permettant de vérifier ce quotient.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(−7/8)×(2/3), qui doit redonner −7/12.",
+                  "reviewFeedback": "Revois le rôle des deux facteurs dans la vérification et quelle valeur initiale leur produit devrait reconstituer."
+                },
+                {
+                  "id": "b",
+                  "label": "(−7/8)×(−7/12), qui doit redonner 2/3.",
+                  "reviewFeedback": "Ta vérification multiplie par le dividende. Détermine quelle relation devrait conserver une opération qui inverse la division proposée."
+                },
+                {
+                  "id": "c",
+                  "label": "(−7/8)+(2/3), qui doit donner zéro.",
+                  "reviewFeedback": "Ta vérification utilise une addition. Reconsidère la relation multiplicative qui définit un quotient et la quantité qu'elle doit retrouver."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le quotient multiplié par le diviseur redonne le dividende : (−7/8)×(2/3) = −7/12.",
+            "incorrect": "Une vérification de division utilise un produit, pas une somme. Conserve le rôle du diviseur sans l'intervertir avec le dividende."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regroupement et diviseurs qui s'annulent"
+        },
+        {
+          "type": "paragraph",
+          "text": "La division n'est pas associative. Dans (6÷3)÷2, le premier quotient est deux et le résultat vaut un ; dans 6÷(3÷2), le diviseur entier est 3/2 et le résultat vaut quatre. Les parenthèses déterminent quel nombre est inversé. Si le diviseur est une somme ou une différence, calcule d'abord sa valeur et vérifie qu'elle n'est pas nulle."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "division_no_asociativa",
+          "prompt": "Calcule (3/4÷1/2)÷3/2 et 3/4÷(1/2÷3/2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq",
+                  "type": "numeric",
+                  "label": "Premier regroupement"
+                },
+                {
+                  "id": "der",
+                  "type": "numeric",
+                  "label": "Deuxième regroupement"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "der": {
+                    "type": "numeric",
+                    "expected": "9/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les résultats sont 1 et 9/4. Dans le deuxième cas, le diviseur entier est 1/3.",
+            "incorrect": "Déplacer les parenthèses ne conserve pas automatiquement une division. Chaque quotient doit être calculé en respectant le regroupement écrit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_se_anula",
+          "prompt": "La division 1÷(2/3−4/6) est-elle définie ? Choisis une justification complète.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui, parce que deux tiers est différent de zéro.",
+                  "reviewFeedback": "Ton argument vérifie un seul terme de la parenthèse. Repère le diviseur entier et vérifie sa valeur avant de décider s'il possède un inverse."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui, et elle vaut un parce que les fractions sont égales.",
+                  "reviewFeedback": "Ton argument passe de l'égalité de deux fractions à la valeur d'une division. Vérifie d'abord l'opération effectuée dans la parenthèse et le diviseur obtenu."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : le diviseur entier vaut zéro, même si chaque fraction prise séparément est non nulle.",
+                  "reviewFeedback": "Vérifie la valeur de toute la parenthèse et la condition nécessaire pour que ce diviseur possède un inverse. Distingue les termes isolés du nombre qu'ils forment."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4/6 = 2/3 ; le diviseur est leur différence, zéro. Zéro n'a pas d'inverse et la division n'est pas définie.",
+            "incorrect": "La restriction concerne la valeur du diviseur entier. Examiner chaque terme de la soustraction séparément ne suffit pas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "grupo_completo",
+          "prompt": "Calcule (3/4)÷(7/8−1/4) sous forme irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Le diviseur vaut 7/8−2/8 = 5/8, non nul. Multiplier 3/4 par 8/5 donne 6/5.",
+            "incorrect": "L'inverse concerne toute la différence, pas chacun de ses termes. Supprimer des termes additionnés modifie le diviseur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_medida_reparto",
+          "prompt": "Une corde de 11/6 m est partagée également entre trois équipes. Quelle longueur chaque équipe reçoit-elle ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Mètres par équipe",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "11/18"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Je multiplie par trois parce qu'il y a trois équipes.",
+                  "reviewFeedback": "Ton procédé répète le total au lieu de calculer une portion. Revois la quantité partagée et ce que doit reconstituer la réunion des parts des équipes."
+                },
+                {
+                  "id": "b",
+                  "label": "Je divise par trois et vérifie que les trois parts redonnent 11/6 m.",
+                  "reviewFeedback": "Vérifie que l'opération produit une longueur par équipe et que réunir toutes les portions conserve la corde initiale."
+                },
+                {
+                  "id": "c",
+                  "label": "Je divise trois par 11/6 parce que la réponse doit être supérieure à un.",
+                  "reviewFeedback": "Ton procédé intervertit le total et le nombre d'équipes. Vérifie quelle unité aurait le résultat et s'il répond à la question de longueur par équipe."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque équipe reçoit 11/18 m. Trois fois 11/18 m redonne 11/6 m.",
+            "incorrect": "Multiplier par trois triple le total. Intervertir dividende et diviseur produirait des équipes par mètre, ce qui n'est pas demandé."
+          }
+        }
+      ]
+    }
+  ]
+}

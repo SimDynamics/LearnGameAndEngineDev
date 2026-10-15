@@ -1,0 +1,647 @@
+{
+  "id": "math_course_01__racionales_y_decimales__decimales_y_fracciones",
+  "title": "Décimaux et fractions : valeur et représentation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Chaque position correspond à une unité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un nombre décimal, chaque position à droite de la virgule vaut un dixième de la précédente. Dans 0,247, il y a deux dixièmes, quatre centièmes et sept millièmes. Tu peux aussi les réunir en 247 millièmes : \\(0,247=\\frac{247}{1000}\\). Le zéro écrit avant la virgule indique qu'il n'y a pas d'unité entière ; les zéros à l'intérieur du nombre décimal peuvent être indispensables pour indiquer les positions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, 0,045 représente quarante-cinq millièmes, pas quarante-cinq centièmes. Sa fraction est 45/1000, qui se simplifie en 9/200. En revanche, 0,45 = 45/100 = 9/20. Un zéro final ne change pas la valeur : 0,450 = 450/1000 = 0,45. Un zéro entre la virgule et un chiffre non nul peut, lui, changer la valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tout nombre décimal fini est rationnel : il s'écrit comme un entier divisé par une puissance de dix, puis se simplifie si nécessaire. Pour les nombres négatifs, on conserve le signe de la valeur entière. −0,084 = −84/1000 = −21/250. Distinguer la valeur de position et la simplification évite de choisir le dénominateur d'après le nombre de chiffres non nuls."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "decimal_reducido",
+          "prompt": "Écris −0,072 sous forme de fraction irréductible, avec un dénominateur positif. Compte toutes les positions décimales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "125"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−0,072 = −72/1000. Diviser le numérateur et le dénominateur par huit donne −9/125.",
+            "incorrect": "−72/100 omet une position décimale. 9/125 perd le signe ; −72/1000 conserve la valeur, mais n'est pas encore irréductible."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décimaux finis et périodiques"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour convertir une fraction en nombre décimal, tu peux diviser le numérateur par le dénominateur. Si le reste devient nul, le développement s'arrête. Par exemple, 3/8 = 0,375 exactement. Si le même reste réapparaît pendant la division, les étapes suivantes se répètent : le développement est périodique. Un tiers donne 0,3333… ; les points indiquent que le chiffre trois continue sans fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un développement périodique représente une valeur exacte lorsque toute sa répétition est indiquée, mais n'écrire que quelques chiffres donne déjà une approximation. 0,333 vaut exactement 333/1000, et ce nombre est inférieur à 1/3. Davantage de chiffres peuvent rapprocher l'approximation ; aucun tronquage fini de ce développement ne devient égal à un tiers simplement parce qu'il paraît très précis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il existe un critère utile pour les fractions irréductibles : leur écriture décimale se termine si le dénominateur positif n'a que deux et cinq comme facteurs premiers. Ce sont les facteurs de dix, cent, mille et de leurs puissances. Par exemple, 7/40 se termine, car 40 = 2 × 2 × 2 × 5. Le dénominateur douze contient un facteur trois, donc 5/12 produit un développement périodique. Examine la forme irréductible : 6/15 = 2/5 se termine bien que quinze contienne un facteur trois."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "emparejar_decimales",
+          "prompt": "Associe chaque fraction à son écriture décimale exacte. Ces trois quotients ont un développement fini.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "5/16"
+                },
+                {
+                  "id": "b",
+                  "label": "7/20"
+                },
+                {
+                  "id": "c",
+                  "label": "2/5"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "x",
+                  "label": "0,4"
+                },
+                {
+                  "id": "y",
+                  "label": "0,3125"
+                },
+                {
+                  "id": "z",
+                  "label": "0,35"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "y",
+                  "b": "z",
+                  "c": "x"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/16 = 0,3125 ; 7/20 = 0,35 ; 2/5 = 0,4. Multiplier chaque nombre décimal par son dénominateur redonne le numérateur.",
+            "incorrect": "Le dénominateur compte des parts égales, pas des positions décimales. Convertis en une puissance de dix ou effectue la division : 7/20 = 35/100."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "terminan",
+          "prompt": "Sélectionne toutes les fractions dont le développement décimal se termine. Simplifie-les avant d'examiner le dénominateur.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9/45",
+                  "reviewFeedback": "Pour la fraction choisie, commence par simplifier grâce aux facteurs communs de ses termes. Applique le critère du développement fini au dénominateur obtenu."
+                },
+                {
+                  "id": "b",
+                  "label": "13/60",
+                  "reviewFeedback": "Pour la fraction choisie, vérifie si elle peut être simplifiée et factorise le dénominateur obtenu. Distingue les facteurs d'une puissance de dix des autres facteurs premiers."
+                },
+                {
+                  "id": "c",
+                  "label": "7/28",
+                  "reviewFeedback": "Pour la fraction choisie, revois l'effet de la simplification sur les facteurs du dénominateur. N'applique pas le critère à une écriture antérieure à cette étape."
+                },
+                {
+                  "id": "d",
+                  "label": "4/21",
+                  "reviewFeedback": "Pour la fraction choisie, examine les facteurs qui subsistent après toute simplification valable. Vérifie s'ils peuvent entrer dans une puissance de dix."
+                },
+                {
+                  "id": "e",
+                  "label": "9/80",
+                  "reviewFeedback": "Pour la fraction choisie, décompose le dénominateur irréductible et relie ses facteurs à la construction d'une puissance de dix."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/45 = 1/5 et 7/28 = 1/4 ont des développements finis. 9/80 aussi, car 80 ne possède que des facteurs deux et cinq. 13/60 conserve un facteur trois et 4/21 conserve les facteurs trois et sept.",
+            "incorrect": "Le critère s'applique au dénominateur irréductible. Voir un trois ou un sept dans l'écriture initiale ne suffit pas pour exclure 9/45 ou 7/28."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une écriture qui éclaire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fraction et un nombre décimal sont deux façons de représenter un nombre. Un huitième se reconnaît rapidement comme une partie d'une unité ; 0,125 permet de l'aligner avec des prix ou des mesures décimales. Pour un calcul exact avec des tiers, la fraction évite souvent les arrondis. Choisis la représentation adaptée au problème et vérifie que la conversion n'a pas changé la valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour comparer des nombres décimaux, aligne mentalement les positions en ajoutant des zéros à la fin : 0,9 = 0,900 et 0,125 = 0,125. Neuf dixièmes dépassent cent vingt-cinq millièmes, même si « 125 » est supérieur à « 9 » en tant qu'entier. Comparer les nombres sans tenir compte de leurs positions produit des erreurs semblables à la comparaison de numérateurs de fractions aux dénominateurs différents."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igualdad_periodica",
+          "prompt": "Quelle est la relation exacte entre 0,1666 et 1/6 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ils sont égaux parce qu'il y a quatre décimales.",
+                  "reviewFeedback": "Ton argument utilise le nombre de décimales comme preuve d'égalité. Vérifie si écrire davantage de positions transforme une troncature finie en une répétition illimitée."
+                },
+                {
+                  "id": "b",
+                  "label": "0,1666 < 1/6 : en le multipliant par six, on obtient 0,9996, inférieur à un.",
+                  "reviewFeedback": "Vérifie le produit utilisé dans ta justification et la façon dont sa relation avec l'unité permet de conclure sur la comparaison initiale."
+                },
+                {
+                  "id": "c",
+                  "label": "0,1666 > 1/6 parce que 1666 dépasse un.",
+                  "reviewFeedback": "Ton argument compare une suite de chiffres comme un entier. Écris le nombre décimal en fonction de ses positions pour retrouver sa véritable grandeur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le produit 0,1666×6 = 0,9996 montre qu'il manque une quantité positive pour atteindre un. La troncature est inférieure à un sixième.",
+            "incorrect": "Le nombre de décimales ne transforme pas une troncature en valeur exacte. Comparer 1666 avec un ignore le dénominateur 10000."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la division décimale, multiplier le reste par dix permet de passer à la position suivante. Par exemple, pour 1/4 : dix dixièmes divisés par quatre donnent deux dixièmes et un reste de deux ; vingt centièmes divisés par quatre donnent cinq centièmes et un reste nul. On obtient 0,25. Les chiffres sont construits par position, et le reste indique s'il faut poursuivre."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversion_exacta",
+          "prompt": "Complète les quatre chiffres décimaux de 3/16 et le reste final. La première division utilise 30 : abaisser un zéro exprime le reste en parts dix fois plus petites.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Position",
+                "Quantité divisée par 16"
+              ],
+              "rows": [
+                [
+                  "Dixièmes",
+                  "30"
+                ],
+                [
+                  "Centièmes",
+                  "140"
+                ],
+                [
+                  "Millièmes",
+                  "120"
+                ],
+                [
+                  "Dix-millièmes",
+                  "80"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "decimas",
+                  "type": "numeric",
+                  "label": "Chiffre des dixièmes"
+                },
+                {
+                  "id": "centesimas",
+                  "type": "numeric",
+                  "label": "Chiffre des centièmes"
+                },
+                {
+                  "id": "milesimas",
+                  "type": "numeric",
+                  "label": "Chiffre des millièmes"
+                },
+                {
+                  "id": "diezmilesimas",
+                  "type": "numeric",
+                  "label": "Chiffre des dix-millièmes"
+                },
+                {
+                  "id": "residuo",
+                  "type": "numeric",
+                  "label": "Reste final"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "decimas": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "centesimas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "milesimas": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "diezmilesimas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30÷16 donne le chiffre 1 et un reste de 14 ; 140÷16 donne 8 et un reste de 12 ; 120÷16 donne 7 et un reste de 8 ; 80÷16 donne 5 et un reste nul. Ainsi, 3/16 = 0,1875 exactement.",
+            "incorrect": "Chaque chiffre s'obtient en divisant par seize dix fois le reste précédent. S'arrêter à 0,18 laisse un reste de douze et ne fournit qu'une approximation ; le procédé s'arrête lorsque le reste devient nul."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_decimal",
+          "prompt": "Classe ces valeurs de la plus petite à la plus grande. Une carte est écrite comme une fraction ; convertis-la ou compare-la avec une unité commune.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "0,09"
+                },
+                {
+                  "id": "b",
+                  "label": "0,1"
+                },
+                {
+                  "id": "c",
+                  "label": "0,125"
+                },
+                {
+                  "id": "d",
+                  "label": "3/20"
+                },
+                {
+                  "id": "e",
+                  "label": "0,8"
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "e",
+                "a",
+                "d",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,09 < 0,1 < 0,125 < 3/20 < 0,8. Trois vingtièmes valent 0,15 ; ajouter des zéros finaux permet de comparer les positions.",
+            "incorrect": "0,09 ne dépasse pas 0,1 : neuf centièmes sont moins que dix centièmes. 0,125 ne dépasse pas 0,8 parce qu'il comporte plus de chiffres ; compare 125 millièmes à 800 millièmes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pourquoi le dénominateur décide si le développement se termine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si une fraction irréductible p/q possède un développement décimal fini de n positions, elle peut s'écrire comme un entier divisé par 10ⁿ. Puisqu'elle est irréductible, son dénominateur q doit diviser cette puissance de dix ; ses seuls facteurs premiers possibles sont donc deux et cinq."
+        },
+        {
+          "type": "paragraph",
+          "text": "La réciproque permet de construire le nombre décimal : si q = 2ᵃ×5ᵇ, choisis n égal au plus grand de a et b. Multiplie q par les facteurs manquants pour obtenir 2ⁿ×5ⁿ = 10ⁿ, puis multiplie p par le même facteur. Par exemple, pour 3/20, il manque un facteur cinq : 3/20 = 15/100 = 0,15. Cette explication utilise la factorisation et l'équivalence apprises précédemment."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_potencia_diez",
+          "prompt": "Pour 11/40, transforme le dénominateur en la plus petite puissance de dix possible. Écris cette puissance comme un nombre et le numérateur équivalent.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur puissance de dix"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur équivalent"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "den": {
+                    "type": "numeric",
+                    "expected": "1000"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "275"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "40 = 2³×5. La plus petite puissance compatible est 10³ = 1000 ; multiplier les deux termes par 25 donne 275/1000 = 0,275.",
+            "incorrect": "100 n'est pas un multiple de quarante. Transformer le dénominateur sans modifier le numérateur ne conserve pas la valeur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cifras_y_factores",
+          "prompt": "Une fraction irréductible a pour dénominateur 400 = 2⁴×5². Combien de positions décimales suffisent pour exprimer sa valeur exactement ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Deux : il y a deux facteurs cinq.",
+                  "reviewFeedback": "Ton argument ne considère que les facteurs cinq. Vérifie si la puissance de dix proposée contient aussi tous les facteurs deux nécessaires."
+                },
+                {
+                  "id": "b",
+                  "label": "Quatre : il faut quatre facteurs de chaque type pour obtenir 10⁴.",
+                  "reviewFeedback": "Vérifie la factorisation de la puissance de dix proposée et si le dénominateur peut la diviser. Examine aussi pourquoi ce nombre de positions suffit."
+                },
+                {
+                  "id": "c",
+                  "label": "Six : il faut additionner les exposants quatre et deux.",
+                  "reviewFeedback": "Ton argument additionne les exposants. Examine combien de facteurs de chaque type une puissance de dix fournit et quels facteurs il faut ajouter."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10⁴ contient 2⁴×5⁴. Il suffit d'ajouter deux facteurs cinq : 400×25 = 10000. Un nombre inférieur de positions ne contient pas les quatre facteurs deux nécessaires.",
+            "incorrect": "Les puissances de dix exigent des quantités égales de facteurs deux et cinq. Le nombre de positions correspond au plus grand exposant, pas à leur somme."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_interiores",
+          "prompt": "Écris 0,0405 sous forme de fraction irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "81"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "2000"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "0,0405 représente 405 dix-millièmes : 405/10000 = 81/2000. Les zéros intérieurs fixent les positions.",
+            "incorrect": "405/100 ou 405/1000 change l'échelle. Un zéro final peut être omis, mais les zéros intérieurs ne peuvent pas être supprimés sans changer le nombre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_y_comparacion",
+          "prompt": "Sélectionne toutes les égalités exactes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,070 = 0,07",
+                  "reviewFeedback": "Pour l'égalité choisie, détermine la contribution de chaque zéro et de chaque chiffre non nul. Vérifie si la valeur d'une position a changé."
+                },
+                {
+                  "id": "b",
+                  "label": "0,070 = 0,7",
+                  "reviewFeedback": "Pour l'égalité choisie, suis la position du chiffre non nul avant et après la virgule. Vérifie si les deux écritures représentent la même unité fractionnaire."
+                },
+                {
+                  "id": "c",
+                  "label": "0,204 = 204/1000",
+                  "reviewFeedback": "Pour l'égalité choisie, écris le nombre décimal comme une quantité de parts d'une puissance de dix. Vérifie la position occupée par le dernier chiffre."
+                },
+                {
+                  "id": "d",
+                  "label": "2,04 = 204/100",
+                  "reviewFeedback": "Pour l'égalité choisie, inclus également les unités entières lors de la conversion en fraction. Vérifie le dénominateur correspondant aux positions décimales."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le zéro final de 0,070 ne change pas sept centièmes. 0,204 contient des millièmes et 2,04 contient des centièmes en plus des unités entières.",
+            "incorrect": "0,7 représente sept dixièmes, soit dix fois 0,07. La position de chaque chiffre détermine le dénominateur correspondant."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_posiciones",
+          "prompt": "Calcule exactement 2,4+0,036.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "609/250"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2,400+0,036 = 2,436. Aligner les positions grâce aux zéros finaux permet d'additionner des millièmes.",
+            "incorrect": "On n'aligne pas les derniers chiffres : on aligne les virgules et les positions. 2,76 réunirait incorrectement les dixièmes et les centièmes."
+          }
+        }
+      ]
+    }
+  ]
+}
