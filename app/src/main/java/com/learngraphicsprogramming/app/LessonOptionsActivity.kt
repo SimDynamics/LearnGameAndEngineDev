@@ -16,6 +16,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
+import android.content.SharedPreferences
 import com.learngraphicsprogramming.app.narration.AndroidVoiceCatalog
 import com.learngraphicsprogramming.app.narration.SpanishVoice
 import com.learngraphicsprogramming.app.narration.NarrationEngine
@@ -25,6 +26,7 @@ import com.learngraphicsprogramming.app.narration.KokoroModelStore
 import com.learngraphicsprogramming.app.narration.KokoroVoiceCatalog
 import com.learngraphicsprogramming.app.narration.NarrationLanguage
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
+import com.learngraphicsprogramming.app.narration.NarrationControlAvailability
 import com.learngraphicsprogramming.app.narration.showWithNeutralActionText
 
 class LessonOptionsActivity : AppCompatActivity() {
@@ -39,6 +41,25 @@ class LessonOptionsActivity : AppCompatActivity() {
     private var lessonAndroidVoices = emptyList<SpanishVoice>()
     private var loadedAndroidVoiceLanguage: NarrationLanguage? = null
     private lateinit var narrationGlobalHint: TextView
+    private val narrationAvailability = NarrationControlAvailability()
+    private var openNarrationDialog: AlertDialog? = null
+    private val narrationPreferences by lazy {
+        applicationContext.getSharedPreferences("lesson_narration_settings", MODE_PRIVATE)
+    }
+    private val narrationSettingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        runOnUiThread {
+            if (!isDestroyed && ::narrationLanguageButton.isInitialized) {
+                refreshNarrationSelectors()
+                if (!NarrationSettingsRepository.get(this).enabled) {
+                    openNarrationDialog?.dismiss()
+                    androidVoiceCatalog?.close()
+                    androidVoiceCatalog = null
+                } else if (key in setOf("enabled", "engine", "language")) {
+                    refreshNarrationResources()
+                }
+            }
+        }
+    }
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -58,6 +79,7 @@ class LessonOptionsActivity : AppCompatActivity() {
         narrationGlobalHint = findViewById(R.id.textLessonNarrationGlobalHint)
         narrationLanguageButton.setOnClickListener { chooseNarrationLanguage() }
         narrationVoiceButton.setOnClickListener { chooseNarrationVoice() }
+        narrationPreferences.registerOnSharedPreferenceChangeListener(narrationSettingsListener)
         refreshNarrationSelectors()
 
         val routeId =
@@ -559,6 +581,8 @@ class LessonOptionsActivity : AppCompatActivity() {
      */
     private fun refreshNarrationSelectors() {
         val settings = NarrationSettingsRepository.get(this)
+        val section = narrationLanguageButton.parent as View
+        if (settings.enabled) narrationAvailability.apply(section, true)
         narrationLanguageButton.text = getString(
             R.string.narration_selected_language, settings.language.label(this)
         )
@@ -592,9 +616,12 @@ class LessonOptionsActivity : AppCompatActivity() {
             narrationVoiceButton.isEnabled = lessonNarrationVoiceStates != null
             narrationGlobalHint.setText(R.string.lesson_settings_narration_global_hint)
         }
+        narrationLanguageButton.isEnabled = settings.enabled
+        if (!settings.enabled) narrationAvailability.apply(section, false)
     }
 
     private fun chooseNarrationLanguage() {
+        if (!NarrationSettingsRepository.get(this).enabled) return
         val languages = NarrationLanguage.entries
         val current = NarrationSettingsRepository.get(this).language
         AlertDialog.Builder(this)
@@ -603,6 +630,7 @@ class LessonOptionsActivity : AppCompatActivity() {
                 languages.map { it.label(this) }.toTypedArray(),
                 languages.indexOf(current)
             ) { dialog, index ->
+                if (!NarrationSettingsRepository.get(this).enabled) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveLanguage(this, languages[index])
                 dialog.dismiss()
                 refreshNarrationSelectors()
@@ -611,10 +639,11 @@ class LessonOptionsActivity : AppCompatActivity() {
                 refreshAndroidVoicesIfNeeded()
             }
             .setNegativeButton(R.string.narration_cancel, null)
-            .showWithNeutralActionText()
+            .showNarrationDialog()
     }
 
     private fun chooseNarrationVoice() {
+        if (!NarrationSettingsRepository.get(this).enabled) return
         if (NarrationSettingsRepository.get(this).engine == NarrationEngine.ANDROID) {
             chooseAndroidVoice()
         } else {
@@ -624,6 +653,7 @@ class LessonOptionsActivity : AppCompatActivity() {
 
     private fun chooseAndroidVoice() {
         val settings = NarrationSettingsRepository.get(this)
+        if (!settings.enabled) return
         val available = lessonAndroidVoices.takeIf {
             loadedAndroidVoiceLanguage == settings.language
         }.orEmpty()
@@ -636,6 +666,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             .setSingleChoiceItems(
                 labels, available.indexOfFirst { it.name == settings.androidVoice } + 1
             ) { dialog, index ->
+                if (!NarrationSettingsRepository.get(this).enabled) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveAndroidVoice(
                     this, if (index == 0) null else available[index - 1].name
                 )
@@ -643,12 +674,12 @@ class LessonOptionsActivity : AppCompatActivity() {
                 refreshNarrationSelectors()
             }
             .setNegativeButton(R.string.narration_cancel, null)
-            .showWithNeutralActionText()
+            .showNarrationDialog()
     }
 
     private fun refreshAndroidVoicesIfNeeded() {
         val settings = NarrationSettingsRepository.get(this)
-        if (settings.engine != NarrationEngine.ANDROID) return
+        if (!settings.enabled || settings.engine != NarrationEngine.ANDROID) return
         val selectedLanguage = settings.language
         // Do not present voices from a previously selected language while the
         // catalog refreshes. Its own request generation rejects stale results.
@@ -661,6 +692,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             onResult = { available ->
                 val current = NarrationSettingsRepository.get(this)
                 if (!isFinishing && !isDestroyed &&
+                    current.enabled &&
                     current.engine == NarrationEngine.ANDROID &&
                     current.language == selectedLanguage) {
                     lessonAndroidVoices = available
@@ -671,6 +703,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             onError = {
                 val current = NarrationSettingsRepository.get(this)
                 if (!isFinishing && !isDestroyed &&
+                    current.enabled &&
                     current.engine == NarrationEngine.ANDROID &&
                     current.language == selectedLanguage) {
                     lessonAndroidVoices = emptyList()
@@ -686,6 +719,7 @@ class LessonOptionsActivity : AppCompatActivity() {
     private fun chooseInstalledKokoroVoice() {
         val states = lessonNarrationVoiceStates ?: return
         val settings = NarrationSettingsRepository.get(this)
+        if (!settings.enabled) return
         val installed = KokoroVoiceCatalog.forLanguage(settings.language)
             .filter { states[it.id]?.status == KokoroModelStatus.INSTALLED }
         if (installed.isEmpty()) {
@@ -693,7 +727,7 @@ class LessonOptionsActivity : AppCompatActivity() {
                 .setTitle(R.string.narration_installed_kokoro)
                 .setMessage(R.string.lesson_settings_narration_no_voices)
                 .setPositiveButton(R.string.narration_close, null)
-                .showWithNeutralActionText()
+                .showNarrationDialog()
             return
         }
         AlertDialog.Builder(this)
@@ -704,13 +738,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                 }.toTypedArray(),
                 installed.indexOfFirst { it.id == settings.kokoroVoice }
             ) { dialog, index ->
+                if (!NarrationSettingsRepository.get(this).enabled) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveKokoroVoice(this, installed[index].id)
                 dialog.dismiss()
                 refreshNarrationSelectors()
             }
             .setNegativeButton(R.string.narration_cancel, null)
-            .showWithNeutralActionText()
+            .showNarrationDialog()
     }
+
+    private fun AlertDialog.Builder.showNarrationDialog(): AlertDialog =
+        showWithNeutralActionText().also { openNarrationDialog = it }
 
     private fun showProgrammingShortcutEditor() {
 
@@ -977,6 +1015,11 @@ class LessonOptionsActivity : AppCompatActivity() {
             routeId
         )
         refreshNarrationSelectors()
+        refreshNarrationResources()
+    }
+
+    private fun refreshNarrationResources() {
+        if (!NarrationSettingsRepository.get(this).enabled) return
         if (NarrationSettingsRepository.get(this).engine == NarrationEngine.ANDROID) {
             refreshAndroidVoicesIfNeeded()
         } else {
@@ -990,6 +1033,8 @@ class LessonOptionsActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        narrationPreferences.unregisterOnSharedPreferenceChangeListener(narrationSettingsListener)
+        openNarrationDialog?.dismiss()
         androidVoiceCatalog?.close()
         if (::narrationModels.isInitialized) narrationModels.close()
         super.onDestroy()

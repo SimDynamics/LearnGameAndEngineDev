@@ -16,7 +16,12 @@ internal class KokoroBackgroundNarrationWorker(
 ) {
     enum class Outcome { COMPLETE, MORE, BUSY, PAUSED, UNAVAILABLE, RETRY }
 
-    fun cancel() { KokoroEngineCoordinator.cancel(this) }
+    @Volatile private var cancelFrontend: (() -> Unit)? = null
+
+    fun cancel() {
+        KokoroEngineCoordinator.cancel(this)
+        cancelFrontend?.invoke()
+    }
 
     /** Called on the service's private thread, with a bounded CPU wake lock. */
     fun runSlice(activeSession: () -> Boolean): Outcome {
@@ -41,20 +46,18 @@ internal class KokoroBackgroundNarrationWorker(
         var cpuBudget: AutoCloseable? = null
         var frontendForeground: Boolean? = null
         val started = SystemClock.elapsedRealtime()
-        val cancel: () -> Unit = {
-            KokoroEngineCoordinator.cancel(this)
-            english?.cancelCurrentRun()
-            Unit
-        }
+        val cancel: () -> Unit = { this.cancel() }
         val interruption = NarrationWorkPriority.onPreempt(cancel)
         val pageChange = KokoroPagePreparationQueue.onChanged(cancel)
         val contextChange = plan.onChanged(cancel)
         fun pageChanged() = KokoroPagePreparationQueue.snapshot(app)?.revision != pageRevision || !plan.isCurrent(planEpoch)
-        fun active() = activeSession() && !NarrationWorkPriority.isBusy && !pageChanged()
+        fun active() = NarrationSettingsRepository.isEnabled(app) && activeSession() &&
+            !NarrationWorkPriority.isBusy && !pageChanged()
         fun selectBudget(foreground: Boolean) {
             if (frontendForeground == foreground) return
             // The G2P pools also inherit the worker mask when constructed. Do not carry a
             // page-created pool into the automatic profile, or a capped pool into a page.
+            cancelFrontend = null
             english?.close(); english = null
             (french as? AutoCloseable)?.close(); french = null
             cpuBudget?.close(); cpuBudget = null
@@ -91,6 +94,7 @@ internal class KokoroBackgroundNarrationWorker(
                 val pageSentences = planned.page.sentences.distinctBy(NarrationPageQueue::hash)
                 try {
                     for ((sentenceIndex, item) in pageSentences.withIndex()) {
+                        if (!NarrationSettingsRepository.isEnabled(app)) return Outcome.PAUSED
                         if (pageChanged()) return Outcome.MORE
                         if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
                         scanned++
@@ -134,7 +138,10 @@ internal class KokoroBackgroundNarrationWorker(
                             }
                             NarrationLanguage.FRENCH -> MixedFrenchG2P.phonemizePrepared(item.text,
                                 french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json")).also { french = it })
-                            else -> (english ?: EnglishMisakiG2P(modelRoot).also { english = it })
+                            else -> (english ?: EnglishMisakiG2P(modelRoot).also {
+                                english = it
+                                cancelFrontend = { it.cancelCurrentRun() }
+                            })
                                 .phonemize(item.text, item.language == NarrationLanguage.BRITISH_ENGLISH, ::active)
                         }
                         if (!active()) return if (pageChanged()) Outcome.MORE else Outcome.BUSY
@@ -215,6 +222,7 @@ internal class KokoroBackgroundNarrationWorker(
             KokoroNarrationDiagnostics.event(app, TAG, "Offline narration interrupted or resources unavailable", error)
             return Outcome.RETRY
         } finally {
+            cancelFrontend = null
             interruption.close()
             pageChange.close()
             contextChange.close()

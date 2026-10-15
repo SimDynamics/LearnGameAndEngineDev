@@ -2254,11 +2254,11 @@ class OptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
-        narrationOptions?.onResume()
-
         AppearanceUi.apply(
             this
         )
+
+        narrationOptions?.onResume()
 
         updatePremiumUi()
     }

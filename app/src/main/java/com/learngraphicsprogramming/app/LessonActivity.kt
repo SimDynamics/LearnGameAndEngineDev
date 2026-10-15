@@ -31,6 +31,7 @@ import android.view.DragEvent
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import android.content.Intent
+import android.content.SharedPreferences
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -385,6 +386,17 @@ class LessonActivity : AppCompatActivity() {
 
     private var narrationController: LessonNarrationController? = null
     private var narrationControls: LessonNarrationControls? = null
+    private val narrationUiPreferences by lazy {
+        applicationContext.getSharedPreferences("lesson_narration_settings", MODE_PRIVATE)
+    }
+    private val narrationUiSettingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        runOnUiThread {
+            if (!isDestroyed && ::buttonNarrationToggle.isInitialized) {
+                narrationControls?.refresh(narrationController?.isPlaying == true)
+                updateNarrationVisibility()
+            }
+        }
+    }
     private var narrationExerciseObserver: com.learngraphicsprogramming.app.narration.LessonNarrationExerciseState? = null
     private val readingProgress = LessonReadingProgressModel()
     private val readingTextPages = mutableMapOf<String, LessonReadingTextColors>()
@@ -546,9 +558,8 @@ class LessonActivity : AppCompatActivity() {
 
     private fun updateNarrationVisibility() {
         applyReadingPresentation()
-        val enabled = NarrationSettingsRepository.get(this).enabled
         val controlsVisible = NarrationSettingsRepository.controlsVisible(this)
-        narrationControls?.setVisible(enabled && controlsVisible && !keyboardVisible && programmingImeAnimations.isEmpty() &&
+        narrationControls?.setVisible(controlsVisible && !keyboardVisible && programmingImeAnimations.isEmpty() &&
             mathKeyboardHost?.isKeyboardVisible != true && !compilerFullscreenActive &&
             !exerciseFullscreenActive && hasWindowFocus())
         updateNarrationToggleAppearance()
@@ -597,6 +608,7 @@ class LessonActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        narrationUiPreferences.unregisterOnSharedPreferenceChangeListener(narrationUiSettingsListener)
         readingPlaybackOwner = null
         clearReadingPages()
         floatingInteractions.close()
@@ -734,19 +746,16 @@ class LessonActivity : AppCompatActivity() {
 
         buttonNarrationToggle =
             findViewById(R.id.buttonNarrationToggle)
+        narrationUiPreferences.registerOnSharedPreferenceChangeListener(narrationUiSettingsListener)
 
         buttonNarrationToggle.setOnClickListener {
             val enabled = NarrationSettingsRepository.get(this).enabled
-            val showControls = !enabled || !NarrationSettingsRepository.controlsVisible(this) ||
+            if (!enabled) return@setOnClickListener
+            val showControls = !NarrationSettingsRepository.controlsVisible(this) ||
                 narrationControls?.isOutsideViewport() == true
             NarrationSettingsRepository.saveControlsVisible(this, showControls)
             if (showControls) {
-                if (!enabled) {
-                    NarrationSettingsRepository.saveEnabled(this, true)
-                    narrationController?.settingsChanged()
-                    com.learngraphicsprogramming.app.narration.KokoroNarrationSessionMonitor.refresh(this)
-                }
-                // An unchanged page keeps its segments and paused MediaPlayer.
+                // An unchanged page keeps its segments and saved playback position.
                 // Showing controls alone never starts or restarts playback.
                 prefetchVisibleNarration()
             } else {
@@ -3704,7 +3713,8 @@ class LessonActivity : AppCompatActivity() {
     private fun updateNarrationToggleAppearance() {
         if (!::buttonNarrationToggle.isInitialized) return
 
-        val enabled = NarrationSettingsRepository.get(this).enabled &&
+        val masterEnabled = NarrationSettingsRepository.get(this).enabled
+        val enabled = masterEnabled &&
             NarrationSettingsRepository.controlsVisible(this)
         val accent = AppearanceSettingsRepository.getRouteAccentColor(
             this, currentRouteId
@@ -3717,6 +3727,8 @@ class LessonActivity : AppCompatActivity() {
             if (enabled) accent else Color.rgb(170, 174, 183)
         )
         buttonNarrationToggle.isActivated = enabled
+        buttonNarrationToggle.isEnabled = masterEnabled
+        buttonNarrationToggle.alpha = if (masterEnabled) 1f else 0.65f
         buttonNarrationToggle.contentDescription = getString(
             if (enabled) R.string.lesson_narration_hide_controls
             else R.string.lesson_narration_show_controls

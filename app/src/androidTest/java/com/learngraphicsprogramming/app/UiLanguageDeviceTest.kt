@@ -117,8 +117,17 @@ class UiLanguageDeviceTest {
         val spanishMath = LessonRepository.loadLessonJson(
             context, AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, mathId).toString()
         val progressBefore = context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all.toMap()
+        // Explicit UI changes now initially select narration too, retaining the
+        // last chosen English variant even after selecting another language.
+        NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.BRITISH_ENGLISH)
         NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.FRENCH)
+        val settingsBefore = NarrationSettingsRepository.get(context)
+        val voicesBefore = NarrationLanguage.entries.associateWith {
+            NarrationSettingsRepository.forLanguage(context, it)
+        }
         val narrationBefore = context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all.toMap()
+        fun languageStorageKey(key: String) = key == "language" || key == "last_english_language" ||
+            key == "android_voice" || key.startsWith("kokoro_voice:") || key.startsWith("android_voice:")
 
         for (tag in listOf("en", "fr", "es")) {
             instrumentation.runOnMainSync { UiLanguageSettings.select(context, tag) }
@@ -181,7 +190,24 @@ class UiLanguageDeviceTest {
             assertEquals("Missing translated lessons must fall back to Spanish without hiding them",
                 spanishMath, LessonRepository.loadLessonJson(localized,
                     AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, mathId).toString())
-            assertEquals(narrationBefore, context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all)
+            val expectedLanguage = when (tag) {
+                "en" -> NarrationLanguage.BRITISH_ENGLISH
+                "fr" -> NarrationLanguage.FRENCH
+                else -> NarrationLanguage.SPANISH
+            }
+            val narration = NarrationSettingsRepository.get(context)
+            val expectedVoices = voicesBefore.getValue(expectedLanguage)
+            assertEquals(settingsBefore.copy(language = expectedLanguage,
+                kokoroVoice = expectedVoices.kokoroVoice, androidVoice = expectedVoices.androidVoice), narration)
+            for ((language, remembered) in voicesBefore) {
+                val current = NarrationSettingsRepository.forLanguage(context, language)
+                assertEquals("Kokoro voice for ${language.tag} must be preserved", remembered.kokoroVoice, current.kokoroVoice)
+                assertEquals("Android voice for ${language.tag} must be preserved", remembered.androidVoice, current.androidVoice)
+            }
+            assertEquals("Preferences unrelated to language must remain intact",
+                narrationBefore.filterKeys { !languageStorageKey(it) },
+                context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all
+                    .filterKeys { !languageStorageKey(it) })
             assertEquals(progressBefore, context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all)
         }
     }

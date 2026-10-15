@@ -35,6 +35,7 @@ class LessonNarrationControls(
     private var position = NarrationSettingsRepository.position(activity)
     private var closed = false
     private var recoverPosition = false
+    private val availability = NarrationControlAvailability()
     private val row = DraggableRow().apply {
         id = R.id.lessonNarrationControls
         orientation = LinearLayout.HORIZONTAL
@@ -49,7 +50,7 @@ class LessonNarrationControls(
         setImageResource(R.drawable.ic_person_speaking)
         setPadding(dp(11),dp(11),dp(11),dp(11))
         setBackgroundResource(android.R.drawable.list_selector_background)
-        setOnClickListener { onListen() }
+        setOnClickListener { if (narrationEnabled()) onListen() }
     }
     private val rate = control(activity.getString(R.string.narration_rate_normal),
         activity.getString(R.string.narration_change_rate)) {
@@ -65,7 +66,7 @@ class LessonNarrationControls(
         setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription = activity.getString(R.string.narration_restart_current_page)
         setBackgroundResource(android.R.drawable.list_selector_background)
-        setOnClickListener { onRestart() }
+        setOnClickListener { if (narrationEnabled()) onRestart() }
     }
     private val layoutListener = View.OnLayoutChangeListener { _,_,_,_,_,_,_,_,_ -> positionRow() }
 
@@ -77,8 +78,10 @@ class LessonNarrationControls(
             activity.getString(R.string.narration_back_five)) { onSeek(-5) }.apply {
                 id = R.id.buttonLessonBackFive
                 setOnLongClickListener {
-                    onRestart()
-                    Toast.makeText(activity,activity.getString(R.string.narration_restarted),Toast.LENGTH_SHORT).show()
+                    if (narrationEnabled()) {
+                        onRestart()
+                        Toast.makeText(activity,activity.getString(R.string.narration_restarted),Toast.LENGTH_SHORT).show()
+                    }
                     true
                 }
             },itemParams())
@@ -100,6 +103,7 @@ class LessonNarrationControls(
 
     fun refresh(playing: Boolean) {
         val settings = NarrationSettingsRepository.get(activity)
+        if (settings.enabled) availability.apply(row, true)
         val route = activity.intent.getStringExtra("routeId") ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
         val accent = AppearanceSettingsRepository.getRouteAccentColor(activity,route)
         listen.isActivated = playing
@@ -108,6 +112,7 @@ class LessonNarrationControls(
         rate.text = NarrationSettingsRepository.rateLabel(activity,settings.rate)
         rate.setTextColor(accent)
         rate.contentDescription = activity.getString(R.string.narration_rate_description,rate.text)
+        if (!settings.enabled) availability.apply(row, false)
     }
 
     fun setVisible(visible: Boolean) {
@@ -117,6 +122,7 @@ class LessonNarrationControls(
 
     /** Called only by the head shortcut, not by passive layout or focus refresh. */
     fun restoreVisiblePosition() {
+        if (!narrationEnabled()) return
         recoverPosition = true
         positionRow()
         row.post { positionRow() }
@@ -172,8 +178,9 @@ class LessonNarrationControls(
         setTypeface(typeface,android.graphics.Typeface.BOLD); setTextColor(Color.WHITE)
         isClickable = true; isFocusable = true
         setBackgroundResource(android.R.drawable.list_selector_background)
-        setOnClickListener { action() }
+        setOnClickListener { if (narrationEnabled()) action() }
     }
+    private fun narrationEnabled() = !closed && NarrationSettingsRepository.get(activity).enabled
     private fun itemParams() = LinearLayout.LayoutParams(0,dp(48),1f)
     private fun dp(value: Int) = (value*activity.resources.displayMetrics.density).toInt()
 
@@ -207,11 +214,13 @@ class LessonNarrationControls(
         }
 
         override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+            if (!narrationEnabled()) return true
             if (event.actionMasked == MotionEvent.ACTION_SCROLL) return true
             return super.dispatchGenericMotionEvent(event)
         }
 
         override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+            if (!narrationEnabled()) { endGesture(); return true }
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> begin(event)
                 MotionEvent.ACTION_POINTER_DOWN -> dragGate.reject()
@@ -229,6 +238,7 @@ class LessonNarrationControls(
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            if (!narrationEnabled()) { endGesture(); return true }
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     begin(event)

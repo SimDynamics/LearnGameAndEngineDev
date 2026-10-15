@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.learngraphicsprogramming.app.R
 import com.learngraphicsprogramming.app.UiLanguageSettings
 import android.media.AudioAttributes
@@ -299,6 +300,14 @@ class LessonNarrationController(
     private val removeResourceListener = NarrationResourceEvents.addListener {
         if (!closed) stopInternal(releaseNeuralResources = true)
     }
+    private val masterPreferences = appContext.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE)
+    private val masterListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null || key == "enabled") settingsChanged()
+    }
+
+    init {
+        masterPreferences.registerOnSharedPreferenceChangeListener(masterListener)
+    }
 
     private data class Segment(val text: String, var file: File? = null, var duration: Int? = null)
     private data class Synthesis(
@@ -428,7 +437,8 @@ class LessonNarrationController(
                 if (!File(root, "model.onnx").isFile ||
                     !File(root, voice.artifact.fileName).isFile
                 ) return@post
-                KokoroEngineCoordinator.withEngine(this, root, { closed }, foreground = true) { }
+                KokoroEngineCoordinator.withEngine(this, root,
+                    { closed || !NarrationSettingsRepository.isEnabled(appContext) }, foreground = true) { }
             }
                 .onFailure { error ->
                     if (error !is InterruptedException) {
@@ -517,7 +527,7 @@ class LessonNarrationController(
     fun stop() = onMain { stopInternal() }
 
     fun restart() = onMain {
-        if (closed || segments.isEmpty()) return@onMain
+        if (closed || segments.isEmpty() || !NarrationSettingsRepository.isEnabled(appContext)) return@onMain
         pause()
         pendingManualForward = null
         userPositionChosen = true
@@ -531,7 +541,7 @@ class LessonNarrationController(
 
     /** Offsets are measured in source audio seconds, independent of playback speed. */
     fun seekBy(seconds: Int) = onMain {
-        if (closed || segments.isEmpty() || (finished && seconds >= 0)) return@onMain
+        if (closed || !NarrationSettingsRepository.isEnabled(appContext) || segments.isEmpty() || (finished && seconds >= 0)) return@onMain
         val point = playbackPoint()
         var target = point.positionMs + seconds.toLong() * 1_000L
         var targetIndex = index
@@ -623,7 +633,7 @@ class LessonNarrationController(
     }
 
     private fun ensureSegment(next: Int) {
-        if (closed || next !in segments.indices) return
+        if (closed || !NarrationSettingsRepository.isEnabled(appContext) || next !in segments.indices) return
         val segment = segments[next]
         if (segment.file?.isFile == true) {
             if (playing && next == index && player == null) preparePlayer(segment)
@@ -785,14 +795,14 @@ class LessonNarrationController(
     }
 
     private fun initializeTts() {
-        if (ttsInitializing || closed) return
+        if (ttsInitializing || closed || !NarrationSettingsRepository.isEnabled(appContext)) return
         ttsInitializing = true
         systemEngine = defaultAndroidTtsEngine(appContext)
         val initialization = ++ttsGeneration
         try {
             tts = TextToSpeech(appContext) { status ->
                 worker.post {
-                    if (closed || initialization != ttsGeneration) return@post
+                    if (closed || initialization != ttsGeneration || !NarrationSettingsRepository.isEnabled(appContext)) return@post
                     ttsInitializing = false
                     if (status != TextToSpeech.SUCCESS) {
                         failTtsPending(s(R.string.narration_android_configure))
@@ -914,7 +924,7 @@ class LessonNarrationController(
     }
 
     private fun preparePlayer(segment: Segment) {
-        if (closed || finished || !playing) return
+        if (closed || finished || !playing || !NarrationSettingsRepository.isEnabled(appContext)) return
         if (playbackGate?.canPlay(index) == false) { waitForExercise(); return }
         val file = segment.file ?: return
         val duration = segment.duration ?: return
@@ -941,9 +951,9 @@ class LessonNarrationController(
             media.setDataSource(file.absolutePath)
             media.isLooping = false
             media.setOnPreparedListener {
-                if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return@setOnPreparedListener
+                if (closed || finished || !playing || !NarrationSettingsRepository.isEnabled(appContext) || generation != currentGeneration || index != currentIndex || player !== media) return@setOnPreparedListener
                 fun finishPreparation() {
-                    if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return
+                    if (closed || finished || !playing || !NarrationSettingsRepository.isEnabled(appContext) || generation != currentGeneration || index != currentIndex || player !== media) return
                     if (playbackGate?.canPlay(index) == false) { waitForExercise(); return }
                     try {
                         playerReady = true
@@ -971,7 +981,7 @@ class LessonNarrationController(
                 } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
-                if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return@setOnCompletionListener
+                if (closed || finished || !playing || !NarrationSettingsRepository.isEnabled(appContext) || generation != currentGeneration || index != currentIndex || player !== media) return@setOnCompletionListener
                 playbackGate?.completedNaturally(currentIndex)
                 publishProgress(NarrationPlaybackPhase.SEGMENT_COMPLETED)
                 rememberPlaybackPosition()
@@ -1020,7 +1030,7 @@ class LessonNarrationController(
         ttsPending.values.toList().forEach { synthesisFailed(it, message) }
         ttsPending.clear()
     }
-    private fun isCurrent(request: Synthesis): Boolean = !closed &&
+    private fun isCurrent(request: Synthesis): Boolean = !closed && NarrationSettingsRepository.isEnabled(appContext) &&
         request.generation == generation && request.configuration == configuration
     private fun fail(message: String) {
         stopInternal(phase = NarrationPlaybackPhase.UNAVAILABLE)
@@ -1068,6 +1078,9 @@ class LessonNarrationController(
             // pages of the SAME lesson. The audio files are still discarded.
             // Remove them if narration is disabled, assets change or we close.
             if (releaseNeuralResources) {
+                ttsGeneration++
+                runCatching { tts?.shutdown() }
+                tts = null; ttsReady = false; ttsInitializing = false; voices = emptyList()
                 releaseKokoro()
                 releasePhonemizers()
             }
@@ -1130,6 +1143,7 @@ class LessonNarrationController(
         }
     }
     private fun preservePagePriority(texts: List<String>, selected: NarrationSettings) {
+        if (!NarrationSettingsRepository.isEnabled(appContext)) return
         runCatching { KokoroPagePreparationQueue.submit(appContext, texts, selected.language, selected.kokoroVoice) }
             .onFailure { KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Page priority could not be preserved", it) }
     }
@@ -1145,6 +1159,7 @@ class LessonNarrationController(
     fun close() = onMain {
         if (closed) return@onMain
         stopInternal(releaseNeuralResources = true); closed = true; removeResourceListener()
+        masterPreferences.unregisterOnSharedPreferenceChangeListener(masterListener)
         main.removeCallbacksAndMessages(null); models.close()
         worker.post {
             runCatching { tts?.shutdown() }; tts = null; releaseKokoro()

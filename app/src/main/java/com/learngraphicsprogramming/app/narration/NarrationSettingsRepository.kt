@@ -27,6 +27,7 @@ object NarrationSettingsRepository {
     private const val KEY_KOKORO_VOICE = "kokoro_voice"
     private const val KEY_ANDROID_VOICE = "android_voice"
     private const val KEY_RATE = "rate"
+    private const val KEY_ENGLISH_LANGUAGE = "last_english_language"
 
     val KOKORO_VOICES get() = KokoroVoiceCatalog.voices.map { it.id }
     val RATES = listOf(0.5f, 1f, 1.5f, 2f)
@@ -60,6 +61,9 @@ object NarrationSettingsRepository {
         preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
     }
 
+    /** Also checked by queued work, before a settings observer can run on main. */
+    fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(KEY_ENABLED, true)
+
     /** Presentation only: hiding the controls does not disable background narration. */
     fun controlsVisible(context: Context): Boolean =
         preferences(context).getBoolean(KEY_CONTROLS_VISIBLE, true)
@@ -74,11 +78,15 @@ object NarrationSettingsRepository {
 
     fun saveKokoroVoice(context: Context, voice: String) {
         val selected = KokoroVoiceCatalog.find(voice) ?: return
-        preferences(context).edit()
+        val previousLanguage = get(context).language
+        val editor = preferences(context).edit()
             .putString(KEY_KOKORO_VOICE, voice)
             .putString("kokoro_voice:${selected.language.tag}", voice)
             .putString("language", selected.language.tag)
-            .apply()
+        val english = selected.language.takeIf { it.resourceGroup == "en" }
+            ?: previousLanguage.takeIf { it.resourceGroup == "en" }
+        if (english != null) editor.putString(KEY_ENGLISH_LANGUAGE, english.tag)
+        editor.apply()
     }
 
     fun saveAndroidVoice(context: Context, voice: String?) {
@@ -96,7 +104,30 @@ object NarrationSettingsRepository {
             .putString("android_voice:${current.language.tag}", current.androidVoice)
             .putString("language", language.tag)
         if (current.language == NarrationLanguage.SPANISH) editor.remove(KEY_ANDROID_VOICE)
+        val english = language.takeIf { it.resourceGroup == "en" }
+            ?: current.language.takeIf { it.resourceGroup == "en" }
+        if (english != null) editor.putString(KEY_ENGLISH_LANGUAGE, english.tag)
         editor.apply()
+    }
+
+    /** Called exclusively by the app-language picker, never during binding or app startup. */
+    fun synchronizeWithUiLanguage(context: Context, selectedUiTags: String) {
+        val prefs = preferences(context)
+        val current = get(context)
+        val previousEnglish = current.language.takeIf { it.resourceGroup == "en" }
+            ?: NarrationLanguage.fromTag(prefs.getString(KEY_ENGLISH_LANGUAGE, null))
+                ?.takeIf { it.resourceGroup == "en" }
+            // Existing installations had no dedicated variant key. Their last chosen
+            // voice, or an unambiguous saved British voice, retains that choice too.
+            ?: KokoroVoiceCatalog.find(prefs.getString(KEY_KOKORO_VOICE, "").orEmpty())
+                ?.language?.takeIf { it.resourceGroup == "en" }
+            ?: NarrationLanguage.BRITISH_ENGLISH.takeIf {
+                prefs.contains("kokoro_voice:en-GB") && !prefs.contains("kokoro_voice:en-US")
+            }
+        val next = NarrationUiLanguageSelection.resolve(selectedUiTags,
+            android.content.res.Resources.getSystem().configuration.locales.toLanguageTags(),
+            previousEnglish)
+        if (next != current.language) saveLanguage(context, next)
     }
 
     fun forLanguage(context: Context, language: NarrationLanguage): NarrationSettings {

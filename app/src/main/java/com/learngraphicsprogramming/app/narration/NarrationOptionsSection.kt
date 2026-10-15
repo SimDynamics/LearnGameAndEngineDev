@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException
 import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
@@ -24,11 +25,33 @@ import com.learngraphicsprogramming.app.R
 class NarrationOptionsSection(private val activity: Activity) {
     private fun s(id: Int, vararg args: Any): String = activity.getString(id, *args)
     private val host = activity.findViewById<LinearLayout>(R.id.narrationSettingsSection)
-    private val catalog = AndroidVoiceCatalog(activity)
+    private var catalog: AndroidVoiceCatalog? = null
     private val models = KokoroModelStore(activity)
     private val handler = Handler(Looper.getMainLooper())
     private var active = false
     private var closed = false
+    private val availability = NarrationControlAvailability()
+    private val masterSwitch = Switch(activity)
+    private var bindingMaster = false
+    private var openDialog: AlertDialog? = null
+    private val preferences = activity.applicationContext.getSharedPreferences(
+        "lesson_narration_settings", Activity.MODE_PRIVATE
+    )
+    private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        handler.post {
+            if (closed) return@post
+            refreshSelections()
+            if (!narrationEnabled()) {
+                openDialog?.dismiss()
+                catalog?.close()
+                catalog = null
+                storageDragging = false
+            } else if (active && key in setOf("enabled", "language", "engine")) {
+                loadAndroidVoices()
+                inspect()
+            }
+        }
+    }
     private var androidVoices = emptyList<SpanishVoice>()
     private var states = emptyMap<String, KokoroModelState>()
     private val engineButton = button(s(R.string.narration_engine)) { chooseEngine() }
@@ -76,7 +99,7 @@ class NarrationOptionsSection(private val activity: Activity) {
     private val poll = object : Runnable {
         override fun run() {
             if (!active || closed) return
-            inspect()
+            if (narrationEnabled()) inspect()
             handler.postDelayed(this, 2_000L)
         }
     }
@@ -85,12 +108,17 @@ class NarrationOptionsSection(private val activity: Activity) {
 
         // Shared controls apply to both Kokoro and Android TTS.
         host.addView(sectionHeading(R.string.narration_section_general))
-        host.addView(Switch(activity).apply {
+        host.addView(masterSwitch.apply {
             text = s(R.string.narration_show_controls)
             setTextColor(Color.WHITE)
             minHeight = dp(48)
             isChecked = NarrationSettingsRepository.get(activity).enabled
-            setOnCheckedChangeListener { _, enabled -> NarrationSettingsRepository.saveEnabled(activity, enabled) }
+            setOnCheckedChangeListener { _, enabled ->
+                if (!bindingMaster) {
+                    NarrationSettingsRepository.saveEnabled(activity, enabled)
+                    refreshSelections()
+                }
+            }
         })
         listOf(engineButton, languageButton, voiceButton).forEach { host.addView(it) }
 
@@ -108,6 +136,7 @@ class NarrationOptionsSection(private val activity: Activity) {
             }
             override fun onStopTrackingTouch(seekBar: SeekBar) {
                 storageDragging = false
+                if (!narrationEnabled()) return
                 NarrationStorageBudget.saveLimit(activity, seekBar.progress.toLong() * storageStepBytes)
                 // A previously paused queue may continue after raising the limit.
                 KokoroBackgroundNarrationWorker.start(activity.applicationContext)
@@ -125,13 +154,14 @@ class NarrationOptionsSection(private val activity: Activity) {
 
         host.addView(sectionHeading(R.string.narration_section_licenses))
         host.addView(button(s(R.string.narration_licenses_reading)) { showLicenses() })
+        preferences.registerOnSharedPreferenceChangeListener(settingsListener)
         refreshSelections()
     }
 
     fun onResume() {
         active = true
         refreshSelections()
-        loadAndroidVoices()
+        if (narrationEnabled()) loadAndroidVoices()
         handler.removeCallbacks(poll)
         handler.post(poll)
         refreshStorage()
@@ -183,23 +213,37 @@ class NarrationOptionsSection(private val activity: Activity) {
         s(R.string.narration_storage_gib, bytes.toDouble() / NarrationStorageBudget.RESERVE_BYTES)
 
     fun onStop() { active = false; handler.removeCallbacks(poll) }
-    fun close() { closed = true; onStop(); catalog.close(); models.close() }
+    fun close() {
+        closed = true
+        onStop()
+        preferences.unregisterOnSharedPreferenceChangeListener(settingsListener)
+        openDialog?.dismiss()
+        catalog?.close()
+        catalog = null
+        models.close()
+    }
 
     private fun loadAndroidVoices() {
+        if (!narrationEnabled() || closed) return
         val language = NarrationSettingsRepository.get(activity).language
         androidVoices = emptyList()
-        catalog.load({ available ->
-            if (!closed && NarrationSettingsRepository.get(activity).language == language) {
+        val voiceCatalog = catalog ?: AndroidVoiceCatalog(activity).also { catalog = it }
+        voiceCatalog.load({ available ->
+            if (!closed && narrationEnabled() && NarrationSettingsRepository.get(activity).language == language) {
                 androidVoices = available
                 systemStatus.text = if (available.isEmpty()) s(R.string.narration_no_android_voices, language.label(activity))
                     else activity.resources.getQuantityString(R.plurals.narration_android_voices, available.size, available.size)
                 refreshSelections()
             }
-        }, { message -> if (!closed) { systemStatus.text = message; refreshSelections() } }, language)
+        }, { message -> if (!closed && narrationEnabled()) { systemStatus.text = message; refreshSelections() } }, language)
     }
 
     private fun refreshSelections() {
         val settings = NarrationSettingsRepository.get(activity)
+        if (settings.enabled) availability.apply(host, true, masterSwitch)
+        bindingMaster = true
+        masterSwitch.isChecked = settings.enabled
+        bindingMaster = false
         engineButton.text = when (settings.engine) {
             NarrationEngine.AUTO -> s(R.string.narration_engine_auto)
             NarrationEngine.KOKORO -> s(R.string.narration_engine_kokoro)
@@ -232,6 +276,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         installEnglishButton.text = s(if (auxiliary?.status == KokoroModelStatus.ERROR)
             R.string.narration_retry_english else R.string.narration_install_english)
         removeAuxButton.isEnabled = hasFiles(auxiliary)
+        if (!settings.enabled) availability.apply(host, false, masterSwitch)
     }
 
     private fun hasFiles(state: KokoroModelState?) = state != null && (state.downloadedBytes > 0 || state.status != KokoroModelStatus.NOT_INSTALLED)
@@ -250,56 +295,66 @@ class NarrationOptionsSection(private val activity: Activity) {
     }
 
     private fun chooseEngine() {
+        if (!narrationEnabled()) return
         val engines = NarrationEngine.entries.toTypedArray()
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_voice_engine))
             .setSingleChoiceItems(arrayOf(s(R.string.narration_automatic), s(R.string.narration_kokoro_neural), s(R.string.narration_android_tts)), engines.indexOf(NarrationSettingsRepository.get(activity).engine)) { dialog, index ->
+                if (!narrationEnabled()) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveEngine(activity, engines[index]); dialog.dismiss(); refreshSelections()
-            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showReaderDialog()
     }
 
     private fun chooseLanguage() {
+        if (!narrationEnabled()) return
         val choices = NarrationLanguage.entries
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_reading_language))
             .setSingleChoiceItems(choices.map { it.label(activity) }.toTypedArray(), choices.indexOf(NarrationSettingsRepository.get(activity).language)) { dialog, index ->
+                if (!narrationEnabled()) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveLanguage(activity, choices[index]); dialog.dismiss(); refreshSelections(); loadAndroidVoices()
-            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showReaderDialog()
     }
 
     private fun chooseVoice() {
+        if (!narrationEnabled()) return
         val settings = NarrationSettingsRepository.get(activity)
         if (settings.engine != NarrationEngine.ANDROID) {
             val choices = KokoroVoiceCatalog.forLanguage(settings.language).filter { states[it.id]?.status == KokoroModelStatus.INSTALLED }
             if (choices.isEmpty()) { manageVoices(); return }
             AlertDialog.Builder(activity).setTitle(s(R.string.narration_installed_kokoro))
                 .setSingleChoiceItems(choices.map { s(R.string.narration_voice_name_id, it.label, it.id) }.toTypedArray(), choices.indexOfFirst { it.id == settings.kokoroVoice }) { dialog, index ->
+                    if (!narrationEnabled()) return@setSingleChoiceItems
                     NarrationSettingsRepository.saveKokoroVoice(activity, choices[index].id); dialog.dismiss(); refreshSelections()
-                }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
+                }.setNegativeButton(s(R.string.narration_cancel), null).showReaderDialog()
             return
         }
         val labels = arrayOf(s(R.string.narration_automatic_offline)) + androidVoices.map { it.label }
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_android_voice_language, settings.language.label(activity)))
             .setSingleChoiceItems(labels, androidVoices.indexOfFirst { it.name == settings.androidVoice } + 1) { dialog, index ->
+                if (!narrationEnabled()) return@setSingleChoiceItems
                 NarrationSettingsRepository.saveAndroidVoice(activity, if (index == 0) null else androidVoices[index - 1].name)
                 dialog.dismiss(); refreshSelections()
-            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showReaderDialog()
     }
 
     private fun manageVoices() {
+        if (!narrationEnabled()) return
         val language = NarrationSettingsRepository.get(activity).language
         val choices = KokoroVoiceCatalog.forLanguage(language)
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_kokoro_language, language.label(activity)))
             .setItems(choices.map { s(R.string.narration_voice_name_status, it.label, it.id, stateLabel(states[it.id])) }.toTypedArray()) { _, index ->
+                if (!narrationEnabled()) return@setItems
                 val voice = choices[index]
                 val installed = states[voice.id]?.status == KokoroModelStatus.INSTALLED
                 AlertDialog.Builder(activity).setTitle(s(R.string.narration_voice_name_id, voice.label, voice.id))
                     .setMessage(s(R.string.narration_voice_details, stateLabel(states[voice.id]), compatibilityReason(language)))
                     .setPositiveButton(if (installed) s(R.string.narration_select) else s(R.string.narration_download)) { _, _ ->
+                        if (!narrationEnabled()) return@setPositiveButton
                         if (installed) { NarrationSettingsRepository.saveKokoroVoice(activity, voice.id); refreshSelections() }
                         else confirmDownload(s(R.string.narration_voice_resource, voice.id), listOf(voice.artifact))
                     }
                     .setNeutralButton(s(R.string.narration_remove)) { _, _ -> confirmRemove(s(R.string.narration_voice_resource, voice.id), listOf(voice.artifact)) }
-                    .setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
-            }.setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
+                    .setNegativeButton(s(R.string.narration_close), null).showReaderDialog()
+            }.setNegativeButton(s(R.string.narration_close), null).showReaderDialog()
     }
 
     private fun inspect() = models.inspectResources { snapshots ->
@@ -307,26 +362,33 @@ class NarrationOptionsSection(private val activity: Activity) {
     }
 
     private fun confirmDownload(label: String, artifacts: List<KokoroModelManifest.Artifact>) {
-        if (artifacts.isEmpty()) return
+        if (!narrationEnabled() || artifacts.isEmpty()) return
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_download_title, label))
             .setMessage(s(R.string.narration_download_confirmation, size(artifacts.sumOf { it.bytes }), compatibilityReason(NarrationSettingsRepository.get(activity).language)))
             .setNegativeButton(s(R.string.narration_cancel), null)
-            .setPositiveButton(s(R.string.narration_download)) { _, _ -> models.startDownload(true, artifacts); inspect() }.showWithNeutralActionText()
+            .setPositiveButton(s(R.string.narration_download)) { _, _ ->
+                if (narrationEnabled()) { models.startDownload(true, artifacts); inspect() }
+            }.showReaderDialog()
     }
 
     private fun confirmRemove(label: String, artifacts: List<KokoroModelManifest.Artifact>) {
+        if (!narrationEnabled()) return
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_remove_title, label))
             .setMessage(s(R.string.narration_remove_confirmation))
             .setNegativeButton(s(R.string.narration_cancel), null)
-            .setPositiveButton(s(R.string.narration_remove)) { _, _ -> models.remove(artifacts); inspect() }.showWithNeutralActionText()
+            .setPositiveButton(s(R.string.narration_remove)) { _, _ ->
+                if (narrationEnabled()) { models.remove(artifacts); inspect() }
+            }.showReaderDialog()
     }
 
     private fun openSystem(intent: Intent) {
+        if (!narrationEnabled()) return
         try { activity.startActivity(intent) }
         catch (_: ActivityNotFoundException) { Toast.makeText(activity, s(R.string.narration_system_settings_missing), Toast.LENGTH_LONG).show() }
     }
 
     private fun showLicenses() {
+        if (!narrationEnabled()) return
         val resources = listOf(
             s(R.string.narration_license_kokoro) to R.raw.kokoro_model_notice,
             s(R.string.narration_license_apache) to R.raw.french_fluidaudio_license,
@@ -347,7 +409,8 @@ class NarrationOptionsSection(private val activity: Activity) {
         val labels = resources.map { it.first } + assets.map { it.first }
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_licenses))
             .setItems(labels.toTypedArray()) { _, index ->
-                val pending = AlertDialog.Builder(activity).setTitle(labels[index]).setMessage(s(R.string.narration_loading)).setPositiveButton(s(R.string.narration_close), null).showWithNeutralActionText()
+                if (!narrationEnabled()) return@setItems
+                val pending = AlertDialog.Builder(activity).setTitle(labels[index]).setMessage(s(R.string.narration_loading)).setPositiveButton(s(R.string.narration_close), null).showReaderDialog()
                 Thread({
                     val contents = runCatching {
                         if (index < resources.size) activity.resources.openRawResource(resources[index].second).bufferedReader().use { it.readText() }
@@ -355,7 +418,7 @@ class NarrationOptionsSection(private val activity: Activity) {
                     }.getOrDefault(s(R.string.narration_license_open_error))
                     handler.post { if (!closed && pending.isShowing && !activity.isDestroyed) pending.setMessage(contents) }
                 }, "NarrationLicenses").start()
-            }.setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
+            }.setNegativeButton(s(R.string.narration_close), null).showReaderDialog()
     }
     private fun size(bytes: Long) = s(R.string.narration_size_mib, bytes / 1_048_576.0)
     private fun sectionHeading(titleRes: Int) = LinearLayout(activity).apply {
@@ -378,8 +441,14 @@ class NarrationOptionsSection(private val activity: Activity) {
         text = value; textSize = size; setTextColor(Color.rgb(210, 214, 220)); setPadding(0, dp(8), 0, dp(8))
     }
     private fun button(label: String, click: () -> Unit) = Button(activity).apply {
-        text = label; isAllCaps = false; minHeight = dp(48); setOnClickListener { click() }
+        text = label; isAllCaps = false; minHeight = dp(48)
+        setOnClickListener { if (narrationEnabled()) click() }
     }
+    private fun narrationEnabled() = !closed && NarrationSettingsRepository.get(activity).enabled
+
+    private fun AlertDialog.Builder.showReaderDialog(): AlertDialog =
+        showWithNeutralActionText().also { openDialog = it }
+
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
 }
 

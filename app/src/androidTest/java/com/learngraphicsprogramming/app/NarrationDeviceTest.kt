@@ -100,7 +100,17 @@ class NarrationDeviceTest {
                 assertRate(activity, 1.5f)
                 NarrationSettingsRepository.saveEnabled(activity, false)
                 invoke(activity, "updateNarrationVisibility")
-                assertEquals(View.GONE, activity.findViewById<View>(R.id.lessonNarrationControls).visibility)
+                val disabledControls = activity.findViewById<ViewGroup>(R.id.lessonNarrationControls)
+                assertEquals(View.VISIBLE, disabledControls.visibility)
+                tree(disabledControls).forEach { view ->
+                    assertFalse("The disabled master gates every floating control", view.isEnabled)
+                    if (view !is ViewGroup) {
+                        assertTrue("Disabled floating controls remain visibly dimmed", view.alpha < 0.8f)
+                        val color = if (view is TextView) view.currentTextColor
+                            else (view as? android.widget.ImageView)?.imageTintList?.defaultColor
+                        assertEquals(android.graphics.Color.rgb(170, 174, 183), color)
+                    }
+                }
                 NarrationSettingsRepository.saveEnabled(activity, true)
                 invoke(activity, "updateNarrationVisibility")
                 assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.lessonNarrationControls).visibility)

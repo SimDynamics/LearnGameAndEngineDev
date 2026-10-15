@@ -10,8 +10,9 @@ import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.learngraphicsprogramming.app.narration.KokoroNarrationSessionMonitor
+import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 
-/** App locale selects UI resources and translated curriculum assets; narration preferences stay independent. */
+/** Explicit UI changes initially select narration; subsequent voice choices remain independent. */
 object UiLanguageSettings {
     private const val PREFERENCES = "ui_language_settings"
     private const val SELECTION = "selection"
@@ -47,6 +48,10 @@ object UiLanguageSettings {
 
     fun select(context: Context, tag: String) {
         require(tag.isEmpty() || tag in supportedTags(context))
+        if (tag == selectedTag(context)) return
+        // Both UI pickers share this explicit action. Initialization and independent
+        // voice changes never synchronize in the opposite direction.
+        NarrationSettingsRepository.synchronizeWithUiLanguage(context, tag)
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
             .putString(SELECTION, tag).putBoolean(INITIALIZED, true).apply()
         if (Build.VERSION.SDK_INT >= 33) {

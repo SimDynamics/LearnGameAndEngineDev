@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -34,6 +36,24 @@ internal class KokoroContinuousNarrationService : Service() {
     // Main-thread only: a refresh received during an ending session must not be lost.
     private var startEpoch = 0L
     private val main = Handler(Looper.getMainLooper())
+    private lateinit var settingsPreferences: SharedPreferences
+    // Keep a strong reference: SharedPreferences listeners are weakly held.
+    private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "enabled" || key == "engine") {
+            val stopIfDisabled = {
+                if (!narrationAllowed()) {
+                    running = false
+                    worker?.cancel()
+                    thread?.interrupt()
+                    // Let the existing epoch/finally hand-off finish the old
+                    // worker before stopping or honoring a subsequent ON.
+                    if (thread?.isAlive != true) stopSelf()
+                }
+            }
+            if (Looper.myLooper() == Looper.getMainLooper()) stopIfDisabled()
+            else main.post { stopIfDisabled() }
+        }
+    }
     private var wakeRenewedAt = 0L
     private val heartbeat = object : Runnable {
         override fun run() {
@@ -67,9 +87,39 @@ internal class KokoroContinuousNarrationService : Service() {
                 }
             )
         }
+        // A stopService request can arrive before Android delivers onStartCommand.
+        // Acknowledge startForegroundService as soon as this instance exists,
+        // before any master-switch check or cancellation can stop it.
+        ensureForegroundStarted()
+        settingsPreferences = applicationContext.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE)
+        settingsPreferences.registerOnSharedPreferenceChangeListener(settingsListener)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!ensureForegroundStarted()) return START_NOT_STICKY
+        // A foreground-service intent may have been queued before the master
+        // switch was turned off. Fulfil Android's promotion contract first,
+        // then stop without acquiring an engine or starting synthesis.
+        if (!narrationAllowed()) {
+            running = false
+            worker?.cancel()
+            thread?.interrupt()
+            if (thread?.isAlive != true) stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
+        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Offline narration start command",
+            fields = mapOf("startId" to startId, "threadAlive" to (thread?.isAlive == true)))
+        startEpoch++
+        // A rapid OFF -> ON can arrive while the cancelled worker is still
+        // releasing its sessions. Its finally block owns the safe replacement.
+        running = true
+        if (thread?.isAlive != true) {
+            launchSession()
+        }
+        return START_NOT_STICKY
+    }
+
+    private fun ensureForegroundStarted(): Boolean {
         if (!foregroundStarted) {
             try {
                 val notification = createNotification()
@@ -82,17 +132,11 @@ internal class KokoroContinuousNarrationService : Service() {
             } catch (error: RuntimeException) {
                 KokoroNarrationDiagnostics.event(applicationContext, TAG, "Cannot start foreground narration; Android denied the service", error)
                 stopSelf()
-                return START_NOT_STICKY
+                return false
             }
             main.post(heartbeat)
         }
-        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Offline narration start command",
-            fields = mapOf("startId" to startId, "threadAlive" to (thread?.isAlive == true)))
-        startEpoch++
-        if (thread?.isAlive != true) {
-            launchSession()
-        }
-        return START_NOT_STICKY
+        return true
     }
 
     @Suppress("DEPRECATION")
@@ -115,6 +159,11 @@ internal class KokoroContinuousNarrationService : Service() {
     }
 
     private fun launchSession() {
+        if (!foregroundStarted || !narrationAllowed()) {
+            running = false
+            stopSelf()
+            return
+        }
         val epoch = startEpoch
         running = true
         val next = Thread({ runSession(epoch) }, "KokoroOfflineNarration").apply {
@@ -183,7 +232,7 @@ internal class KokoroContinuousNarrationService : Service() {
             main.post {
                 if (thread === current) {
                     thread = null
-                    if (running && foregroundStarted && startEpoch != epoch) {
+                    if (running && foregroundStarted && startEpoch != epoch && narrationAllowed()) {
                         // The old worker has completely finished. Its wake lock
                         // remains held until this replacement can resume pending work.
                         launchSession()
@@ -207,6 +256,11 @@ internal class KokoroContinuousNarrationService : Service() {
         }
     }
 
+    private fun narrationAllowed(): Boolean {
+        if (!NarrationSettingsRepository.isEnabled(applicationContext)) return false
+        return NarrationSettingsRepository.get(applicationContext).engine != NarrationEngine.ANDROID
+    }
+
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Swiping the task away explicitly closes this preparation session.
         stopSelf()
@@ -214,6 +268,9 @@ internal class KokoroContinuousNarrationService : Service() {
     }
 
     override fun onDestroy() {
+        if (::settingsPreferences.isInitialized) {
+            settingsPreferences.unregisterOnSharedPreferenceChangeListener(settingsListener)
+        }
         running = false
         worker?.cancel()
         thread?.interrupt()

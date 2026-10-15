@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -29,12 +30,21 @@ internal object KokoroNarrationSessionMonitor {
     private var initialized = false
     private var startedActivities = 0
     private lateinit var application: Application
+    // SharedPreferences keeps listeners weakly; the application monitor owns this
+    // one for its lifetime, including sessions with no visible activity.
+    private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "enabled" || key == "engine") {
+            val update = { startService() }
+            if (Looper.myLooper() == Looper.getMainLooper()) update()
+            else main.post { update() }
+        }
+    }
 
     fun refresh(context: Context) {
         val app = context.applicationContext as Application
         val update = {
             if (!initialized) install(app)
-            if (startedActivities > 0) startService()
+            startService()
         }
         // MainActivity calls this inside onCreate. Registration must happen
         // NOW, before Android dispatches the first onActivityStarted callback.
@@ -45,6 +55,8 @@ internal object KokoroNarrationSessionMonitor {
     private fun install(app: Application) {
         initialized = true
         application = app
+        app.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(settingsListener)
 
         // Jobs created by earlier APK versions must not run a second copy.
         WorkManager.getInstance(app).cancelUniqueWork(OLD_WORK_NAME)
@@ -98,13 +110,16 @@ internal object KokoroNarrationSessionMonitor {
     }
 
     private fun startService() {
-        if (startedActivities <= 0) return
         val settings = NarrationSettingsRepository.get(application)
         if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) {
             KokoroNarrationDiagnostics.update(application, mapOf("sessionState" to "disabled-or-android-tts"))
-            application.stopService(Intent(application, KokoroContinuousNarrationService::class.java))
+            // Do not cancel a startForegroundService request before Android has
+            // delivered onCreate/onStartCommand: that violates its promotion
+            // deadline. A live service observes these settings itself; a queued
+            // instance promotes first, then exits without launching synthesis.
             return
         }
+        if (startedActivities <= 0) return
         val intent = Intent(application, KokoroContinuousNarrationService::class.java)
         try {
             if (Build.VERSION.SDK_INT >= 26) application.startForegroundService(intent)
