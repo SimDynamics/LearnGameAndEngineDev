@@ -1,0 +1,930 @@
+{
+  "id": "math_course_01__recuperacion_y_transferencia__decisiones_y_transferencia",
+  "title": "Decide and Check in New Situations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide and Check in New Situations"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following situations combine quantities, references, and constraints. Before calculating, identify which quantity remains constant and which changes. Check the result using an inverse relationship, a unit, or a total; recognizing a word in the problem is not enough. Two consecutive questions about the same pricing schemes form a guided check of one decision, not two independent solutions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 1"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trayecto_racional",
+          "prompt": "A robot starts at −5/2 m on a number line. It moves 7/6 m in the positive direction and then 2/3 m in the negative direction. Give its final position, its total signed change, and the distance traveled.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Final position, in m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Total change, in m",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "recorrido",
+                  "type": "numeric",
+                  "label": "Distance traveled, in m",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "final": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "recorrido": {
+                    "type": "numeric",
+                    "expected": "11/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The change is 1/2 m, the final position is −2 m, and the distance traveled is 11/6 m. The distance adds the lengths of both segments.",
+            "incorrect": "Do not confuse starting position, displacement, and distance traveled. On the return movement, the distance is added even though the signed change is negative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_materiales",
+          "prompt": "There are 66 light-colored pieces, 90 dark ones, and 114 gray ones. Make as many identical packages as possible, using everything. Each package contains all three colors. Give the number of packages and the number of pieces of each color in one.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paquetes",
+                  "type": "numeric",
+                  "label": "Packages",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "claras",
+                  "type": "numeric",
+                  "label": "Light-colored pieces per package",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "oscuras",
+                  "type": "numeric",
+                  "label": "Dark pieces per package",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grises",
+                  "type": "numeric",
+                  "label": "Gray pieces per package",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paquetes": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "claras": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "oscuras": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "grises": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The greatest number dividing all three quantities is 6. Each package contains 11, 15, and 19 pieces, respectively.",
+            "incorrect": "The number of packages must divide each available quantity. Find the contents of each package afterward by division."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_ciclos",
+          "prompt": "Three signals coincide at minute 0 and then repeat every 7, 10, and 14 minutes, respectively. At which positive minute do all three first coincide again?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "70"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Minute 70 is divisible by 7, 10, and 14. It is the first positive coincidence.",
+            "incorrect": "Multiplying all three periods counts shared factors more than once."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 2"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_y_razon",
+          "prompt": "Of 45 cards, two fifths are red and the rest are blue. Give both quantities and the ratio red/blue in lowest terms.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "rojas",
+                  "type": "numeric",
+                  "label": "Red cards",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "azules",
+                  "type": "numeric",
+                  "label": "Blue cards",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator of red/blue",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominator of red/blue",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "rojas": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "azules": {
+                    "type": "numeric",
+                    "expected": "27"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "There are 18 red cards and 27 blue ones. The part-to-part ratio is 18/27=2/3; the part-to-total fraction was 2/5.",
+            "incorrect": "The denominator changes the reference: the total number of cards and the blue cards are not the same quantity."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tarifas_dos_encargos",
+          "prompt": "A charges a 12-peso setup fee plus 6 per meter; B charges 8 pesos per meter with no setup fee. Give the payments to A and B for orders of 5 m and 9 m, assuming equal quality.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a5",
+                  "type": "numeric",
+                  "label": "A for 5 m, in pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b5",
+                  "type": "numeric",
+                  "label": "B for 5 m, in pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "a9",
+                  "type": "numeric",
+                  "label": "A for 9 m, in pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b9",
+                  "type": "numeric",
+                  "label": "B for 9 m, in pesos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a5": {
+                    "type": "numeric",
+                    "expected": "42"
+                  },
+                  "b5": {
+                    "type": "numeric",
+                    "expected": "40"
+                  },
+                  "a9": {
+                    "type": "numeric",
+                    "expected": "66"
+                  },
+                  "b9": {
+                    "type": "numeric",
+                    "expected": "72"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For 5 m: A=42 and B=40. For 9 m: A=66 and B=72. The better supplier changes with the quantity.",
+            "incorrect": "The fixed charge is paid only once per order. Comparing just the price per meter does not settle both cases."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_proveedor",
+          "prompt": "With rates A=12 pesos setup plus 6 per meter and B=8 per meter, which decision is correct for orders of 5 m and 9 m?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "B for 5 m; A for 9 m.",
+                  "reviewFeedback": "Check each selected decision by evaluating the complete payment for that length. Include the setup fee and compare orders without extrapolating one rate alone."
+                },
+                {
+                  "id": "b",
+                  "label": "A for both because its price per meter is lower.",
+                  "reviewFeedback": "Review whether a lower price per meter always determines the lower total payment. Consider the setup charge for the order lengths."
+                },
+                {
+                  "id": "c",
+                  "label": "B for both because it has no setup fee.",
+                  "reviewFeedback": "Check whether having no setup fee is enough to decide every order. Calculate the full payment under the selected charging rule."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The decision is verified by the total payments, 42 versus 40 and 66 versus 72.",
+            "incorrect": "The same supplier need not be best for every quantity."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 3"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "llenar_sin_perdidas",
+          "prompt": "An 18 L tank is filled without losses. One pump has a constant flow rate of 3/4 L/min and another 3/2 L/min. Give the filling times.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "First pump, in min",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Second pump, in min",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The times are 24 min and 12 min. Doubling the flow rate halves the time because the volume stays fixed.",
+            "incorrect": "Here the product flow rate×time stays fixed, not the quotient time/flow rate."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_dos_tramos",
+          "prompt": "A person travels 6 km at 3 km/h and another 6 km at 6 km/h, without stopping. What is the average speed over the whole journey, in km/h?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The person covers 12 km in 2+1=3 h. The average speed is 4 km/h.",
+            "incorrect": "The two speeds are not maintained for equal times; their arithmetic mean of 4.5 does not represent this journey."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_en_razon",
+          "prompt": "An ideal mixture with additive volumes is prepared with pigment and water in a ratio of 3:8. Its total volume will be 55 mL. Give each volume.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pigmento",
+                  "type": "numeric",
+                  "label": "Pigment, in mL",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "agua",
+                  "type": "numeric",
+                  "label": "Water, in mL",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pigmento": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "agua": {
+                    "type": "numeric",
+                    "expected": "40"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The eleven parts contain 5 mL each: 15 of pigment and 40 of water. They add to 55.",
+            "incorrect": "The ratio 3:8 is part-to-part. Do not use three eighths of the total as though it were part-to-total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 4"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "hallar_escala_y_usarla",
+          "prompt": "On a drawing, 4.8 cm represents an actual length of 144 m. Use 1 m=100 cm. Give the denominator of the scale 1:n and the length, in centimeters, that an actual 75 m occupies on the drawing.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "escala",
+                  "type": "numeric",
+                  "label": "n in the 1:n scale",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "plano",
+                  "type": "numeric",
+                  "label": "Length on drawing, in cm",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "escala": {
+                    "type": "numeric",
+                    "expected": "3000"
+                  },
+                  "plano": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "144 m equals 14400 cm; 14400/4.8=3000. For 75 m, 7500/3000=2.5 cm.",
+            "incorrect": "First express both lengths in the same unit. Drawing→real and real→drawing use opposite directions."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caja_ampliada",
+          "prompt": "A rectangular box has interior dimensions of 4 cm, 8 cm, and 2 cm. Another box multiplies each length by 3/2. Give the volume of each box, in cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Original volume",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "nuevo",
+                  "type": "numeric",
+                  "label": "Enlarged volume",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "64"
+                  },
+                  "nuevo": {
+                    "type": "numeric",
+                    "expected": "216"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The original volume is 64 cm³. The new sides measure 6, 12, and 3 cm; their product is 216 cm³.",
+            "incorrect": "The enlargement changes three lengths; multiplying the volume by only 3/2 does not preserve that model."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tara_y_densidad",
+          "prompt": "An empty container has a mass of 60 g. With 125 cm³ of a homogeneous substance, its total mass is 310 g. Give the mass of the substance and its density in g/cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "masa",
+                  "type": "numeric",
+                  "label": "Mass of substance, in g",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "densidad",
+                  "type": "numeric",
+                  "label": "Density, in g/cm³",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "masa": {
+                    "type": "numeric",
+                    "expected": "250"
+                  },
+                  "densidad": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The substance has a mass of 250 g; 250/125=2 g/cm³. The mass of the container is not part of the sample.",
+            "incorrect": "Using 310 g as the mass of the substance includes the container's tare and changes the density."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 5"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diluir_y_evaporar",
+          "prompt": "There are 8 L of an ideal mixture with 25% solute by volume. Add 2 L of pure water, then evaporate exactly those 2 L of water without losing solute. Volumes are assumed to be additive. Give the solute volume and the percentages after adding and after evaporating.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluto",
+                  "type": "numeric",
+                  "label": "Solute, in L",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "diluida",
+                  "type": "numeric",
+                  "label": "Percentage after adding water, without %",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Percentage after evaporating, without %",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluto": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "diluida": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The 2 L of solute is conserved. With 10 L total, it represents 20%; with 8 L, it again represents 25%.",
+            "incorrect": "The total base changes even though the solute does not. Evaporating only water is not the same as withdrawing a homogeneous mixture."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "deposito_y_vasos",
+          "prompt": "A rectangular tank has interior dimensions of 30 cm, 20 cm, and 10 cm. Every 1000 cm³ equals 1 L. Reserve 15% of its capacity; the rest fills 0.3 L glasses with no loss. Give the capacity in liters, the available volume, and the number of full glasses.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "capacidad",
+                  "type": "numeric",
+                  "label": "Capacity, in L",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "disponible",
+                  "type": "numeric",
+                  "label": "Available, in L",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "vasos",
+                  "type": "numeric",
+                  "label": "Full glasses",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "capacidad": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "disponible": {
+                    "type": "numeric",
+                    "expected": "51/10"
+                  },
+                  "vasos": {
+                    "type": "numeric",
+                    "expected": "17"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The capacity is 6 L; the available 85% is 5.1 L and fills exactly 17 glasses.",
+            "incorrect": "The reserve applies to the entire capacity. The size of each glass is a quantity, not a percentage."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondear_durante",
+          "prompt": "Seven segments of exactly 2/7 m each are needed. Compare adding their exact lengths with first rounding each segment to 0.29 m. Give the exact total, the sum of the rounded lengths, and the absolute error between them.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "exacto",
+                  "type": "numeric",
+                  "label": "Exact total, in m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "redondeado",
+                  "type": "numeric",
+                  "label": "Total of rounded segments, in m",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "error",
+                  "type": "numeric",
+                  "label": "Absolute error, in m",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "exacto": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "redondeado": {
+                    "type": "numeric",
+                    "expected": "203/100"
+                  },
+                  "error": {
+                    "type": "numeric",
+                    "expected": "3/100"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The exact total is 2 m; the other total is 2.03 m. The absolute error is 0.03 m: approximations accumulate.",
+            "incorrect": "Do not call the sum of already rounded data exact. Keeping fractions until the final total avoids this error."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Set 6"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trabajo_y_condiciones",
+          "prompt": "Five people finished a job in two hours. From this information alone, what can we conclude about the time ten people would need?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It will be exactly one hour.",
+                  "reviewFeedback": "Identify the working conditions assumed by the exact time selected. Check which information is available about productivity, task distribution, and cooperation between people."
+                },
+                {
+                  "id": "b",
+                  "label": "Conditions about productivity, sharing the work, and possible interference are missing, so one hour cannot be guaranteed.",
+                  "reviewFeedback": "Relate the conditions in your choice to the combined work rate. Examine what can be guaranteed from the one job observed."
+                },
+                {
+                  "id": "c",
+                  "label": "It will be exactly four hours.",
+                  "reviewFeedback": "Review the rule that would produce the proposed duration when the number of people increases. Justify its assumptions before extending the initial data."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product people×time is constant only under a fixed-work model with comparable productivity. The number of people alone does not guarantee the model.",
+            "incorrect": "Doubling a quantity is not enough to decide whether the relationship is direct or inverse without checking what is conserved."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_grupos",
+          "prompt": "In a group of 120 people, 25% chose an activity. In another group of 60, 40% chose it. Give the number of people who chose it in each group.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "People in the first group",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "People in the second group",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "30"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "They are 30 and 24 people. A greater percentage of a smaller base may represent fewer people.",
+            "incorrect": "Compare the quantities calculated from each base, not just the percentages."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_calculado",
+          "prompt": "Before calculating 14÷(3/4−6/8), which diagnosis is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The divisor equals zero, so this division is undefined.",
+                  "reviewFeedback": "Check the equivalence of the fractions forming the divisor and evaluate their difference. Then check the condition required for a quotient to be defined."
+                },
+                {
+                  "id": "b",
+                  "label": "The division equals zero because the divisor becomes zero.",
+                  "reviewFeedback": "Distinguish the value of the divisor from the value of the quotient. Use the connection between division and multiplication to check your choice."
+                },
+                {
+                  "id": "c",
+                  "label": "Take the reciprocal of each addend and then subtract.",
+                  "reviewFeedback": "Check which complete quantity acts as the divisor before finding its reciprocal. Determine whether transforming each term separately preserves the original division."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/4 and 6/8 have the same value. Their difference is zero, which has no reciprocal.",
+            "incorrect": "Check the divisor after evaluating its entire expression."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "note",
+          "text": "After checking, explain which data or condition determined your procedure. If you relied on copying a solution, solve a different activity on the same topic and return to this set in another session."
+        }
+      ]
+    }
+  ]
+}
