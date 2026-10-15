@@ -29,9 +29,9 @@
           "id": "evidencia_del_caso_reportado",
           "question": "Se observó 0 para disponibles=5 y minimo=5. ¿Qué permite afirmar el requisito, sin inventar aún una causa?",
           "options": [
-            "El mínimo debe cambiarse a 6 porque la salida del programa define el requisito.",
-            "En esa ejecución el resultado contradice el requisito; todavía debemos identificar el programa y explicar por qué ocurrió.",
-            "El fallo demuestra que se ejecutó una versión antigua, aunque no conocemos su ruta ni sus fuentes."
+            "La salida debe incorporarse al requisito; repetirla confirma qué regla de reposición necesita el problema.",
+            "La salida contradice el requisito en ese caso; falta identificar el programa y explicar la discrepancia.",
+            "La salida demuestra que se ejecutó una copia antigua; basta que falle la igualdad para identificar su procedencia."
           ],
           "correctIndex": 1,
           "explanation": "La igualdad está incluida: el resultado esperado es true, impreso como 1. El dato demuestra una discrepancia bajo el requisito y el dominio; por sí solo no distingue una comparación equivocada de un ejecutable equivocado.",
@@ -66,9 +66,9 @@
           "id": "construccion_y_comportamiento",
           "question": "La construcción terminó sin errores y, al ejecutar, main retornó 0. ¿Qué evidencia falta para acreditar el requisito de reposición?",
           "options": [
-            "Comparar los resultados de casos pertinentes con lo que exige el requisito, identificando el programa y los datos usados.",
-            "Ninguna: construir y retornar 0 demuestran que cualquier función coincide con su requisito.",
-            "Basta que el archivo ejecutable tenga el mismo nombre que antes."
+            "Falta contrastar casos pertinentes con el requisito, identificando el programa construido y los datos usados.",
+            "No falta otra prueba: construir bien y retornar 0 acredita las decisiones de reposición del programa.",
+            "Sólo falta comprobar que el archivo conserva su nombre; así se identifica la revisión que ya se probó."
           ],
           "correctIndex": 0,
           "explanation": "El éxito de construcción acredita que se obtuvo un programa en ese proceso; el retorno 0 acredita cómo terminó esa ejecución. Ninguno calcula por nosotros qué decisión de reposición era correcta. Un nombre de archivo tampoco identifica su contenido.",
@@ -107,9 +107,9 @@
           "id": "caso_que_discrimina_la_frontera",
           "question": "Si sólo puedes añadir un caso para distinguir la regla < de la regla <=, manteniendo mínimo=5, ¿cuál eliges?",
           "options": [
-            "Disponibles=4, porque ambas reglas producen true.",
-            "Disponibles=41, aunque queda fuera del dominio de la función.",
-            "Disponibles=5, porque pertenece al dominio y las reglas discrepan exactamente allí."
+            "Disponibles=4.",
+            "Disponibles=41.",
+            "Disponibles=5."
           ],
           "correctIndex": 2,
           "explanation": "La igualdad es el caso discriminante. El caso 4 sigue siendo un control útil, pero no separa estas hipótesis. El 41 incumple la precondición y no es evidencia sobre el contrato declarado.",
@@ -140,9 +140,9 @@
           "id": "conservar_la_procedencia_del_resultado",
           "question": "En el escenario descrito, ¿cuál es la conclusión más precisa?",
           "options": [
-            "La revisión B sigue excluyendo la igualdad: basta mirar el resultado de A.",
-            "La salida pertenece al ejecutable A conservado; primero hay que resolver el fallo de construcción de B y probar el programa obtenido de sus fuentes.",
-            "Hay que cambiar el requisito para aceptar 1:0:0 y conservar cualquier ejecutable disponible."
+            "B sigue excluyendo la igualdad: la última fuente guardada determina qué revisión se ejecuta al usar el mismo nombre.",
+            "La salida pertenece a A. Primero hay que construir B sin errores y contrastar la ejecución obtenida de sus fuentes.",
+            "La salida de A debe aceptarse como referencia del requisito; cualquier copia disponible sirve para conservar esa observación."
           ],
           "correctIndex": 1,
           "explanation": "Se conserva la procedencia de la observación. No se debe atribuir al texto B una ejecución de A. Resolver el error de construcción permitirá estudiar B; comparar su salida con el requisito será todavía necesario.",
@@ -161,9 +161,9 @@
           "id": "mismo_nombre_distinto_programa",
           "question": "Hay una copia en salida/ y otra en respaldo/, ambas llamadas existencias.exe. Sólo salida/ fue reconstruida correctamente con B. Una prueba de respaldo/ falla en la igualdad. ¿Qué acción produce evidencia sobre B?",
           "options": [
-            "Repetir respaldo/ muchas veces y contar sus fallos como pruebas de B.",
-            "Renombrar ambas copias sin comprobar cuál se ejecuta.",
-            "Ejecutar la copia de salida/ identificada, con los mismos datos, y contrastarla con el requisito."
+            "Repetir respaldo/ con los mismos datos: el nombre común existencias.exe permite atribuir la ejecución a B.",
+            "Renombrar las dos copias con la etiqueta B y probar cualquiera: ambas tendrán el nombre de la revisión nueva.",
+            "Ejecutar la copia de salida/ construida con B, con los mismos datos, y contrastar su resultado con el requisito."
           ],
           "correctIndex": 2,
           "explanation": "Conservar los datos controla esa parte de la comparación; elegir la copia construida de B controla la versión. Renombrar o repetir una copia equivocada no aporta esa evidencia.",

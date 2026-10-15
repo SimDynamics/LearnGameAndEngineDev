@@ -123,9 +123,9 @@
           "id": "multi_producto_de_la_biblioteca",
           "question": "Se construyó únicamente el objetivo faltantes. ¿Qué se obtuvo y qué queda por acreditar?",
           "options": [
-            "Se obtuvo un ejecutable faltantes que ya permite observar la salida de main.cpp.",
-            "Se obtuvo una biblioteca de código objeto; falta acreditar la construcción y la ejecución del cliente revisar.",
-            "Se obtuvo una cabecera con declaraciones; la implementación no participa hasta ejecutar revisar."
+            "Un ejecutable faltantes; queda repetir los casos de main para comprobar revisar.",
+            "Una biblioteca de código objeto; queda construir y ejecutar revisar para comprobar sus casos.",
+            "Una cabecera generada; queda ejecutar revisar para incorporar la definición."
           ],
           "correctIndex": 1,
           "explanation": "Una biblioteca estática reúne código objeto. Construirla no ejecuta main ni acredita el enlace del cliente o el cumplimiento de su contrato. La cabecera mantenida no es el producto generado por add_library.",
@@ -140,15 +140,15 @@
           "id": "multi_archivo_presente_no_basta",
           "question": "faltantes.cpp existe junto a main.cpp, pero el objetivo revisar sólo enumera main.cpp y no usa ninguna biblioteca. ¿Por qué la existencia de la implementación no basta para construir el cliente completo?",
           "options": [
-            "Porque una fuente en el directorio se compila sólo si antes se incluye su .cpp desde main.cpp.",
-            "Porque CMake interpreta el cuerpo de todas las fuentes y necesita que la función use el nombre del proyecto.",
-            "Porque la descripción debe seleccionar las fuentes o dependencias que aportan la definición; la presencia de un archivo no establece esa relación."
+            "Porque el cliente debe incluir faltantes.cpp antes de que su definición pueda compilarse.",
+            "Porque CMake sólo puede escoger las fuentes de revisar si se retiran las demás de la carpeta.",
+            "Porque la descripción de revisar aún debe seleccionar una fuente o dependencia que aporte la definición."
           ],
           "correctIndex": 2,
           "explanation": "La descripción identifica qué productos se construyen y qué entradas utilizan. En nuestro diseño faltantes.cpp pertenece a su biblioteca; el cliente debe utilizar ese producto. No copiamos la implementación dentro de main para reemplazar una dependencia ausente.",
           "reviewFeedback": [
             "Distingue incorporar texto mediante #include de pedir que una herramienta traduzca una fuente. Comprueba qué condición has impuesto a la compilación al elegir esa explicación.",
-            "Separa el lenguaje que procesa el cuerpo de una función de la descripción que configura el proyecto. Revisa qué relación has supuesto entre el nombre de una función y el del proyecto.",
+            "Distingue qué archivos conserva el directorio y cuáles selecciona la descripción. Revisa si retirar una fuente física establece la relación que necesita el cliente.",
             "Lee qué entradas y relaciones conserva la descripción para el cliente. Justifica cómo participaría la definición que sus llamadas requieren."
           ]
         }
@@ -182,9 +182,9 @@
           "id": "multi_private_en_la_relacion",
           "question": "¿Qué significa PRIVATE en la relación mostrada para esta práctica?",
           "options": [
-            "La función queda inaccesible desde main.cpp, aunque su declaración esté incluida.",
-            "La biblioteca deja de producir un archivo y sólo se incorpora su cabecera.",
-            "La relación de enlace se establece para revisar; no es una regla de acceso a funciones de C++."
+            "La relación impide que revisar llame a la función declarada en la cabecera.",
+            "La relación aporta la cabecera a revisar y excluye el archivo de biblioteca del enlace.",
+            "La relación de enlace se aplica a revisar; no regula el acceso a funciones C++."
           ],
           "correctIndex": 2,
           "explanation": "PRIVATE pertenece al lenguaje de construcción y al alcance de la relación de un objetivo. El cliente sigue usando la declaración de la función; la biblioteca estática sigue aportando su producto. No deducimos reglas avanzadas de propagación a partir de este par de objetivos.",
@@ -199,9 +199,9 @@
           "id": "multi_dependencia_al_pedir_cliente",
           "question": "Partes de una construcción nueva con la descripción completa. Solicitas construir revisar. ¿Qué debe contemplar la herramienta?",
           "options": [
-            "Obtener los productos de sus fuentes y de faltantes necesarios para enlazar revisar, sin exigir un orden fijo entre compilaciones independientes.",
-            "Compilar sólo main.cpp; solicitar revisar nunca construye un objetivo mencionado por target_link_libraries.",
-            "Ejecutar faltantes para generar la definición y después compilar main.cpp."
+            "Construir los productos requeridos por revisar; sus compilaciones independientes pueden coordinarse en paralelo.",
+            "Compilar main.cpp; target_link_libraries reserva el enlace pero no pide construir el objetivo faltantes.",
+            "Ejecutar faltantes para generar la definición; después compilar main.cpp y enlazar revisar con ella."
           ],
           "correctIndex": 0,
           "explanation": "La relación conecta los productos requeridos para construir el cliente. Crear una biblioteca estática no la ejecuta. La dependencia exige disponer de su producto al enlazar, pero no convierte el texto de las instrucciones en una agenda fija para todas las compilaciones.",
@@ -317,9 +317,9 @@
           "id": "multi_pasar_el_enlace_no_prueba_la_regla",
           "question": "La revisión modificada construye revisar sin errores y su ejecución coincide con tu predicción. ¿Qué conclusión corresponde?",
           "options": [
-            "La coincidencia confirma esta revisión observada, pero hay que compararla con el contrato original para decidir si es correcta.",
-            "El enlace sin errores demuestra que la función respeta el contrato original para todo su dominio.",
-            "La coincidencia obliga a cambiar el contrato de cantidades faltantes para que la revisión sea correcta."
+            "La predicción coincide con esta revisión, pero falta comprobar si ésta cumple el contrato original.",
+            "El enlace confirma el contrato de la función; su cálculo ya es correcto en todo el dominio.",
+            "La coincidencia permite tomar la revisión como contrato; esa salida será la referencia de los casos."
           ],
           "correctIndex": 0,
           "explanation": "Predecir lo que hace un programa y definir lo que debe hacer son tareas distintas. La revisión suma una unidad en su rama positiva. Una predicción acertada no convierte esa modificación en una reparación del contrato.",
@@ -377,15 +377,15 @@
           "id": "multi_compilacion_de_la_implementacion",
           "question": "La configuración terminó y el compilador señala la instrucción return de faltantes.cpp. ¿Qué decisión corresponde a esta evidencia?",
           "options": [
-            "Quitar target_link_libraries, porque una biblioteca no debe contener instrucciones return.",
-            "Cambiar sólo main.cpp, porque los cuerpos de otras fuentes se comprueban durante la ejecución.",
-            "Corregir la sintaxis de la implementación y volver a construir el cliente con la dependencia conservada."
+            "Retirar el enlace con faltantes para que revisar deje de incorporar la fuente que provoca el diagnóstico.",
+            "Corregir main.cpp: el objetivo pedido es revisar y la biblioteca superó ya la configuración.",
+            "Corregir la sintaxis de faltantes.cpp y reconstruir revisar, conservando su dependencia."
           ],
           "correctIndex": 2,
           "explanation": "La construcción tiene que compilar la fuente de la biblioteca antes de utilizar su producto. Un error dentro de esa fuente no se repara eliminando la relación de enlace ni atribuyendo el diagnóstico al cliente. La misma construcción puede incluir varias tareas: identifica el archivo y el paso que realmente fallaron.",
           "reviewFeedback": [
-            "Relaciona el diagnóstico de return con el archivo y la instrucción de C++ que lo originaron. Pregúntate cómo la relación entre objetivos corregiría esa sintaxis.",
-            "Localiza qué fuente contiene la instrucción indicada y en qué paso se traduce su cuerpo. Revisa qué cambiaría ese diagnóstico si sólo editaras el cliente.",
+            "Relaciona el diagnóstico con el archivo y la instrucción de C++ que lo originaron. Revisa qué cambiaría al retirar una relación entre objetivos y si eso resolvería la causa señalada.",
+            "Localiza qué fuente contiene la instrucción indicada y en qué fase se traduce su cuerpo. Revisa qué demuestra la configuración sobre la sintaxis que debe comprobarse después.",
             "Identifica el lugar al que corresponde el diagnóstico y qué revisión obtendrías tras intervenir allí. Conserva la relación entre los archivos que se construyen y el cliente que quieres comprobar."
           ]
         },
@@ -559,14 +559,14 @@
           "id": "multi_delimitar_lo_que_acredita_el_proyecto",
           "question": "Construiste el cliente con su biblioteca y pasaron los casos acordados. ¿Qué afirmación mantiene el alcance de esa evidencia?",
           "options": [
-            "Toda biblioteca del proyecto puede ejecutarse y cumple el contrato del cliente.",
-            "Esta revisión y estos casos están contrastados; quedan por justificar o practicar otros casos, contratos y relaciones que aún no se han estudiado.",
-            "La compilación del cliente prueba que cualquier cambio futuro de la implementación conservará esos resultados."
+            "El éxito de revisar permite ejecutar también faltantes para repetir con él los casos observados.",
+            "Los casos observados contrastan esta revisión; otros casos o relaciones todavía necesitan justificación.",
+            "Los mismos resultados se conservarán tras editar la implementación, pues ya se comprobó su enlace."
           ],
           "correctIndex": 1,
           "explanation": "Los resultados pertenecen a los archivos, herramientas, opciones y casos utilizados. Una biblioteca estática no se convierte en ejecutable, y los cambios futuros necesitan su propia evidencia. Este trabajo inicia dependencias locales; no acredita instalación, paquetes, exportación ni cadenas generales de requisitos.",
           "reviewFeedback": [
-            "Vuelve al tipo de producto que genera el objetivo de biblioteca y a los casos que se ejecutaron. Justifica el salto que haces de esa observación al conjunto de bibliotecas.",
+            "Sitúa la ejecución observada: qué programa contenía main y qué llamadas se hicieron. Revisa qué evidencia tienes para presentar como otra ejecución el uso de una biblioteca.",
             "Relaciona cada conclusión con la revisión y las llamadas de las que procede la evidencia. Indica qué necesitarías para sostener afirmaciones más amplias.",
             "Distingue el producto construido ahora de los que resultarían tras otras ediciones. Explica qué evidencia tienes sobre el efecto de esos cambios todavía no realizados."
           ]
