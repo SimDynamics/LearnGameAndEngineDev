@@ -73,6 +73,36 @@ class KokoroModelStore(context: Context) {
         }
     }
 
+    /**
+     * Lightweight check for lesson-level voice selection. Verifies each voice
+     * through the same installed-file pipeline, but does not scan the 311 MiB
+     * shared model or dictionaries whenever lesson settings are opened.
+     */
+    fun inspectVoices(onState: (Map<String, KokoroModelState>) -> Unit) {
+        if (closed || !inspecting.compareAndSet(false, true)) return
+        submit {
+            val states = linkedMapOf<String, KokoroModelState>()
+            try {
+                synchronized(storeLock) {
+                    KokoroVoiceCatalog.voices.forEach { voice ->
+                        states[voice.id] = try {
+                            inspectInternal(listOf(voice.artifact))
+                        } catch (error: Exception) {
+                            KokoroModelState(
+                                KokoroModelStatus.ERROR,
+                                error = message(problem(error, NarrationResourceProblem.CHECK_FAILED)),
+                                totalBytes = voice.artifact.bytes
+                            )
+                        }
+                    }
+                }
+            } finally {
+                inspecting.set(false)
+            }
+            main.post { if (!closed) onState(states) }
+        }
+    }
+
     fun inspectArtifacts(artifacts: List<KokoroModelManifest.Artifact>, onState: (KokoroModelState) -> Unit) {
         if (closed || !inspecting.compareAndSet(false, true)) return
         submit {
