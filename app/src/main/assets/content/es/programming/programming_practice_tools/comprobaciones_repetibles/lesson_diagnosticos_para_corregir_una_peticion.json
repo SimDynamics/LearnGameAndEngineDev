@@ -1,0 +1,306 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion",
+  "title": "Diagnósticos para corregir una petición (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rechazo correcto todavía necesita una explicación útil"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas ya decide si acepta una cantidad y conserva el destino al rechazar. Aquí no cambiaremos esa biblioteca ni su cálculo. El cliente debe comunicar el rechazo a una persona que prepara un lote y necesita corregir sus datos, sin conocer los nombres de nuestras funciones. El aprendizaje nuevo es elegir información que permita actuar, no añadir más texto porque sí."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un diagnóstico útil relaciona la operación, la petición concreta y su dato con la condición que se incumplió. Debe ayudar al destinatario sin atribuir causas que el programa no comprobó. La fuente recomienda identificar el origen del mensaje e indicar la forma de entrada válida; ajustar la comunicación a su destinatario y propósito orienta nuestra práctica (Kernighan & Pike, 1999, pp. 113–114; Thomas & Hunt, 2020, pp. 20–21)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_destinatario_del_rechazo",
+          "question": "La persona que prepara las piezas quiere corregir su lote y no conoce el código. ¿Qué información responde a esa necesidad?",
+          "options": [
+            "La cantidad de llamadas internas, para reconstruir el recorrido de nuestras funciones.",
+            "La petición y el dato rechazados, para revisar la cantidad que intentaba proporcionar.",
+            "El valor anterior del destino, para conservarlo como resultado de la petición actual."
+          ],
+          "correctIndex": 1,
+          "explanation": "La petición permite localizar la entrada y el dato permite revisarla. El destinatario no necesita reconstruir las llamadas internas para corregir esa cantidad. El resultado anterior no pertenece a la petición rechazada.",
+          "reviewFeedback": [
+            "Relaciona el detalle elegido con lo que necesita hacer quien prepara el lote y con lo que conoce del programa.",
+            "Comprueba si la información elegida permite localizar y revisar la entrada que se está tratando.",
+            "Distingue un dato conservado por la biblioteca del resultado que se produjo para esta petición."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decir lo comprobado y proponer una acción coherente"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas acepta exactamente cantidades de 0 a 20. Si recibe 21 y devuelve false, sabemos que esa petición incumple el intervalo. No hemos observado existencias del almacén, disponibilidad de vehículos ni el motivo por el que alguien escribió 21. El diagnóstico no debe convertir una explicación imaginable en una causa demostrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "La acción sugerida también debe respetar el encargo. Pedir que se revise la cantidad puede ayudar. Anunciar que ya se corrigió, cambiarla automáticamente a 20 o recomendar modificar la capacidad de las cajas haría otra cosa. En estos laboratorios sólo calculamos y presentamos; no enviamos mercancía ni corregimos entradas por nuestra cuenta."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_afirmacion_sostenida",
+          "question": "Conoces el contrato y el rechazo de intentar_cajas(21, resultado). ¿Qué diagnóstico se sostiene con esa información?",
+          "options": [
+            "21 excede el intervalo de cantidades admitidas; puede indicarse que se permiten enteros de 0 a 20.",
+            "21 excede las existencias del almacén; puede indicarse que hace falta reponer el material disponible.",
+            "21 excede la capacidad elegida para una caja; puede indicarse que hay que aumentar sus cuatro plazas."
+          ],
+          "correctIndex": 0,
+          "explanation": "El rechazo corresponde al dominio de cantidades de esta interfaz. Ni las existencias ni un problema con la capacidad de cada caja fueron observados. La indicación debe permitir corregir el dato sin cambiar el contrato.",
+          "reviewFeedback": [
+            "Relaciona cada afirmación del diagnóstico con el acuerdo que la función realmente comprobó.",
+            "Revisa si el programa recibió u observó información sobre las existencias que permita afirmar esa causa.",
+            "Distingue el límite de cantidad de piezas de la capacidad que utiliza el cálculo para distribuirlas."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resultado, diagnóstico y código final son evidencias distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera std::cout para la salida ordinaria y std::cerr para la salida de diagnóstico. En esta práctica el cliente escribe un resultado por cada petición aceptada en stdout, el canal de cout. Los rechazos se explican en stderr, el canal de cerr. El cliente continúa con las peticiones posteriores y al final devuelve 1 si hubo algún rechazo; si no hubo ninguno devuelve 0. Ese código no es otro resultado impreso."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función de mensaje recibe std::ostream& destino. Ya utilizaste esa interfaz para escribir en distintos destinos: aquí main le proporciona std::cerr. La función debe usar el destino recibido. Al comparar una ejecución, conserva por separado stdout, stderr y código final. No deduzcas un orden relativo entre los dos canales a partir de cómo los presenta una herramienta."
+        },
+        {
+          "type": "note",
+          "text": "Contrato de entrada de ambos laboratorios: como máximo ocho peticiones completas, enteros representables por int y final normal del flujo. En el primero cada petición tiene un entero; en el segundo tiene dos. Un lote vacío es válido. La lectura recupera cin hasta EOF; esta práctica no trata texto mal formado, pares incompletos ni fallos del dispositivo de entrada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_comparar_los_canales",
+          "question": "Una ejecución calcula resultados para algunas peticiones y escribe diagnósticos para otras. ¿Qué comparación conserva las evidencias del contrato?",
+          "options": [
+            "Una lista conjunta con todas las líneas en el orden en que aparecen dentro de una ventana.",
+            "El contenido de stderr como informe suficiente del lote, porque hubo peticiones rechazadas.",
+            "El contenido de cada canal y el código final, distinguiendo resultados, mensajes y terminación."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada canal tiene un propósito y el código comunica cómo terminó este lote. Mezclarlos puede ocultar dónde apareció un mensaje o hacer exigir un orden que no se ha prometido entre canales.",
+          "reviewFeedback": [
+            "Revisa si la posición visual identifica el canal original y si ese orden conjunto forma parte del contrato.",
+            "Considera qué evidencia queda sobre las peticiones aceptadas cuando conservas únicamente los diagnósticos.",
+            "Relaciona cada comparación con una obligación distinta del programa, sin reducirlas a una sola observación."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: un rechazo que permite localizar y revisar el dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa inicial calcula y decide correctamente, pero Error no permite saber qué cantidad del lote se rechazó. Modifica únicamente el cuerpo de informar_rechazo_cajas. Conserva cajas_para, intentar_cajas, main y la entrada preparada. El mensaje debe identificar la operación de cajas, el número de petición, la cantidad recibida, el intervalo entero admitido y una acción de revisión que no modifique el encargo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con -1 0 21 5 se rechazan las peticiones primera y tercera; cero sí se acepta. Antes de ejecutar, deduce por separado los resultados y los datos que debe conservar cada diagnóstico. stdout debe contener Cajas=0 y Cajas=2, una línea por resultado; el código final es 1. Los dos diagnósticos se escriben en stderr y no deben anunciar falta de material ni una corrección que no se realizó."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Error\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 0 21 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después prueba 0 1 20 4, sin cambiar el programa: se aceptan las cuatro peticiones, stderr queda vacío y el código final es 0. Comprueba también el lote vacío: ambos canales quedan vacíos y el código es 0. Una redacción distinta puede cumplir los criterios; el compilador no decide por sí solo si el mensaje ayuda a su destinatario. Intenta y revisa tu versión antes de abrir la referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: contexto sin cambiar el cálculo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia mantiene intactos la biblioteca, la lectura, las decisiones y la salida ordinaria. Sólo desarrolla la función de mensaje. La petición permite localizar la cantidad dentro del lote; piezas identifica el dato; el intervalo y la invitación a revisar orientan una acción posible. No se ha deducido una causa ajena a esos datos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la entrada inicial, stderr contiene dos líneas: la primera nombra la petición 1 y piezas=-1; la segunda, la petición 3 y piezas=21. Ambas indican de 0 a 20 incluidos. No se exige copiar estas frases: sí mantener esos hechos y escribir en el destino recibido. Los resultados y los códigos de terminación conservan su significado anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_variar_el_extremo",
+          "question": "Una versión identifica piezas=-1, pero añade «la cantidad es demasiado grande». ¿Qué revisión responde al problema sin cambiar la aceptación?",
+          "options": [
+            "Cambiar el dato del mensaje a 21 para que la frase describa una cantidad superior al límite.",
+            "Describir el dato recibido y el intervalo admitido sin atribuirle una dirección que no corresponde.",
+            "Aceptar la petición de -1 para que deje de activar una frase que sólo se escribió para cantidades grandes."
+          ],
+          "correctIndex": 1,
+          "explanation": "El mensaje debe corresponder al dato real en ambos extremos exteriores. Cambiar la frase para expresar el intervalo conserva el rechazo y evita afirmar que -1 es mayor que el límite superior.",
+          "reviewFeedback": [
+            "Revisa si el dato que presentas sigue perteneciendo a la petición que se está diagnosticando.",
+            "Contrasta cada parte de la frase con el valor concreto recibido y con los dos límites del contrato.",
+            "Distingue una mejora de presentación de un cambio en cuáles peticiones permite la biblioteca."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar también qué valor acompaña a cada etiqueta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa puede construir un texto legible y aun así asociar mal sus datos. Comprueba los campos del mensaje, no sólo que aparezcan palabras como peticion y piezas. La llamada siguiente proporciona dos valores con papeles diferentes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "diagnostico_etiquetas_y_valores",
+          "question": "Predice la salida exacta, sin salto final. Sigue el código mostrado sin reparar las etiquetas ni intercambiar los argumentos.",
+          "code": "#include <iostream>\n\nvoid informar(std::ostream& destino, int peticion, int piezas) {\n    destino << \"peticion=\" << piezas << \";piezas=\" << peticion;\n}\n\nint main() {\n    informar(std::cout, 3, 21);\n    return 0;\n}\n",
+          "answers": [
+            "peticion=21;piezas=3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer campo inserta piezas, que vale 21, y el segundo inserta peticion, que vale 3. El texto se puede generar, pero atribuye cada valor al papel equivocado. Una presentación correcta debe conservar también la relación entre etiqueta y dato.",
+          "reviewFeedback": "Sigue qué parámetro se inserta después de cada etiqueta y qué argumento recibió. Distingue lo que debería comunicar el mensaje de lo que este código escribe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al revisar tu propia función, localiza para cada campo su origen en la petición. Conserva el dato aunque no sea válido para calcular: precisamente ése es el dato que se necesita revisar. La función de mensaje no debe volver a ejecutar la operación para averiguarlo ni convertir un resultado anterior en la cantidad rechazada."
+        },
+        {
+          "type": "note",
+          "text": "El lector de un mensaje público no siempre conoce nuestro archivo fuente. Un nombre de función puede ser útil para quien desarrolla el programa, pero no sustituye la operación y los datos que necesita esta persona. Elige el detalle según su tarea; un mensaje más largo no es automáticamente más útil."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferencia: diagnosticar una petición con dos campos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reutiliza calcular_saldo exactamente como quedó en la lección anterior. Acepta cada par cuando cobros y devoluciones están, por separado, entre 0 y 9 incluidos; devuelve su diferencia por referencia. El cliente ya interpreta correctamente el bool. Tu tarea es desarrollar únicamente informar_rechazo_saldo para una persona que prepara esos pares y necesita saber qué revisar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada preparada contiene cuatro peticiones: (2,3), (10,0), (0,-1), (5,5). stdout debe contener Saldo=-1 y Saldo=0, una línea por resultado. Los rechazos corresponden a las peticiones 2 y 3; el código final es 1. En stderr, identifica la operación, la petición y ambos campos por su nombre, con sus valores reales; indica la condición válida para cada campo y una acción de revisión. No clasifiques como error un saldo negativo ni anuncies un cobro o una devolución que no se realizó."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Error de saldo\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "2 3 10 0 0 -1 5 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva la biblioteca, main y los datos mientras mejoras el mensaje. Después cambia sólo la entrada a 2 3 0 0 9 0 0 9: las cuatro peticiones son válidas. Deduce los cuatro saldos antes de ejecutar y comprueba que no aparezca un diagnóstico por el signo de un resultado. El lote vacío también debe conservar vacíos ambos canales y terminar con 0. Intenta la transferencia antes de consultar su referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de transferencia: nombres y valores conservados"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mensaje presenta el par completo y expresa que ambos campos deben ser enteros de 0 a 9. Esto no afirma que ambos estén equivocados. Permite revisar cuál incumple el acuerdo, conservando lo que realmente se recibió. La presentación sigue fuera del componente de cálculo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Saldo: peticion \" << peticion << \", cobros=\" << cobros\n            << \", devoluciones=\" << devoluciones\n            << \". Se admiten enteros de 0 a 9 en ambos campos. Revise el par de datos.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Saldo=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el lote inicial, los diagnósticos describen cobros=10, devoluciones=0 en la petición 2, y cobros=0, devoluciones=-1 en la petición 3. Para el lote sólo válido se imprimen los saldos -1, 0, 9 y -9, en ese orden; stderr queda vacío y el código es 0. Los saldos negativos son resultados aceptados y no explicaciones de un rechazo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_conservar_los_dos_campos",
+          "question": "Para la petición (10,0), un mensaje escribe «cobros=10; devoluciones=10; ambos campos de 0 a 9». ¿Qué aspecto necesita revisión?",
+          "options": [
+            "La asociación del segundo campo con su dato: la petición aportó cero devoluciones.",
+            "El límite de ambos campos: hace falta ampliarlo a diez para poder describir esta petición.",
+            "El rechazo de la petición: basta que devoluciones esté en el intervalo para aceptar el par."
+          ],
+          "correctIndex": 0,
+          "explanation": "El texto repitió el primer valor en el segundo campo. Informar del dato recibido no exige aceptarlo ni cambiar el dominio. El diagnóstico debe conservar cada valor bajo su etiqueta.",
+          "reviewFeedback": [
+            "Comprueba qué argumento originó cada campo y si su etiqueta sigue describiendo ese mismo dato.",
+            "Distingue poder presentar una cantidad recibida de permitir esa cantidad para el cálculo.",
+            "Recupera la condición completa de aceptación de un par antes de atribuir el problema al rechazo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el propósito cuando el mensaje sale de su contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que alguien conserva sólo una de las líneas de stderr para revisar después el lote. El mensaje debe seguir identificando la operación y la petición sin depender de que esa persona vea el código ni todas las líneas anteriores. Esa comprobación también ayuda a descubrir etiquetas o valores omitidos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_linea_fuera_de_contexto",
+          "question": "La persona que revisa el lote recibe una sola línea de diagnóstico. ¿Qué decisión mantiene útil el mensaje fuera de la pantalla original?",
+          "options": [
+            "Mencionar la posición visual de la línea anterior, porque allí se presentó el resultado previo.",
+            "Conservar operación, petición, datos y condición, para localizar y revisar la entrada señalada.",
+            "Mencionar la función interna y omitir el dato, porque su nombre explica qué cantidad se recibió."
+          ],
+          "correctIndex": 1,
+          "explanation": "La línea conserva lo necesario para relacionarla con una petición y revisar sus datos. Una posición visual que ya no está disponible o el nombre de una función no sustituye esa información.",
+          "reviewFeedback": [
+            "Considera qué parte de la pantalla podrá consultar realmente la persona que recibió una línea aislada.",
+            "Relaciona cada dato conservado con la localización de la petición y con la revisión que necesita hacer el destinatario.",
+            "Revisa qué información concreta permite recuperar ese nombre sobre los valores que se proporcionaron."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión prepara una petición distinta fuera del intervalo inferior y otra fuera del superior. Antes de ejecutar, escribe qué hechos debe conservar cada diagnóstico; después contrasta sus campos, canal y código final sin editar la biblioteca. Incluye una petición aceptada entre los rechazos para comprobar que sigue produciendo su resultado."
+        },
+        {
+          "type": "note",
+          "text": "Revisa el mensaje desde la tarea de quien lo leerá: qué puede localizar, qué dato puede corregir y qué sigue sin saber. Una frase de referencia permite comparar una implementación concreta; no demuestra por sí sola que toda persona comprenderá el mensaje ni hace incorrecta otra redacción que cumpla el propósito."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__leer_avisos_sin_sustituir_las_pruebas",
+  "title": "Leer avisos sin sustituir las pruebas (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un aviso aporta evidencia; una construcción correcta no demuestra el contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya distingues configurar, construir y ejecutar; también conservas una batería con resultados esperados independientes. Ahora incorporarás otra fuente de evidencia: los avisos que produce el compilador al analizar el código. Atenderlos puede ahorrar una investigación posterior; ignorarlos porque existe un ejecutable desperdicia información. Tampoco un compilador sin avisos puede demostrar todas las propiedades del programa (Kernighan & Pike, 1999, pp. 118, 120; Thomas & Hunt, 2020, pp. 90, 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera una regla del primer curso: en C++, 0 <= dato <= 20 no expresa pertenencia a un intervalo. Se evalúa primero 0 <= dato; su resultado booleano participa en la segunda comparación. No estamos introduciendo de nuevo esa regla: la usaremos para aprender a interpretar un aviso sin confundirlo con el resultado de una prueba. La forma sin paréntesis puede diagnosticarse incluso como error según el compilador. El proyecto del laboratorio escribe (0 <= dato) <= 20 para mostrar explícitamente el bool intermedio: el agrupamiento no repara la condición ni elimina el aviso sobre compararlo con 20."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_construccion_y_contrato",
+          "question": "La construcción termina con código 0 y deja un aviso en cantidad.cpp. ¿Qué conclusión permite ese estado?",
+          "options": [
+            "La función cumple el contrato para cualquier dato porque se produjo el ejecutable.",
+            "La construcción terminó; aún hay que interpretar el aviso y comprobar el comportamiento.",
+            "La batería ya se ejecutó y rechazó un dato aunque todavía no pulsaste Ejecutar."
+          ],
+          "correctIndex": 1,
+          "explanation": "El estado corresponde a la fase que lo produjo. Una construcción exitosa no equivale a una ejecución de la batería ni a una prueba del contrato.",
+          "reviewFeedback": [
+            "Reconsidera qué puede observar el proceso de construcción sobre el comportamiento exigido a la función.",
+            "Relaciona cada conclusión con la fase y la evidencia que realmente la respalda.",
+            "Identifica qué acción pone en marcha el programa y cuándo existiría un resultado de sus casos."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pedir avisos al objetivo que compila la definición"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto utilizará la biblioteca cantidades, que compila cantidad.cpp, y el ejecutable comprobar_cantidad, que consume su función. Recupera esa separación antes de leer la descripción. target_compile_options añade opciones a la compilación de un objetivo existente; PRIVATE las aplica a ese objetivo sin convertirlas en requisitos de compilación para sus consumidores. No se trata de una opción de ejecución ni de un ajuste universal de CMake (Scott, 2025, p. 184)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el perfil Clang de este laboratorio, estos nombres solicitan grupos de avisos de ese compilador. No significan «todos los avisos posibles» ni sustituyen pruebas. Otros compiladores pueden necesitar opciones diferentes; aquí no construiremos una política portable para todos ellos. Observar un aviso tampoco basta para deducir cuál opción lo activó: algunos avisos pueden estar activos de antemano. Mantendremos las opciones constantes durante toda la práctica."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_objetivo_que_compila",
+          "question": "cantidad.cpp pertenece a cantidades y comprobar.cpp pertenece a comprobar_cantidad. Quieres revisar la compilación de la definición de cantidad_admitida. ¿Dónde aplicas las opciones de esa revisión?",
+          "options": [
+            "A cantidades, que compila el archivo de la definición.",
+            "Sólo a comprobar_cantidad, porque su ejecutable utiliza la función.",
+            "Al texto de entrada de Ejecutar, para que el programa solicite los avisos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las opciones afectan a la compilación del objetivo indicado. Que un consumidor enlace una biblioteca no hace que sus opciones PRIVATE se apliquen hacia atrás al compilar esa biblioteca.",
+          "reviewFeedback": [
+            "Relaciona el archivo que contiene la definición con el objetivo que lo compila.",
+            "Revisa en qué dirección describe PRIVATE el alcance de una opción y qué archivo compila ese consumidor.",
+            "Distingue los datos que recibe un programa en ejecución de las instrucciones para compilar sus fuentes."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: conservar pruebas y leer el aviso real"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrato: cantidad_admitida acepta cualquier valor representable por int y devuelve true exactamente para los enteros de 0 a 20, incluidos ambos extremos. No modifica estado externo. Los cuatro esperados del comprobador se fijaron a partir de ese contrato: -1 se rechaza, 0 y 20 se admiten, 21 se rechaza. Los casos son una muestra discriminante; su acierto no prueba por sí solo todos los enteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de editar, configura y genera el proyecto; construye comprobar_cantidad. Lee el panel de Construcción aunque indique éxito. Localiza el archivo y la línea citados, distingue la categoría de aviso de su explicación y relaciona ésta con la expresión de esa línea. En los diagnósticos de este perfil, archivo:línea:columna precede a warning y al texto: es una localización para investigar, no una solución automática. Lee también las líneas de contexto del mismo mensaje (Thomas & Hunt, 2020, p. 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta la batería inicial y conserva por separado lo observado al construir y al ejecutar: qué casos discrepan, sus esperados y obtenidos, y el estado de cada fase. Repara únicamente la expresión devuelta en cantidad.cpp para respetar el contrato. Construye y ejecuta de nuevo; compara el aviso y los cuatro casos. No cambies cantidad.hpp, comprobar.cpp, los esperados, las opciones ni el contrato para conseguir un panel vacío. La referencia de la página siguiente se consulta después de tu intento."
+        },
+        {
+          "type": "cpp_compiler",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\nadd_library(cantidades STATIC cantidad.cpp)\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "cantidad.hpp",
+              "initialCode": "#ifndef CANTIDAD_HPP\n#define CANTIDAD_HPP\n\nbool cantidad_admitida(int dato);\n\n#endif\n"
+            },
+            {
+              "path": "cantidad.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return (0 <= dato) <= 20;\n}\n"
+            },
+            {
+              "path": "comprobar.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cantidad",
+            "buildType": "Debug"
+          },
+          "language": "cpp",
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar una reparación con dos clases de evidencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia de cantidad.cpp une las dos comparaciones completas. El extremo 20 forma parte del contrato; no basta con que algunos valores interiores funcionen."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato <= 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a construir para que el diagnóstico corresponda a la fuente actual; después ejecuta esa construcción. La reparación se sostiene aquí por dos observaciones distintas: desaparece el aviso sobre esa expresión y los cuatro resultados coinciden con los esperados conservados. Si el compilador produce otro mensaje, léelo: no lo clasifiques automáticamente como el mismo problema. Registrar «sin ese aviso en esta construcción» es más preciso que afirmar «sin errores posibles» (Kernighan & Pike, 1999, p. 120)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_archivo_antes_de_editar",
+          "question": "El aviso de Construcción cita cantidad.cpp y la expresión devuelta. La ejecución, en otro panel, informa discrepancias en -1 y 21. ¿Qué investigación respeta ambas observaciones?",
+          "options": [
+            "Cambiar los esperados de -1 y 21 para que coincidan con la ejecución inicial.",
+            "Añadir una supresión del aviso y conservar la expresión inicial.",
+            "Examinar la expresión citada frente al contrato y volver a construir y ejecutar tras repararla."
+          ],
+          "correctIndex": 2,
+          "explanation": "La localización del aviso orienta la inspección y los casos permiten contrastar la hipótesis. Conservar el oráculo impide adaptar el acuerdo a una implementación defectuosa.",
+          "reviewFeedback": [
+            "Recupera de dónde procede cada esperado y qué se perdería al derivarlo de esta implementación.",
+            "Reconsidera qué evidencia aporta ocultar un diagnóstico sobre el comportamiento de la expresión.",
+            "Relaciona el lugar señalado por la herramienta con la propiedad que debe mantenerse en los datos."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una variación que conserva el silencio y rompe el extremo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Regresa al mismo laboratorio. Tras guardar y comprobar tu reparación, sustituye sólo la expresión devuelta por dato >= 0 && dato < 20. Conserva los cuatro esperados y las opciones. Antes de ejecutar, anticipa qué fila puede distinguir esta variación de la reparación. Construye y vuelve a ejecutar. En este perfil esa expresión no provoca el aviso sobre comparar un resultado booleano con 20, pero tu conclusión debe incluir los resultados de la batería."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato < 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso 20 exige true y obtiene false: el comprobador termina con código 1 aunque la construcción haya terminado con código 0 y sin aquel aviso. Son estados de fases distintas. El compilador no conoce el acuerdo «incluido 20» sólo por ver una comparación válida. Restaura la reparación inclusiva, construye y ejecuta una cuarta vez; comprueba de nuevo los cuatro casos y conserva ambas evidencias. No dejes como versión final la mutación deliberada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_silencio_no_es_oraculo",
+          "question": "La variación con dato < 20 se construyó sin aquel aviso. La batería conservada rechaza su resultado para 20. ¿Qué muestra esa combinación?",
+          "options": [
+            "Que la ausencia del aviso no certifica la inclusión del extremo exigido.",
+            "Que hay que retirar el caso 20 porque contradice una construcción correcta.",
+            "Que el código 1 de la batería demuestra que CMake no generó el proyecto."
+          ],
+          "correctIndex": 0,
+          "explanation": "El compilador aceptó una expresión válida del lenguaje; el comprobador encontró una diferencia respecto del contrato. Sus responsabilidades y evidencias son distintas.",
+          "reviewFeedback": [
+            "Relaciona la propiedad que exige el contrato con lo que analiza esa advertencia concreta.",
+            "Reconsidera qué justifica el caso del extremo y por qué existe antes de observar esta variación.",
+            "Sitúa el estado de la batería en la fase que tuvo que alcanzarse para producir ese resultado."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar y transferir el método sin cambiar el acuerdo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin volver a la referencia, explica qué guardarías para que otra persona pudiera repetir la investigación: revisión de la fuente, objetivo y perfil usados, diagnóstico con localización y texto, casos con esperados, y resultados de construir y ejecutar. Evita sustituir esos datos por «compila bien» o «falló». Esta explicación abierta se revisa por esos criterios; las preguntas siguientes sólo comprueban decisiones concretas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_transferir_al_otro_extremo",
+          "question": "Otro contrato admite de 2 a 9, inclusive. Su implementación devuelve dato >= 2 && dato < 9 y no produce avisos en la construcción observada. ¿Qué caso debe conservar una batería para distinguir ese defecto del comportamiento acordado?",
+          "options": [
+            "El valor 5, porque está lejos de los extremos.",
+            "El valor 9, cuyo resultado esperado debe proceder de la inclusión del extremo.",
+            "El valor 10 con esperado true, para adaptar el contrato a la implementación."
+          ],
+          "correctIndex": 1,
+          "explanation": "El caso 9 distingue ambas condiciones porque el contrato lo incluye y la implementación lo excluye. Su esperado se deduce antes de consultar el resultado del programa.",
+          "reviewFeedback": [
+            "Comprueba si ese valor haría diferentes las dos condiciones que comparas.",
+            "Recupera el acuerdo sobre el extremo y contrástalo con cada operador de la expresión.",
+            "Vuelve a fijar el dominio admitido antes de elegir un esperado para un dato exterior."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica inicial de atender avisos y reunir observaciones precisas evita perseguir síntomas sin una base reproducible. Eso no autoriza a desactivar mensajes para conseguir silencio ni a afirmar corrección universal por una tanda verde. En una investigación posterior conservarás tanto los diagnósticos pertinentes como los casos que discriminan el comportamiento (Thomas & Hunt, 2020, p. 90)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_recuperar_evidencias",
+          "question": "Una compañera recibe sólo la frase «ya no sale nada». Quiere repetir tu contraste de la reparación final. ¿Qué le permite interpretar y repetir la afirmación?",
+          "options": [
+            "Una captura vacía sin indicar si procede de Construcción o de Ejecutar.",
+            "La promesa de que todos los compiladores comprobarán cualquier defecto.",
+            "La fuente y el perfil utilizados, la fase observada y los casos conservados con sus resultados."
+          ],
+          "correctIndex": 2,
+          "explanation": "Una observación necesita contexto reproducible. Distinguir fases y conservar casos impide confundir la ausencia de un mensaje con la ejecución correcta de la batería o con una prueba universal.",
+          "reviewFeedback": [
+            "Identifica qué información falta para relacionar ese panel con una fase y una fuente concretas.",
+            "Reconsidera el alcance real de una herramienta y el tipo de evidencia que puede aportar.",
+            "Relaciona cada dato conservado con la posibilidad de repetir la misma observación."
+          ]
+        }
+      ]
+    }
+  ]
+}
