@@ -1,0 +1,459 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__tasas_y_unidades",
+  "title": "Rates, Units, and Conversions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a printer produces 180 labels in 6 minutes, its average rate is 180/6 = 30 labels per minute. The quotient is not simply 30: the unit explains what it means. The word \"per\" indicates the reference quantity. The average rate describes the entire interval; it does not prove that the printer worked at the same pace during every minute."
+        },
+        {
+          "type": "paragraph",
+          "text": "A rate can compare different quantities, such as kilometers and hours, liters and minutes, or price and mass. If 1.5 kilograms cost 54 pesos, the price per kilogram is 54/1.5 = 36 pesos/kg. Dividing the other way gives kilograms per peso. Both quotients can be meaningful, but they answer different questions. The prompt determines which one is needed."
+        },
+        {
+          "type": "paragraph",
+          "text": "Units help verify an operation. If a pump delivers 8 liters each minute and maintains that rate for 5 minutes, multiply 8 L/min by 5 min to get 40 L. The minute in the denominator cancels because there are five one-minute intervals. If we want to know how long it takes to fill 40 L, divide the liters by the rate: 40/8 = 5 minutes."
+        },
+        {
+          "type": "note",
+          "text": "Enter the number in each field; the unit in its label shows how to interpret it. Check that both quantities in a comparison use consistent units."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Reciprocal Rate Also Has Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "If 12 liters are delivered in 3 minutes, the rate is 4 L/min. It also takes 3/12 = 1/4 min per liter. Multiplying 4 L/min by 1/4 min/L gives one: these are reciprocal rates. Use liters per minute to find liters, or minutes per liter to find minutes. The question determines which is more convenient."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tasa_reciproca",
+          "prompt": "A dispenser delivers 15 L every 6 min at a steady rate. Determine liters per minute and minutes per liter. Do not round.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lm",
+              "type": "math_numeric_input",
+              "label": "Liters per minute",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/2"
+              },
+              "unit": "L/min"
+            },
+            {
+              "id": "ml",
+              "type": "math_numeric_input",
+              "label": "Minutes per liter",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/5"
+              },
+              "unit": "min/L"
+            }
+          ],
+          "feedback": {
+            "correct": "15/6 = 5/2 L/min and 6/15 = 2/5 min/L. Their product equals one.",
+            "incorrect": "The quotients have different orders and units. 2.5 cannot represent both."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "duracion_desde_tasa",
+          "prompt": "A valve takes 2/5 min to deliver one liter, at a constant rate. How long will it take to deliver 7.5 L?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Duration",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              },
+              "unit": "min"
+            }
+          ],
+          "feedback": {
+            "correct": "7.5 L×2/5 min/L = 3 min.",
+            "incorrect": "Multiplying a rate measured in min/L by liters gives minutes. Inverting it and multiplying by liters again would produce incompatible units."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "A distance of 2.4 kilometers is the same distance as 2400 meters. The numerical value changes because the size of the unit changes; the journey has not become longer. To convert, use the equivalence 1 km = 1000 m and first decide whether the number should increase or decrease. Expressing kilometers in meters counts units that are one thousand times smaller."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same applies to time: 1 hour = 60 minutes. A speed of 72 km/h corresponds to 72/60 = 1.2 km/min, and therefore 1200 m/min. To express it in meters per second, also use 1 min = 60 s: 1200/60 = 20 m/s. Changing only the distance unit or only the time unit gives a rate different from the one requested."
+        },
+        {
+          "type": "paragraph",
+          "text": "To compare offers, use a common reference. A 0.75 L container costing 30 pesos costs 40 pesos/L; another 1.2 L container costing 42 pesos costs 35 pesos/L. The second has a lower price per liter although its total cost is higher. The decision also depends on how much you need, the quality, and the budget: the rate allows one specific comparison but does not settle every consideration."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tasaimpresora",
+          "prompt": "A team places 144 labels in 8 minutes. Assuming a constant pace, determine labels per minute and how many it would place in 5 minutes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ritmo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "r",
+                  "type": "numeric",
+                  "label": "Labels per minute"
+                },
+                {
+                  "id": "q",
+                  "type": "numeric",
+                  "label": "Labels in 5 minutes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "r": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "q": {
+                    "type": "numeric",
+                    "expected": "90"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "144/8 = 18 labels/min. At that rate, in five minutes the team places 18×5 = 90 labels.",
+            "incorrect": "The rate is found by dividing the quantity by the time. 144×8 is not a rate. For five minutes, use the quantity per minute, not the original eight-minute interval."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convert in the Opposite Direction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Converting meters to kilometers groups one thousand meters per kilometer, so the number decreases. Converting minutes to hours groups sixty minutes per hour. In a rate the denominator changes too: 10 m/s equals 600 m/min and 36 km/h. The physical quantity is preserved even though the numerical value increases or decreases."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversion_regreso",
+          "prompt": "Express 750 m in kilometers and 90 min in hours. Use 1 km = 1000 m and 1 h = 60 min.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "km",
+              "type": "math_numeric_input",
+              "label": "Kilometers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/4"
+              },
+              "unit": "km"
+            },
+            {
+              "id": "h",
+              "type": "math_numeric_input",
+              "label": "Hours",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "h"
+            }
+          ],
+          "feedback": {
+            "correct": "750/1000 = 3/4 km and 90/60 = 3/2 h.",
+            "incorrect": "Converting to larger units decreases the number. 0.90 h wrongly treats an hour as if it had one hundred minutes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Varying Quantities Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversiones",
+          "prompt": "Express the same length and the same time in the indicated units: 3.6 km in meters and 2.25 hours in minutes. Use 1 km = 1000 m and 1 h = 60 min.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "convertir",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "Meters"
+                },
+                {
+                  "id": "min",
+                  "type": "numeric",
+                  "label": "Minutes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "m": {
+                    "type": "numeric",
+                    "expected": "3600"
+                  },
+                  "min": {
+                    "type": "numeric",
+                    "expected": "135"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3.6×1000 = 3600 m; 2.25×60 = 135 min. Smaller units require larger numerical values.",
+            "incorrect": "Do not change the physical quantity. To convert km to m and h to min, multiply by the number of smaller units in each larger unit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "velocidad",
+          "prompt": "A vehicle maintains 54 km/h. Using 1 km = 1000 m and 1 h = 3600 s, what is its speed in m/s? The goal is to decide how to convert both units.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Speed",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "15"
+              },
+              "unit": "m/s",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "54×1000/3600 = 15 m/s. Distance changes to meters and time to seconds.",
+            "incorrect": "Multiplying only by 1000 leaves meters per hour. Dividing only by 3600 leaves kilometers per second. Convert both units and check the magnitude of the result."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unidades",
+          "prompt": "Match each question to the correct unit for its answer. All are rates, and each target is used once.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dimensiones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "agua",
+                  "label": "Liters delivered by a pump each minute"
+                },
+                {
+                  "id": "recorrido",
+                  "label": "Kilometers traveled each hour"
+                },
+                {
+                  "id": "precio",
+                  "label": "Pesos paid per kilogram"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "v",
+                  "label": "km/h"
+                },
+                {
+                  "id": "p",
+                  "label": "pesos/kg"
+                },
+                {
+                  "id": "a",
+                  "label": "L/min"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "agua": "a",
+                  "recorrido": "v",
+                  "precio": "p"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The units preserve the order of the quantities: L/min, km/h, and pesos/kg.",
+            "incorrect": "Do not reverse the reference. Min/L answers the time per liter; kg/peso answers the mass bought with one peso. Read the question before forming the quotient."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ofertas",
+          "prompt": "A: 0.8 L for 32 pesos. B: 1.5 L for 54 pesos. Compare the price per liter, ignoring quality differences. Calculate both rates and choose the offer with the lower rate.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Price per liter A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              },
+              "unit": "pesos/L",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Price per liter B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "pesos/L",
+              "calculator": true
+            },
+            {
+              "id": "mejor",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Offer A",
+                  "reviewFeedback": "Calculate the cost per common unit of volume in the selected offer. Distinguish comparing containers of different sizes from comparing their rates."
+                },
+                {
+                  "id": "b",
+                  "label": "Offer B",
+                  "reviewFeedback": "Check the price-to-volume quotient for the chosen offer. Express the rate in pesos per liter before justifying the comparison."
+                },
+                {
+                  "id": "igual",
+                  "label": "The rates are equal",
+                  "reviewFeedback": "Check your proposed rate equality using the same unit of volume. Prices of different-sized containers cannot be compared without considering their quantities."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A costs 32/0.8 = 40 pesos/L; B costs 54/1.5 = 36 pesos/L. B has the lower price per liter.",
+            "incorrect": "A's lower total payment does not mean a lower unit price. Quality is assumed to be comparable. Divide each price by its liters; do not compare quantities with different references."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio",
+          "prompt": "A walk covers 4.5 km in 1.5 hours. Which statement is justified by these data alone?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "afirmacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The walking pace was exactly the same during every minute.",
+                  "reviewFeedback": "Check whether an overall distance and duration describe every instant of the trip. Distinguish average speed from a constant pace throughout the walk."
+                },
+                {
+                  "id": "b",
+                  "label": "The average speed was 3 km/h.",
+                  "reviewFeedback": "Check the quotient expressing the chosen speed. Relate it to the total distance and time without adding assumptions about the instantaneous pace."
+                },
+                {
+                  "id": "c",
+                  "label": "The average speed was 6.75 km/h.",
+                  "reviewFeedback": "Check which operation produces the speed you propose and its units. Compare it with the definition of average speed for the whole trip."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4.5/1.5 = 3 km/h is the average speed. More information would be required to claim a constant pace.",
+            "incorrect": "The 6.75 option multiplies distance and time rather than dividing. An average does not prove that movement was uniform; there could have been stops or changes in pace."
+          }
+        }
+      ]
+    }
+  ]
+}
