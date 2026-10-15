@@ -102,11 +102,20 @@ internal object MisakiEnglishPipeline {
         var currency: String? = null
         for ((index, original) in tokens.withIndex()) {
             checkCurrent()
+            // Ordinary source tokens can be sliced character-for-character. A named
+            // symbol ("::" -> "scope", "resolution", "operator") has a different
+            // length: every resulting subtoken must retain that exact source atom.
+            // This changes provenance only, never retokenization or pronunciation.
+            val literalSource = original.sourceEndExclusive - original.sourceStart == original.text.length
             val parts = if (original.override != null || original.alias != null) mutableListOf(original.copy(phonemes = original.override)) else
                 subtokens.findAll(original.text).map { original.copy(text = it.value, whitespace = "", phonemes = null,
                     currency = null, isHead = true, preSpace = false,
-                    sourceStart = original.sourceStart.takeIf { start -> start >= 0 }?.plus(it.range.first) ?: -1,
-                    sourceEndExclusive = original.sourceStart.takeIf { start -> start >= 0 }?.plus(it.range.last + 1) ?: -1) }.toMutableList()
+                    sourceStart = original.sourceStart.takeIf { start -> start >= 0 }?.let { start ->
+                        if (literalSource) start + it.range.first else start
+                    } ?: -1,
+                    sourceEndExclusive = original.sourceStart.takeIf { start -> start >= 0 }?.let { start ->
+                        if (literalSource) start + it.range.last + 1 else original.sourceEndExclusive
+                    } ?: -1) }.toMutableList()
             if (parts.isEmpty()) continue
             parts.last().whitespace = original.whitespace
             for ((partIndex, word) in parts.withIndex()) {

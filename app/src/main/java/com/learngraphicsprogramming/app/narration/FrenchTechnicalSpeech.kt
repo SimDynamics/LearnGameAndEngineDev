@@ -2,6 +2,12 @@ package com.learngraphicsprogramming.app.narration
 
 /** Internal provenance over the original French source; no translated or curricular text is rewritten. */
 internal object FrenchTechnicalSpeech {
+    internal const val SYMBOL_CACHE_REVISION = "french-technical-symbol-names-v1"
+
+    /** Old recordings could predate residual symbol reading; scope also gains its own speech. */
+    internal fun hasChangedSymbolPronunciation(text: String): Boolean =
+        ManualEnglishSpeech.strip(text).let { '#' in it || "::" in it }
+
     fun prepareForKokoro(text: String, mathMode: String = "auto"): String = prepare(text, mathMode, null)
 
     /** Observe the same replacements; offsets remain derived from the displayed original. */

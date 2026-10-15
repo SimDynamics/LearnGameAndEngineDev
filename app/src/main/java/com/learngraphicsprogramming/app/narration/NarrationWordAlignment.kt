@@ -53,7 +53,8 @@ internal object NarrationWordTimingBuilder {
 
     fun buildSourceChunked(text: String, audioSha256: String, sampleCount: Long, phonemes: String,
                           sources: List<NarrationSourcePhones>, chunks: List<String>,
-                          durations: List<LongArray>): NarrationWordAlignment? {
+                          durations: List<LongArray>,
+                          language: NarrationLanguage = NarrationLanguage.SPANISH): NarrationWordAlignment? {
         if (!audioSha256.matches(Regex("[a-f0-9]{64}")) || sampleCount !in 1L..MAX_SAMPLES ||
             chunks.isEmpty() || chunks.size != durations.size || chunks.size > 4096) return null
         data class Chunk(val start: Int, val end: Int, val sampleBase: Long, val frames: LongArray)
@@ -74,7 +75,7 @@ internal object NarrationWordTimingBuilder {
             cursor = start + chunk.length
         }
         if (phonemes.substring(cursor).any { !it.isWhitespace() } || totalSamples != sampleCount) return null
-        val visibleWords = NarrationSpokenWords.lexemes(text)
+        val visibleWords = NarrationSpokenWords.technicalAtoms(text, language)
         if (visibleWords.isEmpty() || sources.isEmpty()) return null
         if (sources.any { it.sourceStart !in 0 until text.length || it.sourceEndExclusive !in (it.sourceStart + 1)..text.length ||
                 it.phoneStart !in 0 until phonemes.length || it.phoneEndExclusive !in (it.phoneStart + 1)..phonemes.length } ||
@@ -90,12 +91,13 @@ internal object NarrationWordTimingBuilder {
                 chunk.sampleBase + chunk.frames[phone.phoneStart - chunk.start + 1] * SAMPLES_PER_FRAME,
                 chunk.sampleBase + chunk.frames[phone.phoneEndExclusive - chunk.start + 1] * SAMPLES_PER_FRAME)
         }
-        if (!valid(text, sampleCount, words)) return null
+        if (!valid(text, sampleCount, words, language)) return null
         return NarrationWordAlignment(audioSha256, sampleCount, words)
     }
 
-    fun valid(text: String, sampleCount: Long, words: List<NarrationWordTiming>): Boolean {
-        val actual = NarrationSpokenWords.lexemes(text)
+    fun valid(text: String, sampleCount: Long, words: List<NarrationWordTiming>,
+              language: NarrationLanguage = NarrationLanguage.SPANISH): Boolean {
+        val actual = NarrationSpokenWords.technicalAtoms(text, language)
         if (sampleCount !in 1L..MAX_SAMPLES || words.isEmpty() || words.size != actual.size) return false
         return words.indices.all { index ->
             val word = words[index]

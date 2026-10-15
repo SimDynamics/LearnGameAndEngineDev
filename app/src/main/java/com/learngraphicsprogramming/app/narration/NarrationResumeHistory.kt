@@ -18,9 +18,10 @@ internal object NarrationResumePolicy {
     fun key(page: String, language: String, engine: String, voice: String,
             sentences: List<String>): String {
         val audioIdentity = sentences.map { sentence ->
-            if (engine == NarrationEngine.KOKORO.name &&
-                language in setOf(NarrationLanguage.AMERICAN_ENGLISH.tag, NarrationLanguage.BRITISH_ENGLISH.tag) &&
-                EnglishTechnicalSpeech.qualifiedOutputMatches(sentence).isNotEmpty()) {
+            if (engine != NarrationEngine.ANDROID.name &&
+                ((language in setOf(NarrationLanguage.AMERICAN_ENGLISH.tag, NarrationLanguage.BRITISH_ENGLISH.tag) &&
+                    EnglishTechnicalSpeech.hasChangedSymbolPronunciation(sentence)) ||
+                    (language == NarrationLanguage.FRENCH.tag && FrenchTechnicalSpeech.hasChangedSymbolPronunciation(sentence)))) {
                 // Only corrected audio has different timing. Existing bookmarks for
                 // all unchanged recordings retain their exact identity and policy.
                 "qualified-output-resume-v1\u0000" + KokoroNarrationCache.key(language, voice, sentence)

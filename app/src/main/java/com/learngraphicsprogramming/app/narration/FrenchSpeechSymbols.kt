@@ -43,7 +43,7 @@ internal object FrenchSpeechSymbols {
         "/=" to "barre oblique égal", "%=" to "pour cent égal",
         "&=" to "esperluette égal", "|=" to "barre verticale égal",
         "^=" to "accent circonflexe égal", "->" to "flèche",
-        ".*" to "point astérisque"
+        ".*" to "point astérisque", "::" to "double deux points"
     )
     private val symbols = mapOf(
         '+' to "plus", '=' to "égal", '/' to "barre oblique", '\\' to "barre oblique inverse",

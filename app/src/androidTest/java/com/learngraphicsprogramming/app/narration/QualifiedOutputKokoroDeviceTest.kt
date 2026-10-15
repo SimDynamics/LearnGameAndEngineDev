@@ -50,7 +50,11 @@ class QualifiedOutputKokoroDeviceTest {
             SpanishTechnicalSpeech.prepare("\${clientes} sin comillas frente a \${clientes}.").text)
     }
 
-    @Test fun qualifiedOutputUsesNativeLetterNamesAndSpanishNotationWithoutVoiceSplicing() {
+    @Test fun qualifiedOutputUsesNativeLetterNamesAndSpanishNotationWithoutVoiceSplicing() = verifySamples(SAMPLES)
+
+    @Test fun technicalSymbolsUseContinuousNativeSpeechAndTheirOwnObservedWordTimes() = verifySamples(SYMBOL_SAMPLES)
+
+    private fun verifySamples(samples: List<Sample>) {
         assertEquals("Use only the isolated APK", QA_PACKAGE, app.packageName)
         assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
         assertTrue("Use only the explicitly authorized LDPlayer or Honor QA device",
@@ -62,8 +66,8 @@ class QualifiedOutputKokoroDeviceTest {
         assertTrue("Existing resources belong only to the isolated application",
             root.path.startsWith(external.path + File.separator) || root.path.startsWith(app.filesDir.canonicalPath + File.separator))
         val artifacts = (KokoroModelManifest.sharedArtifacts +
-            SAMPLES.flatMap { KokoroModelManifest.resources(it.language) } + EnglishAuxResources.artifacts +
-            SAMPLES.map { requireNotNull(KokoroVoiceCatalog.find(it.voice)).artifact }).distinctBy { it.fileName }
+            samples.flatMap { KokoroModelManifest.resources(it.language) } + EnglishAuxResources.artifacts +
+            samples.map { requireNotNull(KokoroVoiceCatalog.find(it.voice)).artifact }).distinctBy { it.fileName }
         val beforeResources = artifacts.associate { artifact ->
             val file = File(root, artifact.fileName)
             assertTrue("Real installed SHA-256 must match; this test never downloads: ${artifact.fileName}",
@@ -97,7 +101,7 @@ class QualifiedOutputKokoroDeviceTest {
         val durationModel = KokoroDurationModel(root, durationCache)
         val owner = Any()
         try {
-            for (sample in SAMPLES) {
+            for (sample in samples) {
                 val lesson = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray()
                     .put(JSONObject().put("type", "paragraph").put("text", sample.source)))))
                 val original = lesson.toString()
@@ -188,17 +192,49 @@ class QualifiedOutputKokoroDeviceTest {
                     }
                 }
                 val chunks = KokoroPhonemeChunks.split(phones)
+                if (sample.id == "en-us-symbols" || sample.id == "en-gb-symbols") {
+                    val british = sample.language == NarrationLanguage.BRITISH_ENGLISH
+                    val hash = sources.single { prepared.substring(it.sourceStart, it.sourceEndExclusive) == "#" }
+                    assertEquals("A named symbol cannot acquire a BART pronunciation for a whitespace token",
+                        if (british) "hˈaʃ" else "hˈæʃ", phones.substring(hash.phoneStart, hash.phoneEndExclusive))
+                    val namespaces = sources.filter { prepared.substring(it.sourceStart, it.sourceEndExclusive) == "std" }
+                    assertEquals(2, namespaces.size)
+                    namespaces.forEach { assertEquals("No extra sound may be prefixed to the three letter names",
+                        EnglishTechnicalSpeech.STD_PHONES, phones.substring(it.phoneStart, it.phoneEndExclusive)) }
+                    val output = sources.single { prepared.substring(it.sourceStart, it.sourceEndExclusive) == "cout" }
+                    assertEquals(EnglishTechnicalSpeech.coutPhones, phones.substring(output.phoneStart, output.phoneEndExclusive))
+                }
                 val timings = NarrationCpuBudget.capBackground().use {
                     chunks.map { durationModel.durations(it, sample.voice) }
                 }
                 val wavHash = sha256(wav)
                 val alignment = requireNotNull(NarrationWordTimingBuilder.buildSourceChunked(prepared, wavHash,
-                    pcm.size.toLong(), phones, sources, chunks, timings)) {
+                    pcm.size.toLong(), phones, sources, chunks, timings, sample.language)) {
                     "Actual phoneme durations must match this exact native waveform sample count: ${sample.id}"
                 }
                 assertEquals(wavHash, alignment.audioSha256)
                 assertEquals(pcm.size.toLong(), alignment.sampleCount)
-                assertTrue(NarrationWordTimingBuilder.valid(prepared, alignment.sampleCount, alignment.words))
+                assertTrue(NarrationWordTimingBuilder.valid(prepared, alignment.sampleCount, alignment.words, sample.language))
+                if (sample.id.endsWith("-symbols")) {
+                    val atoms = NarrationSpokenWords.technicalAtoms(prepared, sample.language)
+                    assertEquals(atoms.map { it.start to it.endExclusive }, alignment.words.map { it.start to it.endExclusive })
+                    val expected = if (sample.language == NarrationLanguage.FRENCH) listOf("#", "::")
+                        else listOf("#", "<", ">", "{", "}", "::")
+                    for (symbol in expected) {
+                        assertTrue("Every requested symbol has its own native observed time: $symbol", atoms.any {
+                            prepared.substring(it.start, it.endExclusive) == symbol
+                        })
+                    }
+                    val segmentsByIndex = segments.withIndex().associate { it.index to it.value }
+                    val mapping = NarrationWordMappings.forBlock(0, sample.source, segmentsByIndex, sample.language).getValue(0)
+                    assertEquals(alignment.words.map { ReadingTextRange(it.start, it.endExclusive) }, mapping.spoken)
+                    assertTrue("Symbol ownership never covers an entire paragraph", mapping.displayed.all {
+                        it.endExclusive - it.start < sample.source.length
+                    })
+                    assertTrue("The following ordinary word keeps a later native boundary", alignment.words.zipWithNext().any {
+                        (left, right) -> prepared.substring(left.start, left.endExclusive) == "::" && left.endSample <= right.startSample
+                    })
+                }
                 if (sample.id == "fr-fixed-phrase") {
                     val lexical = NarrationSpokenWords.lexemes(prepared)
                     val parce = alignment.words[lexical.indexOfFirst { it.canonical == "parce" }]
@@ -268,6 +304,12 @@ class QualifiedOutputKokoroDeviceTest {
     private data class Sample(val id: String, val language: NarrationLanguage, val voice: String, val source: String)
     companion object {
         private const val QA_PACKAGE = "com.learngraphicsprogramming.app.realdownloadsqa"
+        private val SYMBOL_SAMPLES = listOf(
+            Sample("fr-symbols", NarrationLanguage.FRENCH, "ff_siwis", "La ligne #include utilise std::cout et :: indique la portée."),
+            Sample("en-us-symbols", NarrationLanguage.AMERICAN_ENGLISH, "af_heart", "The #include <iostream> line contains { std::cout } and std:: indicates scope."),
+            Sample("en-gb-symbols", NarrationLanguage.BRITISH_ENGLISH, "bf_emma", "The #include <iostream> line contains { std::cout } and std:: indicates scope."),
+            Sample("es-symbol-regression", NarrationLanguage.SPANISH, "ef_dora", "La línea #include permite usar std::cout.")
+        )
         private val SAMPLES = listOf(
             Sample("fr-cout", NarrationLanguage.FRENCH, "ff_siwis", "La ligne std::cout affiche le résultat."),
             Sample("en-us-cout", NarrationLanguage.AMERICAN_ENGLISH, "af_heart", "The expression std::cout displays the result."),

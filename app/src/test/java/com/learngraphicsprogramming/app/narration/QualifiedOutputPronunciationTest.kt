@@ -32,9 +32,13 @@ class QualifiedOutputPronunciationTest {
             val changed = "Use std::cout to display the result."
             assertNotEquals(legacyAudio(language, voice, changed), KokoroNarrationCache.key(language, voice, changed))
             assertEquals(KokoroNarrationCache.key(language, voice, changed), KokoroNarrationCache.key(language, voice, changed))
-            for (source in listOf("Use a standard output stream.", "std::cin and std::vector<int>.",
-                "mystd::cout, std::cout_total", "https://example.org/std::cout")) {
+            for (source in listOf("Use a standard output stream.", "The cin and vector names remain visible.",
+                "mystd couttotal", "https://example.org/std::cout")) {
                 assertEquals(source, legacyAudio(language, voice, source), KokoroNarrationCache.key(language, voice, source))
+            }
+            for (source in listOf("std::cin and std::vector<int>.", "mystd::cout, std::cout_total", "#include <iostream> { }")) {
+                assertNotEquals("Newly audible notation changes only its own recording: $source",
+                    legacyAudio(language, voice, source), KokoroNarrationCache.key(language, voice, source))
             }
         }
     }

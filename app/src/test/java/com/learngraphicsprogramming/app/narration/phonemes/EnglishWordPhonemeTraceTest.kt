@@ -10,7 +10,8 @@ class EnglishWordPhonemeTraceTest {
         {"They":"ðA","record":{"DEFAULT":"ɹˈɛkəɹd","VERB":"ɹəkˈɔɹd"},
          "I":"ˈI","can't":"kˈænt","read":"ɹˈid","it":"ɪt","Use":"jˈuz",
          "well-known":"wˌɛlnˈOn","tools":"tˈulz","the":"ði","apple":"ˈæpəl",
-         "and":"ænd","book":"bˈʊk","to":"tu","page":"pˈAʤ","hello":"həlˈO"}
+         "and":"ænd","book":"bˈʊk","to":"tu","page":"pˈAʤ","hello":"həlˈO",
+         "scope":"skˈOp","resolution":"ɹˌɛzəlˈuʃən","operator":"ˈɑpəɹˌAtəɹ"}
     """), JSONObject(), british)
 
     private fun tokens(text: String, vararg words: Pair<String, String>): List<MisakiWord> {
@@ -99,15 +100,18 @@ class EnglishWordPhonemeTraceTest {
                 EnglishMisakiSpacyPos::class.java, Boolean::class.javaPrimitiveType, Function0::class.java).apply { isAccessible = true }
             @Suppress("UNCHECKED_CAST")
             val tokens = method.invoke(frontend, text, null, true, {}) as List<MisakiWord>
-            assertEquals(listOf("Use", "std", "cout", ";", "read", "it", "."), tokens.map { it.text })
-            tokens.zip(listOf("VB", "NNP", "NNP", ":", "VB", "PRP", ".")).forEach { (token, tag) -> token.tag = tag }
+            assertEquals(listOf("Use", "std", "scope", "resolution", "operator", "cout", ";", "read", "it", "."), tokens.map { it.text })
+            tokens.zip(listOf("VB", "NNP", "NN", "NN", "NN", "NNP", ":", "VB", "PRP", ".")).forEach { (token, tag) -> token.tag = tag }
             val trace = trace(text, tokens)
-            assertEquals(listOf("use", "std", "cout", "read", "it"), trace.words.map { it.word })
+            assertEquals(listOf("use", "std", "::", "cout", "read", "it"), trace.words.map { it.word })
             val std = trace.words[1]
-            val cout = trace.words[2]
+            val scope = trace.words[2]
+            val cout = trace.words[3]
             assertEquals("std", text.substring(std.sourceStart, std.sourceEndExclusive))
             assertEquals("cout", text.substring(cout.sourceStart, cout.sourceEndExclusive))
             assertEquals("ˈɛs tˈi dˈi", trace.phonemes.substring(std.start, std.endExclusive))
+            assertEquals("::", text.substring(scope.sourceStart, scope.sourceEndExclusive))
+            assertEquals("skˈOp ɹˌɛzəlˈuʃən ˈɑpəɹˌAtəɹ", trace.phonemes.substring(scope.start, scope.endExclusive))
             assertEquals("sˈi ˈWt", trace.phonemes.substring(cout.start, cout.endExclusive))
             assertFalse(trace.phonemes.contains("standard"))
         } finally { frontend.close() }

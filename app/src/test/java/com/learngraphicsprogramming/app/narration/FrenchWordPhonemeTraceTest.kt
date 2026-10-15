@@ -142,6 +142,30 @@ class FrenchWordPhonemeTraceTest {
         assertEquals(listOf("La", "main", "droite", "reste", "ouverte"), trace.words.map { it.word })
     }
 
+    @Test fun selectedNamespaceHashAndScopeEachOwnTheirActualContinuousPhones() {
+        val french = frontend()
+        for (source in listOf("La fonction utilise std::cout.", "La fonction utilise std :: cout.",
+            "La directive #include <iostream> prépare le programme.", "std::cin affiche une valeur.")) {
+            val prepared = FrenchTechnicalSpeech.prepareForKokoro(source)
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { source }
+            assertValid(prepared, trace)
+            assertEquals(MixedFrenchG2P.phonemizePrepared(prepared, french), trace.phonemes)
+            for (symbol in listOf("#", "::")) {
+                val start = prepared.indexOf(symbol)
+                if (start < 0) continue
+                val symbolRange = trace.words.single { it.sourceStart == start && it.sourceEndExclusive == start + symbol.length }
+                assertEquals(symbol, symbolRange.word)
+                assertTrue(trace.phonemes.substring(symbolRange.start, symbolRange.endExclusive).isNotBlank())
+            }
+            if ("std" in source) {
+                val start = prepared.indexOf("std")
+                val std = trace.words.single { it.sourceStart == start && it.sourceEndExclusive == start + 3 }
+                val expected = if ("cout" in source) MixedFrenchG2P.namespaceFrenchLetters else MixedFrenchG2P.namespaceUsPhones
+                assertEquals(expected, trace.phonemes.substring(std.start, std.endExclusive))
+            }
+        }
+    }
+
     @Test fun unsupportedInputCannotProduceInventedAlignment() {
         val french = FrenchFluidG2P.fromLexicon(mapOf("le" to "lə"))
         assertNull(french.traceWords("Le motinconnu."))

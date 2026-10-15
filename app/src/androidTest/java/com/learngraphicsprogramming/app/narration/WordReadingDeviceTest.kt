@@ -1253,7 +1253,7 @@ class WordReadingDeviceTest {
                             val wav = requireNotNull(field<File?>(field<List<Any>>(reader, "segments")[index], "file"))
                             assertEquals("Native timing is tied to the exact decoded ${language.tag} WAV", sha256(wav), actual.audioSha256)
                             assertEquals(wav.length(), actual.sampleCount * 2L + 44L)
-                            assertTrue("No uniform or guessed timing can bypass native validation", NarrationWordTimingBuilder.valid(prepared[index], actual.sampleCount, actual.words))
+                            assertTrue("No uniform or guessed timing can bypass native validation", NarrationWordTimingBuilder.valid(prepared[index], actual.sampleCount, actual.words, language))
                             assertTrue("Every original spoken atom belongs to one real pronunciation group",
                                 NarrationSpokenWords.lexemes(prepared[index]).all { atom -> actual.words.count { it.start <= atom.start && it.endExclusive >= atom.endExclusive } == 1 })
                             audioEvidence.put(JSONObject().put("segmentIndex", index).put("sourceText", prepared[index])

@@ -42,13 +42,18 @@ internal object KokoroNarrationCache {
             }
         }
         if (language == NarrationLanguage.AMERICAN_ENGLISH.tag || language == NarrationLanguage.BRITISH_ENGLISH.tag) {
-            if (EnglishTechnicalSpeech.qualifiedOutputMatches(text).isNotEmpty()) {
-                // Only this corrected qualifier changes pronunciation. Keep all other
-                // English recordings, including other namespaces and identifiers.
+            if (EnglishTechnicalSpeech.hasChangedSymbolPronunciation(text)) {
+                // Only recordings with corrected technical readings get another identity.
                 parts += EnglishTechnicalSpeech.CACHE_REVISION
-                parts += EnglishTechnicalSpeech.STD_PHONES
-                parts += EnglishTechnicalSpeech.coutPhones
+                EnglishTechnicalSpeech.replacements(text).forEach { replacement ->
+                    parts += "${replacement.start}:${replacement.endExclusive}"
+                    parts += replacement.spoken
+                    parts += replacement.phonemes.orEmpty()
+                }
             }
+        }
+        if (language == NarrationLanguage.FRENCH.tag && FrenchTechnicalSpeech.hasChangedSymbolPronunciation(text)) {
+            parts += FrenchTechnicalSpeech.SYMBOL_CACHE_REVISION
         }
         if (annotated) {
             val terms = ManualEnglishSpeech.spans(text)

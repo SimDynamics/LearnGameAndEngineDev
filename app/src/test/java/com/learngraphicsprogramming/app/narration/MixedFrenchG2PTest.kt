@@ -14,7 +14,8 @@ class MixedFrenchG2PTest {
         "standard" to "stɑ̃dˈaʁ", "main" to "mˈɛ̃", "droite" to "dʁwˈat", "reste" to "ʁˈɛst",
         "ouverte" to "uvˈɛʁt", "public" to "pyblˈik", "continue" to "kɔ̃tinˈy", "lecture" to "lɛktˈyʁ",
         "une" to "yn", "double" to "dˈubl", "un" to "œ̃", "long" to "lˈɔ̃", "moment" to "mɔmˈɑ̃",
-        "dièse" to "djˈɛz", "chevron" to "ʃəvʁˈɔ̃", "ouvrant" to "uvʁˈɑ̃", "fermant" to "fɛʁmˈɑ̃"
+        "dièse" to "djˈɛz", "chevron" to "ʃəvʁˈɔ̃", "ouvrant" to "uvʁˈɑ̃", "fermant" to "fɛʁmˈɑ̃",
+        "deux" to "dˈø", "points" to "pwˈɛ̃"
         )
         val vocabulary = (entries.values.joinToString("") +
             ManualEnglishPronunciations.phones.values.joinToString("") + MixedFrenchG2P.namespaceFrenchLetters + " .,;").toSet()
@@ -29,6 +30,7 @@ class MixedFrenchG2PTest {
         terms.forEach { assertTrue(phones.contains(ManualEnglishPronunciations.phonemes(it.entry))) }
         assertTrue(phones.startsWith("la fɔ̃ksjˈɔ̃ "))
         assertTrue(phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
+        assertTrue(phones.contains("dˈubl dˈø pwˈɛ̃"))
         assertFalse(phones.contains("stɑ̃dˈaʁ"))
         assertFalse(phones.contains(","))
         assertEquals(1, phones.count { it == '.' })
@@ -53,6 +55,7 @@ class MixedFrenchG2PTest {
         assertEquals(text, ManualEnglishSpeech.strip(prepared))
         assertTrue(phones.contains(ManualEnglishPronunciations.phones.getValue("include")))
         assertTrue(phones.contains(ManualEnglishPronunciations.phones.getValue("iostream")))
+        assertTrue(phones.contains("djˈɛz"))
         assertFalse(phones.any { it in "`#<>" })
     }
 

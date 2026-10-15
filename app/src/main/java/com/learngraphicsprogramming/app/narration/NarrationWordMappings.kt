@@ -15,10 +15,10 @@ internal object NarrationWordMappings {
         if (completeBlock.isNotEmpty()) return completeBlock
         val projected = projected(blockIndex, displayed, segments, allowSubset = true, language = language)
         if (projected.isNotEmpty()) return projected
-        val visible = NarrationSpokenWords.lexemes(displayed).map { it.canonical }
+        val visible = NarrationSpokenWords.technicalAtoms(displayed, language).map { it.canonical }
         if (visible.isEmpty()) return emptyMap()
         val ordered = segments.toSortedMap().entries.toList()
-        val spoken = ordered.map { entry -> NarrationSpokenWords.lexemes(entry.value).map { it.canonical } }
+        val spoken = ordered.map { entry -> NarrationSpokenWords.technicalAtoms(entry.value, language).map { it.canonical } }
         var selected: Map<Int, String>? = null
         for (start in ordered.indices) {
             var cursor = 0
@@ -39,8 +39,8 @@ internal object NarrationWordMappings {
 
     fun forBlock(blockIndex: Int, displayed: CharSequence,
                  segments: Map<Int, String>, language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
-        val visible = NarrationSpokenWords.lexemes(displayed)
-        val spoken = segments.toSortedMap().mapValues { NarrationSpokenWords.lexemes(it.value) }
+        val visible = NarrationSpokenWords.technicalAtoms(displayed, language)
+        val spoken = segments.toSortedMap().mapValues { NarrationSpokenWords.technicalAtoms(it.value, language) }
         if (visible.isEmpty() || visible.map { it.canonical } != spoken.values.flatten().map { it.canonical })
             return projected(blockIndex, displayed, segments, allowSubset = false, language = language)
 
@@ -77,7 +77,7 @@ internal object NarrationWordMappings {
         val ordered = segments.toSortedMap().entries.toList()
         for (mode in listOf("auto", "text", "inline", "block")) {
             val projection = NarrationSourceProjection.forLanguage(displayed.toString(), mode, language) ?: continue
-            val expected = NarrationSpokenWords.lexemes(projection.text)
+            val expected = NarrationSpokenWords.technicalAtoms(projection.text, language)
             if (expected.isEmpty()) continue
             fun content(text: String) = text.filterNot { it.isWhitespace() || it == ManualEnglishSpeech.PREPARED }
             val sourceContent = content(projection.text)
@@ -92,7 +92,7 @@ internal object NarrationWordMappings {
             }
             val selected = candidates.singleOrNull() ?: continue
             if (!allowSubset && selected.size != ordered.size) continue
-            val spoken = selected.flatMap { NarrationSpokenWords.lexemes(it.value) }
+            val spoken = selected.flatMap { NarrationSpokenWords.technicalAtoms(it.value, language) }
             if (spoken.map { it.canonical } != expected.map { it.canonical }) continue
             val owners = expected.map { NarrationSourceProjection.owner(projection.owners.subList(it.start, it.endExclusive)) }
             if (owners.any { it.start >= it.endExclusive }) continue
@@ -119,7 +119,7 @@ internal object NarrationWordMappings {
             }
             var cursor = 0
             return selected.associate { segment ->
-                val lexemes = NarrationSpokenWords.lexemes(segment.value)
+                val lexemes = NarrationSpokenWords.technicalAtoms(segment.value, language)
                 val shown = ranges.subList(cursor, cursor + lexemes.size).toList()
                 cursor += lexemes.size
                 segment.key to NarrationWordMapping(block, lexemes.map { ReadingTextRange(it.start, it.endExclusive) }, shown)

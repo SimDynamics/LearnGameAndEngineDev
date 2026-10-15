@@ -27,7 +27,11 @@ class MultilingualReadingCorpusTest {
         assertEquals("Unowned visible glyph in $language/$location", source.indices.toSet(),
             mapping.values.flatMap { value -> value.displayed.flatMap { it.start until it.endExclusive } }.toSet())
         mapping.forEach { (index, value) ->
-            assertEquals(NarrationSpokenWords.lexemes(selected.getValue(index)).map { ReadingTextRange(it.start, it.endExclusive) }, value.spoken)
+            // Pronounced technical symbols now own exact frontend boundaries too;
+            // the explicit language preserves Spanish's original lexical contract.
+            assertEquals("Spoken source atoms in $language/$location",
+                NarrationSpokenWords.technicalAtoms(selected.getValue(index), language)
+                    .map { ReadingTextRange(it.start, it.endExclusive) }, value.spoken)
             assertEquals(value.spoken.size, value.displayed.size)
             assertTrue(value.displayed.all { it.start >= 0 && it.start < it.endExclusive && it.endExclusive <= source.length })
         }

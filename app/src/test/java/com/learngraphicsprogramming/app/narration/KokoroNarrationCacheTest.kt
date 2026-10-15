@@ -50,10 +50,10 @@ class KokoroNarrationCacheTest {
         }
     }
 
-    @Test fun otherLanguagesKeepLegacyKeysEvenForTechnicalText() {
+    @Test fun correctedEnglishAndFrenchTechnicalSymbolsCannotReuseAnOmittingRecording() {
         val text = "std::vector<int> y total_count2."
         for ((language, voice) in listOf("en-US" to "af_heart", "en-GB" to "bf_emma", "fr" to "ff_siwis")) {
-            assertEquals(language, legacyKey(language, voice, text),
+            assertNotEquals(language, legacyKey(language, voice, text),
                 KokoroNarrationCache.key(language, voice, text))
         }
     }
@@ -83,7 +83,7 @@ class KokoroNarrationCacheTest {
     }
 
     @Test fun superscriptCorrectionsDoNotChangeOtherLanguageKeys() {
-        val text = "aᵃ + bᵇ + cᶜ"
+        val text = "aᵃ bᵇ cᶜ"
         for ((language, voice) in listOf("en-US" to "af_heart", "en-GB" to "bf_emma", "fr" to "ff_siwis")) {
             assertEquals(language, legacyKey(language, voice, text),
                 KokoroNarrationCache.key(language, voice, text))

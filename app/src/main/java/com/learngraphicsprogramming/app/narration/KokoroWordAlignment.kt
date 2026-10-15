@@ -83,12 +83,15 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         val sourceHash = digest(text.toByteArray(Charsets.UTF_8))
         val key = digest("$VERSION\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
         val sidecar = File(metadataDirectory, "$key.json")
-        read(sidecar, text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
+        read(sidecar, text, sourceHash, voice, audioHash, sampleCount, language)?.let { return it }
         // Ordinary-prose timings from the previous format remain exact. Validate their
         // offsets against today's atoms and the same immutable audio before reusing them.
-        if (language == NarrationLanguage.SPANISH) for (version in listOf(2, 1)) {
+        val compatibleVersions = if (language == NarrationLanguage.SPANISH) listOf(3, 2, 1)
+            else if (NarrationSpokenWords.technicalAtoms(text, language) == NarrationSpokenWords.lexemes(text)) listOf(3)
+            else emptyList()
+        for (version in compatibleVersions) {
             val compatibleKey = digest("$version\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
-            read(File(metadataDirectory, "$compatibleKey.json"), text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
+            read(File(metadataDirectory, "$compatibleKey.json"), text, sourceHash, voice, audioHash, sampleCount, language)?.let { return it }
         }
         checkActive(isCancelled)
         val store = modelStore ?: KokoroModelStore(app).also { modelStore = it }
@@ -136,7 +139,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
             model.durations(chunk, voice) { closed || isCancelled() }
         }
         checkActive(isCancelled)
-        val alignment = NarrationWordTimingBuilder.buildSourceChunked(text, audioHash, sampleCount, phonemes, sources, chunks, durations) ?: return null
+        val alignment = NarrationWordTimingBuilder.buildSourceChunked(text, audioHash, sampleCount, phonemes, sources, chunks, durations, language) ?: return null
         // Bind the sidecar to bytes that are still the file actually supplied for playback.
         if (audioSampleCount(audio, isCancelled) != sampleCount || digest(audio, isCancelled) != audioHash) return null
         checkActive(isCancelled)
@@ -145,11 +148,12 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
     }
 
     private fun read(
-        file: File, text: String, sourceHash: String, voice: String, audioHash: String, sampleCount: Long
+        file: File, text: String, sourceHash: String, voice: String, audioHash: String, sampleCount: Long,
+        language: NarrationLanguage
     ): NarrationWordAlignment? = runCatching {
         if (!file.isFile || file.length() !in 1L..524_288L) return@runCatching null
         val data = JSONObject(file.readText(Charsets.UTF_8))
-        if (data.getInt("version") !in setOf(1, 2, VERSION) || data.getString("model") != KokoroModelManifest.revision ||
+        if (data.getInt("version") !in setOf(1, 2, 3, VERSION) || data.getString("model") != KokoroModelManifest.revision ||
             data.getString("sourceSha256") != sourceHash || data.getString("voice") != voice ||
             data.getString("audioSha256") != audioHash || data.getLong("sampleCount") != sampleCount) return@runCatching null
         val rows = data.getJSONArray("words")
@@ -159,7 +163,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
             if (row.length() != 4) return@runCatching null
             NarrationWordTiming(row.getInt(0), row.getInt(1), row.getLong(2), row.getLong(3))
         }
-        if (!NarrationWordTimingBuilder.valid(text, sampleCount, words)) return@runCatching null
+        if (!NarrationWordTimingBuilder.valid(text, sampleCount, words, language)) return@runCatching null
         NarrationWordAlignment(audioHash, sampleCount, words)
     }.getOrNull()
 
@@ -244,5 +248,5 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         thread.quitSafely()
     }
 
-    companion object { private const val VERSION = 3 }
+    companion object { private const val VERSION = 4 }
 }

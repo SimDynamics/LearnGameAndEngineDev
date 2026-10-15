@@ -48,12 +48,35 @@ class FrenchSpeechSymbolsTest {
     @Test fun residualProgrammingSymbolsAreNamedAndLongestOperatorsRemainWhole() {
         val samples = mapOf(
             "x+=1; x!=0 && x<=5" to "x plus égal 1; x est différent de 0 et logique x est inférieur ou égal à 5",
-            "std::cout << x; x>>=1" to "std::cout double chevron ouvrant x; x double chevron fermant égal 1",
+            "std::cout << x; x>>=1" to "std double deux points cout double chevron ouvrant x; x double chevron fermant égal 1",
             "{côté_nord[2]/3}\\n" to "accolade ouvrante côté trait de soulignement nord crochet ouvrant 2 crochet fermant barre oblique 3 accolade fermante barre oblique inverse n",
             "`#define` <int> | & * % ^ ~ @" to "accent grave dièse define accent grave inférieur à int supérieur à barre verticale esperluette astérisque pour cent accent circonflexe tilde arobase",
             "x->y; a<=>b" to "x flèche y; a comparaison à trois voies b"
         )
         for ((source, expected) in samples) assertEquals(source, expected, FrenchSpeechSymbols.normalize(source))
+    }
+
+    @Test fun hashesAndScopeOperatorsRetainDistinctFrenchWordsAndSourceOwnership() {
+        val sources = listOf("#", "::", "#include <iostream>", "std:: indique la portée.",
+            "std::cout", "std :: cout", "std::cin", "::valeur", "autre::valeur")
+        for (source in sources) {
+            val pieces = mutableListOf<Triple<Int, Int, String>>()
+            val normalized = FrenchSpeechSymbols.normalizeObserved(source) { start, end, value ->
+                pieces += Triple(start, end, value)
+            }
+            assertEquals(FrenchSpeechSymbols.normalize(source), normalized)
+            assertEquals(normalized, pieces.joinToString("") { it.third })
+            if ('#' in source) {
+                assertTrue(source, normalized.contains("dièse"))
+                assertTrue(source, pieces.filter { it.first == source.indexOf('#') && it.second == it.first + 1 }
+                    .joinToString("") { it.third }.contains("dièse"))
+            }
+            if ("::" in source) {
+                assertTrue(source, normalized.contains("double deux points"))
+                assertTrue(source, pieces.filter { it.first == source.indexOf("::") && it.second == it.first + 2 }
+                    .joinToString("") { it.third }.contains("double deux points"))
+            }
+        }
     }
 
     @Test fun residualMathematicalNotationUsesFrenchNamesRatherThanDiscardingSymbols() {

@@ -119,9 +119,14 @@ internal object MixedFrenchG2P {
         // The selected identifiers retain their reviewed US readings; std::cout uses
         // the requested French letter names for its namespace prefix.
         val marker = "[\\uE100-\\uF8FF]"
-        val namespaceNotation = masked.replace(Regex("(?<![\\p{L}\\p{N}_])std\\s*::\\s*(?=$marker)")) {
-            masked.rendered(it.range.first, it.range.last + 1,
-                "${markerFor(namespaces[masked.text[it.range.last + 1]] ?: namespaceUsPhones)} ")
+        val namespaceNotation = masked.replace(Regex("(?<![\\p{L}\\p{N}_])std(\\s*::\\s*)(?=$marker)")) {
+            // Only std owns its existing foreign pronunciation. Keep the scope
+            // operator and its source offsets so it is spoken and timed separately.
+            val prefix = masked.rendered(it.range.first, it.range.first + 3,
+                markerFor(namespaces[masked.text[it.range.last + 1]] ?: namespaceUsPhones).toString())
+            val scope = masked.slice(it.range.first + 3, it.range.last + 1)
+            Owned(prefix.text + scope.text,
+                if (observe) prefix.owners!! + scope.owners!! else null)
         }
         val directives = namespaceNotation.replace(Regex("#\\s*(?=$marker)")) {
             namespaceNotation.rendered(it.range.first, it.range.last + 1, "dièse ")

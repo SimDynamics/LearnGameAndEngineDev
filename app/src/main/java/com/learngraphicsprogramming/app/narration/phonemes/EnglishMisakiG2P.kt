@@ -9,6 +9,7 @@ import java.text.Normalizer
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 import com.learngraphicsprogramming.app.narration.NarrationSpokenWords
+import com.learngraphicsprogramming.app.narration.NarrationLanguage
 import com.learngraphicsprogramming.app.narration.EnglishTechnicalSpeech
 
 class EnglishMisakiException(message: String) : IllegalArgumentException(message)
@@ -193,6 +194,15 @@ class EnglishMisakiG2P(
 
     private fun tokenize(text: String, pos: EnglishMisakiSpacyPos? = null, trackSource: Boolean = false,
         checkCurrent: () -> Unit = {}): MutableList<MisakiWord> {
+        val tokenizer: ((String) -> List<SpacyTaggedToken>)? = pos?.let { engine ->
+            { source -> engine.tokenizeAndTag(source) { checkCurrent(); true } }
+        }
+        return tokenizeUsing(text, tokenizer, trackSource, checkCurrent)
+    }
+
+    /** Shares source binding with the native POS frontend, including its space tokens. */
+    internal fun tokenizeUsing(text: String, tokenizer: ((String) -> List<SpacyTaggedToken>)?,
+        trackSource: Boolean, checkCurrent: () -> Unit = {}): MutableList<MisakiWord> {
         val prepared = StringBuilder()
         val sourceStarts = if (trackSource) mutableListOf<Int>() else null
         val sourceEnds = if (trackSource) mutableListOf<Int>() else null
@@ -201,16 +211,26 @@ class EnglishMisakiG2P(
             if (sourceStarts != null && sourceEnds != null) for (index in start until end) { sourceStarts += index; sourceEnds += index + 1 }
         }
         val overrides = mutableMapOf<IntRange, String>()
-        fun appendOverride(start: Int, end: Int, phones: String) {
-            val preparedStart = prepared.length
-            appendSource(start, end)
-            overrides[preparedStart until prepared.length] = phones
+        fun appendTechnical(piece: EnglishTechnicalSpeech.Replacement) {
+            fun appendMapped(value: String) {
+                prepared.append(value)
+                if (sourceStarts != null && sourceEnds != null) repeat(value.length) {
+                    sourceStarts += piece.start; sourceEnds += piece.endExclusive
+                }
+            }
+            // Insert only missing separators. spaCy represents a second ASCII space
+            // as a separate SPACE token; an artificial duplicate must never be sent
+            // through BART as if it were an unknown word.
+            if (prepared.isNotEmpty() && !prepared.last().isWhitespace()) appendMapped(" ")
+            val start = prepared.length
+            appendMapped(piece.spoken)
+            if (piece.phonemes != null) overrides[start until prepared.length] = piece.phonemes
+            if (text.getOrNull(piece.endExclusive)?.let { it.isLetterOrDigit() || it == '_' } == true)
+                appendMapped(" ")
         }
         val links = LINK.findAll(text).toList()
-        val qualified = EnglishTechnicalSpeech.qualifiedOutputMatches(text).filter { output ->
-            links.none { link -> link.range.first < output.endExclusive && link.range.last + 1 > output.start }
-        }
-        val pieces = (links.map { it.range.first to it } + qualified.map { it.start to it }).sortedBy { it.first }
+        val replacements = EnglishTechnicalSpeech.replacements(text)
+        val pieces = (links.map { it.range.first to it } + replacements.map { it.start to it }).sortedBy { it.first }
         var last = 0
         for ((_, piece) in pieces) {
             checkCurrent()
@@ -226,15 +246,9 @@ class EnglishMisakiG2P(
                     if (phonemes.startsWith('/') && phonemes.endsWith('/')) overrides[start until prepared.length] = phonemes.trim('/')
                     last = piece.range.last + 1
                 }
-                is EnglishTechnicalSpeech.QualifiedOutput -> {
+                is EnglishTechnicalSpeech.Replacement -> {
                     appendSource(last, piece.start)
-                    appendOverride(piece.stdStart, piece.stdEndExclusive, EnglishTechnicalSpeech.STD_PHONES)
-                    // A temporary tokenizer separator prevents spaCy from fusing the qualifier;
-                    // it does not rewrite the lesson, script, displayed code or cache source text.
-                    prepared.append(' ')
-                    sourceStarts?.add(piece.stdEndExclusive)
-                    sourceEnds?.add(piece.coutStart)
-                    appendOverride(piece.coutStart, piece.coutEndExclusive, EnglishTechnicalSpeech.coutPhones)
+                    appendTechnical(piece)
                     last = piece.endExclusive
                 }
             }
@@ -244,13 +258,19 @@ class EnglishMisakiG2P(
         val result = mutableListOf<MisakiWord>()
         var quoteOpen = true
         var sourceOffset = 0
-        val words = pos?.tokenizeAndTag(normalized) { checkCurrent(); true }?.map { it.text to (it.whitespace to it.tag) }
+        val words = tokenizer?.invoke(normalized)?.map { it.text to (it.whitespace to it.tag) }
             ?: TOKEN.findAll(normalized).map { match -> match.value to (normalized.substring(match.range.last + 1).takeWhile { it.isWhitespace() } to null) }.toList()
         for ((raw, attributes) in words) {
             checkCurrent()
             val start = normalized.indexOf(raw, sourceOffset)
             if (start < sourceOffset) throw EnglishMisakiException("Misaki POS tokenizer did not align with the source")
             sourceOffset = start + raw.length
+            if (raw.isBlank()) {
+                // Preserve authored whitespace as separation/prosody, never phonemes.
+                // This also covers genuine newlines and tabs emitted by native spaCy.
+                result.lastOrNull()?.let { it.whitespace += raw + attributes.first }
+                continue
+            }
             val override = overrides.entries.firstOrNull { start in it.key }
             val forced = override?.let { if (start == it.key.first) it.value else "" }
             val word = if (raw == "\"") {
@@ -283,7 +303,7 @@ class EnglishMisakiG2P(
     companion object {
         /** Indivisible dictionary compounds stay whole instead of inventing internal phone times. */
         internal fun traceResolved(text: String, phonemes: String, pieces: List<PhonePiece>): EnglishPhoneTrace? {
-            val lexical = NarrationSpokenWords.lexemes(text)
+            val lexical = NarrationSpokenWords.technicalAtoms(text, NarrationLanguage.AMERICAN_ENGLISH)
             if (lexical.isEmpty() || pieces.isEmpty()) return null
             val parent = IntArray(lexical.size) { it }
             fun root(index: Int): Int { var next = index; while (parent[next] != next) next = parent[next]; return next }

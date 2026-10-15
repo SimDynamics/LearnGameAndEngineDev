@@ -23,6 +23,54 @@ internal object NarrationSpokenWords {
         return result
     }
 
+    /**
+     * Technical notation owns its actual frontend phone range too. Keep the ordinary
+     * lexical definition unchanged for Spanish and old metadata; only the English
+     * and French frontends explicitly opt into these additional source atoms.
+     */
+    fun technicalAtoms(text: CharSequence, language: NarrationLanguage): List<Lexeme> {
+        val source = text.toString()
+        val lexical = lexemes(source)
+        if (language == NarrationLanguage.SPANISH || source.isEmpty()) return lexical
+        val annotations = runCatching { ManualEnglishSpeech.spans(source) }.getOrNull() ?: return emptyList()
+        val protected = annotations.map { it.start until it.endExclusive } +
+            Regex("(?:https?://|www\\.)\\S+", RegexOption.IGNORE_CASE).findAll(source).map { it.range }.toList() +
+            Regex("\\[([^]]+)]\\(([^)]*)\\)").findAll(source).map { it.range }.toList()
+        val symbols = mutableListOf<ReadingTextRange>()
+        fun add(start: Int, end: Int) {
+            if (start !in source.indices || end !in (start + 1)..source.length ||
+                source.substring(start, end).any { it.isLetterOrDigit() } ||
+                protected.any { it.first < end && it.last + 1 > start } ||
+                lexical.any { it.start < end && it.endExclusive > start }) return
+            symbols += ReadingTextRange(start, end)
+        }
+        if (language == NarrationLanguage.FRENCH) {
+            // Observe the production normalizer, rather than maintaining another
+            // table of French names or guessing which punctuation is pronounced.
+            val replacements = linkedMapOf<Pair<Int, Int>, StringBuilder>()
+            var cursor = 0
+            fun observe(end: Int) {
+                val offset = cursor
+                FrenchSpeechSymbols.normalizeObserved(source.substring(cursor, end)) { start, finish, rendered ->
+                    replacements.getOrPut(start + offset to finish + offset) { StringBuilder() }.append(rendered)
+                }
+            }
+            annotations.forEach { annotation ->
+                observe(annotation.start)
+                cursor = annotation.endExclusive
+            }
+            observe(source.length)
+            replacements.forEach { (range, rendered) ->
+                if (rendered.any { it.isLetter() } && rendered.toString().trim() != source.substring(range.first, range.second))
+                    add(range.first, range.second)
+            }
+        } else {
+            EnglishTechnicalSpeech.replacements(source).forEach { add(it.start, it.endExclusive) }
+        }
+        return (lexical + symbols.distinct().map { Lexeme(it.start, it.endExclusive,
+            canonical(source.substring(it.start, it.endExclusive))) }).sortedBy { it.start }
+    }
+
     private fun plain(text: String, start: Int, end: Int): List<Lexeme> =
         words.findAll(text.substring(start, end)).map {
             Lexeme(start + it.range.first, start + it.range.last + 1, canonical(it.value))
