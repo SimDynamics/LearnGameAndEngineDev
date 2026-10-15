@@ -186,7 +186,10 @@ class NumericCurriculumPreservationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         old = json.loads(subprocess.check_output(["git", "show", "HEAD:" + cls.relative], cwd=contract.ROOT, text=True, encoding="utf-8"))
-        cls.previous = old["pages"][2]["blocks"][4]
+        # HEAD can already contain the integrated selector. This fixture models
+        # the contract before that optional field, without changing its answers.
+        cls.previous = copy.deepcopy(old["pages"][2]["blocks"][4])
+        cls.previous.pop("answerComparison", None)
         cls.current = contract.load(contract.ROOT / cls.relative)["pages"][2]["blocks"][4]
 
     def test_actual_activity_adds_only_selector_and_keeps_canonical_answers(self):
@@ -197,6 +200,8 @@ class NumericCurriculumPreservationTest(unittest.TestCase):
 
     def test_same_selector_cannot_authorize_other_location_or_legacy_field_changes(self):
         candidate = dict(self.previous, answerComparison=contract.DECIMAL_LITERAL_MODE)
+        self.assertNotIn("answerComparison", self.previous)
+        self.assertNotEqual(self.previous, candidate)
         self.assertFalse(contract.preserves_previous_exercise(self.relative, 2, 3, self.previous, candidate))
         for key, replacement in (("id", "moved_id"), ("code", "___"), ("answers", ["3.0", "3"]),
                                  ("question", "otra consigna"), ("explanation", "otra explicación")):

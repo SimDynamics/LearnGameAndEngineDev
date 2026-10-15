@@ -16,10 +16,10 @@ FIELDS = {
     "paragraph": {"type", "text"},
     "note": {"type", "text"},
     "code": {"type", "language", "code"},
-    "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation"},
-    "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison"},
-    "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison"},
-    "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation"},
+    "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
+    "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison", "reviewFeedback"},
+    "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison", "reviewFeedback"},
+    "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation", "reviewFeedback"},
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
@@ -27,6 +27,7 @@ FIELDS = {
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake"}
+REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
 # Precisiones revisadas de consigna; todos los demás campos del ejercicio,
@@ -410,6 +411,34 @@ def validate_decimal_answer_contract(block, where):
     require(all(value == values[0] for value in values), where, "answers deben representar exactamente la cantidad de answers[0]; configuración técnica inválida")
 
 
+def validate_review_feedback_contract(block, where):
+    """Optional guidance never changes options or answers and is not a second evaluator."""
+    if "reviewFeedback" not in block:
+        return
+    kind = block.get("type")
+    require(kind in REVIEW_FEEDBACK_TYPES, where, "reviewFeedback no corresponde a este tipo de ejercicio")
+    if kind not in REVIEW_FEEDBACK_TYPES:
+        return
+    review = block["reviewFeedback"]
+    if kind == "multiple_choice":
+        options = block.get("options")
+        valid_options = isinstance(options, list) and bool(options) and all(isinstance(option, str) for option in options)
+        require(valid_options, where, "reviewFeedback conserva options como lista de textos")
+        valid_reviews = isinstance(review, list) and all(isinstance(text, str) and text.strip() for text in review)
+        require(valid_reviews, where, "reviewFeedback requiere una lista de textos no vacíos")
+        if valid_options and isinstance(review, list):
+            require(len(review) == len(options), where, "reviewFeedback requiere una orientación por inciso, en el mismo orden")
+    else:
+        require(isinstance(review, str) and bool(review.strip()), where, "reviewFeedback debe ser texto no vacío de revisión del proceso")
+
+
+def without_review_feedback(block):
+    """Exclude only the newly optional presentation field on its four supported types."""
+    if block.get("type") not in REVIEW_FEEDBACK_TYPES or "reviewFeedback" not in block:
+        return block
+    return {key: value for key, value in block.items() if key != "reviewFeedback"}
+
+
 def validate_answer_contract(block, where):
     validate_decimal_answer_contract(block, where)
     if block["type"] == "output_prediction" and "outputComparison" in block:
@@ -555,6 +584,8 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
 
 
 def preserves_previous_exercise(relative, pn, bn, old, current):
+    old = without_review_feedback(old)
+    current = without_review_feedback(current)
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
@@ -655,6 +686,7 @@ def main():
                 if kind not in FIELDS:
                     continue
                 require(set(block) <= FIELDS[kind], where, "campo ajeno al contrato comprobado")
+                validate_review_feedback_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where)
                 if kind in {"heading", "paragraph", "note"}:

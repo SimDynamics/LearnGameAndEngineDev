@@ -3798,6 +3798,37 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(view)
     }
 
+    private fun cppIncorrectReview(block: JSONObject, selectedIndex: Int? = null): String {
+        val fallback = when (block.getString("type")) {
+            "multiple_choice" -> R.string.cpp_review_choice
+            "fill_code" -> R.string.cpp_review_fill
+            "output_prediction" -> R.string.cpp_review_output
+            "order_code" -> R.string.cpp_review_order
+            else -> error("Unsupported C++ feedback type")
+        }
+        val prefix = if (block.getString("type") == "order_code")
+            R.string.exercise_wrong_order else R.string.exercise_incorrect
+        return getString(prefix) + "\n" + CppExerciseFeedback.review(block, selectedIndex, getString(fallback))
+    }
+
+    private fun restoreCppReview(block: JSONObject, state: JSONObject?, answer: Any,
+                                 result: TextView, selectedIndex: Int? = null) {
+        if (!CppExerciseFeedback.wasReviewed(state, answer)) return
+        // A restored draft never evaluates an answer or consumes another attempt.
+        runCatching { cppIncorrectReview(block, selectedIndex) }.getOrNull()?.let {
+            result.text = it
+            result.setTextColor(Color.rgb(240, 150, 150))
+        }
+    }
+
+    private fun saveCppReviewDraft(page: Int, block: Int, field: String, answer: Any) {
+        // Update a previous submission's draft; a first technical/incomplete attempt
+        // must keep the existing no-saved-response guarantee.
+        if (ProgressRepository.getExerciseState(this, currentLessonId, page, block) == null) return
+        val state = JSONObject().put(field, answer).put("correct", false)
+        ProgressRepository.saveExerciseState(this, currentRouteId, currentLessonId, page, block, state)
+    }
+
     private fun addFillCode(
         block: JSONObject,
         blockIndex: Int
@@ -4245,6 +4276,10 @@ class LessonActivity : AppCompatActivity() {
                     s: Editable?
                 ) {
 
+                    if (!answeredCorrectly) {
+                        result.text = ""
+                        saveCppReviewDraft(exercisePage, blockIndex, "answer", input.text.toString())
+                    }
                     updateResetButton()
 
                     button.isEnabled =
@@ -4287,6 +4322,8 @@ class LessonActivity : AppCompatActivity() {
                 )
             )
         }
+
+        restoreCppReview(block, savedState, savedAnswer, result)
 
         updateResetButton()
 
@@ -4378,8 +4415,10 @@ class LessonActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            var incorrectReview = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
                 evaluation = {
+                    incorrectReview = cppIncorrectReview(block)
                     CppExerciseAnswers.fillMatches(block, userAnswer)
                 }, verdict = { it }) ?: return@setOnClickListener
 
@@ -4395,6 +4434,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (!correct) CppExerciseFeedback.recordIncorrect(state, input.text.toString())
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -4442,7 +4483,7 @@ class LessonActivity : AppCompatActivity() {
             } else {
 
                 result.text =
-                    getString(R.string.exercise_incorrect)
+                    incorrectReview
 
                 result.setTextColor(
                     Color.rgb(
@@ -4877,6 +4918,10 @@ class LessonActivity : AppCompatActivity() {
                     s: Editable?
                 ) {
 
+                    if (!answeredCorrectly) {
+                        result.text = ""
+                        saveCppReviewDraft(exercisePage, blockIndex, "answer", input.text.toString())
+                    }
                     updateResetButton()
 
                     button.isEnabled =
@@ -4921,6 +4966,8 @@ class LessonActivity : AppCompatActivity() {
                 )
             )
         }
+
+        restoreCppReview(block, savedState, savedAnswer, result)
 
         updateResetButton()
 
@@ -5014,8 +5061,10 @@ class LessonActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            var incorrectReview = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
                 evaluation = {
+                    incorrectReview = cppIncorrectReview(block)
                     CppExerciseAnswers.outputMatches(block, userAnswer)
                 }, verdict = { it }) ?: return@setOnClickListener
 
@@ -5031,6 +5080,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (!correct) CppExerciseFeedback.recordIncorrect(state, input.text.toString())
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -5078,7 +5129,7 @@ class LessonActivity : AppCompatActivity() {
             } else {
 
                 result.text =
-                    getString(R.string.exercise_incorrect)
+                    incorrectReview
 
                 result.setTextColor(
                     Color.rgb(
@@ -5643,27 +5694,19 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
+        val result = TextView(this)
+        fun currentOrderAnswer() = org.json.JSONArray((0 until orderContainer.childCount).map {
+            orderContainer.getChildAt(it).tag as Int
+        })
+
         fun saveOrderState(
             correct: Boolean =
-                answeredCorrectly
+                answeredCorrectly,
+            reviewed: Boolean = false
         ) {
 
-            val orderJson =
-                org.json.JSONArray()
-
-            for (
-            i in 0 until
-                    orderContainer.childCount
-            ) {
-
-                val row =
-                    orderContainer
-                        .getChildAt(i)
-
-                orderJson.put(
-                    row.tag as Int
-                )
-            }
+            val orderJson = currentOrderAnswer()
+            if (!correct && !reviewed) result.text = ""
 
             val state =
                 JSONObject()
@@ -5677,6 +5720,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (reviewed && !correct) CppExerciseFeedback.recordIncorrect(state, orderJson)
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -6136,9 +6181,6 @@ class LessonActivity : AppCompatActivity() {
             checkButton
         )
 
-        val result =
-            TextView(this)
-
         result.textSize =
             18f
 
@@ -6193,14 +6235,18 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
+        restoreCppReview(block, savedState, currentOrderAnswer(), result)
+
         checkButton.setOnClickListener {
 
             if (answeredCorrectly || !puzzleStarted) return@setOnClickListener
             val actual = List(orderContainer.childCount) {
                 (orderContainer.getChildAt(it) as TextView).text.toString()
             }
+            var incorrectReview = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
                 evaluation = {
+                    incorrectReview = cppIncorrectReview(block)
                     require(actual.isNotEmpty() && actual.size == fragments.length() &&
                         actual.size == correctOrder.length()) { "Invalid ordering configuration" }
                     val expected = List(actual.size) {
@@ -6212,7 +6258,7 @@ class LessonActivity : AppCompatActivity() {
                 }, verdict = { it }) ?: return@setOnClickListener
 
             saveOrderState(
-                correct
+                correct, reviewed = true
             )
 
             if (correct) {
@@ -6255,9 +6301,11 @@ class LessonActivity : AppCompatActivity() {
                 }
 
             } else {
+                // Reconsider the current draft with another tap sequence; keep every row.
+                nextTapPosition = 0
 
                 result.text =
-                    getString(R.string.exercise_wrong_order)
+                    incorrectReview
 
                 result.setTextColor(
                     Color.rgb(
@@ -13354,6 +13402,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         radioGroup.setOnCheckedChangeListener { _, _ ->
+            if (!answeredCorrectly) result.text = ""
 
             button.isEnabled =
                 radioGroup.checkedRadioButtonId != -1 &&
@@ -13465,6 +13514,8 @@ class LessonActivity : AppCompatActivity() {
             )
         }
 
+        restoreCppReview(block, savedState, savedSelectedIndex, result, savedSelectedIndex)
+
         updateResetButton()
 
         resetButton.setOnClickListener {
@@ -13572,8 +13623,10 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
 
+            var incorrectReview = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, selectedIndex,
                 evaluation = {
+                    incorrectReview = cppIncorrectReview(block, selectedIndex)
                     val correctIndex = block.getInt("correctIndex")
                     require(selectedIndex in optionButtons.indices && correctIndex in optionButtons.indices) {
                         "Invalid answer index"
@@ -13593,6 +13646,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (!correct) CppExerciseFeedback.recordIncorrect(state, selectedIndex)
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -13644,7 +13699,7 @@ class LessonActivity : AppCompatActivity() {
             } else {
 
                 result.text =
-                    getString(R.string.exercise_incorrect)
+                    incorrectReview
 
                 result.setTextColor(
                     Color.rgb(

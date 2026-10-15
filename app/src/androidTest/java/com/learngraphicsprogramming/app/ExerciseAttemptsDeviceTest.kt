@@ -56,7 +56,7 @@ class ExerciseAttemptsDeviceTest {
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         assertFalse("Unlock the phone before instrumentation: isDeviceLocked=${keyguard.isDeviceLocked}, " +
             "isKeyguardLocked=${keyguard.isKeyguardLocked}", keyguard.isDeviceLocked)
-        assertEquals("The existing recovery policy must remain one minute", 60_000L, AttemptRepository.RECOVERY_MILLIS)
+        assertEquals("Preserve the current one-hour recovery policy", 3_600_000L, AttemptRepository.RECOVERY_MILLIS)
     }
 
     @After fun restoreUserState() {
