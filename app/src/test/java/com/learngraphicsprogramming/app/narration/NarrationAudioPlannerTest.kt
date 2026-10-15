@@ -1,0 +1,190 @@
+package com.learngraphicsprogramming.app.narration
+
+import org.junit.Assert.*
+import org.junit.Test
+
+class NarrationAudioPlannerTest {
+    private val programming = NarrationAudioPlan.ROUTES.first()
+    private val math = NarrationAudioPlan.ROUTES.last()
+    private fun page(route: String, index: Int, course: String = "course1", text: String = "$route page $index") =
+        NarrationCurriculum.Page(route, course, "unit1", "${course}__unit1__lesson1", index,
+            listOf(NarrationCurriculum.Sentence(text, NarrationLanguage.SPANISH, "ef_dora", "$route/$course/unit1/lesson1/${index + 1}")))
+    private fun catalog(pages: List<NarrationCurriculum.Page>): (String, String?) -> Sequence<NarrationCurriculum.Page> =
+        { route, course -> pages.asSequence().filter { it.routeId == route && (course == null || it.courseId == course) } }
+
+    @Test fun currentPageIsFirstWithoutScanningTheCatalogWhenItsQueueRevisionIsKnown() {
+        val plan = NarrationAudioPlan()
+        val target = page(math, 2)
+        val queue = NarrationPageQueue.Snapshot(7L, target.sentences, emptySet())
+        plan.enter(math, target.courseId, target.lessonId, target.pageIndex, queue.revision)
+        var scans = 0
+        val next = plan.candidates(queue) { _, _ -> scans++; emptySequence() }.first()
+        assertEquals(0, scans)
+        assertEquals(NarrationAudioPriority.CURRENT_PAGE, next.priority)
+        assertSame(queue.sentences, next.page.sentences)
+        assertEquals(target.identity, next.page.identity)
+    }
+
+    @Test fun currentPageThenPendingCoursePagesRetainTheirCurricularOrder() {
+        val pages = listOf(page(programming, 0), page(math, 0), page(math, 1), page(math, 2), page(math, 0, "course2"))
+        val target = pages[2]
+        val queue = NarrationPageQueue.Snapshot(2L, target.sentences, emptySet())
+        val plan = NarrationAudioPlan()
+        plan.enter(math, target.courseId, target.lessonId, target.pageIndex, queue.revision)
+        val result = plan.candidates(queue, catalog(pages)).toList()
+        assertEquals(listOf(target.identity, pages[1].identity, pages[3].identity, pages[4].identity, pages[0].identity),
+            result.map { it.page.identity })
+        assertEquals(listOf(NarrationAudioPriority.CURRENT_PAGE, NarrationAudioPriority.COURSE,
+            NarrationAudioPriority.COURSE, NarrationAudioPriority.GENERAL, NarrationAudioPriority.GENERAL), result.map { it.priority })
+        assertEquals(result.size, result.map { it.page.identity }.distinct().size)
+    }
+
+    @Test fun homeAlternatesPendingPagesRatherThanCountingAlreadyCachedPagesAsTurns() {
+        val pages = (0..2).map { page(programming, it) } + (0..2).map { page(math, it) }
+        val cached = setOf(pages[0].identity, pages[3].identity)
+        val plan = NarrationAudioPlan()
+        val generated = mutableListOf<String>()
+        plan.candidates(null, catalog(pages)).forEach { planned ->
+            val missing = planned.page.identity !in cached
+            if (missing) generated += planned.page.identity
+            assertTrue(plan.completed(planned, generated = missing))
+        }
+        assertEquals(listOf(pages[1].identity, pages[4].identity, pages[2].identity, pages[5].identity), generated)
+    }
+
+    @Test fun nextAreaAndEachAreaCursorSurviveRecreationWithoutStoringSpeechText() {
+        var persisted = ""
+        val pages = listOf(page(programming, 0, text = "Private original lesson text."), page(math, 0))
+        val plan = NarrationAudioPlan(persist = { persisted = it.encode() })
+        val first = plan.candidates(null, catalog(pages)).first()
+        plan.completed(first, generated = true)
+        assertFalse(persisted.contains("Private original lesson text"))
+        val restored = NarrationAudioPlan(persisted)
+        assertEquals(math, restored.snapshot().nextRoute)
+        assertEquals(mapOf(programming to pages[0].identity), restored.snapshot().cursors)
+        val second = restored.candidates(null, catalog(pages)).first()
+        assertEquals(math, second.page.routeId)
+        restored.completed(second, generated = true)
+        assertEquals(pages[0].identity, restored.snapshot().cursors[programming])
+        assertEquals(pages[1].identity, restored.snapshot().cursors[math])
+    }
+
+    @Test fun partialPageDoesNotAdvanceTheCursorOrConsumeItsAlternatingTurn() {
+        var persisted = ""
+        val pages = listOf(page(programming, 0), page(math, 0))
+        val plan = NarrationAudioPlan(persist = { persisted = it.encode() })
+        val interrupted = plan.candidates(null, catalog(pages)).first()
+        assertEquals(programming, interrupted.page.routeId)
+        // A sentence may finish, but only the worker can verify the complete page.
+        val restored = NarrationAudioPlan(persisted)
+        assertTrue(restored.snapshot().cursors.isEmpty())
+        assertEquals(interrupted.page.identity, restored.candidates(null, catalog(pages)).first().page.identity)
+    }
+
+    @Test fun latestContextInvalidatesOldCandidatesCompletionsAndFailures() {
+        val pages = listOf(page(programming, 0), page(programming, 1), page(math, 0))
+        val plan = NarrationAudioPlan()
+        val iterator = plan.candidates(null, catalog(pages)).iterator()
+        val old = iterator.next()
+        plan.enter(math, "course1")
+        assertFalse(iterator.hasNext())
+        assertFalse(plan.completed(old, generated = true))
+        assertFalse(plan.defer(old))
+        assertTrue(plan.snapshot().cursors.isEmpty())
+        assertEquals(math, plan.candidates(null, catalog(pages)).first().page.routeId)
+    }
+
+    @Test fun aFailedPageStaysPendingWhileTheOtherAreaContinuesAndCanBeRetried() {
+        var clock = 10_000L
+        val pages = listOf(page(programming, 0), page(math, 0))
+        val plan = NarrationAudioPlan(now = { clock })
+        val iterator = plan.candidates(null, catalog(pages)).iterator()
+        val failed = iterator.next()
+        plan.defer(failed, 1000L)
+        assertTrue(plan.hasDeferredWork())
+        assertTrue(plan.snapshot().cursors.isEmpty())
+        assertEquals(math, iterator.next().page.routeId)
+        assertEquals(listOf(math), plan.candidates(null, catalog(pages)).map { it.page.routeId }.toList())
+        clock += 1001L
+        assertTrue("The retry delay ending must not falsely complete the failed page", plan.hasDeferredWork())
+        plan.enter(programming, "course1")
+        val retry = plan.candidates(null, catalog(pages)).first()
+        assertEquals(failed.page.identity, retry.page.identity)
+        plan.completed(retry, generated = true)
+        assertFalse(plan.hasDeferredWork())
+    }
+
+    @Test fun aCompleteOrUnavailableAreaNeverBlocksTheOtherArea() {
+        val pages = (0..2).map { page(math, it) }
+        val plan = NarrationAudioPlan()
+        val generated = mutableListOf<String>()
+        plan.candidates(null, catalog(pages)).forEach { next ->
+            generated += next.page.identity
+            plan.completed(next, generated = true)
+        }
+        assertEquals(pages.map { it.identity }, generated)
+    }
+
+    @Test fun oldCurrentPageQueueCannotBeAssignedToANewLessonOrCourse() {
+        val previous = page(programming, 0)
+        val target = page(math, 1)
+        val queue = NarrationPageQueue.Snapshot(3L, previous.sentences, emptySet())
+        val plan = NarrationAudioPlan()
+        plan.enter(math, target.courseId, target.lessonId, target.pageIndex)
+        val next = plan.candidates(queue, catalog(listOf(previous, target))).first()
+        assertEquals(target.identity, next.page.identity)
+        assertEquals(target.sentences, next.page.sentences)
+        assertEquals(NarrationAudioPriority.CURRENT_PAGE, next.priority)
+    }
+
+    @Test fun sameContextDoesNotPreemptButLatestPageRevisionDoes() {
+        val plan = NarrationAudioPlan()
+        var changes = 0
+        val subscription = plan.onChanged { changes++ }
+        try {
+            val first = plan.enter(math, "course1", "lesson1", 0, 1L)
+            assertEquals(first, plan.enter(math, "course1", "lesson1", 0, 1L))
+            assertEquals("A navigation refresh must not forget the known audio queue revision",
+                first, plan.enter(math, "course1", "lesson1", 0))
+            assertEquals(1, changes)
+            val second = plan.enter(math, "course1", "lesson1", 1, 2L)
+            assertTrue(second.epoch > first.epoch)
+            assertEquals(2, changes)
+            val home = plan.enter()
+            assertNull(home.context.routeId)
+            assertNull(home.context.pageRevision)
+        } finally { subscription.close() }
+    }
+
+    @Test fun persistenceFailureCannotPublishFalseAudioProgressOrConsumeATurn() {
+        var failWrites = false
+        val plan = NarrationAudioPlan(persist = { if (failWrites) throw java.io.IOException("No storage") })
+        val next = plan.candidates(null, catalog(listOf(page(programming, 0)))).first()
+        failWrites = true
+        try {
+            plan.completed(next, generated = true)
+            fail("Expected persistence failure")
+        } catch (_: java.io.IOException) { }
+        assertEquals(programming, plan.snapshot().nextRoute)
+        assertTrue(plan.snapshot().cursors.isEmpty())
+    }
+
+    @Test fun scanningCachedPagesDoesNotWriteSchedulerStateOrAdvanceItsTurn() {
+        var writes = 0
+        val pages = (0..99).map { page(programming, it) } + listOf(page(math, 0))
+        val plan = NarrationAudioPlan(persist = { writes++ })
+        plan.candidates(null, catalog(pages)).forEach { assertTrue(plan.completed(it, generated = false)) }
+        assertEquals(0, writes)
+        assertEquals(programming, plan.snapshot().nextRoute)
+        assertTrue(plan.snapshot().cursors.isEmpty())
+    }
+
+    @Test fun restoredCursorNeverSkipsAnEarlierMissingOrInvalidRecording() {
+        val pages = listOf(page(programming, 0), page(programming, 1))
+        val plan = NarrationAudioPlan()
+        val old = plan.candidates(null, catalog(pages)).toList().last()
+        plan.completed(old, generated = true)
+        val restored = NarrationAudioPlan(plan.snapshot().encode())
+        assertEquals(pages[0].identity, restored.candidates(null, catalog(pages)).first().page.identity)
+    }
+}

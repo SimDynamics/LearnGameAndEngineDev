@@ -17,6 +17,18 @@ data class NavigationState(
 
 object NavigationStateRepository {
 
+    /** Scheduling observes navigation; it never owns the student's navigation or reading position. */
+    private fun updateNarrationContext(context: Context) {
+        val state = getState(context)
+        val selected = state.screen != SCREEN_ROUTES
+        com.learngraphicsprogramming.app.narration.NarrationAudioPlanner.enter(context,
+            routeId = state.routeId.takeIf { selected },
+            courseId = state.courseId.takeIf { selected },
+            lessonId = state.lessonId.takeIf { selected },
+            pageIndex = state.lessonId?.takeIf { selected }?.let { ProgressRepository.getCurrentPage(context, it) }
+        )
+    }
+
     const val SCREEN_ROUTES =
         "routes"
 
@@ -70,6 +82,7 @@ object NavigationStateRepository {
             )
             .remove(KEY_ROUTE_ID)
             .apply()
+        updateNarrationContext(context)
     }
 
     fun saveCourses(
@@ -94,6 +107,7 @@ object NavigationStateRepository {
                 KEY_LESSON_ID
             )
             .apply()
+        updateNarrationContext(context)
     }
 
     fun saveCourse(
@@ -120,6 +134,7 @@ object NavigationStateRepository {
                 KEY_LESSON_ID
             )
             .apply()
+        updateNarrationContext(context)
     }
 
     fun saveUnit(
@@ -148,6 +163,7 @@ object NavigationStateRepository {
                 KEY_LESSON_ID
             )
             .apply()
+        updateNarrationContext(context)
     }
 
     fun saveLesson(
@@ -207,6 +223,7 @@ object NavigationStateRepository {
         }
 
         editor.apply()
+        updateNarrationContext(context)
     }
 
     fun getState(

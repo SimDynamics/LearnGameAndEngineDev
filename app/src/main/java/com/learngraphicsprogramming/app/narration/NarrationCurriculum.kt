@@ -31,18 +31,33 @@ internal object NarrationCurriculum {
         val location: String
     )
 
-    fun sentences(context: Context): Sequence<Sentence> = sequence {
+    data class Page(
+        val routeId: String,
+        val courseId: String,
+        val unitId: String,
+        val lessonId: String,
+        val pageIndex: Int,
+        val sentences: List<Sentence>
+    ) {
+        val identity: String get() = "$routeId/$courseId/$lessonId/${pageIndex + 1}"
+        val location: String get() = "$routeId/$courseId/$unitId/$lessonId/${pageIndex + 1}"
+    }
+
+    fun sentences(context: Context): Sequence<Sentence> = pages(context).flatMap { it.sentences.asSequence() }
+
+    /** The existing manifests remain the sole source of route/course/page order. */
+    fun pages(context: Context, routeFilter: String? = null, courseFilter: String? = null): Sequence<Page> = sequence {
         val preference = NarrationSettingsRepository.get(context)
         val routes = listOf(
             AppearanceSettingsRepository.ROUTE_PROGRAMMING,
             AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
         )
-        for (route in routes) {
+        for (route in routes.filter { routeFilter == null || it == routeFilter }) {
             val courses = runCatching { CourseRepository.loadCourses(context, route) }
                 .onFailure { unavailable(context, "Unavailable curriculum route", it,
                     mapOf("route" to route)) }
                 .getOrDefault(emptyList()).sortedBy { it.number }
-            for (course in courses) {
+            for (course in courses.filter { courseFilter == null || it.id == courseFilter }) {
                 val units = runCatching { UnitRepository.loadUnits(context, route, course.id) }
                     .onFailure { unavailable(context, "Unavailable curriculum course", it,
                         mapOf("route" to route, "course" to course.id)) }
@@ -71,12 +86,13 @@ internal object NarrationCurriculum {
                                 forKokoro = MixedSpanishG2P.productionEnabled) { blockType ->
                                 NarrationUiInstructions.forBlock(context, blockType)
                             }
-                            for (text in NarrationSegments.sentences(script.texts)) {
-                                yield(Sentence(
+                            val sentences = NarrationSegments.sentences(script.texts).map { text ->
+                                Sentence(
                                     text, language, options.kokoroVoice,
                                     "$route/${course.id}/${unit.id}/${lesson.id}/${pageIndex + 1}"
-                                ))
+                                )
                             }
+                            yield(Page(route, course.id, unit.id, lesson.id, pageIndex, sentences))
                         }
                     }
                 }

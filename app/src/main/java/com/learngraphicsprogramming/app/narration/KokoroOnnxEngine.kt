@@ -32,7 +32,8 @@ class KokoroSynthesisException(message: String, cause: Throwable? = null) :
 class KokoroOnnxEngine(
     directory: File,
     preferAccelerator: Boolean = true,
-    cpuThreads: Int? = null
+    cpuThreads: Int? = null,
+    cpuFallbackThreads: Int = 1
 ) : AutoCloseable {
     private val root: File
     private val environment: OrtEnvironment
@@ -61,13 +62,16 @@ class KokoroOnnxEngine(
             }
             vocabulary = KokoroOnnxInputs.loadVocabulary(ownedFile("tokenizer.json"))
             environment = OrtEnvironment.getEnvironment()
-            val cpuCores = cpuThreads?.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
-                ?: Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+            val usableCpus = NarrationCpuBudget.foregroundThreadCount()
+            val cpuCores = cpuThreads?.coerceIn(1, usableCpus) ?: usableCpus
             fun openSession(hardware: Boolean = false, optimizedCpu: Boolean = false): OrtSession =
                 OrtSession.SessionOptions().use { options ->
-                    // XNNPACK manages its own CPU pool. Avoid two competing
-                    // multithreaded pools as recommended by ONNX Runtime.
-                    options.setIntraOpNumThreads(if (optimizedCpu) 1 else cpuCores)
+                    // XNNPACK's general default uses one ORT thread. This pinned model also has
+                    // CPU-heavy unsupported nodes: callers choose a measured fallback pool size
+                    // within their effective CPU budget. Graph execution remains sequential and
+                    // ORT spinning stays off to limit contention between the two pools.
+                    options.setIntraOpNumThreads(if (optimizedCpu)
+                        cpuFallbackThreads.coerceIn(1, cpuCores) else cpuCores)
                     options.setInterOpNumThreads(1)
                     options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
                     if (hardware) {

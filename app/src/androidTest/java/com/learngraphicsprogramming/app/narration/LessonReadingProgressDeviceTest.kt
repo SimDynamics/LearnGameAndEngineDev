@@ -285,7 +285,42 @@ class LessonReadingProgressDeviceTest {
         lateinit var pausedStates: Map<Int, ReadingBlockState>
         lateinit var audio: File
         lateinit var audioHash: String
-        var audioTimestamp = 0L
+        lateinit var audioIdentity: List<Long>
+        lateinit var audioCacheKey: String
+        lateinit var initialGenerationEvidence: Set<String>
+        fun generationEvidence(hash: String): Set<String> {
+            val diagnostics = File(context.filesDir, KokoroNarrationDiagnostics.EVENTS_FILE)
+            if (!diagnostics.isFile) return emptySet()
+            val generated = linkedSetOf<String>()
+            val previousBackground = mutableMapOf<String, Pair<Int, Int>>()
+            diagnostics.readLines(Charsets.UTF_8).forEach { line ->
+                val event = runCatching { JSONObject(line) }.getOrNull() ?: return@forEach
+                val kind = event.optString("event")
+                if (kind == "Page sentence generated" && event.optString("hash") == hash) generated += line
+                if (kind == "Cached lesson speech") {
+                    val counters = event.optInt("generated") to event.optInt("reused")
+                    val previous = previousBackground.put(event.optString("thread"), counters)
+                    val newSlice = previous == null || counters.first + counters.second <= previous.first + previous.second
+                    val newlyGenerated = if (newSlice) counters.first else counters.first - requireNotNull(previous).first
+                    // Background diagnostics use cumulative slice counters. A cache-race reuse
+                    // can log the same hash without generating audio and must remain permitted.
+                    if (newlyGenerated > 0 && event.optString("hash") == hash) generated += line
+                }
+            }
+            return generated
+        }
+        fun cacheIdentity(file: File): List<Long> = android.system.Os.stat(file.absolutePath).let {
+            listOf(it.st_dev, it.st_ino, it.st_size)
+        }
+        fun assertOriginalAudioIsReused() {
+            assertTrue("The actual cached audio file remains available", audio.isFile)
+            assertEquals("Playback reuses the exact original audio bytes", audioHash, sha256(audio))
+            assertEquals("Cache access retains the same file identity and size", audioIdentity, cacheIdentity(audio))
+            assertTrue("Resuming generates no additional audio for this sentence hash",
+                (generationEvidence(audioCacheKey) - initialGenerationEvidence).isEmpty())
+            // Existing cache lookup deliberately updates lastModified for retention. That
+            // access timestamp is not evidence of rewritten bytes or another synthesis.
+        }
         lateinit var staleCompletion: NarrationPlaybackProgress
         host.onActivity { activity ->
             val current = controller(activity)
@@ -293,7 +328,9 @@ class LessonReadingProgressDeviceTest {
             audio = field(segment, "file")
             assertTrue("Playback uses actual synthesized audio", audio.length() > 44)
             audioHash = sha256(audio)
-            audioTimestamp = audio.lastModified()
+            audioIdentity = cacheIdentity(audio)
+            audioCacheKey = KokoroNarrationCache.key("es", "ef_dora", field(segment, "text"))
+            initialGenerationEvidence = generationEvidence(audioCacheKey)
             assertSame("The current paragraph uses its original style", originalIntro, intro.textColors)
             assertEquals(ReadingBlockState.UNREAD, states(activity)[1])
             assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
@@ -306,8 +343,7 @@ class LessonReadingProgressDeviceTest {
         host.onActivity { activity ->
             assertEquals("Pausing never credits more reading", pausedStates, states(activity))
             assertEquals(pausedPosition, field<Long>(controller(activity), "offset"))
-            assertEquals(audioHash, sha256(audio))
-            assertEquals(audioTimestamp, audio.lastModified())
+            assertOriginalAudioIsReused()
             assertFacts(before)
             capture(activity, "actual-playback-paused-first-paragraph")
             assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
@@ -325,8 +361,7 @@ class LessonReadingProgressDeviceTest {
             assertSame(originalIntro, intro.textColors)
             assertSame("Formula color changes without replacing its spans", originalFormula, formula.textColors)
             assertEquals(ReadingBlockState.UNREAD, states(activity)[3])
-            assertEquals("Resuming reuses the existing WAV bytes", audioHash, sha256(audio))
-            assertEquals(audioTimestamp, audio.lastModified())
+            assertOriginalAudioIsReused()
             assertFacts(before)
             activity.findViewById<ScrollView>(R.id.lessonScroll).scrollTo(0, formula.top)
             capture(activity, "actual-playback-read-prose-current-formula")

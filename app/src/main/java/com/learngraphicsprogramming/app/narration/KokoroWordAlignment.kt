@@ -28,6 +28,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
     private val derivedDirectory = File(app.cacheDir, "runtime-word-alignment")
     @Volatile private var closed = false
     @Volatile private var durationModel: KokoroDurationModel? = null
+    private var durationCpuMask: List<Int>? = null
     private var modelStore: KokoroModelStore? = null
     private var lexicon: Map<String, String>? = null
 
@@ -42,7 +43,19 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         if (closed) return
         worker.post {
             if (closed || isCancelled()) return@post
-            val alignment = runCatching { prepareInternal(text, language, voice, audio, isCancelled) }
+            val alignment = runCatching {
+                // Optional metadata and automatic speech share the same two permitted CPUs.
+                // A session inherits its pool's mask at construction, not at run().
+                NarrationCpuBudget.capBackground().use {
+                    val mask = NarrationCpuBudget.allowedCpus()
+                    if (durationCpuMask != mask) {
+                        durationModel?.close()
+                        durationModel = null
+                        durationCpuMask = mask
+                    }
+                    prepareInternal(text, language, voice, audio, isCancelled)
+                }
+            }
                 .onFailure { if (it !is InterruptedException && !closed) Log.w("NarrationWordAlignment", "Optional alignment unavailable", it) }
                 .getOrNull()
             main.post { if (!closed && !isCancelled()) runCatching { onReady(alignment) } }

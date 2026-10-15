@@ -13,6 +13,7 @@ internal object KokoroEngineCoordinator {
     private var engine: KokoroOnnxEngine? = null
     private var directory: File? = null
     private var foregroundProfile: Boolean? = null
+    private var cpuMask: List<Int>? = null
     private val failedNnapi = mutableSetOf<File>()
     private var active: Lease? = null
 
@@ -32,20 +33,26 @@ internal object KokoroEngineCoordinator {
             if (isCancelled()) throw InterruptedException("Kokoro request cancelled while waiting")
         }
         val lease = Lease(owner)
+        var cpuBudget: AutoCloseable? = null
         try {
             if (isCancelled()) throw InterruptedException("Kokoro request cancelled before acquisition")
+            if (!foreground) cpuBudget = NarrationCpuBudget.capBackground()
             synchronized(state) { active = lease }
             val canonical = root.canonicalFile
-            if (directory != canonical || engine == null || foregroundProfile != foreground) {
+            val allowed = if (foreground) runCatching { NarrationCpuBudget.allowedCpus() }.getOrNull()
+                else NarrationCpuBudget.allowedCpus()
+            if (directory != canonical || engine == null || foregroundProfile != foreground || cpuMask != allowed) {
                 engine?.close()
                 engine = null
                 directory = canonical
                 foregroundProfile = foreground
+                cpuMask = allowed
                 // Preserve the existing fast page profile and economical curriculum
                 // profile, but close the old session before opening another one.
                 engine = KokoroOnnxEngine(canonical,
                     preferAccelerator = foreground && canonical !in failedNnapi,
-                    cpuThreads = if (foreground) null else 2)
+                    cpuThreads = if (foreground) null else 2,
+                    cpuFallbackThreads = if (foreground) allowed?.size ?: NarrationCpuBudget.foregroundThreadCount() else 2)
             }
             if (lease.cancelled || isCancelled()) throw InterruptedException("Kokoro request cancelled during initialization")
             val selected = requireNotNull(engine)
@@ -61,7 +68,8 @@ internal object KokoroEngineCoordinator {
                 failedNnapi.add(canonical)
                 selected.close()
                 engine = null
-                val cpu = KokoroOnnxEngine(canonical, preferAccelerator = false).also { engine = it }
+                val cpu = KokoroOnnxEngine(canonical, preferAccelerator = false,
+                    cpuFallbackThreads = NarrationCpuBudget.foregroundThreadCount()).also { engine = it }
                 if (lease.cancelled || isCancelled()) throw InterruptedException("Kokoro request cancelled during CPU retry")
                 block(cpu)
             }
@@ -74,7 +82,7 @@ internal object KokoroEngineCoordinator {
             throw error
         } finally {
             synchronized(state) { if (active === lease) active = null }
-            exclusive.unlock()
+            try { cpuBudget?.close() } finally { exclusive.unlock() }
         }
     }
 
@@ -93,6 +101,7 @@ internal object KokoroEngineCoordinator {
             engine = null
             directory = null
             foregroundProfile = null
+            cpuMask = null
         } finally {
             exclusive.unlock()
         }

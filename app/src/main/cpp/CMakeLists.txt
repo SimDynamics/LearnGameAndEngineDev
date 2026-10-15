@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("app")
 
+# Small independent JNI boundary: narration never loads the graphics/WASM library for affinity.
+add_library(lgp_narration_cpu SHARED narration-cpu-jni.cpp)
+
 # Only one WebAssembly runtime is linked into libapp.so per APK build.
 # Both WAMR and Wasmtime implement wasm-c-api symbol names, which must
 # never be interposed across different opaque engine/config object types.

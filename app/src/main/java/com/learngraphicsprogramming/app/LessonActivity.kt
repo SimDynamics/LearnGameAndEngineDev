@@ -461,6 +461,8 @@ class LessonActivity : AppCompatActivity() {
 
     private fun prefetchVisibleNarration() {
         if (!::lessonJson.isInitialized) return
+        com.learngraphicsprogramming.app.narration.NarrationAudioPlanner.enter(
+            this, currentRouteId, currentCourseId, currentLessonId, currentPage)
         if (!NarrationSettingsRepository.get(this).enabled) {
             applyReadingPresentation()
             return
@@ -476,6 +478,16 @@ class LessonActivity : AppCompatActivity() {
             feedbackGates = script.gates,
             correctBlocks = narrationCorrectBlocks()
         )
+        val pageQueue = com.learngraphicsprogramming.app.narration.KokoroPagePreparationQueue.snapshot(this)
+        val voice = NarrationSettingsRepository.forLanguage(this, language).kokoroVoice
+        val expected = NarrationSegments.sentences(script.texts).map {
+            com.learngraphicsprogramming.app.narration.KokoroNarrationCache.key(language.tag, voice, it)
+        }.distinct()
+        val pageRevision = pageQueue?.takeIf {
+            it.sentences.map(com.learngraphicsprogramming.app.narration.NarrationPageQueue::hash).distinct() == expected
+        }?.revision
+        com.learngraphicsprogramming.app.narration.NarrationAudioPlanner.enter(
+            this, currentRouteId, currentCourseId, currentLessonId, currentPage, pageRevision)
     }
 
     private fun setupLessonNarration() {
