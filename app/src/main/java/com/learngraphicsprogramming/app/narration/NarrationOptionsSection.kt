@@ -3,6 +3,8 @@ package com.learngraphicsprogramming.app.narration
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
+import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.graphics.Color
 import android.os.Handler
@@ -255,7 +257,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_voice_engine))
             .setSingleChoiceItems(arrayOf(s(R.string.narration_automatic), s(R.string.narration_kokoro_neural), s(R.string.narration_android_tts)), engines.indexOf(NarrationSettingsRepository.get(activity).engine)) { dialog, index ->
                 NarrationSettingsRepository.saveEngine(activity, engines[index]); dialog.dismiss(); refreshSelections()
-            }.setNegativeButton(s(R.string.narration_cancel), null).show()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
     }
 
     private fun chooseLanguage() {
@@ -263,7 +265,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_reading_language))
             .setSingleChoiceItems(choices.map { it.label(activity) }.toTypedArray(), choices.indexOf(NarrationSettingsRepository.get(activity).language)) { dialog, index ->
                 NarrationSettingsRepository.saveLanguage(activity, choices[index]); dialog.dismiss(); refreshSelections(); loadAndroidVoices()
-            }.setNegativeButton(s(R.string.narration_cancel), null).show()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
     }
 
     private fun chooseVoice() {
@@ -274,7 +276,7 @@ class NarrationOptionsSection(private val activity: Activity) {
             AlertDialog.Builder(activity).setTitle(s(R.string.narration_installed_kokoro))
                 .setSingleChoiceItems(choices.map { s(R.string.narration_voice_name_id, it.label, it.id) }.toTypedArray(), choices.indexOfFirst { it.id == settings.kokoroVoice }) { dialog, index ->
                     NarrationSettingsRepository.saveKokoroVoice(activity, choices[index].id); dialog.dismiss(); refreshSelections()
-                }.setNegativeButton(s(R.string.narration_cancel), null).show()
+                }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
             return
         }
         val labels = arrayOf(s(R.string.narration_automatic_offline)) + androidVoices.map { it.label }
@@ -282,7 +284,7 @@ class NarrationOptionsSection(private val activity: Activity) {
             .setSingleChoiceItems(labels, androidVoices.indexOfFirst { it.name == settings.androidVoice } + 1) { dialog, index ->
                 NarrationSettingsRepository.saveAndroidVoice(activity, if (index == 0) null else androidVoices[index - 1].name)
                 dialog.dismiss(); refreshSelections()
-            }.setNegativeButton(s(R.string.narration_cancel), null).show()
+            }.setNegativeButton(s(R.string.narration_cancel), null).showWithNeutralActionText()
     }
 
     private fun manageVoices() {
@@ -299,8 +301,8 @@ class NarrationOptionsSection(private val activity: Activity) {
                         else confirmDownload(s(R.string.narration_voice_resource, voice.id), listOf(voice.artifact))
                     }
                     .setNeutralButton(s(R.string.narration_remove)) { _, _ -> confirmRemove(s(R.string.narration_voice_resource, voice.id), listOf(voice.artifact)) }
-                    .setNegativeButton(s(R.string.narration_close), null).show()
-            }.setNegativeButton(s(R.string.narration_close), null).show()
+                    .setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
+            }.setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
     }
 
     private fun inspect() = models.inspectResources { snapshots ->
@@ -312,14 +314,14 @@ class NarrationOptionsSection(private val activity: Activity) {
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_download_title, label))
             .setMessage(s(R.string.narration_download_confirmation, size(artifacts.sumOf { it.bytes }), compatibilityReason(NarrationSettingsRepository.get(activity).language)))
             .setNegativeButton(s(R.string.narration_cancel), null)
-            .setPositiveButton(s(R.string.narration_download)) { _, _ -> models.startDownload(true, artifacts); inspect() }.show()
+            .setPositiveButton(s(R.string.narration_download)) { _, _ -> models.startDownload(true, artifacts); inspect() }.showWithNeutralActionText()
     }
 
     private fun confirmRemove(label: String, artifacts: List<KokoroModelManifest.Artifact>) {
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_remove_title, label))
             .setMessage(s(R.string.narration_remove_confirmation))
             .setNegativeButton(s(R.string.narration_cancel), null)
-            .setPositiveButton(s(R.string.narration_remove)) { _, _ -> models.remove(artifacts); inspect() }.show()
+            .setPositiveButton(s(R.string.narration_remove)) { _, _ -> models.remove(artifacts); inspect() }.showWithNeutralActionText()
     }
 
     private fun openSystem(intent: Intent) {
@@ -347,7 +349,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         val labels = resources.map { it.first } + assets.map { it.first }
         AlertDialog.Builder(activity).setTitle(s(R.string.narration_licenses))
             .setItems(labels.toTypedArray()) { _, index ->
-                val pending = AlertDialog.Builder(activity).setTitle(labels[index]).setMessage(s(R.string.narration_loading)).setPositiveButton(s(R.string.narration_close), null).show()
+                val pending = AlertDialog.Builder(activity).setTitle(labels[index]).setMessage(s(R.string.narration_loading)).setPositiveButton(s(R.string.narration_close), null).showWithNeutralActionText()
                 Thread({
                     val contents = runCatching {
                         if (index < resources.size) activity.resources.openRawResource(resources[index].second).bufferedReader().use { it.readText() }
@@ -355,7 +357,7 @@ class NarrationOptionsSection(private val activity: Activity) {
                     }.getOrDefault(s(R.string.narration_license_open_error))
                     handler.post { if (!closed && pending.isShowing && !activity.isDestroyed) pending.setMessage(contents) }
                 }, "NarrationLicenses").start()
-            }.setNegativeButton(s(R.string.narration_close), null).show()
+            }.setNegativeButton(s(R.string.narration_close), null).showWithNeutralActionText()
     }
     private fun size(bytes: Long) = s(R.string.narration_size_mib, bytes / 1_048_576.0)
     private fun sectionHeading(titleRes: Int) = LinearLayout(activity).apply {
@@ -381,4 +383,29 @@ class NarrationOptionsSection(private val activity: Activity) {
         text = label; isAllCaps = false; minHeight = dp(48); setOnClickListener { click() }
     }
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
+}
+
+/**
+ * Native dialog buttons otherwise inherit the cyan/route-accent tint. Match the
+ * dialog's own text colors instead, which adapt automatically to light/dark UI
+ * and preserve disabled text states independently of user-selected accent hues.
+ */
+internal fun AlertDialog.Builder.showWithNeutralActionText(): AlertDialog {
+    val dialog = show()
+    val attrs = dialog.context.obtainStyledAttributes(intArrayOf(
+        android.R.attr.textColorPrimary, android.R.attr.colorBackground
+    ))
+    val textColors = try {
+        attrs.getColorStateList(0) ?: ColorStateList.valueOf(
+            if (Color.luminance(attrs.getColor(1, Color.WHITE)) > 0.179) Color.BLACK else Color.WHITE
+        )
+    } finally {
+        attrs.recycle()
+    }
+    for (button in intArrayOf(
+        DialogInterface.BUTTON_POSITIVE, DialogInterface.BUTTON_NEUTRAL, DialogInterface.BUTTON_NEGATIVE
+    )) {
+        dialog.getButton(button)?.setTextColor(textColors)
+    }
+    return dialog
 }
