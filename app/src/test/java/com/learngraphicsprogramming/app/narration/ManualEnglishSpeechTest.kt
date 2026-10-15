@@ -62,7 +62,7 @@ class ManualEnglishSpeechTest {
     @Test fun publicPreparationRetainsItsLegacyContract() {
         val source = "#include <iostream>"
         val legacy = SpanishTechnicalSpeech.prepare(source)
-        assertEquals("directiva almohadilla include abre ángulo iostream cierra ángulo", legacy.text)
+        assertEquals("almohadilla include abre ángulo iostream cierra ángulo", legacy.text)
         assertFalse(ManualEnglishSpeech.isPrepared(legacy.text))
         assertTrue(ManualEnglishSpeech.spans(legacy.text).isEmpty())
     }

@@ -10,10 +10,10 @@ internal object NarrationWordMappings {
      * inside a sentence or a choice between repeated, ambiguous occurrences.
      */
     fun forView(blockIndex: Int, displayed: CharSequence,
-                segments: Map<Int, String>): Map<Int, NarrationWordMapping> {
-        val completeBlock = forBlock(blockIndex, displayed, segments)
+                segments: Map<Int, String>, language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
+        val completeBlock = forBlock(blockIndex, displayed, segments, language)
         if (completeBlock.isNotEmpty()) return completeBlock
-        val projected = projected(blockIndex, displayed, segments, allowSubset = true)
+        val projected = projected(blockIndex, displayed, segments, allowSubset = true, language = language)
         if (projected.isNotEmpty()) return projected
         val visible = NarrationSpokenWords.lexemes(displayed).map { it.canonical }
         if (visible.isEmpty()) return emptyMap()
@@ -34,15 +34,15 @@ internal object NarrationWordMappings {
                 }
             }
         }
-        return selected?.let { forBlock(blockIndex, displayed, it) }.orEmpty()
+        return selected?.let { forBlock(blockIndex, displayed, it, language) }.orEmpty()
     }
 
     fun forBlock(blockIndex: Int, displayed: CharSequence,
-                 segments: Map<Int, String>): Map<Int, NarrationWordMapping> {
+                 segments: Map<Int, String>, language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
         val visible = NarrationSpokenWords.lexemes(displayed)
         val spoken = segments.toSortedMap().mapValues { NarrationSpokenWords.lexemes(it.value) }
         if (visible.isEmpty() || visible.map { it.canonical } != spoken.values.flatten().map { it.canonical })
-            return projected(blockIndex, displayed, segments, allowSubset = false)
+            return projected(blockIndex, displayed, segments, allowSubset = false, language = language)
 
         // Closing punctuation belongs to the preceding word; opening punctuation belongs
         // to the following word. Every intervening glyph is covered, including C++'s ++.
@@ -71,11 +71,12 @@ internal object NarrationWordMappings {
 
     /** Source ranges come from actual normalization, never a search for similar words. */
     private fun projected(block: Int, displayed: CharSequence, segments: Map<Int, String>,
-                          allowSubset: Boolean): Map<Int, NarrationWordMapping> {
-        if (segments.isEmpty() || segments.values.none { it.startsWith(ManualEnglishSpeech.PREPARED) }) return emptyMap()
+                          allowSubset: Boolean, language: NarrationLanguage): Map<Int, NarrationWordMapping> {
+        if (segments.isEmpty()) return emptyMap()
+        if (language == NarrationLanguage.SPANISH && segments.values.none { ManualEnglishSpeech.isPrepared(it) }) return emptyMap()
         val ordered = segments.toSortedMap().entries.toList()
         for (mode in listOf("auto", "text", "inline", "block")) {
-            val projection = NarrationSourceProjection.spanish(displayed.toString(), mode) ?: continue
+            val projection = NarrationSourceProjection.forLanguage(displayed.toString(), mode, language) ?: continue
             val expected = NarrationSpokenWords.lexemes(projection.text)
             if (expected.isEmpty()) continue
             fun content(text: String) = text.filterNot { it.isWhitespace() || it == ManualEnglishSpeech.PREPARED }

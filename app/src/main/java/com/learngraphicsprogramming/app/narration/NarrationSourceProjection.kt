@@ -5,10 +5,18 @@ internal object NarrationSourceProjection {
     data class Projection(val text: String, val owners: List<ReadingTextRange>)
     private data class Piece(val start: Int, val end: Int, val text: String)
 
-    fun spanish(source: String, mode: String): Projection? = runCatching {
+    fun spanish(source: String, mode: String): Projection? = forLanguage(source, mode, NarrationLanguage.SPANISH)
+
+    fun forLanguage(source: String, mode: String, language: NarrationLanguage): Projection? = runCatching {
         val initial = Projection(source, source.indices.map { ReadingTextRange(it, it + 1) })
-        val technical = stage(initial) { observe -> SpanishTechnicalSpeech.prepareForReading(source, mode, observe).text }
+        val technical = when (language) {
+            NarrationLanguage.SPANISH -> stage(initial) { observe -> SpanishTechnicalSpeech.prepareForReading(source, mode, observe).text }
+            NarrationLanguage.FRENCH -> stage(initial) { observe -> FrenchTechnicalSpeech.prepareForReading(source, mode, observe) }
+            else -> initial
+        }
             ?: return null
+        if (language == NarrationLanguage.AMERICAN_ENGLISH || language == NarrationLanguage.BRITISH_ENGLISH)
+            return stage(technical) { observe -> MultilingualMathSpeech.textObserved(technical.text, mode, language, observe) }
         var mathematical: Projection? = null
         val restored = ManualEnglishSpeech.protect(technical.text) { masked ->
             val maskedOwners = mutableListOf<ReadingTextRange>()
@@ -30,7 +38,7 @@ internal object NarrationSourceProjection {
             plain(technical.text.length)
             check(maskedOwners.size == masked.length)
             val math = stage(Projection(masked, maskedOwners)) { observe ->
-                MultilingualMathSpeech.textObserved(masked, mode, NarrationLanguage.SPANISH, observe)
+                MultilingualMathSpeech.textObserved(masked, mode, language, observe)
             } ?: error("Unverifiable math provenance")
             val output = StringBuilder()
             val owners = mutableListOf<ReadingTextRange>()

@@ -77,7 +77,7 @@ class FrenchSpeechSymbolsTest {
         val selected = ManualEnglishSpeech.spans(prepared)
         assertEquals(listOf("main", "cout"), selected.map { it.entry.id })
         selected.forEach { assertTrue(phones.contains(ManualEnglishPronunciations.phonemes(it.entry))) }
-        assertTrue(phones.contains(MixedFrenchG2P.namespaceUsPhones))
+        assertTrue(phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
         assertTrue(observed.containsAll(listOf("chevron", "ouvrant", "trait", "soulignement", "barre", "oblique")))
         assertFalse(observed.contains("main"))
         assertFalse(observed.contains("cout"))

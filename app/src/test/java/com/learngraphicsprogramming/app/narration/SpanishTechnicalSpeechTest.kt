@@ -53,10 +53,10 @@ class SpanishTechnicalSpeechTest {
     }
 
     @Test fun includeDirectivesAndHeadersAreNotComparisons() {
-        assertEquals("directiva almohadilla include abre ángulo iostream cierra ángulo", read("#include <iostream>"))
-        assertEquals("La línea directiva almohadilla include abre ángulo iostream cierra ángulo pone a disposición las declaraciones.",
+        assertEquals("almohadilla include abre ángulo iostream cierra ángulo", read("#include <iostream>"))
+        assertEquals("La línea almohadilla include abre ángulo iostream cierra ángulo pone a disposición las declaraciones.",
             read("La línea #include <iostream> pone a disposición las declaraciones."))
-        assertEquals("directiva almohadilla include abre comilla doble sobres punto ache cierra comilla doble", read("#include \"sobres.h\""))
+        assertEquals("almohadilla include abre comilla doble sobres punto ache cierra comilla doble", read("#include \"sobres.h\""))
         assertEquals("De abre ángulo stdexcept cierra ángulo.", read("De <stdexcept>."))
         assertEquals("directiva almohadilla ifndef CPP guion bajo FUNDAMENTALS guion bajo SOBRES guion bajo ache",
             read("#ifndef CPP_FUNDAMENTALS_SOBRES_H"))

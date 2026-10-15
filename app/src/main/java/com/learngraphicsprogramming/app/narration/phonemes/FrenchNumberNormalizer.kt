@@ -7,7 +7,21 @@ internal object FrenchNumberNormalizer {
     private val units = listOf("zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf")
     private val tens = listOf("", "", "vingt", "trente", "quarante", "cinquante", "soixante")
 
-    fun normalize(text: String): String = number.replace(text) { read(it.value) }
+    fun normalize(text: String): String = normalizeObserved(text)
+
+    /** Observe the existing rewrite without maintaining another number parser. */
+    internal fun normalizeObserved(text: String, onPiece: ((Int, Int, String) -> Unit)? = null): String {
+        var cursor = 0
+        val result = number.replace(text) { match ->
+            if (match.range.first > cursor) onPiece?.invoke(cursor, match.range.first, text.substring(cursor, match.range.first))
+            val words = read(match.value)
+            onPiece?.invoke(match.range.first, match.range.last + 1, words)
+            cursor = match.range.last + 1
+            words
+        }
+        if (cursor < text.length) onPiece?.invoke(cursor, text.length, text.substring(cursor))
+        return result
+    }
 
     private fun read(token: String): String {
         val percentage = token.endsWith('%')

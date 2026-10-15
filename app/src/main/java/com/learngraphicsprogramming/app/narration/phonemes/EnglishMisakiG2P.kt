@@ -8,6 +8,8 @@ import java.security.MessageDigest
 import java.text.Normalizer
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
+import com.learngraphicsprogramming.app.narration.NarrationSpokenWords
+import com.learngraphicsprogramming.app.narration.EnglishTechnicalSpeech
 
 class EnglishMisakiException(message: String) : IllegalArgumentException(message)
 
@@ -72,6 +74,28 @@ class EnglishMisakiG2P(
 
     @Synchronized
     fun phonemize(text: String, british: Boolean = false, isCurrent: () -> Boolean = { true }): String {
+        return phonemizeImpl(text, british, isCurrent)
+    }
+
+    internal data class EnglishWordPhoneRange(val word: String, val sourceStart: Int, val sourceEndExclusive: Int,
+        val start: Int, val endExclusive: Int)
+    internal data class EnglishPhoneTrace(val phonemes: String, val words: List<EnglishWordPhoneRange>)
+    internal data class PhonePiece(val sourceStart: Int, val sourceEndExclusive: Int, val start: Int, val endExclusive: Int)
+
+    /** Uses the same contextual POS, retokenization, lexicon and original BART run as synthesis. */
+    @Synchronized
+    internal fun traceWords(text: String, british: Boolean = false, isCurrent: () -> Boolean = { true }): EnglishPhoneTrace? {
+        // Offsets must refer to the exact input, not an untracked compatibility rewrite.
+        if (text.isBlank() || text.length > 32_768 || Normalizer.normalize(text, Normalizer.Form.NFKC) != text) return null
+        val pieces = mutableListOf<PhonePiece>()
+        val phones = phonemizeImpl(text, british, isCurrent) { token, start, end ->
+            pieces += PhonePiece(token.sourceStart, token.sourceEndExclusive, start, end)
+        }
+        return traceResolved(text, phones, pieces)
+    }
+
+    private fun phonemizeImpl(text: String, british: Boolean, isCurrent: () -> Boolean,
+        onPiece: ((MisakiWord, Int, Int) -> Unit)? = null): String {
         if (closed) throw EnglishMisakiException("Misaki frontend is closed")
         val generation = cancellationGeneration.get()
         fun checkCurrent() {
@@ -90,7 +114,7 @@ class EnglishMisakiG2P(
             if (neuralDirectory != null && partOfSpeech == null && pos == null) {
                 throw EnglishMisakiException("Install Misaki's verified spaCy POS resources for contextual English pronunciation")
             }
-            val tokens = tokenize(Normalizer.normalize(text, Normalizer.Form.NFKC), pos) { checkCurrent() }
+            val tokens = tokenize(Normalizer.normalize(text, Normalizer.Form.NFKC), pos, onPiece != null) { checkCurrent() }
             checkCurrent()
             val tags = partOfSpeech?.tag(tokens.map { it.text })
             checkCurrent()
@@ -108,7 +132,7 @@ class EnglishMisakiG2P(
                 model?.phonemizeWord(word) { checkCurrent(); true }
                     ?: throw EnglishMisakiException("Misaki has no pronunciation for '$word'; install its original BART resource")
             }
-            if (pos != null) return MisakiEnglishPipeline.speakCancellable(tokens, lexicon, fallback) { checkCurrent() }
+            if (pos != null) return MisakiEnglishPipeline.speakObserved(tokens, lexicon, fallback, { checkCurrent() }, onPiece)
             var context = PhoneticContext()
             for (token in tokens.asReversed()) {
                 checkCurrent()
@@ -121,13 +145,19 @@ class EnglishMisakiG2P(
                 }
                 context = nextContext(context, token)
             }
-            return buildString {
+            val observed = if (onPiece == null) null else mutableListOf<Triple<MisakiWord, Int, Int>>()
+            val output = buildString {
                 tokens.forEach { token ->
                     checkCurrent()
+                    val start = length
                     append(token.phonemes?.replace('ɾ', 'T')?.replace('ʔ', 't').orEmpty())
+                    if (length > start) observed?.add(Triple(token, start, length))
                     append(token.whitespace)
                 }
-            }.trim()
+            }
+            val prefix = output.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0)
+            observed?.forEach { (word, start, end) -> onPiece?.invoke(word, start - prefix, end - prefix) }
+            return output.trim()
         } catch (error: InterruptedException) { throw error }
         catch (error: Exception) { checkCurrent(); throw error }
     }
@@ -161,22 +191,55 @@ class EnglishMisakiG2P(
         return MisakiLexicon(read("${prefix}_gold.json"), read("${prefix}_silver.json"), british)
     }
 
-    private fun tokenize(text: String, pos: EnglishMisakiSpacyPos? = null, checkCurrent: () -> Unit = {}): MutableList<MisakiWord> {
+    private fun tokenize(text: String, pos: EnglishMisakiSpacyPos? = null, trackSource: Boolean = false,
+        checkCurrent: () -> Unit = {}): MutableList<MisakiWord> {
         val prepared = StringBuilder()
-        val overrides = mutableMapOf<IntRange, String>()
-        var last = 0
-        for (match in LINK.findAll(text)) {
-            checkCurrent()
-            prepared.append(text.substring(last, match.range.first))
-            val start = prepared.length
-            prepared.append(match.groupValues[1])
-            val phonemes = match.groupValues[2]
-            if (phonemes.startsWith('/') && phonemes.endsWith('/')) {
-                overrides[start until prepared.length] = phonemes.trim('/')
-            }
-            last = match.range.last + 1
+        val sourceStarts = if (trackSource) mutableListOf<Int>() else null
+        val sourceEnds = if (trackSource) mutableListOf<Int>() else null
+        fun appendSource(start: Int, end: Int) {
+            prepared.append(text.substring(start, end))
+            if (sourceStarts != null && sourceEnds != null) for (index in start until end) { sourceStarts += index; sourceEnds += index + 1 }
         }
-        prepared.append(text.substring(last))
+        val overrides = mutableMapOf<IntRange, String>()
+        fun appendOverride(start: Int, end: Int, phones: String) {
+            val preparedStart = prepared.length
+            appendSource(start, end)
+            overrides[preparedStart until prepared.length] = phones
+        }
+        val links = LINK.findAll(text).toList()
+        val qualified = EnglishTechnicalSpeech.qualifiedOutputMatches(text).filter { output ->
+            links.none { link -> link.range.first < output.endExclusive && link.range.last + 1 > output.start }
+        }
+        val pieces = (links.map { it.range.first to it } + qualified.map { it.start to it }).sortedBy { it.first }
+        var last = 0
+        for ((_, piece) in pieces) {
+            checkCurrent()
+            when (piece) {
+                is MatchResult -> {
+                    appendSource(last, piece.range.first)
+                    val start = prepared.length
+                    prepared.append(piece.groupValues[1])
+                    if (sourceStarts != null && sourceEnds != null) repeat(piece.groupValues[1].length) {
+                        sourceStarts += piece.range.first; sourceEnds += piece.range.last + 1
+                    }
+                    val phonemes = piece.groupValues[2]
+                    if (phonemes.startsWith('/') && phonemes.endsWith('/')) overrides[start until prepared.length] = phonemes.trim('/')
+                    last = piece.range.last + 1
+                }
+                is EnglishTechnicalSpeech.QualifiedOutput -> {
+                    appendSource(last, piece.start)
+                    appendOverride(piece.stdStart, piece.stdEndExclusive, EnglishTechnicalSpeech.STD_PHONES)
+                    // A temporary tokenizer separator prevents spaCy from fusing the qualifier;
+                    // it does not rewrite the lesson, script, displayed code or cache source text.
+                    prepared.append(' ')
+                    sourceStarts?.add(piece.stdEndExclusive)
+                    sourceEnds?.add(piece.coutStart)
+                    appendOverride(piece.coutStart, piece.coutEndExclusive, EnglishTechnicalSpeech.coutPhones)
+                    last = piece.endExclusive
+                }
+            }
+        }
+        appendSource(last, text.length)
         val normalized = prepared.toString().replace('’', '\'').replace('‘', '\'')
         val result = mutableListOf<MisakiWord>()
         var quoteOpen = true
@@ -193,7 +256,8 @@ class EnglishMisakiG2P(
             val word = if (raw == "\"") {
                 (if (quoteOpen) "“" else "”").also { quoteOpen = !quoteOpen }
             } else raw
-            result += MisakiWord(word, attributes.first, tag = attributes.second, override = forced)
+            result += MisakiWord(word, attributes.first, tag = attributes.second, override = forced,
+                sourceStart = sourceStarts?.get(start) ?: -1, sourceEndExclusive = sourceEnds?.get(sourceOffset - 1) ?: -1)
         }
         result.forEachIndexed { index, token ->
             if (token.text in listOf("$", "£", "€") && index + 1 < result.size && NUMBER.matches(result[index + 1].text)) {
@@ -217,6 +281,33 @@ class EnglishMisakiG2P(
     }
 
     companion object {
+        /** Indivisible dictionary compounds stay whole instead of inventing internal phone times. */
+        internal fun traceResolved(text: String, phonemes: String, pieces: List<PhonePiece>): EnglishPhoneTrace? {
+            val lexical = NarrationSpokenWords.lexemes(text)
+            if (lexical.isEmpty() || pieces.isEmpty()) return null
+            val parent = IntArray(lexical.size) { it }
+            fun root(index: Int): Int { var next = index; while (parent[next] != next) next = parent[next]; return next }
+            val owners = pieces.map { piece ->
+                if (piece.sourceStart < 0 || piece.sourceEndExclusive > text.length ||
+                    piece.sourceStart >= piece.sourceEndExclusive || piece.start < 0 ||
+                    piece.start >= piece.endExclusive || piece.endExclusive > phonemes.length) return null
+                lexical.indices.filter { index -> lexical[index].start < piece.sourceEndExclusive && lexical[index].endExclusive > piece.sourceStart }
+                    .also { indices -> indices.drop(1).forEach { parent[root(it)] = root(indices.first()) } }
+            }
+            val groups = lexical.indices.groupBy(::root).values.sortedBy { it.first() }
+            val ranges = groups.map { indices ->
+                val matching = pieces.indices.filter { piece -> owners[piece].any { it in indices } }
+                if (matching.isEmpty()) return null
+                val start = matching.minOf { pieces[it].start }
+                val end = matching.maxOf { pieces[it].endExclusive }
+                val sourceStart = lexical[indices.first()].start
+                val sourceEnd = lexical[indices.last()].endExclusive
+                EnglishWordPhoneRange(text.substring(sourceStart, sourceEnd).lowercase(Locale.ROOT), sourceStart, sourceEnd, start, end)
+            }
+            if (ranges.zipWithNext().any { (left, right) -> left.sourceEndExclusive > right.sourceStart || left.endExclusive > right.start }) return null
+            return EnglishPhoneTrace(phonemes, ranges)
+        }
+
         private val LINK = Regex("\\[([^]]+)]\\(([^)]*)\\)")
         internal val NUMBER = Regex("-?(?:[0-9]+(?:[,.][0-9]+)*|\\.[0-9]+)(?:st|nd|rd|th|s|'s|ed|'d|ing)?")
         private val TOKEN = Regex("(?:[A-Za-z]\\.){2,}|-?(?:[0-9]+(?:[,.][0-9]+)*|\\.[0-9]+)(?:st|nd|rd|th|s|'s|ed|'d|ing)?|[\\p{L}]+(?:'[\\p{L}]+)*(?:-[\\p{L}]+(?:'[\\p{L}]+)*)*|[^\\s]")
@@ -237,7 +328,9 @@ internal data class MisakiWord(
     var preSpace: Boolean = false,
     var alias: String? = null,
     var isHead: Boolean = true,
-    var numFlags: String = ""
+    var numFlags: String = "",
+    var sourceStart: Int = -1,
+    var sourceEndExclusive: Int = -1
 )
 
 internal data class PhoneticContext(val futureVowel: Boolean? = null, val futureTo: Boolean = false)

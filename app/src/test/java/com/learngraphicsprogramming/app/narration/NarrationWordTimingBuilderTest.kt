@@ -7,6 +7,31 @@ import org.junit.Test
 class NarrationWordTimingBuilderTest {
     private val hash = "a".repeat(64)
 
+    @Test fun indivisibleElisionsUseTheirObservedNativeRangeWithoutInventedSubwordDurations() {
+        val source = "L'algorithme continues."
+        val phones = "lalɡɔʁitm kəntˈɪnjuz."
+        val second = source.indexOf("continues")
+        val split = phones.indexOf(' ')
+        val owners = listOf(NarrationSourcePhones(0, second - 1, 0, split),
+            NarrationSourcePhones(second, source.length - 1, split + 1, phones.length - 1))
+        val frames = LongArray(phones.length + 2) { (it % 5 + 1).toLong() }
+        val samples = frames.sum() * 600L
+        val actual = requireNotNull(NarrationWordTimingBuilder.buildSourceChunked(source, hash, samples,
+            phones, owners, listOf(phones), listOf(frames)))
+        assertEquals(3, actual.words.size)
+        assertEquals(actual.words[0].startSample, actual.words[1].startSample)
+        assertEquals(actual.words[0].endSample, actual.words[1].endSample)
+        assertEquals(frames.take(split + 1).sum() * 600L, actual.words[1].endSample)
+        assertTrue(actual.words[2].startSample > actual.words[1].endSample)
+        assertTrue(NarrationWordTimingBuilder.valid(source, samples, actual.words))
+        assertNull(NarrationWordTimingBuilder.buildSourceChunked(source, hash, samples + 1,
+            phones, owners, listOf(phones), listOf(frames)))
+        assertNull(NarrationWordTimingBuilder.buildSourceChunked(source, hash, samples,
+            phones, owners.dropLast(1), listOf(phones), listOf(frames)))
+        assertNull(NarrationWordTimingBuilder.buildSourceChunked(source, hash, samples,
+            phones, owners + owners.last(), listOf(phones), listOf(frames)))
+    }
+
     @Test fun cppLanguageNameGroupsItsExistingThreeWordReadingWithoutChangingSentencePhones() {
         val source = "Podemos discutir un algoritmo antes de decidir todos los detalles de C++."
         val trace = requireNotNull(SpanishFluidG2P.traceWords(source))

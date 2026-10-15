@@ -60,21 +60,29 @@ internal object FrenchSpeechSymbols {
         '°' to "degré", '§' to "section", '⁺' to "plus", '⁻' to "moins"
     )
 
-    fun normalize(text: String): String {
+    fun normalize(text: String): String = normalizeObserved(text)
+
+    /** Exact source ownership of the same residual-symbol rewrite used for synthesis. */
+    internal fun normalizeObserved(text: String, onPiece: ((Int, Int, String) -> Unit)? = null): String {
         val out = StringBuilder(text.length)
+        val owners = if (onPiece == null) null else mutableListOf<Pair<Int, Int>>()
+        fun record(start: Int, end: Int, rendered: String) {
+            out.append(rendered)
+            owners?.let { ranges -> repeat(rendered.length) { ranges += start to end } }
+        }
         var index = 0
         var changed = false
         while (index < text.length) {
             val special = characterLiteral(text, index) ?: unitNotation(text, index) ?: script(text, index)
             if (special != null) {
-                out.append(' ').append(special.words).append(' ')
+                record(index, special.endExclusive, " ${special.words} ")
                 index = special.endExclusive
                 changed = true
                 continue
             }
             val operator = operators.firstOrNull { text.startsWith(it.first, index) }
             if (operator != null) {
-                out.append(' ').append(operator.second).append(' ')
+                record(index, index + operator.first.length, " ${operator.second} ")
                 index += operator.first.length
                 changed = true
                 continue
@@ -90,16 +98,28 @@ internal object FrenchSpeechSymbols {
                 char in "'‘’" && text.getOrNull(index - 1)?.isLetterOrDigit() != true -> "apostrophe"
                 else -> symbols[char]
             }
-            if (word == null) out.append(char)
+            if (word == null) record(index, index + 1, char.toString())
             else {
-                out.append(' ').append(word).append(' ')
+                record(index, index + 1, " $word ")
                 changed = true
             }
             index++
         }
-        if (!changed) return text
-        return out.toString().replace(Regex("[ \\t]+"), " ")
+        val result = if (!changed) text else out.toString().replace(Regex("[ \\t]+"), " ")
             .replace(Regex(" +([,.;:!?])"), "$1").trim()
+        if (onPiece != null && owners != null) {
+            var cursor = 0
+            for (char in result) {
+                while (cursor < out.length && out[cursor] != char && out[cursor].isWhitespace() &&
+                    !(char.isWhitespace() && out[cursor].isWhitespace())) cursor++
+                // Cleanup changes only whitespace; retaining every non-space glyph is mandatory.
+                check(cursor < out.length && (out[cursor] == char || (char.isWhitespace() && out[cursor].isWhitespace())))
+                val owner = owners[cursor]
+                onPiece(owner.first, owner.second, char.toString())
+                cursor++
+            }
+        }
+        return result
     }
 
     private fun unitNotation(text: String, start: Int): Reading? {

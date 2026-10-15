@@ -41,6 +41,15 @@ internal object KokoroNarrationCache {
                 parts += prepared.text
             }
         }
+        if (language == NarrationLanguage.AMERICAN_ENGLISH.tag || language == NarrationLanguage.BRITISH_ENGLISH.tag) {
+            if (EnglishTechnicalSpeech.qualifiedOutputMatches(text).isNotEmpty()) {
+                // Only this corrected qualifier changes pronunciation. Keep all other
+                // English recordings, including other namespaces and identifiers.
+                parts += EnglishTechnicalSpeech.CACHE_REVISION
+                parts += EnglishTechnicalSpeech.STD_PHONES
+                parts += EnglishTechnicalSpeech.coutPhones
+            }
+        }
         if (annotated) {
             val terms = ManualEnglishSpeech.spans(text)
             if (terms.isNotEmpty()) {

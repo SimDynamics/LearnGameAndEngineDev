@@ -17,7 +17,7 @@ class MixedFrenchG2PTest {
         "dièse" to "djˈɛz", "chevron" to "ʃəvʁˈɔ̃", "ouvrant" to "uvʁˈɑ̃", "fermant" to "fɛʁmˈɑ̃"
         )
         val vocabulary = (entries.values.joinToString("") +
-            ManualEnglishPronunciations.phones.values.joinToString("") + " .,;").toSet()
+            ManualEnglishPronunciations.phones.values.joinToString("") + MixedFrenchG2P.namespaceFrenchLetters + " .,;").toSet()
         return FrenchFluidG2P.fromLexicon(entries, vocabulary = vocabulary)
     }
 
@@ -28,7 +28,7 @@ class MixedFrenchG2PTest {
         assertEquals(listOf("main", "cout"), terms.map { it.entry.id })
         terms.forEach { assertTrue(phones.contains(ManualEnglishPronunciations.phonemes(it.entry))) }
         assertTrue(phones.startsWith("la fɔ̃ksjˈɔ̃ "))
-        assertTrue(phones.contains(MixedFrenchG2P.namespaceUsPhones))
+        assertTrue(phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
         assertFalse(phones.contains("stɑ̃dˈaʁ"))
         assertFalse(phones.contains(","))
         assertEquals(1, phones.count { it == '.' })

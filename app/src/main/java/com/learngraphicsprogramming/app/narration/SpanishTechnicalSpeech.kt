@@ -170,6 +170,9 @@ object SpanishTechnicalSpeech {
             return end
         }
         header.matchAt(text, index)?.let { return it.range.last + 1 }
+        // The namespace can be mentioned on its own before prose, as in "std:: indica".
+        // Do not consume the following ordinary word as a C++ identifier.
+        namespacePrefix.matchAt(text, index)?.let { return it.range.last + 1 }
         technicalNumber.matchAt(text, index)?.let { return it.range.last + 1 }
         if (text[index] == '{' || text[index] == '[') {
             val closing = if (text[index] == '{') '}' else ']'
@@ -320,7 +323,7 @@ object SpanishTechnicalSpeech {
                 val match = selected[baseOffset + requireNotNull(directive.groups[1]).range.first]
                 val spokenName = if (match?.endExclusive == baseOffset + requireNotNull(directive.groups[1]).range.last + 1)
                     ManualEnglishSpeech.encode(match.entry) else name
-                result += "directiva almohadilla $spokenName"
+                result += if (name == "include") "almohadilla $spokenName" else "directiva almohadilla $spokenName"
                 include = name == "include"
                 index = directive.range.last + 1
                 continue
@@ -480,6 +483,7 @@ object SpanishTechnicalSpeech {
     private val directive = Regex("#\\s*(include|ifndef|ifdef|define|endif|pragma|undef|elif|else|if)\\b")
     private val header = Regex("<(?:iostream|string|string_view|vector|array|sstream|stdexcept|limits|iomanip|ios|utility|algorithm|cmath|cstdint|cassert|format|fstream|optional|map|set|memory)>")
     private val qualifiedName = Regex("[A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)+")
+    private val namespacePrefix = Regex("std\\s*::(?=\\s|$|[.,;!?)}\\]])")
     private val technicalIdentifier = Regex("(?:[A-Za-z][A-Za-z0-9]*_[A-Za-z_0-9]*|_+[A-Za-z_0-9]+)")
     private val callName = Regex("([A-Za-z_][A-Za-z_0-9]*)(?=\\()")
     private val keywordCall = Regex("(for|while|if|switch|catch|main)\\s*(?=\\()")

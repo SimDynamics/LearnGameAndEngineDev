@@ -73,7 +73,8 @@ class LessonReadingTextColors {
     }
 
     /** Require complete monotonic lexical identity; repeated words are never found by indexOf. */
-    fun wordMappings(parts: List<String>, origins: List<NarrationTextOrigin>): Map<Int, NarrationWordMapping> {
+    fun wordMappings(parts: List<String>, origins: List<NarrationTextOrigin>,
+                     language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
         if (parts.size != origins.size) return emptyMap()
         val result = mutableMapOf<Int, NarrationWordMapping>()
         entries.values.groupBy { it.block }.forEach { (block, candidates) ->
@@ -82,7 +83,7 @@ class LessonReadingTextColors {
             if (!view.safeSupportsWordReading) return@forEach
             val segments = origins.indices.filter { origins[it].blockIndex == block && !origins[it].feedback }
             result += NarrationWordMappings.forView(block, view.text,
-                segments.associateWith { parts[it] })
+                segments.associateWith { parts[it] }, language)
         }
         return result
     }

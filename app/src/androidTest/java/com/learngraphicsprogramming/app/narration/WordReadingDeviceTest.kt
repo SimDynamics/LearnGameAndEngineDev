@@ -1133,6 +1133,197 @@ class WordReadingDeviceTest {
         assertEquals(authored, LessonRepository.loadLessonJson(context, "programming", lesson).toString())
     }
 
+    @Test fun actualAmericanEnglishLibraryUsesRealWordTimingsAndOriginalCodeOffsets() =
+        actualMultilingualLibrary(NarrationLanguage.AMERICAN_ENGLISH)
+
+    @Test fun actualBritishEnglishLibraryUsesRealWordTimingsAndOriginalCodeOffsets() =
+        actualMultilingualLibrary(NarrationLanguage.BRITISH_ENGLISH)
+
+    @Test fun actualFrenchLibraryUsesRealWordTimingsAndOriginalCodeOffsets() =
+        actualMultilingualLibrary(NarrationLanguage.FRENCH)
+
+    private fun actualMultilingualLibrary(language: NarrationLanguage) {
+        val label = language.tag.lowercase().replace('-', '_')
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, if (language == NarrationLanguage.FRENCH) "fr" else "en") }
+        NarrationSettingsRepository.saveLanguage(context, language)
+        NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
+        val original = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val authored = original.toString()
+        val paragraphText = original.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(3).getString("text")
+        assertTrue("This is the actual translated library paragraph", paragraphText.contains("#include <iostream>") && paragraphText.contains("std::cout"))
+        val originalLexemes = NarrationSpokenWords.lexemes(paragraphText)
+        val finalWord = originalLexemes.last()
+        val script = LessonNarrationScript.page(original, 0, language, forKokoro = true) { NarrationUiInstructions.forBlock(context, it) }
+        val plan = requireNotNull(script.readingPlan(NarrationEngine.KOKORO))
+        val prepared = NarrationSegments.sentences(script.texts)
+        val paragraphSegments = plan.origins.indices.filter { plan.origins[it].blockIndex == 3 && !plan.origins[it].feedback }
+        val first = paragraphSegments.first()
+        val last = paragraphSegments.last()
+        val coutSegments = paragraphSegments.filter { prepared[it].contains("cout") }.toSet()
+        assertTrue("The translated paragraph preserves its technical output identifier", coutSegments.isNotEmpty())
+        ProgressRepository.saveCurrentPage(context, "programming", lesson, 0)
+        val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", "programming").putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lesson)
+            .putExtra("lessonNumber", 2).putExtra("lessonTotal", 1)).also { scenario = it }
+        await("The original translated lesson opens without curricular injection", 15_000) {
+            var ready = false
+            host.onActivity { activity -> ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == 0 &&
+                texts(activity).any { it.text.toString() == paragraphText } && !content(activity).isLayoutRequested }
+            ready
+        }
+        host.onActivity { activity -> NarrationSettingsRepository.saveEnabled(activity, true); invoke(activity, "renderCurrentPage") }
+        awaitLayout(host, lesson)
+        lateinit var paragraph: ReadingTextView
+        lateinit var originalFacts: List<TextFact>
+        var gray = 0
+        host.onActivity { activity ->
+            paragraph = texts(activity).single { it.text.toString() == paragraphText } as ReadingTextView
+            paragraph.requestRectangleOnScreen(Rect(0, 0, paragraph.width, paragraph.height), true)
+            originalFacts = facts(content(activity))
+            assertTrue(paragraph.safeSupportsWordReading)
+            gray = field<Int>(paragraph, "unreadColor").takeIf { it != 0 } ?: paragraph.currentTextColor
+            assertGlyphColor(paragraph, finalWord.start, finalWord.endExclusive - finalWord.start, gray)
+            saveParagraph(paragraph, "actual-$label-library-before-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Genuine ${language.tag} Kokoro reaches its original translated paragraph", 240_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                ready = reader.isPlaying && field<Int>(reader, "index") == first && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition >= 500
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            saveParagraph(paragraph, "actual-$label-library-first-observation-native")
+            capture("actual-$label-library-first-observation")
+            File(evidence(), "actual-$label-library-first-observation.json").writeText(JSONObject()
+                .put("language", language.tag).put("voice", language.defaultVoice).put("lessonId", lesson)
+                .put("segmentIndex", first).put("positionMs", field<Long>(reader, "offset"))
+                .put("hasRealWordAlignment", alignment(activity) != null)
+                .put("pendingRanges", JSONArray(field<List<ReadingTextRange>>(paragraph, "unreadRanges").map { JSONArray(listOf(it.start, it.endExclusive)) }))
+                .toString(2))
+            assertNull("A real inspection pause releases MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            assertGlyphColor(paragraph, finalWord.start, finalWord.endExclusive - finalWord.start, gray)
+        }
+        // The first uncached native frontend can finish after playback starts. Retain the exact
+        // paused source position while optional metadata arrives, then explicitly replay naturally.
+        await("Actual native ${language.tag} phone durations describe the genuine paused recording", 180_000) {
+            var ready = false
+            host.onActivity { activity -> ready = alignment(activity) != null }
+            ready
+        }
+        lateinit var sourceAudio: File
+        lateinit var sourceHash: String
+        lateinit var sourceIdentity: List<Long>
+        lateinit var sourceKey: String
+        var sourceGenerationCount = 0
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            sourceAudio = requireNotNull(field<File?>(field<List<Any>>(reader, "segments")[first], "file"))
+            sourceHash = sha256(sourceAudio)
+            sourceIdentity = audioIdentity(sourceAudio)
+            sourceKey = KokoroNarrationCache.key(language.tag, language.defaultVoice, prepared[first])
+            sourceGenerationCount = generationEvents(sourceKey)
+            assertEquals(sourceHash, requireNotNull(alignment(activity)).audioSha256)
+            reader.restart()
+        }
+        val observed = mutableSetOf<Int>()
+        val aligned = mutableSetOf<Int>()
+        val mixed = mutableSetOf<Int>()
+        val audioEvidence = JSONArray()
+        await("Every translated sentence advances using the native model's word durations", 240_000) {
+            var done = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val index = field<Int>(reader, "index")
+                if (reader.isPlaying && field<Boolean>(reader, "playerReady") && index in paragraphSegments) {
+                    observed += index
+                    val mask = field<List<ReadingTextRange>>(paragraph, "unreadRanges")
+                    if (index < last) assertTrue("A later translated sentence stays gray", mask.any { finalWord.start in it.start until it.endExclusive })
+                    alignment(activity)?.let { actual ->
+                        val mapping = pageMappings(activity).getValue(index)
+                        if (aligned.add(index)) {
+                            val wav = requireNotNull(field<File?>(field<List<Any>>(reader, "segments")[index], "file"))
+                            assertEquals("Native timing is tied to the exact decoded ${language.tag} WAV", sha256(wav), actual.audioSha256)
+                            assertEquals(wav.length(), actual.sampleCount * 2L + 44L)
+                            assertTrue("No uniform or guessed timing can bypass native validation", NarrationWordTimingBuilder.valid(prepared[index], actual.sampleCount, actual.words))
+                            assertTrue("Every original spoken atom belongs to one real pronunciation group",
+                                NarrationSpokenWords.lexemes(prepared[index]).all { atom -> actual.words.count { it.start <= atom.start && it.endExclusive >= atom.endExclusive } == 1 })
+                            audioEvidence.put(JSONObject().put("segmentIndex", index).put("sourceText", prepared[index])
+                                .put("audioSha256", actual.audioSha256).put("sampleCount", actual.sampleCount)
+                                .put("wordRanges", JSONArray(actual.words.map { JSONArray(listOf(it.start, it.endExclusive, it.startSample, it.endSample)) })))
+                        }
+                        if (index !in mixed) {
+                            val normal = mapping.displayed.distinct().firstOrNull { shown -> mask.none { it.start < shown.endExclusive && it.endExclusive > shown.start } }
+                            val pending = mapping.displayed.distinct().firstOrNull { shown -> mask.any { it.start <= shown.start && it.endExclusive >= shown.endExclusive } }
+                            if (normal != null && pending != null) {
+                                assertMixedPixels(paragraph)
+                                val normalGlyph = (normal.start until normal.endExclusive).first { !paragraphText[it].isWhitespace() }
+                                val pendingGlyph = (pending.start until pending.endExclusive).first { !paragraphText[it].isWhitespace() }
+                                assertGlyphColor(paragraph, normalGlyph, 1, paragraph.currentTextColor)
+                                assertGlyphColor(paragraph, pendingGlyph, 1, gray)
+                                mixed += index
+                                saveParagraph(paragraph, "actual-$label-library-mixed-$index-native")
+                                if (index in coutSegments || index == first) capture("actual-$label-library-mixed-$index")
+                            }
+                        }
+                    }
+                }
+                done = index > last && reader.isPlaying && field<Boolean>(reader, "playerReady")
+            }
+            done
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            assertEquals("Every original sentence was genuinely played", paragraphSegments.toSet(), observed)
+            assertEquals("Every original sentence retained real model-based word alignment", paragraphSegments.toSet(), aligned)
+            assertTrue("The first sentence progresses within its own words", first in mixed)
+            assertTrue("The std::cout sentence also has concurrent normal and gray original words", coutSegments.any { it in mixed })
+            assertTrue("Natural completion leaves the whole original paragraph read", field<List<ReadingTextRange>>(paragraph, "unreadRanges").isEmpty())
+            saveParagraph(paragraph, "actual-$label-library-naturally-complete-native")
+            repeat(2) { assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick()) }
+            val rewound = field<List<ReadingTextRange>>(paragraph, "unreadRanges").sumOf { it.endExclusive - it.start }
+            assertTrue("Repeated rewinds restore gray words across translated sentences", rewound > 0)
+            val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+            val heard = gate.heardThrough
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardFive).performClick())
+            val forwarded = field<List<ReadingTextRange>>(paragraph, "unreadRanges").sumOf { it.endExclusive - it.start }
+            assertTrue("A genuine user forward seek updates the displayed source words", forwarded < rewound)
+            assertEquals("Skipped puzzle feedback remains uncredited", heard, gate.heardThrough)
+            assertNull("Paused seeks do not retain a player", field<MediaPlayer?>(reader, "player"))
+            assertSameCachedAudio(sourceAudio, sourceHash, sourceIdentity, sourceKey, sourceGenerationCount)
+            assertFacts(originalFacts)
+            assertEquals(authored, field<JSONObject>(activity, "lessonJson").toString())
+            File(evidence(), "actual-$label-library-word-regression.json").writeText(JSONObject()
+                .put("language", language.tag).put("voice", language.defaultVoice).put("lessonId", lesson)
+                .put("observedSegments", JSONArray(observed.toList())).put("alignedSegments", JSONArray(aligned.toList()))
+                .put("mixedWordSegments", JSONArray(mixed.toList())).put("coutSegments", JSONArray(coutSegments.toList()))
+                .put("genuineAudioAlignment", audioEvidence).put("sourceAudioReused", true)
+                .put("pendingGlyphsAfterRewinds", rewound).put("pendingGlyphsAfterForward", forwarded)
+                .put("originalJsonSpansCodeAndDimensionsUnchanged", true).toString(2))
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("The same genuine translated Kokoro audio resumes after released-player seeks", 20_000) {
+            var ready = false
+            host.onActivity { activity -> ready = controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady") }
+            ready
+        }
+        host.onActivity { activity ->
+            controller(activity).pauseKeepingPosition()
+            assertNull(field<MediaPlayer?>(controller(activity), "player"))
+            assertSameCachedAudio(sourceAudio, sourceHash, sourceIdentity, sourceKey, sourceGenerationCount)
+        }
+        assertEquals(authored, LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+    }
+
     private fun fixture(): JSONObject {
         val published = LessonRepository.loadLessonJson(context, ROUTE,
             "math_geometria_plana__fundamentos_geometricos__del_trazo_a_la_figura_geometrica")

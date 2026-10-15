@@ -7,6 +7,8 @@ import android.os.Looper
 import android.os.Process
 import android.util.Log
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
+import com.learngraphicsprogramming.app.narration.phonemes.EnglishMisakiG2P
+import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -31,6 +33,8 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
     private var durationCpuMask: List<Int>? = null
     private var modelStore: KokoroModelStore? = null
     private var lexicon: Map<String, String>? = null
+    @Volatile private var english: EnglishMisakiG2P? = null
+    private var french: FrenchFluidG2P? = null
 
     fun prepare(
         text: String,
@@ -69,7 +73,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         audio: File,
         isCancelled: () -> Boolean
     ): NarrationWordAlignment? {
-        if (language != NarrationLanguage.SPANISH || text.length !in 1..32_768 ||
+        if (text.length !in 1..32_768 ||
             KokoroVoiceCatalog.find(voice) == null) return null
         checkActive(isCancelled)
         // Lossless PCM has an exact sample origin. Opus pre-skip/decoder offsets are deliberately
@@ -82,22 +86,49 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         read(sidecar, text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
         // Ordinary-prose timings from the previous format remain exact. Validate their
         // offsets against today's atoms and the same immutable audio before reusing them.
-        val compatibleKey = digest("1\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
-        read(File(metadataDirectory, "$compatibleKey.json"), text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
+        if (language == NarrationLanguage.SPANISH) for (version in listOf(2, 1)) {
+            val compatibleKey = digest("$version\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
+            read(File(metadataDirectory, "$compatibleKey.json"), text, sourceHash, voice, audioHash, sampleCount)?.let { return it }
+        }
         checkActive(isCancelled)
         val store = modelStore ?: KokoroModelStore(app).also { modelStore = it }
         val root = store.directory()
-        val dictionary = lexicon ?: run {
-            val artifact = KokoroModelManifest.resources(NarrationLanguage.SPANISH).single()
-            val file = File(root, artifact.fileName)
-            if (!KokoroModelManifest.verify(file, artifact)) return null
-            checkActive(isCancelled)
-            SpanishFluidG2P.loadLexicon(file).also { lexicon = it }
+        val phonemes: String
+        val sources: List<NarrationSourcePhones>
+        when (language) {
+            NarrationLanguage.SPANISH -> {
+                val dictionary = lexicon ?: run {
+                    val artifact = KokoroModelManifest.resources(NarrationLanguage.SPANISH).single()
+                    val file = File(root, artifact.fileName)
+                    if (!KokoroModelManifest.verify(file, artifact)) return null
+                    checkActive(isCancelled)
+                    SpanishFluidG2P.loadLexicon(file).also { lexicon = it }
+                }
+                val trace = MixedSpanishG2P.traceWordsPrepared(text, dictionary) ?: return null
+                if (trace.phonemes != MixedSpanishG2P.phonemizePrepared(text, dictionary)) return null
+                val lexical = NarrationSpokenWords.lexemes(text)
+                if (lexical.size != trace.words.size || lexical.indices.any { lexical[it].canonical != trace.words[it].word }) return null
+                phonemes = trace.phonemes
+                sources = lexical.zip(trace.words).map { (source, phone) ->
+                    NarrationSourcePhones(source.start, source.endExclusive, phone.start, phone.endExclusive)
+                }
+            }
+            NarrationLanguage.FRENCH -> {
+                val frontend = french ?: FrenchFluidG2P(root, File(root, "tokenizer.json")).also { french = it }
+                val trace = MixedFrenchG2P.traceWordsPrepared(text, frontend) ?: return null
+                phonemes = trace.phonemes
+                sources = trace.words.map { NarrationSourcePhones(it.sourceStart, it.sourceEndExclusive, it.start, it.endExclusive) }
+            }
+            NarrationLanguage.AMERICAN_ENGLISH, NarrationLanguage.BRITISH_ENGLISH -> {
+                val frontend = english ?: EnglishMisakiG2P(root).also { english = it }
+                val trace = frontend.traceWords(text, language == NarrationLanguage.BRITISH_ENGLISH) {
+                    !closed && !isCancelled()
+                } ?: return null
+                phonemes = trace.phonemes
+                sources = trace.words.map { NarrationSourcePhones(it.sourceStart, it.sourceEndExclusive, it.start, it.endExclusive) }
+            }
         }
-        val trace = MixedSpanishG2P.traceWordsPrepared(text, dictionary) ?: return null
-        // The exact production frontend remains the authority, including prepared-speech rules.
-        if (trace.phonemes != MixedSpanishG2P.phonemizePrepared(text, dictionary)) return null
-        val chunks = KokoroPhonemeChunks.split(trace.phonemes)
+        val chunks = KokoroPhonemeChunks.split(phonemes)
         checkActive(isCancelled)
         val model = durationModel ?: KokoroDurationModel(root, derivedDirectory).also { durationModel = it }
         val durations = chunks.map { chunk ->
@@ -105,7 +136,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
             model.durations(chunk, voice) { closed || isCancelled() }
         }
         checkActive(isCancelled)
-        val alignment = NarrationWordTimingBuilder.buildChunked(text, audioHash, sampleCount, trace, chunks, durations) ?: return null
+        val alignment = NarrationWordTimingBuilder.buildSourceChunked(text, audioHash, sampleCount, phonemes, sources, chunks, durations) ?: return null
         // Bind the sidecar to bytes that are still the file actually supplied for playback.
         if (pcmSampleCount(audio) != sampleCount || digest(audio, isCancelled) != audioHash) return null
         checkActive(isCancelled)
@@ -118,7 +149,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
     ): NarrationWordAlignment? = runCatching {
         if (!file.isFile || file.length() !in 1L..524_288L) return@runCatching null
         val data = JSONObject(file.readText(Charsets.UTF_8))
-        if (data.getInt("version") !in setOf(1, VERSION) || data.getString("model") != KokoroModelManifest.revision ||
+        if (data.getInt("version") !in setOf(1, 2, VERSION) || data.getString("model") != KokoroModelManifest.revision ||
             data.getString("sourceSha256") != sourceHash || data.getString("voice") != voice ||
             data.getString("audioSha256") != audioHash || data.getLong("sampleCount") != sampleCount) return@runCatching null
         val rows = data.getJSONArray("words")
@@ -192,15 +223,19 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         main.removeCallbacksAndMessages(null)
         worker.removeCallbacksAndMessages(null)
         durationModel?.cancelCurrentRun()
+        english?.cancelCurrentRun()
         worker.post {
             runCatching { durationModel?.close() }
             durationModel = null
             modelStore?.close()
             modelStore = null
             lexicon = null
+            english?.close()
+            english = null
+            french = null
         }
         thread.quitSafely()
     }
 
-    companion object { private const val VERSION = 2 }
+    companion object { private const val VERSION = 3 }
 }

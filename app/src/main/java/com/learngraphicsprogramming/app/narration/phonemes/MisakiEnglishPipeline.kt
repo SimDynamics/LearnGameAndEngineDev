@@ -16,6 +16,12 @@ internal object MisakiEnglishPipeline {
     }
 
     fun speakCancellable(tokens: List<MisakiWord>, lexicon: MisakiLexicon, fallback: ((String) -> String)?, checkCurrent: () -> Unit): String {
+        return speakObserved(tokens, lexicon, fallback, checkCurrent, null)
+    }
+
+    /** Observes the final resolved phones; it never re-pronounces isolated words. */
+    fun speakObserved(tokens: List<MisakiWord>, lexicon: MisakiLexicon, fallback: ((String) -> String)?,
+        checkCurrent: () -> Unit, onPiece: ((MisakiWord, Int, Int) -> Unit)?): String {
         checkCurrent()
         val groups = retokenize(tokens, checkCurrent)
         var context = PhoneticContext()
@@ -38,6 +44,7 @@ internal object MisakiEnglishPipeline {
                 val spoken = merged?.let { lexicon.tryPronounce(it, context) }
                 if (spoken != null) {
                     words[left].phonemes = spoken
+                    words[left].sourceEndExclusive = words[right - 1].sourceEndExclusive
                     for (index in left + 1 until right) words[index].phonemes = ""
                     context = context(context, spoken, checkNotNull(merged))
                     right = left
@@ -56,15 +63,35 @@ internal object MisakiEnglishPipeline {
             }
             if (useFallback) {
                 words.first().phonemes = missing(merge(words).text, fallback)
+                words.first().sourceEndExclusive = words.last().sourceEndExclusive
                 for (index in 1 until words.size) words[index].phonemes = ""
             } else resolve(words)
         }
-        return groups.joinToString("") { cluster ->
-            checkCurrent()
-            val word = merge(cluster.tokens)
-            (word.phonemes ?: throw EnglishMisakiException("Unresolved Misaki token: ${word.text}"))
-                .replace('ɾ', 'T').replace('ʔ', 't') + word.whitespace
-        }.trim()
+        val observed = if (onPiece == null) null else mutableListOf<Triple<MisakiWord, Int, Int>>()
+        val output = buildString {
+            for (cluster in groups) {
+                checkCurrent()
+                val word = merge(cluster.tokens)
+                val phones = (word.phonemes ?: throw EnglishMisakiException("Unresolved Misaki token: ${word.text}"))
+                    .replace('ɾ', 'T').replace('ʔ', 't')
+                val clusterStart = length
+                append(phones)
+                if (onPiece != null) {
+                    var local = 0
+                    for (part in cluster.tokens) {
+                        val partPhones = part.phonemes.orEmpty().replace('ɾ', 'T').replace('ʔ', 't')
+                        if (part.preSpace && local > 0 && !phones[local - 1].isWhitespace() && partPhones.isNotEmpty()) local++
+                        if (partPhones.isNotEmpty()) observed?.add(Triple(part, clusterStart + local, clusterStart + local + partPhones.length))
+                        local += partPhones.length
+                    }
+                    check(local == phones.length) { "Misaki phoneme provenance did not match its resolved cluster" }
+                }
+                append(word.whitespace)
+            }
+        }
+        val prefix = output.indexOfFirst { !it.isWhitespace() }.coerceAtLeast(0)
+        observed?.forEach { (word, start, end) -> onPiece?.invoke(word, start - prefix, end - prefix) }
+        return output.trim()
     }
 
     private fun missing(word: String, fallback: ((String) -> String)?): String = fallback?.invoke(word)
@@ -77,7 +104,9 @@ internal object MisakiEnglishPipeline {
             checkCurrent()
             val parts = if (original.override != null || original.alias != null) mutableListOf(original.copy(phonemes = original.override)) else
                 subtokens.findAll(original.text).map { original.copy(text = it.value, whitespace = "", phonemes = null,
-                    currency = null, isHead = true, preSpace = false) }.toMutableList()
+                    currency = null, isHead = true, preSpace = false,
+                    sourceStart = original.sourceStart.takeIf { start -> start >= 0 }?.plus(it.range.first) ?: -1,
+                    sourceEndExclusive = original.sourceStart.takeIf { start -> start >= 0 }?.plus(it.range.last + 1) ?: -1) }.toMutableList()
             if (parts.isEmpty()) continue
             parts.last().whitespace = original.whitespace
             for ((partIndex, word) in parts.withIndex()) {
@@ -117,7 +146,8 @@ internal object MisakiEnglishPipeline {
         val tag = words.maxBy { word -> word.text.sumOf { if (it == it.lowercaseChar()) 1 else 2 } }.tag
         return MisakiWord(text, words.last().whitespace, tag, currency = words.mapNotNull { it.currency }.maxOrNull(),
             phonemes = phones, stress = words.mapNotNull { it.stress }.distinct().singleOrNull(),
-            isHead = words.first().isHead, numFlags = words.flatMap { it.numFlags.toList() }.toSortedSet().joinToString(""))
+            isHead = words.first().isHead, numFlags = words.flatMap { it.numFlags.toList() }.toSortedSet().joinToString(""),
+            sourceStart = words.first().sourceStart, sourceEndExclusive = words.last().sourceEndExclusive)
     }
 
     private fun resolve(words: List<MisakiWord>) {

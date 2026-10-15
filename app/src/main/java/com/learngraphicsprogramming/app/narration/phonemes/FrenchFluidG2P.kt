@@ -26,6 +26,11 @@ class FrenchFluidG2P private constructor(
     private val fallback: FrenchWordG2P?,
     private val vocabulary: Set<Char>?
 ) {
+    internal data class FrenchWordPhoneRange(
+        val word: String, val sourceStart: Int, val sourceEndExclusive: Int,
+        val start: Int, val endExclusive: Int
+    )
+    internal data class FrenchPhoneTrace(val phonemes: String, val words: List<FrenchWordPhoneRange>)
     constructor(resourcesDirectory: File, kokoroTokenizer: File, fallback: FrenchWordG2P? = FrenchRuleBasedG2P) : this(
         loadLexicon(resourcesDirectory), fallback, loadVocabulary(kokoroTokenizer)
     )
@@ -55,11 +60,57 @@ class FrenchFluidG2P private constructor(
         return phonemizeImpl(text, foreignTokens)
     }
 
-    private fun phonemizeImpl(text: String, foreignTokens: Map<Char, String>): String {
+    /** Observe final sentence phones, including real liaison and stress, without word re-synthesis. */
+    @Synchronized internal fun traceWords(
+        text: String, foreignTokens: Map<Char, String> = emptyMap()
+    ): FrenchPhoneTrace? = runCatching {
+        if (text.isBlank() || text.length > 16_384) return@runCatching null
+        val numericOwners = mutableListOf<Pair<Int, Int>>()
+        val numeric = FrenchNumberNormalizer.normalizeObserved(text) { start, end, rendered ->
+            if (rendered == text.substring(start, end)) {
+                for (index in start until end) numericOwners += index to index + 1
+            } else repeat(rendered.length) { numericOwners += start to end }
+        }
+        val owners = mutableListOf<Pair<Int, Int>>()
+        val normalized = buildString {
+            var start = 0
+            while (start < numeric.length) {
+                var end = start + 1
+                while (end < numeric.length && Character.getType(numeric[end]) in setOf(
+                        Character.NON_SPACING_MARK.toInt(), Character.COMBINING_SPACING_MARK.toInt(), Character.ENCLOSING_MARK.toInt())) end++
+                val piece = Normalizer.normalize(numeric.substring(start, end), Normalizer.Form.NFC)
+                    .replace('’', '\'').replace('«', '“').replace('»', '”')
+                val sourceStart = numericOwners.subList(start, end).minOf { it.first }
+                val sourceEnd = numericOwners.subList(start, end).maxOf { it.second }
+                append(piece)
+                repeat(piece.length) { owners += sourceStart to sourceEnd }
+                start = end
+            }
+        }
+        if (normalized != Normalizer.normalize(numeric, Normalizer.Form.NFC)
+                .replace('’', '\'').replace('«', '“').replace('»', '”')) return@runCatching null
+        val words = mutableListOf<FrenchWordPhoneRange>()
+        val phones = phonemizeImpl(text, foreignTokens) { start, end, phoneStart, phoneEnd ->
+            val sourceStart = owners.subList(start, end).minOf { it.first }
+            val sourceEnd = owners.subList(start, end).maxOf { it.second }
+            val previous = words.lastOrNull()
+            // A numeric expansion or a dictionary contraction is one honest source atom.
+            if (previous != null && sourceStart < previous.sourceEndExclusive) {
+                words[words.lastIndex] = previous.copy(
+                    sourceEndExclusive = maxOf(sourceEnd, previous.sourceEndExclusive), endExclusive = phoneEnd,
+                    word = text.substring(previous.sourceStart, maxOf(sourceEnd, previous.sourceEndExclusive)))
+            } else words += FrenchWordPhoneRange(text.substring(sourceStart, sourceEnd), sourceStart, sourceEnd, phoneStart, phoneEnd)
+        }
+        if (words.isEmpty() || phones != phonemizeWithForeignTokens(text, foreignTokens)) return@runCatching null
+        FrenchPhoneTrace(phones, words)
+    }.getOrNull()
+
+    private fun phonemizeImpl(text: String, foreignTokens: Map<Char, String>,
+                              onWord: ((Int, Int, Int, Int) -> Unit)? = null): String {
         if (text.length > 16_384) throw FrenchG2PException("El texto francés es demasiado largo")
         if (text.isBlank()) return ""
         val normalized = FrenchNumberNormalizer.normalize(text)
-        val phonemes = FrenchPhonology.phonemize(normalized, lexicon::contains, foreignTokens) { word ->
+        val phonemes = FrenchPhonology.phonemize(normalized, lexicon::contains, foreignTokens, onWord) { word ->
             FrenchPhonology.citationOverrides[word]?.let { FrenchPronunciation.Raw(it) }
                 ?: lexicon.lookup(word)?.let { FrenchPronunciation.Cached(it, word in lexicon.hAspire) }
                 ?: if (word.all { it.isLetter() }) {
@@ -157,14 +208,20 @@ internal sealed class FrenchPronunciation {
 /** Sentence-level rules translated from the selected FluidAudio FrenchPhonology. */
 internal object FrenchPhonology {
     enum class Stress { PRIMARY, SECONDARY, NONE }
-    data class Token(val text: String, val isWord: Boolean, val spaceBefore: Boolean)
+    data class Token(val text: String, val isWord: Boolean, val spaceBefore: Boolean,
+                     val start: Int, val endExclusive: Int)
+    private data class SourcePhonePart(val sourceStart: Int, val sourceEndExclusive: Int,
+                                       val phoneStart: Int, val phoneEndExclusive: Int)
     private data class Item(
         val isWord: Boolean, val phones: String, val word: String = "", val hAspire: Boolean = false,
-        val spaceBefore: Boolean = false, val foreign: Boolean = false
+        val spaceBefore: Boolean = false, val foreign: Boolean = false,
+        val sourceStart: Int = -1, val sourceEndExclusive: Int = -1,
+        val partitionLiteral: String? = null, val sourcePhoneParts: List<SourcePhonePart>? = null
     )
 
     fun phonemize(text: String, isLexiconEntry: (String) -> Boolean,
-                  foreignTokens: Map<Char, String> = emptyMap(), lookup: (String) -> FrenchPronunciation?): String {
+                  foreignTokens: Map<Char, String> = emptyMap(), onWord: ((Int, Int, Int, Int) -> Unit)? = null,
+                  lookup: (String) -> FrenchPronunciation?): String {
         val normalized = Normalizer.normalize(text, Normalizer.Form.NFC).replace('’', '\'').replace('«', '“').replace('»', '”')
         val tokens = tokenize(normalized, foreignTokens.keys)
         val items = mutableListOf<Item>()
@@ -174,7 +231,8 @@ internal object FrenchPhonology {
             if (!token.isWord) { items += Item(false, token.text, spaceBefore = token.spaceBefore); return@forEachIndexed }
             val foreign = token.text.singleOrNull()?.let(foreignTokens::get)
             if (foreign != null) {
-                items += Item(true, foreign, spaceBefore = token.spaceBefore, foreign = true)
+                items += Item(true, foreign, spaceBefore = token.spaceBefore, foreign = true,
+                    sourceStart = token.start, sourceEndExclusive = token.endExclusive)
                 return@forEachIndexed
             }
             val phrase = phrases.firstOrNull { (words, _) ->
@@ -183,14 +241,28 @@ internal object FrenchPhonology {
                 }
             }
             if (phrase != null) {
-                items += Item(true, phrase.second, tokens[index + phrase.first.size - 1].text.lowercase(Locale.ROOT), spaceBefore = token.spaceBefore)
+                val partition = if (onWord == null) null else phraseWordPhones[phrase.first]
+                    ?.takeIf { it.size == phrase.first.size && it.joinToString("") == phrase.second }
+                    ?.let { parts ->
+                        var offset = 0
+                        parts.mapIndexed { ordinal, phones ->
+                            val first = phones.indexOfFirst { !it.isWhitespace() }
+                            val last = phones.indexOfLast { !it.isWhitespace() }
+                            SourcePhonePart(tokens[index + ordinal].start, tokens[index + ordinal].endExclusive,
+                                offset + first, offset + last + 1).also { offset += phones.length }
+                        }
+                    }
+                items += Item(true, phrase.second, tokens[index + phrase.first.size - 1].text.lowercase(Locale.ROOT), spaceBefore = token.spaceBefore,
+                    sourceStart = token.start, sourceEndExclusive = tokens[index + phrase.first.size - 1].endExclusive,
+                    partitionLiteral = phrase.second, sourcePhoneParts = partition)
                 skip = phrase.first.size - 1
                 return@forEachIndexed
             }
             val trailingApostrophe = token.text.endsWith("'")
             val lower = token.text.lowercase(Locale.ROOT).trimEnd('\'')
             if (isSpelledAcronym(token.text)) {
-                items += Item(true, spell(lower), lower, spaceBefore = token.spaceBefore)
+                items += Item(true, spell(lower), lower, spaceBefore = token.spaceBefore,
+                    sourceStart = token.start, sourceEndExclusive = token.endExclusive)
                 return@forEachIndexed
             }
             var prefix = ""
@@ -227,7 +299,8 @@ internal object FrenchPhonology {
                 phones = resolved.first; hAspire = resolved.second
             }
             if (prefix.isNotEmpty()) phones = mapToKokoro(prefix, "") + phones
-            items += Item(true, phones, classWord, hAspire, token.spaceBefore)
+            items += Item(true, phones, classWord, hAspire, token.spaceBefore,
+                sourceStart = token.start, sourceEndExclusive = token.endExclusive)
         }
         val out = items.mapIndexed { index, item ->
             val next = items.getOrNull(index + 1)
@@ -242,7 +315,18 @@ internal object FrenchPhonology {
             pendingSpace = pendingSpace || item.spaceBefore
             if (item.phones.isNotEmpty()) {
                 if (result.isNotEmpty() && (pendingSpace || (item.isWord && lastWasWord))) result.append(' ')
-                result.append(item.phones); pendingSpace = false; lastWasWord = item.isWord
+                val start = result.length
+                result.append(item.phones)
+                if (item.isWord && onWord != null) {
+                    // These boundaries are ownership of the existing fixed phoneme string,
+                    // never a division of audio duration. A changed contextual pronunciation
+                    // falls back to its indivisible source phrase rather than reusing offsets.
+                    val partition = item.sourcePhoneParts?.takeIf { item.phones == item.partitionLiteral }
+                    if (partition == null) onWord(item.sourceStart, item.sourceEndExclusive, start, result.length)
+                    else partition.forEach { part -> onWord(part.sourceStart, part.sourceEndExclusive,
+                        start + part.phoneStart, start + part.phoneEndExclusive) }
+                }
+                pendingSpace = false; lastWasWord = item.isWord
             }
         }
         return result.toString()
@@ -355,7 +439,7 @@ internal object FrenchPhonology {
             val ch = text[i]
             if (ch.isWhitespace() || Character.isSpaceChar(ch)) { sawSpace = true; i++; continue }
             if (ch in foreignMarkers) {
-                tokens += Token(ch.toString(), true, sawSpace)
+                tokens += Token(ch.toString(), true, sawSpace, i, i + 1)
                 sawSpace = false; i++; continue
             }
             if (ch.isLetter()) {
@@ -365,9 +449,9 @@ internal object FrenchPhonology {
                     j++; while (j < text.length && text[j].isLetter()) j++
                 }
                 if (j < text.length && text[j] == '\'') j++
-                tokens += Token(text.substring(i, j), true, sawSpace); sawSpace = false; i = j; continue
+                tokens += Token(text.substring(i, j), true, sawSpace, i, j); sawSpace = false; i = j; continue
             }
-            if (!ch.isDigit() && ch != '_') { tokens += Token(ch.toString(), false, sawSpace); sawSpace = false }
+            if (!ch.isDigit() && ch != '_') { tokens += Token(ch.toString(), false, sawSpace, i, i + 1); sawSpace = false }
             else throw FrenchG2PException("Nombre o símbolo francés sin normalizar: $ch")
             i++
         }
@@ -387,6 +471,13 @@ internal object FrenchPhonology {
     private val phrases = listOf(
         listOf("tout", "le", "monde") to "tulmˈɔ̃d", listOf("parce", "que") to "paʁskˌə",
         listOf("est-ce", "que") to "ɛs kə", listOf("c'est-à-dire") to "sɛtadˈiʁ", listOf("etc") to "ɛtseteʁˈa"
+    )
+    // Explicit ownership inside the three existing multiword overrides. The omitted schwa in
+    // "le" owns its actual /l/ only; original stress, nasal marks and spaces stay unchanged.
+    private val phraseWordPhones = mapOf(
+        listOf("tout", "le", "monde") to listOf("tu", "l", "mˈɔ̃d"),
+        listOf("parce", "que") to listOf("paʁs", "kˌə"),
+        listOf("est-ce", "que") to listOf("ɛs", " kə")
     )
     private val unstressedWords = "de les la et le des à un est du en une que qui a il pour dans plus sur au ce ou se qu leur aux par comme mais autres vous ne tout y ils on leurs peu tous son elle cette car ces sa autre elles toute ses chaque sans sous nous entre très nos dont où vos tel quand lors vers eu toutes tels près non celles furent me ceux notre quel cet telle quelle je ni mes chez ça quant dès votre faut sommes l d j m n s t c jusqu lorsqu puisqu te tu mon ma ton ta pas contre".split(' ').toSet()
     private val secondaryWords = "avec aussi plusieurs cela ainsi beaucoup après plupart quelques encore soit assez parmi toujours afin presque alors avant mieux durant tandis rien depuis comment quelque néanmoins jamais loin autour toutefois lorsque puisque lui".split(' ').toSet()

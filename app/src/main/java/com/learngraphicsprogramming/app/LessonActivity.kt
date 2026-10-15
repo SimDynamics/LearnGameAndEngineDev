@@ -434,7 +434,7 @@ class LessonActivity : AppCompatActivity() {
         val key = NarrationResumePolicy.key(narrationPageIdentity(), language.tag, selected.engine.name,
             if (selected.engine == NarrationEngine.ANDROID) selected.androidVoice.orEmpty() else selected.kokoroVoice, parts)
         readingProgress.bind(narrationPageIdentity(), plan, key,
-            readingTextPages[narrationPageIdentity()]?.wordMappings(parts, plan.origins).orEmpty())
+            readingTextPages[narrationPageIdentity()]?.wordMappings(parts, plan.origins, language).orEmpty())
         applyReadingPresentation()
     }
 
