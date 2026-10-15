@@ -12,6 +12,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import java.util.IdentityHashMap
+import java.text.Normalizer
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -28,13 +30,25 @@ class LessonReadingTextColors {
         // A caller identifies prose, but a misplaced registration must never recolor controls
         // or syntax spans. In particular, icons in this app are ordinary clickable TextViews.
         if (view is EditText || view is Button || view.isClickable || view.isLongClickable ||
-            view.text.isNullOrBlank() || hasForegroundSpans(view)) return
+            view.text.isNullOrBlank() || (hasForegroundSpans(view) && view !is ReadingTextView)) return
         if (!entries.containsKey(view)) entries[view] = Entry(blockIndex, view, view.textColors)
     }
 
-    fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean) {
+    fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean,
+             unreadWords: Map<Int, List<ReadingTextRange>> = emptyMap()) {
         entries.values.forEach { entry ->
             val view = entry.view
+            if (view is ReadingTextView) {
+                val wordRanges = unreadWords[entry.block].takeIf { enabled && view.safeSupportsWordReading }
+                val surface = if (wordRanges != null) backgroundColor(view) else null
+                if (surface != null) {
+                    if (view.textColors !== entry.original) view.setTextColor(entry.original)
+                    view.setUnreadWordRanges(wordRanges,
+                        unreadColors.getOrPut(surface) { LessonReadingColor.unread(surface) })
+                    return@forEach
+                }
+                view.setUnreadWordRanges(null, 0)
+            }
             val unread = enabled && states[entry.block] == ReadingBlockState.UNREAD
             val background = if (unread) backgroundColor(view) else null
             val color = background?.let { unreadColors.getOrPut(it) { LessonReadingColor.unread(it) } }
@@ -48,6 +62,7 @@ class LessonReadingTextColors {
 
     fun restore() {
         entries.values.forEach { entry ->
+            (entry.view as? ReadingTextView)?.setUnreadWordRanges(null, 0)
             if (entry.view.textColors !== entry.original) entry.view.setTextColor(entry.original)
         }
     }
@@ -56,6 +71,33 @@ class LessonReadingTextColors {
         restore()
         entries.clear()
         unreadColors.clear()
+    }
+
+    /** Require complete monotonic lexical identity; repeated words are never found by indexOf. */
+    fun wordMappings(parts: List<String>, origins: List<NarrationTextOrigin>): Map<Int, NarrationWordMapping> {
+        if (parts.size != origins.size) return emptyMap()
+        val result = mutableMapOf<Int, NarrationWordMapping>()
+        val words = Regex("\\p{L}[\\p{L}\\p{M}]*")
+        fun canonical(value: String) = Normalizer.normalize(value, Normalizer.Form.NFC).lowercase(Locale.ROOT)
+        entries.values.groupBy { it.block }.forEach { (block, candidates) ->
+            if (candidates.size != 1) return@forEach
+            val view = candidates.single().view as? ReadingTextView ?: return@forEach
+            if (!view.safeSupportsWordReading) return@forEach
+            val visible = words.findAll(view.text).toList()
+            val segments = origins.indices.filter { origins[it].blockIndex == block && !origins[it].feedback }
+            val spoken = segments.flatMap { words.findAll(parts[it]).toList() }
+            if (visible.isEmpty() || visible.map { canonical(it.value) } != spoken.map { canonical(it.value) }) return@forEach
+            var cursor = 0
+            segments.forEach { segment ->
+                val matches = words.findAll(parts[segment]).toList()
+                val displayed = visible.subList(cursor, cursor + matches.size)
+                    .map { ReadingTextRange(it.range.first, it.range.last + 1) }
+                result[segment] = NarrationWordMapping(block,
+                    matches.map { ReadingTextRange(it.range.first, it.range.last + 1) }, displayed)
+                cursor += matches.size
+            }
+        }
+        return result
     }
 
     private fun hasForegroundSpans(view: TextView): Boolean {
@@ -109,7 +151,7 @@ internal object LessonReadingColor {
     fun unread(background: Int): Int {
         // Keep an opaque, neutral gray. On intermediate surfaces select the closest gray
         // meeting ordinary text contrast instead of fading the view or its formula strokes.
-        val preferred = if (luminance(background) < .35) 170 else 100
+        val preferred = if (luminance(background) < .35) 145 else 80
         if (contrast(gray(preferred), background) >= MIN_CONTRAST) return gray(preferred)
         val channel = (0..255).asSequence()
             .filter { contrast(gray(it), background) >= MIN_CONTRAST }

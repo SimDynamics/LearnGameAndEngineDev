@@ -67,6 +67,7 @@ import com.learngraphicsprogramming.app.narration.NarrationEngine
 import com.learngraphicsprogramming.app.narration.NarrationSegments
 import com.learngraphicsprogramming.app.narration.NarrationResumePolicy
 import com.learngraphicsprogramming.app.narration.readingPlan
+import com.learngraphicsprogramming.app.narration.ReadingTextView
 import com.learngraphicsprogramming.app.math.MathTextRenderer
 import com.learngraphicsprogramming.app.math.MathDevelopmentMode
 import com.learngraphicsprogramming.app.math.MathExpressionEditor
@@ -420,7 +421,8 @@ class LessonActivity : AppCompatActivity() {
             else NarrationSegments.sentences(script.texts)
         val key = NarrationResumePolicy.key(narrationPageIdentity(), language.tag, selected.engine.name,
             if (selected.engine == NarrationEngine.ANDROID) selected.androidVoice.orEmpty() else selected.kokoroVoice, parts)
-        readingProgress.bind(narrationPageIdentity(), plan, key)
+        readingProgress.bind(narrationPageIdentity(), plan, key,
+            readingTextPages[narrationPageIdentity()]?.wordMappings(parts, plan.origins).orEmpty())
         applyReadingPresentation()
     }
 
@@ -433,7 +435,7 @@ class LessonActivity : AppCompatActivity() {
         if (!::lessonJson.isInitialized) return
         val identity = narrationPageIdentity()
         readingTextPages[identity]?.show(readingProgress.states(identity),
-            NarrationSettingsRepository.get(this).enabled)
+            NarrationSettingsRepository.get(this).enabled, readingProgress.unreadWords(identity))
     }
 
     private fun clearReadingPages() {
@@ -490,7 +492,8 @@ class LessonActivity : AppCompatActivity() {
             onError = { message -> Toast.makeText(this, message, Toast.LENGTH_LONG).show() },
             onProgress = { progress ->
                 if (readingPlaybackOwner === playbackOwner) readingPlaybackChanged(progress)
-            }
+            },
+            trackWords = true
         )
         narrationControls = LessonNarrationControls(
             this,
@@ -3729,7 +3732,7 @@ class LessonActivity : AppCompatActivity() {
     }
     private fun addNote(text: String, mathMode: String = "auto") {
 
-        val view = TextView(this)
+        val view = ReadingTextView(this)
 
         view.text =
             getString(R.string.lesson_note, text)
@@ -11565,7 +11568,7 @@ class LessonActivity : AppCompatActivity() {
     ) {
 
         val view =
-            TextView(this)
+            ReadingTextView(this)
 
         view.text =
             text
@@ -11601,7 +11604,7 @@ class LessonActivity : AppCompatActivity() {
     ) {
 
         val view =
-            TextView(this)
+            ReadingTextView(this)
 
         view.text =
             text
@@ -11640,7 +11643,7 @@ class LessonActivity : AppCompatActivity() {
     ) {
 
         val view =
-            TextView(this)
+            ReadingTextView(this)
 
         view.text =
             text

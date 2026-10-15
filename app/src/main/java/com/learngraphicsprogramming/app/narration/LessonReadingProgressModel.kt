@@ -66,11 +66,14 @@ class LessonReadingProgressModel {
     }
 
     private val pages = mutableMapOf<String, Page>()
+    private val words = LessonWordReadingProgress()
 
-    fun bind(pageIdentity: String, plan: NarrationReadingPlan, playbackKey: String? = null) {
+    fun bind(pageIdentity: String, plan: NarrationReadingPlan, playbackKey: String? = null,
+             wordMappings: Map<Int, NarrationWordMapping> = emptyMap()) {
         val previous = pages[pageIdentity]
         if (previous != null && previous.plan.signature == plan.signature && previous.plan.origins == plan.origins &&
             previous.playbackKey == playbackKey) {
+            words.bind(pageIdentity, wordMappings, replace = false)
             // Reattaching cached views keeps both a paused current block and genuine evidence.
             if (previous.canReactivateOnBind) {
                 previous.available = valid(plan)
@@ -80,6 +83,7 @@ class LessonReadingProgressModel {
         }
         pages[pageIdentity] = Page(plan.copy(origins = plan.origins.toList()), playbackKey)
             .apply { available = valid(plan) }
+        words.bind(pageIdentity, wordMappings, replace = true)
     }
 
     fun update(event: NarrationPlaybackProgress) {
@@ -92,6 +96,7 @@ class LessonReadingProgressModel {
             page.available = false
             page.canReactivateOnBind = false
             page.cancelCoverage()
+            words.unavailable(event.pageIdentity)
             return
         }
         if (event.generation > page.generation) {
@@ -99,7 +104,9 @@ class LessonReadingProgressModel {
             page.cancelCoverage()
         }
         page.canReactivateOnBind = false
+        words.update(event)
         when (event.phase) {
+            NarrationPlaybackPhase.ADVANCED, NarrationPlaybackPhase.ALIGNMENT_AVAILABLE -> Unit
             NarrationPlaybackPhase.PREPARED -> {
                 page.available = true
                 // The existing reader starts at zero after a bookmark is evicted. Its
@@ -185,6 +192,7 @@ class LessonReadingProgressModel {
 
     /** The Activity rejects callbacks from the previous controller before forwarding events. */
     fun newController() {
+        words.newController()
         pages.values.forEach {
             it.generation = Long.MIN_VALUE
             it.available = false
@@ -193,9 +201,11 @@ class LessonReadingProgressModel {
         }
     }
 
-    fun clear() = pages.clear()
+    fun unreadWords(pageIdentity: String) = words.unread(pageIdentity)
 
-    fun forget(pageIdentity: String) { pages.remove(pageIdentity) }
+    fun clear() { pages.clear(); words.clear() }
+
+    fun forget(pageIdentity: String) { pages.remove(pageIdentity); words.forget(pageIdentity) }
 
     private fun valid(plan: NarrationReadingPlan) = plan.signature.isNotBlank() &&
         plan.origins.isNotEmpty() && plan.origins.all { it.blockIndex >= -1 && (!it.feedback || it.blockIndex >= 0) }

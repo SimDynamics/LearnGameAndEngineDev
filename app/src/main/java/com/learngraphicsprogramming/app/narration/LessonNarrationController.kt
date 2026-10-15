@@ -30,7 +30,8 @@ class LessonNarrationController(
     context: Context,
     private val onState: (Boolean) -> Unit,
     private val onError: (String) -> Unit,
-    private val onProgress: (NarrationPlaybackProgress) -> Unit = {}
+    private val onProgress: (NarrationPlaybackProgress) -> Unit = {},
+    private val trackWords: Boolean = false
 ) {
     private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
     private fun s(id: Int, vararg args: Any): String = uiContext.getString(id, *args)
@@ -102,10 +103,20 @@ class LessonNarrationController(
     private var playbackGate: NarrationExerciseGate? = null
     private var activePageIdentity = ""
     private var waitingForExercise = false
+    private var wordAlignmentService: KokoroWordAlignment? = null
+    private val wordCheckpoint = object : Runnable {
+        override fun run() {
+            if (!trackWords || closed || !playing || !playerReady || finished) return
+            publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED).copy(
+                positionMs = playbackPoint().positionMs))
+            main.postDelayed(this, 50L)
+        }
+    }
 
     private fun progressSnapshot(phase: NarrationPlaybackPhase,
                                  pageIdentity: String = activePageIdentity) = NarrationPlaybackProgress(
-        pageIdentity, generation, index, segments.size, phase, resumeKey, offset.coerceAtLeast(0L)
+        pageIdentity, generation, index, segments.size, phase, resumeKey, offset.coerceAtLeast(0L),
+        android.os.SystemClock.uptimeMillis(), NarrationSettingsRepository.get(appContext).rate
     )
 
     /** UI observation must never interrupt audio, synthesis or bookmark updates. */
@@ -117,6 +128,27 @@ class LessonNarrationController(
 
     private fun publishProgress(phase: NarrationPlaybackPhase) =
         publishProgress(progressSnapshot(phase))
+
+    private fun startWordObservation() {
+        if (!trackWords) return
+        main.removeCallbacks(wordCheckpoint)
+        main.post(wordCheckpoint)
+    }
+
+    private fun prepareWordAlignment(request: Synthesis) {
+        if (!trackWords || request.settings.engine == NarrationEngine.ANDROID || !isCurrent(request)) return
+        val identity = activePageIdentity
+        val key = resumeKey
+        val count = segments.size
+        val service = wordAlignmentService ?: KokoroWordAlignment(appContext).also { wordAlignmentService = it }
+        service.prepare(request.text, request.settings.language, request.settings.kokoroVoice, request.file,
+            isCancelled = { !isCurrent(request) }) { alignment ->
+            if (alignment != null && isCurrent(request) && segments.getOrNull(request.index)?.file == request.file) {
+                publishProgress(NarrationPlaybackProgress(identity, request.generation, request.index, count,
+                    NarrationPlaybackPhase.ALIGNMENT_AVAILABLE, key, alignment = alignment))
+            }
+        }
+    }
 
     /** A changed answer only changes playback permission, never the pre-render queue. */
     fun updateSolvedExercises(pageIdentity: String, correctBlocks: Set<Int>) = onMain {
@@ -368,6 +400,7 @@ class LessonNarrationController(
         val wasPlaying = playing
         playing = false
         main.removeCallbacks(playbackCheckpoint)
+        main.removeCallbacks(wordCheckpoint)
         if (playerReady) runCatching { player?.pause() }
         if (playerReady) offset = playbackPoint().positionMs
         rememberPlaybackPosition()
@@ -422,7 +455,10 @@ class LessonNarrationController(
             applyRate()
             if (!finished && playing) runCatching {
                 player?.start()
-                if (player != null) publishProgress(NarrationPlaybackPhase.PLAYING)
+                if (player != null) {
+                    publishProgress(NarrationPlaybackPhase.PLAYING)
+                    startWordObservation()
+                }
             }.onFailure { fail(s(R.string.narration_resume_error)) }
         } else ensureSegment(index)
         rememberPlaybackPosition()
@@ -511,6 +547,7 @@ class LessonNarrationController(
             }
         }
         applyRate()
+        if (settings.engine == NarrationEngine.ANDROID) releaseWordAlignment()
         worker.post {
             if (tts != null && systemEngine != defaultAndroidTtsEngine(appContext)) {
                 ttsGeneration++
@@ -810,6 +847,7 @@ class LessonNarrationController(
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
                 if (playing && request.index == index && player == null) preparePlayer(segments[index])
+                prepareWordAlignment(request)
                 if (request.settings.engine != NarrationEngine.ANDROID) {
                     // Continue rendering the whole page in the background,
                     // even before Play is pressed. A two-sentence window
@@ -861,6 +899,7 @@ class LessonNarrationController(
                         if (!finished && playing && player === media) {
                             media.start()
                             publishProgress(NarrationPlaybackPhase.PLAYING)
+                            startWordObservation()
                         }
                         rememberPlaybackPosition()
                         if (index+1 < segments.size) ensureSegment(index+1)
@@ -937,6 +976,7 @@ class LessonNarrationController(
     }
 
     private fun releasePlayer() {
+        main.removeCallbacks(wordCheckpoint)
         playerReady = false
         runCatching { player?.release() }
         player = null
@@ -967,6 +1007,7 @@ class LessonNarrationController(
         reportedFallback = false; warnedNetwork = false
         watchdogs.values.forEach(main::removeCallbacks); watchdogs.clear()
         releasePlayer(); releaseFocus()
+        if (releaseNeuralResources) releaseWordAlignment()
         if (!closed) worker.post {
             runCatching { tts?.stop() }
             ttsPending.clear()
@@ -1043,6 +1084,10 @@ class LessonNarrationController(
         fun release(resource: Any?) { if (resource is AutoCloseable) runCatching { resource.close() } }
         release(english); release(french)
         english = null; french = null; spanishLexicon = null
+    }
+    private fun releaseWordAlignment() {
+        wordAlignmentService?.close()
+        wordAlignmentService = null
     }
     fun close() = onMain {
         if (closed) return@onMain

@@ -36,6 +36,68 @@ object SpanishFluidG2P {
         return phonemes
     }
 
+    internal data class SpanishWordPhoneRange(val word: String, val start: Int, val endExclusive: Int)
+    internal data class SpanishPhoneTrace(val phonemes: String, val words: List<SpanishWordPhoneRange>)
+
+    /**
+     * Optional lexical provenance for ordinary prose. This observes the existing whole-sentence
+     * frontend; it never changes the phonemes used for synthesis. Normalization that expands or
+     * rewrites visible words has no word trace rather than an inferred correspondence.
+     */
+    internal fun traceWords(text: String, lexicon: Map<String, String> = emptyMap()): SpanishPhoneTrace? {
+        if (text.isBlank() || text.length > 32_768) return null
+        return runCatching {
+            val source = nfc(text)
+            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
+            if (source.any { !it.isLetter() && !it.isWhitespace() && it !in prosePunctuation }) return null
+            val wordPattern = Regex("\\p{L}+")
+            fun words(value: String) = wordPattern.findAll(nfc(value)).map {
+                it.value.lowercase(Locale.ROOT)
+            }.toList()
+            val sourceWords = words(source)
+            if (sourceWords.isEmpty()) return null
+            val normalized = normalizeText(source)
+            if (words(normalized) != sourceWords) return null
+            val tokens = normalizedTokens(normalized, lexicon)
+            if (tokens.count { it.word } != sourceWords.size) return null
+
+            // The ordinary join rules are retained, including punctuation attachment and
+            // the contextual changes normalizedTokens already made to preceding words.
+            val joined = StringBuilder()
+            val ranges = mutableListOf<SpanishWordPhoneRange>()
+            var wordIndex = 0
+            for (token in tokens) {
+                if (!token.word && token.text in attachLeft) {
+                    while (joined.lastOrNull() == ' ') joined.deleteCharAt(joined.lastIndex)
+                    joined.append(token.text).append(' ')
+                } else if (!token.word && token.text in attachRight) joined.append(token.text)
+                else {
+                    val start = joined.length
+                    joined.append(token.text)
+                    if (token.word) ranges += SpanishWordPhoneRange(sourceWords[wordIndex++], start, joined.length)
+                    joined.append(' ')
+                }
+            }
+            val raw = joined.toString()
+            val first = raw.indexOfFirst { !it.isWhitespace() }
+            val last = raw.indexOfLast { !it.isWhitespace() }
+            if (first < 0) return null
+            // Match phonemize's trim and unsupported opening-punctuation removal exactly.
+            val offsets = IntArray(raw.length + 1)
+            val phonemes = buildString {
+                raw.forEachIndexed { index, char ->
+                    val retained = index in first..last && char != '¿' && char != '¡'
+                    offsets[index + 1] = offsets[index] + if (retained) 1 else 0
+                    if (retained) append(char)
+                }
+            }
+            if (phonemes != phonemize(text, lexicon)) return null
+            val mapped = ranges.map { it.copy(start = offsets[it.start], endExclusive = offsets[it.endExclusive]) }
+            if (mapped.any { it.start >= it.endExclusive }) return null
+            SpanishPhoneTrace(phonemes, mapped)
+        }.getOrNull()
+    }
+
     internal data class PhonemeSpan(val phonemes: String, val foreign: Boolean)
 
     /** Foreign tokens are selected by an explicit term list before Spanish normalization.

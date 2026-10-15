@@ -5,6 +5,8 @@ enum class NarrationPlaybackPhase {
     PREPARED,
     BUFFERING,
     PLAYING,
+    ADVANCED,
+    ALIGNMENT_AVAILABLE,
     PAUSED,
     POSITION_CHANGED,
     SEGMENT_COMPLETED,
@@ -27,5 +29,8 @@ data class NarrationPlaybackProgress(
     val phase: NarrationPlaybackPhase,
     val playbackKey: String? = null,
     /** Real start/seek offset in the source audio; never an estimated reading time. */
-    val positionMs: Long = 0L
+    val positionMs: Long = 0L,
+    val observedUptimeMs: Long = 0L,
+    val playbackRate: Float = 1f,
+    val alignment: NarrationWordAlignment? = null
 )

@@ -264,7 +264,9 @@ class LessonReadingProgressDeviceTest {
         awaitLayout(host, id)
         host.onActivity { activity ->
             assertEquals(ReadingBlockState.UNREAD, states(activity)[0])
-            assertNotEquals("Preparation alone does not mark prose as read", originalIntro.defaultColor, intro.currentTextColor)
+            assertSame("Word drawing preserves the original text colors", originalIntro, intro.textColors)
+            assertTrue("Preparation leaves the paragraph's word glyphs pending",
+                field<List<ReadingTextRange>>(intro, "unreadRanges").isNotEmpty())
             assertNotEquals(originalFormula.defaultColor, formula.currentTextColor)
             assertFacts(before)
             assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
@@ -408,7 +410,7 @@ class LessonReadingProgressDeviceTest {
             LessonNarrationController(context, {}, { errors.add(it) }, { event ->
                 events.add(event)
                 model.update(event)
-            }).also { extraController = it }
+            }, trackWords = true).also { extraController = it }
         }
         val store = NarrationResumeStore(context)
         val paused = linkedMapOf<Int, Long>()

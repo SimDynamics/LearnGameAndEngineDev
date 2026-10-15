@@ -1,0 +1,116 @@
+package com.learngraphicsprogramming.app.narration
+
+import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
+import org.junit.Assert.*
+import org.junit.Test
+
+class NarrationWordTimingBuilderTest {
+    private val hash = "a".repeat(64)
+
+    @Test fun realTokenFrameCountsIncludeTheLeadingTokenWithoutInventedDelay() {
+        val text = "La vida."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        val durations = LongArray(trace.phonemes.length + 2) { (it + 1).toLong() }
+        val sampleCount = durations.sum() * 600L
+        val alignment = requireNotNull(NarrationWordTimingBuilder.build(text, hash, sampleCount, trace, durations))
+        assertEquals(hash, alignment.audioSha256)
+        assertEquals(sampleCount, alignment.sampleCount)
+        assertEquals(600L, alignment.words.first().startSample)
+        trace.words.zip(alignment.words).forEach { (phone, word) ->
+            assertEquals(durations.take(phone.start + 1).sum() * 600L, word.startSample)
+            assertEquals(durations.take(phone.endExclusive + 1).sum() * 600L, word.endSample)
+        }
+    }
+
+    @Test fun utf16RangesDescribeTheExactPreparedSourceIncludingItsPrefix() {
+        val prose = "La vida, la vida."
+        val text = ManualEnglishSpeech.PREPARED + prose
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(prose))
+        val durations = LongArray(trace.phonemes.length + 2) { 1L }
+        val alignment = requireNotNull(NarrationWordTimingBuilder.build(text, hash, durations.sum() * 600L, trace, durations))
+        assertEquals(1, alignment.words.first().start)
+        assertEquals(listOf("La", "vida", "la", "vida"), alignment.words.map { text.substring(it.start, it.endExclusive) })
+        assertTrue(alignment.words[0].endExclusive < alignment.words[2].start)
+        assertTrue(alignment.words[0].endSample < alignment.words[2].startSample)
+    }
+
+    @Test fun canonicalAccentsMapBackToTheUnmodifiedSourceOffsets() {
+        val source = "E\u0301l leyó."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(source))
+        val durations = LongArray(trace.phonemes.length + 2) { 1L }
+        val alignment = requireNotNull(NarrationWordTimingBuilder.build(source, hash, durations.sum() * 600L, trace, durations))
+        assertEquals("E\u0301l", source.substring(alignment.words[0].start, alignment.words[0].endExclusive))
+        assertEquals(3, alignment.words[0].endExclusive)
+    }
+
+    @Test fun differentAudioLengthsAndInvalidDurationsHaveNoAlignment() {
+        val text = "La vida."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        val durations = LongArray(trace.phonemes.length + 2) { 1L }
+        val sampleCount = durations.sum() * 600L
+        assertNull(NarrationWordTimingBuilder.build(text, hash, sampleCount + 1L, trace, durations))
+        assertNull(NarrationWordTimingBuilder.build(text, hash, sampleCount, trace, durations.dropLast(1).toLongArray()))
+        assertNull(NarrationWordTimingBuilder.build(text, hash, sampleCount, trace, durations.copyOf().apply { this[1] = 0L }))
+        assertNull(NarrationWordTimingBuilder.build(text, hash, sampleCount, trace, durations.copyOf().apply { this[1] = -1L }))
+        assertNull(NarrationWordTimingBuilder.build(text, hash, sampleCount, trace, durations.copyOf().apply { this[1] = Long.MAX_VALUE }))
+    }
+
+    @Test fun changedWordsUnknownBytesAndOverlappingRangesFailClosed() {
+        val text = "La vida."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        val durations = LongArray(trace.phonemes.length + 2) { 1L }
+        val sampleCount = durations.sum() * 600L
+        assertNull(NarrationWordTimingBuilder.build("La casa.", hash, sampleCount, trace, durations))
+        assertNull(NarrationWordTimingBuilder.build(text, "invalid", sampleCount, trace, durations))
+        assertFalse(NarrationWordTimingBuilder.valid(text, sampleCount, listOf(
+            NarrationWordTiming(0, 2, 600L, 2400L), NarrationWordTiming(3, 7, 1800L, 3000L))))
+        assertFalse(NarrationWordTimingBuilder.valid(text, sampleCount, listOf(
+            NarrationWordTiming(0, 2, 600L, 1200L), NarrationWordTiming(3, 8, 1800L, 3000L))))
+    }
+
+    @Test fun concatenatedChunksRetainEveryActualPaddingTokenAndPermitOnlyTrimmedWhitespace() {
+        val text = "Uno dos tres."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        val cut = trace.words[1].start
+        val chunks = listOf(trace.phonemes.substring(0, cut).trimEnd(), trace.phonemes.substring(cut))
+        val durations = chunks.mapIndexed { index, chunk -> LongArray(chunk.length + 2) { (index + 2).toLong() } }
+        val sampleCount = durations.sumOf { it.sum() } * 600L
+        val alignment = requireNotNull(NarrationWordTimingBuilder.buildChunked(text, hash, sampleCount, trace, chunks, durations))
+        assertEquals(1200L, alignment.words[0].startSample)
+        assertEquals(durations[0].sum() * 600L + 1800L, alignment.words[1].startSample)
+        // No division of the complete duration: this gap is precisely first EOS plus second BOS.
+        assertEquals(3000L, alignment.words[1].startSample - alignment.words[0].endSample)
+        assertEquals(listOf("Uno", "dos", "tres"), alignment.words.map { text.substring(it.start, it.endExclusive) })
+    }
+
+    @Test fun longParagraphUsesTheSameChunkBoundariesAsAudioSynthesis() {
+        val text = ("La lectura conserva la posición y avanza con claridad ".repeat(12)).trim() + "."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        val chunks = KokoroPhonemeChunks.split(trace.phonemes)
+        assertTrue(chunks.size > 1)
+        val durations = chunks.mapIndexed { index, chunk -> LongArray(chunk.length + 2) { (index + 1).toLong() } }
+        val sampleCount = durations.sumOf { it.sum() } * 600L
+        val alignment = requireNotNull(NarrationWordTimingBuilder.buildChunked(text, hash, sampleCount, trace, chunks, durations))
+        assertEquals(trace.words.size, alignment.words.size)
+        assertTrue(NarrationWordTimingBuilder.valid(text, sampleCount, alignment.words))
+        assertTrue(alignment.words.last().startSample > durations[0].sum() * 600L)
+    }
+
+    @Test fun crossedWordsMissingPhonemesChangedOrderOrChunkTimingMismatchAreRejected() {
+        val text = "Uno dos tres."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(text))
+        fun build(chunks: List<String>, timing: List<LongArray> = chunks.map { LongArray(it.length + 2) { 1L } },
+                  sampleCount: Long = timing.sumOf { it.sum() } * 600L) =
+            NarrationWordTimingBuilder.buildChunked(text, hash, sampleCount, trace, chunks, timing)
+        val withinWord = trace.words[0].start + 1
+        assertNull(build(listOf(trace.phonemes.substring(0, withinWord), trace.phonemes.substring(withinWord))))
+        val first = trace.phonemes.substring(0, trace.words[0].endExclusive)
+        val second = trace.phonemes.substring(trace.words[1].start)
+        assertNull(build(listOf(first, second.drop(1)))) // Dropped phoneme, not whitespace.
+        assertNull(build(listOf(second, first)))
+        assertNull(build(listOf(first, second), emptyList()))
+        val timing = listOf(LongArray(first.length + 2) { 1L }, LongArray(second.length + 2) { 1L })
+        assertNull(build(listOf(first, second), timing, timing.sumOf { it.sum() } * 600L + 1L))
+        assertNull(build(listOf(first, second), timing.map { it.dropLast(1).toLongArray() }))
+    }
+}
