@@ -1,0 +1,623 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__modelos_y_decisiones",
+  "title": "Modèles numériques pour décider",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprendre la relation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un modèle numérique représente une situation à l'aide de quantités et de relations que nous décidons de conserver. Il ne contient pas tous ses détails. Si nous utilisons distance = vitesse×temps, il faut savoir ce que signifie la vitesse : elle peut être constante ou représenter une vitesse moyenne correspondant à tout l'intervalle. La formule n'efface pas les arrêts et ne transforme pas n'importe quelle vitesse indiquée en une moyenne correcte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Appelons d une distance en kilomètres, v une vitesse en kilomètres par heure et t un temps en heures. L'écriture abrégée \\(d=v\\times t\\) permet de vérifier les unités et de choisir l'opération. À 12 km/h pendant 0,75 h, on parcourt 9 km si le rythme reste constant. Pour parcourir 9 km à ce rythme, le temps vaut 9/12 = 0,75 h, soit 45 minutes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de calculer, distingue les données des hypothèses. « Il y a 30 participants » peut être une donnée. « Chaque personne boira 0,4 litre » peut être une estimation de consommation. La multiplication donne une prévision qui dépend de cette estimation. Si tu veux prévoir une réserve, explique comment elle est définie : un pourcentage de la consommation prévue n'est pas la même chose qu'un nombre fixe de bouteilles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un taux ne décide pas à lui seul d'un achat complet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un récipient de cinq litres vendu 26 pesos a un prix au litre inférieur à celui d'un récipient de deux litres vendu 11 pesos. Mais pour obtenir au moins six litres, deux grands récipients coûtent 52 et trois petits coûtent 33. Le besoin, les tailles indivisibles des récipients et le budget modifient la décision. Comparer des taux n'est qu'une partie du modèle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un budget est une contrainte : un plan peut couvrir la quantité nécessaire tout en dépassant l'argent disponible. Il convient de vérifier séparément le besoin, le nombre entier de récipients, le coût et le budget. Arrondir à l'entier le plus proche ne convient pas lorsque cela ne couvre pas le besoin."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_envases",
+          "prompt": "Tu as besoin d'au moins 7 L et disposes de 40 pesos. A vend 6 L pour 25 pesos ; B vend 2 L pour 9 pesos. On achète des récipients entiers d'un seul format et la qualité est comparable. Calcule le paiement minimal pour chaque offre et choisis celle qui respecte la quantité et le budget.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Paiement minimal avec A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "50"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Paiement minimal avec B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "plan",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A.",
+                  "reviewFeedback": "Évalue le format choisi en comptant assez de récipients entiers pour satisfaire le besoin. Calcule le paiement complet et compare-le au budget, pas seulement au prix unitaire."
+                },
+                {
+                  "id": "b",
+                  "label": "B.",
+                  "reviewFeedback": "Vérifie combien de récipients entiers sont nécessaires avec le format choisi. Contrôle à la fois la quantité achetée et le coût total."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucune.",
+                  "reviewFeedback": "Réexamine l'affirmation selon laquelle aucun achat n'est réalisable. Il faut vérifier la quantité suffisante et le budget en achetant des récipients entiers."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A nécessite deux récipients et coûte 50 ; B en exige quatre et coûte 36. Seul B fournit au moins sept litres avec un budget de 40 pesos.",
+            "incorrect": "Le taux inférieur de A ne décide pas du paiement total. Un récipient A coûte 25, mais fournit six litres, ce qui ne satisfait pas le besoin. Avec B, trois récipients ne suffisent pas non plus."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_sin_plan",
+          "prompt": "Il faut au moins 10 L et le budget est de 45 pesos. Les récipients contiennent 3 L et coûtent 12 pesos chacun ; seuls les récipients entiers peuvent être achetés. Calcule le coût minimal permettant de couvrir le besoin en eau et détermine si le budget suffit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Coût minimal nécessaire",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "48"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : trois récipients coûtent 36.",
+                  "reviewFeedback": "Vérifie quel volume fournit le nombre de récipients choisi. Un paiement inférieur au budget ne suffit pas si la quantité requise n'est pas couverte."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : l'achat minimal en récipients entiers dépasse le budget.",
+                  "reviewFeedback": "Détermine l'achat minimal en récipients entiers et calcule son coût. Vérifie les deux contraintes sans les remplacer par une approximation du prix unitaire."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui : on peut acheter 10/3 récipients entiers.",
+                  "reviewFeedback": "Vérifie si le nombre de récipients proposé respecte la condition d'achat entier. Distingue le résultat d'une division d'un achat réalisable."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Trois récipients ne fournissent que neuf litres. Quatre couvrent douze litres et coûtent 48 ; le budget ne suffit pas pour ce plan.",
+            "incorrect": "Respecter le budget ne suffit pas s'il manque de l'eau. 10/3 n'est pas un nombre entier de récipients."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Références, conditions et premier essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour prévoir l'eau nécessaire à 30 personnes consommant chacune 0,4 L, la consommation estimée vaut 12 L. Si la réserve est de 25% de cette prévision, il faut 12×1,25 = 15 L. Avec des récipients de 2 L, sept fournissent 14 et ne suffisent pas ; il en faut huit, même si cela fournit 16. Une quantité continue calculée peut devenir une décision sur des objets entiers."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un modèle idéal de mélange, on peut supposer que les volumes s'additionnent sans contraction. Si l'on combine 2 L d'une solution à 10% d'un composant et 3 L à 20%, on obtient 0,2 L et 0,6 L de composant, soit 0,8 L dans 5 L au total. Le pourcentage final est de 16%. Ce n'est pas la moyenne simple 15%, car les quantités mélangées sont différentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce calcul suppose également que le composant se conserve et que tous les pourcentages sont volumiques. Si une réaction se produit, si les pourcentages sont massiques ou si les volumes ne s'additionnent pas, il faut un autre modèle. Énoncer l'hypothèse limite la conclusion : un résultat peut être correct dans un modèle sans décrire exactement tous les cas réels."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "movimiento",
+          "prompt": "Un vélo roule à vitesse constante de 16 km/h pendant 45 minutes, sans arrêt. Calcule la distance et choisis la conversion de durée permettant d'utiliser la vitesse indiquée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Distance",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km",
+              "calculator": true
+            },
+            {
+              "id": "tiempo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "45 h",
+                  "reviewFeedback": "Vérifie si l'unité de temps choisie représente la même durée que les minutes indiquées. Utilise la relation entre minutes et heures."
+                },
+                {
+                  "id": "b",
+                  "label": "0,75 h",
+                  "reviewFeedback": "Vérifie la conversion choisie avec l'équivalence entre heures et minutes. Assure-toi ensuite que les unités sont compatibles avec la vitesse."
+                },
+                {
+                  "id": "c",
+                  "label": "0,45 h",
+                  "reviewFeedback": "Revois l'interprétation des chiffres des minutes comme une partie décimale de l'heure. Vérifie l'équivalence en utilisant le nombre de minutes dans une heure."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "45/60 = 0,75 h et 16×0,75 = 12 km. Les unités de temps doivent correspondre.",
+            "incorrect": "0,45 h traite les minutes comme des centièmes d'heure ; 45 h oublie la conversion. Une heure contient soixante minutes, pas cent."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver signes, parenthèses et unités"
+        },
+        {
+          "type": "paragraph",
+          "text": "Certaines relations incluent une différence initiale plutôt qu'un facteur proportionnel. Pour convertir une température F en degrés Fahrenheit en C degrés Celsius, on utilise C = (F−32)×5/9. La relation est fournie ici : il faut calculer en respectant les signes et les parenthèses. Le terme 32 signifie que doubler F ne double généralement pas C."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un calcul avec des quantités fractionnaires exige une même unité avant d'additionner ou de soustraire. Le signe de chaque terme représente une entrée ou une sortie. Après avoir calculé le total, on décide s'il suffit ; on ne choisit pas un achat selon l'apparence du nombre décimal."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_relacion_desplazada",
+          "prompt": "Utilise C = (F−32)×5/9. Pour F = 14, calcule C. Détermine également si les valeurs C et F sont directement proportionnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Température Celsius",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-10"
+              },
+              "unit": "°C"
+            },
+            {
+              "id": "relacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : la formule contient une multiplication.",
+                  "reviewFeedback": "Vérifie si la présence d'une multiplication suffit pour établir une proportionnalité directe. Examine le comportement de la formule à l'origine et son rapport."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : soustraire 32 introduit un décalage.",
+                  "reviewFeedback": "Vérifie l'effet du terme soustrait dans toute la formule. Compare-le à la condition de rapport constant nécessaire à la proportionnalité directe."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui : les deux sont des températures.",
+                  "reviewFeedback": "Distingue une même grandeur physique d'un rapport numérique constant. Vérifie la formule et l'origine des échelles avant de classer la relation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14−32 = −18 et −18×5/9 = −10 °C. La conversion contient un décalage et ne conserve pas C/F.",
+            "incorrect": "La soustraction exige de conserver le signe négatif. (14−32)×5/9 n'est pas équivalent à 14−32×5/9 ; les parenthèses déterminent ce qui est multiplié."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva_con_fracciones",
+          "prompt": "Un récipient contient 3/4 L de peinture et un autre 2/3 L. On utilise 5/6 L pour un travail. Quelle quantité reste-t-il et suffit-elle pour un autre travail demandant 1/2 L ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resto",
+              "type": "math_numeric_input",
+              "label": "Peinture restante",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/12"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : le reste dépasse la quantité nécessaire au deuxième travail.",
+                  "reviewFeedback": "Calcule le reste en additionnant la peinture des deux récipients et en soustrayant la quantité utilisée. Compare ensuite les quantités dans la même unité, sans arrondir les fractions."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : il reste moins de 1/2 L.",
+                  "reviewFeedback": "Recalcule la quantité disponible après le premier travail et compare-la au besoin suivant. Justifie l'inégalité choisie."
+                },
+                {
+                  "id": "c",
+                  "label": "Il est impossible d'additionner les quantités de récipients différents.",
+                  "reviewFeedback": "Vérifie quelle condition permet de réunir des volumes provenant de récipients différents. Contrôle s'ils partagent la même grandeur et la même unité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/12+8/12−10/12 = 7/12 L. Cela suffit pour 6/12 L et il reste 1/12 L.",
+            "incorrect": "Les récipients diffèrent, mais le litre est une unité commune. N'additionne pas les dénominateurs et n'inverse pas le signe du matériau utilisé."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Faire varier sans perdre le sens"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva",
+          "prompt": "On prévoit 0,5 L d'eau par personne pour 24 personnes, plus une réserve de 20% de la consommation prévue. Les récipients contiennent 2 L et seuls des récipients entiers peuvent être achetés. Calcule les litres nécessaires et le nombre minimal de récipients.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "litros",
+              "type": "math_numeric_input",
+              "label": "Litres avec réserve",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14.4"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "envases",
+              "type": "math_numeric_input",
+              "label": "Récipients entiers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La consommation prévue vaut 12 L ; avec la réserve, elle atteint 14,4 L. Sept récipients fournissent 14 L et huit en fournissent 16 L, il en faut donc huit.",
+            "incorrect": "La réserve s'applique à 12 L. Le quotient 14,4/2 = 7,2 ne correspond pas à un achat de récipients entiers ; choisis l'entier qui couvre le besoin."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla",
+          "prompt": "Modèle idéal : les volumes s'additionnent et le composant est conservé. On mélange 3 L d'une solution contenant 10% de composant en volume avec 2 L d'une solution à 25%. Calcule les litres de composant et son pourcentage dans le mélange total.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componente",
+              "type": "math_numeric_input",
+              "label": "Litres de composant",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0.8"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "porcentaje",
+              "type": "math_numeric_input",
+              "label": "Pourcentage final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "16"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Il y a 3×0,10 + 2×0,25 = 0,8 L de composant. Le total est de 5 L : 0,8/5 = 16%.",
+            "incorrect": "La moyenne simple de 10% et 25% vaut 17,5%, mais les volumes ne sont pas égaux. Calcule les quantités de composant, puis compare-les au total supposé."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Découpes entières et perte déclarée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Diviser une longueur totale par la taille d'une pièce indique combien on pourrait en obtenir sans perte. Si chaque découpe fait perdre de la matière, cette perte fait partie du modèle. Même si le quotient n'est pas entier, on ne peut pas fabriquer une fraction d'une pièce qui doit avoir la taille complète."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cortes_con_perdida",
+          "prompt": "Un ruban mesure 2 m. On souhaite des morceaux entiers de 3/5 m ; chaque morceau découpé consomme aussi 1/20 m de ruban supplémentaire à cause de la découpe, y compris le dernier. Calcule la matière consommée par morceau et le nombre maximal de morceaux entiers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "uso",
+              "type": "math_numeric_input",
+              "label": "Matière consommée par morceau",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/20"
+              },
+              "unit": "m"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Nombre maximal de morceaux entiers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque morceau consomme 13/20 m. Trois consomment 39/20 = 1,95 m ; quatre nécessiteraient 52/20 = 2,6 m.",
+            "incorrect": "Ignorer la perte change le modèle. Le quotient 40/13 ne donne pas un nombre de morceaux entiers ; on prend le plus grand entier possible."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combiner et vérifier"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "supuesto",
+          "prompt": "On propose d'utiliser un tableau de temps et de production pour prévoir combien de pièces seront prêtes à la fin d'un poste. Quelle information justifie le mieux l'extension d'un taux constant ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La machine conserve le même rendement, sans pause ni changement de matière.",
+                  "reviewFeedback": "Vérifie les conditions de fonctionnement présentes dans ton choix. Explique comment elles permettraient de conserver le taux pendant la durée à prévoir."
+                },
+                {
+                  "id": "b",
+                  "label": "Le dernier nombre du tableau est supérieur au premier.",
+                  "reviewFeedback": "Distingue une augmentation entre les données d'un taux constant. Vérifie quelles informations sur le procédé apporte réellement la donnée choisie."
+                },
+                {
+                  "id": "c",
+                  "label": "Tout tableau à deux colonnes est proportionnel.",
+                  "reviewFeedback": "Vérifie si la présentation en deux colonnes établit une relation mathématique. La décision exige d'examiner les données et les conditions du procédé représenté."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Conserver le rendement et les conditions permet d'étendre le même nombre de pièces par unité de temps.",
+            "incorrect": "Une production croissante ne prouve pas un taux constant. Deux colonnes organisent seulement les données ; elles ne déterminent pas leur relation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra",
+          "prompt": "Il te faut au moins 7 L. A vend des récipients de 2 L pour 30 pesos ; B vend des récipients de 3 L pour 42 pesos. On achète des récipients entiers et la qualité est comparable. Calcule le paiement minimal de chaque offre et choisis le plus faible qui satisfait le besoin.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Paiement avec A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Paiement avec B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "126"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "elegir",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Offre A",
+                  "reviewFeedback": "Vérifie l'achat minimal de l'offre choisie en utilisant des récipients entiers. Relie le paiement total à la quantité suffisante, pas seulement au prix par litre."
+                },
+                {
+                  "id": "b",
+                  "label": "Offre B",
+                  "reviewFeedback": "Détermine le nombre entier de récipients nécessaire avec l'offre choisie. Vérifie la quantité acquise et le paiement complet pour justifier ta comparaison."
+                },
+                {
+                  "id": "igual",
+                  "label": "Paiement identique",
+                  "reviewFeedback": "Vérifie l'égalité des paiements que tu proposes en calculant des achats entiers couvrant le besoin. Respecte la taille des récipients et l'obligation d'acheter des entiers."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A exige quatre récipients : 8 L et 120 pesos. B en exige trois : 9 L et 126 pesos. A répond au besoin pour un paiement inférieur.",
+            "incorrect": "B a un prix par litre inférieur, mais la taille de ses récipients oblige à acheter neuf litres. Trois récipients A ne donnent que six litres ; deux récipients B non plus. Compare des achats qui couvrent effectivement sept."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision",
+          "prompt": "Un ruban de 10 m est divisé en 6 morceaux égaux, sans perte à la découpe. Donne une approximation de la longueur de chaque morceau en mètres avec une erreur absolue maximale de 0,005 m. La calculatrice peut aider à vérifier la précision.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tramo",
+              "type": "math_numeric_input",
+              "label": "Longueur d'un morceau",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "tolerance",
+                "expected": "5/3",
+                "tolerance": 0.005
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque morceau mesure exactement 10/6 = 5/3 m. Une approximation valable est 1,67 m, dont l'erreur est inférieure à 0,005 m.",
+            "incorrect": "1,6 m s'écarte de plus de 0,005 m de la longueur exacte. Ne transforme pas un nombre décimal tronqué en égalité exacte. Divise la longueur totale par six et vérifie la proximité avec la valeur exacte."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour comparer les décisions, utilise le même besoin. Si tu achètes des récipients de tailles différentes, compare la quantité disponible et le paiement total nécessaires pour atteindre l'objectif. Un prix au litre plus faible peut exiger un paiement supérieur ou laisser un surplus. Vérifie aussi la précision : un résultat approximatif doit communiquer sa marge, alors qu'acheter huit bouteilles est une décision exacte selon les données choisies."
+        }
+      ]
+    }
+  ]
+}

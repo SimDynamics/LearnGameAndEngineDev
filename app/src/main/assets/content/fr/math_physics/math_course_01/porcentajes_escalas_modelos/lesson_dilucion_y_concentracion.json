@@ -1,0 +1,351 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__dilucion_y_concentracion",
+  "title": "Dilution et concentration",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver le composant en ajoutant de l'eau"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une solution de 120 g contenant 25% de sel renferme 30 g de sel. Si l'on ajoute 80 g d'eau pure, la masse totale devient 200 g tandis que le sel reste à 30 g : la concentration vaut 15%. On ne soustrait pas la quantité d'eau au nombre 25 ; ce sont des quantités et des références différentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour atteindre une concentration choisie, on trouve d'abord la quantité conservée du composant. Si 30 g doivent représenter 10% du mélange final, la masse finale doit être de 30/0,10 = 300 g. Comme il y avait 120 g, on ajoute 180 g d'eau. Retrouver la base et calculer ce qu'il manque sont deux étapes distinctes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_directa",
+          "prompt": "Une solution de 200 g contient 15% de sel en masse. On ajoute 100 g d'eau pure sans perdre de sel. Calcule la quantité de sel et le pourcentage final.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sal",
+              "type": "math_numeric_input",
+              "label": "Sel conservé",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Pourcentage final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le sel reste à 30 g ; la base passe à 300 g et le pourcentage devient 10%.",
+            "incorrect": "Ne soustrais pas 100 au pourcentage. Ajouter de l'eau conserve le sel et modifie la masse totale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_buscar_agua",
+          "prompt": "On dispose de 150 g d'une solution contenant 20% de sel en masse. On souhaite abaisser la concentration à 12% en ajoutant uniquement de l'eau. Calcule la masse finale nécessaire et l'eau à ajouter.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Masse finale",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "250"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "agua",
+              "type": "math_numeric_input",
+              "label": "Eau ajoutée",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "100"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "Les 30 g de sel sont conservés ; pour qu'ils représentent 12%, il faut 250 g au total. On ajoute 100 g d'eau.",
+            "incorrect": "250 g représente le total final, pas l'eau ajoutée. Soustraire douze ou vingt grammes confond les pourcentages avec les masses."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver le composant lors de l'évaporation de l'eau"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si seule l'eau s'évapore, le sel reste. Une solution de 200 g contenant 10% de sel renferme 20 g de sel. Si elle perd 100 g d'eau, il reste 100 g de solution avec 20 g de sel : 20%. La concentration augmente sans aucun ajout de sel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour concentrer jusqu'à un taux choisi, on calcule la base finale avec composant/facteur, puis on soustrait cette base de la masse initiale. La masse finale doit être au moins égale à celle du composant ; demander plus de 100% pour une partie d'un mélange n'a pas de sens comme concentration de cette partie."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaporacion_directa",
+          "prompt": "Une solution de 300 g contient 20% de sel en masse. Exactement 100 g d'eau s'évaporent, sans perdre de sel. Quel est le pourcentage de sel dans ce qui reste ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Pourcentage final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les 60 g de sel restent dans 200 g de solution : 30%.",
+            "incorrect": "On n'a pas fait évaporer 100% de l'eau ni ajouté cent points de pourcentage. Retrouve la base restante et le composant conservé."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaporacion_buscar_agua",
+          "prompt": "Une solution de 240 g contient 25% de sel en masse. On souhaite obtenir 40% en évaporant uniquement de l'eau. Calcule la masse finale et l'eau à évaporer.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Masse finale",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "150"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "evap",
+              "type": "math_numeric_input",
+              "label": "Eau évaporée",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "90"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "Le sel représente 60 g ; il doit rester dans 150 g de mélange, car 60/150 = 40%. On évapore 90 g d'eau.",
+            "incorrect": "90 g représente l'eau perdue ; 150 g est la masse restante. Dans le modèle indiqué, le sel ne s'évapore pas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mélanger des quantités différentes et vérifier la capacité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour mélanger deux solutions, on additionne les quantités de composant et les quantités de mélange. Lorsque les deux quantités sont positives et que le composant est conservé, la concentration finale se situe entre les deux concentrations initiales. La moyenne simple ne convient que lorsque les bases des deux solutions sont égales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un calcul de dilution peut nécessiter une capacité supérieure à celle du récipient. Trouver la base finale ne termine pas la décision : il faut comparer cette base à la capacité disponible. Si elle ne tient pas, l'opération proposée ne peut pas être réalisée dans ce récipient en conservant toutes les données."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_ponderada_variante",
+          "prompt": "On combine 1 L d'une solution à 10% et 3 L d'une solution à 30%, les deux pourcentages étant volumiques. Suppose les volumes additifs et le composant conservé. Calcule les litres de composant et le pourcentage final.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Composant",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "1"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Pourcentage final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les quantités de composant totalisent 0,1+0,9 = 1 L dans 4 L de mélange : 25%.",
+            "incorrect": "20% attribuerait le même poids à un litre et à trois. Calcule d'abord les quantités de composant."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_capacidad",
+          "prompt": "Un récipient de 5 L contient 2 L d'une solution à 30% en volume. On souhaite obtenir 10% en ajoutant de l'eau, sans retirer de solution. Suppose les volumes additifs et le composant conservé. Calcule le volume final nécessaire et détermine s'il peut tenir dans le récipient.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Volume final nécessaire",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "cabe",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui, car l'eau seule peut entrer.",
+                  "reviewFeedback": "Vérifie quel volume doit être comparé à la capacité : tiens compte de tout ce qui se trouverait dans le récipient, pas seulement de l'eau ajoutée."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : le volume final nécessaire dépasse la capacité.",
+                  "reviewFeedback": "Retrouve le volume final en conservant la quantité de composant. Compare ensuite cette quantité à la capacité avec les mêmes unités."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui : un pourcentage plus faible exige toujours moins de volume.",
+                  "reviewFeedback": "Vérifie comment le pourcentage et le volume total sont liés lorsque le composant est conservé. Il faut quantifier la variation de volume, pas seulement son sens."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les 0,6 L de composant sont conservés. Pour obtenir 10%, il faut 6 L au total, soit plus que la capacité.",
+            "incorrect": "Les quatre litres d'eau ajoutée ne représentent pas le volume final : il y avait déjà deux litres de solution."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir ce qui se conserve sans recette de calcul"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_acciones_concentracion",
+          "prompt": "Une solution homogène contient un composant dissous. Quelles actions modifient son pourcentage selon les modèles indiqués ? Sélectionne-les toutes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "acciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Retirer une portion du mélange homogène.",
+                  "reviewFeedback": "Examine ce qu'il advient du composant et du total lors du retrait d'une portion homogène. Compare leurs facteurs de variation."
+                },
+                {
+                  "id": "b",
+                  "label": "Ajouter de l'eau pure en conservant le composant.",
+                  "reviewFeedback": "Identifie quelle quantité l'ajout d'eau conserve et laquelle il modifie. Relie les deux à la définition du pourcentage de la solution."
+                },
+                {
+                  "id": "c",
+                  "label": "Évaporer uniquement l'eau en conservant le composant.",
+                  "reviewFeedback": "Examine ce que la solution perd lorsque seule l'eau s'évapore. Vérifie l'effet sur le composant conservé et la quantité totale."
+                },
+                {
+                  "id": "d",
+                  "label": "Convertir toutes les masses des grammes en kilogrammes sans modifier le mélange.",
+                  "reviewFeedback": "Distingue une conversion d'unités d'une modification du mélange. Exprime le composant et le total dans la même unité avant de comparer leur rapport."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ajouter de l'eau augmente la base ; l'évaporer diminue la base. Retirer une portion de mélange homogène conserve la proportion ; convertir les unités conserve la quantité.",
+            "incorrect": "Une quantité moindre de solution ne signifie pas une concentration moindre. Distingue le retrait de mélange, le retrait d'eau seule et le changement d'unités."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_fracciones",
+          "prompt": "On mélange 1/2 L d'une préparation à 20% et 1/3 L d'une autre à 50%, en volume. Suppose des volumes additifs et le composant conservé. Quel est le pourcentage final ? Tu peux répondre exactement.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Pourcentage final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "32"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les quantités de composant totalisent 1/10+1/6 = 4/15 L. Le mélange totalise 5/6 L ; (4/15)/(5/6) = 8/25, soit 32%.",
+            "incorrect": "35% donne la moyenne des taux sans tenir compte des quantités. Utilise une unité commune pour additionner les fractions et compare le composant au mélange total."
+          }
+        }
+      ]
+    }
+  ]
+}

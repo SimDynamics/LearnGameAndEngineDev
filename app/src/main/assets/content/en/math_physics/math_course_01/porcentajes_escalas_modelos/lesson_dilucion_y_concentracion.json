@@ -1,0 +1,351 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__dilucion_y_concentracion",
+  "title": "Dilution and Concentration",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve the Component When Adding Water"
+        },
+        {
+          "type": "paragraph",
+          "text": "A 120 g solution containing 25% salt has 30 g of salt. If 80 g of pure water is added, the total mass becomes 200 g while the salt remains 30 g: the concentration is 15%. We do not subtract the amount of water from the number 25; these are different quantities and reference values."
+        },
+        {
+          "type": "paragraph",
+          "text": "To reach a chosen concentration, first find the conserved amount of the component. If 30 g must be 10% of the final mixture, the final mass must be 30/0.10 = 300 g. Since there were 120 g, add 180 g of water. Recovering the base and finding what needs to be added are two separate steps."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_directa",
+          "prompt": "A 200 g solution contains 15% salt by mass. Add 100 g of pure water without losing salt. Calculate the salt and the final percentage.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sal",
+              "type": "math_numeric_input",
+              "label": "Salt retained",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Final percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The salt remains 30 g; the base becomes 300 g and the percentage drops to 10%.",
+            "incorrect": "Do not subtract 100 from the percentage. Adding water preserves the salt and changes the total mass."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_buscar_agua",
+          "prompt": "There are 150 g of a solution containing 20% salt by mass. The goal is to reduce it to 12% by adding only water. Calculate the required final mass and the water that must be added.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Final mass",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "250"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "agua",
+              "type": "math_numeric_input",
+              "label": "Water added",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "100"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "The 30 g of salt is conserved; to make it 12%, the total mass must be 250 g. Add 100 g of water.",
+            "incorrect": "250 g is the final total, not the water added. Subtracting twelve or twenty grams confuses percentages with masses."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve the Component When Evaporating Water"
+        },
+        {
+          "type": "paragraph",
+          "text": "If only water evaporates, the salt remains. A 200 g solution containing 10% salt has 20 g of salt. If it loses 100 g of water, 100 g of solution remains with 20 g of salt: 20%. The concentration rises even though no salt was added."
+        },
+        {
+          "type": "paragraph",
+          "text": "To concentrate a solution to a chosen rate, calculate the final base as component/factor, then subtract that base from the starting mass. The final mass must be at least the mass of the component; requesting more than 100% for a part of a mixture has no meaningful interpretation as the concentration of that part."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaporacion_directa",
+          "prompt": "A 300 g solution contains 20% salt by mass. Exactly 100 g of water evaporates without any salt being lost. What percentage of the remaining solution is salt?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Final percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The 60 g of salt remains in 200 g of solution: 30%.",
+            "incorrect": "Not 100% of the water evaporated, nor were one hundred percentage points added. Reconstruct the remaining base and conserved component."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaporacion_buscar_agua",
+          "prompt": "A 240 g solution contains 25% salt by mass. The goal is to reach 40% by evaporating only water. Calculate the final mass and the water that must evaporate.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Final mass",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "150"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "evap",
+              "type": "math_numeric_input",
+              "label": "Water evaporated",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "90"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "The salt is 60 g; it must remain in 150 g of mixture because 60/150 = 40%. Evaporate 90 g of water.",
+            "incorrect": "90 g is the lost water; 150 g is what remains. Salt does not evaporate under the stated model."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mix Different Amounts and Check Capacity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mixing two solutions requires adding component amounts and mixture amounts. When both amounts are positive and the component is conserved, the result lies between their concentrations. A simple average is only correct when the bases of the two solutions are equal."
+        },
+        {
+          "type": "paragraph",
+          "text": "A dilution calculation may require more capacity than the container has. Finding the final base does not settle the decision: compare that base with the container's capacity. If it does not fit, the proposed operation cannot be performed there while preserving all the stated quantities."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_ponderada_variante",
+          "prompt": "Combine 1 L of a 10% solution with 3 L of a 30% solution; both percentages are by volume. Assume additive volumes and conservation of the component. Calculate the liters of component and the final percentage.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Component",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "1"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Final percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The component amounts add to 0.1+0.9 = 1 L in 4 L of mixture: 25%.",
+            "incorrect": "20% would assign equal weight to one liter and three. Calculate the component amounts first."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dilucion_capacidad",
+          "prompt": "A 5 L container holds 2 L of a solution containing 30% component by volume. The goal is to reach 10% by adding water, without removing any solution. Assume additive volumes and conservation of the component. Calculate the final volume required and decide whether it fits.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Final volume required",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "cabe",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes, because the water alone fits.",
+                  "reviewFeedback": "Check which volume must be compared with capacity: consider everything that will be in the container, not just the added water."
+                },
+                {
+                  "id": "b",
+                  "label": "No: the required final volume exceeds capacity.",
+                  "reviewFeedback": "Review the final volume using component conservation, then compare that amount with the capacity in consistent units."
+                },
+                {
+                  "id": "c",
+                  "label": "Yes: a lower percentage always requires less volume.",
+                  "reviewFeedback": "Examine how the percentage and total volume relate when the component is conserved. A percentage change requires quantifying the volume, not just knowing the direction of change."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The 0.6 L of component is conserved. To reach 10%, a total of 6 L is needed, exceeding capacity.",
+            "incorrect": "The four liters of water added are not the final volume: the container already held two liters of solution."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose What Is Conserved Without a Calculation Recipe"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_acciones_concentracion",
+          "prompt": "A homogeneous solution contains a dissolved component. Which actions change its percentage under the stated models? Select all that apply.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "acciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Removing a portion of the homogeneous mixture.",
+                  "reviewFeedback": "Examine what happens to both the component and the total when a homogeneous portion is removed. Compare their factors of change."
+                },
+                {
+                  "id": "b",
+                  "label": "Adding pure water while preserving the component.",
+                  "reviewFeedback": "Identify what adding water preserves and what it changes. Relate both quantities to the definition of the solution's percentage."
+                },
+                {
+                  "id": "c",
+                  "label": "Evaporating only water while preserving the component.",
+                  "reviewFeedback": "Review what the solution loses when only water evaporates. Check the effect on the conserved component and the total quantity."
+                },
+                {
+                  "id": "d",
+                  "label": "Changing all masses from grams to kilograms without altering the mixture.",
+                  "reviewFeedback": "Distinguish a unit conversion from a change to the mixture. Express the component and total in the same unit before comparing their ratio."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Adding water increases the base; evaporating it decreases the base. Removing a homogeneous portion preserves the proportion; changing units preserves the quantity.",
+            "incorrect": "A smaller amount of solution does not imply a lower concentration. Distinguish removing a mixture, removing only water, and changing units."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_fracciones",
+          "prompt": "Mix 1/2 L of a preparation containing 20% component with 1/3 L of another containing 50%, by volume. Assume additive volumes and conservation of the component. What is the final percentage? You may give an exact answer.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Final percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "32"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The component amounts add to 1/10+1/6 = 4/15 L. The mixture totals 5/6 L; (4/15)/(5/6) = 8/25, or 32%.",
+            "incorrect": "35% averages the rates while ignoring the amounts. Use a common unit to add fractions and compare the component with the whole mixture."
+          }
+        }
+      ]
+    }
+  ]
+}

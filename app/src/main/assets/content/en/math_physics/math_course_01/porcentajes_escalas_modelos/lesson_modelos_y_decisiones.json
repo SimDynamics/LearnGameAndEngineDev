@@ -1,0 +1,623 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__modelos_y_decisiones",
+  "title": "Numerical Models for Decision-Making",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "A numerical model represents a situation using quantities and relationships that we choose to preserve. It does not include every detail. If we use distance = speed×time, we must know what the speed means: it may be constant, or it may be the average speed over the entire interval. The formula does not erase stops or turn any given speed into a valid average."
+        },
+        {
+          "type": "paragraph",
+          "text": "Let d be a distance in kilometers, v a speed in kilometers per hour, and t a time in hours. The shorthand \\(d=v\\times t\\) helps us check units and choose an operation. At 12 km/h for 0.75 h, the distance traveled is 9 km if the pace is constant. To travel 9 km at that pace, the time is 9/12 = 0.75 h, or 45 minutes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before calculating, separate the data from the assumptions. \"There are 30 participants\" may be a given fact. \"Each person will drink 0.4 liters\" may be a consumption estimate. Multiplying gives a forecast that depends on that estimate. If you want a reserve, explain how it is defined: a percentage of expected consumption is not the same as a fixed number of bottles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Unit Rate Does Not Decide an Entire Purchase"
+        },
+        {
+          "type": "paragraph",
+          "text": "A five-liter container for 26 pesos has a lower price per liter than a two-liter container for 11 pesos. But to obtain at least six liters, two large containers cost 52 while three small ones cost 33. The requirement, indivisible container sizes, and budget change the decision. Comparing rates is only one part of the model."
+        },
+        {
+          "type": "paragraph",
+          "text": "A budget is a constraint: a plan may cover the required quantity but still cost more than the available money. Check the requirement, whole containers, cost, and budget separately. Rounding to the nearest integer does not work when it leaves the requirement unmet."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_envases",
+          "prompt": "You need at least 7 L and have 40 pesos. A sells 6 L for 25 pesos; B sells 2 L for 9 pesos. You must buy whole containers of a single type, and quality is comparable. Calculate the minimum total cost for each and choose which meets both the quantity and budget requirements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Minimum payment with A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "50"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Minimum payment with B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "plan",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A.",
+                  "reviewFeedback": "Evaluate the chosen type by counting enough whole containers to meet the requirement. Calculate the complete payment and compare it with the budget, not just the unit rate."
+                },
+                {
+                  "id": "b",
+                  "label": "B.",
+                  "reviewFeedback": "Check how many whole containers of the selected type are required. Verify both the amount purchased and its total cost."
+                },
+                {
+                  "id": "c",
+                  "label": "Neither.",
+                  "reviewFeedback": "Reconsider the claim that neither purchase is feasible. Check sufficient quantity and the budget using purchases of whole containers."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A requires two containers and costs 50; B requires four and costs 36. Only B provides at least seven liters within the 40-peso budget.",
+            "incorrect": "A's lower rate does not determine the total payment. One A container costs 25 but provides six liters, which does not meet the requirement. Three B containers are also insufficient."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_sin_plan",
+          "prompt": "At least 10 L are needed, and the budget is 45 pesos. Containers hold 3 L and cost 12 pesos each; only whole containers may be purchased. Calculate the minimum cost that would cover the water requirement and decide whether the budget is sufficient.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Minimum required cost",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "48"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: three containers cost 36.",
+                  "reviewFeedback": "Check how much volume the selected number of containers provides. Being within budget is not enough if the required quantity is not covered."
+                },
+                {
+                  "id": "b",
+                  "label": "No: the minimum purchase of whole containers exceeds the budget.",
+                  "reviewFeedback": "Find the minimum purchase using whole containers and check its cost. Test both constraints without replacing them with an approximation of the unit price."
+                },
+                {
+                  "id": "c",
+                  "label": "Yes: 10/3 whole containers can be bought.",
+                  "reviewFeedback": "Check whether the proposed container count satisfies the whole-container requirement. Distinguish the quotient from a feasible purchase."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Three containers supply only nine liters. Four supply twelve and cost 48; the budget is insufficient for the plan.",
+            "incorrect": "Meeting the budget is not enough if there is too little water. 10/3 is not a whole number of containers."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "References, Conditions, and a First Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "To plan water for 30 people at 0.4 L each, expected consumption is 12 L. If the reserve is 25% of that estimate, the amount needed is 12×1.25 = 15 L. With 2 L containers, seven supply 14 and are insufficient; eight are needed, although they provide 16. A calculated continuous quantity may become a decision about whole objects."
+        },
+        {
+          "type": "paragraph",
+          "text": "In an ideal mixture model, we may assume that volumes add without contraction. If we combine 2 L of a solution with 10% of a component and 3 L with 20%, there are 0.2 L and 0.6 L of the component, totaling 0.8 L in 5 L. The final percentage is 16%. It is not the simple average of 15% because the mixed quantities differ."
+        },
+        {
+          "type": "paragraph",
+          "text": "That calculation also assumes that the component is conserved and that all percentages are by volume. If a reaction occurs, percentages are by mass, or volumes do not add, another model is required. Stating the assumptions limits the conclusion: a result may be correct within a model without describing every real-life case exactly."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "movimiento",
+          "prompt": "A bicycle travels at a steady 16 km/h for 45 minutes without stops. Calculate the distance and choose the time conversion that allows you to use the given speed.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Distance",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km",
+              "calculator": true
+            },
+            {
+              "id": "tiempo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "45 h",
+                  "reviewFeedback": "Check whether the time unit in your selected answer represents the same duration as the given minutes. Use the relationship between minutes and hours."
+                },
+                {
+                  "id": "b",
+                  "label": "0.75 h",
+                  "reviewFeedback": "Verify your selected conversion using the equivalence between hours and minutes. Then check that the units are compatible with the speed."
+                },
+                {
+                  "id": "c",
+                  "label": "0.45 h",
+                  "reviewFeedback": "Review the assumption that minutes can be used as the decimal digits of an hour. Check the equivalence using the number of minutes in one hour."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "45/60 = 0.75 h, and 16×0.75 = 12 km. The time units must agree.",
+            "incorrect": "0.45 h treats minutes as hundredths of an hour; 45 h skips the conversion. An hour has sixty minutes, not one hundred."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review Signs, Parentheses, and Units"
+        },
+        {
+          "type": "paragraph",
+          "text": "Some relationships include an initial difference rather than a proportional factor. To convert a temperature reading F in degrees Fahrenheit to C in degrees Celsius, use C = (F−32)×5/9. The relationship is provided here: the task is to calculate with signs and preserve parentheses. The term 32 means that doubling F does not generally double C."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calculations involving fractional quantities require a common unit before adding or subtracting. The sign of each term represents an input or output. After finding the total, decide whether it is enough; do not choose a purchase based on the appearance of its decimal."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_relacion_desplazada",
+          "prompt": "Use C = (F−32)×5/9. For F = 14, calculate C. Also decide whether the readings C and F are directly proportional.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Celsius reading",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-10"
+              },
+              "unit": "°C"
+            },
+            {
+              "id": "relacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: the formula contains multiplication.",
+                  "reviewFeedback": "Consider whether the presence of multiplication is enough to establish direct proportionality. Check the formula's behavior at the origin and its ratio."
+                },
+                {
+                  "id": "b",
+                  "label": "No: subtracting 32 introduces an offset.",
+                  "reviewFeedback": "Examine the role of the subtracted term in the entire formula. Compare its effect with the constant-ratio condition required for direct proportionality."
+                },
+                {
+                  "id": "c",
+                  "label": "Yes: both are temperatures.",
+                  "reviewFeedback": "Distinguish measuring the same physical quantity from preserving a numerical ratio. Check the formula and the origin of the scales before classifying the relationship."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14−32 = −18, and −18×5/9 = −10 °C. The conversion includes an offset and does not preserve C/F.",
+            "incorrect": "Subtraction requires preserving the negative sign. (14−32)×5/9 is not equivalent to 14−32×5/9; parentheses determine what gets multiplied."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva_con_fracciones",
+          "prompt": "One container holds 3/4 L of paint and another holds 2/3 L. A job uses 5/6 L. How much remains, and is it enough for another job needing 1/2 L?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resto",
+              "type": "math_numeric_input",
+              "label": "Paint remaining",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/12"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: the remainder exceeds what the second job needs.",
+                  "reviewFeedback": "Calculate the remainder by combining the paint quantities and subtracting what was used. Then compare quantities in the same unit without rounding fractions."
+                },
+                {
+                  "id": "b",
+                  "label": "No: less than 1/2 L remains.",
+                  "reviewFeedback": "Recalculate the amount available after the first job and compare it with the next requirement. Justify the inequality in your answer."
+                },
+                {
+                  "id": "c",
+                  "label": "Quantities from different containers cannot be added.",
+                  "reviewFeedback": "Check the condition that permits volumes from different containers to be combined. See whether the amounts share the same kind of quantity and unit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/12+8/12−10/12 = 7/12 L. That is enough for 6/12 L, leaving 1/12 L.",
+            "incorrect": "The containers differ, but they share the liter as a unit. Do not add denominators or reverse the sign of the material used."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vary Without Losing Meaning"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva",
+          "prompt": "Plan for 0.5 L of water per person for 24 people, plus a reserve of 20% of expected consumption. Containers hold 2 L and must be bought whole. Calculate the liters needed and the minimum number of containers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "litros",
+              "type": "math_numeric_input",
+              "label": "Liters including reserve",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14.4"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "envases",
+              "type": "math_numeric_input",
+              "label": "Whole containers",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Expected consumption is 12 L; with the reserve it becomes 14.4 L. Seven containers supply 14 L, while eight supply 16 L, so eight are needed.",
+            "incorrect": "Apply the reserve to 12 L. The quotient 14.4/2 = 7.2 is not a purchase of whole containers; choose the smallest integer that covers the need."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla",
+          "prompt": "Ideal model: volumes add and the component is conserved. Mix 3 L of a solution containing 10% component by volume and 2 L containing 25%. Calculate the liters of component and its percentage in the total mixture.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componente",
+              "type": "math_numeric_input",
+              "label": "Liters of component",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0.8"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "porcentaje",
+              "type": "math_numeric_input",
+              "label": "Final percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "16"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "There are 3×0.10 + 2×0.25 = 0.8 L of component. The total is 5 L: 0.8/5 = 16%.",
+            "incorrect": "The simple average of 10% and 25% is 17.5%, but the volumes differ. Calculate component quantities and compare them with the assumed total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Complete Cuts and Stated Waste"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividing a total length by the size of a piece tells you how many could fit with no waste. If each cut wastes material, that loss belongs in the model. Even when the quotient is not a whole number, you cannot make a fraction of a piece that must have the complete specified length."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cortes_con_perdida",
+          "prompt": "A ribbon is 2 m long. You want complete pieces of 3/5 m; every cut piece also uses an additional 1/20 m of ribbon as cutting waste, including the final piece. Calculate the material used per piece and the maximum number of complete pieces.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "uso",
+              "type": "math_numeric_input",
+              "label": "Material used per piece",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/20"
+              },
+              "unit": "m"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Maximum complete pieces",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Each piece uses 13/20 m. Three use 39/20 = 1.95 m; four would require 52/20 = 2.6 m.",
+            "incorrect": "Ignoring waste changes the model. The quotient 40/13 is not a number of complete pieces; take the largest integer that fits."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine and Check"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "supuesto",
+          "prompt": "A table of time and production is proposed to predict how many items will be finished by the end of a shift. Which information best justifies extending a constant rate?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The machine maintains the same output rate, with no stops or changes of material.",
+                  "reviewFeedback": "Review the operating conditions in your choice. Explain how they would allow the rate to remain unchanged throughout the interval being predicted."
+                },
+                {
+                  "id": "b",
+                  "label": "The last number in the table is greater than the first.",
+                  "reviewFeedback": "Distinguish an increase between records from a constant rate. Consider what information about the process your selected data actually provide."
+                },
+                {
+                  "id": "c",
+                  "label": "Every two-column table is proportional.",
+                  "reviewFeedback": "Consider whether the two-column format establishes a mathematical relationship. The decision requires examining the data and the process conditions represented."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Maintaining productivity and conditions allows the same number of items per unit time to be projected.",
+            "incorrect": "Increasing production does not prove a constant rate. Two columns merely organize data; they do not determine the relationship."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra",
+          "prompt": "You need at least 7 L. A sells 2 L containers for 30 pesos; B sells 3 L containers for 42 pesos. You must buy whole containers, and quality is comparable. Calculate the minimum payment for each offer and choose the lower payment that meets the requirement.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Payment with A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Payment with B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "126"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "elegir",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Offer A",
+                  "reviewFeedback": "Check the minimum purchase with the selected offer using whole containers. Relate the total payment to a sufficient quantity, not just the price per liter."
+                },
+                {
+                  "id": "b",
+                  "label": "Offer B",
+                  "reviewFeedback": "Determine the whole number of containers required for the chosen offer. Check the amount purchased and full payment to justify your comparison."
+                },
+                {
+                  "id": "igual",
+                  "label": "Same payment",
+                  "reviewFeedback": "Check the claimed equal payments by calculating complete purchases that cover the requirement. Respect container sizes and the whole-number condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A requires four containers: 8 L and 120 pesos. B requires three: 9 L and 126 pesos. A meets the requirement for a lower payment.",
+            "incorrect": "B has a lower price per liter, but its container size forces you to buy nine liters. Three A containers supply only six liters; two B containers also fall short. Compare purchases that actually cover seven."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision",
+          "prompt": "A 10 m ribbon is divided into 6 equal sections without cutting waste. Approximate the length of each section in meters with a maximum absolute error of 0.005 m. A calculator may help you check the precision.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tramo",
+              "type": "math_numeric_input",
+              "label": "Length of one section",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "tolerance",
+                "expected": "5/3",
+                "tolerance": 0.005
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Each section measures exactly 10/6 = 5/3 m. A valid approximation is 1.67 m, whose error is less than 0.005 m.",
+            "incorrect": "1.6 m differs from the exact length by more than 0.005 m. Do not treat a truncated decimal as an exact equality. Divide the total by six and check closeness to the exact value."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "When comparing decisions, use the same requirement. If buying containers of different sizes, compare the available quantity and total payment needed to meet the goal. The lower price per liter may require paying more or leave a surplus. Also review precision: an approximate result must communicate its margin, while buying eight bottles is an exact decision under the chosen data."
+        }
+      ]
+    }
+  ]
+}
