@@ -6,6 +6,7 @@ import com.learngraphicsprogramming.app.narration.phonemes.EnglishMisakiG2P
 import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 /** Current-page work survives its activity; the curriculum resumes in its original order. */
 internal class KokoroBackgroundNarrationWorker(
@@ -17,14 +18,17 @@ internal class KokoroBackgroundNarrationWorker(
     enum class Outcome { COMPLETE, MORE, BUSY, PAUSED, UNAVAILABLE, RETRY }
 
     @Volatile private var cancelFrontend: (() -> Unit)? = null
+    private val cancellation = AtomicLong()
 
     fun cancel() {
+        cancellation.incrementAndGet()
         KokoroEngineCoordinator.cancel(this)
         cancelFrontend?.invoke()
     }
 
     /** Called on the service's private thread, with a bounded CPU wake lock. */
     fun runSlice(activeSession: () -> Boolean): Outcome {
+        val slice = cancellation.get()
         val settings = NarrationSettingsRepository.get(app)
         if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Outcome.PAUSED
         if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
@@ -51,7 +55,8 @@ internal class KokoroBackgroundNarrationWorker(
         val pageChange = KokoroPagePreparationQueue.onChanged(cancel)
         val contextChange = plan.onChanged(cancel)
         fun pageChanged() = KokoroPagePreparationQueue.snapshot(app)?.revision != pageRevision || !plan.isCurrent(planEpoch)
-        fun active() = NarrationSettingsRepository.isEnabled(app) && activeSession() &&
+        fun enabled() = NarrationSettingsRepository.isEngineAllowed(app, NarrationEngine.KOKORO)
+        fun active() = enabled() && slice == cancellation.get() && activeSession() &&
             !NarrationWorkPriority.isBusy && !pageChanged()
         fun selectBudget(foreground: Boolean) {
             if (frontendForeground == foreground) return
@@ -94,9 +99,9 @@ internal class KokoroBackgroundNarrationWorker(
                 val pageSentences = planned.page.sentences.distinctBy(NarrationPageQueue::hash)
                 try {
                     for ((sentenceIndex, item) in pageSentences.withIndex()) {
-                        if (!NarrationSettingsRepository.isEnabled(app)) return Outcome.PAUSED
+                        if (!enabled()) return Outcome.PAUSED
                         if (pageChanged()) return Outcome.MORE
-                        if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
+                        if (slice != cancellation.get() || !activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
                         scanned++
                         val hash = NarrationPageQueue.hash(item)
                         if (KokoroNarrationCache.lookup(app, item.language.tag, item.voice, item.text) != null) {

@@ -28,13 +28,33 @@ class QualifiedOutputKokoroDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val app = instrumentation.targetContext
 
+    @Test fun cmakeSyntaxCompilesUnderAndroidIcuAndKeepsSeparateSourceOwners() {
+        assertEquals("Use only the isolated APK", QA_PACKAGE, app.packageName)
+        val source = "Usa \${clientes} y \"\${cliente_principal}\"."
+        val pieces = mutableListOf<Triple<Int, Int, String>>()
+        val prepared = SpanishTechnicalSpeech.prepareForReading(source) { start, end, spoken ->
+            pieces += Triple(start, end, spoken)
+        }
+        assertEquals(SpanishTechnicalSpeech.prepareForKokoro(source), prepared)
+        assertEquals("Usa dólar abre llave clientes cierra llave y abre comilla doble dólar abre llave " +
+            "cliente guion bajo principal cierra llave cierra comilla doble.", ManualEnglishSpeech.strip(prepared.text))
+        assertTrue("The dollar is owned separately rather than by a whole paragraph", pieces.any {
+            source.substring(it.first, it.second) == "$" && it.third.trim() == "dólar"
+        })
+        for (math in listOf("\${x}$", "\${x}+1$", "\${x}^2$", "\${x}^{2}$", "\${x} + 1$",
+            "Calcula \${x}+1$ y \${y}^2$.", "Calcula \$x\$ y \$y\$.")) {
+            assertEquals(SpanishTechnicalSpeech.Preparation(math, false), SpanishTechnicalSpeech.prepare(math))
+        }
+        assertEquals("dólar abre llave clientes cierra llave sin comillas frente a " +
+            "dólar abre llave clientes cierra llave.",
+            SpanishTechnicalSpeech.prepare("\${clientes} sin comillas frente a \${clientes}.").text)
+    }
+
     @Test fun qualifiedOutputUsesNativeLetterNamesAndSpanishNotationWithoutVoiceSplicing() {
         assertEquals("Use only the isolated APK", QA_PACKAGE, app.packageName)
         assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
-        assertTrue("This acceptance must run in LDPlayer, never the physical telephone",
-            Build.SUPPORTED_ABIS.any { it == "x86" || it == "x86_64" } &&
-                (Build.MODEL.contains("V2307", true) || Build.FINGERPRINT.contains("generic", true) ||
-                    Build.FINGERPRINT.contains("emulator", true)))
+        assertTrue("Use only the explicitly authorized LDPlayer or Honor QA device",
+            Build.MODEL == "CRT-LX3" || Build.SUPPORTED_ABIS.any { it == "x86" || it == "x86_64" })
         assertNotEquals(Looper.getMainLooper(), Looper.myLooper())
         val external = requireNotNull(app.getExternalFilesDir(null)).canonicalFile
         val root = InstrumentationRegistry.getArguments().getString("modelRoot")?.let(::File)?.canonicalFile
@@ -60,7 +80,7 @@ class QualifiedOutputKokoroDeviceTest {
         val rows = JSONArray()
         val report = JSONObject().put("package", app.packageName).put("device", Build.MODEL)
             .put("sdk", Build.VERSION.SDK_INT).put("abis", JSONArray(Build.SUPPORTED_ABIS.toList()))
-            .put("scope", "LDPlayer native ONNX synthesis; listening naturalness remains a separate assessment")
+            .put("scope", "${Build.MODEL} native ONNX synthesis; listening naturalness remains a separate assessment")
             .put("sampleRate", 24_000).put("modelRevision", KokoroModelManifest.revision)
             .put("audioCacheUsed", false).put("androidTtsUsed", false).put("modelsDownloaded", false)
             .put("samples", rows).put("status", "running")
@@ -115,6 +135,11 @@ class QualifiedOutputKokoroDeviceTest {
                     }
                     "es-std-prefix" -> assertTrue("The bare namespace prefix is spelled rather than guessed: $spoken",
                         spoken.contains("ese te de doble dos puntos"))
+                    "es-cmake-variable", "es-cmake-list" -> {
+                        assertFalse("No unsupported dollar reaches the phonemizer", '$' in spoken)
+                        assertTrue(spoken, spoken.contains("dólar abre llave"))
+                        assertTrue(spoken, spoken.contains("cierra llave"))
+                    }
                 }
                 assertEquals("The exact original visible lesson text stays unchanged", original, lesson.toString())
                 assertEquals("No word-level recordings or voices may be spliced", 1, KokoroPhonemeChunks.split(phones).size)
@@ -250,7 +275,9 @@ class QualifiedOutputKokoroDeviceTest {
             Sample("es-include", NarrationLanguage.SPANISH, "ef_dora", "La línea #include permite usar iostream."),
             Sample("es-directiva-include", NarrationLanguage.SPANISH, "ef_dora", "La directiva #include permite usar iostream."),
             Sample("es-std-prefix", NarrationLanguage.SPANISH, "ef_dora", "El prefijo std:: indica el espacio de nombres."),
-            Sample("fr-fixed-phrase", NarrationLanguage.FRENCH, "ff_siwis", "Je continue parce que la lecture reste naturelle.")
+            Sample("fr-fixed-phrase", NarrationLanguage.FRENCH, "ff_siwis", "Je continue parce que la lecture reste naturelle."),
+            Sample("es-cmake-variable", NarrationLanguage.SPANISH, "ef_dora", "\${cliente_principal} obtiene el valor al procesar el comando."),
+            Sample("es-cmake-list", NarrationLanguage.SPANISH, "ef_dora", "list(APPEND \${clientes} comprobar_cajas)")
         )
     }
 }

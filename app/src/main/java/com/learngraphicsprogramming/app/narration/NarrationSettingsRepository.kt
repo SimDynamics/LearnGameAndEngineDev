@@ -38,17 +38,38 @@ object NarrationSettingsRepository {
             Context.MODE_PRIVATE
         )
 
+    private val initializationLock = Any()
+
+    /** Persist missing defaults once; explicit engine/language/voice choices always win. */
+    private fun initializeDefaults(context: Context) {
+        val prefs = preferences(context)
+        if (prefs.contains(KEY_ENGINE) && prefs.contains("language")) return
+        synchronized(initializationLock) {
+            val editor = prefs.edit()
+            if (!prefs.contains(KEY_ENGINE)) editor.putString(KEY_ENGINE, NarrationEngine.KOKORO.name)
+            if (!prefs.contains("language")) {
+                // Older installations could save a voice before a separate language key existed.
+                val legacy = KokoroVoiceCatalog.find(prefs.getString(KEY_KOKORO_VOICE, "").orEmpty())?.language
+                val language = legacy ?: NarrationInitialSettings.language(
+                    android.content.res.Resources.getSystem().configuration.locales.toLanguageTags())
+                editor.putString("language", language.tag)
+            }
+            editor.apply()
+        }
+    }
+
     fun get(context: Context): NarrationSettings {
+        initializeDefaults(context)
         val preferences = preferences(context)
-        val engineName = preferences.getString(KEY_ENGINE, NarrationEngine.AUTO.name)
-        val language = NarrationLanguage.fromTag(preferences.getString("language", "es")) ?: NarrationLanguage.SPANISH
+        val engineName = preferences.getString(KEY_ENGINE, NarrationEngine.KOKORO.name)
+        val language = NarrationLanguage.fromTag(preferences.getString("language", null)) ?: NarrationLanguage.AMERICAN_ENGLISH
         val voice = preferences.getString("kokoro_voice:${language.tag}", null)
             ?: preferences.getString(KEY_KOKORO_VOICE, language.defaultVoice)
 
         return NarrationSettings(
             enabled = preferences.getBoolean(KEY_ENABLED, true),
             engine = NarrationEngine.entries.firstOrNull { it.name == engineName }
-                ?: NarrationEngine.AUTO,
+                ?: NarrationEngine.KOKORO,
             kokoroVoice = voice?.takeIf { KokoroVoiceCatalog.find(it)?.language == language } ?: language.defaultVoice,
             androidVoice = preferences.getString("android_voice:${language.tag}", null)
                 ?: if (language == NarrationLanguage.SPANISH) preferences.getString(KEY_ANDROID_VOICE, null) else null,
@@ -64,6 +85,13 @@ object NarrationSettingsRepository {
     /** Also checked by queued work, before a settings observer can run on main. */
     fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(KEY_ENABLED, true)
 
+    /** Cancellation hot path: no settings/voice objects and no observer delivery required. */
+    internal fun isEngineAllowed(context: Context, engine: NarrationEngine): Boolean = preferences(context).let {
+        it.getBoolean(KEY_ENABLED, true) &&
+            (it.getString(KEY_ENGINE, NarrationEngine.KOKORO.name) == NarrationEngine.ANDROID.name) ==
+            (engine == NarrationEngine.ANDROID)
+    }
+
     /** Presentation only: hiding the controls does not disable background narration. */
     fun controlsVisible(context: Context): Boolean =
         preferences(context).getBoolean(KEY_CONTROLS_VISIBLE, true)
@@ -73,7 +101,9 @@ object NarrationSettingsRepository {
     }
 
     fun saveEngine(context: Context, engine: NarrationEngine) {
-        preferences(context).edit().putString(KEY_ENGINE, engine.name).apply()
+        synchronized(initializationLock) {
+            preferences(context).edit().putString(KEY_ENGINE, engine.name).apply()
+        }
     }
 
     fun saveKokoroVoice(context: Context, voice: String) {

@@ -76,9 +76,9 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         if (text.length !in 1..32_768 ||
             KokoroVoiceCatalog.find(voice) == null) return null
         checkActive(isCancelled)
-        // Lossless PCM has an exact sample origin. Opus pre-skip/decoder offsets are deliberately
-        // not guessed, and existing OGG files remain usable by the ordinary audio controller.
-        val sampleCount = pcmSampleCount(audio) ?: return null
+        // Both formats have an exact audible origin. For the shipped mono Opus pack,
+        // subtract the container's actual pre-skip and end trimming, never a rounded duration.
+        val sampleCount = audioSampleCount(audio, isCancelled) ?: return null
         val audioHash = digest(audio, isCancelled)
         val sourceHash = digest(text.toByteArray(Charsets.UTF_8))
         val key = digest("$VERSION\n${KokoroModelManifest.revision}\n$voice\n$audioHash\n$sourceHash".toByteArray(Charsets.UTF_8))
@@ -138,7 +138,7 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
         checkActive(isCancelled)
         val alignment = NarrationWordTimingBuilder.buildSourceChunked(text, audioHash, sampleCount, phonemes, sources, chunks, durations) ?: return null
         // Bind the sidecar to bytes that are still the file actually supplied for playback.
-        if (pcmSampleCount(audio) != sampleCount || digest(audio, isCancelled) != audioHash) return null
+        if (audioSampleCount(audio, isCancelled) != sampleCount || digest(audio, isCancelled) != audioHash) return null
         checkActive(isCancelled)
         runCatching { write(sidecar, sourceHash, voice, alignment) }
         return alignment
@@ -177,6 +177,13 @@ internal class KokoroWordAlignment(context: Context) : AutoCloseable {
             temporary.writeText(data.toString(), Charsets.UTF_8)
             if (!closed) temporary.renameTo(file)
         } finally { temporary.delete() }
+    }
+
+    private fun audioSampleCount(file: File, isCancelled: () -> Boolean): Long? {
+        if (file.extension.equals("ogg", ignoreCase = true)) {
+            return KokoroOpusTimeline.read(file, isCancelled)?.presentationSamples24k
+        }
+        return pcmSampleCount(file)
     }
 
     private fun pcmSampleCount(file: File): Long? = runCatching {

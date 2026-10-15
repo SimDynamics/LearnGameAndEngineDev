@@ -159,6 +159,10 @@ object SpanishTechnicalSpeech {
 
     private fun codeEnd(text: String, index: Int): Int? {
         if (index > 0 && (text[index - 1].isLetterOrDigit() || text[index - 1] == '_')) return null
+        if (text[index] == '$') cmakeVariable.matchAt(text, index)?.let { variable ->
+            var end = variable.range.last + 1
+            while (true) end = cmakeVariable.matchAt(text, end)?.range?.last?.plus(1) ?: return end
+        }
         val directive = directive.matchAt(text, index)
         if (directive != null) {
             var end = directive.range.last + 1
@@ -273,6 +277,14 @@ object SpanishTechnicalSpeech {
     }
 
     private fun mathEnd(text: String, index: Int): Int? {
+        // A CMake expansion is source notation, even when another expansion
+        // follows it. Its dollar signs must not become paired math delimiters.
+        if (text[index] == '$') cmakeVariable.matchAt(text, index)?.let { variable ->
+            val closing = text.indexOf('$', variable.range.last + 1)
+            // Preserve the existing explicit-math boundary for ${x}+1$ or
+            // ${x}^2$. Another ${name} is an opening expansion, not its closer.
+            if (closing < 0 || cmakeVariable.matchAt(text, closing) != null) return null
+        }
         val delimiters = when {
             text.startsWith("\\(", index) -> "\\(" to "\\)"
             text.startsWith("\\[", index) -> "\\[" to "\\]"
@@ -303,6 +315,11 @@ object SpanishTechnicalSpeech {
             try {
             val char = source[index]
             if (char.isWhitespace()) { index++; continue }
+            if (char == '$' && cmakeVariable.matchAt(source, index) != null) {
+                result += "dólar"
+                index++
+                continue
+            }
             if (char == '\'' || char == '"') {
                 val end = quotedEnd(source, index)
                 if (end != null) {
@@ -389,6 +406,9 @@ object SpanishTechnicalSpeech {
         var index = 0
         while (index < source.length) {
             val char = source[index]
+            if (char == '$' && cmakeVariable.matchAt(source, index) != null) {
+                add("dólar"); index++; continue
+            }
             if (char == '\\') {
                 add("barra inversa")
                 if (index + 1 < source.length) {
@@ -481,6 +501,7 @@ object SpanishTechnicalSpeech {
     private val pureFormula = Regex("[\\d\\s.,;:a-zA-Zα-ωπ∞=<>≤≥≠≈→+−*/×÷·()\\[\\]{}|?²³⁴⁵⁶⁷⁸⁹⁰¹^_%!√-]+")
     private val contextSignals = Regex("&&|\\|\\||==|!=|\\+\\+|--|[+*/%&|^-]=|\\.\\.")
     private val directive = Regex("#\\s*(include|ifndef|ifdef|define|endif|pragma|undef|elif|else|if)\\b")
+    private val cmakeVariable = Regex("\\$\\{[A-Za-z_][A-Za-z_0-9]*\\}")
     private val header = Regex("<(?:iostream|string|string_view|vector|array|sstream|stdexcept|limits|iomanip|ios|utility|algorithm|cmath|cstdint|cassert|format|fstream|optional|map|set|memory)>")
     private val qualifiedName = Regex("[A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)+")
     private val namespacePrefix = Regex("std\\s*::(?=\\s|$|[.,;!?)}\\]])")

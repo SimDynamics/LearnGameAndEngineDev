@@ -302,7 +302,7 @@ class LessonNarrationController(
     }
     private val masterPreferences = appContext.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE)
     private val masterListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == "enabled") settingsChanged()
+        if (key == null || key == "enabled" || key == "engine") settingsChanged()
     }
 
     init {
@@ -438,7 +438,7 @@ class LessonNarrationController(
                     !File(root, voice.artifact.fileName).isFile
                 ) return@post
                 KokoroEngineCoordinator.withEngine(this, root,
-                    { closed || !NarrationSettingsRepository.isEnabled(appContext) }, foreground = true) { }
+                    { closed || !neuralGenerationAllowed() }, foreground = true) { }
             }
                 .onFailure { error ->
                     if (error !is InterruptedException) {
@@ -600,9 +600,13 @@ class LessonNarrationController(
                     if (previousFile != null) worker.post { deleteTemporaryAudio(previousFile) }
                 }
             }
-            if (segments.isNotEmpty() && player == null) ensureSegment(index)
+            if (!finished && segments.isNotEmpty() && player == null &&
+                (playing || settings.engine != NarrationEngine.ANDROID)) ensureSegment(index)
             if (segments.isNotEmpty() && settings.engine != NarrationEngine.ANDROID) {
                 preservePagePriority(segments.map { it.text }, settings)
+                // Resume both preparation chains after an engine change, including
+                // an idle page that has no player to request the next sentence.
+                if (!finished && settings.engine != previous.engine) ensureSegment(index + 1)
             }
         }
         applyRate()
@@ -614,7 +618,10 @@ class LessonNarrationController(
                 tts = null; ttsReady = false; ttsInitializing = false; voices = emptyList()
                 failTtsPending(s(R.string.narration_provider_changed))
             }
-            if (settings.engine == NarrationEngine.ANDROID) releaseKokoro()
+            if (settings.engine == NarrationEngine.ANDROID) {
+                releaseKokoro()
+                releasePhonemizers()
+            }
         }
     }
 
@@ -1030,7 +1037,13 @@ class LessonNarrationController(
         ttsPending.values.toList().forEach { synthesisFailed(it, message) }
         ttsPending.clear()
     }
-    private fun isCurrent(request: Synthesis): Boolean = !closed && NarrationSettingsRepository.isEnabled(appContext) &&
+    private fun neuralGenerationAllowed(): Boolean =
+        NarrationSettingsRepository.isEngineAllowed(appContext, NarrationEngine.KOKORO)
+
+    private fun isCurrent(request: Synthesis): Boolean = !closed &&
+        // The saved selection wins immediately, even before its main-thread observer
+        // invalidates queued requests. AUTO and Kokoro both use the neural pipeline.
+        NarrationSettingsRepository.isEngineAllowed(appContext, request.settings.engine) &&
         request.generation == generation && request.configuration == configuration
     private fun fail(message: String) {
         stopInternal(phase = NarrationPlaybackPhase.UNAVAILABLE)

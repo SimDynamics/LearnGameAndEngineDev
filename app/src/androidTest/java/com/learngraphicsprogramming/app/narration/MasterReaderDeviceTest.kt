@@ -48,10 +48,11 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
+import org.junit.Assume.assumeTrue
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 
-/** Runs only in the isolated APK on LDPlayer, sharing its genuine installed model files. */
+/** Runs only in the isolated QA APK, sharing its genuine installed model files. */
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class MasterReaderDeviceTest {
@@ -72,7 +73,6 @@ class MasterReaderDeviceTest {
     @Before fun preserveRealInstallation() {
         assertEquals("Never run in the user's normal application", QA_PACKAGE, app.packageName)
         assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
-        assertTrue("LDPlayer only", Build.SUPPORTED_ABIS.any { it == "x86" || it == "x86_64" })
         recoverInterruptedRun()
         names = preferenceNames()
         before = (names + KNOWN_PREFERENCES).associateWith(::preference)
@@ -533,6 +533,185 @@ class MasterReaderDeviceTest {
             .put("exception", requireNotNull(failure.get()).javaClass.name)
             .put("interruptFlagRetained", interruptRetained.get()).put("pageYielded", yielded.get())
             .put("preferencesQueuePlannerAndAuthoredJsonUnchanged", true))
+    }
+
+    @Test fun i_androidSelectionCancelsRealCurrentPageInferenceAndKokoroResumesBothPreparationChains() {
+        val options = launchOptions()
+        options.onActivity { master(it).performClick() }
+        val errors = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val reader = onMain { LessonNarrationController(app, {}, { errors += it }, trackWords = true) }.also(readers::add)
+        val unique = SystemClock.elapsedRealtime() % 100_000L
+        val texts = listOf(
+            "La prueba número $unique conserva la primera grabación válida.",
+            "La segunda prueba número $unique " +
+                List(5) { "conserva los recursos preparados y comprueba cada resultado antes de continuar" }.joinToString(" ") + ".",
+            "La última prueba número $unique conserva el resultado final."
+        )
+        val prepared = NarrationSegments.sentences(texts)
+        assertEquals(3, prepared.size)
+        val keys = prepared.map { KokoroNarrationCache.key("es", "ef_dora", it) }
+        val bookmarks = preference("lesson_narration_resume_bounded_v1")
+        onMain { reader.prefetchPage(texts, NarrationLanguage.SPANISH, "qa-engine-prefetch/$unique") }
+        await("Observe a genuine current-page ONNX run after its first sentence is cached", 180_000) {
+            val lease = field<Any?>(KokoroEngineCoordinator, "active")
+            val engine = field<Any?>(KokoroEngineCoordinator, "engine")
+            KokoroNarrationCache.lookup(app, "es", "ef_dora", prepared[0]) != null &&
+                lease != null && field<Any>(lease, "owner") === reader &&
+                engine != null && field<Any?>(engine, "activeRun") != null
+        }
+        val cached = requireNotNull(KokoroNarrationCache.lookup(app, "es", "ef_dora", prepared[0]))
+        // Cache hits deliberately refresh mtime for retention. Verify immutable
+        // audio and the actual generation diagnostics, not the access timestamp.
+        val recording = sha256(cached) to cached.length()
+        fun generationCounts() = synthesisEvents().filter { it.optString("hash") == keys.first() }
+            .groupingBy { it.getString("event") }.eachCount()
+        val generationsBefore = generationCounts()
+        assertTrue("The fresh first sentence has real native generation evidence", generationsBefore.isNotEmpty())
+        val priorQueue = requireNotNull(KokoroPagePreparationQueue.snapshot(app))
+        val configuration = onMain { field<Long>(reader, "configuration") }
+        // Deliberately do not call reader.settingsChanged(): selecting the preference
+        // must cancel every existing reader, not depend on one particular settings UI.
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.ANDROID) }
+        await("Android selection cancels the page lease, pending chains and word inference", 30_000) {
+            onMain { field<Long>(reader, "configuration") > configuration &&
+                field<NarrationSettings>(reader, "settings").engine == NarrationEngine.ANDROID &&
+                field<Set<*>>(reader, "pending").isEmpty() && field<Any?>(reader, "wordAlignmentService") == null &&
+                field<Any?>(KokoroEngineCoordinator, "active") == null }
+        }
+        val stoppedAt = System.currentTimeMillis()
+        onMain {
+            assertFalse("Changing an idle engine never starts playback", reader.isPlaying)
+            assertNull("Idle Android selection does not allocate a player", field<MediaPlayer?>(reader, "player"))
+            assertNull("An idle engine choice must not synthesize Android audio", field<Any?>(reader, "tts"))
+            reader.warmUp()
+        }
+        SystemClock.sleep(500)
+        assertTrue("Android selection blocks all new neural recordings", synthesisEvents().none { it.optLong("at") > stoppedAt })
+        assertEquals("Engine selection never adds or changes a page bookmark", bookmarks,
+            preference("lesson_narration_resume_bounded_v1"))
+        assertEquals("The pending page keeps the same identity", priorQueue.revision,
+            requireNotNull(KokoroPagePreparationQueue.snapshot(app)).revision)
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.KOKORO) }
+        await("Returning to Kokoro automatically resumes both original prefetch chains", 180_000) {
+            assertTrue("Cancellation is not a neural failure or Android fallback: $errors", errors.isEmpty())
+            prepared.all { KokoroNarrationCache.lookup(app, "es", "ef_dora", it) != null } &&
+                onMain { field<Set<*>>(reader, "pending").isEmpty() }
+        }
+        assertEquals("A previously valid recording is reused without regeneration", recording,
+            sha256(cached) to cached.length())
+        assertEquals("Neither controller nor background worker generates the valid first recording again",
+            generationsBefore, generationCounts())
+        assertEquals(priorQueue.revision, requireNotNull(KokoroPagePreparationQueue.snapshot(app)).revision)
+        assertEquals("Automatic generation never takes playback ownership", bookmarks,
+            preference("lesson_narration_resume_bounded_v1"))
+        onMain {
+            assertFalse(reader.isPlaying)
+            assertNull(field<MediaPlayer?>(reader, "player"))
+            assertNull(field<Any?>(reader, "tts"))
+        }
+        writeReport("i-engine-current-page.json", JSONObject().put("device", Build.MODEL)
+            .put("realOnnxRunCancelled", true).put("automaticKokoroResumption", true)
+            .put("bothPageChainsCompleted", true).put("pageRevisionPreserved", priorQueue.revision)
+            .put("recordingReusedSha256", recording.first).put("recordingBytes", recording.second)
+            .put("generationEventsBefore", JSONObject(generationsBefore)).put("generationEventsAfter", JSONObject(generationCounts()))
+            .put("cacheKeys", JSONArray(keys))
+            .put("bookmarksUnchanged", true).put("errors", JSONArray(errors.toList())))
+    }
+
+    @Test fun j_androidSelectionStopsTheRealBackgroundServiceAndReturningKokoroRecoversItsDurableQueue() {
+        val options = launchOptions()
+        options.onActivity { master(it).performClick() }
+        val unique = SystemClock.elapsedRealtime() % 100_000L
+        val texts = listOf("La preparación número $unique " +
+            List(5) { "conserva cada resultado y todos los recursos antes de continuar" }.joinToString(" ") + ".",
+            "La siguiente grabación de la prueba número $unique conserva exactamente su resultado.")
+        val keys = NarrationSegments.sentences(texts).map { KokoroNarrationCache.key("es", "ef_dora", it) }
+        val bookmarks = preference("lesson_narration_resume_bounded_v1")
+        var revision = 0L
+        onMain {
+            val queue = KokoroPagePreparationQueue.submit(app, texts, NarrationLanguage.SPANISH, "ef_dora")
+            revision = queue.revision
+            NarrationAudioPlanner.enter(app, AppearanceSettingsRepository.ROUTE_PROGRAMMING, "cpp_fundamentals",
+                LESSON_ID, 0, revision)
+            KokoroBackgroundNarrationWorker.start(app)
+        }
+        await("The durable current-page service enters actual ONNX synthesis", 180_000) {
+            val status = KokoroNarrationDiagnostics.snapshot(app)
+            status.optString("workerState") == "synthesizing" && status.optString("currentHash") in keys &&
+                field<Any?>(KokoroEngineCoordinator, "engine")?.let { field<Any?>(it, "activeRun") != null } == true
+        }
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.ANDROID) }
+        await("Android selection stops offline preparation and releases its neural session", 30_000) {
+            Thread.getAllStackTraces().keys.none { it.isAlive && it.name == "KokoroOfflineNarration" } &&
+                field<Any?>(KokoroEngineCoordinator, "active") == null &&
+                field<Any?>(KokoroEngineCoordinator, "engine") == null
+        }
+        val pausedQueue = requireNotNull(KokoroPagePreparationQueue.snapshot(app)).encode()
+        val stoppedAt = System.currentTimeMillis()
+        onMain { KokoroBackgroundNarrationWorker.start(app) }
+        SystemClock.sleep(500)
+        assertTrue(synthesisEvents().none { it.optLong("at") > stoppedAt })
+        assertEquals("Android does not discard the durable pending work", pausedQueue,
+            requireNotNull(KokoroPagePreparationQueue.snapshot(app)).encode())
+        assertTrue(NarrationSettingsRepository.get(app).enabled)
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.KOKORO) }
+        await("Kokoro restarts automatically and completes the existing durable page", 180_000) {
+            val queue = requireNotNull(KokoroPagePreparationQueue.snapshot(app))
+            queue.revision == revision && queue.pending == 0 &&
+                keys.all { File(app.filesDir, "kokoro-narration-cache/$it.wav").isFile }
+        }
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.ANDROID) }
+        await("The restarted service also shuts down without leaving an owner", 30_000) {
+            Thread.getAllStackTraces().keys.none { it.isAlive && it.name == "KokoroOfflineNarration" }
+        }
+        assertEquals(bookmarks, preference("lesson_narration_resume_bounded_v1"))
+        writeReport("j-engine-background.json", JSONObject().put("device", Build.MODEL)
+            .put("actualOnnxCancelled", true).put("androidPreventsBackgroundRestart", true)
+            .put("returnToKokoroAutomaticallyResumed", true).put("pageRevision", revision)
+            .put("cacheKeys", JSONArray(keys)).put("masterStillEnabled", true).put("bookmarksUnchanged", true))
+    }
+
+    @Test fun k_androidTtsStillPlaysPausesResumesAndFinishesWithItsReleasedPlayer() {
+        assumeTrue("This test needs the official Android TTS engine; Kokoro tests remain mandatory on LDPlayer",
+            defaultAndroidTtsEngine(app) != null)
+        val options = launchOptions()
+        onMain { NarrationSettingsRepository.saveEngine(app, NarrationEngine.ANDROID) }
+        options.onActivity { master(it).performClick() }
+        val errors = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val reader = onMain { LessonNarrationController(app, {}, { errors += it }, trackWords = true) }.also(readers::add)
+        val texts = listOf("Una biblioteca reúne recursos preparados para tareas comunes y permite conservar los resultados antes de continuar.")
+        val identity = "qa-android-engine/${System.nanoTime()}"
+        onMain { reader.toggle(texts, NarrationLanguage.SPANISH, identity) }
+        await("The genuine Android voice must start playback on this device", 120_000) {
+            assertTrue("A present Android engine must work rather than be skipped: $errors", errors.isEmpty())
+            onMain { ready(reader) && requireNotNull(field<MediaPlayer?>(reader, "player")).currentPosition >= 350 }
+        }
+        val saved = onMain {
+            reader.pauseKeepingPosition()
+            assertNull("Pause releases Android's decoder as well", field<MediaPlayer?>(reader, "player"))
+            field<Long>(reader, "offset")
+        }
+        val audio = onMain { field<List<Any>>(reader, "segments").map { requireNotNull(field<File?>(it, "file")) } }
+        val hashes = audio.associateWith(::sha256)
+        val key = onMain { requireNotNull(field<String?>(reader, "resumeKey")) }
+        onMain { reader.toggle(texts, NarrationLanguage.SPANISH, identity) }
+        await("Android resumes from its exact bookmark and existing audio", 60_000) {
+            assertTrue(errors.toString(), errors.isEmpty())
+            onMain { ready(reader) && requireNotNull(field<MediaPlayer?>(reader, "player")).currentPosition >= saved + 100 }
+        }
+        await("Android completion retains its final position without restarting", 60_000) { onMain { field<Boolean>(reader, "finished") } }
+        onMain {
+            assertNull(field<MediaPlayer?>(reader, "player"))
+            reader.toggle(texts, NarrationLanguage.SPANISH, identity)
+            assertFalse(reader.isPlaying)
+            assertTrue(field(reader, "finished"))
+        }
+        hashes.forEach { (file, hash) -> assertEquals("Resume reuses the same Android output", hash, sha256(file)) }
+        assertTrue(requireNotNull(NarrationResumeStore(app).restore(key, NarrationSegments.prepare(texts, 250).size)).finished)
+        writeReport("k-real-android-tts.json", JSONObject().put("device", Build.MODEL)
+            .put("engine", defaultAndroidTtsEngine(app)).put("actualAndroidPlayback", true)
+            .put("pauseReleasesPlayer", true).put("savedPositionMs", saved).put("audioReused", true)
+            .put("finishedBookmarkPreserved", true).put("errors", JSONArray(errors.toList())))
     }
 
     private fun launchLesson(): ActivityScenario<LessonActivity> = ActivityScenario.launch<LessonActivity>(
