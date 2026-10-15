@@ -1,0 +1,632 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__bateria_como_segundo_consumidor",
+  "title": "Una batería como segundo consumidor (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De comprobar una función a conservar su comprobador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya construiste comprobaciones con esperados independientes, conservaste casos anteriores y usaste un código de terminación no nulo cuando alguna fallaba. También sabes que dos ejecutables pueden consumir una biblioteca. Ahora unirás esas prácticas en un proyecto: la aplicación y el comprobador tendrán sus propios main y objetivos, pero llamarán a la misma implementación."
+        },
+        {
+          "type": "paragraph",
+          "text": "El trabajo nuevo consiste en guardar la batería como una fuente del proyecto, construir el objetivo que la contiene y volver a ejecutarlo después de cada cambio pertinente. No basta recordar una salida ni modificar una copia de la función dentro del comprobador. Automatizar comparaciones facilita repetirlas; conservar una expectativa antigua exige comprobar que procede de un requisito correcto (Kernighan & Pike, 1999, pp. 149–150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_resultado_del_cliente",
+          "question": "La aplicación muestra dos resultados plausibles. Quieres conservar evidencia repetible del componente para futuras revisiones. ¿Qué organización responde a ese propósito?",
+          "options": [
+            "Copiar la función en otro main y comprobar siempre esa copia, aunque la biblioteca cambie.",
+            "Otro ejecutable con casos y esperados guardados, enlazado con la misma biblioteca.",
+            "Guardar sólo la salida de la aplicación y considerarla el esperado de cualquier revisión."
+          ],
+          "correctIndex": 1,
+          "explanation": "El segundo ejecutable conserva casos y expectativas y usa la biblioteca real. Sus resultados se atribuyen a esa construcción; una copia de la función podría quedar desconectada de lo que utiliza la aplicación.",
+          "reviewFeedback": [
+            "Revisa qué implementación recibiría los cambios y cuál estarías ejecutando. Mantener el mismo nombre de función no hace que dos cuerpos sean la misma fuente.",
+            "Comprueba que tus comparaciones correspondan al componente realmente compartido y a un objetivo que puedas reconstruir y ejecutar.",
+            "Relaciona el resultado guardado con los datos que lo produjeron y con el requisito. Una observación previa necesita una justificación antes de convertirse en expectativa."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El requisito decide qué significa acertar"
+        },
+        {
+          "type": "paragraph",
+          "text": "El componente cajas_para recibe un entero entre 0 y 20. Una caja admite hasta cuatro piezas. Debe devolver el menor número de cajas que permita guardar todas las piezas; cero piezas requiere cero cajas. Una caja parcialmente ocupada también cuenta. No estamos definiendo cómo tratar entradas fuera del dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, seis piezas requieren dos cajas: una no tiene capacidad suficiente y dos sí. Este cálculo procede del acuerdo, antes de mirar un cuerpo de función. Mantén separadas dos preguntas: qué produce una revisión y qué debería producir."
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_salida_no_es_acuerdo",
+          "question": "Predice la salida exacta de esta revisión para 0,5,17, sin salto final. No respondas con el resultado que debería cumplir el contrato.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    std::cout << cajas_para(0) << \":\" << cajas_para(5)\n              << \":\" << cajas_para(17);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La división entre enteros descarta el resto: 0/4=0, 5/4=1 y 17/4=4. Esa es la salida de la revisión, pero una y cuatro cajas no bastan para cinco y diecisiete piezas. Predecirla correctamente no convierte la implementación en correcta.",
+          "reviewFeedback": "Traza la expresión que realmente ejecuta este cuerpo con enteros. Después separa ese resultado del número de cajas exigido por la capacidad."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_no_depende_del_cuerpo",
+          "question": "Una ejecución ha producido una caja para seis piezas. ¿De dónde debe salir el esperado con que la contrastarás?",
+          "options": [
+            "De copiar ese uno como nueva expectativa, porque ya fue obtenido al ejecutar.",
+            "De ejecutar de nuevo el mismo cuerpo y usar su segunda salida como referencia.",
+            "De la capacidad acordada y de si las cajas bastan para guardar las seis piezas."
+          ],
+          "correctIndex": 2,
+          "explanation": "El acuerdo permite comprobar si la capacidad total basta y si se usaron cajas innecesarias. Repetir o copiar la salida del cuerpo no aporta una expectativa independiente.",
+          "reviewFeedback": [
+            "Reconsidera qué estás tomando como autoridad: una observación muestra lo que hizo la revisión, no justifica por sí sola lo que debía hacer.",
+            "Distingue repetibilidad y cumplimiento. Una segunda ejecución puede repetir exactamente el mismo defecto.",
+            "Comprueba que tu criterio de aceptación siga siendo independiente del cuerpo al que vas a evaluar."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos consumidores, una implementación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto conservará publico/envio/cajas.h, src/cajas.cpp, app/consulta.cpp y pruebas/cajas_casos.cpp. La biblioteca envios contiene la definición. consultar_cajas usa app/consulta.cpp; comprobar_cajas usa pruebas/cajas_casos.cpp. Cada ejecutable tiene un main distinto; la biblioteca no contiene ninguno."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambos consumidores reciben la ruta PUBLIC de envios al declarar su enlace PRIVATE con ella. El segundo enlace no publica nada global ni ejecuta las pruebas. Construir un objetivo obtiene ese programa y sus dependencias; para comprobar los casos todavía debes ejecutar comprobar_cajas. La separación deja el código de prueba fuera del ejecutable de la aplicación, sin mantener otra implementación del componente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_un_main_por_ejecutable",
+          "question": "¿Qué fuentes deben figurar en comprobar_cajas para llamar a la biblioteca sin mezclar los dos puntos de entrada?",
+          "options": [
+            "pruebas/cajas_casos.cpp como fuente del ejecutable y un enlace con envios.",
+            "app/consulta.cpp y pruebas/cajas_casos.cpp como fuentes de un único ejecutable.",
+            "Sólo pruebas/cajas_casos.cpp y una segunda definición de cajas_para pegada allí."
+          ],
+          "correctIndex": 0,
+          "explanation": "El comprobador tiene su propio main y enlaza envios para recibir su definición. El cliente tiene otro main en otro objetivo; ninguno necesita copiar el cuerpo de cajas_para.",
+          "reviewFeedback": [
+            "Revisa qué archivo aporta el main del comprobador y qué relación aporta la definición compartida.",
+            "Localiza cuántas definiciones de main introduciría esa lista. Tener dos programas del proyecto no implica juntar sus puntos de entrada.",
+            "Considera qué implementación cambiaría al reparar src/cajas.cpp y cuál conservaría tu comprobador si mantiene un cuerpo propio."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "bat_esperado_para_dato_nuevo",
+          "question": "Completa sólo el esperado de esta llamada para diecisiete piezas, según el contrato de cajas de cuatro plazas. Escribe un único literal decimal entero o real que represente exactamente esa cantidad, sin operaciones ni nombres.",
+          "code": "// comprobar recibe piezas y numero esperado de cajas.\nif (!comprobar(17, ____)) { correcto = false; }",
+          "answers": [
+            "5",
+            "5.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "Cuatro cajas sólo tienen dieciséis plazas; cinco bastan y son el mínimo. El esperado es cinco, aunque un cuerpo defectuoso devuelva cuatro. Las escrituras admitidas representan esa misma cantidad.",
+          "reviewFeedback": "Calcula la capacidad total con el número de cajas propuesto y comprueba si permite guardar todas las piezas. Revisa también que no estés copiando el valor de la revisión que quieres evaluar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el comprobador sin ocultar casos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función comprobar obtiene el resultado una vez y devuelve si coincide. main conserva un bool que pasa a false al encontrar alguna discrepancia. Las llamadas están en if separados, como en la práctica anterior, de modo que un fallo no evita observar los siguientes. Cada línea identifica datos, esperado y obtenido; el resumen y return 0/1 comunican el resultado conjunto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta batería inicial conserva cuatro entradas: 0,4,8,20. Sus esperados se pueden justificar desde la capacidad. Que los cuatro casos pasen sólo dice que esa revisión coincide en esas llamadas. El texto OK no demuestra que hayas elegido casos capaces de distinguir el defecto que estás investigando."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_construir_no_es_veredicto",
+          "question": "CMake construyó comprobar_cajas y no se ha ejecutado todavía. ¿Qué evidencia tienes en ese momento?",
+          "options": [
+            "El comprobador pudo construirse con esas fuentes; aún falta observar sus comparaciones.",
+            "Todos los casos de su main ya pasaron porque el objetivo se construyó sin errores.",
+            "La biblioteca cumple todo el dominio, pues el comprobador tiene un nombre de prueba."
+          ],
+          "correctIndex": 0,
+          "explanation": "Construir acredita que se obtuvo el objetivo con sus dependencias. Ejecutarlo produce las comparaciones; ni el nombre ni la construcción prueban todo el contrato.",
+          "reviewFeedback": [
+            "Identifica qué fase produjo la evidencia y qué fase necesita ejecutar las llamadas.",
+            "Separa producir un ejecutable de ejecutar sus instrucciones. La construcción no observa por sí sola el retorno de comprobar.",
+            "Revisa qué información aporta el nombre y qué observaciones necesitarías para sostener una afirmación de comportamiento."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_continuar_despues_del_fallo",
+          "question": "¿Qué cambio conservaría la observación de todos los casos aunque el primero falle?",
+          "options": [
+            "Unir todas las llamadas con && dentro de una sola condición.",
+            "Retornar 1 inmediatamente dentro de la primera comprobación que falle.",
+            "Mantener cada llamada en su propio if y acumular el resultado conjunto."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los if independientes observan todos los datos y conservan el fallo en correcto. Es recuperación de la práctica anterior: aquí importa mantenerla al trasladar la batería al segundo ejecutable.",
+          "reviewFeedback": [
+            "Revisa las reglas de evaluación de && cuando el operando anterior es false. El resultado conjunto no demuestra que se hicieron todas las llamadas.",
+            "Traza qué instrucciones del main dejan de ejecutarse al retornar antes de llegar al resto de los datos.",
+            "Comprueba que el flujo conserve la ejecución de los casos restantes y el fallo ya observado."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: construir el consumidor que sí compara"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva las cuatro comprobaciones iniciales. Primero configura, construye y ejecuta consultar_cajas; registra qué datos usa su main. Después cambia el objetivo a comprobar_cajas, construye ese objetivo y ejecútalo. No tomes la salida de un objetivo como evidencia del otro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de editar, calcula del requisito los esperados para 1,5,17. Añade esas tres llamadas sin borrar las cuatro anteriores. Reconstruye comprobar_cajas y contrasta cada línea y el código final. Después repara sólo src/cajas.cpp para que cumpla la capacidad, conservando intactos los siete casos. Reconstruye y vuelve a ejecutar el mismo comprobador. Una solución válida necesita el mínimo de cajas para todo el dominio; no basta ajustar retornos a las siete entradas."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_registro_de_objetivo",
+          "question": "Al pasar de consultar_cajas a comprobar_cajas, ¿qué debes conservar en tu registro para atribuir bien cada observación?",
+          "options": [
+            "Sólo el nombre envios, porque ambas ejecuciones dependen de esa biblioteca.",
+            "El objetivo construido y ejecutado, su fuente y las llamadas o datos que esa ejecución examinó.",
+            "Sólo la última salida visible, sin importar qué objetivo estaba elegido."
+          ],
+          "correctIndex": 1,
+          "explanation": "La biblioteca común no hace intercambiables los dos main. El registro debe identificar qué objetivo se ejecutó y qué casos observó, además de la revisión compartida.",
+          "reviewFeedback": [
+            "La dependencia compartida no identifica qué main se ejecutó. Reconsidera qué información diferencia los dos consumidores.",
+            "Comprueba que puedas distinguir las dos ejecuciones aun cuando compartan la misma biblioteca.",
+            "Relaciona la salida con el ejecutable y la revisión que la produjeron. Una observación aislada puede pertenecer al consumidor anterior."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: ampliar y reparar por separado"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta referencia después de intentar el laboratorio. No exige copiar mensajes, nombres internos ni organización; sí conservar los criterios y los casos anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "La revisión piezas/4 coincide con las cuatro entradas iniciales porque son múltiplos de cuatro, incluido cero. Las entradas añadidas tienen restos y exigen otra caja. Al conservarlas en el segundo ejecutable, el defecto queda observable después de reconstruir la biblioteca y el comprobador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una referencia de la implementación es (piezas + 3) / 4. Para un múltiplo 4k el cociente sigue siendo k; para 4k+1, 4k+2 o 4k+3 pasa a k+1. También devuelve cero para cero. El mayor numerador del dominio es 23, por lo que la suma no se acerca al límite de int. Este razonamiento explica la regla; las siete comprobaciones aportan evidencia repetible sobre esos datos, sin convertirse en una prueba de todos los programas posibles."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_misma_fuente_compartida",
+          "question": "¿Qué reparación permite que cliente y comprobador reciban el mismo cambio de comportamiento?",
+          "options": [
+            "Corregir sólo una copia de la función añadida a pruebas/cajas_casos.cpp.",
+            "Cambiar sólo los mensajes FALLO por OK, conservando comparaciones y biblioteca.",
+            "Cambiar la definición de src/cajas.cpp y reconstruir el objetivo que se va a ejecutar."
+          ],
+          "correctIndex": 2,
+          "explanation": "La definición compartida debe repararse en su fuente y el objetivo solicitado reconstruirse. Corregir una copia o un mensaje no repara el componente que utiliza el cliente.",
+          "reviewFeedback": [
+            "Revisa si la aplicación seguiría llamando a la definición sin reparar. Una batería que usa una copia puede observar otra cosa.",
+            "Distingue lo que imprime un aviso y lo que significa la comparación. Renombrar el resultado no cambia la discrepancia.",
+            "Relaciona el cuerpo reparado con la biblioteca y con el consumidor que obtendrá su nueva construcción."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una discrepancia también puede estar en el esperado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una prueba es otro programa y también puede contener errores. Si la biblioteca devuelve cinco cajas para diecisiete piezas y el comprobador tenía esperado=4, la discrepancia no obliga a cambiar la biblioteca. Vuelve al acuerdo: cuatro cajas sólo admiten dieciséis piezas. El origen del esperado debe poder revisarse, incluso si se conserva desde una ejecución anterior (Kernighan & Pike, 1999, p. 150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_revisar_esperado",
+          "question": "La biblioteca devuelve 5 para 17 y el caso guardado esperaba 4. El contrato sigue siendo cajas de cuatro plazas. ¿Qué decisión está justificada?",
+          "options": [
+            "Corregir la expectativa usando la capacidad y conservar un registro del motivo del cambio.",
+            "Cambiar la biblioteca para que devuelva 4, porque cualquier esperado guardado tiene prioridad.",
+            "Eliminar el caso 17 porque su discrepancia impide terminar con cero."
+          ],
+          "correctIndex": 0,
+          "explanation": "El requisito justifica cinco cajas y permite corregir la expectativa errónea. Conservar pruebas no significa perpetuar datos incorrectos: los cambios de esperado necesitan una razón comprobable.",
+          "reviewFeedback": [
+            "Comprueba que la modificación de la prueba quede justificada por el requisito y no sólo por el deseo de hacerla pasar.",
+            "Contrasta la capacidad total de la cantidad guardada con las piezas del caso. La antigüedad del esperado no demuestra su validez.",
+            "Reconsidera qué información perderías al retirar precisamente el caso que obliga a revisar el acuerdo y la prueba."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco obtengas el esperado llamando al mismo cuerpo que estás evaluando. Si escribes esperado=cajas_para(piezas) y luego lo comparas con otra llamada igual, ambas pueden repetir el defecto. Compartir la biblioteca evita copias divergentes de la implementación; mantener independientes los esperados evita que la prueba copie automáticamente su respuesta."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_independiente",
+          "question": "¿Qué mantiene la independencia necesaria entre la biblioteca y las expectativas del comprobador?",
+          "options": [
+            "Calcular cada esperado llamando dos veces a cajas_para y aceptar cuando coincidan.",
+            "Derivar todos los esperados de la salida de consultar_cajas para no mirar el contrato.",
+            "Usar la biblioteca real para obtener el resultado y conservar esperados justificados desde el acuerdo."
+          ],
+          "correctIndex": 2,
+          "explanation": "La definición debe ser compartida por ambos consumidores, pero la expectativa requiere justificación independiente. Repetir el mismo cálculo bajo prueba no crea un criterio externo.",
+          "reviewFeedback": [
+            "Considera qué ocurriría si el cuerpo repite el mismo resultado defectuoso en las dos llamadas.",
+            "Revisa qué entradas observa ese cliente y de dónde obtiene sus resultados. Un consumidor de la biblioteca también puede mostrar su defecto.",
+            "Distingue compartir el componente ejecutado y copiar de él el criterio con que lo juzgas."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una coincidencia fabricada no controla el contrato"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_comparar_dos_llamadas_iguales",
+          "question": "Predice la salida exacta, sin salto final. El programa compara dos llamadas, no la capacidad exigida por el requisito.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    const int esperado{cajas_para(17)};\n    const int obtenido{cajas_para(17)};\n    std::cout << (obtenido == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos llamadas producen cuatro con esta revisión; la igualdad es true y cout muestra 1. El contrato necesita cinco cajas para diecisiete piezas. El resultado sólo refleja que ambas llamadas coincidieron entre sí.",
+          "reviewFeedback": "Separa los valores que calculan las dos expresiones y el significado de imprimir un bool. No sustituyas su comparación por el juicio que harías sobre el contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "El comprobador debe poder avisar ante una discrepancia conocida. Puedes conservar una revisión deliberadamente defectuosa dentro del laboratorio, ejecutar la batería contra ella y recuperar después la revisión correcta. No estás aprobando la revisión mala: estás observando si la prueba sabe rechazar ese defecto concreto. Probar las propias pruebas y conservar el caso que descubre un fallo refuerza su utilidad (Thomas & Hunt, 2020, pp. 277–278)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_control_del_comprobador",
+          "question": "Una batería quedó verde con la revisión correcta. ¿Qué observación adicional comprueba que detecta el defecto conocido piezas/4?",
+          "options": [
+            "Ejecutar otra vez la revisión correcta hasta obtener varias salidas verdes.",
+            "Ejecutar la misma batería ampliada con esa revisión deliberadamente defectuosa y comprobar la discrepancia y el retorno no nulo.",
+            "Cambiar los esperados a los valores que devuelve piezas/4 antes de repetir."
+          ],
+          "correctIndex": 1,
+          "explanation": "La contraprueba conserva la batería y observa si rechaza la revisión conocida como incorrecta. Sus casos y comparaciones deben seguir procediendo del contrato; repetir sólo la revisión correcta no examina esa capacidad.",
+          "reviewFeedback": [
+            "Repetir un caso correcto observa estabilidad, pero revisa si pone a prueba la capacidad de avisar ante la discrepancia conocida.",
+            "Comprueba que el control cambie la implementación observada y conserve las expectativas justificadas.",
+            "Relaciona el cambio de criterio con el defecto que intentas detectar. Adaptar la expectativa al cuerpo puede borrar la discrepancia que querías observar."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: revisar también la prueba guardada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta ubicación empieza con una biblioteca que usa la regla de referencia y con una batería guardada. Configura, construye y ejecuta comprobar_cajas. Decide, desde el acuerdo y los datos de cada línea, si la primera discrepancia procede del cuerpo o del esperado. Corrige sólo lo que contradice el contrato y conserva los siete casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después realiza una contraprueba controlada: conserva los esperados ya justificados, cambia temporalmente sólo src/cajas.cpp a piezas/4, reconstruye y exige que el comprobador observe las discrepancias y termine con código 1. Recupera la implementación correcta y vuelve a construir/ejecutar con la batería intacta. Identifica en el registro cada revisión; no dejes la deliberadamente defectuosa como reparación."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 4)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_retorno_y_fase",
+          "question": "El objetivo se construye y al ejecutarlo muestra una comparación FALLO y termina con código 1. ¿Qué significa aquí ese resultado?",
+          "options": [
+            "Se ejecutó el comprobador y encontró al menos una discrepancia; hay que revisar su origen.",
+            "CMake no consiguió construir el objetivo, porque cualquier código 1 es un fallo de construcción.",
+            "La biblioteca es necesariamente incorrecta y no hace falta revisar el esperado."
+          ],
+          "correctIndex": 0,
+          "explanation": "El retorno 1 pertenece a la ejecución del comprobador, no a CMake. Señala alguna discrepancia; revisar el requisito permite decidir si el defecto está en el componente o en la prueba.",
+          "reviewFeedback": [
+            "Relaciona el retorno con el propósito de este main y conserva la información de las líneas por caso.",
+            "Identifica qué operación produjo el código. Un programa construido puede usar un retorno no nulo para comunicar su propia evaluación.",
+            "Comprueba qué dos valores se compararon y qué fundamento tiene cada uno. La discrepancia por sí sola no decide cuál contradice el acuerdo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar la batería después de la contraprueba"
+        },
+        {
+          "type": "note",
+          "text": "Referencia posterior al intento: para 17 piezas el caso debe esperar 5. Los cuatro casos iniciales y los tres añadidos permanecen en pruebas/cajas_casos.cpp; no se sustituyen por una sola entrada que falle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la biblioteca piezas/4, fallan 1,5,17; los demás siguen observándose. Con (piezas+3)/4, los siete coinciden. En este laboratorio siempre se reconstruye el objetivo después de editar. La batería queda guardada en el proyecto y puede repetirse sin volver a escribir manualmente cada comparación. La repetibilidad necesita conservar entradas, expectativas, descripción y fuentes pertinentes (Thomas & Hunt, 2020, pp. 274–275)."
+        },
+        {
+          "type": "order_code",
+          "id": "bat_orden_del_control",
+          "question": "Ordena las acciones de esta contraprueba, partiendo de una batería justificada y una revisión correcta ya comprobada. Cada acción describe un bloque completo del procedimiento.",
+          "fragments": [
+            "Recuperar la revisión correcta, reconstruir y volver a comprobar la misma batería.",
+            "Guardar la identidad de la revisión correcta y la batería que se conservará.",
+            "Cambiar sólo la biblioteca al defecto conocido, sin tocar los esperados.",
+            "Reconstruir el comprobador, ejecutarlo y comprobar el rechazo del defecto."
+          ],
+          "correctOrder": [
+            1,
+            2,
+            3,
+            0
+          ],
+          "explanation": "Primero se identifica qué se conservará, después se introduce el defecto controlado y se observa con la misma batería reconstruida. Al final se recupera y comprueba la revisión correcta. Conservar los esperados permite atribuir el cambio de resultado a la revisión de la biblioteca.",
+          "reviewFeedback": "Para cada acción de tu orden, localiza qué revisión y qué batería estarían disponibles. Comprueba si el resultado observado correspondería al cambio que intentas controlar y si el procedimiento deja recuperada la revisión prevista."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_todo_verde_y_alcance",
+          "question": "Los siete casos pasan tras recuperar la revisión correcta. ¿Qué afirmación expresa el alcance de esa evidencia?",
+          "options": [
+            "Todas las entradas y todos los futuros cambios del proyecto ya están certificados.",
+            "Esa construcción coincide con los siete esperados guardados; otras entradas requieren razonamiento o comprobaciones pertinentes.",
+            "El comprobador ya no debe conservar los cuatro casos iniciales porque todos pasaron."
+          ],
+          "correctIndex": 1,
+          "explanation": "La batería aporta evidencia repetible de sus casos y de esa construcción. Su permanencia ayuda a detectar regresiones, pero un resultado verde no certifica datos o revisiones que no se han examinado.",
+          "reviewFeedback": [
+            "Distingue las observaciones de esta ejecución y una afirmación sobre datos o revisiones que no se ejecutaron.",
+            "Relaciona la afirmación con los casos que se ejecutaron y con el dominio del componente.",
+            "Reconsidera qué comportamientos seguirán observándose cuando cambie de nuevo el componente."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferencia: otro componente y un comprobador por construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora lotes_para recibe entre 0 y 18 piezas y devuelve el mínimo número de lotes de seis plazas que permite guardarlas; cero piezas necesita cero lotes. El proyecto ya tiene biblioteca lotes y cliente consultar_lotes. verificar_lotes es otro ejecutable enlazado con la misma biblioteca, pero su main inicial todavía no compara nada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, calcula los esperados para 0,6,7,18 desde la nueva capacidad. Escribe las cuatro comparaciones en pruebas/lotes_casos.cpp, con diagnóstico por caso y retorno final 0 si todas coinciden o 1 si hay alguna discrepancia. No copies la fórmula al comprobador para fabricar esperados. Conserva las cuatro llamadas al hacer el control deliberado de piezas/6 y recuperar después la referencia correcta. Puedes organizar tu solución con los recursos ya conocidos; no existe un único texto válido."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset_target_properties(lotes consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Dominio: 0 <= piezas <= 18.\n// Minimo numero de lotes de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero lotes.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    // Escribe aqui tus comprobaciones antes de consultar la referencia.\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_main_vacio",
+          "question": "El main inicial de verificar_lotes termina con código 0 sin comparar ni imprimir nada. ¿Qué puedes concluir?",
+          "options": [
+            "Los cuatro casos pasaron porque un comprobador siempre usa cero para indicar que todo coincide.",
+            "Ese programa terminó sin comunicar un fallo, pero todavía no examinó los cuatro casos pedidos.",
+            "La biblioteca ya fue examinada porque el ejecutable enlaza con lotes."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un main vacío puede retornar cero sin observar nada. Para atribuir el retorno a los cuatro casos, el código debe ejecutarlos y combinar sus comparaciones como exige la consigna.",
+          "reviewFeedback": [
+            "Relaciona el significado del retorno con las instrucciones que lo calculan. Un nombre o una convención no añade llamadas ausentes.",
+            "Comprueba qué instrucciones de comparación ejecutó realmente el main antes de interpretar su retorno.",
+            "Separa disponer de una definición al enlazar y llamar a ella durante la ejecución. Revisa si ese main hizo alguna llamada."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de transferencia y recuperación posterior"
+        },
+        {
+          "type": "note",
+          "text": "Consulta después de escribir y contrastar tu comprobador. La referencia organiza las cuatro llamadas con el mismo mecanismo conocido; el contrato nuevo decide sus cantidades."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La biblioteca de referencia usa (piezas+5)/6. Para cero devuelve cero; para un múltiplo de seis conserva el cociente y para el resto necesita un lote adicional. El numerador máximo también es 23. La contraprueba piezas/6 debe fallar en siete piezas y la recuperación debe conservar los cuatro casos. Al seguir ampliando el proyecto, vuelve a ejecutar los casos pertinentes después de cambios de fuentes, requisitos o descripción; no confundas un cliente que muestra dos cantidades con la batería completa."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_otra_revision_otros_datos",
+          "question": "Predice la salida exacta de la revisión deliberada para 1,12,13, sin salto final. Es otra ejecución: no copies el informe de los cuatro casos de la batería.",
+          "code": "#include <iostream>\n\nint lotes_para(int piezas) { return piezas / 6; }\n\nint main() {\n    std::cout << lotes_para(1) << \":\" << lotes_para(12)\n              << \":\" << lotes_para(13);\n    return 0;\n}\n",
+          "answers": [
+            "0:2:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La revisión usa división entera por seis: obtiene 0,2,2. Su coincidencia para doce no corrige la falta de capacidad para una o trece piezas. Cambiar los datos cambia qué resultados se observaron.",
+          "reviewFeedback": "Traza las tres llamadas en el orden de impresión con el cuerpo que aparece aquí. Distingue los datos de esta ejecución y los de la batería que construiste."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_cambio_de_acuerdo",
+          "question": "El proyecto cambia legítimamente a lotes de cinco plazas. ¿Qué trabajo permite conservar una prueba con significado?",
+          "options": [
+            "Revisar el contrato, recalcular sus esperados y ajustar/comprobar la implementación, conservando el motivo de los cambios.",
+            "Conservar todos los esperados anteriores sin revisarlos para no alterar la regresión.",
+            "Cambiar esperados copiando la nueva salida, sin contrastar la capacidad acordada."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una modificación real del requisito puede justificar nuevos esperados; su origen debe ser el acuerdo revisado. Conservar el registro anterior ayuda a distinguir ese cambio de ocultar un defecto. Esta lección no sustituye las técnicas de validación posteriores.",
+          "reviewFeedback": [
+            "Comprueba que las expectativas y la revisión se juzguen según el nuevo acuerdo explícito.",
+            "Conservar evidencia requiere saber a qué contrato corresponde. Revisa si las cantidades de una capacidad siguen siendo válidas para la nueva.",
+            "Distingue una actualización justificada del acuerdo y adaptar la prueba a cualquier resultado que produzca el cuerpo."
+          ]
+        }
+      ]
+    }
+  ]
+}
