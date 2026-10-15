@@ -18,7 +18,8 @@ internal object NarrationResumePolicy {
     fun key(page: String, language: String, engine: String, voice: String,
             sentences: List<String>): String {
         val audioIdentity = sentences.map { sentence ->
-            if (language != NarrationLanguage.SPANISH.tag || !ManualEnglishSpeech.isPrepared(sentence)) sentence
+            if ((language != NarrationLanguage.SPANISH.tag && language != NarrationLanguage.FRENCH.tag) ||
+                !ManualEnglishSpeech.isPrepared(sentence)) sentence
             else if (engine == NarrationEngine.ANDROID.name || ManualEnglishSpeech.spans(sentence).isEmpty()) {
                 // Internal metadata cannot invalidate a bookmark for unchanged audio.
                 ManualEnglishSpeech.strip(sentence)

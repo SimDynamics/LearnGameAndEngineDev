@@ -1,5 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
+import java.util.Locale
+
 /**
  * Reviewed English readings for Spanish C++ lessons. This is a finite allowlist, not
  * language detection. Add an entry and regenerate its bundled Misaki pronunciation;
@@ -204,6 +206,103 @@ object ManualEnglishTerms {
         }.toList()
     }
 
+    // These are contextual roles of the shared entries, not a second pronunciation dictionary.
+    private val frenchStandalone = setOf("include", "iostream", "cout", "cin", "return")
+    // The pinned French lexicon already contains the reviewed US phones for these entries.
+    // Naming them in prose preserves compatible audio; C++ notation still needs preparation.
+    private val frenchAlreadyEnglish = setOf("string", "break", "set", "flush")
+    private val frenchCallable = setOf("main", "getline", "size", "empty", "push_back", "pop_back", "begin",
+        "end", "at", "front", "back", "data", "reserve", "resize", "clear", "insert", "erase", "find",
+        "sort", "swap", "move", "format", "setw", "setfill", "setprecision", "flush", "ws", "fail", "good",
+        "bad", "eof", "close", "get", "str", "what", "seed", "reset", "assert", "isalpha", "isdigit",
+        "isspace", "tolower", "toupper")
+    private val frenchTypes = typeNames + setOf("string_view", "vector", "array", "map", "set", "optional",
+        "size_t", "numeric_limits", "pair", "istream", "ostream", "ifstream", "ofstream", "istringstream",
+        "ostringstream", "ios", "mt19937", "uniform_int_distribution", "uniform_real_distribution",
+        "random_device", "result_type", "exception", "runtime_error", "logic_error", "invalid_argument",
+        "out_of_range", "bad_alloc")
+    private val frenchClasses = frenchTypes - setOf("int", "char", "auto", "bool", "double", "float", "void",
+        "unsigned", "signed", "short", "long", "const")
+    private val frenchHeaders = setOf("iostream", "string", "string_view", "vector", "array", "map", "set",
+        "optional", "sstream", "fstream", "ios", "istream", "ostream", "iomanip", "stdexcept", "cctype",
+        "cstdio", "cstddef", "cstdint", "cassert", "algorithm", "limits", "utility", "cmath", "memory",
+        "random", "format")
+    private val frenchDirectives = setOf("include", "define", "ifdef", "ifndef", "endif", "elif", "undef", "pragma")
+    private val frenchInstructions = setOf("return", "if", "else", "for", "while", "do", "switch", "case",
+        "break", "continue", "try", "catch", "throw", "using", "new", "delete", "assert")
+    private val frenchKeywords = setOf("int", "char", "bool", "float", "double", "void", "long", "short",
+        "signed", "unsigned", "const", "constexpr", "auto", "true", "false", "class", "struct", "enum",
+        "public", "private", "protected", "virtual", "override", "final", "namespace", "template", "typename",
+        "static_cast", "dynamic_cast", "reinterpret_cast", "const_cast", "nullptr", "noexcept") + frenchInstructions
+    private val frenchCallSyntax = frenchCallable + setOf("if", "for", "while", "switch", "catch")
+    private val frenchMembers = frenchCallable + "result_type"
+    private val frenchAccessSpecifiers = setOf("public", "private", "protected")
+    private const val FRENCH_NAMED = "(?:(?:nomm[ée]e?|appel[ée]e?)\\s+)?"
+    private val frenchFunctionCue = Regex("\\b(?:fonction|m[ée]thode|manipulateur)\\s+$FRENCH_NAMED$")
+    private val frenchMemberCue = Regex("\\bmembre\\s+$FRENCH_NAMED$")
+    private val frenchNamedCallableCue = Regex("\\b(?:fonction|m[ée]thode|manipulateur|membre)\\s+(?:nomm[ée]e?|appel[ée]e?)\\s+$")
+    private val frenchTypeCue = Regex("\\btype(?:s)?(?: de donn[ée]es)?\\s+$FRENCH_NAMED$")
+    private val frenchClassCue = Regex("\\b(?:classe|conteneur)\\s+$FRENCH_NAMED$")
+    private val frenchHeaderCue = Regex("\\b(?:biblioth[èe]que|en-t[êe]te|fichier d['’]en-t[êe]te)\\s+(?:standard\\s+)?$FRENCH_NAMED$")
+    private val frenchKeywordCue = Regex("\\b(?:mots?[- ]cl[ée]s?|mots? r[ée]serv[ée]s?|sp[ée]cificateur|modificateur)\\s+$FRENCH_NAMED$")
+    private val frenchInstructionCue = Regex("\\b(?:instruction|boucle|condition|branche|clause)\\s+$FRENCH_NAMED$")
+    private val frenchDirectiveCue = Regex("(?:#\\s*|\\bdirective\\s+(?:(?:du|de) pr[ée]processeur\\s+)?$FRENCH_NAMED)$")
+    private val frenchDeclarationAfter = Regex("^\\s+[*&]*\\s*[\\p{L}_][\\p{L}\\p{N}_]*\\s*[;=({]")
+    private val frenchElisionPrefixes = setOf("l", "d", "j", "m", "n", "s", "t", "c", "qu", "jusqu",
+        "lorsqu", "puisqu", "quoiqu", "quelqu", "aujourd")
+
+    /** Explicit French policy. Ordinary French homonyms never inherit Spanish PROSE permission. */
+    fun selectFrench(source: String, mathMode: String = "auto"): List<Match> {
+        if (source.isBlank() || mathMode == "inline" || mathMode == "block") return emptyList()
+        val (protected, code) = masks(source, french = true)
+        return identifier.findAll(source).mapNotNull { token ->
+            val entry = bySpelling[token.value] ?: return@mapNotNull null
+            val start = token.range.first
+            val end = token.range.last + 1
+            if ((start until end).any { protected[it] }) return@mapNotNull null
+            if (entry.spelling in frenchStandalone) return@mapNotNull Match(start, end, entry)
+            val before = source.substring((start - 100).coerceAtLeast(0), start)
+            val after = source.substring(end, (end + 100).coerceAtMost(source.length))
+            val lowerBefore = before.lowercase(Locale.ROOT)
+            val qualified = qualifiedCue.containsMatchIn(before)
+            val header = before.endsWith('<') && after.startsWith('>')
+            val template = templateContext(entry, before, after)
+            if (entry.spelling in frenchAlreadyEnglish) {
+                return@mapNotNull if (code[start] || qualified || header || template) Match(start, end, entry) else null
+            }
+            val contexts = mutableSetOf<Context>()
+            if (code[start]) contexts += Context.CODE
+            if (qualified) contexts += Context.QUALIFIED
+            if (memberCallBefore.containsMatchIn(before) && after.startsWith('(') && entry.spelling in frenchCallable)
+                contexts += Context.MEMBER
+            if (header) contexts += Context.HEADER
+            // French prose often places a parenthetical after a verb/adjective. Whitespace
+            // before '(' alone is not proof of a C++ call, nor is every keyword callable.
+            if (after.startsWith('(') && entry.spelling in frenchCallSyntax)
+                contexts += Context.CALL
+            val declarationStart = before.substringAfterLast('\n').isBlank() ||
+                before.trimEnd().lastOrNull()?.let { it in ";{}" } == true
+            // "La fonction sort du domaine" uses the ordinary French verb sortir.
+            // Only explicit naming or actual C++ notation establishes the library function.
+            val namedCallable = entry.spelling != "sort" || frenchNamedCallableCue.containsMatchIn(lowerBefore)
+            val roleCue =
+                (entry.spelling in frenchCallable && namedCallable && frenchFunctionCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchMembers && namedCallable && frenchMemberCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchTypes && frenchTypeCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchClasses && frenchClassCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchHeaders && frenchHeaderCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchKeywords && frenchKeywordCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchInstructions && frenchInstructionCue.containsMatchIn(lowerBefore)) ||
+                (entry.spelling in frenchTypes && declarationStart && frenchDeclarationAfter.containsMatchIn(after)) ||
+                (entry.spelling in frenchAccessSpecifiers && declarationStart && after.trimStart().startsWith(':')) ||
+                (entry.spelling == "final" && finalBefore.containsMatchIn(before) && finalAfter.containsMatchIn(after)) ||
+                template
+            if (roleCue) contexts += Context.TYPE_CUE
+            if (entry.spelling in frenchDirectives && frenchDirectiveCue.containsMatchIn(lowerBefore)) contexts += Context.DIRECTIVE_CUE
+            if (contexts.any { it in entry.contexts }) Match(start, end, entry) else null
+        }.toList()
+    }
+
     private fun templateContext(entry: Entry, before: String, after: String): Boolean {
         if (entry.spelling in templateNames && templateTail.containsMatchIn(after)) return true
         return entry.spelling in typeNames && before.endsWith('<') &&
@@ -224,7 +323,7 @@ object ManualEnglishTerms {
         else -> false
     }
 
-    private fun masks(source: String): Pair<BooleanArray, BooleanArray> {
+    private fun masks(source: String, french: Boolean = false): Pair<BooleanArray, BooleanArray> {
         val protected = BooleanArray(source.length)
         val code = BooleanArray(source.length)
         fun mask(from: Int, to: Int) { for (i in from until to) protected[i] = true }
@@ -256,6 +355,7 @@ object ManualEnglishTerms {
                 // when its surrounding code was supplied as prose rather than Markdown.
                 if (source[index] == '\'' && source.getOrNull(index - 1)?.isDigit() == true &&
                     source.getOrNull(index + 1)?.isDigit() == true) { index++; continue }
+                if (french && source[index] == '\'' && frenchElision(source, index)) { index++; continue }
                 val end = quoteEnd(source, index, source.length)
                 mask(index, end); index = end; continue
             }
@@ -263,6 +363,13 @@ object ManualEnglishTerms {
         }
         url.findAll(source).forEach { mask(it.range.first, it.range.last + 1) }
         return protected to code
+    }
+
+    private fun frenchElision(source: String, apostrophe: Int): Boolean {
+        if (source.getOrNull(apostrophe + 1)?.isLetter() != true || source.getOrNull(apostrophe + 2) == '\'') return false
+        val prefix = Regex("\\p{L}+$").find(source.substring((apostrophe - 20).coerceAtLeast(0), apostrophe))?.value
+            ?.lowercase(Locale.ROOT) ?: return false
+        return prefix in frenchElisionPrefixes
     }
 
     private fun maskQuotes(source: String, from: Int, to: Int, protected: BooleanArray) {

@@ -104,6 +104,8 @@ class LessonNarrationController(
     private var activePageIdentity = ""
     private var waitingForExercise = false
     private var wordAlignmentService: KokoroWordAlignment? = null
+    // Transient provenance for one explicit seek, not another bookmark or playback owner.
+    private var pendingManualForward: NarrationGatePosition? = null
     private val wordCheckpoint = object : Runnable {
         override fun run() {
             if (!trackWords || closed || !playing || !playerReady || finished) return
@@ -128,6 +130,29 @@ class LessonNarrationController(
 
     private fun publishProgress(phase: NarrationPlaybackPhase) =
         publishProgress(progressSnapshot(phase))
+
+    private fun publishPositionChanged() {
+        val from = pendingManualForward
+        if (from == null || offset < 0L) {
+            publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
+            return
+        }
+        // Project the same explicit seek through available WAV durations even while paused.
+        // This observes the existing gate without changing the selected segment, player,
+        // bookmark or synthesis queue. Unknown durations defer the remaining visual range.
+        val projection = NarrationVisualSeek.resolve(NarrationGatePosition(index, offset),
+            segments.map { it.duration }) { edge, proposed -> playbackGate?.seek(edge, proposed) ?: proposed }
+        val destination = projection.destination
+        val forward = destination.segment > from.segment ||
+            (destination.segment == from.segment && destination.positionMs > from.positionMs)
+        if (forward) publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
+            segmentIndex = destination.segment,
+            positionMs = destination.positionMs, manualForwardFrom = from,
+            manualForwardToEnd = projection.resolved && destination.segment == segments.lastIndex &&
+                destination.positionMs == segments[destination.segment].duration?.toLong()))
+        else publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
+        if (projection.resolved) pendingManualForward = null
+    }
 
     private fun startWordObservation() {
         if (!trackWords) return
@@ -164,6 +189,7 @@ class LessonNarrationController(
             index = permitted.segment
             offset = permitted.positionMs
             waitingForExercise = shouldWait && gate.blockedByAnswer(index)
+            pendingManualForward = null
             rememberPlaybackPosition()
             publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
         }
@@ -476,6 +502,7 @@ class LessonNarrationController(
     fun restart() = onMain {
         if (closed || segments.isEmpty()) return@onMain
         pause()
+        pendingManualForward = null
         userPositionChosen = true
         finished = false
         playbackGate?.restart()
@@ -502,6 +529,11 @@ class LessonNarrationController(
         val requested = NarrationGatePosition(targetIndex,if(previousUnknown) target else target.coerceAtLeast(0))
         val bounded = if (previousUnknown) requested else playbackGate?.seek(from,requested) ?: requested
         if (bounded == from) return@onMain
+        // Close the genuinely played interval at its observed decoder position before
+        // reporting the separate, voluntary visual skip. Neither event completes feedback.
+        if (playerReady && playing) publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED)
+            .copy(positionMs = point.positionMs))
+        pendingManualForward = if (seconds > 0) pendingManualForward ?: from else null
         val wasFinished = finished
         if (wasFinished) finished = false
         userPositionChosen = true
@@ -567,7 +599,7 @@ class LessonNarrationController(
         val target = if (position < 0) desired else playbackGate?.clamp(desired) ?: desired
         index = target.segment; offset = target.positionMs
         rememberPlaybackPosition()
-        publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
+        publishPositionChanged()
         if (playing && playbackGate?.blockedByAnswer(index) == true) waitForExercise()
         if (playing) publishProgress(NarrationPlaybackPhase.BUFFERING)
         ensureSegment(index)
@@ -731,7 +763,8 @@ class LessonNarrationController(
             (english ?: EnglishMisakiG2P(root).also { english = it })
                 .phonemize(text, language == NarrationLanguage.BRITISH_ENGLISH, isCurrent)
         NarrationLanguage.FRENCH ->
-            (french ?: FrenchFluidG2P(root, File(root, "tokenizer.json")).also { french = it }).phonemize(text)
+            MixedFrenchG2P.phonemizePrepared(text,
+                french ?: FrenchFluidG2P(root, File(root, "tokenizer.json")).also { french = it })
     }
 
     private fun initializeTts() {
@@ -846,6 +879,7 @@ class LessonNarrationController(
                 if (pending.isEmpty()) releaseSynthesisCpu()
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
+                if (pendingManualForward != null) publishPositionChanged()
                 if (playing && request.index == index && player == null) preparePlayer(segments[index])
                 prepareWordAlignment(request)
                 if (request.settings.engine != NarrationEngine.ANDROID) {
@@ -991,6 +1025,7 @@ class LessonNarrationController(
         resumeKey = null
         resumeOwner = null
         userPositionChosen = false
+        pendingManualForward = null
         playbackGate = null
         activePageIdentity = ""
         waitingForExercise = false

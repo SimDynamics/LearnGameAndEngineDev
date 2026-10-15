@@ -78,6 +78,23 @@ class LessonReadingProgressModelTest {
         assertTrue(model.states(page).isEmpty())
     }
 
+    @Test fun explicitManualSkipUpdatesUnmappedVisualBlocksWithoutCreditingHeardFeedback() {
+        val model = LessonReadingProgressModel()
+        val origins = listOf(NarrationTextOrigin(0), NarrationTextOrigin(1), NarrationTextOrigin(1, true))
+        model.bind(page, NarrationReadingPlan(origins, "visual-skip-fallback"), key)
+        model.update(event(NarrationPlaybackPhase.POSITION_CHANGED, index = 1).copy(
+            manualForwardFrom = NarrationGatePosition(0)))
+        assertEquals(ReadingBlockState.READ, model.states(page)[0])
+        assertEquals(ReadingBlockState.UNREAD, model.states(page)[1])
+        // The visual observer cannot add the skipped segment to its heard evidence.
+        val pages = model.javaClass.getDeclaredField("pages").apply { isAccessible = true }.get(model) as Map<*, *>
+        val state = requireNotNull(pages[page])
+        val heard = state.javaClass.getDeclaredField("heard").apply { isAccessible = true }.get(state) as Set<*>
+        assertTrue(heard.isEmpty())
+        model.update(event(NarrationPlaybackPhase.RESTARTED))
+        assertTrue(model.states(page).values.all { it == ReadingBlockState.UNREAD })
+    }
+
     @Test fun seekingWithinTheCurrentSegmentCancelsCoverageUntilACompleteReplay() {
         val model = LessonReadingProgressModel()
         model.bind(page, plan(0, 1, 2), key)

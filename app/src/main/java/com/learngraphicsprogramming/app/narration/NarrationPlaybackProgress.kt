@@ -32,5 +32,9 @@ data class NarrationPlaybackProgress(
     val positionMs: Long = 0L,
     val observedUptimeMs: Long = 0L,
     val playbackRate: Float = 1f,
-    val alignment: NarrationWordAlignment? = null
+    val alignment: NarrationWordAlignment? = null,
+    /** Explicit forward control, for visual coverage only; never evidence of heard feedback. */
+    val manualForwardFrom: NarrationGatePosition? = null,
+    /** The explicit visual skip reaches the measured end of the final source recording. */
+    val manualForwardToEnd: Boolean = false
 )

@@ -5,6 +5,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LessonReadingColorTest {
+    @Test fun darkLessonPendingInkIsDarkerThanBeforeWithoutLosingTextContrast() {
+        for (surface in listOf(0xff101114.toInt(), 0xff1c1f24.toInt())) {
+            val pending = LessonReadingColor.unread(surface)
+            assertTrue("Pending ink is visibly darker than the previous channel 145", pending and 255 < 145)
+            assertTrue(LessonReadingColor.contrast(pending, surface) >= LessonReadingColor.MIN_CONTRAST)
+            assertTrue("Read white remains distinctly brighter", 233 - (pending and 255) >= 90)
+        }
+        assertEquals("The existing readable light-theme gray is retained", 80,
+            LessonReadingColor.unread(0xffffffff.toInt()) and 255)
+    }
+
     @Test fun unreadGrayRemainsOpaqueAndReadableOnActualLessonAndLightSurfaces() {
         val surfaces = listOf(0xff101114.toInt(), 0xff1c1f24.toInt(), 0xff262330.toInt(),
             0xff313842.toInt(), 0xffffffff.toInt(), 0xfffafafa.toInt(), 0xffeeeeee.toInt())

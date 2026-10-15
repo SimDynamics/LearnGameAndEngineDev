@@ -28,7 +28,8 @@ internal object KokoroNarrationCache {
     // on low storage instead of evicting successfully generated lessons.
 
     fun key(language: String, voice: String, text: String): String {
-        val annotated = language == NarrationLanguage.SPANISH.tag && ManualEnglishSpeech.isPrepared(text)
+        val annotated = (language == NarrationLanguage.SPANISH.tag || language == NarrationLanguage.FRENCH.tag) &&
+            ManualEnglishSpeech.isPrepared(text)
         val spoken = if (annotated) ManualEnglishSpeech.strip(text) else text
         val parts = mutableListOf(VERSION, KokoroModelManifest.revision, language, voice, spoken)
         if (language == NarrationLanguage.SPANISH.tag) {
@@ -39,16 +40,24 @@ internal object KokoroNarrationCache {
                 parts += SPANISH_TECHNICAL_REVISION
                 parts += prepared.text
             }
-            if (annotated) {
-                val terms = ManualEnglishSpeech.spans(text)
-                if (terms.isNotEmpty()) {
-                    parts += "manual-english-same-voice-v1"
-                    // Only the selected occurrences and their actual phones affect this
-                    // key. Adding an unrelated term preserves every compatible recording.
-                    terms.forEach { term ->
-                        parts += ManualEnglishSpeech.strip(text.substring(0, term.start)).length.toString()
-                        parts += term.entry.id
-                        parts += ManualEnglishPronunciations.phonemes(term.entry)
+        }
+        if (annotated) {
+            val terms = ManualEnglishSpeech.spans(text)
+            if (terms.isNotEmpty()) {
+                parts += "manual-english-same-voice-v1"
+                // Only the selected occurrences and their actual phones affect this
+                // key. Adding an unrelated term preserves every compatible recording.
+                terms.forEach { term ->
+                    parts += ManualEnglishSpeech.strip(text.substring(0, term.start)).length.toString()
+                    parts += term.entry.id
+                    parts += if (language == NarrationLanguage.FRENCH.tag) MixedFrenchG2P.englishPhones(term.entry)
+                        else ManualEnglishPronunciations.phonemes(term.entry)
+                    if (language == NarrationLanguage.FRENCH.tag) {
+                        MixedFrenchG2P.namespacePhonesBefore(text, term)?.let { phones ->
+                            parts += "french-us-namespace-v1"
+                            parts += phones
+                        }
+                        if (MixedFrenchG2P.needsTermBoundary(text, term)) parts += "french-cout-boundary-v1"
                     }
                 }
             }

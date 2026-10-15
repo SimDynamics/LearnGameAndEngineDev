@@ -4,12 +4,13 @@ package com.learngraphicsprogramming.app.narration
 data class NarrationWordMapping(val blockIndex: Int, val spoken: List<ReadingTextRange>,
                                 val displayed: List<ReadingTextRange>)
 
-/** Observed source-audio intervals, never a saved position or a second reader history. */
+/** Visual evidence only: listened intervals and explicitly skipped intervals stay distinct. */
 internal class LessonWordReadingProgress {
     private data class Interval(val start: Long, val end: Long)
     private class Page(val mapping: Map<Int, NarrationWordMapping>) {
         val alignments = mutableMapOf<Int, NarrationWordAlignment>()
         val covered = mutableMapOf<Int, MutableList<Interval>>()
+        val skipped = mutableMapOf<Int, MutableList<Interval>>()
         val unknown = mutableMapOf<Int, Long>()
         val completed = mutableSetOf<Int>()
         var active: Int? = null
@@ -20,7 +21,7 @@ internal class LessonWordReadingProgress {
         var visible = true
         var observed = false
         fun stop() { active = null; from = null; current = null; lastClock = 0 }
-        fun reset() { covered.clear(); unknown.clear(); completed.clear(); observed = false; stop() }
+        fun reset() { covered.clear(); skipped.clear(); unknown.clear(); completed.clear(); observed = false; stop() }
     }
     private val pages = mutableMapOf<String, Page>()
 
@@ -87,7 +88,19 @@ internal class LessonWordReadingProgress {
                 }
                 page.stop()
             }
-            NarrationPlaybackPhase.POSITION_CHANGED -> page.stop()
+            NarrationPlaybackPhase.POSITION_CHANGED -> {
+                event.manualForwardFrom?.let { from ->
+                    if (from.segment in 0..segment && from.positionMs >= 0 &&
+                        (from.segment < segment || from.positionMs < event.positionMs)) {
+                        for (index in from.segment..segment) {
+                            val start = if (index == from.segment) from.positionMs * 24L else 0L
+                            val end = if (index == segment && !event.manualForwardToEnd) position else Long.MAX_VALUE
+                            cover(page.skipped, index, start, end)
+                        }
+                    }
+                }
+                page.stop()
+            }
             NarrationPlaybackPhase.RESTARTED -> { page.reset(); page.visible = true }
             NarrationPlaybackPhase.BUFFERING -> page.current = null
             NarrationPlaybackPhase.FINISHED -> {
@@ -101,8 +114,12 @@ internal class LessonWordReadingProgress {
     }
 
     private fun cover(page: Page, segment: Int, start: Long, end: Long) {
+        cover(page.covered, segment, start, end)
+    }
+
+    private fun cover(intervals: MutableMap<Int, MutableList<Interval>>, segment: Int, start: Long, end: Long) {
         if (end <= start) return
-        val values = page.covered.getOrPut(segment) { mutableListOf() }
+        val values = intervals.getOrPut(segment) { mutableListOf() }
         val sorted = (values + Interval(start, end)).sortedBy { it.start }
         values.clear()
         sorted.forEach { item ->
@@ -113,6 +130,24 @@ internal class LessonWordReadingProgress {
         }
     }
 
+    private fun visuallyComplete(page: Page, segment: Int): Boolean {
+        if (segment in page.completed) return true
+        var through = 0L
+        for (interval in (page.covered[segment].orEmpty() + page.skipped[segment].orEmpty()).sortedBy { it.start }) {
+            if (interval.start > through) break
+            through = maxOf(through, interval.end)
+        }
+        return through == Long.MAX_VALUE
+    }
+
+    /** Whole-segment visual coverage also supports views that cannot expose safe word ranges. */
+    fun visuallyCompletedSegments(identity: String): Set<Int> {
+        val page = pages[identity] ?: return emptySet()
+        if (!page.visible) return emptySet()
+        return (page.covered.keys + page.skipped.keys + page.completed)
+            .filterTo(mutableSetOf()) { visuallyComplete(page, it) }
+    }
+
     /** Only pending glyph ranges are returned; no TextView content is retained or rewritten. */
     fun unread(identity: String): Map<Int, List<ReadingTextRange>> {
         val page = pages[identity] ?: return emptyMap()
@@ -121,12 +156,17 @@ internal class LessonWordReadingProgress {
         page.mapping.forEach { (segment, mapping) ->
             val ranges = result.getOrPut(mapping.blockIndex) { mutableListOf() }
             val alignment = page.alignments[segment]
+            val skipped = page.skipped[segment].orEmpty()
+            // An unsupported alignment still has a reliable whole-segment boundary.
+            // This union changes presentation only; skipped audio never becomes heard audio.
+            val knownComplete = visuallyComplete(page, segment)
             mapping.displayed.forEachIndexed { index, displayed ->
                 val word = alignment?.words?.getOrNull(index)
-                val knownComplete = segment in page.completed
                 val unknown = page.unknown[segment]
-                val ordinary = knownComplete || unknown == Long.MAX_VALUE || (word != null && (
+                val ordinary = knownComplete || unknown == Long.MAX_VALUE ||
+                    (word != null && (
                     (unknown != null && word.startSample < unknown) ||
+                    skipped.any { it.start < word.endSample && it.end > word.startSample } ||
                     page.covered[segment].orEmpty().any { it.start <= word.startSample && it.end >= word.endSample } ||
                     page.current?.let { it.first == segment && it.second >= word.startSample && it.second < word.endSample } == true))
                 if (!ordinary) ranges += displayed

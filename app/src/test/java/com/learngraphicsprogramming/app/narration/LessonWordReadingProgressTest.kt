@@ -40,7 +40,7 @@ class LessonWordReadingProgressTest {
         assertEquals(ranges.drop(2), progress.pending()) // A silence does not undo heard words.
     }
 
-    @Test fun explicitForwardSeekNeverCreditsTheWordsItSkipped() {
+    @Test fun aPositionChangeWithoutConfirmedForwardControlDoesNotCreditSkippedWords() {
         val progress = model()
         progress.update(event(NarrationPlaybackPhase.PLAYING))
         progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 1_000, 1_010))
@@ -51,12 +51,97 @@ class LessonWordReadingProgressTest {
         assertEquals(ranges.take(3), progress.pending())
     }
 
+    @Test fun aConfirmedManualForwardControlMarksItsSkippedWordsOnlyForVisualPresentation() {
+        val progress = model()
+        progress.update(event(NarrationPlaybackPhase.PLAYING))
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 200, 1_200))
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 1_000, 1_210)
+            .copy(manualForwardFrom = NarrationGatePosition(0, 200)))
+        assertEquals(listOf(ranges.last()), progress.pending())
+        progress.update(event(NarrationPlaybackPhase.PLAYING, 1_000, 1_220))
+        assertTrue(progress.pending().isEmpty()) // Target word is current; no hearing milestone was fabricated.
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 1_250, 1_470))
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 100, 1_480))
+        assertTrue(progress.pending().isEmpty()) // Rewinding retains explicit visual coverage.
+        progress.update(event(NarrationPlaybackPhase.RESTARTED))
+        assertEquals(ranges, progress.pending())
+    }
+
+    @Test fun confirmedForwardControlCrossesSegmentsWhileUnrelatedPrefixesRemainPending() {
+        val progress = LessonWordReadingProgress()
+        val mappings = (0..3).associateWith { NarrationWordMapping(it, ranges, ranges) }
+        progress.bind(identity, mappings, replace = true)
+        for (segment in 0..3) progress.update(event(NarrationPlaybackPhase.ALIGNMENT_AVAILABLE,
+            segment = segment, count = 4, alignment = alignment))
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 650, segment = 3, count = 4)
+            .copy(manualForwardFrom = NarrationGatePosition(1, 400)))
+        assertEquals(ranges, progress.unread(identity)[0])
+        assertEquals(listOf(ranges.first()), progress.unread(identity)[1])
+        assertTrue(progress.unread(identity)[2].orEmpty().isEmpty())
+        assertEquals(ranges.drop(2), progress.unread(identity)[3])
+        progress.update(event(NarrationPlaybackPhase.RESTARTED, count = 4))
+        assertTrue(progress.unread(identity).values.all { it == ranges })
+    }
+
+    @Test fun lateTimingAppliesConfirmedManualCoverageWithoutClaimingAnUnexplainedJump() {
+        val progress = model(aligned = false)
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 650)
+            .copy(manualForwardFrom = NarrationGatePosition(0, 0)))
+        assertEquals(ranges, progress.pending())
+        progress.update(event(NarrationPlaybackPhase.ALIGNMENT_AVAILABLE, alignment = alignment))
+        assertEquals(ranges.drop(2), progress.pending())
+    }
+
+    @Test fun explicitSkipAndObservedTailUseWholeSegmentCompletionWithoutInventedWordTiming() {
+        val progress = model(aligned = false)
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 650)
+            .copy(manualForwardFrom = NarrationGatePosition(0, 0)))
+        progress.update(event(NarrationPlaybackPhase.PLAYING, 650))
+        assertEquals(ranges, progress.pending()) // Partial coverage has no pretend word precision.
+        progress.update(event(NarrationPlaybackPhase.SEGMENT_COMPLETED, 1_350, 1_700))
+        assertTrue(progress.pending().isEmpty())
+        progress.update(event(NarrationPlaybackPhase.RESTARTED))
+        assertEquals(ranges, progress.pending())
+    }
+
+    @Test fun wholeSegmentCoverageForFallbackViewsUnionsListeningAndManualSkipWithoutAnotherHistory() {
+        val progress = LessonWordReadingProgress().apply { bind(identity, emptyMap(), replace = true) }
+        progress.update(event(NarrationPlaybackPhase.PLAYING))
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 200, 1_200))
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 650, 1_210)
+            .copy(manualForwardFrom = NarrationGatePosition(0, 200)))
+        progress.update(event(NarrationPlaybackPhase.PLAYING, 650, 1_220))
+        assertTrue(progress.visuallyCompletedSegments(identity).isEmpty())
+        progress.update(event(NarrationPlaybackPhase.SEGMENT_COMPLETED, 1_350, 1_920))
+        assertEquals(setOf(0), progress.visuallyCompletedSegments(identity))
+        progress.update(event(NarrationPlaybackPhase.RESTARTED))
+        assertTrue(progress.visuallyCompletedSegments(identity).isEmpty())
+        // A completion without evidence for the omitted prefix cannot complete presentation.
+        progress.update(event(NarrationPlaybackPhase.PLAYING, 400))
+        progress.update(event(NarrationPlaybackPhase.SEGMENT_COMPLETED, 1_350, 1_950))
+        assertTrue(progress.visuallyCompletedSegments(identity).isEmpty())
+    }
+
     @Test fun implausibleClockJumpIsTreatedAsASeekInsteadOfListeningEvidence() {
         val progress = model()
         progress.update(event(NarrationPlaybackPhase.PLAYING))
         progress.update(event(NarrationPlaybackPhase.ADVANCED, 1_000, 1_050))
         progress.update(event(NarrationPlaybackPhase.ADVANCED, 1_250, 1_300))
         assertEquals(ranges.take(3), progress.pending())
+    }
+
+    @Test fun anExplicitSkipToTheMeasuredRecordingEndCompletesVisualFallbackWithoutWordTiming() {
+        val progress = model(aligned = false)
+        progress.update(event(NarrationPlaybackPhase.PLAYING))
+        progress.update(event(NarrationPlaybackPhase.PAUSED, 200, 1_200))
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 1_350, 1_210).copy(
+            manualForwardFrom = NarrationGatePosition(0, 200), manualForwardToEnd = true))
+        assertTrue(progress.pending().isEmpty())
+        assertEquals(setOf(0), progress.visuallyCompletedSegments(identity))
+        progress.update(event(NarrationPlaybackPhase.FINISHED, 1_350, 1_220))
+        assertTrue(progress.pending().isEmpty())
+        progress.update(event(NarrationPlaybackPhase.RESTARTED))
+        assertEquals(ranges, progress.pending())
     }
 
     @Test fun pauseAndExactResumeMergeOnlyTheIntervalsActuallyPlayed() {

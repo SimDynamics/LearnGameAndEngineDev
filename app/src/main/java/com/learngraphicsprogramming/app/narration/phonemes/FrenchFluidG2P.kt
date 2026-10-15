@@ -35,11 +35,31 @@ class FrenchFluidG2P private constructor(
     }
 
     /** Must be called on a worker. Unknown words require the real Charsiu fallback. */
-    @Synchronized fun phonemize(text: String): String {
+    @Synchronized fun phonemize(text: String): String = phonemizeImpl(text, emptyMap())
+
+    /**
+     * Runtime-only provenance: selected English phones replace reserved single-character markers.
+     * All French words still traverse the same complete-sentence frontend. Foreign phones are
+     * opaque to French stress, spelling, adaptation and liaison; no audio is split or produced here.
+     */
+    @Synchronized internal fun phonemizeWithForeignTokens(text: String, foreignTokens: Map<Char, String>): String {
+        foreignTokens.forEach { (marker, phones) ->
+            if (marker !in '\uE100'..'\uF8FF' || phones.isBlank() || phones.length > 4096 ||
+                phones.any { it == '$' || it.isISOControl() || it.isSurrogate() || it in '\uE000'..'\uF8FF' }) {
+                throw FrenchG2PException("Fragmento fonético extranjero no válido")
+            }
+        }
+        if (text.any { it in '\uE100'..'\uF8FF' && it !in foreignTokens }) {
+            throw FrenchG2PException("Marcador fonético extranjero sin resolver")
+        }
+        return phonemizeImpl(text, foreignTokens)
+    }
+
+    private fun phonemizeImpl(text: String, foreignTokens: Map<Char, String>): String {
         if (text.length > 16_384) throw FrenchG2PException("El texto francés es demasiado largo")
         if (text.isBlank()) return ""
         val normalized = FrenchNumberNormalizer.normalize(text)
-        val phonemes = FrenchPhonology.phonemize(normalized, lexicon::contains) { word ->
+        val phonemes = FrenchPhonology.phonemize(normalized, lexicon::contains, foreignTokens) { word ->
             FrenchPhonology.citationOverrides[word]?.let { FrenchPronunciation.Raw(it) }
                 ?: lexicon.lookup(word)?.let { FrenchPronunciation.Cached(it, word in lexicon.hAspire) }
                 ?: if (word.all { it.isLetter() }) {
@@ -139,17 +159,23 @@ internal object FrenchPhonology {
     data class Token(val text: String, val isWord: Boolean, val spaceBefore: Boolean)
     private data class Item(
         val isWord: Boolean, val phones: String, val word: String = "", val hAspire: Boolean = false,
-        val spaceBefore: Boolean = false
+        val spaceBefore: Boolean = false, val foreign: Boolean = false
     )
 
-    fun phonemize(text: String, isLexiconEntry: (String) -> Boolean, lookup: (String) -> FrenchPronunciation?): String {
+    fun phonemize(text: String, isLexiconEntry: (String) -> Boolean,
+                  foreignTokens: Map<Char, String> = emptyMap(), lookup: (String) -> FrenchPronunciation?): String {
         val normalized = Normalizer.normalize(text, Normalizer.Form.NFC).replace('’', '\'').replace('«', '“').replace('»', '”')
-        val tokens = tokenize(normalized)
+        val tokens = tokenize(normalized, foreignTokens.keys)
         val items = mutableListOf<Item>()
         var skip = 0
         tokens.forEachIndexed { index, token ->
             if (skip > 0) { skip--; return@forEachIndexed }
             if (!token.isWord) { items += Item(false, token.text, spaceBefore = token.spaceBefore); return@forEachIndexed }
+            val foreign = token.text.singleOrNull()?.let(foreignTokens::get)
+            if (foreign != null) {
+                items += Item(true, foreign, spaceBefore = token.spaceBefore, foreign = true)
+                return@forEachIndexed
+            }
             val phrase = phrases.firstOrNull { (words, _) ->
                 index + words.size <= tokens.size && words.indices.all {
                     tokens[index + it].isWord && tokens[index + it].text.lowercase(Locale.ROOT) == words[it]
@@ -204,7 +230,8 @@ internal object FrenchPhonology {
         }
         val out = items.mapIndexed { index, item ->
             val next = items.getOrNull(index + 1)
-            if (item.isWord && next?.isWord == true && !next.hAspire && startsWithVowel(next.phones))
+            if (item.isWord && !item.foreign && next?.isWord == true && !next.foreign &&
+                !next.hAspire && startsWithVowel(next.phones))
                 item.copy(phones = applyLiaison(item.word, item.phones)) else item
         }
         val result = StringBuilder()
@@ -319,13 +346,17 @@ internal object FrenchPhonology {
     }
     private fun startsWithVowel(phones: String): Boolean = phones.firstOrNull { it != 'ˈ' && it != 'ˌ' }?.let { it in vowels || it == 'j' || it == 'w' } ?: false
 
-    private fun tokenize(text: String): List<Token> {
+    private fun tokenize(text: String, foreignMarkers: Set<Char> = emptySet()): List<Token> {
         val tokens = mutableListOf<Token>()
         var i = 0
         var sawSpace = false
         while (i < text.length) {
             val ch = text[i]
             if (ch.isWhitespace() || Character.isSpaceChar(ch)) { sawSpace = true; i++; continue }
+            if (ch in foreignMarkers) {
+                tokens += Token(ch.toString(), true, sawSpace)
+                sawSpace = false; i++; continue
+            }
             if (ch.isLetter()) {
                 var j = i
                 while (j < text.length && text[j].isLetter()) j++

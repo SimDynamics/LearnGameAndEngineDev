@@ -186,8 +186,10 @@ object LessonNarrationText {
         val contextual = if (speechLanguage == NarrationLanguage.SPANISH) {
             if (forKokoro) SpanishTechnicalSpeech.prepareForKokoro(source, mathMode).text
             else SpanishTechnicalSpeech.prepare(source, mathMode).text
+        } else if (forKokoro && speechLanguage == NarrationLanguage.FRENCH) {
+            FrenchTechnicalSpeech.prepareForKokoro(source, mathMode)
         } else source
-        val spoken = if (forKokoro && speechLanguage == NarrationLanguage.SPANISH)
+        val spoken = if (forKokoro && (speechLanguage == NarrationLanguage.SPANISH || speechLanguage == NarrationLanguage.FRENCH))
             ManualEnglishSpeech.protect(contextual) { MultilingualMathSpeech.text(it, mathMode, speechLanguage) }
         else MultilingualMathSpeech.text(contextual, mathMode, speechLanguage)
         if (spoken.isNotBlank()) output.add(spoken)

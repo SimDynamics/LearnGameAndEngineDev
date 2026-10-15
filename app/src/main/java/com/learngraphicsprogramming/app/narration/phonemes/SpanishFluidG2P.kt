@@ -41,15 +41,22 @@ object SpanishFluidG2P {
 
     /**
      * Optional lexical provenance for ordinary prose. This observes the existing whole-sentence
-     * frontend; it never changes the phonemes used for synthesis. Normalization that expands or
-     * rewrites visible words has no word trace rather than an inferred correspondence.
+     * frontend; it never changes the phonemes used for synthesis. The established C++ language
+     * name is one visible word with the exact three-word reading "ce más más". Other rewrites
+     * retain the conservative fallback rather than an inferred correspondence.
      */
     internal fun traceWords(text: String, lexicon: Map<String, String> = emptyMap()): SpanishPhoneTrace? {
         if (text.isBlank() || text.length > 32_768) return null
         return runCatching {
             val source = nfc(text)
             val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
-            if (source.any { !it.isLetter() && !it.isWhitespace() && it !in prosePunctuation }) return null
+            val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
+            val cppRanges = cpp.findAll(source).map { it.range }.toList()
+            if (source.indices.any { index ->
+                    val char = source[index]
+                    !char.isLetter() && !char.isWhitespace() && char !in prosePunctuation &&
+                        !(char == '+' && cppRanges.any { index in it })
+                }) return null
             val wordPattern = Regex("\\p{L}+")
             fun words(value: String) = wordPattern.findAll(nfc(value)).map {
                 it.value.lowercase(Locale.ROOT)
@@ -57,14 +64,20 @@ object SpanishFluidG2P {
             val sourceWords = words(source)
             if (sourceWords.isEmpty()) return null
             val normalized = normalizeText(source)
-            if (words(normalized) != sourceWords) return null
+            val expandedWords = words(cpp.replace(source, "ce más más"))
+            if (words(normalized) != expandedWords) return null
+            val owners = wordPattern.findAll(source).flatMapIndexed { index, match ->
+                val count = if (cppRanges.any { it.first == match.range.first }) 3 else 1
+                List(count) { index }.asSequence()
+            }.toList()
             val tokens = normalizedTokens(normalized, lexicon)
-            if (tokens.count { it.word } != sourceWords.size) return null
+            if (tokens.count { it.word } != owners.size) return null
 
             // The ordinary join rules are retained, including punctuation attachment and
             // the contextual changes normalizedTokens already made to preceding words.
             val joined = StringBuilder()
-            val ranges = mutableListOf<SpanishWordPhoneRange>()
+            val starts = IntArray(sourceWords.size) { -1 }
+            val ends = IntArray(sourceWords.size)
             var wordIndex = 0
             for (token in tokens) {
                 if (!token.word && token.text in attachLeft) {
@@ -74,7 +87,11 @@ object SpanishFluidG2P {
                 else {
                     val start = joined.length
                     joined.append(token.text)
-                    if (token.word) ranges += SpanishWordPhoneRange(sourceWords[wordIndex++], start, joined.length)
+                    if (token.word) {
+                        val owner = owners[wordIndex++]
+                        if (starts[owner] < 0) starts[owner] = start
+                        ends[owner] = joined.length
+                    }
                     joined.append(' ')
                 }
             }
@@ -92,7 +109,10 @@ object SpanishFluidG2P {
                 }
             }
             if (phonemes != phonemize(text, lexicon)) return null
-            val mapped = ranges.map { it.copy(start = offsets[it.start], endExclusive = offsets[it.endExclusive]) }
+            val mapped = sourceWords.indices.map { index ->
+                if (starts[index] < 0) return null
+                SpanishWordPhoneRange(sourceWords[index], offsets[starts[index]], offsets[ends[index]])
+            }
             if (mapped.any { it.start >= it.endExclusive }) return null
             SpanishPhoneTrace(phonemes, mapped)
         }.getOrNull()

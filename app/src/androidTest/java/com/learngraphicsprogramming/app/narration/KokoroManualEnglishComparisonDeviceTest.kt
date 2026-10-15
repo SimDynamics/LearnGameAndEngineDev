@@ -482,9 +482,8 @@ class KokoroManualEnglishComparisonDeviceTest {
         override fun getApplicationContext(): Context = this
         override fun getFilesDir(): File = files
         override fun getCacheDir(): File = cache
-        // The QA-private model directory is shared read-only. Playback/cache/preferences are scoped.
-        override fun getExternalFilesDir(type: String?): File =
-            if (type == null) actual.filesDir else File(actual.filesDir, type)
+        // Share the actual QA installation read-only; the model store chooses its current location.
+        override fun getExternalFilesDir(type: String?): File? = actual.getExternalFilesDir(type)
         override fun getSharedPreferences(name: String, mode: Int): SharedPreferences {
             val scoped = prefix + name; preferenceNames.add(scoped)
             return actual.getSharedPreferences(scoped, mode)

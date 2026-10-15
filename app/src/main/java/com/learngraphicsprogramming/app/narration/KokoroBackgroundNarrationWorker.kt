@@ -132,8 +132,8 @@ internal class KokoroBackgroundNarrationWorker(
                                 }
                                 MixedSpanishG2P.phonemizePrepared(item.text, spanish!!)
                             }
-                            NarrationLanguage.FRENCH -> (french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json"))
-                                .also { french = it }).phonemize(item.text)
+                            NarrationLanguage.FRENCH -> MixedFrenchG2P.phonemizePrepared(item.text,
+                                french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json")).also { french = it })
                             else -> (english ?: EnglishMisakiG2P(modelRoot).also { english = it })
                                 .phonemize(item.text, item.language == NarrationLanguage.BRITISH_ENGLISH, ::active)
                         }

@@ -219,7 +219,10 @@ class WordReadingDeviceTest {
             }
             assertEquals("Word colors follow the real source-audio position and exact model word starts",
                 expectedPending, pendingAtPause)
-            assertEquals(pendingAtPause, field<List<ReadingTextRange>>(paragraph, "unreadRanges"))
+            assertEquals("The merged native draw mask covers exactly the model's pending glyphs",
+                pendingAtPause.flatMap { it.start until it.endExclusive }.toSet(),
+                field<List<ReadingTextRange>>(paragraph, "unreadRanges")
+                    .flatMap { it.start until it.endExclusive }.toSet())
             val key = requireNotNull(field<String?>(reader, "resumeKey"))
             assertEquals(paused, requireNotNull(NarrationResumeStore(context)
                 .restore(key, field<List<Any>>(reader, "segments").size)).positionMs)
@@ -265,7 +268,7 @@ class WordReadingDeviceTest {
             assertSameCachedAudio(audio, hash, initialAudioIdentity, cacheKey, initialGenerationEvents)
             reader.seekBy(jumpSeconds)
             assertNull(field<MediaPlayer?>(reader, "player"))
-            assertTrue("A forward seek does not mark skipped words as heard", skipped in pending(activity))
+            assertFalse("An explicit forward seek marks its skipped words visually read", skipped in pending(activity))
             assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
         }
         var seekOffset = 0L
@@ -282,11 +285,11 @@ class WordReadingDeviceTest {
         host.onActivity { activity ->
             val reader = controller(activity)
             reader.pauseKeepingPosition()
-            assertTrue("Even after real playback beyond the jump, the skipped word stays gray", skipped in pending(activity))
+            assertFalse("Playback after a manual jump retains its visual coverage", skipped in pending(activity))
             val beforeRewind = field<Long>(reader, "offset")
             reader.seekBy(-jumpSeconds)
             assertTrue(field<Long>(reader, "offset") < beforeRewind)
-            assertTrue("Rewind is a position change, not proof that a skipped word was heard", skipped in pending(activity))
+            assertFalse("Rewind preserves the words intentionally skipped earlier", skipped in pending(activity))
             assertSameCachedAudio(audio, hash, initialAudioIdentity, cacheKey, initialGenerationEvents)
             assertFacts(originalFacts)
             reader.restart()
@@ -328,6 +331,323 @@ class WordReadingDeviceTest {
             } finally { disabled.recycle() }
         }
         assertEquals(authored, fixture.toString())
+    }
+
+    @Test fun publishedCppParagraphTracksItsPlusesPunctuationAndRealForwardButtonsAcrossParagraphs() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados"
+        val originalLesson = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val authored = originalLesson.toString()
+        val originalParagraph = originalLesson.getJSONArray("pages").getJSONObject(3)
+            .getJSONArray("blocks").getJSONObject(1).getString("text")
+        val cppStart = originalParagraph.indexOf("C++")
+        assertTrue(cppStart > 0)
+        ProgressRepository.saveCurrentPage(context, "programming", lesson, 3)
+        val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", "programming").putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lesson)
+            .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)).also { scenario = it }
+        await("The published C++ lesson is focused on its actual fourth page", 15_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == 3 &&
+                    texts(activity).any { it.text.toString() == originalParagraph } && !content(activity).isLayoutRequested
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            assertEquals(authored, field<JSONObject>(activity, "lessonJson").toString())
+            NarrationSettingsRepository.saveEnabled(activity, true)
+            invoke(activity, "renderCurrentPage")
+        }
+        awaitLayout(host, lesson)
+        lateinit var paragraph: ReadingTextView
+        lateinit var originalFacts: List<TextFact>
+        var cppSegment = -1
+        var paragraphLastSegment = -1
+        var afterCppSegment = -1
+        lateinit var sourceAudio: File
+        lateinit var sourceHash: String
+        lateinit var sourceIdentity: List<Long>
+        lateinit var sourceKey: String
+        var generationCount = 0
+        host.onActivity { activity ->
+            assertTrue(texts(activity).any { it.text.toString() == "Algoritmo, programa y prueba" })
+            paragraph = texts(activity).single { it.text.toString() == originalParagraph } as ReadingTextView
+            originalFacts = facts(content(activity))
+            assertTrue("The real question controls remain present", field<Int>(activity, "requiredExercises") >= 2)
+            capture("published-cpp-before")
+            saveParagraph(paragraph, "published-cpp-before-native")
+            assertTrue("The pending ++ glyphs must be included before playback",
+                pending(activity, 1).any { it.start <= cppStart && it.endExclusive >= cppStart + 3 })
+            val mapping = pageMappings(activity)
+            val entries = mapping.filterValues { it.blockIndex == 1 }
+            assertTrue("C++ no longer disables the whole paragraph's reliable lexical mapping", entries.isNotEmpty())
+            cppSegment = entries.entries.single { (_, value) -> value.displayed.any {
+                it.start <= cppStart && it.endExclusive >= cppStart + 3
+            } }.key
+            paragraphLastSegment = entries.keys.max()
+            val pending = pending(activity, 1)
+            originalParagraph.indices.filter { !originalParagraph[it].isWhitespace() }.forEach { offset ->
+                assertTrue("Pending glyph ${originalParagraph[offset]} at $offset must not start white",
+                    pending.any { offset in it.start until it.endExclusive })
+            }
+            assertGlyphColor(paragraph, cppStart + 1, 2, field(paragraph, "unreadColor"))
+            capture("published-cpp-before")
+            saveParagraph(paragraph, "published-cpp-before-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("The real C++ sentence has its exact source-audio alignment and pending plus signs", 180_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                ready = reader.isPlaying && field<Int>(reader, "index") == cppSegment && player != null &&
+                    field<Boolean>(reader, "playerReady") && player.currentPosition >= 400 && alignment(activity) != null &&
+                    pending(activity, 1).any { cppStart + 1 in it.start until it.endExclusive }
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            assertNull("A visual inspection pause releases MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            assertMixedPixels(paragraph)
+            assertGlyphColor(paragraph, cppStart + 1, 2, field(paragraph, "unreadColor"))
+            sourceAudio = requireNotNull(field<File?>(field<List<Any>>(reader, "segments")[cppSegment], "file"))
+            sourceHash = sha256(sourceAudio)
+            sourceIdentity = audioIdentity(sourceAudio)
+            sourceKey = KokoroNarrationCache.key("es", "ef_dora", field(field<List<Any>>(reader, "segments")[cppSegment], "text"))
+            generationCount = generationEvents(sourceKey)
+            assertFacts(originalFacts)
+            capture("published-cpp-during-pending-pluses")
+            saveParagraph(paragraph, "published-cpp-during-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Natural Kokoro playback completes C++ and continues the rest of its paragraph", 25_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = field<Int>(controller(activity), "index") > cppSegment && controller(activity).isPlaying &&
+                    field<Boolean>(controller(activity), "playerReady")
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            controller(activity).pauseKeepingPosition()
+            afterCppSegment = field(controller(activity), "index")
+            assertFalse("All of C++ and its closing period are read after its natural completion",
+                pending(activity, 1).any { it.start < cppStart + 4 && it.endExclusive > cppStart })
+            assertGlyphColor(paragraph, cppStart + 1, 2, paragraph.currentTextColor)
+            assertSameCachedAudio(sourceAudio, sourceHash, sourceIdentity, sourceKey, generationCount)
+            saveParagraph(paragraph, "published-cpp-after-spoken-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Symbols do not break natural tracking of the remaining actual paragraph", 50_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = field<Int>(controller(activity), "index") > paragraphLastSegment &&
+                    controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady")
+            }
+            ready
+        }
+        var backIndex = -1
+        var forwardIndex = -1
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            assertTrue("The complete original paragraph, including C++, ends read", pending(activity, 1).isEmpty())
+            capture("published-cpp-after-complete-paragraph")
+            saveParagraph(paragraph, "published-cpp-after-complete-native")
+            val secondParagraphIndex = field<Int>(reader, "index")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick())
+            backIndex = field(reader, "index")
+            assertTrue("The real -3 button crosses back over the paragraph boundary", backIndex < secondParagraphIndex)
+            val pendingNextParagraph = pending(activity, 2).size
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardFive).performClick())
+            assertTrue("A paused +5 crossing marks the next paragraph's skipped prefix before playback resumes",
+                pending(activity, 2).size < pendingNextParagraph)
+            assertNull("A paused cross-paragraph jump never creates MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("The +5 button resolves actual WAV lengths across the paragraph boundary", 15_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = controller(activity).isPlaying && field<Boolean>(controller(activity), "playerReady") &&
+                    field<Int>(controller(activity), "index") > paragraphLastSegment
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            forwardIndex = field(reader, "index")
+            val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+            val heardFeedback = gate.heardThrough
+            val feedbackBoundary = gate.boundary()
+            val from = field<Long>(reader, "offset")
+            val beforeForward = pending(activity, 2).toSet()
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardThree).performClick())
+            val sameSegment = field<Int>(reader, "index") == forwardIndex
+            assertTrue("The real +3 button advances its source-audio position",
+                !sameSegment || field<Long>(reader, "offset") >= from + 2_990)
+            val afterForward = pending(activity, 2).toSet()
+            assertTrue("Intentional forward navigation clears words in the skipped interval",
+                afterForward.size < beforeForward.size)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonBackFive).performClick())
+            assertTrue("Rewind never resurrects pending glyphs already read or deliberately skipped",
+                pending(activity, 2).toSet().all { it in afterForward })
+            assertEquals("A manual visual advance never credits puzzle feedback as heard", heardFeedback, gate.heardThrough)
+            assertEquals("The existing unanswered-feedback boundary remains enforced", feedbackBoundary, gate.boundary())
+            assertNull("Every paused seek keeps the released-player architecture", field<MediaPlayer?>(reader, "player"))
+            assertSameCachedAudio(sourceAudio, sourceHash, sourceIdentity, sourceKey, generationCount)
+            assertFacts(originalFacts)
+            assertEquals("Reading and manual seeks do not answer actual questions", 0, field<Int>(activity, "completedExercises"))
+            assertEquals("The entire published JSON stays intact", authored, field<JSONObject>(activity, "lessonJson").toString())
+            File(evidence(), "published-cpp-word-tracking.json").writeText(JSONObject()
+                .put("lessonId", lesson).put("pageIndex", 3).put("title", "Algoritmo, programa y prueba")
+                .put("engine", "KOKORO").put("voice", "ef_dora").put("cppSentenceIndex", cppSegment)
+                .put("afterNaturalCppIndex", afterCppSegment).put("lastParagraphSentence", paragraphLastSegment)
+                .put("backThreeIndex", backIndex).put("forwardFiveIndex", forwardIndex)
+                .put("pendingBeforeForwardThree", beforeForward.size).put("pendingAfterForwardThree", afterForward.size)
+                .put("sourceAudioSha256", sourceHash).put("sameAudioReused", true)
+                .put("jsonUnchanged", true).put("controlsAndSpansUnchanged", true).toString(2))
+        }
+        assertEquals(authored, LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+    }
+
+    @Test fun forwardToRealAudioEndClearsPendingTailWithoutAlignmentAndKeepsReleasedPlayer() {
+        val phrase = "La página 1 conserva la posición de lectura."
+        val id = "math_course_01__estructura_y_divisibilidad__word_tail_qa_${UUID.randomUUID().toString().replace("-", "")}"
+        val fixture = JSONObject().put("id", id).put("title", "").put("pages", JSONArray()
+            .put(JSONObject().put("blocks", JSONArray().put(JSONObject()
+                .put("type", "paragraph").put("text", phrase)))))
+        val authored = fixture.toString()
+        ProgressRepository.saveCurrentPage(context, ROUTE, SOURCE_LESSON, 0)
+        val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", ROUTE).putExtra("courseId", "math_course_01")
+            .putExtra("unitId", "estructura_y_divisibilidad").putExtra("lessonId", SOURCE_LESSON)
+            .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)).also { scenario = it }
+        await("The ordinary lesson is focused and stable before one isolated tail fixture injection", 15_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = postResumed[activity]?.let { SystemClock.uptimeMillis() - it >= 700 } == true &&
+                    activity.hasWindowFocus() && content(activity).width > 0 && !content(activity).isLayoutRequested
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            setField(activity, "currentLessonId", id)
+            setField(activity, "lessonJson", JSONObject(authored))
+            setField(activity, "totalPages", 1)
+            setField(activity, "currentPage", 0)
+            listOf("pageViewCache", "pageRequiredExercises", "pageCompletedExercises").forEach {
+                field<MutableMap<Int, Any>>(activity, it).clear()
+            }
+            invoke(activity, "renderCurrentPage")
+        }
+        awaitLayout(host, id)
+        host.onActivity { activity ->
+            NarrationSettingsRepository.saveEnabled(activity, true)
+            invoke(activity, "renderCurrentPage")
+        }
+        awaitLayout(host, id)
+        lateinit var paragraph: ReadingTextView
+        lateinit var originalFacts: List<TextFact>
+        host.onActivity { activity ->
+            paragraph = texts(activity).single { it.text.toString() == phrase } as ReadingTextView
+            originalFacts = facts(content(activity))
+            assertTrue("The original paragraph starts pending", pending(activity).isNotEmpty())
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("A real Kokoro WAV is audibly decoding before the manual end jump", 120_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                ready = reader.isPlaying && field<Boolean>(reader, "playerReady") && player != null &&
+                    player.currentPosition >= 300
+            }
+            ready
+        }
+        lateinit var audio: File
+        lateinit var hash: String
+        lateinit var audioFileIdentity: List<Long>
+        lateinit var cacheKey: String
+        var generations = 0
+        var duration = 0
+        var pauseOffset = 0L
+        var heardFeedback = 0
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            pauseOffset = field(reader, "offset")
+            assertNull("Pausing keeps the source position and releases MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            assertNull("A numeral expansion has no invented exact word alignment", alignment(activity))
+            assertEquals(1, field<List<Any>>(reader, "segments").size)
+            val source = field<List<Any>>(reader, "segments").single()
+            audio = requireNotNull(field<File?>(source, "file"))
+            duration = requireNotNull(field<Int?>(source, "duration"))
+            assertTrue("The real +5 control reaches this actual WAV's end", duration < pauseOffset + 5_000)
+            hash = sha256(audio)
+            audioFileIdentity = audioIdentity(audio)
+            cacheKey = KokoroNarrationCache.key("es", "ef_dora", field(source, "text"))
+            generations = generationEvents(cacheKey)
+            val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+            heardFeedback = gate.heardThrough
+            assertNull("The tail fixture contains no puzzle feedback", gate.boundary())
+            assertTrue("The unsupported lexical expansion remains conservatively pending before the jump", pending(activity).isNotEmpty())
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardFive).performClick())
+        }
+        await("An explicitly skipped final tail is visually read even without word metadata", 5_000) {
+            var ready = false
+            host.onActivity { ready = pending(it).isEmpty() }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            assertFalse("A paused forward jump does not start playback", reader.isPlaying)
+            assertNull(field<MediaPlayer?>(reader, "player"))
+            assertTrue("The resolved saved offset reaches the measured audio duration", field<Long>(reader, "offset") >= duration)
+            assertTrue(field<List<ReadingTextRange>>(paragraph, "unreadRanges").isEmpty())
+            assertEquals(heardFeedback, requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate")).heardThrough)
+            assertSameCachedAudio(audio, hash, audioFileIdentity, cacheKey, generations)
+            assertFacts(originalFacts)
+            capture("manual-forward-to-eof-without-word-alignment")
+            saveParagraph(paragraph, "manual-forward-to-eof-native")
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Resuming at the real end records the existing finished-page bookmark", 8_000) {
+            var ready = false
+            host.onActivity { ready = field<Boolean>(controller(it), "finished") && !controller(it).isPlaying }
+            ready
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            assertNull("Finishing never retains a player", field<MediaPlayer?>(reader, "player"))
+            assertTrue(pending(activity).isEmpty())
+            val bookmark = requireNotNull(NarrationResumeStore(context).restore(requireNotNull(field<String?>(reader, "resumeKey")), 1))
+            assertTrue("The final position uses the existing bounded bookmark store", bookmark.finished)
+            assertEquals(duration.toLong(), bookmark.positionMs)
+            assertEquals(heardFeedback, requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate")).heardThrough)
+            assertSameCachedAudio(audio, hash, audioFileIdentity, cacheKey, generations)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonRestartPage).performClick())
+            reader.pauseKeepingPosition()
+            assertFalse("Explicit restart leaves finished state", field(reader, "finished"))
+            assertNull("Restart followed by pause preserves resource release", field<MediaPlayer?>(reader, "player"))
+            val reset = pending(activity)
+            phrase.indices.filter { !phrase[it].isWhitespace() }.forEach { offset ->
+                assertTrue("Restart restores every original glyph to pending", reset.any { offset in it.start until it.endExclusive })
+            }
+            assertSameCachedAudio(audio, hash, audioFileIdentity, cacheKey, generations)
+            assertFacts(originalFacts)
+            assertEquals(authored, field<JSONObject>(activity, "lessonJson").toString())
+            File(evidence(), "manual-forward-to-eof-without-alignment.json").writeText(JSONObject()
+                .put("engine", "KOKORO").put("voice", "ef_dora").put("sourceAudioSha256", hash)
+                .put("pauseOffsetMs", pauseOffset).put("actualDurationMs", duration)
+                .put("exactWordAlignmentAvailable", false).put("manualForwardSeconds", 5)
+                .put("pendingTailAfterJump", 0).put("pausedPlayerReleased", true)
+                .put("finishedBookmarkPreserved", true).put("restartRestoresPendingGlyphs", true)
+                .put("sameCachedAudio", true).put("feedbackHeardThrough", heardFeedback).toString(2))
+        }
     }
 
     private fun fixture(): JSONObject {
@@ -391,9 +711,34 @@ class WordReadingDeviceTest {
     }
     private fun pending(activity: LessonActivity): List<ReadingTextRange> =
         field<LessonReadingProgressModel>(activity, "readingProgress").unreadWords(identity(activity))[0].orEmpty()
-    private fun identity(activity: LessonActivity) = "$ROUTE/${field<String>(activity, "currentLessonId")}/${field<Int>(activity, "currentPage")}"
-    private fun allWords() = Regex("\\p{L}[\\p{L}\\p{M}]*").findAll(PROSE)
-        .map { ReadingTextRange(it.range.first, it.range.last + 1) }.toList()
+    private fun pending(activity: LessonActivity, block: Int): List<ReadingTextRange> =
+        field<LessonReadingProgressModel>(activity, "readingProgress").unreadWords(identity(activity))[block].orEmpty()
+    private fun pageMappings(activity: LessonActivity): Map<Int, NarrationWordMapping> {
+        val words = field<Any>(field<LessonReadingProgressModel>(activity, "readingProgress"), "words")
+        return field(field<Map<String, Any>>(words, "pages").getValue(identity(activity)), "mapping")
+    }
+    private fun assertGlyphColor(view: ReadingTextView, start: Int, length: Int, color: Int) {
+        val bitmap = paragraphBitmap(view)
+        try {
+            val layout = view.layout
+            for (offset in start until start + length) {
+                val line = layout.getLineForOffset(offset)
+                val first = layout.getPrimaryHorizontal(offset)
+                val last = layout.getPrimaryHorizontal(offset + 1)
+                var ink = 0
+                for (y in (layout.getLineTop(line) + view.totalPaddingTop).coerceAtLeast(0) until
+                    (layout.getLineBottom(line) + view.totalPaddingTop).coerceAtMost(bitmap.height)) {
+                    for (x in kotlin.math.floor(minOf(first, last) + view.compoundPaddingLeft).toInt().coerceAtLeast(0) until
+                        kotlin.math.ceil(maxOf(first, last) + view.compoundPaddingLeft).toInt().coerceAtMost(bitmap.width)) {
+                        if (bitmap.getPixel(x, y) == color) ink++
+                    }
+                }
+                assertTrue("Glyph ${view.text[offset]} must use ${Integer.toHexString(color)}", ink > 0)
+            }
+        } finally { bitmap.recycle() }
+    }
+    private fun identity(activity: LessonActivity) = "${field<String>(activity, "currentRouteId")}/${field<String>(activity, "currentLessonId")}/${field<Int>(activity, "currentPage")}"
+    private fun allWords() = NarrationWordMappings.forBlock(0, PROSE, mapOf(0 to PROSE)).getValue(0).displayed
     private fun controller(activity: LessonActivity): LessonNarrationController = field(activity, "narrationController")
     private fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)
     private fun texts(activity: LessonActivity) = descendants(content(activity)).filterIsInstance<TextView>()

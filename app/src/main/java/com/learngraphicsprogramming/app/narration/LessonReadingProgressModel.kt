@@ -40,9 +40,9 @@ fun LessonNarrationScript.readingPlan(engine: NarrationEngine): NarrationReading
 }
 
 /**
- * Ephemeral evidence of audio heard during this lesson activity. A position or a generated
- * WAV never substitutes for natural completion, and successful feedback does not delay the
- * question's read state. No educational completion or narration bookmark is written here.
+ * Ephemeral reading presentation. Actually heard audio and explicit visual skips stay
+ * distinct; neither a generated WAV nor a visual skip completes educational feedback.
+ * No educational completion or narration bookmark is written here.
  */
 class LessonReadingProgressModel {
     private class Page(val plan: NarrationReadingPlan, val playbackKey: String?) {
@@ -158,8 +158,10 @@ class LessonReadingProgressModel {
             }
             NarrationPlaybackPhase.FINISHED -> {
                 page.cancelCoverage()
-                // Restored completion and a seek to EOF contain no evidence of skipped speech.
-                page.available = page.allBodyHeard()
+                // A deliberate skip can complete the visual body without accrediting hearing.
+                val visual = words.visuallyCompletedSegments(event.pageIdentity)
+                page.available = page.allBodyHeard() || page.plan.origins.indices
+                    .filter { !page.plan.origins[it].feedback }.all { it in page.heard || it in visual }
             }
             NarrationPlaybackPhase.STOPPED -> {
                 page.available = false
@@ -179,10 +181,11 @@ class LessonReadingProgressModel {
         val body = page.plan.origins.indices.filter { !page.plan.origins[it].feedback }
             .groupBy { page.plan.origins[it].blockIndex }
         val current = page.currentSegment?.let { page.plan.origins[it].blockIndex }
+        val visual = words.visuallyCompletedSegments(pageIdentity)
         return body.mapNotNull { (block, segments) ->
             val state = when {
                 block == current -> ReadingBlockState.CURRENT
-                segments.all { it in page.heard } -> ReadingBlockState.READ
+                segments.all { it in page.heard || it in visual } -> ReadingBlockState.READ
                 segments.any { it in page.uncertain } -> null
                 else -> ReadingBlockState.UNREAD
             }

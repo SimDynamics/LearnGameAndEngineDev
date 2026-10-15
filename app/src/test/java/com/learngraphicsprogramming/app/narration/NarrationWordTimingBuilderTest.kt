@@ -7,6 +7,34 @@ import org.junit.Test
 class NarrationWordTimingBuilderTest {
     private val hash = "a".repeat(64)
 
+    @Test fun cppLanguageNameGroupsItsExistingThreeWordReadingWithoutChangingSentencePhones() {
+        val source = "Podemos discutir un algoritmo antes de decidir todos los detalles de C++."
+        val trace = requireNotNull(SpanishFluidG2P.traceWords(source))
+        assertEquals(SpanishFluidG2P.phonemize(source), trace.phonemes)
+        assertEquals(Regex("\\p{L}+").findAll(source).count(), trace.words.size)
+        val cpp = trace.words.last()
+        assertEquals("c", cpp.word)
+        assertEquals(SpanishFluidG2P.phonemize("ce más más"), trace.phonemes.substring(cpp.start, cpp.endExclusive))
+        val durations = LongArray(trace.phonemes.length + 2) { (it % 4 + 1).toLong() }
+        val text = ManualEnglishSpeech.PREPARED + source
+        val alignment = requireNotNull(NarrationWordTimingBuilder.build(text, hash,
+            durations.sum() * 600L, trace, durations))
+        assertTrue(NarrationWordTimingBuilder.valid(text, alignment.sampleCount, alignment.words))
+        assertEquals("C", text.substring(alignment.words.last().start, alignment.words.last().endExclusive))
+        assertEquals(durations.take(cpp.start + 1).sum() * 600L, alignment.words.last().startSample)
+        assertEquals(durations.take(cpp.endExclusive + 1).sum() * 600L, alignment.words.last().endSample)
+    }
+
+    @Test fun cppTracingIsExplicitAndOtherUnmappedExpansionsStillFailConservatively() {
+        for (source in listOf("Lee C++, luego c++ y continúa.", "C++.", "(C++), después.")) {
+            val trace = requireNotNull(SpanishFluidG2P.traceWords(source))
+            assertEquals(SpanishFluidG2P.phonemize(source), trace.phonemes)
+        }
+        for (source in listOf("a++", "C+++", "C++20", "x = 2", "x + y", "C++ y 2")) {
+            assertNull(source, SpanishFluidG2P.traceWords(source))
+        }
+    }
+
     @Test fun realTokenFrameCountsIncludeTheLeadingTokenWithoutInventedDelay() {
         val text = "La vida."
         val trace = requireNotNull(SpanishFluidG2P.traceWords(text))

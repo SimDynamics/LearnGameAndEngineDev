@@ -29,6 +29,42 @@ class ReadingTextViewDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
 
+    @Test fun technicalSignsAndPunctuationUseTheSamePendingInkAsTheirOriginalWords() = onMain {
+        val phrase = "C++, (uno); cout << (dos++)."
+        val source = SpannableString(phrase).apply {
+            setSpan(StyleSpan(Typeface.BOLD), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            setSpan(ForegroundColorSpan(Color.rgb(240, 215, 170)), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        val view = prose(source, Color.rgb(16, 17, 20), Color.WHITE)
+        val original = render(view)
+        val text = view.text
+        val layout = view.layout
+        val spans = spanSnapshot(text)
+        val dimensions = geometry(view)
+        val displayed = NarrationWordMappings.forBlock(0, text, mapOf(0 to phrase)).getValue(0).displayed
+        phrase.indices.filter { !phrase[it].isWhitespace() }.forEach { offset ->
+            assertTrue("Every technical or punctuation glyph belongs to an aligned range: ${phrase[offset]}",
+                displayed.any { offset in it.start until it.endExclusive })
+        }
+        val gray = LessonReadingColor.unread(Color.rgb(16, 17, 20))
+        view.setUnreadWordRanges(displayed, gray)
+        val pending = render(view)
+        for ((offset, size) in listOf(0 to 4, phrase.indexOf("(") to 1, phrase.indexOf(";") to 1,
+            phrase.indexOf("<<") to 2, phrase.lastIndexOf("++") to 2, phrase.lastIndex to 1)) {
+            assertWordColor(pending, view, offset, size, gray)
+        }
+        view.setUnreadWordRanges(displayed.drop(1), gray)
+        val partial = render(view)
+        assertWordPixelsUnchanged(original, partial, view, 0, 4)
+        assertWordColor(partial, view, phrase.lastIndexOf("++"), 2, gray)
+        view.setUnreadWordRanges(emptyList(), gray)
+        assertPixelsEqual("Finished technical prose restores every original glyph and span color", original, render(view))
+        assertSame(text, view.text)
+        assertSame(layout, view.layout)
+        assertEquals(spans, spanSnapshot(view.text))
+        assertEquals(dimensions, geometry(view))
+    }
+
     @Test fun wrappedProseContainsOriginalAndPendingWordsWithoutReplacingTextLayoutOrSpans() = onMain {
         for (background in listOf(Color.WHITE, Color.rgb(16, 17, 20))) {
             val originalColor = if (background == Color.WHITE) Color.rgb(20, 23, 27) else Color.rgb(233, 235, 240)
