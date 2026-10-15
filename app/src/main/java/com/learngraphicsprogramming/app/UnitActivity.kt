@@ -74,10 +74,11 @@ class UnitActivity : AppCompatActivity() {
                 1
             )
 
-        val unitTitle =
-            intent.getStringExtra(
-                "unitTitle"
-            ) ?: ""
+        // Resolve title again if the app language changed on a lesson screen.
+        val unitTitle = runCatching {
+            UnitRepository.loadUnits(this, routeId, courseId)
+                .firstOrNull { it.id == unitId }?.title
+        }.getOrNull() ?: intent.getStringExtra("unitTitle").orEmpty()
 
         textUnitNumber.text =
             getString(

@@ -115,15 +115,7 @@ object LessonRepository {
                 lessonId
             )
 
-        val json =
-            context.assets
-                .open(
-                    path
-                )
-                .bufferedReader()
-                .use {
-                    it.readText()
-                }
+        val json = CurriculumAssetLocale.read(context, path)
 
         return JSONObject(
             json
@@ -157,14 +149,10 @@ object LessonRepository {
 
         return try {
 
-            context.assets
-                .open(
-                    getLessonAssetPath(
-                        routeId,
-                        lessonId
-                    )
-                )
-                .close()
+            CurriculumAssetLocale.open(
+                context,
+                getLessonAssetPath(routeId, lessonId)
+            ).close()
 
             true
 
@@ -204,7 +192,7 @@ object LessonRepository {
         val lessonSlug =
             parts[2]
 
-        return "content/es/$routeId/" +
+        return "$routeId/" +
                 "$courseId/" +
                 "$unitSlug/" +
                 "lesson_$lessonSlug.json"

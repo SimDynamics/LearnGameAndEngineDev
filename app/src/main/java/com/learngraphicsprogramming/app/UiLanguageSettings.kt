@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.learngraphicsprogramming.app.narration.KokoroNarrationSessionMonitor
 
-/** UI locales only: educational assets and narration have their own selection policies. */
+/** App locale selects UI resources and translated curriculum assets; narration preferences stay independent. */
 object UiLanguageSettings {
     private const val PREFERENCES = "ui_language_settings"
     private const val SELECTION = "selection"

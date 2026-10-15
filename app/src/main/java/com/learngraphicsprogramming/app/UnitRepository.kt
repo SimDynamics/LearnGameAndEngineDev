@@ -106,19 +106,11 @@ object UnitRepository {
     ): JSONObject {
 
         val path =
-            "content/es/$routeId/" +
+            "$routeId/" +
                     "$courseId/" +
                     "course_$courseId.json"
 
-        val json =
-            context.assets
-                .open(
-                    path
-                )
-                .bufferedReader()
-                .use {
-                    it.readText()
-                }
+        val json = CurriculumAssetLocale.read(context, path)
 
         return JSONObject(
             json
@@ -162,20 +154,12 @@ object UnitRepository {
             )
 
         val path =
-            "content/es/$routeId/" +
+            "$routeId/" +
                     "$courseId/" +
                     "$unitSlug/" +
                     "unit_$unitSlug.json"
 
-        val json =
-            context.assets
-                .open(
-                    path
-                )
-                .bufferedReader()
-                .use {
-                    it.readText()
-                }
+        val json = CurriculumAssetLocale.read(context, path)
 
         return JSONObject(
             json

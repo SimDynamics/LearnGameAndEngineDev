@@ -10,13 +10,7 @@ object CourseRepository {
         routeId: String
     ): List<Course> {
 
-        val json =
-            context.assets
-                .open(
-                    "content/es/$routeId/courses.json"
-                )
-            .bufferedReader()
-            .use { it.readText() }
+        val json = CurriculumAssetLocale.read(context, "$routeId/courses.json")
 
         val array = JSONArray(json)
 

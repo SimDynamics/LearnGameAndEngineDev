@@ -100,27 +100,130 @@ class UiLanguageDeviceTest {
         }
     }
 
-    @Test fun uiChangesPreserveEducationalDataNarrationAndProgress() {
+    @Test fun uiChangesLoadTranslatedEducationalAssetsAndKeepIdentifiersAndProgress() {
         val route = AppearanceSettingsRepository.ROUTE_PROGRAMMING
-        val originalCourses = CourseRepository.loadCourses(context, route)
-        assertTrue(originalCourses.isNotEmpty())
-        val originalUnits = UnitRepository.loadUnits(context, route, originalCourses.first().id)
-        val originalLessons = LessonRepository.loadLessons(context, route, originalCourses.first().id, originalUnits.first().id)
-        val lessonId = originalLessons.first().id
-        val originalLessonJson = LessonRepository.loadLessonJson(context, route, lessonId).toString()
+        val courseId = "cpp_fundamentals"
+        val unitId = "cpp_fundamentals__programas_y_ejecucion"
+        val lessonId = "${unitId}__primer_programa_y_salida"
+        val spanishCourses = CourseRepository.loadCourses(context, route)
+        val spanishUnits = UnitRepository.loadUnits(context, route, courseId)
+        val spanishLessons = LessonRepository.loadLessons(context, route, courseId, unitId)
+        val spanishLesson = LessonRepository.loadLessonJson(context, route, lessonId)
+        val originalParagraph = spanishLesson.getJSONArray("pages")
+            .getJSONObject(0).getJSONArray("blocks").getJSONObject(1).getString("text")
+
+        // This math sandbox has no EN/FR asset, even though its course manifests do.
+        val mathId = "math_course_01__arithmetic_fundamentals__numbers_operations"
+        val spanishMath = LessonRepository.loadLessonJson(
+            context, AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, mathId).toString()
         val progressBefore = context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all.toMap()
         NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.FRENCH)
         val narrationBefore = context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all.toMap()
+
         for (tag in listOf("en", "fr", "es")) {
             instrumentation.runOnMainSync { UiLanguageSettings.select(context, tag) }
             instrumentation.waitForIdleSync()
             val localized = UiLanguageSettings.localizedContext(context)
-            assertEquals(originalCourses, CourseRepository.loadCourses(localized, route))
-            assertEquals(originalUnits, UnitRepository.loadUnits(localized, route, originalCourses.first().id))
-            assertEquals(originalLessons, LessonRepository.loadLessons(localized, route, originalCourses.first().id, originalUnits.first().id))
-            assertEquals(originalLessonJson, LessonRepository.loadLessonJson(localized, route, lessonId).toString())
+            fun original(relative: String): String = localized.assets.open("content/$tag/$relative")
+                .bufferedReader().use { it.readText() }
+
+            val courses = CourseRepository.loadCourses(localized, route)
+            val units = UnitRepository.loadUnits(localized, route, courseId)
+            val lessons = LessonRepository.loadLessons(localized, route, courseId, unitId)
+            assertEquals(spanishCourses.map { it.id to it.number }, courses.map { it.id to it.number })
+            assertEquals(spanishUnits.map { it.id to it.number }, units.map { it.id to it.number })
+            assertEquals(spanishLessons.map { it.id to it.number }, lessons.map { it.id to it.number })
+
+            val expectedCourses = org.json.JSONArray(original("$route/courses.json"))
+            val expectedCourse = (0 until expectedCourses.length()).map { expectedCourses.getJSONObject(it) }
+                .first { it.getString("id") == courseId }
+            assertEquals(expectedCourse.getString("title"), courses.first { it.id == courseId }.title)
+
+            val expectedCourseDetails = JSONObject(original("$route/$courseId/course_$courseId.json"))
+            assertEquals(expectedCourseDetails.getJSONArray("units").getJSONObject(0).getString("title"),
+                units.first { it.id == unitId }.title)
+
+            val expectedUnit = JSONObject(original(
+                "$route/$courseId/programas_y_ejecucion/unit_programas_y_ejecucion.json"))
+            val expectedLesson = (0 until expectedUnit.getJSONArray("lessons").length())
+                .map { expectedUnit.getJSONArray("lessons").getJSONObject(it) }
+                .first { it.getString("id") == lessonId }
+            assertEquals(expectedLesson.getString("title"), lessons.first { it.id == lessonId }.title)
+
+            val expectedLessonJson = JSONObject(original(
+                "$route/$courseId/programas_y_ejecucion/lesson_primer_programa_y_salida.json"))
+            val lessonJson = LessonRepository.loadLessonJson(localized, route, lessonId)
+            assertEquals(expectedLessonJson.toString(), lessonJson.toString())
+            assertEquals(lessonId, lessonJson.getString("id"))
+            assertEquals(spanishLesson.getJSONArray("pages").length(), lessonJson.getJSONArray("pages").length())
+
+            // Mathematics 1 also has real translated lessons, not only the navigation catalog.
+            val mathRoute = AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            val mathCourse = "math_course_01"
+            val mathUnitId = "math_course_01__numeros_y_operaciones"
+            val mathLessonId = "${mathUnitId}__magnitudes_y_numeracion"
+            val translatedMathUnit = JSONObject(original(
+                "$mathRoute/$mathCourse/numeros_y_operaciones/unit_numeros_y_operaciones.json"))
+            val localizedMathLessons = LessonRepository.loadLessons(
+                localized, mathRoute, mathCourse, mathUnitId)
+            assertEquals(translatedMathUnit.getJSONArray("lessons")
+                .getJSONObject(0).getString("title"), localizedMathLessons.first().title)
+            val translatedMathLesson = JSONObject(original(
+                "$mathRoute/$mathCourse/numeros_y_operaciones/lesson_magnitudes_y_numeracion.json"))
+            assertEquals(translatedMathLesson.toString(),
+                LessonRepository.loadLessonJson(localized, mathRoute, mathLessonId).toString())
+            val paragraph = lessonJson.getJSONArray("pages")
+                .getJSONObject(0).getJSONArray("blocks").getJSONObject(1).getString("text")
+            if (tag != "es") assertNotEquals("The translated body must differ from Spanish", originalParagraph, paragraph)
+            else assertEquals(originalParagraph, paragraph)
+
+            assertTrue(LessonRepository.lessonExists(localized, AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, mathId))
+            assertEquals("Missing translated lessons must fall back to Spanish without hiding them",
+                spanishMath, LessonRepository.loadLessonJson(localized,
+                    AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, mathId).toString())
             assertEquals(narrationBefore, context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all)
             assertEquals(progressBefore, context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all)
+        }
+    }
+
+    @Test fun changingLanguageDuringLessonRecreatesItsTranslatedTextWithoutResettingProgress() {
+        val route = AppearanceSettingsRepository.ROUTE_PROGRAMMING
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        ProgressRepository.saveCurrentPage(context, route, lessonId, 0)
+        NarrationSettingsRepository.saveEnabled(context, false)
+        ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", route)
+            .putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "cpp_fundamentals__programas_y_ejecucion")
+            .putExtra("lessonId", lessonId)
+            .putExtra("lessonNumber", 2)).use { scenario ->
+            val savedProgress = context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all.toMap()
+            for ((tag, heading) in listOf(
+                "es" to "Un programa pequeño y completo",
+                "en" to "A small, complete program",
+                "fr" to "Un petit programme complet",
+                "es" to "Un programa pequeño y completo"
+            )) {
+                instrumentation.runOnMainSync { UiLanguageSettings.select(context, tag) }
+                val deadline = SystemClock.uptimeMillis() + 12_000
+                var correctlyRendered = false
+                while (!correctlyRendered && SystemClock.uptimeMillis() < deadline) {
+                    instrumentation.waitForIdleSync()
+                    scenario.onActivity { activity ->
+                        val json = LessonActivity::class.java.getDeclaredField("lessonJson")
+                            .apply { isAccessible = true }.get(activity) as JSONObject
+                        val headingInJson = json.getJSONArray("pages")
+                            .getJSONObject(0).getJSONArray("blocks").getJSONObject(0).getString("text")
+                        correctlyRendered = headingInJson == heading &&
+                            descendants(activity.findViewById(R.id.lessonContent))
+                                .filterIsInstance<TextView>().any { it.text.toString().contains(heading) }
+                    }
+                    if (!correctlyRendered) SystemClock.sleep(120)
+                }
+                assertTrue("Switching to $tag must display the actual lesson in that language", correctlyRendered)
+                assertEquals(savedProgress,
+                    context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all)
+            }
         }
     }
 

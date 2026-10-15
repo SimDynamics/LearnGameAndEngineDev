@@ -64,10 +64,11 @@ class CourseActivity : AppCompatActivity() {
                 1
             )
 
-        val courseTitle =
-            intent.getStringExtra(
-                "courseTitle"
-            ) ?: ""
+        // Navigation intent titles can come from a previous app language.
+        val courseTitle = runCatching {
+            CourseRepository.loadCourses(this, routeId)
+                .firstOrNull { it.id == courseId }?.title
+        }.getOrNull() ?: intent.getStringExtra("courseTitle").orEmpty()
 
         val totalCourses =
             if (
