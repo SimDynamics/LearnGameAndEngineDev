@@ -22,6 +22,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.narration.KokoroModelState
 import com.learngraphicsprogramming.app.narration.KokoroModelStatus
 import com.learngraphicsprogramming.app.narration.NarrationLanguage
+import com.learngraphicsprogramming.app.narration.NarrationEngine
+import com.learngraphicsprogramming.app.narration.SpanishVoice
+import com.learngraphicsprogramming.app.narration.AndroidVoiceCatalog
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import org.hamcrest.Matchers.anything
 import org.junit.After
@@ -124,6 +127,7 @@ class LessonNarrationSettingsDeviceTest {
     }
 
     @Test fun voiceSelectorOffersOnlyVerifiedChoicesAndExplainsMissingDownloads() {
+        NarrationSettingsRepository.saveEngine(context, NarrationEngine.KOKORO)
         NarrationSettingsRepository.saveKokoroVoice(context, "af_heart")
         launch(AppearanceSettingsRepository.ROUTE_PROGRAMMING).use { scenario ->
             // Wait for the real lightweight inspection before injecting an isolated
@@ -166,6 +170,126 @@ class LessonNarrationSettingsDeviceTest {
                 assertFalse(activity.findViewById<Button>(R.id.buttonSaveCourseSettings).isEnabled)
             }
         }
+    }
+
+    @Test fun androidVoiceSettingsUseGlobalTtsChoicesAndPreserveKokoroOnBothRoutes() {
+        val progressBefore = context.getSharedPreferences(
+            "learning_progress", Context.MODE_PRIVATE).all.toMap()
+        // Ensure a deterministic "automatic" choice for French, even when the
+        // real user's saved French Android voice preference is nonempty.
+        NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.FRENCH)
+        NarrationSettingsRepository.saveAndroidVoice(context, null)
+        NarrationSettingsRepository.saveKokoroVoice(context, "af_heart")
+        NarrationSettingsRepository.saveEngine(context, NarrationEngine.ANDROID)
+        val voice = SpanishVoice(
+            "test.android.voice.us", "Test Android US voice · offline", false, 400
+        )
+
+        for (route in listOf(
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+        )) {
+            NarrationSettingsRepository.saveAndroidVoice(context, null)
+            launch(route).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    val settings = NarrationSettingsRepository.get(activity)
+                    assertEquals(NarrationEngine.ANDROID, settings.engine)
+                    assertEquals(activity.getString(R.string.narration_selected_language,
+                        settings.language.label(activity)),
+                        activity.findViewById<Button>(R.id.buttonLessonNarrationLanguage).text.toString())
+                    assertEquals(activity.getString(
+                        R.string.narration_selected_android,
+                        activity.getString(R.string.narration_auto_voice)),
+                        activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).text.toString())
+                    assertEquals(activity.getString(
+                        R.string.lesson_settings_narration_global_hint_android),
+                        activity.findViewById<TextView>(R.id.textLessonNarrationGlobalHint).text.toString())
+                    assertFalse(activity.findViewById<Button>(R.id.buttonSaveCourseSettings).isEnabled)
+
+                    // Do not let an asynchronous real-device TTS callback
+                    // race the synthetic choice used by this isolated UI test.
+                    (LessonOptionsActivity::class.java.getDeclaredField("androidVoiceCatalog")
+                        .apply { isAccessible = true }.get(activity) as? AndroidVoiceCatalog)?.close()
+                    // Fake only the catalog's already-discovered voice choices; no
+                    // Android TTS engine or installed device voices are required.
+                    setAndroidVoiceCatalog(activity, listOf(voice),
+                        NarrationLanguage.AMERICAN_ENGLISH)
+                    assertEquals(activity.getString(R.string.narration_selected_android,
+                        activity.getString(R.string.narration_auto_voice)),
+                        activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).text.toString())
+                    activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).performClick()
+                }
+                onData(anything()).inRoot(isDialog()).atPosition(1).perform(click())
+                assertEquals(voice.name, NarrationSettingsRepository.get(context).androidVoice)
+                assertEquals(NarrationEngine.ANDROID, NarrationSettingsRepository.get(context).engine)
+                assertEquals("af_heart", NarrationSettingsRepository.get(context).kokoroVoice)
+                scenario.onActivity { activity ->
+                    assertEquals(activity.getString(R.string.narration_selected_android, voice.label),
+                        activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).text.toString())
+                    assertFalse(activity.findViewById<Button>(R.id.buttonSaveCourseSettings).isEnabled)
+                }
+
+                onView(withId(R.id.buttonLessonNarrationLanguage)).perform(click())
+                onData(anything()).inRoot(isDialog()).atPosition(3).perform(click())
+                assertEquals(NarrationLanguage.FRENCH, NarrationSettingsRepository.get(context).language)
+                assertEquals(NarrationEngine.ANDROID, NarrationSettingsRepository.get(context).engine)
+                scenario.onActivity { activity ->
+                    assertEquals(activity.getString(R.string.narration_selected_android,
+                        activity.getString(R.string.narration_auto_voice)),
+                        activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).text.toString())
+                    assertEquals(activity.getString(
+                        R.string.lesson_settings_narration_global_hint_android),
+                        activity.findViewById<TextView>(R.id.textLessonNarrationGlobalHint).text.toString())
+                    // The English system voice is never offered in French.
+                    activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).performClick()
+                }
+                onData(anything()).inRoot(isDialog()).atPosition(0).perform(click())
+                assertEquals(null, NarrationSettingsRepository.get(context).androidVoice)
+                onView(withId(R.id.buttonLessonNarrationLanguage)).perform(click())
+                onData(anything()).inRoot(isDialog()).atPosition(1).perform(click())
+                assertEquals(voice.name, NarrationSettingsRepository.get(context).androidVoice)
+                assertEquals("af_heart", NarrationSettingsRepository.get(context).kokoroVoice)
+                assertEquals(NarrationEngine.ANDROID, NarrationSettingsRepository.get(context).engine)
+                scenario.recreate()
+                scenario.onActivity { activity ->
+                    val title = activity.findViewById<Button>(R.id.buttonLessonNarrationVoice).text
+                    assertTrue(title.toString().startsWith(
+                        activity.getString(R.string.narration_selected_android, "").trim()))
+                }
+            }
+            assertEquals(progressBefore,
+                context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all)
+            assertEquals(NarrationEngine.ANDROID, NarrationSettingsRepository.get(context).engine)
+        }
+    }
+
+    @Test fun automaticEngineKeepsKokoroUiAndItsGlobalSettingsHint() {
+        NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.SPANISH)
+        NarrationSettingsRepository.saveEngine(context, NarrationEngine.AUTO)
+        launch(AppearanceSettingsRepository.ROUTE_PROGRAMMING).use { scenario ->
+            scenario.onActivity { activity ->
+                assertTrue(activity.findViewById<Button>(R.id.buttonLessonNarrationVoice)
+                    .text.toString().startsWith(
+                        activity.getString(R.string.narration_selected_kokoro, "", "").substringBefore(':')))
+                assertEquals(activity.getString(R.string.lesson_settings_narration_global_hint),
+                    activity.findViewById<TextView>(R.id.textLessonNarrationGlobalHint).text.toString())
+                assertEquals(NarrationEngine.AUTO, NarrationSettingsRepository.get(activity).engine)
+            }
+        }
+    }
+
+    private fun setAndroidVoiceCatalog(
+        activity: LessonOptionsActivity,
+        voices: List<SpanishVoice>,
+        language: NarrationLanguage
+    ) {
+        LessonOptionsActivity::class.java.getDeclaredField("lessonAndroidVoices")
+            .apply { isAccessible = true }.set(activity, voices)
+        LessonOptionsActivity::class.java.getDeclaredField("loadedAndroidVoiceLanguage")
+            .apply { isAccessible = true }.set(activity, language)
+        LessonOptionsActivity::class.java.getDeclaredMethod("refreshNarrationSelectors")
+            .apply { isAccessible = true }.invoke(activity)
     }
 
     @Suppress("UNCHECKED_CAST")

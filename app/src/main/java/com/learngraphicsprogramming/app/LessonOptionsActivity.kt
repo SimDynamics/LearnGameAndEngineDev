@@ -16,6 +16,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
+import com.learngraphicsprogramming.app.narration.AndroidVoiceCatalog
+import com.learngraphicsprogramming.app.narration.SpanishVoice
+import com.learngraphicsprogramming.app.narration.NarrationEngine
 import com.learngraphicsprogramming.app.narration.KokoroModelState
 import com.learngraphicsprogramming.app.narration.KokoroModelStatus
 import com.learngraphicsprogramming.app.narration.KokoroModelStore
@@ -32,6 +35,10 @@ class LessonOptionsActivity : AppCompatActivity() {
     private lateinit var narrationLanguageButton: Button
     private lateinit var narrationVoiceButton: Button
     private var lessonNarrationVoiceStates: Map<String, KokoroModelState>? = null
+    private var androidVoiceCatalog: AndroidVoiceCatalog? = null
+    private var lessonAndroidVoices = emptyList<SpanishVoice>()
+    private var loadedAndroidVoiceLanguage: NarrationLanguage? = null
+    private lateinit var narrationGlobalHint: TextView
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -48,8 +55,9 @@ class LessonOptionsActivity : AppCompatActivity() {
         narrationModels = KokoroModelStore(this)
         narrationLanguageButton = findViewById(R.id.buttonLessonNarrationLanguage)
         narrationVoiceButton = findViewById(R.id.buttonLessonNarrationVoice)
+        narrationGlobalHint = findViewById(R.id.textLessonNarrationGlobalHint)
         narrationLanguageButton.setOnClickListener { chooseNarrationLanguage() }
-        narrationVoiceButton.setOnClickListener { chooseInstalledKokoroVoice() }
+        narrationVoiceButton.setOnClickListener { chooseNarrationVoice() }
         refreshNarrationSelectors()
 
         val routeId =
@@ -545,30 +553,45 @@ class LessonOptionsActivity : AppCompatActivity() {
     }
 
     /**
-     * Installed voices are checked by the existing Kokoro store, without starting
-     * downloads or holding ONNX models in memory. Only verified voices are offered.
+     * Both controls mirror the global narration settings, including the chosen
+     * engine. AUTO/KOKORO uses the verified Kokoro voice; ANDROID uses system TTS.
+     * None of these changes are pending course settings or require a Save action.
      */
     private fun refreshNarrationSelectors() {
         val settings = NarrationSettingsRepository.get(this)
         narrationLanguageButton.text = getString(
             R.string.narration_selected_language, settings.language.label(this)
         )
-        val voiceState = lessonNarrationVoiceStates?.get(settings.kokoroVoice)
-        val stateLabel = when (voiceState?.status) {
-            null -> getString(R.string.narration_checking)
-            KokoroModelStatus.NOT_INSTALLED -> getString(R.string.narration_not_installed)
-            KokoroModelStatus.INSTALLED -> getString(R.string.narration_verified)
-            KokoroModelStatus.DOWNLOADING ->
-                getString(R.string.narration_downloading, voiceState?.percentage ?: 0)
-            KokoroModelStatus.ERROR ->
-                getString(R.string.narration_state_error,
-                    voiceState?.error ?: getString(R.string.narration_interrupted))
-            KokoroModelStatus.UPDATE_AVAILABLE -> getString(R.string.narration_update_available)
+        if (settings.engine == NarrationEngine.ANDROID) {
+            val available = lessonAndroidVoices.takeIf {
+                loadedAndroidVoiceLanguage == settings.language
+            }.orEmpty()
+            val voiceLabel = available.firstOrNull { it.name == settings.androidVoice }?.label
+                ?: settings.androidVoice?.takeIf { it.isNotBlank() }
+                ?: getString(R.string.narration_auto_voice)
+            narrationVoiceButton.text = getString(R.string.narration_selected_android, voiceLabel)
+            // "Automatic" remains selectable even when the system has no TTS voices.
+            narrationVoiceButton.isEnabled = true
+            narrationGlobalHint.setText(R.string.lesson_settings_narration_global_hint_android)
+        } else {
+            val voiceState = lessonNarrationVoiceStates?.get(settings.kokoroVoice)
+            val stateLabel = when (voiceState?.status) {
+                null -> getString(R.string.narration_checking)
+                KokoroModelStatus.NOT_INSTALLED -> getString(R.string.narration_not_installed)
+                KokoroModelStatus.INSTALLED -> getString(R.string.narration_verified)
+                KokoroModelStatus.DOWNLOADING ->
+                    getString(R.string.narration_downloading, voiceState?.percentage ?: 0)
+                KokoroModelStatus.ERROR ->
+                    getString(R.string.narration_state_error,
+                        voiceState?.error ?: getString(R.string.narration_interrupted))
+                KokoroModelStatus.UPDATE_AVAILABLE -> getString(R.string.narration_update_available)
+            }
+            narrationVoiceButton.text = getString(
+                R.string.narration_selected_kokoro, settings.kokoroVoice, stateLabel
+            )
+            narrationVoiceButton.isEnabled = lessonNarrationVoiceStates != null
+            narrationGlobalHint.setText(R.string.lesson_settings_narration_global_hint)
         }
-        narrationVoiceButton.text = getString(
-            R.string.narration_selected_kokoro, settings.kokoroVoice, stateLabel
-        )
-        narrationVoiceButton.isEnabled = lessonNarrationVoiceStates != null
     }
 
     private fun chooseNarrationLanguage() {
@@ -583,11 +606,83 @@ class LessonOptionsActivity : AppCompatActivity() {
                 NarrationSettingsRepository.saveLanguage(this, languages[index])
                 dialog.dismiss()
                 refreshNarrationSelectors()
+                // Android's system voice catalog depends on the language; Kokoro
+                // voice preferences are already stored separately for each one.
+                refreshAndroidVoicesIfNeeded()
             }
             .setNegativeButton(R.string.narration_cancel, null)
             .showWithNeutralActionText()
     }
 
+    private fun chooseNarrationVoice() {
+        if (NarrationSettingsRepository.get(this).engine == NarrationEngine.ANDROID) {
+            chooseAndroidVoice()
+        } else {
+            chooseInstalledKokoroVoice()
+        }
+    }
+
+    private fun chooseAndroidVoice() {
+        val settings = NarrationSettingsRepository.get(this)
+        val available = lessonAndroidVoices.takeIf {
+            loadedAndroidVoiceLanguage == settings.language
+        }.orEmpty()
+        // Identical option order and persistence as the global Android voice selector.
+        val labels = arrayOf(getString(R.string.narration_automatic_offline)) +
+            available.map { it.label }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.narration_android_voice_language,
+                settings.language.label(this)))
+            .setSingleChoiceItems(
+                labels, available.indexOfFirst { it.name == settings.androidVoice } + 1
+            ) { dialog, index ->
+                NarrationSettingsRepository.saveAndroidVoice(
+                    this, if (index == 0) null else available[index - 1].name
+                )
+                dialog.dismiss()
+                refreshNarrationSelectors()
+            }
+            .setNegativeButton(R.string.narration_cancel, null)
+            .showWithNeutralActionText()
+    }
+
+    private fun refreshAndroidVoicesIfNeeded() {
+        val settings = NarrationSettingsRepository.get(this)
+        if (settings.engine != NarrationEngine.ANDROID) return
+        val selectedLanguage = settings.language
+        // Do not present voices from a previously selected language while the
+        // catalog refreshes. Its own request generation rejects stale results.
+        lessonAndroidVoices = emptyList()
+        loadedAndroidVoiceLanguage = null
+        refreshNarrationSelectors()
+        val catalog = androidVoiceCatalog
+            ?: AndroidVoiceCatalog(this).also { androidVoiceCatalog = it }
+        catalog.load(
+            onResult = { available ->
+                val current = NarrationSettingsRepository.get(this)
+                if (!isFinishing && !isDestroyed &&
+                    current.engine == NarrationEngine.ANDROID &&
+                    current.language == selectedLanguage) {
+                    lessonAndroidVoices = available
+                    loadedAndroidVoiceLanguage = selectedLanguage
+                    refreshNarrationSelectors()
+                }
+            },
+            onError = {
+                val current = NarrationSettingsRepository.get(this)
+                if (!isFinishing && !isDestroyed &&
+                    current.engine == NarrationEngine.ANDROID &&
+                    current.language == selectedLanguage) {
+                    lessonAndroidVoices = emptyList()
+                    loadedAndroidVoiceLanguage = selectedLanguage
+                    refreshNarrationSelectors()
+                }
+            },
+            language = selectedLanguage
+        )
+    }
+
+    /** Kokoro lists only voices whose original .bin passed integrity checks. */
     private fun chooseInstalledKokoroVoice() {
         val states = lessonNarrationVoiceStates ?: return
         val settings = NarrationSettingsRepository.get(this)
@@ -882,15 +977,20 @@ class LessonOptionsActivity : AppCompatActivity() {
             routeId
         )
         refreshNarrationSelectors()
-        narrationModels.inspectVoices { snapshot ->
-            if (!isFinishing && !isDestroyed) {
-                lessonNarrationVoiceStates = snapshot
-                refreshNarrationSelectors()
+        if (NarrationSettingsRepository.get(this).engine == NarrationEngine.ANDROID) {
+            refreshAndroidVoicesIfNeeded()
+        } else {
+            narrationModels.inspectVoices { snapshot ->
+                if (!isFinishing && !isDestroyed) {
+                    lessonNarrationVoiceStates = snapshot
+                    refreshNarrationSelectors()
+                }
             }
         }
     }
 
     override fun onDestroy() {
+        androidVoiceCatalog?.close()
         if (::narrationModels.isInitialized) narrationModels.close()
         super.onDestroy()
     }
