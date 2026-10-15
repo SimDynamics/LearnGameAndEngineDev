@@ -16,13 +16,9 @@ object KokoroModelManifest {
         val remotePath: String,
         val bytes: Long,
         val sha256: String,
-        val sourceUrl: String? = null,
-        val localImportOnly: Boolean = false
+        val sourceUrl: String? = null
     ) {
-        val url: String get() {
-            check(!localImportOnly) { "Este recurso se instala desde una conversión local verificada, sin URL pública" }
-            return sourceUrl ?: "$source/resolve/$revision/$remotePath"
-        }
+        val url: String get() = sourceUrl ?: "$source/resolve/$revision/$remotePath"
     }
 
     // Published LFS SHA-256 values for the complete fp32 graph and voice data.

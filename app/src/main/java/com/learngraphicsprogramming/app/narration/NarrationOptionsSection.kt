@@ -19,8 +19,6 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import com.learngraphicsprogramming.app.R
-import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 
 /** Preferences and optional resources share the existing global options screen. */
 class NarrationOptionsSection(private val activity: Activity) {
@@ -28,15 +26,6 @@ class NarrationOptionsSection(private val activity: Activity) {
     private val host = activity.findViewById<LinearLayout>(R.id.narrationSettingsSection)
     private val catalog = AndroidVoiceCatalog(activity)
     private val models = KokoroModelStore(activity)
-    private val importLauncher = (activity as ComponentActivity).registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null && !closed) {
-            Toast.makeText(activity, s(R.string.narration_checking_install), Toast.LENGTH_SHORT).show()
-            models.importResources(uri) { error ->
-                Toast.makeText(activity, error ?: s(R.string.narration_installed_verified), Toast.LENGTH_LONG).show()
-                inspect()
-            }
-        }
-    }
     private val handler = Handler(Looper.getMainLooper())
     private var active = false
     private var closed = false
@@ -63,8 +52,11 @@ class NarrationOptionsSection(private val activity: Activity) {
     private val languageStatus = text("", 15f)
     private val compatibility = text("", 15f)
     private val auxiliaryStatus = text("", 15f)
-    private val importButton = button(s(R.string.narration_import_english)) {
-        importLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed"))
+    private val installEnglishButton = button(s(R.string.narration_install_english)) {
+        confirmDownload(s(R.string.narration_english_resources), EnglishAuxResources.artifacts)
+    }
+    private val englishProgress = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
+        max = 100; visibility = View.GONE
     }
     private val removeAuxButton = button(s(R.string.narration_remove_english)) {
         confirmRemove(s(R.string.narration_english_resources), EnglishAuxResources.artifacts)
@@ -124,7 +116,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         })
 
         host.addView(sectionHeading(R.string.narration_section_kokoro_status))
-        listOf(compatibility, auxiliaryStatus, importButton, removeAuxButton).forEach { host.addView(it) }
+        listOf(compatibility, auxiliaryStatus, englishProgress, installEnglishButton, removeAuxButton).forEach { host.addView(it) }
 
         host.addView(sectionHeading(R.string.narration_section_android))
         host.addView(systemStatus)
@@ -231,10 +223,15 @@ class NarrationOptionsSection(private val activity: Activity) {
         installLanguageButton.text = s(R.string.narration_install_language_size, settings.language.label(activity), size(KokoroModelManifest.resources(settings.language).sumOf { it.bytes }))
         removeLanguageButton.isEnabled = hasFiles(language)
         val english = settings.language.resourceGroup == "en"
-        listOf(auxiliaryStatus, importButton, removeAuxButton).forEach { it.visibility = if (english) View.VISIBLE else View.GONE }
-        auxiliaryStatus.text = s(R.string.narration_aux_status, stateLabel(states["en_neural"]))
-        importButton.isEnabled = EnglishAuxResources.artifacts.isNotEmpty()
-        removeAuxButton.isEnabled = hasFiles(states["en_neural"])
+        val auxiliary = states["en_neural"]
+        listOf(auxiliaryStatus, installEnglishButton, removeAuxButton).forEach { it.visibility = if (english) View.VISIBLE else View.GONE }
+        auxiliaryStatus.text = s(R.string.narration_aux_status, stateLabel(auxiliary))
+        englishProgress.visibility = if (english && auxiliary?.status == KokoroModelStatus.DOWNLOADING) View.VISIBLE else View.GONE
+        englishProgress.progress = auxiliary?.percentage ?: 0
+        installEnglishButton.isEnabled = auxiliary?.status !in listOf(KokoroModelStatus.DOWNLOADING, KokoroModelStatus.INSTALLED)
+        installEnglishButton.text = s(if (auxiliary?.status == KokoroModelStatus.ERROR)
+            R.string.narration_retry_english else R.string.narration_install_english)
+        removeAuxButton.isEnabled = hasFiles(auxiliary)
     }
 
     private fun hasFiles(state: KokoroModelState?) = state != null && (state.downloadedBytes > 0 || state.status != KokoroModelStatus.NOT_INSTALLED)

@@ -57,7 +57,13 @@ class CppPrototypeActivity : AppCompatActivity() {
         registerForActivityResult(
             ActivityResultContracts.StartIntentSenderForResult()
         ) { result ->
-            if (result.resultCode != RESULT_OK && !isFinishing && !isDestroyed) {
+            if (isFinishing || isDestroyed) return@registerForActivityResult
+            // Unknown-source settings commonly returns RESULT_CANCELED even
+            // after permission was granted. The installer owns the true state.
+            val state = clang21FeatureDelivery?.currentState()
+            if (state != null) updateClang21FeaturePanel(state)
+            if (result.resultCode != RESULT_OK &&
+                state?.phase == Phase.NEEDS_CONFIRMATION && state.sessionId != -1) {
                 binding.clang21FeatureStatus.setText(
                     R.string.clang21_confirmation_rejected
                 )
@@ -514,12 +520,18 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.clang21FeatureSection.visibility = View.VISIBLE
         val installer = Clang21FeatureDelivery(this)
         clang21FeatureDelivery = installer
+        installer.observe { state ->
+            if (!isFinishing && !isDestroyed) updateClang21FeaturePanel(state)
+        }
         updateClang21FeaturePanel(installer.currentState())
 
         binding.clang21DownloadButton.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle(R.string.clang21_confirm_title)
-                .setMessage(R.string.clang21_confirm_message)
+                .setMessage(if (BuildConfig.LGP_CLANG21_DELIVERY_PROVIDER == "https")
+                    getString(R.string.clang21_https_confirm_message,
+                        installer.currentState().totalBytes / 1_048_576.0)
+                    else getString(R.string.clang21_confirm_message))
                 .setNegativeButton(R.string.clang21_confirm_no, null)
                 .setPositiveButton(R.string.clang21_confirm_yes) { _, _ ->
                     installer.requestInstall { state ->
@@ -577,7 +589,8 @@ class CppPrototypeActivity : AppCompatActivity() {
             Phase.NOT_IN_BUILD, Phase.NOT_INSTALLED ->
                 getString(R.string.clang21_not_installed)
             Phase.REQUESTED -> getString(R.string.clang21_requesting)
-            Phase.PENDING -> getString(R.string.clang21_pending)
+            Phase.PENDING -> getString(if (BuildConfig.LGP_CLANG21_DELIVERY_PROVIDER == "https")
+                R.string.clang21_https_pending else R.string.clang21_pending)
             Phase.DOWNLOADING -> {
                 if (total > 0L) {
                     getString(
@@ -588,9 +601,11 @@ class CppPrototypeActivity : AppCompatActivity() {
                     getString(R.string.clang21_requesting)
                 }
             }
-            Phase.DOWNLOADED -> getString(R.string.clang21_downloaded)
+            Phase.DOWNLOADED -> getString(if (BuildConfig.LGP_CLANG21_DELIVERY_PROVIDER == "https")
+                R.string.clang21_https_verifying else R.string.clang21_downloaded)
             Phase.INSTALLING -> getString(R.string.clang21_installing)
-            Phase.NEEDS_CONFIRMATION -> getString(R.string.clang21_confirming)
+            Phase.NEEDS_CONFIRMATION -> getString(if (state.sessionId == -1)
+                R.string.clang21_https_permission else R.string.clang21_confirming)
             Phase.INSTALLED ->
                 if (CppCompiler.isOptionalClang21Available(this))
                     getString(R.string.clang21_ready)
@@ -668,7 +683,7 @@ class CppPrototypeActivity : AppCompatActivity() {
         val installer = clang21FeatureDelivery
         if (installer != null && clang21FeatureState?.phase !in setOf(
                 Phase.REQUESTED, Phase.PENDING, Phase.DOWNLOADING, Phase.DOWNLOADED,
-                Phase.INSTALLING, Phase.NEEDS_CONFIRMATION, Phase.CANCELING
+                Phase.INSTALLING, Phase.CANCELING
             )) {
             updateClang21FeaturePanel(installer.currentState())
         } else {

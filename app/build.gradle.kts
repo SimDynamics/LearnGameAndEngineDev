@@ -178,6 +178,8 @@ fun lgpBooleanProperty(name: String, defaultValue: Boolean): Boolean {
 val lgpEnableClang23 = lgpBooleanProperty("lgp.clang23", true)
 // Copia aislada para comprobar contenido curricular sin tocar los datos del usuario.
 val lgpCurricularQa = lgpBooleanProperty("lgp.curricularQa", false)
+val lgpRealDownloadsQa = lgpBooleanProperty("lgp.realDownloadsQa", false)
+check(!lgpCurricularQa || !lgpRealDownloadsQa) { "Select only one isolated QA application." }
 val lgpEnableWasmtime = lgpBooleanProperty("lgp.wasmtime", lgpEnableClang23)
 val lgpEnableCppExceptions = lgpBooleanProperty(
     "lgp.cppExceptions", lgpEnableClang23 && lgpEnableWasmtime
@@ -185,6 +187,16 @@ val lgpEnableCppExceptions = lgpBooleanProperty(
 
 // Experimental Play-delivered feature stub. Never included by normal builds.
 val lgpEnablePlayClang21Feature = lgpBooleanProperty("lgp.playClang21Feature", false)
+// The existing build button enables the optional module. APK builds use HTTPS;
+// Play releases explicitly select their independent Feature Delivery provider.
+val lgpClang21Distribution = providers.gradleProperty("lgp.clang21Distribution").orNull
+    ?: if (lgpEnablePlayClang21Feature) "https" else "disabled"
+check(lgpClang21Distribution in setOf("https", "play", "disabled")) {
+    "lgp.clang21Distribution must be https, play or disabled."
+}
+check(lgpClang21Distribution == "disabled" || lgpEnablePlayClang21Feature) {
+    "Enable lgp.playClang21Feature to prepare the complete optional Clang 21 module."
+}
 check(!lgpEnablePlayClang21Feature || (lgpEnableClang23 && lgpEnableWasmtime)) {
     "The optional Clang 21 Play module requires a Clang 23 + Wasmtime base APK."
 }
@@ -231,12 +243,15 @@ android {
         buildConfigField("boolean", "LGP_CLANG23_ENABLED", lgpEnableClang23.toString())
         buildConfigField("boolean", "LGP_CPP_EXCEPTIONS_ENABLED", lgpEnableCppExceptions.toString())
         buildConfigField("boolean", "LGP_PLAY_CLANG21_FEATURE_ENABLED", lgpEnablePlayClang21Feature.toString())
+        buildConfigField("String", "LGP_CLANG21_DELIVERY_PROVIDER", "\"${if (lgpClang21Distribution == "https") "disabled" else lgpClang21Distribution}\"")
         buildConfigField("boolean", "LGP_WASMTIME_DIAGNOSTICS", lgpWasmtimeDiagnostics.toString())
     }
 
     buildTypes {
         getByName("debug") {
             if (lgpCurricularQa) applicationIdSuffix = ".curricularqa"
+            if (lgpRealDownloadsQa) applicationIdSuffix = ".realdownloadsqa"
+            buildConfigField("String", "LGP_CLANG21_DELIVERY_PROVIDER", "\"$lgpClang21Distribution\"")
         }
         release {
             optimization {
@@ -268,6 +283,11 @@ android {
         }
     }
     sourceSets {
+        if (lgpClang21Distribution == "https") {
+            getByName("debug").kotlin.directories.add("src/standalone/java")
+            getByName("debug").manifest.srcFile("src/standalone/AndroidManifest.xml")
+            getByName("debug").assets.directories.add("build/generated/clang21Https/assets")
+        }
         getByName("main").jniLibs.directories.add("build/generated/cppRuntime/jniLibs")
         getByName("main").jniLibs.directories.add("build/generated/cmakeRuntime/jniLibs")
         getByName("main").assets.directories.add("build/generated/cmakeRuntime/assets")
@@ -283,6 +303,65 @@ android {
             merges += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/DEPENDENCIES")
             // Symja external and JGraphT contain byte-identical copies of these schemas.
             pickFirsts += setOf("graphml.xsd", "xlink.xsd", "viz.xsd", "gexf.xsd")
+        }
+    }
+}
+
+if (lgpClang21Distribution == "https") {
+    val sdk = androidComponents.sdkComponents.sdkDirectory.get().asFile
+    val tools = File(sdk, "build-tools/${android.buildToolsVersion}")
+    val signing = android.signingConfigs.getByName("debug")
+    val signingFile = signing.storeFile ?: File(System.getProperty("user.home"), ".android/debug.keystore")
+    val packageId = "com.learngraphicsprogramming.app" + when {
+        lgpRealDownloadsQa -> ".realdownloadsqa"
+        lgpCurricularQa -> ".curricularqa"
+        else -> ""
+    }
+    val nativeDirectory = rootProject.layout.projectDirectory.dir("clang21/build/generated/clang21Feature/jniLibs/arm64-v8a")
+    val archiveDirectory = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache")
+    val recipeScript = rootProject.layout.projectDirectory.file("scripts/runtime/prepare_clang21_installation.py")
+    val outputAssets = layout.buildDirectory.dir("generated/clang21Https/assets")
+    val signedWorkspace = layout.buildDirectory.dir("intermediates/clang21Https")
+    val prepareClang21HttpsInstallation by tasks.registering(Exec::class) {
+        group = "build setup"
+        description = "Prepare the signed Clang 21 installation envelope; native payload downloads on demand."
+        dependsOn(":clang21:prepareClang21FeatureLibraries", "validateSigningDebug")
+        inputs.file(recipeScript)
+        inputs.dir(nativeDirectory)
+        inputs.file(signingFile)
+        inputs.property("packageName", packageId)
+        inputs.property("versionCode", android.defaultConfig.versionCode ?: 1)
+        outputs.dir(outputAssets)
+        environment("LGP_SPLIT_STORE_PASSWORD", signing.storePassword ?: "android")
+        environment("LGP_SPLIT_KEY_PASSWORD", signing.keyPassword ?: "android")
+        commandLine(
+            providers.gradleProperty("lgp.python").orNull ?: "python",
+            recipeScript.asFile.absolutePath,
+            "--native-dir", nativeDirectory.asFile.absolutePath,
+            "--archive-cache", archiveDirectory.asFile.absolutePath,
+            "--package-name", packageId,
+            "--version-code", (android.defaultConfig.versionCode ?: 1).toString(),
+            "--min-sdk", "24", "--target-sdk", "37",
+            "--android-jar", androidComponents.sdkComponents.bootClasspath.get()
+                .single { it.asFile.name == "android.jar" }.asFile.absolutePath,
+            "--aapt2", File(tools, "aapt2.exe").absolutePath,
+            "--zipalign", File(tools, "zipalign.exe").absolutePath,
+            "--apksigner", File(tools, "lib/apksigner.jar").absolutePath,
+            "--java", File(System.getProperty("java.home"), "bin/java.exe").absolutePath,
+            "--keystore", signingFile.absolutePath,
+            "--key-alias", signing.keyAlias ?: "androiddebugkey",
+            "--store-password-env", "LGP_SPLIT_STORE_PASSWORD",
+            "--key-password-env", "LGP_SPLIT_KEY_PASSWORD",
+            "--output-assets", outputAssets.get().asFile.absolutePath,
+            "--work-dir", signedWorkspace.get().asFile.absolutePath
+        )
+    }
+    tasks.matching { it.name == "mergeDebugAssets" }.configureEach {
+        dependsOn(prepareClang21HttpsInstallation)
+    }
+    tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+        doFirst {
+            error("For Google Play releases select -Plgp.clang21Distribution=play; HTTPS executable installation is restricted to development APKs.")
         }
     }
 }
@@ -708,7 +787,7 @@ dependencies {
      */
     implementation("com.android.billingclient:billing:9.1.0")
 
-    // Native on-demand Clang 21 delivery through Google Play, never GitHub in-app.
+    // Google Play provider; standalone APKs use their isolated HTTPS installer.
     implementation("com.google.android.play:feature-delivery:2.1.0")
 
     testImplementation(libs.junit)

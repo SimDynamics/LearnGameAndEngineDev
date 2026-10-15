@@ -79,8 +79,15 @@ class SpanishWordPhonemeTraceTest {
         assertEquals("βwˈeno", trace.phones(3))
     }
 
+    @Test fun cppLanguageNameOwnsItsExistingCompletePronunciation() {
+        val trace = requireNotNull(SpanishFluidG2P.traceWords("C++"))
+        assertEquals(SpanishFluidG2P.phonemize("C++"), trace.phonemes)
+        assertEquals(SpanishFluidG2P.phonemize("ce más más"), trace.phonemes)
+        assertEquals(listOf(SpanishFluidG2P.SpanishWordPhoneRange("c", 0, trace.phonemes.length)), trace.words)
+    }
+
     @Test fun expansionsMathCodeAndOpaquePronunciationAnnotationsHaveNoInferredWordTrace() {
-        listOf("12 casas", "x²", "3/4", "C++", "C más más", "std::cout", "a + b", "a = b",
+        listOf("12 casas", "x²", "3/4", "C más más", "std::cout", "a + b", "a = b",
             "\\frac{1}{2}", "m_nombre", "int x = 4;", "90°", "cm³", "\uE002Hola", "\uE000cout\uE001")
             .forEach { assertNull(it, SpanishFluidG2P.traceWords(it)) }
     }

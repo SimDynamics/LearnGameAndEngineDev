@@ -30,7 +30,7 @@ internal class CppCompiler(private val context: Context) {
             else hasExecutableClang21Libraries(context)
 
         private fun hasExecutableClang21Libraries(context: Context): Boolean {
-            val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+            val nativeDirectory = File(context.packageManager.getApplicationInfo(context.packageName, 0).nativeLibraryDir)
             return CLANG_21_NATIVE_LIBRARIES.all { name ->
                 File(nativeDirectory, name).let { it.isFile && it.canExecute() }
             }
@@ -42,7 +42,7 @@ internal class CppCompiler(private val context: Context) {
          * are not executable on Android 10+.
          */
         fun isOptionalClang21Available(context: Context): Boolean {
-            if (!BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED ||
+            if (BuildConfig.LGP_CLANG21_DELIVERY_PROVIDER == "disabled" ||
                 !BuildConfig.LGP_CLANG23_ENABLED
             ) return false
 
@@ -87,7 +87,7 @@ internal class CppCompiler(private val context: Context) {
             path to File(buildDirectory, "$index-${File(path).name}.o")
         }
         val wasmFile = File(workspace, "program.wasm")
-        val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+        val nativeDirectory = File(context.packageManager.getApplicationInfo(context.packageName, 0).nativeLibraryDir)
         // Legacy -Plgp.clang23=false APKs continue using their original toolchain.
         val useClang21 = !BuildConfig.LGP_CLANG23_ENABLED ||
             compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21

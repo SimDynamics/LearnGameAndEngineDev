@@ -122,7 +122,6 @@ class KokoroModelStore(context: Context) {
     fun startDownload(userAccepted: Boolean, artifacts: List<KokoroModelManifest.Artifact> = KokoroModelManifest.sharedArtifacts) {
         require(userAccepted) { "La descarga requiere aceptación explícita del usuario" }
         require(artifacts.isNotEmpty() && artifacts.all { it in KokoroModelManifest.artifacts })
-        require(artifacts.none { it.localImportOnly }) { "Los recursos convertidos se instalan mediante importación local" }
         submit {
             synchronized(storeLock) {
                 try {
@@ -383,7 +382,6 @@ class KokoroModelStore(context: Context) {
         artifact: KokoroModelManifest.Artifact,
         revision: String = KokoroModelManifest.revision
     ): Long {
-        if (artifact.localImportOnly) return NO_DOWNLOAD
         val savedId = downloadId(artifact, revision)
         if (savedId != NO_DOWNLOAD) return savedId
         val destination = Uri.fromFile(ownedFile(directory, "${artifact.fileName}.part")).toString()
@@ -427,7 +425,10 @@ class KokoroModelStore(context: Context) {
                 synchronized(storeLock) {
                     val root = currentDirectory()
                     if (!root.isDirectory && !root.mkdirs()) throw NarrationResourceException(NarrationResourceProblem.CREATE_DIRECTORY)
-                    val expected = KokoroModelManifest.artifacts.associateBy { it.fileName }
+                    // Preserve the shared importer for other resources; English neural
+                    // models are installed only through their verified downloads.
+                    val expected = (KokoroModelManifest.sharedArtifacts + KokoroModelManifest.voiceArtifacts +
+                        KokoroModelManifest.languageArtifacts).associateBy { it.fileName }
                     val installed = mutableSetOf<String>()
                     appContext.contentResolver.openInputStream(uri)?.use { input ->
                         ZipInputStream(input.buffered()).use { zip ->

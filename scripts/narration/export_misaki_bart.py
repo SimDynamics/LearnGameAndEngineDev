@@ -1,7 +1,7 @@
 """Export Misaki's selected original US/GB BART models, without downloading anything.
 
 Inputs must be the pinned, verified PeterReid source models. Outputs are two full FP32
-ONNX graphs per dialect, with a checked manifest and a local installation ZIP. Both
+ONNX graphs per dialect, with a checked manifest for verified HTTPS delivery. Both
 graphs use standard opset 17 and no key/value cache. The greedy loop is checked against
 the original transformers 4.51.2 generate() call, including its default length/EOS.
 
@@ -15,7 +15,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import zipfile
 
 # Keep transformers entirely local; no missing file may trigger a network request.
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -177,12 +176,8 @@ def main():
     torch.set_num_threads(2)
     torch.manual_seed(0)
     args.output.mkdir(parents=True, exist_ok=True)
-    files = []
     for variant in ("us", "gb"):
-        files.extend(export_variant(args.source, args.output, variant))
-    with zipfile.ZipFile(args.output / "misaki-bart-install.zip", "w", zipfile.ZIP_DEFLATED) as archive:
-        for file in files:
-            archive.write(file, file.name)
+        export_variant(args.source, args.output, variant)
 
 
 if __name__ == "__main__":

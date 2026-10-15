@@ -32,11 +32,11 @@ internal class CppCmakeEngine(context: Context, sessionKey: String) {
     val workspace = File(this.context.cacheDir, "cpp-cmake-jobs/${hash(sessionKey.toByteArray())}")
     private val sourceDirectory = File(workspace, "project")
     private val buildDirectory = File(workspace, "build")
-    private val nativeDirectory = File(this.context.applicationInfo.nativeLibraryDir)
+    private val nativeDirectory get() = File(context.packageManager.getApplicationInfo(context.packageName, 0).nativeLibraryDir)
     private val stateFile = File(workspace, "state.json")
     private val lock = locks.getOrPut(workspace.absolutePath) { Any() }
-    private val cmake = File(nativeDirectory, "liblgp_cmake.so")
-    private val ninja = File(nativeDirectory, "liblgp_ninja.so")
+    private val cmake get() = File(nativeDirectory, "liblgp_cmake.so")
+    private val ninja get() = File(nativeDirectory, "liblgp_ninja.so")
 
     fun isBusy(): Boolean = (operations[workspace.absolutePath]?.get() ?: 0) > 0
 
