@@ -1,0 +1,276 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__densidad_y_conservacion",
+  "title": "Density and Conservation of Quantities",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mass per Unit Volume"
+        },
+        {
+          "type": "paragraph",
+          "text": "Density compares mass with volume: density = mass/volume. If 30 g occupy 5 cm³, the average density is 6 g/cm³. For another object made of the same uniform material, mass = volume×density. Extending this relationship requires keeping the material and conditions the same; the average density of an object with empty spaces does not demonstrate uniformity."
+        },
+        {
+          "type": "paragraph",
+          "text": "The unit g/cm³ means grams per cubic centimeter. To find volume, divide mass by that rate. A reciprocal rate in cm³/g can also be meaningful, but it answers how much volume corresponds to each gram."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "densidad_obtener_masa",
+          "prompt": "A piece of uniform material has a mass of 42 g and a volume of 6 cm³. Calculate its density and the mass of another piece of the same material with a volume of 9 cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "rho",
+              "type": "math_numeric_input",
+              "label": "Density",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              },
+              "unit": "g/cm³"
+            },
+            {
+              "id": "m",
+              "type": "math_numeric_input",
+              "label": "New mass",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "63"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "The density is 7 g/cm³; 9 cm³ have a mass of 63 g.",
+            "incorrect": "42 g corresponds to a volume of six. Applying the rate to another object requires the same uniform material."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "densidad_obtener_volumen",
+          "prompt": "A uniform material has a density of 5/2 g/cm³. A piece has a mass of 15 g. What volume does it occupy?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volume",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "cm³"
+            }
+          ],
+          "feedback": {
+            "correct": "15÷5/2 = 6 cm³. Multiplying by 5/2 g/cm³ recovers 15 g.",
+            "incorrect": "Multiplying mass by density does not give volume. Dividing by a nonzero fraction uses its reciprocal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "densidad_racional",
+          "prompt": "A sample has a mass of 3/4 g and occupies 1/2 cm³. What is its average density?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Density",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "g/cm³"
+            }
+          ],
+          "feedback": {
+            "correct": "3/4÷1/2 = 3/2 g/cm³.",
+            "incorrect": "A sample can have fractional measurements. Dividing by 1/2 is equivalent to multiplying by two."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Change Units Without Changing the Material"
+        },
+        {
+          "type": "paragraph",
+          "text": "To express 800 g/L in g/cm³, use 1 L = 1000 cm³: 800/1000 = 0.8 g/cm³. We are not multiplying the object's mass or changing its material; only the volume chosen as the reference for the rate changes."
+        },
+        {
+          "type": "paragraph",
+          "text": "If density stays fixed, mass and volume are directly proportional. If mass is fixed for a comparison and possible densities and volumes are considered, the product density×volume is constant. The assumption of uniform material determines when a density can be applied to new pieces."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "densidad_conversion",
+          "prompt": "A sample has a density of 1200 g/L. Express that rate in g/cm³ using 1 L = 1000 cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Density",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6/5"
+              },
+              "unit": "g/cm³"
+            }
+          ],
+          "feedback": {
+            "correct": "1200 g per 1000 cm³ is 1.2 g/cm³.",
+            "incorrect": "Multiplying by 1000 would treat each cubic centimeter as a thousand liters. Reconstruct the mass of a liter to check."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "densidad_condicion",
+          "prompt": "We know the average density of a box containing objects and air gaps. Someone wants to use it as the density of a solid object made of another material. Which decision is justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Use the same density because both objects have mass.",
+                  "reviewFeedback": "Review which material properties justify transferring a density. Having mass does not, by itself, establish uniformity or identical materials."
+                },
+                {
+                  "id": "b",
+                  "label": "Do not transfer it: the same uniform material has not been established.",
+                  "reviewFeedback": "Consider what the average density measured for the box describes. Identify which assumptions would be needed to apply it to another object."
+                },
+                {
+                  "id": "c",
+                  "label": "Use it only when the numbers are integers.",
+                  "reviewFeedback": "Relate the decision to the material and the distribution of mass and volume. Check whether requiring whole numbers represents a relevant physical condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The box's average rate includes its contents and empty spaces; it does not characterize every material.",
+            "incorrect": "The mass-to-volume ratio exists, but retaining the same quotient for another object requires appropriate conditions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Conserved Part and a Changing Reference"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a homogeneous mixture, removing a portion takes away the same fraction of the component and of the mixture. The percentage of what remains does not change. Adding pure water increases the base without adding the component, so the percentage decreases. Evaporating only water reduces the base while conserving the component, so the percentage increases."
+        },
+        {
+          "type": "paragraph",
+          "text": "These conclusions depend on the model. For mass percentages, add masses. For volume percentages, add volumes only when the problem states that they are additive. Do not interchange the two references."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "retirar_mezcla_uniforme",
+          "prompt": "A homogeneous 10 L solution contains 20% of a component by volume. Remove 4 L of that same solution. Assume an ideal model with additive volumes. Calculate how many liters of the component remain and their percentage.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Component remaining",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6/5"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Percentage remaining",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "There are 6 L of solution and 1.2 L of component remaining: the percentage is still 20%.",
+            "incorrect": "Removing a homogeneous mixture also removes part of the component. The original two liters of component do not all remain after four liters of solution have been removed."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "masa_o_volumen",
+          "prompt": "Mix 200 g of a preparation that is 10% salt by mass with 300 g of another that is 20% salt by mass. The salt is conserved. Calculate the mass of salt and the final mass percentage.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sal",
+              "type": "math_numeric_input",
+              "label": "Mass of salt",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "80"
+              },
+              "unit": "g"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Final mass percentage",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "16"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "There are 20+60 = 80 g of salt in 500 g: 16%.",
+            "incorrect": "15% is an unweighted average of percentages from different masses. Here the reference is total mass, not liters."
+          }
+        }
+      ]
+    }
+  ]
+}
