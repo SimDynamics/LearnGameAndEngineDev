@@ -51,6 +51,33 @@ class SpanishMathSpeechTest {
         assertEquals("Una fracción: tres cuartos.", SpanishMathSpeech.text("Una fracción: 3/4."))
     }
 
+    @Test fun curricularMembershipInProseUsesTheExistingMathematicalReading() {
+        val authored = "El mismo simulador mantiene r ∈ {0, 1/2, 1} y la condición L = R."
+        assertEquals("El mismo simulador mantiene r pertenece a {0, un medio, 1} y la condición L = R.",
+            SpanishMathSpeech.text(authored))
+        // The actual failing sentence has already passed through technical notation speech.
+        val prepared = "El mismo simulador mantiene r ∈ abre llave cero coma uno barra dos coma uno cierra llave y la condición L = R."
+        val expected = prepared.replace("∈", "pertenece a")
+        assertEquals(expected, SpanishMathSpeech.text(prepared))
+        assertEquals(expected, SpanishMathSpeech.text(prepared, "inline"))
+        assertEquals(expected, SpanishMathSpeech.text(prepared, "block"))
+    }
+
+    @Test fun membershipPreservesTheExistingNameOfVariableR() {
+        assertEquals("erre pertenece a", SpanishMathSpeech.speak(MathExpression.Sequence(listOf(
+            MathExpression.Variable("r"), MathExpression.Symbol("∈")))))
+        assertEquals("r pertenece a A", SpanishMathSpeech.text("r ∈ A"))
+    }
+
+    @Test fun membershipInProtectedCodePathsAndTextModeRemainsLiteral() {
+        val protected = "Usa `r ∈ A`, ```r ∈ A``` y C:/geometria/∈/fuente.cpp, " +
+            "/datos/∈/archivo.txt o https://ejemplo.es/∈/conjunto."
+        assertEquals(protected, SpanishMathSpeech.text(protected))
+        val textOnly = "El mismo simulador mantiene r ∈ {0, 1/2, 1}."
+        assertEquals(textOnly, SpanishMathSpeech.text(textOnly, "text"))
+        assertEquals("Símbolo sin lectura ∉.", SpanishMathSpeech.text("Símbolo sin lectura ∉."))
+    }
+
     @Test fun groupingAndCompoundFractionsStayUnambiguous() {
         val speech = speech("\\frac{x+1}{2}+(x+2)^3")
         assertTrue(speech.contains("numerador, equis más uno; y denominador, dos, fin de fracción"))

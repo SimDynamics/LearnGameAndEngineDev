@@ -129,7 +129,7 @@ object SpanishMathSpeech {
                     continue
                 }
             }
-            if (text[index] in "×÷≤≥≠≈π∞") output.append(' ').append(render(MathExpression.Symbol(text[index].toString()))).append(' ')
+            if (text[index] in "×÷≤≥≠≈π∞∈") output.append(' ').append(render(MathExpression.Symbol(text[index].toString()))).append(' ')
             else output.append(text[index])
             index++
         }

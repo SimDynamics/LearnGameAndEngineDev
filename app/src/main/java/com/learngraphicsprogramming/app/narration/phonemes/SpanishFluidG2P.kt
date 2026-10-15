@@ -225,7 +225,8 @@ object SpanishFluidG2P {
 
     private fun normalizedTokens(text: String, lexicon: Map<String, String>,
                                  foreignTokens: Map<Char, String> = emptyMap()): List<Token> {
-        val normalized = nfc(text).replace('«', '“').replace('»', '”').replace('\'', ' ')
+        // Typographic apostrophes use the existing ASCII word boundary, retaining both sides.
+        val normalized = nfc(text).replace('«', '“').replace('»', '”').replace('’', '\'').replace('\'', ' ')
         val tokens = tokenize(normalized)
         val items = tokens.mapIndexed { index, token ->
             val foreign = token.text.singleOrNull()?.let(foreignTokens::get)

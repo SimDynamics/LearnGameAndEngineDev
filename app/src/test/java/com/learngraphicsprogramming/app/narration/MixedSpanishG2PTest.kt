@@ -72,6 +72,21 @@ class MixedSpanishG2PTest {
         assertTrue(plan.last().phonemes.endsWith('.'))
     }
 
+    @Test fun typographicApostropheAlsoWorksBesideManualEnglishWithoutChangingContent() {
+        val raw = "Kiselev’s geometry utiliza std::vector."
+        val lesson = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray()
+            .put(JSONObject().put("type", "paragraph").put("text", raw)))))
+        val authored = lesson.toString()
+        val prepared = LessonNarrationText.page(lesson, 0, forKokoro = true).single()
+        // Keep the same selected English spans while comparing only apostrophe normalization.
+        val ascii = prepared.replace('’', '\'')
+        assertTrue(ManualEnglishSpeech.spans(prepared).any { it.entry.spelling == "vector" })
+        assertTrue(ManualEnglishSpeech.strip(prepared).contains("Kiselev’s geometry"))
+        assertEquals(MixedSpanishG2P.phonemizePrepared(ascii, emptyMap()),
+            MixedSpanishG2P.phonemizePrepared(prepared, emptyMap()))
+        assertEquals(authored, lesson.toString())
+    }
+
     @Test fun mixedKeysAreSelectiveAndKeepEveryLegacyPlainKeyAccessible() {
         val raw = "Utilizamos include para incluir la biblioteca iostream."
         val prepared = SpanishTechnicalSpeech.prepareForKokoro(raw).text

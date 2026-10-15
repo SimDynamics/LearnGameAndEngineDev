@@ -142,6 +142,16 @@ class SpanishFluidG2PTest {
         assertEquals("", SpanishFluidG2P.phonemize("   "))
     }
 
+    @Test fun typographicApostropheKeepsTheExistingAsciiPronunciationAndEveryLetter() {
+        val ascii = "Kiselev's geometry: Book I."
+        val typographic = "Kiselev’s geometry: Book I."
+        val expected = SpanishFluidG2P.phonemize(ascii)
+        assertEquals(expected, SpanishFluidG2P.phonemize(typographic))
+        assertEquals(SpanishFluidG2P.phonemizeNormalized(ascii),
+            SpanishFluidG2P.phonemizeNormalized(typographic))
+        assertEquals(SpanishFluidG2P.phonemize("Kiselev s geometry: Book I."), expected)
+    }
+
     @Test fun lexiconLoaderJoinsOfficialCharacterArraySchemaAndRejectsUnknownPhones() {
         val file = File.createTempFile("spanish-fluid-lexicon", ".tmp")
         try {
