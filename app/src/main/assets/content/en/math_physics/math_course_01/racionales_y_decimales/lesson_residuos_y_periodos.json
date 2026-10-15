@@ -1,0 +1,521 @@
+{
+  "id": "math_course_01__racionales_y_decimales__residuos_y_periodos",
+  "title": "Remainders and Repeating Decimals",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Remainder Tracks What Is Left"
+        },
+        {
+          "type": "paragraph",
+          "text": "When dividing 2 by 7, there are no whole units. We change to twenty tenths: the first digit is two and six tenths remain. Next, we change to sixty hundredths: the following digit is eight and four remain. At each step we multiply the previous remainder by ten, divide by seven, and obtain a digit between zero and nine."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seguir_residuos",
+          "prompt": "For 1/8, the first decimal digit is 1 and the remainder is 2, because 10 = 1×8+2. Complete the second and third digits and their remainders.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Second decimal digit"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Remainder after the second digit"
+                },
+                {
+                  "id": "cifra3",
+                  "type": "numeric",
+                  "label": "Third decimal digit"
+                },
+                {
+                  "id": "residuo3",
+                  "type": "numeric",
+                  "label": "Remainder after the third digit"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "cifra3": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo3": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "20 = 2×8+4 and 40 = 5×8+0. We obtain 0.125, and the expansion terminates when the remainder reaches zero.",
+            "incorrect": "Divide ten times the remainder, not ten times the previous digit. A decimal digit is not the remainder; they serve different purposes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_por_retorno",
+          "prompt": "Complete the digits and remainders for 3/11. The initial remainder is three; after these two steps, decide whether the process will terminate or repeat.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "First decimal digit"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "First remainder"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Second decimal digit"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Second remainder"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It terminates: at least one calculated remainder is zero.",
+                  "reviewFeedback": "Your conclusion claims that a zero remainder appears. Verify the calculated remainders using the relationship among the divisor, the digit, and the quantity being divided at each step."
+                },
+                {
+                  "id": "b",
+                  "label": "It repeats from the first digit: the last remainder matches the initial remainder.",
+                  "reviewFeedback": "Check when a previous state of the division is reached again. Relate that state to the steps that would follow."
+                },
+                {
+                  "id": "c",
+                  "label": "The repeating block is obtained by copying the remainders as decimal digits.",
+                  "reviewFeedback": "Your method copies remainders as digits. Distinguish what part of each division produces the digit and what remains for the next step."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30 = 2×11+8 and 80 = 7×11+3. Returning to remainder three restarts exactly the same steps: 3/11 = 0.272727… with 27 repeating endlessly.",
+            "incorrect": "The remainders are eight and three, not the digits of the repeating block. The process terminates only with remainder zero; a repeated remainder forces the following steps to repeat."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Initial Part May Not Repeat"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 1/6, 10 = 1×6+4, then 40 = 6×6+4. Remainder four repeats starting with the second step: the decimal is 0.16666…, with an initial one followed by repeating sixes. The whole string 16 does not repeat. This is called a mixed repeating decimal because initial digits precede the repeating block."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_mixto",
+          "prompt": "Complete the first two steps for 5/6 and choose which part repeats.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "First digit"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "First remainder"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Second digit"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Second remainder"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The first two digits repeat from the beginning.",
+                  "reviewFeedback": "Your conclusion includes the first digit in the cycle. Check which remainder starts each step and where the same state first appears again."
+                },
+                {
+                  "id": "b",
+                  "label": "The first digit comes before the cycle; starting with the second, a single digit repeats.",
+                  "reviewFeedback": "Check which state appears again and which digit it produces when the step repeats. Distinguish the initial part from the subsequent cycle."
+                },
+                {
+                  "id": "c",
+                  "label": "The repeated remainder is copied as a decimal digit.",
+                  "reviewFeedback": "Your choice treats the remainder as a decimal digit. Check the quotient at each step and the amount left for the next one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "50 = 8×6+2 and 20 = 3×6+2. Remainder two appears again, so threes keep following threes: 0.83333… with three repeating.",
+            "incorrect": "A remainder is not copied as a digit. Repetition begins when the same remainder returns; here eight comes before that cycle."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_periodo_tabla",
+          "prompt": "The table corresponds to 3/22. Each row divides ten times the preceding remainder by 22. Choose the exact decimal expansion it describes.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Amount divided",
+                "Digit",
+                "Remainder"
+              ],
+              "rows": [
+                [
+                  "30",
+                  "1",
+                  "8"
+                ],
+                [
+                  "80",
+                  "3",
+                  "14"
+                ],
+                [
+                  "140",
+                  "6",
+                  "8"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.136363…: after the initial one, 36 repeats.",
+                  "reviewFeedback": "Check the initial part and the repeating block by following the table's states. Verify that returning to the same remainder restarts the steps of the proposed block."
+                },
+                {
+                  "id": "b",
+                  "label": "0.136136…: 136 repeats from the beginning.",
+                  "reviewFeedback": "Your choice repeats from the start. Check whether the table's initial remainder reappears within the proposed cycle."
+                },
+                {
+                  "id": "c",
+                  "label": "0.138888…: remainder eight becomes the repeated digit.",
+                  "reviewFeedback": "Your choice uses a remainder as the repeated digit. Distinguish the digit produced by division from the amount carried to the next step."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Remainder eight returns after the digits three and six. The block 36 repeats, preceded by the initial one.",
+            "incorrect": "The remainder cycle does not include the initial remainder three. That is why 136 does not repeat; nor are remainders written as if they were digits."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "For a positive denominator q, a remainder can only be 0, 1, …, q−1. If zero appears, the division terminates. If it does not, there are only q−1 possible nonzero remainders: eventually one repeats and the algorithm repeats its digits. Thus every rational number has a terminating or repeating decimal expansion. We are not claiming that the repeating block always has q−1 digits; it can be much shorter."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "por_que_repite",
+          "prompt": "Which argument guarantees that a rational division that does not terminate eventually repeats its digits?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Every calculator displays a finite row of numbers.",
+                  "reviewFeedback": "Your argument relies on screen size. Check whether limiting the displayed digits proves anything about how the number continues."
+                },
+                {
+                  "id": "b",
+                  "label": "There are finitely many possible remainders, and the same remainder forces the same steps to repeat.",
+                  "reviewFeedback": "Check what information determines the next division step and why there are only finitely many possible states."
+                },
+                {
+                  "id": "c",
+                  "label": "The denominator always equals the length of the repeating block.",
+                  "reviewFeedback": "Your statement equates the denominator with the length of the repeating block. Consider whether knowing how many remainders are possible means that all must occur before one repeats."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The algorithm depends on the remainder and denominator. Repeating that state repeats every subsequent step; a finite display does not prove periodicity.",
+            "incorrect": "The display also truncates approximations. The repeating block of 1/3 has one digit, even though its denominator is three."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exact Repetition, Truncation, and Sign"
+        },
+        {
+          "type": "paragraph",
+          "text": "Writing 0.272727… and saying that 27 repeats forever describes an exact value. Writing 0.2727 without an ellipsis describes exactly 2727/10000 and only approximates the former. For a negative number, truncating its magnitude may produce a greater value: −0.33 is closer to zero than −1/3."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_positivo",
+          "prompt": "The decimal expansion of 2/11 is 0.181818… with repeating 18. How does the truncation 0.1818 compare with 2/11?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is exactly equal because 18 appeared twice.",
+                  "reviewFeedback": "Your explanation confuses repeating a block a few times with repeating it forever. Consider what information a decimal written with an ending preserves."
+                },
+                {
+                  "id": "b",
+                  "label": "It is less: positive digits are still missing from the continuing expansion.",
+                  "reviewFeedback": "Check the comparison using the exact value of the truncation and the indicated continuation. Justify the sign of the difference without relying on the appearance of the digits."
+                },
+                {
+                  "id": "c",
+                  "label": "It is greater because 1818 is greater than two.",
+                  "reviewFeedback": "Your argument compares digits as whole numbers. Express the truncated decimal using its place values before comparing it with the fraction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0.1818 = 909/5000. The difference 2/11−909/5000 is 1/55000, which is positive.",
+            "incorrect": "Repeating a block a finite number of times is not the same as repeating it forever. The integers 1818 and two cannot be compared without their denominators."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_negativo",
+          "prompt": "Compare −0.666 with −2/3 and choose the correct reasoning.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−0.666 < −2/3 because 666 is greater than two.",
+                  "reviewFeedback": "Your reasoning compares numerators without their fractional units. Also check how the order changes when taking opposites."
+                },
+                {
+                  "id": "b",
+                  "label": "They are equal because both have three decimal places.",
+                  "reviewFeedback": "Your argument treats three places as proof of exactness. Check whether a finite truncation represents the fraction's entire expansion."
+                },
+                {
+                  "id": "c",
+                  "label": "−0.666 > −2/3: 0.666 < 2/3, and taking opposites reverses the order.",
+                  "reviewFeedback": "First verify the comparison of the positive magnitudes, then the effect of taking their opposites on number-line order."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The positive truncation lies below two thirds. Taking opposites brings it closer to zero, so it is greater.",
+            "incorrect": "The rule learned for positive truncations cannot simply be copied without considering the sign. Three digits do not make the expansion exact."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "finito_periodico_recuperacion",
+          "prompt": "Select all correct descriptions after simplifying the fractions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "21/60 = 7/20 has a terminating decimal expansion.",
+                  "reviewFeedback": "For the selected description, verify the simplification and factor the remaining denominator. Apply the decimal criterion to that final form."
+                },
+                {
+                  "id": "b",
+                  "label": "5/18 has a repeating decimal expansion because its reduced denominator still contains a factor of three.",
+                  "reviewFeedback": "For the selected description, check whether the fraction is already in simplest form and examine the factorization supporting the conclusion about its expansion."
+                },
+                {
+                  "id": "c",
+                  "label": "4/12 has a terminating decimal expansion because both terms are even.",
+                  "reviewFeedback": "For the selected description, check what follows from both terms being even. Examine the denominator after completing all necessary simplifications."
+                },
+                {
+                  "id": "d",
+                  "label": "7/14 has a terminating decimal expansion because it simplifies to 1/2.",
+                  "reviewFeedback": "For the selected description, verify the simplifying factor and connect the final denominator with a power of ten."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "21/60 and 7/14 lose the factors other than two and five when simplified. 5/18 retains a factor of three; 4/12 simplifies to 1/3 and does not terminate.",
+            "incorrect": "Both terms being even allows a simplification, but it does not guarantee that every factor of three disappears. The criterion applies to the final denominator."
+          }
+        }
+      ]
+    }
+  ]
+}

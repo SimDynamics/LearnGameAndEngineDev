@@ -1,0 +1,521 @@
+{
+  "id": "math_course_01__racionales_y_decimales__residuos_y_periodos",
+  "title": "Restes et décimaux périodiques",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le reste représente ce qu'il reste à répartir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour diviser 2 par 7, il n'y a pas d'unité entière. On passe à vingt dixièmes : le premier chiffre est deux et il reste six dixièmes. On passe à soixante centièmes : le chiffre suivant est huit et il reste quatre. À chaque étape, on multiplie par dix le reste précédent, on divise par sept et on obtient un chiffre compris entre zéro et neuf."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seguir_residuos",
+          "prompt": "Pour 1/8, le premier chiffre décimal est 1 et le reste est 2, car 10 = 1×8+2. Complète les deuxième et troisième chiffres, ainsi que leurs restes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Deuxième chiffre décimal"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Reste après le deuxième chiffre"
+                },
+                {
+                  "id": "cifra3",
+                  "type": "numeric",
+                  "label": "Troisième chiffre décimal"
+                },
+                {
+                  "id": "residuo3",
+                  "type": "numeric",
+                  "label": "Reste après le troisième chiffre"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "cifra3": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo3": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "20 = 2×8+4 et 40 = 5×8+0. On obtient 0,125 et le développement se termine lorsque le reste devient nul.",
+            "incorrect": "On divise dix fois le reste, pas dix fois le chiffre précédent. Un chiffre décimal n'est pas un reste ; ils ont des rôles différents."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_por_retorno",
+          "prompt": "Complète les chiffres et les restes de 3/11. Le reste initial est trois ; après ces deux étapes, détermine si le développement se termine ou se répète.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "Premier chiffre décimal"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "Premier reste"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Deuxième chiffre décimal"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Deuxième reste"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il se termine : au moins un des restes calculés est nul.",
+                  "reviewFeedback": "Ta conclusion affirme qu'un reste nul apparaît. Vérifie les restes calculés grâce à la relation entre le diviseur, le chiffre et la quantité divisée à chaque étape."
+                },
+                {
+                  "id": "b",
+                  "label": "Il se répète dès le premier chiffre : le dernier reste est identique au reste initial.",
+                  "reviewFeedback": "Vérifie à quel moment on retrouve un état précédent de la division. Relie cet état aux étapes qui suivraient."
+                },
+                {
+                  "id": "c",
+                  "label": "La période s'obtient en recopiant les restes comme chiffres décimaux.",
+                  "reviewFeedback": "Ta méthode recopie les restes comme des chiffres. Distingue la partie de chaque division qui donne le chiffre de celle qui reste pour l'étape suivante."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30 = 2×11+8 et 80 = 7×11+3. Retrouver le reste trois relance exactement les mêmes étapes : 3/11 = 0,272727… avec 27 qui se répète sans fin.",
+            "incorrect": "Les restes sont huit et trois, pas les chiffres de la période. Le procédé ne se termine qu'avec un reste nul ; répéter un reste impose de répéter les étapes suivantes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une partie initiale peut ne pas se répéter"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 1/6, 10 = 1×6+4 puis 40 = 6×6+4. Le reste quatre se répète dès la deuxième étape : le nombre décimal est 0,16666…, avec un un initial, puis des six répétés. Toute la suite 16 ne se répète pas. On parle de développement périodique mixte, car des chiffres initiaux précèdent la période."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_mixto",
+          "prompt": "Complète les deux premières étapes de 5/6 et choisis quelle partie se répète.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "Premier chiffre"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "Premier reste"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Deuxième chiffre"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Deuxième reste"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux premiers chiffres se répètent depuis le début.",
+                  "reviewFeedback": "Ta conclusion inclut le premier chiffre dans le cycle. Vérifie quel reste lance chaque étape et où le même état réapparaît pour la première fois."
+                },
+                {
+                  "id": "b",
+                  "label": "Le premier chiffre précède le cycle ; à partir du deuxième, un seul chiffre se répète.",
+                  "reviewFeedback": "Vérifie quel état réapparaît et quel chiffre il produit lorsque l'étape se répète. Distingue la partie initiale du cycle suivant."
+                },
+                {
+                  "id": "c",
+                  "label": "Le reste répété est recopié comme chiffre décimal.",
+                  "reviewFeedback": "Ton choix traite le reste comme un chiffre décimal. Examine à chaque étape le quotient de la division et la quantité restante pour l'étape suivante."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "50 = 8×6+2 et 20 = 3×6+2. Le reste deux réapparaît ; les trois se succèdent donc sans fin : 0,83333… avec le chiffre trois répété.",
+            "incorrect": "Un reste ne se recopie pas comme un chiffre. La répétition commence lorsque le même reste revient ; ici, le huit précède ce cycle."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_periodo_tabla",
+          "prompt": "Le tableau correspond à 3/22. Chaque ligne divise par 22 dix fois le reste précédent. Choisis le développement décimal exact qu'il décrit.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Quantité divisée",
+                "Chiffre",
+                "Reste"
+              ],
+              "rows": [
+                [
+                  "30",
+                  "1",
+                  "8"
+                ],
+                [
+                  "80",
+                  "3",
+                  "14"
+                ],
+                [
+                  "140",
+                  "6",
+                  "8"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,136363… : après le un initial, 36 se répète.",
+                  "reviewFeedback": "Vérifie la partie initiale et la période en suivant les états du tableau. Assure-toi que le retour au même reste relance les étapes du bloc proposé."
+                },
+                {
+                  "id": "b",
+                  "label": "0,136136… : 136 se répète depuis le début.",
+                  "reviewFeedback": "Ton choix fait recommencer le cycle au début. Vérifie si le reste initial du tableau réapparaît dans le cycle proposé."
+                },
+                {
+                  "id": "c",
+                  "label": "0,138888… : le reste huit devient le chiffre répété.",
+                  "reviewFeedback": "Ton choix utilise un reste comme chiffre répété. Distingue le chiffre obtenu par la division de la quantité reportée à l'étape suivante."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le reste huit revient après les chiffres trois et six. La période 36 se répète, précédée du un initial.",
+            "incorrect": "Le cycle des restes n'inclut pas le reste initial trois. C'est pourquoi 136 ne se répète pas ; les restes ne s'écrivent pas non plus comme des chiffres."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour un dénominateur positif q, un reste ne peut valoir que 0, 1, …, q−1. Si zéro apparaît, la division se termine. Sinon, il n'existe que q−1 restes non nuls possibles : l'un d'eux finit par se répéter, et l'algorithme répète ses chiffres. Ainsi, tout nombre rationnel possède un développement décimal fini ou périodique. Cela ne signifie pas que la période comporte toujours q−1 chiffres ; elle peut être beaucoup plus courte."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "por_que_repite",
+          "prompt": "Quel argument garantit qu'une division rationnelle qui ne se termine pas finit par répéter ses chiffres ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Toute calculatrice affiche une suite finie de chiffres.",
+                  "reviewFeedback": "Ton argument repose sur la taille d'un écran. Vérifie si limiter les chiffres affichés démontre quelque chose sur la suite du nombre."
+                },
+                {
+                  "id": "b",
+                  "label": "Il existe un nombre fini de restes possibles, et le même reste impose de répéter les mêmes étapes.",
+                  "reviewFeedback": "Vérifie quelle information détermine l'étape suivante de la division et pourquoi le nombre d'états possibles est fini."
+                },
+                {
+                  "id": "c",
+                  "label": "Le dénominateur est toujours égal à la longueur de la période.",
+                  "reviewFeedback": "Ton affirmation confond le dénominateur avec la longueur de la période. Examine si connaître le nombre de restes possibles oblige à les rencontrer tous avant qu'un reste se répète."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'algorithme dépend du reste et du dénominateur. Retrouver le même état reproduit chaque étape suivante ; un écran fini ne démontre pas la périodicité.",
+            "incorrect": "L'écran tronque également des approximations. La période de 1/3 comporte un seul chiffre, même si son dénominateur vaut trois."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Période exacte, troncature et signe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écrire 0,272727… en précisant que 27 se répète toujours décrit une valeur exacte. Écrire 0,2727 sans points de suspension représente exactement 2727/10000 et ne fait qu'approcher la première valeur. Pour un nombre négatif, tronquer sa valeur absolue peut produire un nombre plus grand : −0,33 est plus proche de zéro que −1/3."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_positivo",
+          "prompt": "Le développement de 2/11 est 0,181818… avec 18 répété. Comment la troncature 0,1818 se compare-t-elle à 2/11 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle est exactement égale, car 18 a été répété deux fois.",
+                  "reviewFeedback": "Ta justification confond la répétition d'un bloc quelques fois avec sa répétition sans fin. Compare les informations conservées par un nombre décimal écrit avec une fin."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle est inférieure : il manque les chiffres positifs qui suivent dans le développement.",
+                  "reviewFeedback": "Vérifie la comparaison à partir de la valeur exacte de la troncature et de la suite indiquée. Justifie le signe de la différence sans te fier à l'apparence des chiffres."
+                },
+                {
+                  "id": "c",
+                  "label": "Elle est supérieure, car 1818 dépasse deux.",
+                  "reviewFeedback": "Ton argument compare des chiffres comme des entiers. Exprime la troncature selon ses positions décimales avant de la comparer à la fraction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,1818 = 909/5000. La différence 2/11−909/5000 est 1/55000, positive.",
+            "incorrect": "Répéter un bloc un nombre fini de fois n'est pas le répéter toujours. Les entiers 1818 et deux ne peuvent pas être comparés sans leurs dénominateurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_negativo",
+          "prompt": "Compare −0,666 et −2/3 et choisis le bon raisonnement.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−0,666 < −2/3 parce que 666 est supérieur à deux.",
+                  "reviewFeedback": "Ta justification compare les numérateurs sans leurs unités fractionnaires. Vérifie aussi comment l'ordre change lorsqu'on prend les opposés."
+                },
+                {
+                  "id": "b",
+                  "label": "Ils sont égaux parce qu'ils ont trois décimales.",
+                  "reviewFeedback": "Ton argument utilise trois positions comme preuve d'exactitude. Vérifie si une troncature finie représente tout le développement de la fraction."
+                },
+                {
+                  "id": "c",
+                  "label": "−0,666 > −2/3 : 0,666 < 2/3, et prendre les opposés inverse l'ordre.",
+                  "reviewFeedback": "Vérifie d'abord la comparaison des valeurs absolues positives, puis l'effet des opposés sur l'ordre de la droite graduée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La troncature positive est inférieure à deux tiers. En prenant les opposés, elle se rapproche de zéro et devient donc supérieure.",
+            "incorrect": "La règle apprise pour les troncatures positives ne se transpose pas sans tenir compte du signe. Trois chiffres ne rendent pas le développement exact."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "finito_periodico_recuperacion",
+          "prompt": "Sélectionne toutes les descriptions correctes après avoir simplifié les fractions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "21/60 = 7/20 possède un développement décimal fini.",
+                  "reviewFeedback": "Pour la description choisie, vérifie la simplification et factorise le dénominateur restant. Applique le critère des décimaux au résultat final."
+                },
+                {
+                  "id": "b",
+                  "label": "5/18 possède un développement périodique, car le dénominateur irréductible contient encore un facteur trois.",
+                  "reviewFeedback": "Pour la description choisie, vérifie si la fraction est déjà irréductible et examine la factorisation qui justifie la conclusion sur son développement."
+                },
+                {
+                  "id": "c",
+                  "label": "4/12 possède un développement décimal fini, car ses deux termes sont pairs.",
+                  "reviewFeedback": "Pour la description choisie, revois ce qu'implique la parité des deux termes. Examine le dénominateur après toutes les simplifications nécessaires."
+                },
+                {
+                  "id": "d",
+                  "label": "7/14 possède un développement décimal fini, car elle se simplifie en 1/2.",
+                  "reviewFeedback": "Pour la description choisie, vérifie le facteur de simplification et relie le dénominateur final à une puissance de dix."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "21/60 et 7/14 éliminent les facteurs autres que deux et cinq lors de la simplification. 5/18 conserve un facteur trois ; 4/12 se simplifie en 1/3 et ne se termine pas.",
+            "incorrect": "La parité des deux termes permet une simplification, mais ne garantit pas la disparition de tous les facteurs trois. Le critère s'applique au dénominateur final."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "id": "math_course_01__racionales_y_decimales__operaciones_y_aproximacion",
+  "title": "Opérations, arrondis et erreur d'approximation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeur exacte et valeur arrondie"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un calcul exact conserve le nombre. Une approximation le remplace par un nombre proche pour le communiquer ou l'utiliser. Sept douzièmes valent exactement 7/12 ; leur développement décimal se poursuit et 0,58 est une approximation. Utilise le signe égal pour les équivalences exactes et le signe ≈ lorsque tu remplaces une valeur par une autre qui lui est proche. Cette distinction permet de vérifier si la précision suffit pour répondre à la question."
+        },
+        {
+          "type": "paragraph",
+          "text": "Arrondir aux centièmes signifie choisir le multiple de 0,01 le plus proche. Pour 2/7 = 0,285714…, les valeurs voisines sont 0,28 et 0,29. Le nombre est plus proche de 0,29, qui est son arrondi aux centièmes. Regarder le troisième chiffre, cinq, permet de décider d'augmenter le deuxième. En cas d'égalité exacte des distances, nous utiliserons la convention qui consiste à arrondir le cinq vers le haut pour les valeurs positives."
+        },
+        {
+          "type": "paragraph",
+          "text": "Demander « l'arrondi aux centièmes » n'est pas la même chose que demander « une approximation avec une erreur maximale donnée ». La première consigne détermine une valeur précise, même si elle peut s'écrire 0,29 ou 29/100. La seconde peut accepter plusieurs valeurs différentes si elles sont toutes assez proches. Lis la condition demandée avant de décider combien de chiffres écrire."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_concreto",
+          "prompt": "Arrondis 4/7 aux centièmes. On demande la valeur arrondie, pas n'importe quelle approximation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "57/100"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4/7 = 0,571428… est plus proche de 0,57 que de 0,58. Son arrondi aux centièmes est 0,57.",
+            "incorrect": "0,571 correspond à un arrondi aux millièmes, une autre position. 0,58 augmente le chiffre des centièmes alors que le chiffre suivant est un."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mesurer l'écart d'une approximation"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'erreur absolue est la distance entre la valeur utilisée et la valeur exacte, sans signe. Si tu approximes 7/12 par 0,58, écris 0,58 = 29/50 et soustrais : \\(\\frac{7}{12}-\\frac{29}{50}=\\frac{1}{300}\\). L'erreur vaut 1/300, soit environ 0,003333…. Peu importe le sens de la soustraction lorsqu'on mesure la distance : si la différence est négative, on prend sa valeur absolue."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une tolérance décrit l'erreur permise, dans la même unité que la donnée. Une erreur maximale de 0,001 m signifie que l'approximation peut se trouver au plus un millimètre au-dessus ou au-dessous de la valeur exacte. Cela ne signifie pas une erreur relative de un pour cent et n'impose pas d'écrire exactement trois décimales. Le contexte et la condition explicite déterminent si une approximation convient."
+        },
+        {
+          "type": "paragraph",
+          "text": "La calculatrice est utile pour produire des chiffres, mais son écran ne transforme pas un développement périodique en un nombre décimal exact et fini. Si le résultat se répète sans fin, conserve la fraction pour le calcul exact et utilise le décimal pour décider de la précision. Si plusieurs opérations sont nécessaires, il vaut généralement mieux arrondir à la fin ; arrondir chaque étape peut accumuler les écarts."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error_exacto",
+          "prompt": "On approxime 5/6 par 0,83. Quelle est l'erreur absolue exacte ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/300"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,83 = 83/100. La distance est 5/6−83/100 = 1/300 ; l'approximation est inférieure à la valeur exacte.",
+            "incorrect": "L'erreur absolue mesure une distance et ne peut pas être négative. 0,01 représente un centième, pas l'erreur de cette valeur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aproximacion_libre",
+          "prompt": "Trouve une approximation de 3/14 dont l'erreur absolue est au maximum 0,0001. Sélectionne ensuite tous les candidats qui satisfont la même condition. Tu peux utiliser la calculatrice.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia",
+              "type": "math_numeric_input",
+              "label": "Approximation de référence",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "3/14",
+                "tolerance": 0.0001
+              },
+              "calculator": true
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,2140",
+                  "reviewFeedback": "Pour le nombre décimal sélectionné, calcule sa différence par rapport à la fraction exacte. Compare la valeur absolue de cette différence à la limite sans décider seulement d'après le nombre de chiffres."
+                },
+                {
+                  "id": "b",
+                  "label": "0,2142",
+                  "reviewFeedback": "Pour le nombre décimal sélectionné, convertis l'approximation en fraction et compare-la à la valeur exacte. Vérifie ce que signifie autoriser une erreur absolue maximale."
+                },
+                {
+                  "id": "c",
+                  "label": "0,2143",
+                  "reviewFeedback": "Pour le nombre décimal sélectionné, mesure sa distance au nombre exact avec une précision suffisante. Le sens de l'écart ne suffit pas à décider s'il convient."
+                },
+                {
+                  "id": "d",
+                  "label": "0,2150",
+                  "reviewFeedback": "Pour le nombre décimal sélectionné, utilise les données d'origine pour calculer l'erreur. Une écriture à quatre décimales ne garantit pas un écart donné."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/14 ≈ 0,214285714. L'erreur de 0,2142 vaut 3/35000 et celle de 0,2143 vaut 1/70000 ; les deux respectent 0,0001. La condition accepte différentes approximations.",
+            "incorrect": "0,2140 est éloigné de 1/3500 et 0,2150 de 1/1400 : ces deux écarts dépassent la tolérance. Avoir quatre décimales ne garantit pas de respecter une distance précise."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Estimer avant de faire confiance à un calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une estimation rapide permet de repérer une virgule mal placée. Si tu achètes 4,95 kg à 23,80 pesos par kilogramme, tu peux arrondir les quantités à cinq et vingt-quatre : le coût sera proche de 120 pesos. Le calcul exact sera légèrement inférieur parce que les deux valeurs approximatives ont été augmentées. Une réponse proche de douze ou de mille deux cents mérite d'être vérifiée avant tout arrondi."
+        },
+        {
+          "type": "paragraph",
+          "text": "Choisir une précision ne permet pas d'inventer une exactitude physique. Une mesure enregistrée comme 0,9996 km peut être communiquée sous sa forme arrondie 1,00 km, mais cela ne prouve pas que la longueur réelle soit exactement un kilomètre. La valeur affichée perd volontairement des détails. Conserve la mesure initiale si tu dois ensuite vérifier de petites différences."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra_estimacion",
+          "prompt": "On achète 6,25 kg à 19,60 pesos par kilogramme. Choisis une estimation raisonnable et calcule le montant exact. La calculatrice peut aider pour le produit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Environ 12 pesos.",
+                  "reviewFeedback": "Compare ton estimation au prix d'un seul kilogramme. Vérifie ce que devrait représenter le prix de plusieurs kilogrammes."
+                },
+                {
+                  "id": "b",
+                  "label": "Environ 120 pesos.",
+                  "reviewFeedback": "Justifie ton estimation avec une approximation cohérente de la quantité et du prix par kilogramme. Vérifie que le produit conserve le peso comme unité."
+                },
+                {
+                  "id": "c",
+                  "label": "Environ 1 200 pesos.",
+                  "reviewFeedback": "Vérifie l'ordre de grandeur de ton estimation en arrondissant chaque facteur avant de multiplier. Examine si tu as déplacé la virgule en interprétant le prix ou la quantité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "importe",
+              "type": "math_numeric_input",
+              "label": "Montant exact en pesos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "245/2"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "L'ordre de grandeur raisonnable est d'environ 120 pesos : un peu plus de six kilogrammes à presque vingt pesos par kilogramme. Le produit exact vaut 122,50 pesos.",
+            "incorrect": "12 et 1 200 déplacent la virgule par rapport à l'estimation. Le prix par kilogramme se multiplie par la quantité en kilogrammes ; on ne les additionne pas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision_medida",
+          "prompt": "Une longueur est enregistrée comme 0,9964 km. Elle est communiquée arrondie aux centièmes sous la forme 1,00 km. Quelle conclusion est justifiée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'objet a grandi jusqu'à mesurer un kilomètre.",
+                  "reviewFeedback": "Ton affirmation attribue un changement à l'objet. Distingue sa longueur physique de la manière choisie pour communiquer une mesure."
+                },
+                {
+                  "id": "b",
+                  "label": "L'écriture arrondie ne prouve pas que la mesure d'origine valait exactement un.",
+                  "reviewFeedback": "Vérifie quelle information l'écriture arrondie conserve et quels détails elle perd par rapport à l'enregistrement initial."
+                },
+                {
+                  "id": "c",
+                  "label": "L'enregistrement initial contenait exactement deux décimales.",
+                  "reviewFeedback": "Ton affirmation déduit les chiffres initiaux de la forme arrondie. Vérifie si la perte de détails permet de les retrouver sans consulter l'enregistrement."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'arrondi modifie le nombre communiqué, pas la longueur de l'objet. La donnée initiale était 0,9964 km et l'écriture 1,00 km conserve moins de détails.",
+            "incorrect": "Ni l'objet ne change ni les chiffres de l'enregistrement ne disparaissent rétroactivement. 1,00 est une manière de communiquer l'arrondi."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "candidatos_error",
+          "prompt": "Trouve une approximation de 13/17 avec une erreur absolue maximale de 0,00001 ; la calculatrice peut aider. Sélectionne ensuite toutes les approximations proposées dont l'erreur absolue est au maximum 0,002.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia",
+              "type": "math_numeric_input",
+              "label": "Approximation de référence",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "13/17",
+                "tolerance": 0.00001
+              },
+              "calculator": true
+            },
+            {
+              "id": "sirven",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,760",
+                  "reviewFeedback": "Pour le candidat sélectionné, compare la distance à la valeur exacte avec la tolérance demandée pour les candidats. Distingue cette tolérance de celle exigée dans le champ libre."
+                },
+                {
+                  "id": "b",
+                  "label": "0,765",
+                  "reviewFeedback": "Pour le candidat sélectionné, calcule l'erreur absolue sans exiger qu'elle coïncide avec ton approximation écrite. La sélection vérifie une distance, pas une écriture unique."
+                },
+                {
+                  "id": "c",
+                  "label": "0,764",
+                  "reviewFeedback": "Pour le candidat sélectionné, utilise la donnée exacte pour mesurer l'écart. Vérifie quelle limite s'applique à cette sélection et non au calcul précédent."
+                },
+                {
+                  "id": "d",
+                  "label": "0,770",
+                  "reviewFeedback": "Pour le candidat sélectionné, vérifie la valeur absolue de sa différence avec la fraction d'origine. Ne décide pas uniquement parce qu'il comporte trois décimales."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13/17 ≈ 0,76470588. L'erreur de 0,765 vaut environ 0,00029412 et celle de 0,764 vaut environ 0,00070588 ; les deux sont inférieures à 0,002.",
+            "incorrect": "0,760 s'écarte d'environ 0,00470588 de la valeur exacte et 0,770 d'environ 0,00529412 : les deux dépassent la tolérance. Les candidats ne doivent pas tous s'arrondir au même nombre ; on vérifie leur distance."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les deux côtés d'une même erreur permise"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une approximation peut se trouver au-dessus ou au-dessous de la valeur exacte. Pour 3/4, 0,74 et 0,76 ont la même erreur absolue, 0,01. La tolérance est inclusive lorsqu'on dit « au maximum » : une distance exactement égale à la limite est acceptée. Le signe de la différence ne décide pas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "limite_inclusivo",
+          "prompt": "Sélectionne toutes les approximations de 7/8 dont l'erreur absolue est au maximum 0,005.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,870",
+                  "reviewFeedback": "Pour l'approximation sélectionnée, calcule l'erreur absolue et vérifie si l'expression « au maximum » permet d'atteindre exactement la limite."
+                },
+                {
+                  "id": "b",
+                  "label": "0,880",
+                  "reviewFeedback": "Pour l'approximation sélectionnée, mesure la distance à la valeur exacte. Un écart par excès est évalué selon sa valeur absolue, avec la même limite."
+                },
+                {
+                  "id": "c",
+                  "label": "0,881",
+                  "reviewFeedback": "Pour l'approximation sélectionnée, vérifie l'écart exact avant de le comparer à la tolérance. Ne le remplace pas prématurément par une distance arrondie."
+                },
+                {
+                  "id": "d",
+                  "label": "0,874",
+                  "reviewFeedback": "Pour l'approximation sélectionnée, compare sa distance à la valeur exacte avec la limite inclusive. Vérifie l'unité des positions décimales lors de la soustraction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/8 = 0,875. Les erreurs de 0,870 et 0,880 valent exactement 0,005 ; celle de 0,874 vaut 0,001. Les trois sont acceptées.",
+            "incorrect": "0,881 a une erreur de 0,006, supérieure à la limite. La limite est incluse, et les approximations de part et d'autre sont acceptées."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error_negativo",
+          "prompt": "On utilise −0,67 pour approximer −2/3. Quelle est l'erreur absolue exacte ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/300"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La différence vaut −1/300 ; sa valeur absolue est 1/300. L'approximation est plus éloignée de zéro que la valeur exacte.",
+            "incorrect": "Le signe d'une différence orientée n'est pas le signe d'une distance. Une erreur absolue n'est jamais négative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igual_o_aproximado",
+          "prompt": "Choisis la relation dans laquelle il faut écrire ≈ et non =.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,625 et 5/8.",
+                  "reviewFeedback": "Pour la relation sélectionnée, convertis le décimal fini en fraction et vérifie qu'il conserve exactement la même valeur. Distingue l'égalité de la proximité."
+                },
+                {
+                  "id": "b",
+                  "label": "0,167 et 1/6.",
+                  "reviewFeedback": "Pour la relation sélectionnée, vérifie si le nombre de positions affiché représente le nombre entier ou une troncature. Choisis le symbole selon cette comparaison exacte."
+                },
+                {
+                  "id": "c",
+                  "label": "6/10 et 0,6.",
+                  "reviewFeedback": "Pour la relation sélectionnée, détermine la valeur de position du décimal et compare-la à la fraction. Des écritures différentes n'impliquent pas nécessairement un arrondi."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,167 approche un sixième, mais ne lui est pas exactement égal. Les deux autres relations sont des égalités exactes.",
+            "incorrect": "Le nombre de chiffres ne détermine pas l'exactitude. Un décimal fini peut être exact pour une fraction et n'être qu'une approximation pour une autre."
+          }
+        }
+      ]
+    }
+  ]
+}

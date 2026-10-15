@@ -1,0 +1,446 @@
+{
+  "id": "math_course_01__racionales_y_decimales__operaciones_y_aproximacion",
+  "title": "Operations, Rounding, and Approximation Error",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exact Values and Rounded Values"
+        },
+        {
+          "type": "paragraph",
+          "text": "An exact calculation preserves the number. An approximation replaces it with a nearby number to communicate it or work with it. Seven twelfths equal exactly 7/12; their decimal expansion continues, and 0.58 is an approximation. Use the equals sign for exact equivalences and the ≈ sign when replacing a value with a nearby one. This distinction lets you check whether the precision is sufficient for the question."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rounding to hundredths means choosing the nearest multiple of 0.01. For 2/7 = 0.285714…, the neighboring candidates are 0.28 and 0.29. The number is closer to 0.29, which is its rounded value to hundredths. Looking at the third digit, five, helps you decide to increase the second digit. For an exact tie, we will use the convention of rounding five up for positive values."
+        },
+        {
+          "type": "paragraph",
+          "text": "Asking for \"rounding to hundredths\" is not the same as asking for \"an approximation within a specified maximum error.\" The first instruction determines one value, even if it can be written as 0.29 or 29/100. The second may accept several different values if all are sufficiently close. Read the requested condition before deciding how many digits to write."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_concreto",
+          "prompt": "Round 4/7 to hundredths. Enter the rounded value, not just any approximation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "57/100"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4/7 = 0.571428… is closer to 0.57 than to 0.58. Its rounded value to hundredths is 0.57.",
+            "incorrect": "0.571 is rounding to thousandths, a different place. 0.58 increases the hundredths digit even though the following digit is one."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Measure How Far an Approximation Is from the Exact Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Absolute error is the distance between the value used and the exact value, without a sign. If you approximate 7/12 by 0.58, write 0.58 = 29/50 and subtract: \\(\\frac{7}{12}-\\frac{29}{50}=\\frac{1}{300}\\). The error is 1/300, approximately 0.003333…. The order of subtraction does not matter when measuring the distance: if the difference is negative, take its magnitude."
+        },
+        {
+          "type": "paragraph",
+          "text": "A tolerance describes the error allowed, in the same unit as the original value. A maximum error of 0.001 m means that the approximation may lie at most one millimeter above or below the exact value. It does not mean a relative error of one percent or require writing exactly three decimal places. The context and the explicit condition determine whether an approximation is acceptable."
+        },
+        {
+          "type": "paragraph",
+          "text": "A calculator helps generate digits, but its display does not turn a repeating decimal into an exact terminating one. If the result repeats endlessly, keep the fraction for exact calculations and use the decimal to judge precision. If you need multiple operations, it is usually better to round only at the end; rounding at every step can accumulate differences."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error_exacto",
+          "prompt": "5/6 is approximated by 0.83. What is the exact absolute error?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/300"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0.83 = 83/100. The distance is 5/6−83/100 = 1/300; the approximation is below the exact value.",
+            "incorrect": "Absolute error measures distance and cannot be negative. 0.01 is the size of one hundredth, not the error for this value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aproximacion_libre",
+          "prompt": "Find an approximation to 3/14 with an absolute error of at most 0.0001. Then select all candidates that satisfy the same condition. You may use a calculator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia",
+              "type": "math_numeric_input",
+              "label": "Reference approximation",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "3/14",
+                "tolerance": 0.0001
+              },
+              "calculator": true
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.2140",
+                  "reviewFeedback": "For the selected decimal, calculate its difference from the exact fraction. Compare the magnitude of that difference with the limit; do not decide only by counting digits."
+                },
+                {
+                  "id": "b",
+                  "label": "0.2142",
+                  "reviewFeedback": "For the selected decimal, convert the approximation into a fraction and compare it with the exact value. Check what allowing a maximum absolute error means."
+                },
+                {
+                  "id": "c",
+                  "label": "0.2143",
+                  "reviewFeedback": "For the selected decimal, measure its distance from the exact number with sufficient precision. The direction of the deviation does not, by itself, determine whether it is acceptable."
+                },
+                {
+                  "id": "d",
+                  "label": "0.2150",
+                  "reviewFeedback": "For the selected decimal, use the original values to calculate the error. Writing four decimal places does not guarantee a particular distance."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/14 ≈ 0.214285714. The error of 0.2142 is 3/35000, and the error of 0.2143 is 1/70000; both satisfy 0.0001. The condition allows different approximations.",
+            "incorrect": "0.2140 is 1/3500 away, and 0.2150 is 1/1400 away: both exceed the tolerance. Having four decimal places does not guarantee a specific distance."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Estimate Before Trusting a Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "A quick estimate helps detect a misplaced decimal point. If you buy 4.95 kg at 23.80 pesos per kilogram, you can round the quantities to five and twenty-four: the cost will be around 120 pesos. The exact calculation will be slightly lower because both approximated values were rounded upward. An answer close to twelve or twelve hundred deserves checking before any rounding."
+        },
+        {
+          "type": "paragraph",
+          "text": "Choosing precision does not let you invent physical exactness. A measurement recorded as 0.9996 km may be reported rounded to 1.00 km, but this does not prove that the actual length is exactly one kilometer. The reported value deliberately loses detail. Keep the original measurement in case you later need to check small differences."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra_estimacion",
+          "prompt": "You buy 6.25 kg at 19.60 pesos per kilogram. Choose a reasonable estimate and calculate the exact cost. A calculator may help with the product.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "About 12 pesos.",
+                  "reviewFeedback": "Compare the size of your estimate with the price of a single kilogram. Check what the cost of several kilograms should represent."
+                },
+                {
+                  "id": "b",
+                  "label": "About 120 pesos.",
+                  "reviewFeedback": "Justify your estimate by rounding the quantity and unit price consistently. Check that the product is still measured in pesos."
+                },
+                {
+                  "id": "c",
+                  "label": "About 1 200 pesos.",
+                  "reviewFeedback": "Check the scale of your estimate by rounding each factor before multiplying. Consider whether you misplaced the decimal point when interpreting the price or quantity."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "importe",
+              "type": "math_numeric_input",
+              "label": "Exact cost in pesos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "245/2"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "A reasonable estimate is about 120 pesos: slightly more than six kilograms at almost twenty pesos per kilogram. The exact product is 122.50 pesos.",
+            "incorrect": "12 and 1 200 shift the decimal place relative to the estimated scale. The unit price must be multiplied by the number of kilograms, not added to it."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision_medida",
+          "prompt": "A length is recorded as 0.9964 km. It is reported rounded to hundredths as 1.00 km. Which conclusion is justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The object grew until it measured one kilometer.",
+                  "reviewFeedback": "Your statement attributes a change to the object. Distinguish the physical length from the way a measurement is reported."
+                },
+                {
+                  "id": "b",
+                  "label": "The rounded representation does not prove that the original measurement was exactly one.",
+                  "reviewFeedback": "Check what information the rounded representation preserves and what details are lost compared with the original record."
+                },
+                {
+                  "id": "c",
+                  "label": "The original measurement had exactly two decimal places.",
+                  "reviewFeedback": "Your statement infers the original digits from the rounded report. Consider whether lost detail can be reconstructed without consulting the original record."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Rounding changes the reported number, not the object's length. The original measurement was 0.9964 km; writing 1.00 km preserves fewer details.",
+            "incorrect": "Neither the object changes nor do the original digits disappear retroactively. 1.00 is a way to report the rounding."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "candidatos_error",
+          "prompt": "Find an approximation to 13/17 with an absolute error of at most 0.00001; a calculator may help. Then select all proposed approximations whose absolute error is at most 0.002.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia",
+              "type": "math_numeric_input",
+              "label": "Reference approximation",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "13/17",
+                "tolerance": 0.00001
+              },
+              "calculator": true
+            },
+            {
+              "id": "sirven",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.760",
+                  "reviewFeedback": "For the selected candidate, compare its distance from the exact value with the tolerance requested for the candidates. Distinguish that tolerance from the one used in the free-response field."
+                },
+                {
+                  "id": "b",
+                  "label": "0.765",
+                  "reviewFeedback": "For the selected candidate, calculate the absolute error without requiring it to match the approximation you entered. The selection tests a distance, not a unique representation."
+                },
+                {
+                  "id": "c",
+                  "label": "0.764",
+                  "reviewFeedback": "For the selected candidate, use the exact number to measure its distance. Check which limit applies to this selection rather than to the previous calculation."
+                },
+                {
+                  "id": "d",
+                  "label": "0.770",
+                  "reviewFeedback": "For the selected candidate, check the magnitude of its difference from the original fraction. Do not decide only by seeing three decimal places."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13/17 ≈ 0.76470588. The error of 0.765 is approximately 0.00029412 and the error of 0.764 is approximately 0.00070588; both are less than 0.002.",
+            "incorrect": "0.760 is about 0.00470588 away from the exact value, and 0.770 is about 0.00529412 away: both exceed the condition. Not all candidates are required to round to the same value; their distances are tested."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Both Sides of the Same Allowed Error"
+        },
+        {
+          "type": "paragraph",
+          "text": "An approximation can lie above or below the exact value. For 3/4, 0.74 and 0.76 have the same absolute error, 0.01. The tolerance is inclusive when it says \"at most\": a distance exactly equal to the limit does qualify. The sign of the difference does not decide."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "limite_inclusivo",
+          "prompt": "Select all approximations of 7/8 whose absolute error is at most 0.005.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.870",
+                  "reviewFeedback": "For the selected approximation, calculate the absolute error and check whether \"at most\" includes reaching the exact limit."
+                },
+                {
+                  "id": "b",
+                  "label": "0.880",
+                  "reviewFeedback": "For the selected approximation, measure the distance from the exact value. A deviation above the value is judged by its magnitude, with the same agreed limit."
+                },
+                {
+                  "id": "c",
+                  "label": "0.881",
+                  "reviewFeedback": "For the selected approximation, check the exact difference before comparing it with the tolerance. Do not replace it prematurely with a rounded distance."
+                },
+                {
+                  "id": "d",
+                  "label": "0.874",
+                  "reviewFeedback": "For the selected approximation, compare its distance from the exact value with the inclusive limit. Check the unit of the decimal places when subtracting."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/8 = 0.875. The errors of 0.870 and 0.880 are exactly 0.005; that of 0.874 is 0.001. All three qualify.",
+            "incorrect": "0.881 has an error of 0.006, greater than the maximum. The limit is included, and approximations on either side are allowed."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error_negativo",
+          "prompt": "−0.67 is used to approximate −2/3. What is the exact absolute error?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/300"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The difference is −1/300; its magnitude is 1/300. The approximation is farther from zero than the exact value.",
+            "incorrect": "The sign of a directed difference is not the sign of the distance. An absolute error is never negative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igual_o_aproximado",
+          "prompt": "Choose the relationship in which ≈, not =, should be used.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0.625 and 5/8.",
+                  "reviewFeedback": "For the selected relationship, convert the terminating decimal into a fraction and check whether it preserves exactly the same value. Distinguish equality from closeness."
+                },
+                {
+                  "id": "b",
+                  "label": "0.167 and 1/6.",
+                  "reviewFeedback": "For the selected relationship, check whether the number of displayed places represents the entire number or a truncation. Choose the symbol using that exact comparison."
+                },
+                {
+                  "id": "c",
+                  "label": "6/10 and 0.6.",
+                  "reviewFeedback": "For the selected relationship, identify the decimal's place value and compare it with the fraction. Different representations do not necessarily imply rounding."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0.167 approximates one sixth, but is not exactly that number. The other two relationships are exact equalities.",
+            "incorrect": "The number of digits does not determine exactness. A terminating decimal may be exact for one fraction and only an approximation for another."
+          }
+        }
+      ]
+    }
+  ]
+}
