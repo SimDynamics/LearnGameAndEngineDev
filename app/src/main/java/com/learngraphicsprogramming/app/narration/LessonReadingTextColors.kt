@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import com.learngraphicsprogramming.app.math.MathPuzzleUiInstructions
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -23,6 +24,9 @@ class LessonReadingTextColors {
     private data class Entry(val block: Int, val view: TextView, val original: ColorStateList,
                              val feedback: Boolean, val incorrect: Boolean, val target: Int)
     private val entries = linkedMapOf<TextView, Entry>()
+    private data class SpokenAnchor(val block: Int, val position: View, val label: String, val target: Int)
+    private data class MappingSource(val target: Int, val position: View, val text: CharSequence)
+    private val spokenAnchors = linkedMapOf<View, SpokenAnchor>()
     private var nextTarget = Int.MIN_VALUE
     private val sourceSegments = mutableMapOf<Int, Set<Int>>()
     private val unreadColors = mutableMapOf<Int, Int>()
@@ -38,10 +42,18 @@ class LessonReadingTextColors {
         }
     }
 
+    /** An already announced hole has no paintable view. Its native position establishes
+     * exact speech order while the surrounding real glyphs keep the full word alignment. */
+    fun registerSpokenAnchor(blockIndex: Int, position: View, label: String) {
+        val target = spokenAnchors[position]?.target ?: nextTarget++
+        spokenAnchors[position] = SpokenAnchor(blockIndex, position, label, target)
+    }
+
     /** Feedback changes role and ink in the same native view; never restore stale success colors. */
     fun unregister(view: TextView) {
         (view as? ReadingTextHost)?.setUnreadWordRanges(null, 0)
         entries.remove(view)?.let { sourceSegments.remove(it.target) }
+        spokenAnchors.remove(view)
     }
 
     fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean,
@@ -109,6 +121,7 @@ class LessonReadingTextColors {
     fun clear() {
         restore()
         entries.clear()
+        spokenAnchors.clear()
         sourceSegments.clear()
         nextTarget = Int.MIN_VALUE
         unreadColors.clear()
@@ -125,14 +138,17 @@ class LessonReadingTextColors {
             .groupBy { it.block to it.feedback }.forEach { (origin, candidates) ->
             val (block, feedback) = origin
             val views = candidates.filter { (it.view as? ReadingTextHost)?.safeSupportsWordReading == true }
-                .sortedWith { left, right -> compareVisualOrder(left.view, right.view) }
+            val anchors = spokenAnchors.values.filter { it.block == block && !feedback && !incorrectFeedback }
+            val sources = (views.map { MappingSource(it.target, it.view, it.view.text) } +
+                anchors.map { MappingSource(it.target, it.position, it.label.ifBlank { MathPuzzleUiInstructions.spokenBlank(language) }) })
+                .sortedWith { left, right -> compareVisualOrder(left.position, right.position) }
             val segments = origins.indices.filter { origins[it].blockIndex == block && origins[it].feedback == feedback }
                 .associateWith { parts[it] }
             candidates.forEach { sourceSegments[it.target] = segments.keys }
-            if (views.size == 1 && views.single().target == block) {
+            if (views.size == 1 && views.single().target == block && anchors.isEmpty()) {
                 result += NarrationWordMappings.forView(block, views.single().view.text, segments, language)
             } else {
-                result += NarrationPuzzleWordMappings.forViews(block, views.map { it.target to it.view.text }, segments, language, feedback = feedback)
+                result += NarrationPuzzleWordMappings.forViews(block, sources.map { it.target to it.text }, segments, language, feedback = feedback)
             }
         }
         return result

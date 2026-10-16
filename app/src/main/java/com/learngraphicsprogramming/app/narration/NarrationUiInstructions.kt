@@ -30,6 +30,7 @@ internal object NarrationUiInstructions {
             MathPuzzleUiInstructions.POSITION -> R.string.math_ui_position
             MathPuzzleUiInstructions.INTERVAL_DIRECTION -> R.string.math_ui_interval_direction
             MathPuzzleUiInstructions.AUXILIARY_TOOL -> R.string.math_ui_auxiliary_tool
+            MathPuzzleUiInstructions.UNIT_TEMPLATE -> R.string.math_ui_unit
             else -> return ""
         }
         return UiLanguageSettings.localizedContext(context).getString(resource)

@@ -22,12 +22,19 @@ object LessonNarrationText {
         forKokoro: Boolean = false,
         visibleInstruction: (String) -> String = { "" }
     ): List<String> =
-        Extractor(language, forKokoro, visibleInstruction).page(lesson, pageIndex)
+        page(lesson, pageIndex, language, forKokoro, true, visibleInstruction)
+
+    /** Reconstruct the preceding presentation only to relocate unchanged page audio/bookmarks. */
+    internal fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                      forKokoro: Boolean, completeVisibleLabels: Boolean,
+                      visibleInstruction: (String) -> String): List<String> =
+        Extractor(language, forKokoro, visibleInstruction, completeVisibleLabels).page(lesson, pageIndex)
 
     private class Extractor(
         private val speechLanguage: NarrationLanguage,
         private val forKokoro: Boolean,
-        private val visibleInstruction: (String) -> String
+        private val visibleInstruction: (String) -> String,
+        private val completeVisibleLabels: Boolean
     ) {
     private fun localized(spanish: String, english: String, french: String): String = when (speechLanguage) {
         NarrationLanguage.SPANISH -> spanish
@@ -35,7 +42,7 @@ object LessonNarrationText {
         else -> english
     }
 
-    private val blank: String get() = localized("hueco", "blank", "case vide")
+    private val blank: String get() = MathPuzzleUiInstructions.spokenBlank(speechLanguage)
 
     fun page(lesson: JSONObject, pageIndex: Int): List<String> {
         val page = lesson.optJSONArray("pages")?.optJSONObject(pageIndex) ?: return emptyList()
@@ -101,15 +108,22 @@ object LessonNarrationText {
     private fun response(output: MutableList<String>, response: JSONObject) {
         val type = response.string("type")
         append(output, MathPuzzleUiInstructions.heading(type, response, visibleInstruction), response.mode())
+        val unitCaption = if (completeVisibleLabels) MathPuzzleUiInstructions.textUnit(type, response, visibleInstruction) else ""
+        append(output, unitCaption)
         MathPuzzleUiInstructions.supplementary(type, visibleInstruction).forEach { append(output, it) }
         val fields = objects(response.optJSONArray("fields")).associateBy { it.string("id") }
         val segments = response.optJSONArray("segments")
         val table = response.optJSONArray("rows").takeIf { response.string("layout") == "table" }
+        val usedFields = mutableSetOf<String>()
+        fun field(id: String, inline: Boolean): String {
+            usedFields += id
+            return fields[id]?.let { fieldText(it, inline) } ?: blank
+        }
         when {
             segments != null -> {
                 val content = (0 until segments.length()).mapNotNull { index ->
                     val segment = segments.optJSONObject(index) ?: return@mapNotNull null
-                    if (segment.has("field")) fields[segment.string("field")]?.let(::fieldText) ?: blank
+                    if (segment.has("field")) field(segment.string("field"), inline = true)
                     else segment.string("text")
                 }.joinToString(" ")
                 append(output, content, "inline")
@@ -120,13 +134,19 @@ object LessonNarrationText {
                     val cells = table.optJSONArray(rowIndex) ?: continue
                     val content = (0 until cells.length()).map { index ->
                         val cell = cells.optJSONObject(index)
-                        if (cell?.has("field") == true) fields[cell.string("field")]?.let(::fieldText) ?: blank
+                        if (cell?.has("field") == true) field(cell.string("field"), inline = false)
                         else scalar(cells.opt(index))
                     }.joinToString("; ")
                     append(output, content)
                 }
             }
-            else -> fields.values.forEach { append(output, fieldText(it), it.mode()) }
+            else -> fields.values.forEach { append(output, fieldText(it, inline = false), it.mode()) }
+        }
+        // FieldsControl appends every field omitted by a partial inline/table template.
+        if (completeVisibleLabels && (segments != null || table != null)) {
+            fields.filterKeys { it !in usedFields }.values.forEach {
+                append(output, fieldText(it, inline = segments != null), it.mode())
+            }
         }
         // Lists are visible choices/cards; their IDs and expected order have no speech meaning.
         options(output, response.optJSONArray("options"))
@@ -140,12 +160,20 @@ object LessonNarrationText {
             items.forEach { rich(output, it) }
         }
         objects(response.optJSONArray("parameters")).forEach { append(output, it.string("label")) }
-        append(output, response.string("unit"))
+        if (!completeVisibleLabels) append(output, response.string("unit"))
     }
 
-    private fun fieldText(field: JSONObject): String = if (field.string("type") == "fixed") {
-        field.string("text")
-    } else field.string("label").ifBlank { blank } + field.string("unit").let { if (it.isBlank()) "" else " $it" }
+    private fun fieldText(field: JSONObject, inline: Boolean): String {
+        if (!completeVisibleLabels) return if (field.string("type") == "fixed") field.string("text")
+            else field.string("label").ifBlank { blank } + field.string("unit").let { if (it.isBlank()) "" else " $it" }
+        return buildList {
+            if (field.string("type") == "fixed") {
+                if (!inline) add(field.string("label"))
+                add(field.string("text"))
+            } else add(field.string("label").ifBlank { blank })
+            add(field.string("unit"))
+        }.filter(String::isNotBlank).joinToString(" ")
+    }
 
     /** This is presentation order only. The native control applies the same initialOrder,
      * independently of validator.expected; malformed input remains for the parser to reject. */
@@ -171,7 +199,10 @@ object LessonNarrationText {
     private fun rich(output: MutableList<String>, item: JSONObject) {
         val content = item.optJSONArray("content")
         if (content == null || content.length() == 0) {
-            append(output, item.string("label").ifBlank { item.string("text") }, item.mode())
+            val label = if (completeVisibleLabels)
+                item.optString("label", item.optString("text", item.optString("id")))
+                else item.string("label").ifBlank { item.string("text") }
+            append(output, label, item.mode())
         } else {
             for (index in 0 until content.length()) {
                 val itemSpec = content.optJSONObject(index)
@@ -185,10 +216,12 @@ object LessonNarrationText {
 
     private fun representation(output: MutableList<String>, spec: JSONObject) {
         val config = spec.optJSONObject("config") ?: spec
-        when (spec.string("type")) {
-            "text" -> append(output, config.string("text").ifBlank { config.string("value") }, config.mode())
+        when (if (completeVisibleLabels) spec.optString("type", "text") else spec.string("type")) {
+            "text" -> append(output, if (completeVisibleLabels) config.optString("text", config.optString("value"))
+                else config.string("text").ifBlank { config.string("value") }, config.mode())
             "math_formula" -> {
-                val source = listOf("latex", "text", "formula", "value").firstNotNullOfOrNull {
+                val source = if (completeVisibleLabels) config.optString("latex", config.optString("text",
+                    config.optString("formula", config.optString("value")))) else listOf("latex", "text", "formula", "value").firstNotNullOfOrNull {
                     config.string(it).takeIf(String::isNotBlank)
                 }.orEmpty()
                 append(output, source, "block")
@@ -198,7 +231,13 @@ object LessonNarrationText {
                 val rows = config.optJSONArray("rows") ?: return
                 for (index in 0 until rows.length()) strings(output, rows.optJSONArray(index))
             }
-            "rich_answer_option" -> rich(output, config)
+            "rich_answer_option" -> if (!completeVisibleLabels) rich(output, config) else {
+                val content = config.optJSONArray("content") ?: JSONArray()
+                for (index in 0 until content.length()) {
+                    val part = content.optJSONObject(index)
+                    if (part == null) append(output, scalar(content.opt(index))) else representation(output, part)
+                }
+            }
             "geometry_2d_diagram", "geometry_3d_diagram" -> {
                 append(output, config.string("label"))
                 // The renderer draws at most three labels; hidden geometric coordinates are omitted.

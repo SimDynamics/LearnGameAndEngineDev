@@ -35,6 +35,9 @@ class MathPuzzleRenderer(
     private val readableTexts = mutableListOf<TextView>()
     /** Passive authored text already included in the narration; never editable answers or feedback. */
     val narrationTextViews: List<TextView> get() = readableTexts.toList()
+    /** Raw labels resolve their existing blank announcement when the active language is bound. */
+    val narrationSpokenAnchors: List<Pair<View, String>> get() =
+        responses.values.flatMap { it.narrationSpokenAnchors }
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
     val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, context.getString(R.string.math_ui_fullscreen))
     private val checkButton = MathWidgetUi.button(context, context.getString(R.string.math_ui_check), accent).apply {
@@ -110,7 +113,9 @@ class MathPuzzleRenderer(
         view.addView(checkButton.apply { layoutParams = LinearLayout.LayoutParams(-1, -2) })
         feedback.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         view.addView(feedback)
-        MathInputFocusOrder.configure(view)
+        MathInputFocusOrder.configure(view, responses.values.map { it.view }) {
+            if (checkButton.isEnabled) checkButton.performClick()
+        }
 
         val developmentAnswers =
             MathDevelopmentMode.answersFor(
@@ -455,8 +460,9 @@ class MathPuzzleRenderer(
         add(response.optString("label"))
         val fields = MathWidgetUi.objects(response.optJSONArray("fields"))
         fields.forEach { field ->
-            add(if (field.optString("type") == "fixed") field.optString("text") else field.optString("label"))
-            if (field.optString("type") != "fixed") add(field.optString("unit"))
+            add(field.optString("label"))
+            if (field.optString("type") == "fixed") add(field.optString("text"))
+            add(field.optString("unit"))
         }
         MathWidgetUi.objects(response.optJSONArray("segments")).forEach { segment ->
             if (!segment.has("field")) add(segment.optString("text"))
@@ -475,7 +481,7 @@ class MathPuzzleRenderer(
 
     private fun richTexts(item: JSONObject): List<String> = buildList {
         val content = item.optJSONArray("content")
-        if (content == null || content.length() == 0) add(item.optString("label", item.optString("text")))
+        if (content == null || content.length() == 0) add(item.optString("label", item.optString("text", item.optString("id"))))
         else for (index in 0 until content.length()) {
             val part = content.optJSONObject(index)
             if (part == null) addAll(scalars(JSONArray().put(content.opt(index))))
@@ -488,15 +494,22 @@ class MathPuzzleRenderer(
         val config = representation.optJSONObject("config") ?: representation
         when (representation.optString("type", "text")) {
             "text" -> add(config.optString("text", config.optString("value")))
-            "math_formula" -> add(listOf("latex", "text", "formula", "value").firstNotNullOfOrNull {
-                config.optString(it).takeIf(String::isNotBlank)
-            }.orEmpty())
+            "math_formula" -> add(config.optString("latex", config.optString("text",
+                config.optString("formula", config.optString("value")))))
             "math_table" -> {
                 addAll(scalars(config.optJSONArray("headers")))
                 val rows = config.optJSONArray("rows")
                 if (rows != null) for (index in 0 until rows.length()) addAll(scalars(rows.optJSONArray(index)))
             }
-            "rich_answer_option" -> addAll(richTexts(config))
+            "rich_answer_option" -> {
+                // This representation draws only its content, unlike a rich choice card.
+                val content = config.optJSONArray("content")
+                if (content != null) for (index in 0 until content.length()) {
+                    val part = content.optJSONObject(index)
+                    if (part != null) addAll(representationTexts(part))
+                    else addAll(scalars(JSONArray().put(content.opt(index))))
+                }
+            }
             "geometry_2d_diagram", "geometry_3d_diagram" -> {
                 add(config.optString("label"))
                 addAll(scalars(config.optJSONArray("labels"), limit = 3))

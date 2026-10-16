@@ -32,6 +32,12 @@ data class LessonNarrationScript(
         /** Reuses existing source fields in their native presentation, never a validator tree. */
         internal fun presentedPage(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
                  forKokoro: Boolean, instruction: (String) -> String,
+                 presentation: (Int, JSONObject) -> JSONObject): LessonNarrationScript =
+            presentedPageVersioned(lesson, pageIndex, language, forKokoro, instruction, true, presentation)
+
+        /** Rebuild the previous visible-label contract solely for its existing bookmark. */
+        internal fun presentedPageVersioned(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                 forKokoro: Boolean, instruction: (String) -> String, completeVisibleLabels: Boolean,
                  presentation: (Int, JSONObject) -> JSONObject): LessonNarrationScript {
             val blocks = lesson.optJSONArray("pages")?.optJSONObject(pageIndex)?.optJSONArray("blocks")
                 ?: return LessonNarrationScript(emptyList(), emptyList())
@@ -44,7 +50,7 @@ data class LessonNarrationScript(
             }
             fun authored(block: JSONObject): List<String> {
                 val one = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
-                return LessonNarrationText.page(one, 0, language, forKokoro, instruction)
+                return LessonNarrationText.page(one, 0, language, forKokoro, completeVisibleLabels, instruction)
             }
             fun paragraph(text: String, mode: String = "auto") = authored(JSONObject()
                 .put("type", "paragraph").put("text", text).put("mathMode", mode))

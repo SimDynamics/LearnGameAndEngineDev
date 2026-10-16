@@ -53,6 +53,27 @@ class NarrationPuzzleWordMappingsTest {
         assertRanges(views, mapping)
     }
 
+    @Test fun declaredSpokenHolesRetainFullAlignmentCardinalityAndOnlyTheirOwnNonpaintableTarget() {
+        val views = listOf(80 to "5 +", 999 to "resultado", 81 to "=", 82 to "10")
+        val source = "${ManualEnglishSpeech.PREPARED}cinco más resultado es igual a diez"
+        val mapping = mapped(views, mapOf(0 to source)).getValue(0)
+        assertEquals("No word may be removed from the continuous source-audio alignment",
+            NarrationSpokenWords.lexemes(source).map { ReadingTextRange(it.start, it.endExclusive) }, mapping.spoken)
+        assertEquals(listOf(80, 80, 999, 81, 81, 81, 82), mapping.targets)
+        assertEquals(listOf("5 ", "+", "resultado", "=", "=", "=", "10"),
+            mapping.displayed.indices.map { index ->
+                val text = views.single { it.first == mapping.targets!![index] }.second
+                mapping.displayed[index].let { text.substring(it.start, it.endExclusive) }
+            })
+        for ((target, text) in views.filter { it.first != 999 }) {
+            assertEquals("Only original static glyphs receive that real view's target", text.indices.toSet(),
+                mapping.displayed.indices.filter { mapping.targets!![it] == target }.flatMap {
+                    mapping.displayed[it].let { range -> range.start until range.endExclusive }
+                }.toSet())
+        }
+        assertRanges(views, mapOf(0 to mapping))
+    }
+
     @Test fun aLaterStandaloneRepeatCannotDisplaceAnEarlierExactSharedSegment() {
         val views = listOf(7 to "Lee bien.", 8 to "Continúa aquí.")
         val mapping = mapped(views, linkedMapOf(0 to "Lee bien. Continúa aquí.", 1 to "Lee bien."))

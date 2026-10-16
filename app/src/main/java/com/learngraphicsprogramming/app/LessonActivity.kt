@@ -429,24 +429,40 @@ class LessonActivity : AppCompatActivity() {
             instruction = { type -> NarrationUiInstructions.forBlock(this,type) },
             presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block })
         val configuration = "${language.tag}/${selected.engine}/${selected.kokoroVoice}/${selected.androidVoice}"
-        val previous = readingPresentations[identity]?.takeIf { it.configuration == configuration }?.script
-            ?: LessonNarrationScript.presentedPage(lessonJson, currentPage, language, neural,
+        val known = readingPresentations[identity]?.takeIf { it.configuration == configuration }?.script
+        val previousPresentations = if (known != null) listOf(known) else listOf(
+            LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
+                instruction = { type -> NarrationUiInstructions.forBlock(this, type) },
+                completeVisibleLabels = false,
+                presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block }),
+            LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
                 instruction = { type -> if (type in setOf("order_code", "drag_fill_code"))
                     NarrationUiInstructions.forBlock(this, type) else "" },
+                completeVisibleLabels = false,
                 presentation = { _, block -> com.learngraphicsprogramming.app.math.MathNarrationPresentation.legacyBlock(block) })
-        val update = try {
+        )
+        var update: com.learngraphicsprogramming.app.narration.NarrationPresentationUpdate? = null
+        var deferred: LessonNarrationScript? = null
+        try {
             relocatingReadingPresentation = true
-            narrationController?.relocatePresentation(previous, script, language, identity)
+            for (previous in previousPresentations) {
+                val candidate = narrationController?.relocatePresentation(previous, script, language, identity)
+                if (candidate?.deferred == true) {
+                    deferred = previous
+                    break
+                }
+                if (candidate?.rebind == true) update = candidate
+            }
         } finally { relocatingReadingPresentation = false }
-        if (update?.deferred == true) {
+        if (deferred != null) {
             deferredReadingPresentation = true
-            return previous
+            return deferred
         }
         deferredReadingPresentation = false
         readingPresentations[identity] = ReadingPresentation(configuration, script)
         prepareReadingPage(script, language)
         if (update?.rebind == true) {
-            if (update.resume) narrationController?.toggle(script.texts, language, identity, script.gates, narrationCorrectBlocks())
+            if (update?.resume == true) narrationController?.toggle(script.texts, language, identity, script.gates, narrationCorrectBlocks())
             else narrationController?.bindPausedPresentation(script.texts, language, identity, script.gates, narrationCorrectBlocks())
         }
         return script
@@ -9407,6 +9423,9 @@ class LessonActivity : AppCompatActivity() {
                 if (currentPage == puzzlePage) completedExercises = updated
             }
             if (renderer.isCorrect) completedExercises++
+            renderer.narrationSpokenAnchors.forEach { (position, label) ->
+                readingTextPages[narrationPageIdentity()]?.registerSpokenAnchor(blockIndex, position, label)
+            }
             mathNarrationSources.getOrPut(narrationPageIdentity()) { mutableMapOf() }[blockIndex] =
                 renderer::narrationSourceBlock
             lessonContent.addView(renderer.view)
@@ -14706,6 +14725,7 @@ class LessonActivity : AppCompatActivity() {
 
 
         val inlineResult = exerciseFeedbackText(blockIndex)
+        inputs.forEach { PuzzleAnswerSubmit.install(it, checkButton) }
         fun currentInlineAnswers() = org.json.JSONArray(inputs.map { it.text.toString() })
         fun inlineIncorrectReview() = getString(R.string.exercise_wrong_spacing) + "\n" + getString(R.string.cpp_review_fill)
 

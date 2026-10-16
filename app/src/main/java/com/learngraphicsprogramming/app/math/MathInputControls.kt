@@ -467,6 +467,8 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
 
 private class FieldsControl(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit) : MathResponseControl {
     override val view = MathWidgetUi.column(context)
+    private val spokenAnchors = mutableListOf<Pair<View, String>>()
+    override val narrationSpokenAnchors: List<Pair<View, String>> get() = spokenAnchors.toList()
     private data class Field(val view: View, val read: () -> String, val write: (String) -> Unit, val editable: Boolean,
         val structured: MathExpressionEditor? = null)
     private val fields = linkedMapOf<String, Field>()
@@ -625,6 +627,11 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
             val unit = definition.optString("unit")
             if (unit.isNotBlank()) addControl(MathWidgetUi.text(context, unit))
             fields[id] = field
+            if (field.editable && (inlineFields || fieldLabel.isBlank())) {
+                // This announces the same semantic hole as the existing script, without
+                // reading or registering an EditText, its hint, or a dropdown selection.
+                spokenAnchors += fieldColumn to fieldLabel
+            }
         }
 
         val used = mutableSetOf<String>()

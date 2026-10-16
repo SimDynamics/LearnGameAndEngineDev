@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.math
 
 import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.PuzzleAnswerSubmit
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -31,6 +32,8 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
     val model = MathExpressionModel()
     var onExpressionChanged: (() -> Unit)? = null
     var onImeAction: ((Int) -> Boolean)? = null
+    /** Only graded puzzle responses opt in; slot navigation and calculator editors keep their actions. */
+    internal var onSubmitAnswer: (() -> Unit)? = null
     /** Lessons open their IME on touch; calculator keypads can opt into explicit opening. */
     var showSystemKeyboardOnTouch: Boolean = true
     var keyboardShortcuts: List<String> = emptyList()
@@ -198,9 +201,10 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
 
             } else if (
                 action == MathKeyboardAction.MoveRight &&
-                imeOptions and
+                (imeOptions and
                 EditorInfo.IME_MASK_ACTION ==
-                EditorInfo.IME_ACTION_NEXT
+                EditorInfo.IME_ACTION_NEXT ||
+                (onSubmitAnswer != null && nextFocusForwardId != View.NO_ID))
             ) {
 
                 onImeAction?.invoke(
@@ -910,6 +914,11 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
             }
             override fun performEditorAction(actionCode: Int): Boolean {
                 if (!current()) return false
+                if (onSubmitAnswer != null && PuzzleAnswerSubmit.isSubmitAction(actionCode)) {
+                    finishImeCompositionForExternalAction()
+                    onSubmitAnswer?.invoke()
+                    return true
+                }
                 if (actionCode in setOf(EditorInfo.IME_ACTION_NEXT, EditorInfo.IME_ACTION_DONE) && advanceWithinExpression()) return true
                 return onImeAction?.invoke(actionCode) ?: false
             }
@@ -939,12 +948,20 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (!isEnabled || event.action != KeyEvent.ACTION_DOWN) return super.onKeyDown(keyCode, event)
         when (keyCode) {
+            KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (onSubmitAnswer != null && event.hasNoModifiers()) {
+                if (event.repeatCount == 0) {
+                    finishImeCompositionForExternalAction()
+                    onSubmitAnswer?.invoke()
+                }
+            } else return super.onKeyDown(keyCode, event)
             KeyEvent.KEYCODE_DEL -> return deleteImeText(1, 0, deleteSelection = true)
             KeyEvent.KEYCODE_FORWARD_DEL -> return deleteImeText(0, 1, deleteSelection = true)
             KeyEvent.KEYCODE_DPAD_LEFT -> perform(MathKeyboardAction.MoveLeft)
             KeyEvent.KEYCODE_DPAD_RIGHT -> perform(MathKeyboardAction.MoveRight)
             KeyEvent.KEYCODE_DPAD_UP -> { composition = null; model.previousSlot(); refresh(); restartIme() }
-            KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_TAB -> if (!advanceWithinExpression() && imeOptions and EditorInfo.IME_MASK_ACTION == EditorInfo.IME_ACTION_NEXT) onImeAction?.invoke(EditorInfo.IME_ACTION_NEXT)
+            KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_TAB -> if (!advanceWithinExpression() &&
+                (imeOptions and EditorInfo.IME_MASK_ACTION == EditorInfo.IME_ACTION_NEXT ||
+                    (onSubmitAnswer != null && nextFocusForwardId != View.NO_ID))) onImeAction?.invoke(EditorInfo.IME_ACTION_NEXT)
             KeyEvent.KEYCODE_A -> if (event.isCtrlPressed) { composition = null; model.selectAll(); refresh(); restartIme() } else return insertHardware(event)
             KeyEvent.KEYCODE_V -> if (event.isCtrlPressed) editCommand(android.R.id.paste) else return insertHardware(event)
             KeyEvent.KEYCODE_C -> if (event.isCtrlPressed) editCommand(android.R.id.copy) else return insertHardware(event)

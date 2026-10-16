@@ -30,7 +30,8 @@ class MathPuzzleInstructionsTest {
             MathPuzzleUiInstructions.EDIT_COORDINATES to "math_ui_edit_coordinates",
             MathPuzzleUiInstructions.POSITION to "math_ui_position",
             MathPuzzleUiInstructions.INTERVAL_DIRECTION to "math_ui_interval_direction",
-            MathPuzzleUiInstructions.AUXILIARY_TOOL to "math_ui_auxiliary_tool"
+            MathPuzzleUiInstructions.AUXILIARY_TOOL to "math_ui_auxiliary_tool",
+            MathPuzzleUiInstructions.UNIT_TEMPLATE to "math_ui_unit"
         )
         return { key -> keys[key]?.let(text::get).orEmpty() }
     }

@@ -6,6 +6,8 @@ import org.json.JSONObject
 /** An interaction is independent of its subject, validator and lesson navigation. */
 interface MathResponseControl {
     val view: View
+    /** Existing spoken hole labels whose input has no passive text view; never current answers. */
+    val narrationSpokenAnchors: List<Pair<View, String>> get() = emptyList()
     fun answer(): MathAnswer
     fun restore(answer: MathAnswer)
     fun setEditable(enabled: Boolean)
