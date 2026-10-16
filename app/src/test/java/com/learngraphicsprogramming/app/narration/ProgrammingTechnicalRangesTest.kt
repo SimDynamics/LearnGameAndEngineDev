@@ -7,6 +7,10 @@ import org.junit.Test
 
 class ProgrammingTechnicalRangesTest {
     private val languages = NarrationLanguage.entries
+    private val curricularTechnicalSignal = Regex(
+        "#include|std::|(?<![\\p{L}\\p{M}\\p{N}_])int\\s+[A-Za-z_][A-Za-z_0-9]*" +
+            "(?:(?:\\s*,\\s*[A-Za-z_][A-Za-z_0-9]*)+\\s*(?=;)|\\s*(?=[=;{(\\[]))"
+    )
     private fun analysis(text: String, language: NarrationLanguage = NarrationLanguage.SPANISH) = ProgrammingTechnicalRanges.analyze(text, language)
     private fun covered(result: ProgrammingTechnicalRanges.Analysis, start: Int, end: Int) =
         (start until end).all { position -> result.fragments.any { position in it.start until it.endExclusive } }
@@ -119,7 +123,6 @@ class ProgrammingTechnicalRangesTest {
     @Test fun bothExistingProgrammingCoursesAndTranslationsNeedNoCurricularPreparation() {
         val assets = File(System.getProperty("translation.resources") ?: "src/main/res").absoluteFile.parentFile!!.resolve("assets/content")
         val seen = mutableSetOf<String>()
-        val signal = Regex("#include|std::|(?<![\\p{L}\\p{M}\\p{N}_])int\\s+[a-zA-Z_].*;")
         for (language in languages) {
             for (course in listOf("cpp_fundamentals", "programming_practice_tools")) {
                 val files = assets.resolve("${language.resourceGroup}/programming/$course").walkTopDown()
@@ -136,7 +139,7 @@ class ProgrammingTechnicalRangesTest {
                             val block = blocks.getJSONObject(index)
                             if (block.optString("type") !in setOf("heading", "paragraph", "note")) continue
                             val source = block.optString("text")
-                            if (!signal.containsMatchIn(source)) continue
+                            if (!curricularTechnicalSignal.containsMatchIn(source)) continue
                             val result = analysis(source, language)
                             assertTrue("Expected existing technical prose in ${file.name}/$page/$index", result.fragments.isNotEmpty())
                             assertTrue(result.fragments.all { it.start >= 0 && it.start < it.endExclusive && it.endExclusive <= source.length })
@@ -148,5 +151,22 @@ class ProgrammingTechnicalRangesTest {
             }
         }
         assertEquals(setOf("cpp_fundamentals", "programming_practice_tools"), seen)
+    }
+
+    @Test fun corpusFixtureSignalRequiresADeclarationInsteadOfCrossingOrdinarySentences() {
+        val note = "Acotación de los laboratorios: hasta doce líneas físicas, texto ASCII, cantidades numéricas " +
+            "representables por int y final normal del origen. Se admiten líneas mal formadas para comprobar su " +
+            "diagnóstico. Un lote vacío es válido; una línea vacía es una línea recibida que no cumple el formato. " +
+            "La última línea también se analiza si no lleva salto final. No se investigan averías del dispositivo de entrada."
+        assertFalse(curricularTechnicalSignal.containsMatchIn(note))
+        assertFalse(curricularTechnicalSignal.containsMatchIn("La somme des deux compteurs ne dépasse pas vingt. " +
+            "Chaque élément appartient exactement à une catégorie. Si les données du bilan peuvent être des int " +
+            "quelconques, les comparer ne nécessite ni soustraction ni multiplication : la vérification de l'intervalle " +
+            "peut signaler false sans opération arithmétique dangereuse."))
+        for (source in listOf("int x;", "int x = 2;", "int x{2};", "int main() {", "int x, y;", "int x[4];",
+            "#include <iostream>", "std::cout")) {
+            assertTrue(source, curricularTechnicalSignal.containsMatchIn(source))
+        }
+        assertFalse(curricularTechnicalSignal.containsMatchIn("El tipo int representa cantidades; conserva la explicación."))
     }
 }

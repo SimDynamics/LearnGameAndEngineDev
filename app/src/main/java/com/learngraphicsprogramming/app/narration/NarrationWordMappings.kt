@@ -1,8 +1,11 @@
 package com.learngraphicsprogramming.app.narration
 
+import com.learngraphicsprogramming.app.math.MathTextSemantics
+
 /** Projects lexical provenance onto all existing glyphs, without changing either text. */
 internal object NarrationWordMappings {
     private const val OPENING = "([{«“‘¿¡"
+    private const val MATHEMATICAL_PENDING = "=<>≤≥≠≈+−×÷·"
 
     /**
      * A registered view can be only the question of an exercise whose narration also
@@ -47,11 +50,13 @@ internal object NarrationWordMappings {
         // Closing punctuation belongs to the preceding word; opening punctuation belongs
         // to the following word. Every intervening glyph is covered, including C++'s ++.
         val boundaries = mutableListOf(0)
+        val mathematics by lazy { MathTextSemantics.ranges(displayed) }
         for (index in 1 until visible.size) {
             val gapStart = visible[index - 1].endExclusive
             val gapEnd = visible[index].start
             val opening = (gapStart until gapEnd).firstOrNull {
                 displayed[it] in OPENING ||
+                    (displayed[it] in MATHEMATICAL_PENDING && mathematics.any { range -> it >= range.start && it < range.endExclusive }) ||
                     (displayed[it] == '"' && it > gapStart && displayed[it - 1].isWhitespace())
             }
             boundaries += opening ?: gapEnd
@@ -75,8 +80,10 @@ internal object NarrationWordMappings {
         if (segments.isEmpty()) return emptyMap()
         if (language == NarrationLanguage.SPANISH && segments.values.none { ManualEnglishSpeech.isPrepared(it) }) return emptyMap()
         val ordered = segments.toSortedMap().entries.toList()
+        val mathematics by lazy { MathTextSemantics.ranges(displayed) }
+        for (restoreFormulas in if (NarrationSourceProjection.formulaRanges(displayed).isEmpty()) listOf(false) else listOf(false, true))
         for (mode in listOf("auto", "text", "inline", "block")) {
-            val projection = NarrationSourceProjection.forLanguage(displayed.toString(), mode, language) ?: continue
+            val projection = NarrationSourceProjection.forLanguage(displayed, mode, language, restoreFormulas) ?: continue
             val expected = NarrationSpokenWords.technicalAtoms(projection.text, language)
             if (expected.isEmpty()) continue
             fun content(text: String) = text.filterNot { it.isWhitespace() || it == ManualEnglishSpeech.PREPARED }
@@ -109,6 +116,7 @@ internal object NarrationWordMappings {
                 val start = groups[index - 1].endExclusive
                 val end = groups[index].start
                 boundaries += (start until end).firstOrNull { displayed[it] in OPENING ||
+                    (displayed[it] in MATHEMATICAL_PENDING && mathematics.any { range -> it >= range.start && it < range.endExclusive }) ||
                     (displayed[it] == '"' && it > start && displayed[it - 1].isWhitespace()) } ?: end
             }
             boundaries += displayed.length

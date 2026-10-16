@@ -64,9 +64,11 @@ class TechnicalTextIntegrationDeviceTest {
                 assertTrue((view.text as Spanned).getSpans(0, view.text.length, ForegroundColorSpan::class.java).isEmpty())
                 assertFalse("The subtle mathematical underlay must actually draw", before.sameAs(decorated))
                 assertTrue("Ordinary mathematical ink remains its original color", countColor(decorated, ink) > 10)
-                assertFalse("Formula drawing retains its existing conservative word-tracking behavior", view.safeSupportsWordReading)
+                assertTrue("Known formula drawing supports its own glyph geometry and surrounding word tracking", view.safeSupportsWordReading)
                 view.setUnreadWordRanges(listOf(ReadingTextRange(0, view.text.length)), Color.GRAY)
-                assertTrue("Unsupported formula spans must not acquire guessed visual word times", decorated.sameAs(render(view)))
+                assertFalse("Pending prose and trusted formula glyphs acquire the same readable pending ink", decorated.sameAs(render(view)))
+                view.setUnreadWordRanges(null, Color.GRAY)
+                assertTrue("Completing narration restores every original formula and prose glyph", decorated.sameAs(render(view)))
                 save(decorated, "math-${if (heading) "title" else "paragraph"}-$theme.png")
             }
         }

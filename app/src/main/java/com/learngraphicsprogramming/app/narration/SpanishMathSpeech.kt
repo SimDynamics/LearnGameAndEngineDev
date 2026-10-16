@@ -4,6 +4,7 @@ import com.learngraphicsprogramming.app.math.MathDelimiter
 import com.learngraphicsprogramming.app.math.MathExpression
 import com.learngraphicsprogramming.app.math.MathLargeOperator
 import com.learngraphicsprogramming.app.math.MathLatexParser
+import com.learngraphicsprogramming.app.math.MathReadingAtoms
 
 /** Speech is derived from the existing tree; it never edits lesson text or mathematical state. */
 object SpanishMathSpeech {
@@ -83,14 +84,34 @@ object SpanishMathSpeech {
     /** Observes the existing replacements; source and emitted speech remain unchanged. */
     internal fun textObserved(text: String, mathMode: String = "auto",
                               onPiece: (Int, Int, String) -> Unit): String = renderMathText(
-        text, mathMode, ::speak, "expresión matemática no interpretable", onPiece
+        text, mathMode, ::speak, "expresión matemática no interpretable", granularReading = true, onPiece = onPiece
     )
 
     /** Shared parsing boundary: callers provide an AST visitor, never translated Spanish speech. */
     internal fun renderMathText(
         text: String, mathMode: String, render: (MathExpression) -> String, unreadable: String,
+        granularReading: Boolean = false,
         onPiece: ((Int, Int, String) -> Unit)? = null
     ): String {
+        fun observeFormula(start: Int, end: Int, source: String, base: Int,
+                           expression: MathExpression.Sequence?, spoken: String) {
+            if (onPiece == null) return
+            val atoms = if (granularReading && expression != null) MathReadingAtoms.flat(source, expression) else null
+            val words = atoms?.map { render(it.expression) }
+            // The production AST visitor remains authoritative. Only exact, monotonic leaf
+            // expansions receive finer ownership; implicit products/complex notation stay atomic.
+            if (!atoms.isNullOrEmpty() && words != null && clean(words.joinToString(" ")) == clean(spoken)) {
+                var cursor = start
+                atoms.forEachIndexed { index, atom ->
+                    val first = base + atom.start
+                    val last = base + atom.endExclusive
+                    if (cursor < first) onPiece(cursor, first, "")
+                    onPiece(first, last, " ${words[index]} ")
+                    cursor = last
+                }
+                if (cursor < end) onPiece(cursor, end, "")
+            } else onPiece(start, end, spoken)
+        }
         if (text.isBlank()) return ""
         if (mathMode == "text") {
             onPiece?.invoke(0, text.length, text)
@@ -103,24 +124,27 @@ object SpanishMathSpeech {
             (forced || trimmed.length <= 100 && !Regex("[a-zA-Z]{2,}").containsMatchIn(trimmed))) {
             parse(trimmed, content = forced && Regex("[a-zA-Z]{2,}").containsMatchIn(trimmed))?.let {
                 val spoken = render(it)
-                onPiece?.invoke(0, text.length, spoken)
+                observeFormula(0, text.length, trimmed, text.indexOf(trimmed), it, spoken)
                 return spoken
             }
         }
         if (forced && trimmed.contains('\\') && !trimmed.contains("\\(") &&
             !trimmed.contains("\\[") && !trimmed.contains('$')) {
-            val spoken = parse(trimmed, content = true)?.let(render) ?: unreadable
-            onPiece?.invoke(0, text.length, spoken)
+            val parsed = parse(trimmed, content = true)
+            val spoken = parsed?.let(render) ?: unreadable
+            observeFormula(0, text.length, trimmed, text.indexOf(trimmed), parsed, spoken)
             return spoken
         }
         val protected = (protectedToken.findAll(text) + inlineCode.findAll(text)).map { it.range }.toList()
         val output = StringBuilder()
         var index = 0
         var plainStart = 0
-        fun observeReplacement(start: Int, end: Int, spoken: String) {
+        fun observeReplacement(start: Int, end: Int, spoken: String, source: String? = null,
+                               base: Int = start, expression: MathExpression.Sequence? = null) {
             if (onPiece != null) {
                 if (plainStart < start) onPiece(plainStart, start, text.substring(plainStart, start))
-                onPiece(start, end, spoken)
+                if (source != null) observeFormula(start, end, source, base, expression, spoken)
+                else onPiece(start, end, spoken)
             }
             plainStart = end
         }
@@ -136,9 +160,11 @@ object SpanishMathSpeech {
                 val end = text.indexOf(delimiters.second, index + delimiters.first.length)
                 if (end >= index + delimiters.first.length) {
                     val source = text.substring(index + delimiters.first.length, end)
-                    val spoken = parse(source, content = forced)?.let(render) ?: unreadable
+                    val parsed = parse(source, content = forced)
+                    val spoken = parsed?.let(render) ?: unreadable
                     output.append(' ').append(spoken).append(' ')
-                    observeReplacement(index, end + delimiters.second.length, " $spoken ")
+                    observeReplacement(index, end + delimiters.second.length, " $spoken ", source,
+                        index + delimiters.first.length, parsed)
                     index = end + delimiters.second.length
                     continue
                 }
@@ -152,7 +178,7 @@ object SpanishMathSpeech {
                 if (parsed != null) {
                     val spoken = render(parsed)
                     output.append(' ').append(spoken).append(' ')
-                    observeReplacement(index, candidate.range.last + 1, " $spoken ")
+                    observeReplacement(index, candidate.range.last + 1, " $spoken ", candidate.value, index, parsed)
                     index = candidate.range.last + 1
                     continue
                 }

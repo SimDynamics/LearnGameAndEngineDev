@@ -26,7 +26,7 @@ object MultilingualMathSpeech {
         val visitor = Visitor(language)
         return SpanishMathSpeech.renderMathText(text, mathMode, visitor::speak,
             if (language == NarrationLanguage.FRENCH) "expression mathématique illisible" else "unreadable mathematical expression",
-            onPiece)
+            granularReading = true, onPiece = onPiece)
     }
 
     private class Visitor(private val language: NarrationLanguage) {

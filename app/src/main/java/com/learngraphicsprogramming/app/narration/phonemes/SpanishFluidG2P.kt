@@ -137,10 +137,11 @@ object SpanishFluidG2P {
             val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
             val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
             val cppRanges = cpp.findAll(source).map { it.range }.toList()
+            val normalizationOperators = "=+×÷·<>≤≥≠≈/\\−-"
             if (source.indices.any { index ->
                     val char = source[index]
                     !char.isLetterOrDigit() && !char.isWhitespace() && char !in prosePunctuation &&
-                        char != '−' &&
+                        char !in normalizationOperators &&
                         char !in foreignTokens && !(char == '+' && cppRanges.any { index in it })
                 }) return null
             val pattern = Regex("\\p{L}+|[−-]?\\d+(?:[.,]\\d+)?|[\\uE100-\\uF8FF]")
@@ -152,17 +153,25 @@ object SpanishFluidG2P {
             val normalized = normalizeText(source)
             val expected = mutableListOf<String>()
             val owners = mutableListOf<Int>()
-            pattern.findAll(source).forEachIndexed { index, match ->
+            val items = Regex("${pattern.pattern}|[=+×÷·<>≤≥≠≈/\\\\−-]")
+            var nextOwner = 0
+            items.findAll(source).forEach { match ->
+                // C++ already belongs to its original lexical C atom. Its two +
+                // signs must not be counted a second time as residual operators.
+                if (match.value == "+" && cppRanges.any { match.range.first in it }) return@forEach
+                val operator = match.value.singleOrNull()?.let { it in normalizationOperators } == true
+                val owner = if (operator) -1 else nextOwner++
                 val expanded = when {
                     cppRanges.any { it.first == match.range.first } -> "ce más más"
-                    match.value.any(Char::isDigit) -> normalizeText(match.value)
+                    operator || match.value.any(Char::isDigit) -> normalizeText(match.value)
                     else -> match.value
                 }
                 val lexical = words(expanded)
                 if (lexical.isEmpty()) return null
                 expected += lexical
-                owners += List(lexical.size) { index }
+                owners += List(lexical.size) { owner }
             }
+            if (nextOwner != sourceWords.size) return null
             // Individual expansion supplies ownership only. The whole-context normalization
             // remains authoritative, and any changed formula/code context fails closed.
             if (words(normalized) != expected) return null
@@ -182,8 +191,12 @@ object SpanishFluidG2P {
                     joined.append(token.text)
                     if (token.word) {
                         val owner = owners[wordIndex++]
-                        if (starts[owner] < 0) starts[owner] = start
-                        ends[owner] = joined.length
+                        // Spoken residual signs consume their actual phone tokens,
+                        // but never masquerade as one of the legacy lexical words.
+                        if (owner >= 0) {
+                            if (starts[owner] < 0) starts[owner] = start
+                            ends[owner] = joined.length
+                        }
                     }
                     if (token.word || token.text !in attachRight) joined.append(' ')
                 }

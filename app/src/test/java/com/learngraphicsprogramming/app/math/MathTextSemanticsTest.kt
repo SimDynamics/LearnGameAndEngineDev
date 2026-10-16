@@ -36,6 +36,47 @@ class MathTextSemanticsTest {
         }
     }
 
+    @Test fun completeNumericEquationsKeepTheRelationAndBothSidesInsideOneDecorationRange() {
+        val feedback = "El 6 está en las centenas y aporta 6 × 100 = 600."
+        val decomposition = "5006 = 5000 + 0 + 0 + 6. Los dos ceros mantienen centenas y decenas."
+        assertEquals(listOf("6 × 100 = 600"), fragments(feedback))
+        assertEquals(listOf("5006 = 5000 + 0 + 0 + 6"), fragments(decomposition))
+        assertEquals(listOf("600 = 6 × 100"), fragments("La comprobación es 600 = 6 × 100."))
+        for (language in listOf("Le 6 représente ", "The 6 contributes ")) {
+            assertEquals(listOf("6 × 100 = 600"), fragments("${language}6 × 100 = 600."))
+        }
+        val range = MathTextSemantics.ranges(feedback).single()
+        assertEquals(feedback.lastIndexOf("6 ×"), range.start)
+        assertEquals(feedback.lastIndexOf('.'), range.endExclusive)
+    }
+
+    @Test fun numericRelationsAndArithmeticChainsRetainTheirFullDecorationWithoutSentencePunctuation() {
+        for (operator in listOf("=", "<", ">", "≤", "≥", "≠", "≈")) {
+            val expression = "−2,5 + 3 $operator 0.5 × 1"
+            assertEquals(operator, listOf(expression), fragments("Compara $expression."))
+        }
+        for (operator in listOf("+", "-", "−", "*", "×", "·", "/", "÷")) {
+            val expression = "6 $operator 2 = 3"
+            assertEquals(operator, listOf(expression), fragments("La expresión $expression termina aquí."))
+        }
+        assertEquals(listOf("1 < 2 ≤ 3", "−3 + 4 = +1"),
+            fragments("Observa 1 < 2 ≤ 3; después −3 + 4 = +1."))
+    }
+
+    @Test fun extendingDecorationDoesNotTreatProtectedNumericSourcesAsMathematics() {
+        for (source in listOf(
+            "Texto sin expresiones: hay 6 centenas y 100 unidades.",
+            "Código `6 × 100 = 600` y ```5006 = 5000 + 0 + 0 + 6```.",
+            "Ver https://example.org/6+3=9 y C:\\temp\\6+3=9 y src/6+3=9.",
+            "Rutas /tmp/6+3=9 y fechas 12/03/2026.",
+            "Una fórmula inválida \\(\\unsupported{6+3=9}\\) no se decora parcialmente.",
+            "Otra fórmula inválida \$\\unsupported{6+3=9}\$ tampoco se decora parcialmente.",
+            "También \$\$\\unsupported{6+3=9}\$\$ queda sin decoración parcial."
+        )) assertEquals(source, emptyList<String>(), fragments(source))
+        assertTrue(MathTextSemantics.ranges("6 × 100 = 600", "text").isEmpty())
+        assertTrue(MathTextSemantics.ranges("\\unsupported{6+3=9}", "block").isEmpty())
+    }
+
     @Test fun offsetsUseOriginalUtf16WithoutChangingAnyTextOrSplittingSurrogatePairs() {
         val source = "🧮 E\u0301tudie 3/4 puis x²."
         val before = source.toCharArray()

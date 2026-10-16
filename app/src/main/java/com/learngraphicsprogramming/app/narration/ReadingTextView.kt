@@ -8,15 +8,24 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.Region
 import android.text.Editable
+import android.text.Layout
 import android.text.Spanned
+import android.text.TextPaint
 import android.text.style.BackgroundColorSpan
 import android.text.style.LineBackgroundSpan
 import android.text.style.ReplacementSpan
+import android.text.style.MetricAffectingSpan
 import android.widget.TextView
 import android.widget.RadioButton
 
 /** Display offsets into the TextView's existing CharSequence; no curricular text is retained. */
 data class ReadingTextRange(val start: Int, val endExclusive: Int)
+
+/** Trusted typesetting supplies actual glyph geometry for its own source, without reflow. */
+internal interface ReadingReplacementSpan {
+    fun addReadingPath(path: Path, from: Int, to: Int, spanStart: Int, spanEnd: Int,
+                       x: Float, baseline: Float, paint: Paint)
+}
 
 /** A trusted inline-code delimiter keeps its source offset without drawing a glyph. */
 internal class TechnicalDelimiterSpan : ReplacementSpan() {
@@ -76,7 +85,9 @@ class ReadingTextInk(private val view: TextView, private val interactiveLabel: B
                 view.scrollX != 0 || view.scrollY != 0 ||
                 view.compoundDrawables.any { it != null } || view.compoundDrawablesRelative.any { it != null }) return false
             if (content is Spanned && (
-                    content.getSpans(0, content.length, ReplacementSpan::class.java).any { it !is TechnicalDelimiterSpan } ||
+                    content.getSpans(0, content.length, ReplacementSpan::class.java).any {
+                        it !is TechnicalDelimiterSpan && it !is ReadingReplacementSpan
+                    } ||
                     content.getSpans(0, content.length, BackgroundColorSpan::class.java).isNotEmpty() ||
                     content.getSpans(0, content.length, LineBackgroundSpan::class.java).isNotEmpty())) return false
             return true
@@ -168,7 +179,7 @@ class ReadingTextInk(private val view: TextView, private val interactiveLabel: B
         unreadPath.reset()
         unreadRanges.forEach { range ->
             rangePath.reset()
-            existingLayout.getSelectionPath(range.start, range.endExclusive, rangePath)
+            addUnreadPath(existingLayout, view.text, range, rangePath)
             unreadPath.addPath(rangePath)
         }
         unreadPath.offset(view.compoundPaddingLeft.toFloat(), view.totalPaddingTop.toFloat())
@@ -184,6 +195,38 @@ class ReadingTextInk(private val view: TextView, private val interactiveLabel: B
         val separateSemanticInk = semanticBackgroundRanges.isNotEmpty() && semanticUnreadColor != unreadColor
         drawUnreadInk(canvas, unreadPaint, if (separateSemanticInk) false else null, drawOriginal)
         if (separateSemanticInk) drawUnreadInk(canvas, semanticUnreadPaint, true, drawOriginal)
+    }
+
+    /** Android treats a ReplacementSpan as one selection cell. Known formula spans supply
+     * their actual AST glyph bounds instead; ordinary text retains the native selection path. */
+    private fun addUnreadPath(layout: Layout, content: CharSequence, range: ReadingTextRange, path: Path) {
+        val spanned = content as? Spanned
+        val formulas = spanned?.getSpans(range.start, range.endExclusive, ReplacementSpan::class.java)
+            ?.filter { it is ReadingReplacementSpan }?.sortedBy { spanned.getSpanStart(it) }.orEmpty()
+        var cursor = range.start
+        fun native(end: Int) {
+            if (cursor < end) {
+                val part = Path()
+                layout.getSelectionPath(cursor, end, part)
+                path.addPath(part)
+            }
+            cursor = end
+        }
+        formulas.forEach { span ->
+            val start = requireNotNull(spanned).getSpanStart(span)
+            val end = spanned.getSpanEnd(span)
+            native(maxOf(cursor, start))
+            val paint = TextPaint(view.paint)
+            spanned.getSpans(start, end, MetricAffectingSpan::class.java)
+                .filter { it !is ReplacementSpan }.forEach { it.updateMeasureState(paint) }
+            val advance = layout.getPrimaryHorizontal(start)
+            val left = if (layout.isRtlCharAt(start)) advance - span.getSize(paint, content, start, end, null) else advance
+            (span as ReadingReplacementSpan).addReadingPath(path, maxOf(range.start, start),
+                minOf(range.endExclusive, end), start, end, left,
+                layout.getLineBaseline(layout.getLineForOffset(start)).toFloat(), paint)
+            cursor = minOf(range.endExclusive, end)
+        }
+        native(range.endExclusive)
     }
 
     @Suppress("DEPRECATION")

@@ -1,17 +1,57 @@
 package com.learngraphicsprogramming.app.narration
 
+import com.learngraphicsprogramming.app.math.MathTextRenderer
+
 /** Temporary offsets into the existing view. No curriculum or audio is stored here. */
 internal object NarrationSourceProjection {
-    data class Projection(val text: String, val owners: List<ReadingTextRange>)
+    data class Projection(val text: String, val owners: List<ReadingTextRange>,
+                          val formulas: List<ReadingTextRange> = emptyList())
+    /** Offsets only while joining existing puzzle labels; no Android rendering is duplicated. */
+    data class Source(val text: String, val formulas: List<ReadingTextRange>) : CharSequence by text {
+        override fun toString(): String = text
+    }
     private data class Piece(val start: Int, val end: Int, val text: String)
 
     fun spanish(source: String, mode: String): Projection? = forLanguage(source, mode, NarrationLanguage.SPANISH)
 
-    fun forLanguage(source: String, mode: String, language: NarrationLanguage): Projection? = runCatching {
-        val initial = Projection(source, source.indices.map { ReadingTextRange(it, it + 1) })
+    /** Typesetting removes authored math delimiters. Recover only that existing semantic intent
+     * in a temporary normalization projection, retaining offsets into the displayed original. */
+    fun mathematicalSource(source: CharSequence): Projection {
+        val formulas = formulaRanges(source)
+        if (formulas.isEmpty()) return Projection(source.toString(), source.indices.map { ReadingTextRange(it, it + 1) })
+        val text = StringBuilder()
+        val owners = mutableListOf<ReadingTextRange>()
+        var cursor = 0
+        fun append(end: Int) {
+            while (cursor < end) {
+                text.append(source[cursor])
+                owners += ReadingTextRange(cursor, cursor + 1)
+                cursor++
+            }
+        }
+        formulas.forEach { range ->
+            append(range.start)
+            text.append("\\(")
+            repeat(2) { owners += ReadingTextRange(0, 0) }
+            append(range.endExclusive)
+            text.append("\\)")
+            repeat(2) { owners += ReadingTextRange(0, 0) }
+        }
+        append(source.length)
+        return Projection(text.toString(), owners)
+    }
+
+    fun formulaRanges(source: CharSequence): List<ReadingTextRange> =
+        if (source is Source) source.formulas else MathTextRenderer.formulaRanges(source)
+            .sortedBy { it.first }.map { ReadingTextRange(it.first, it.last + 1) }
+
+    fun forLanguage(source: CharSequence, mode: String, language: NarrationLanguage,
+                    restoreFormulaIntent: Boolean = true): Projection? = runCatching {
+        val initial = if (restoreFormulaIntent) mathematicalSource(source)
+            else Projection(source.toString(), source.indices.map { ReadingTextRange(it, it + 1) })
         val technical = when (language) {
-            NarrationLanguage.SPANISH -> stage(initial) { observe -> SpanishTechnicalSpeech.prepareForReading(source, mode, observe).text }
-            NarrationLanguage.FRENCH -> stage(initial) { observe -> FrenchTechnicalSpeech.prepareForReading(source, mode, observe) }
+            NarrationLanguage.SPANISH -> stage(initial) { observe -> SpanishTechnicalSpeech.prepareForReading(initial.text, mode, observe).text }
+            NarrationLanguage.FRENCH -> stage(initial) { observe -> FrenchTechnicalSpeech.prepareForReading(initial.text, mode, observe) }
             else -> initial
         }
             ?: return null

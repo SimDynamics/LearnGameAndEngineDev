@@ -3,10 +3,12 @@ package com.learngraphicsprogramming.app.math
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ReplacementSpan
 import android.widget.TextView
+import com.learngraphicsprogramming.app.narration.ReadingReplacementSpan
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -54,7 +56,9 @@ object MathTextRenderer {
             if (source.isBlank()) { output.append(source); return }
             val start = output.length
             output.append(source)
-            output.setSpan(MathFormulaSpan(parseExpression(source, content)), start, output.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val expression = parseExpression(source, content)
+            output.setSpan(MathFormulaSpan(expression, MathReadingAtoms.flat(source, expression)), start, output.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         fun appendContent(source: String) {
             // TextView owns line breaks; every line still uses the common AST layout.
@@ -145,7 +149,29 @@ object MathTextRenderer {
     }
 }
 
-private class MathFormulaSpan(private val expression: MathExpression.Sequence) : ReplacementSpan() {
+private class MathFormulaSpan(private val expression: MathExpression.Sequence,
+                              private val readingAtoms: List<MathReadingAtoms.Atom>?) : ReplacementSpan(), ReadingReplacementSpan {
+    override fun addReadingPath(path: Path, from: Int, to: Int, spanStart: Int, spanEnd: Int,
+                                x: Float, baseline: Float, paint: Paint) {
+        if (from >= to || from >= spanEnd || to <= spanStart) return
+        val layout = MathExpressionLayout.create(expression, paint, paint.textSize)
+        val atoms = readingAtoms
+        if (atoms == null) {
+            // Complex notation has one conservative source owner. Its real glyph geometry stays
+            // intact while the ordinary words around it can continue to track independently.
+            path.addRect(x, baseline + layout.ascent, x + layout.width, baseline + layout.descent, Path.Direction.CW)
+            return
+        }
+        atoms.forEachIndexed { index, atom ->
+            if (atom.start + spanStart < to && atom.endExclusive + spanStart > from) {
+                layout.childBounds(emptyList(), index)?.let { bounds ->
+                    path.addRect(x + bounds.left, baseline + bounds.top, x + bounds.right,
+                        baseline + bounds.bottom, Path.Direction.CW)
+                }
+            }
+        }
+    }
+
     override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
         val size = paint.textSize
         val metrics = MathExpressionLayout.create(expression, paint, size)

@@ -122,7 +122,7 @@ class ReadingTextViewDeviceTest {
         assertWordColor(progressive, view, phrase.indexOf("שלום"), "שלום".length, gray)
     }
 
-    @Test fun mathematicalReplacementSpansAndInteractiveTextKeepOrdinaryRendering() = onMain {
+    @Test fun trustedMathematicalSpansKeepTheirGeometryWhileInteractiveTextKeepsOrdinaryRendering() = onMain {
         val formula = ReadingTextView(context).apply {
             textSize = 24f
             setTextColor(Color.WHITE)
@@ -133,10 +133,12 @@ class ReadingTextViewDeviceTest {
         val text = formula.text
         val spans = spanSnapshot(text)
         assertTrue((text as Spanned).getSpans(0, text.length, ReplacementSpan::class.java).isNotEmpty())
-        assertFalse(formula.safeSupportsWordReading)
+        assertTrue(formula.safeSupportsWordReading)
         val original = render(formula)
         formula.setUnreadWordRanges(listOf(ReadingTextRange(0, text.length)), Color.GRAY)
-        assertPixelsEqual("A formula is never split or recolored with unverified word offsets", original, render(formula))
+        assertFalse("A known formula can shade atomically without disabling its surrounding words", original.sameAs(render(formula)))
+        formula.setUnreadWordRanges(null, 0)
+        assertPixelsEqual("Finishing reading restores the exact original formula drawing", original, render(formula))
         assertSame(text, formula.text)
         assertEquals(spans, spanSnapshot(formula.text))
 

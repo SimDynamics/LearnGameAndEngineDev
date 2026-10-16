@@ -5,7 +5,7 @@ internal object NarrationPuzzleWordMappings {
     private data class ViewPart(val target: Int, val start: Int, val end: Int,
                                 val owners: List<ReadingTextRange>)
     private data class VisibleRun(
-        val text: String,
+        val text: CharSequence,
         val parts: List<ViewPart>,
         val signatures: List<List<String>>
     )
@@ -28,18 +28,21 @@ internal object NarrationPuzzleWordMappings {
         val visibleRuns = mutableMapOf<Pair<Int, Int>, VisibleRun>()
         fun visibleRun(start: Int, end: Int) = visibleRuns.getOrPut(start to end) {
             val text = StringBuilder()
+            val formulas = mutableListOf<ReadingTextRange>()
             val parts = (start..end).map { viewIndex ->
                 if (text.isNotEmpty()) text.append(' ')
                 val offset = text.length
-                val source = views[viewIndex].second.toString()
+                val source = views[viewIndex].second
                 val projection = feedbackPresentation(source, language, feedback)
                 text.append(projection.text)
+                formulas += projection.formulas.map { ReadingTextRange(offset + it.start, offset + it.endExclusive) }
                 ViewPart(views[viewIndex].first, offset, text.length, projection.owners)
             }
-            val source = text.toString()
+            val source = NarrationSourceProjection.Source(text.toString(), formulas)
             val signatures = mutableListOf(NarrationSpokenWords.technicalAtoms(source, language).map { it.canonical })
+            for (restoreFormulas in if (formulas.isEmpty()) listOf(false) else listOf(false, true))
             for (mode in listOf("auto", "text", "inline", "block")) {
-                val projection = NarrationSourceProjection.forLanguage(source, mode, language) ?: continue
+                val projection = NarrationSourceProjection.forLanguage(source, mode, language, restoreFormulas) ?: continue
                 signatures += NarrationSpokenWords.technicalAtoms(projection.text, language).map { it.canonical }
             }
             VisibleRun(source, parts, signatures.filter { it.isNotEmpty() }.distinct())
@@ -117,18 +120,22 @@ internal object NarrationPuzzleWordMappings {
     }
 
     /** Only the app-generated successful-feedback heading differs from the script. */
-    private fun feedbackPresentation(source: String, language: NarrationLanguage,
+    private fun feedbackPresentation(displayed: CharSequence, language: NarrationLanguage,
                                      feedback: Boolean): NarrationSourceProjection.Projection {
-        val ordinary = { NarrationSourceProjection.Projection(source,
-            source.indices.map { ReadingTextRange(it, it + 1) }) }
+        val original = NarrationSourceProjection.Projection(displayed.toString(),
+            displayed.indices.map { ReadingTextRange(it, it + 1) }, NarrationSourceProjection.formulaRanges(displayed))
+        val source = original.text
+        val ordinary = { original }
         if (!feedback) return ordinary()
         val heading = listOf("✓ Correcto", "✓ Correct", "✓ ¡Correcto!").firstOrNull {
             source == it || source.startsWith("$it\n")
         } ?: return ordinary()
         val spoken = if (language == NarrationLanguage.SPANISH) "Correcto." else "Correct."
         val text = spoken + source.substring(heading.length)
-        val owners = List(spoken.length) { ReadingTextRange(0, heading.length) } +
-            (heading.length until source.length).map { ReadingTextRange(it, it + 1) }
-        return NarrationSourceProjection.Projection(text, owners)
+        val owners = List(spoken.length) { NarrationSourceProjection.owner(original.owners.subList(0, heading.length)) } +
+            original.owners.subList(heading.length, original.owners.size)
+        return NarrationSourceProjection.Projection(text, owners, original.formulas.map {
+            ReadingTextRange(it.start + spoken.length - heading.length, it.endExclusive + spoken.length - heading.length)
+        })
     }
 }
