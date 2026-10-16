@@ -52,8 +52,7 @@ data class LessonNarrationScript(
                 // Never inspect validator.expected, correctAnswer, solutions or incorrect feedback.
                 val success = if (MathPuzzleTypes.isExercise(type)) {
                     block.optJSONObject("feedback")?.opt("correct") as? String ?: ""
-                } else if (type == "drag_fill_code") ""
-                else block.opt("explanation") as? String ?: ""
+                } else block.opt("explanation") as? String ?: ""
                 val heading = when (language) {
                     NarrationLanguage.SPANISH -> "Correcto."
                     NarrationLanguage.FRENCH -> "Correct."

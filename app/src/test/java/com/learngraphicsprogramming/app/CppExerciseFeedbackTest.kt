@@ -21,14 +21,14 @@ class CppExerciseFeedbackTest {
     }
 
     @Test fun legacyBlocksKeepTheirSafeFallbackAndNeverReadExplanation() {
-        for (type in listOf("multiple_choice", "fill_code", "output_prediction", "order_code")) {
+        for (type in listOf("multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             val legacy = JSONObject().put("type", type).put("explanation", "SOLUTION")
             assertEquals("Revisa tu razonamiento.", CppExerciseFeedback.review(legacy, 1, "Revisa tu razonamiento."))
         }
     }
 
     @Test fun freeResponsesAndOrderUseOnlyTheirAuthoredProcessReview() {
-        for (type in listOf("fill_code", "output_prediction", "order_code")) {
+        for (type in listOf("fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             val block = JSONObject().put("type", type).put("reviewFeedback", "Comprueba el proceso.\nConserva el borrador.")
                 .put("answers", "DO NOT READ").put("correctOrder", "DO NOT READ").put("explanation", "SOLUTION")
             assertEquals("Comprueba el proceso.\nConserva el borrador.", CppExerciseFeedback.review(block, fallback = "safe"))
@@ -47,16 +47,38 @@ class CppExerciseFeedbackTest {
     }
 
     @Test fun malformedTextAndUnsupportedFamiliesAreNotSilentlyAccepted() {
-        for (type in listOf("fill_code", "output_prediction", "order_code")) {
+        for (type in listOf("fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             for (value in listOf<Any>(JSONObject.NULL, "", "\n\t", JSONArray().put("review"), JSONObject(), 1, false)) {
                 assertInvalid { CppExerciseFeedback.review(JSONObject().put("type", type).put("reviewFeedback", value), fallback = "safe") }
             }
         }
-        for (type in listOf("inline_fill_code", "drag_fill_code", "cpp_compiler", "paragraph", "math_multiple_choice_single")) {
+        for (type in listOf("inline_fill_code", "cpp_compiler", "paragraph", "math_multiple_choice_single")) {
             assertInvalid { CppExerciseFeedback.review(JSONObject().put("type", type).put("reviewFeedback", "review"), fallback = "safe") }
         }
         assertInvalid { CppExerciseFeedback.review(choice().put("options", "wrong"), 0, "safe") }
         assertInvalid { CppExerciseFeedback.review(choice().put("options", JSONArray().put("a").put(2).put("c")), 0, "safe") }
+    }
+
+    @Test fun dragGuidanceKeepsBothIncorrectSlotDistributionsAndNeverReadsTheSolution() {
+        val guidance = "Relaciona cada hueco con la magnitud que necesita: una capacidad en el cálculo de cajas y un plazo en la comparación de días. Distingue datos de entrada y reglas."
+        val block = JSONObject().put("type", "drag_fill_code").put("reviewFeedback", guidance)
+            .put("correctOrder", "DO NOT INSPECT").put("choices", "DO NOT INSPECT")
+            .put("explanation", "SUCCESS ONLY")
+        val before = block.toString()
+        for (slots in listOf(JSONArray(listOf(0, 2)), JSONArray(listOf(1, 3)))) {
+            val state = CppExerciseFeedback.recordIncorrect(JSONObject().put("slots", slots).put("correct", false), slots)
+            val restored = JSONObject(state.toString())
+            assertTrue(CppExerciseFeedback.wasReviewed(restored, slots))
+            assertEquals(slots.toString(), restored.getJSONArray("slots").toString())
+            assertEquals(guidance, CppExerciseFeedback.review(block, fallback = "safe"))
+            assertFalse(CppExerciseFeedback.wasReviewed(restored, JSONArray(listOf(2, 0))))
+        }
+        assertEquals("SUCCESS ONLY", CppExerciseFeedback.dragSuccessExplanation(block))
+        assertEquals(before, block.toString())
+        assertEquals("", CppExerciseFeedback.dragSuccessExplanation(JSONObject().put("type", "drag_fill_code")))
+        for (value in listOf<Any>(JSONObject.NULL, "", "  ", false, 1, JSONArray(), JSONObject())) {
+            assertInvalid { CppExerciseFeedback.dragSuccessExplanation(JSONObject().put("explanation", value)) }
+        }
     }
 
     @Test fun readingTheReviewDoesNotMutateContentOrTheCanonicalOptionStrings() {

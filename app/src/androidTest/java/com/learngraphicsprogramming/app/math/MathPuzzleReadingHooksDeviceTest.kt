@@ -136,6 +136,92 @@ class MathPuzzleReadingHooksDeviceTest {
         assertFalse(unassigned in matchRenderer.narrationTextViews)
     }
 
+    @Test fun onlyNewEvaluableWrongSubmissionsEmitTheirOwnSelectedGuidance() = onMain {
+        val block = choiceBlock()
+        val response = block.getJSONArray("responses").getJSONObject(0)
+        response.getJSONArray("options").getJSONObject(0).put("reviewFeedback", "ABSENT_OPTION_MUST_NOT_BE_SPOKEN")
+        response.getJSONArray("options").getJSONObject(1).put("reviewFeedback", "Revisa sólo el razonamiento que elegiste.")
+        block.put("feedback", JSONObject().put("correct", "SUCCESS_MUST_NOT_BE_SPOKEN")
+            .put("incorrect", "GLOBAL_ABSENT_CHOICES_MUST_NOT_BE_SPOKEN"))
+        val original = block.toString()
+        val lessonId = "math_wrong_review_hook_${UUID.randomUUID()}"
+        val reviews = mutableListOf<List<String>>()
+        fun create() = MathPuzzleRenderer(
+            ContextThemeWrapper(context, R.style.Theme_LearnGraphicsProgramming), "math_physics",
+            lessonId, 0, 0, block, onIncorrectAttempt = { reviews += it }
+        ) { }
+        val first = create()
+        assertTrue("Constructing a feedback view is not a submission", reviews.isEmpty())
+        val buttons = tree(first.view).filterIsInstance<CompoundButton>()
+        val check = tree(first.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }
+        buttons[1].isChecked = true
+        assertTrue("Editing a draft does not request speech", reviews.isEmpty())
+        assertTrue(check.performClick())
+        assertEquals(1, reviews.size)
+        assertTrue(reviews.single().joinToString(" ").contains("Revisa sólo el razonamiento que elegiste."))
+        assertFalse(reviews.single().joinToString(" ").contains("MUST_NOT_BE_SPOKEN"))
+        assertFalse(reviews.single().joinToString(" ").contains("choice"))
+        assertTrue(check.performClick())
+        assertEquals("A second deliberate submission can repeat the same guidance", 2, reviews.size)
+        val restored = create()
+        assertEquals("Reopening an incorrect draft cannot trigger narration", 2, reviews.size)
+        val restoredButtons = tree(restored.view).filterIsInstance<CompoundButton>()
+        restoredButtons[0].isChecked = true
+        tree(restored.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+        assertTrue(restored.isCorrect)
+        assertEquals("Successful feedback keeps its independent existing narration gate", 2, reviews.size)
+        create()
+        assertEquals("Restoring correct progress cannot trigger a wrong review", 2, reviews.size)
+
+        val numeric = JSONObject().put("type", "math_puzzle").put("prompt", "Introduce dos.")
+            .put("responses", JSONArray().put(JSONObject().put("id", "number").put("type", "math_numeric_input")
+                .put("label", "Cantidad.").put("validator", JSONObject().put("type", "numeric").put("expected", 2))))
+        val technical = MathPuzzleRenderer(ContextThemeWrapper(context, R.style.Theme_LearnGraphicsProgramming),
+            "math_physics", "math_wrong_review_technical_${UUID.randomUUID()}", 0, 0, numeric,
+            onIncorrectAttempt = { reviews += it }) { }
+        tree(technical.view).filterIsInstance<EditText>().single().setText("not a number")
+        tree(technical.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+        assertEquals("A technical error cannot request wrong-answer speech", 2, reviews.size)
+        assertEquals(original, block.toString())
+    }
+
+    @Test fun anEvaluableWrongResultWithoutAnAuthoredOrValidatorMessageUsesTheVisibleProcessFallback() = onMain {
+        val block = JSONObject().put("type", "math_puzzle").put("prompt", "Introduce dos.")
+            .put("responses", JSONArray().put(JSONObject().put("id", "internal_number_id").put("type", "math_numeric_input")
+                .put("validator", JSONObject().put("type", "numeric").put("expected", 2))))
+        val reviews = mutableListOf<List<String>>()
+        val renderer = MathPuzzleRenderer(ContextThemeWrapper(context, R.style.Theme_LearnGraphicsProgramming),
+            "math_physics", "math_wrong_review_empty_${UUID.randomUUID()}", 0, 0, block,
+            attemptEvaluation = { _, _ -> listOf(MathValidationResult(false, "")) },
+            onIncorrectAttempt = { reviews += it }) { }
+        tree(renderer.view).filterIsInstance<EditText>().single().setText("1")
+        tree(renderer.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+        val fallback = context.getString(R.string.math_ui_review_process)
+        assertEquals(listOf(listOf(fallback)), reviews)
+        assertTrue("The spoken fallback must also be visible", tree(renderer.view).filterIsInstance<TextView>()
+            .any { it.text.toString().contains(fallback) })
+        assertFalse(reviews.flatten().joinToString(" ").contains("internal_number_id"))
+        assertFalse(renderer.isCorrect)
+    }
+
+    @Test fun ordinaryNumericWrongAnswersSpeakTheSameVisibleProcessGuideWithoutDisclosingTheExpectedValue() = onMain {
+        val block = JSONObject().put("type", "math_puzzle").put("prompt", "Introduce la cantidad.")
+            .put("responses", JSONArray().put(JSONObject().put("id", "number_secret_id").put("type", "math_numeric_input")
+                .put("validator", JSONObject().put("type", "numeric").put("expected", 821))))
+        val reviews = mutableListOf<List<String>>()
+        val renderer = MathPuzzleRenderer(ContextThemeWrapper(context, R.style.Theme_LearnGraphicsProgramming),
+            "math_physics", "math_wrong_review_numeric_${UUID.randomUUID()}", 0, 0, block,
+            onIncorrectAttempt = { reviews += it }) { }
+        tree(renderer.view).filterIsInstance<EditText>().single().setText("1")
+        tree(renderer.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+        assertFalse(renderer.isCorrect)
+        val guide = reviews.single().joinToString("\n")
+        assertTrue(guide.contains(context.getString(R.string.math_ui_review_process)))
+        assertFalse(guide.contains("821"))
+        assertFalse(guide.contains("number_secret_id"))
+        assertTrue(tree(renderer.view).filterIsInstance<TextView>().any { it.text.toString().contains(guide) })
+    }
+
     private fun renderer(block: JSONObject, events: MutableList<Event>): MathPuzzleRenderer = MathPuzzleRenderer(
         ContextThemeWrapper(context, R.style.Theme_LearnGraphicsProgramming), "math_physics",
         "math_reading_hook_qa_${UUID.randomUUID()}", 0, 0, block,

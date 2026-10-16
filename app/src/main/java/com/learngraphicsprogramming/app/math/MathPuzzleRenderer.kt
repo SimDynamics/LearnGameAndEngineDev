@@ -25,6 +25,7 @@ class MathPuzzleRenderer(
     block: JSONObject,
     private val attemptEvaluation: ((String, () -> List<MathValidationResult>) -> List<MathValidationResult>?)? = null,
     private val onTextReady: ((TextView, TextRole) -> Unit)? = null,
+    private val onIncorrectAttempt: ((List<String>) -> Unit)? = null,
     private val onCompletionChanged: (Boolean) -> Unit
 ) {
     enum class TextRole { BODY, CORRECT_FEEDBACK, INCORRECT_FEEDBACK, ERROR_FEEDBACK, CLEARED }
@@ -309,6 +310,8 @@ class MathPuzzleRenderer(
             onCompletionChanged(true)
         } else {
             val hasSelections = spec.responses.any(MathPuzzleFeedback::hasSelection)
+            fun processMessage(result: MathValidationResult) = MathPuzzleFeedback.processMessage(result,
+                context.getString(R.string.math_ui_review_process)) { result.resolveMessage(context) }
             val details = results.mapIndexedNotNull { index, (response, result) ->
                 val message = if (MathPuzzleFeedback.hasSelection(response)) {
                     // Even a correct subset is not classified during an incorrect submission.
@@ -319,25 +322,32 @@ class MathPuzzleRenderer(
                     // A mixed response can retain its numeric/expression diagnostic without
                     // classifying either the chosen or the absent dropdown alternatives.
                     val fieldMessage = result.fieldId?.takeIf { !result.correct && !MathPuzzleFeedback.isDropdownField(response, it) }
-                        ?.let { MathPuzzleFeedback.fieldMessage(response, it, result.resolveMessage(context)) { field ->
+                        ?.let { MathPuzzleFeedback.fieldMessage(response, it, processMessage(result)) { field ->
                             context.getString(R.string.math_ui_field, field)
                         } }
                     (reviews + listOfNotNull(fieldMessage)).joinToString("\n")
                 } else {
                     if (result.correct) return@mapIndexedNotNull null
-                    MathPuzzleFeedback.fieldMessage(response, result.fieldId, result.resolveMessage(context)) {
+                    MathPuzzleFeedback.fieldMessage(response, result.fieldId, processMessage(result)) {
                         context.getString(R.string.math_ui_field, it)
                     }
                 }
-                "${responseLabel(response, index)}: $message"
+                if (message.isBlank()) null else "${responseLabel(response, index)}: $message"
             }
             // A legacy global explanation may discuss absent choices, including in a mixed puzzle.
             val heading = if (hasSelections) context.getString(R.string.math_ui_incorrect)
                 else spec.incorrectFeedback.ifBlank { context.getString(R.string.math_ui_incorrect) }
-            MathTextRenderer.apply(feedback, (listOf("✗ $heading") + details).filter { it.isNotBlank() }.joinToString("\n"))
+            val guidance = MathPuzzleFeedback.incorrectGuidance(hasSelections, spec.incorrectFeedback, details,
+                context.getString(R.string.math_ui_review_process))
+            val visibleDetails = if (details.isEmpty() && (hasSelections || spec.incorrectFeedback.isBlank())) guidance else details
+            MathTextRenderer.apply(feedback, (listOf("✗ $heading") + visibleDetails).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))
             onTextReady?.invoke(feedback, TextRole.INCORRECT_FEEDBACK)
             save()
+            // This is a deliberate, evaluable submission, unlike a restored feedback
+            // view or a presentation callback. Only already-visible process guidance
+            // is offered; validators and successful explanations are never traversed.
+            onIncorrectAttempt?.invoke(guidance)
         }
     }
 

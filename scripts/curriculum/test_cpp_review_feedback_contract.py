@@ -32,7 +32,7 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
         self.assertIn("reviewFeedback", contract.FIELDS["multiple_choice"])
 
     def test_free_and_order_reviews_are_optional_nonempty_text(self):
-        for kind in ("fill_code", "output_prediction", "order_code"):
+        for kind in ("fill_code", "output_prediction", "order_code", "drag_fill_code"):
             self.assert_valid({"type": kind, "reviewFeedback": "Revisa el proceso.\nConserva tu borrador."})
             for value in (None, "", " \t\n", False, 1, [], {}, ["text"]):
                 with self.subTest(kind=kind, value=value):
@@ -53,7 +53,7 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
             block["options"] = options
             self.assert_invalid(block)
 
-    def test_only_four_types_accept_the_extension(self):
+    def test_only_supported_types_accept_the_extension(self):
         for kind in contract.FIELDS:
             self.assertEqual(kind in contract.REVIEW_FEEDBACK_TYPES, "reviewFeedback" in contract.FIELDS[kind])
             if kind not in contract.REVIEW_FEEDBACK_TYPES:
@@ -99,11 +99,32 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
                 self.assertFalse(self.preserved(old, current))
 
     def test_review_on_unsupported_type_remains_part_of_content(self):
-        for kind in ("inline_fill_code", "drag_fill_code"):
+        for kind in ("inline_fill_code",):
             block = self.legacy(kind)
             changed = dict(block, reviewFeedback="Not supported")
             self.assertIs(block, contract.without_review_feedback(block))
             self.assertFalse(self.preserved(block, changed))
+
+    def test_order_language_is_optional_and_validated_without_using_the_answer(self):
+        for language in ("cpp", "c++", "cmake", " CMake "):
+            contract.ERRORS.clear()
+            contract.validate_code_presentation_contract({"type": "order_code", "language": language,
+                                                          "correctOrder": "DO NOT READ"}, "fixture")
+            self.assertEqual([], contract.ERRORS)
+        for language in (None, "", "python", 1, {}, []):
+            contract.ERRORS.clear()
+            contract.validate_code_presentation_contract({"type": "order_code", "language": language}, "fixture")
+            self.assertTrue(contract.ERRORS)
+
+    def test_drag_explanation_is_optional_nonempty_success_text(self):
+        for explanation in ("Una explicación posterior al acierto.",):
+            contract.ERRORS.clear()
+            contract.validate_code_presentation_contract({"type": "drag_fill_code", "explanation": explanation}, "fixture")
+            self.assertEqual([], contract.ERRORS)
+        for explanation in (None, "", "\t\n", False, 1, [], {}):
+            contract.ERRORS.clear()
+            contract.validate_code_presentation_contract({"type": "drag_fill_code", "explanation": explanation}, "fixture")
+            self.assertTrue(contract.ERRORS)
 
     @staticmethod
     def choice():

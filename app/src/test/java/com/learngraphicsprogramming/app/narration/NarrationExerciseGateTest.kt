@@ -84,4 +84,34 @@ class NarrationExerciseGateTest {
         }
         assertEquals(null,gate.boundary())
     }
+
+    @Test fun transientGuidanceMayOnlyBindAnActualExerciseOfTheOriginalPage() {
+        val gate = NarrationExerciseGate(12, gates)
+        assertTrue(gate.hasExercise(2))
+        assertTrue(gate.hasExercise(6))
+        assertFalse(gate.hasExercise(-1))
+        assertFalse(gate.hasExercise(3))
+        assertFalse(gate.hasExercise(12))
+        assertEquals(0, gate.heardThrough)
+        assertFalse(gate.canPlay(3))
+    }
+
+    @Test fun wrongAttemptCannotCreditUnsolvedFeedbackOrUnlockFollowingText() {
+        val gate = NarrationExerciseGate(12, gates)
+        repeat(3) {
+            // Even a renderer accidentally reporting a guide's indices cannot grant an unsolved gate.
+            for (index in 0..11) gate.completedNaturally(index)
+            assertEquals(0, gate.heardThrough)
+            assertEquals(NarrationGatePosition(3), gate.clamp(NarrationGatePosition(11, 9000)))
+        }
+        gate.updateCorrect(setOf(2))
+        assertTrue(gate.canPlay(3))
+        assertFalse(gate.canPlay(4))
+        assertFalse(gate.canPlay(5))
+        gate.completedNaturally(3)
+        assertTrue(gate.canPlay(4))
+        assertFalse(gate.canPlay(5))
+        gate.completedNaturally(4)
+        assertTrue(gate.canPlay(5))
+    }
 }

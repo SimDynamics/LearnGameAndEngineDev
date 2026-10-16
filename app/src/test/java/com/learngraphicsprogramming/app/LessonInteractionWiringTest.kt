@@ -18,7 +18,10 @@ class LessonInteractionWiringTest {
         assertTrue(body.contains("onState(false)")); assertTrue(body.contains("releasePlayer()"))
         for(call in listOf("resume()","restart()","selectSegment(0","ensureSegment(0")) assertFalse(body.contains(call))
         assertTrue(text.contains("media.isLooping = false"))
-        assertTrue(text.contains("!playerReady || !playing || finished"))
+        val rate = text.substringAfter("private fun applyRate() {").substringBefore("\n    }")
+        assertTrue(rate.contains("!playerReady || !playing || (finished && incorrectFeedback == null)"))
+        assertEquals("The guide and page must share the sole native player factory", 1,
+            Regex("\\bMediaPlayer\\(\\)").findAll(text).count())
         assertTrue(text.contains("playbackGate?.completedNaturally(currentIndex)"))
     }
     @Test fun plusThreeAndRestartAreRealActionsWithRestartAfterRate() {

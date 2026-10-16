@@ -1,8 +1,23 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
+
 /** Feedback is presentation, never a second evaluator. In particular, an incomplete or
  * incorrect multiple selection must not classify its selected (or absent) options. */
 internal object MathPuzzleFeedback {
+    /** Replace only the built-in generic wrong verdict with process guidance, without
+     * changing validators or suppressing a specific, successful or technical message. */
+    fun processMessage(result: MathValidationResult, fallback: String, resolve: () -> String): String =
+        if (result.evaluable && !result.correct && result.uiMessage?.resourceId == R.string.math_ui_incorrect)
+            fallback else resolve()
+
+    /** Only already-visible guidance for this attempt; no verdict, solution or absent choice. */
+    fun incorrectGuidance(hasSelections: Boolean, authored: String, details: List<String>, fallback: String): List<String> =
+        buildList {
+            if (!hasSelections && authored.isNotBlank()) add(authored)
+            addAll(details.filter { it.isNotBlank() })
+        }.ifEmpty { listOf(fallback) }
+
     fun isChoice(response: MathResponseSpec): Boolean = response.type in setOf(
         "math_multiple_choice_single", "math_multiple_choice_multi"
     )

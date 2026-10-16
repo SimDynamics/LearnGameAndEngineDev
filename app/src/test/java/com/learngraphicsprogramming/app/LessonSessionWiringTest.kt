@@ -67,8 +67,13 @@ class LessonSessionWiringTest {
         assertFalse(prefetch.contains("resumeStore.begin("))
         assertFalse(start.contains("resumeStore.begin("))
         assertTrue(start.contains("resumeStore.restore("))
-        assertTrue(controller.contains("if (playing && next == index && player == null)"))
-        assertTrue(controller.contains("if (playing && request.index == index && player == null)"))
+        assertFalse(prefetch.contains("MediaPlayer("))
+        assertFalse(start.contains("MediaPlayer("))
+        val ensure = body(controller, "private fun ensureSegment(")
+        assertTrue(ensure.contains("if (playing && next == (feedback?.index ?: index) && player == null &&"))
+        assertTrue(ensure.contains("((feedback != null) == (incorrectFeedback != null))) preparePlayer(segment, feedback)"))
+        val generated = body(controller, "private fun generated(")
+        assertTrue(generated.contains("if (incorrectFeedback == null && playing && request.index == index && player == null) preparePlayer(segment)"))
     }
 
     @Test fun pauseAndDepartureReleaseResourcesAfterRememberingThePosition() {

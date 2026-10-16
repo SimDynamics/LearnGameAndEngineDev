@@ -32,6 +32,7 @@ internal class NarrationExerciseGate(
         invalidateUnsolved()
     }
     fun restart() { heardThrough = 0 }
+    fun hasExercise(blockIndex: Int): Boolean = gates.any { it.blockIndex == blockIndex }
     private fun invalidateUnsolved() {
         gates.firstOrNull { it.blockIndex !in correct && it.start < heardThrough }?.let {
             heardThrough = it.start

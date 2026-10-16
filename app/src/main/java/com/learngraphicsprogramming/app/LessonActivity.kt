@@ -3863,17 +3863,47 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(view)
     }
 
-    private fun cppIncorrectReview(block: JSONObject, selectedIndex: Int? = null): String {
+    private fun cppIncorrectGuidance(block: JSONObject, selectedIndex: Int? = null): String {
         val fallback = when (block.getString("type")) {
             "multiple_choice" -> R.string.cpp_review_choice
             "fill_code" -> R.string.cpp_review_fill
             "output_prediction" -> R.string.cpp_review_output
             "order_code" -> R.string.cpp_review_order
+            "drag_fill_code" -> R.string.cpp_review_drag
             else -> error("Unsupported C++ feedback type")
         }
-        val prefix = if (block.getString("type") == "order_code")
-            R.string.exercise_wrong_order else R.string.exercise_incorrect
-        return getString(prefix) + "\n" + CppExerciseFeedback.review(block, selectedIndex, getString(fallback))
+        return CppExerciseFeedback.review(block, selectedIndex, getString(fallback))
+    }
+
+    private fun cppIncorrectReview(block: JSONObject, selectedIndex: Int? = null): String {
+        val prefix = when (block.getString("type")) {
+            "order_code" -> R.string.exercise_wrong_order
+            "drag_fill_code" -> R.string.exercise_wrong_blocks
+            else -> R.string.exercise_incorrect
+        }
+        return getString(prefix) + "\n" + cppIncorrectGuidance(block, selectedIndex)
+    }
+
+    /** An explicit wrong submission may speak its safe process guidance once. Rendering
+     * or restoring feedback never enters this path, and success remains behind its gate. */
+    private fun narrateIncorrectAttempt(pageIndex: Int, blockIndex: Int, guidance: List<String>) {
+        if (!::lessonJson.isInitialized || currentPage != pageIndex || isDestroyed || isFinishing) return
+        val settings = NarrationSettingsRepository.get(this)
+        if (!settings.enabled) return
+        if (guidance.none { it.isNotBlank() }) return
+        val controller = narrationController ?: return
+        val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
+            lessonJson, currentPage, settings.language)
+        val selected = NarrationSettingsRepository.forLanguage(this, language)
+        val texts = com.learngraphicsprogramming.app.narration.IncorrectFeedbackNarration.prepare(
+            guidance, language, forKokoro = selected.engine != NarrationEngine.ANDROID)
+        if (texts.isEmpty()) return
+        val script = narrationScript(language)
+        // Bind the real page, including its existing success gates, even when its first
+        // play action is a review. This is silent and never creates a second bookmark.
+        controller.readIncorrectFeedback(texts, language, narrationPageIdentity(), blockIndex,
+            pageTexts = script.texts, feedbackGates = script.gates,
+            correctBlocks = narrationCorrectBlocks())
     }
 
     private fun restoreCppReview(block: JSONObject, state: JSONObject?, answer: Any,
@@ -4550,6 +4580,8 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+
                 result.setTextColor(
                     Color.rgb(
                         240,
@@ -5196,6 +5228,8 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+
                 result.setTextColor(
                     Color.rgb(
                         240,
@@ -5215,6 +5249,7 @@ class LessonActivity : AppCompatActivity() {
     ) {
 
         val exercisePage = currentPage
+        val codeLanguage = CodeExerciseLanguage.order(block)
 
         requiredExercises++
 
@@ -5324,8 +5359,10 @@ class LessonActivity : AppCompatActivity() {
         val languageLabel =
             TextView(this)
 
-        languageLabel.text =
-            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
+        languageLabel.text = getString(R.string.lesson_code_heading, getString(
+            if (codeLanguage == CodeExerciseLanguage.Language.CMAKE) R.string.lesson_cmake_label
+            else R.string.lesson_cpp_label))
+        languageLabel.tag = "order_code_language_$blockIndex"
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -6372,6 +6409,8 @@ class LessonActivity : AppCompatActivity() {
 
                 result.text =
                     incorrectReview
+
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
 
                 result.setTextColor(
                     Color.rgb(
@@ -9262,6 +9301,7 @@ class LessonActivity : AppCompatActivity() {
             val renderer = MathPuzzleRenderer(
                 this, currentRouteId, currentLessonId, puzzlePage, blockIndex, block,
                 onTextReady = { view, role -> updatePuzzleText(view, blockIndex, role) },
+                onIncorrectAttempt = { guidance -> narrateIncorrectAttempt(puzzlePage, blockIndex, guidance) },
                 attemptEvaluation = { identity, evaluate ->
                     evaluateExerciseAttempt(puzzlePage, blockIndex, identity,
                         evaluation = evaluate,
@@ -10049,6 +10089,14 @@ class LessonActivity : AppCompatActivity() {
         checkButton.isEnabled =
             false
 
+        val result = exerciseFeedbackText(blockIndex).apply {
+            tag = "drag_fill_feedback_$blockIndex"
+        }
+
+        fun currentSlotsAnswer() = org.json.JSONArray(slots.map { slot ->
+            if (slot.childCount == 0) -1 else (slot.getChildAt(0) as TextView).tag as Int
+        })
+
         fun updateDragCheckButton() {
 
             val hasAnyBlock =
@@ -10063,35 +10111,11 @@ class LessonActivity : AppCompatActivity() {
 
         fun saveDragState(
             correct: Boolean =
-                answeredCorrectly
+                answeredCorrectly,
+            reviewed: Boolean = false
         ) {
-
-            val slotsJson =
-                org.json.JSONArray()
-
-            for (
-            slot in slots
-            ) {
-
-                if (
-                    slot.childCount == 0
-                ) {
-
-                    slotsJson.put(
-                        -1
-                    )
-
-                } else {
-
-                    val token =
-                        slot.getChildAt(0)
-                                as TextView
-
-                    slotsJson.put(
-                        token.tag as Int
-                    )
-                }
-            }
+            val slotsJson = currentSlotsAnswer()
+            if (!correct && !reviewed) result.text = ""
 
             val state =
                 JSONObject()
@@ -10105,6 +10129,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (reviewed && !correct) CppExerciseFeedback.recordIncorrect(state, slotsJson)
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -11378,9 +11404,6 @@ class LessonActivity : AppCompatActivity() {
             checkButton
         )
 
-        val result =
-            exerciseFeedbackText(blockIndex)
-
         result.textSize =
             18f
 
@@ -11501,8 +11524,9 @@ class LessonActivity : AppCompatActivity() {
             checkButton.text =
                 getString(R.string.exercise_correct)
 
-            result.text =
-                getString(R.string.lesson_correct_feedback)
+            val explanation = CppExerciseFeedback.dragSuccessExplanation(block)
+            result.text = if (explanation.isBlank()) getString(R.string.lesson_correct_feedback)
+                else getString(R.string.lesson_correct_explanation, explanation)
 
             result.setTextColor(
                 Color.rgb(
@@ -11525,6 +11549,8 @@ class LessonActivity : AppCompatActivity() {
                 )
             }
         }
+
+        restoreCppReview(block, savedState, currentSlotsAnswer(), result)
 
         checkButton.setOnClickListener {
 
@@ -11552,8 +11578,12 @@ class LessonActivity : AppCompatActivity() {
             }
 
             val actual = slots.map { (it.getChildAt(0) as TextView).text.toString() }
+            var incorrectReview = ""
+            var successExplanation = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
                 evaluation = {
+                    incorrectReview = cppIncorrectReview(block)
+                    successExplanation = CppExerciseFeedback.dragSuccessExplanation(block)
                     val correctOrder = block.getJSONArray("correctOrder")
                     require(actual.isNotEmpty() && actual.size == correctOrder.length()) {
                         "Invalid fill configuration"
@@ -11567,13 +11597,13 @@ class LessonActivity : AppCompatActivity() {
                 }, verdict = { it }) ?: return@setOnClickListener
 
             saveDragState(
-                correct
+                correct, reviewed = true
             )
 
             if (correct) {
 
-                result.text =
-                    getString(R.string.lesson_correct_feedback)
+                result.text = if (successExplanation.isBlank()) getString(R.string.lesson_correct_feedback)
+                    else getString(R.string.lesson_correct_explanation, successExplanation)
 
                 result.setTextColor(
                     Color.rgb(
@@ -11617,8 +11647,9 @@ class LessonActivity : AppCompatActivity() {
 
             } else {
 
-                result.text =
-                    getString(R.string.exercise_wrong_blocks)
+                result.text = incorrectReview
+
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
 
                 result.setTextColor(
                     Color.rgb(
@@ -13710,6 +13741,8 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block, selectedIndex)))
+
                 result.setTextColor(
                     Color.rgb(
                         240,
@@ -14580,6 +14613,10 @@ class LessonActivity : AppCompatActivity() {
                     !savedCorrect
 
 
+        val inlineResult = exerciseFeedbackText(blockIndex)
+        fun currentInlineAnswers() = org.json.JSONArray(inputs.map { it.text.toString() })
+        fun inlineIncorrectReview() = getString(R.string.exercise_wrong_spacing) + "\n" + getString(R.string.cpp_review_fill)
+
         for (
         input in inputs
         ) {
@@ -14606,6 +14643,9 @@ class LessonActivity : AppCompatActivity() {
                     override fun afterTextChanged(
                         s: Editable?
                     ) {
+
+                        inlineResult.text = ""
+                        saveCppReviewDraft(exercisePage, blockIndex, "answers", currentInlineAnswers())
 
                         updateResetButton()
 
@@ -14829,8 +14869,7 @@ class LessonActivity : AppCompatActivity() {
             checkButton
         )
 
-        val result =
-            exerciseFeedbackText(blockIndex)
+        val result = inlineResult
 
         result.textSize =
             18f
@@ -14967,6 +15006,11 @@ class LessonActivity : AppCompatActivity() {
             )
         }
 
+        if (CppExerciseFeedback.wasReviewed(savedState, currentInlineAnswers())) {
+            result.text = inlineIncorrectReview()
+            result.setTextColor(Color.rgb(240, 150, 150))
+        }
+
         checkButton.setOnClickListener {
 
             if (answeredCorrectly) return@setOnClickListener
@@ -15011,6 +15055,8 @@ class LessonActivity : AppCompatActivity() {
                 "correct",
                 correct
             )
+
+            if (!correct) CppExerciseFeedback.recordIncorrect(state, answersJson)
 
             ProgressRepository.saveExerciseState(
                 this,
@@ -15065,8 +15111,9 @@ class LessonActivity : AppCompatActivity() {
 
             } else {
 
-                result.text =
-                    getString(R.string.exercise_wrong_spacing)
+                result.text = inlineIncorrectReview()
+
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(getString(R.string.cpp_review_fill)))
 
                 result.setTextColor(
                     Color.rgb(

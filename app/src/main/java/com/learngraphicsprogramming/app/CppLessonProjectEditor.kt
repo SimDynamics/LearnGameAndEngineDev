@@ -12,6 +12,8 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.learngraphicsprogramming.app.runtime.CppProject
+import com.learngraphicsprogramming.app.runtime.CppProjectHistory
+import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -32,6 +34,8 @@ internal class CppLessonProjectEditor(
     private val indentation = mutableMapOf<String, String>()
     private var selected = ""
     private var switching = false
+    private var historyDialog: CppProjectHistoryDialog? = null
+    private val history by lazy { CppProjectHistory(File(context.filesDir, "cpp_project_history"), draftKey) }
     private val usesCmake = block.optJSONObject("cmake") != null
     val controls = LinearLayout(context).apply {
         tag = "cpp_project_controls"
@@ -127,7 +131,19 @@ internal class CppLessonProjectEditor(
                 }
             }
         })
-        controls.addView(actions)
+        actions.addView(Button(context).apply {
+            tag = "cpp_project_history"
+            text = context.getString(R.string.cpp_history_title)
+            setOnClickListener { openHistory() }
+        })
+        controls.addView(HorizontalScrollView(context).apply { addView(actions) })
+        editor.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) = Unit
+            override fun onViewDetachedFromWindow(view: View) {
+                historyDialog?.dismiss()
+                historyDialog = null
+            }
+        })
         compileFile.setOnCheckedChangeListener { _, included ->
             if (!switching) {
                 if (included) sources.add(selected) else sources.remove(selected)
@@ -251,6 +267,38 @@ internal class CppLessonProjectEditor(
         files[selected] = editor.text.toString()
         cursors[selected] = editor.selectionStart
         indentation[selected] = CppIndentationUnits.snapshot(editor.text)
+    }
+
+    private fun historyDraft(): CppProjectHistoryDialog.Draft {
+        captureSelected()
+        save()
+        return CppProjectHistoryDialog.Draft(LinkedHashMap(files), sources.toList(), HashMap(indentation))
+    }
+
+    private fun openHistory() {
+        historyDialog?.dismiss()
+        historyDialog = CppProjectHistoryDialog(context, history, ::historyDraft) { revision, path ->
+            captureSelected()
+            val existed = path in files
+            val recovered = history.restoreFile(path, files, revision)
+            require(recovered.isNotEmpty()) { "Keep at least one editable project file" }
+            CppProject.validateFiles(recovered)
+            // This operation never applies a whole-project snapshot or changes another file.
+            files.clear()
+            files.putAll(recovered)
+            if (path in recovered) {
+                indentation[path] = CppIndentationUnits.snapshot(CppIndentationUnits.loadedText(
+                    recovered.getValue(path), revision.indentation[path]))
+                if (!existed && CppProject.isSourceFile(path) && path in revision.sourceFiles) sources.add(path)
+                selected = path
+            } else {
+                sources.remove(path)
+                cursors.remove(path)
+                indentation.remove(path)
+                if (selected == path) selected = files.keys.first()
+            }
+            showSelected()
+        }.also { it.show() }
     }
 
     private fun save() {

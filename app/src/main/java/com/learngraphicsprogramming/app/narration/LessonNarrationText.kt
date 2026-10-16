@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
 import com.learngraphicsprogramming.app.math.MathPuzzleTypes
+import com.learngraphicsprogramming.app.CodeExerciseLanguage
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -61,7 +62,9 @@ object LessonNarrationText {
                 // Its absence from the JSON is NOT a reason to skip reading it.
                 append(output, visibleInstruction(type))
                 // Templates, source code, expected output and solutions remain on screen.
-                output.add(localized("Ejercicio de código", "Code exercise in", "Exercice de code") + " ${codeLanguage(block.string("language"))}.")
+                val language = if (type == "order_code") CodeExerciseLanguage.order(block).contentName
+                    else block.string("language")
+                output.add(localized("Ejercicio de código", "Code exercise in", "Exercice de code") + " ${codeLanguage(language)}.")
             }
             "math_puzzle" -> {
                 append(output, block.string("prompt").ifBlank { block.string("question") }, block.mode())
@@ -214,6 +217,7 @@ object LessonNarrationText {
 
     private fun codeLanguage(value: String): String = when (value.lowercase()) {
         "", "cpp", "c++" -> localized("C más más", "C plus plus", "C plus plus")
+        "cmake" -> "CMake"
         else -> value
     }
 

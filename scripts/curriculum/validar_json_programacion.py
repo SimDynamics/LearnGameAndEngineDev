@@ -19,15 +19,15 @@ FIELDS = {
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
     "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison", "reviewFeedback"},
     "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison", "reviewFeedback"},
-    "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation", "reviewFeedback"},
-    "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
+    "order_code": {"type", "id", "question", "language", "fragments", "correctOrder", "explanation", "reviewFeedback"},
+    "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder", "explanation", "reviewFeedback"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
     "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake"}
-REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code"}
+REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
 # Precisiones revisadas de consigna; todos los demás campos del ejercicio,
@@ -433,10 +433,22 @@ def validate_review_feedback_contract(block, where):
 
 
 def without_review_feedback(block):
-    """Exclude only the newly optional presentation field on its four supported types."""
+    """Exclude only the optional review field on its supported exercise types."""
     if block.get("type") not in REVIEW_FEEDBACK_TYPES or "reviewFeedback" not in block:
         return block
     return {key: value for key, value in block.items() if key != "reviewFeedback"}
+
+
+def validate_code_presentation_contract(block, where):
+    """Optional presentation does not evaluate a response or infer its solution."""
+    if block.get("type") == "order_code" and "language" in block:
+        language = block["language"]
+        require(isinstance(language, str) and language.strip().lower() in {"cpp", "c++", "cmake"},
+                where, "language de order_code debe ser cpp, c++ o cmake")
+    if block.get("type") == "drag_fill_code" and "explanation" in block:
+        explanation = block["explanation"]
+        require(isinstance(explanation, str) and bool(explanation.strip()),
+                where, "explanation de drag_fill_code debe ser texto no vacío reservado al acierto")
 
 
 def validate_answer_contract(block, where):
@@ -687,6 +699,7 @@ def main():
                     continue
                 require(set(block) <= FIELDS[kind], where, "campo ajeno al contrato comprobado")
                 validate_review_feedback_contract(block, where)
+                validate_code_presentation_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where)
                 if kind in {"heading", "paragraph", "note"}:

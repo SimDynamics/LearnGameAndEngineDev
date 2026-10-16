@@ -25,10 +25,14 @@ object CppExerciseFeedback {
                 val texts = List(reviews.length()) { index -> text(reviews.opt(index)) }
                 if (selectedIndex != null && selectedIndex in texts.indices) texts[selectedIndex] else fallback
             }
-            "fill_code", "output_prediction", "order_code" -> text(value)
+            "fill_code", "output_prediction", "order_code", "drag_fill_code" -> text(value)
             else -> throw IllegalArgumentException("Review feedback is not supported by this exercise type")
         }
     }
+
+    /** The optional drag explanation belongs only to successful feedback, never to a hint. */
+    fun dragSuccessExplanation(block: JSONObject): String =
+        if (block.has("explanation")) text(block.get("explanation")) else ""
 
     /** Reuse the existing typed answer identity; this is not a content fingerprint or attempt ledger. */
     fun recordIncorrect(state: JSONObject, answer: Any): JSONObject {
