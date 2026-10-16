@@ -15,6 +15,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -44,6 +45,7 @@ class CppPrototypeActivity : AppCompatActivity() {
     private var selectedCompiler = CppCompilerVariant.DEFAULT
     private var updatingCompilerSelection = false
     private var clang21FeatureState: Clang21FeatureDelivery.State? = null
+    private var compilerSettingsDialog: AlertDialog? = null
     private var cppKeyboardVisible = false
     private lateinit var editorViewport: CppEditorViewportController
     private var fullscreen = false
@@ -488,6 +490,8 @@ class CppPrototypeActivity : AppCompatActivity() {
      * libraries may back an external clang process.
      */
     private fun setupClang21FeaturePanel() {
+        binding.clangCompilerSettingsHost.visibility = View.GONE
+        binding.clangCompilerMenuButton.setOnClickListener { showCompilerSettings() }
         binding.clangCompilerSelectorSection.visibility = View.VISIBLE
         binding.clang23RadioButton.setText(
             if (BuildConfig.LGP_CLANG23_ENABLED) R.string.clang_compiler_23
@@ -558,6 +562,38 @@ class CppPrototypeActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** Reuse the existing radio group and installer controls, including their live state. */
+    private fun showCompilerSettings() {
+        // onDismiss is queued: its original host must return home before reopening.
+        if (compilerSettingsDialog != null || isFinishing || isDestroyed) return
+        updateCompilerAvailability()
+        val host = binding.clangCompilerSettingsHost
+        val home = host.parent as? ViewGroup ?: return
+        val index = home.indexOfChild(host)
+        val homeLayout = host.layoutParams
+        home.removeView(host)
+        host.visibility = View.VISIBLE
+        val scroll = ScrollView(this).apply {
+            addView(host, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setView(scroll)
+            .setPositiveButton(android.R.string.ok, null)
+            .create()
+        compilerSettingsDialog = dialog
+        dialog.setOnDismissListener {
+            (host.parent as? ViewGroup)?.removeView(host)
+            host.visibility = View.GONE
+            home.addView(host, index.coerceIn(0, home.childCount), homeLayout)
+            if (compilerSettingsDialog === dialog) compilerSettingsDialog = null
+        }
+        dialog.show()
+        dialog.window?.setBackgroundDrawable(GradientDrawable().apply {
+            setColor(Color.rgb(28, 31, 36))
+            cornerRadius = 12f * resources.displayMetrics.density
+        })
     }
 
     private fun updateClang21FeaturePanel(state: Clang21FeatureDelivery.State) {
@@ -1039,6 +1075,8 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        compilerSettingsDialog?.dismiss()
+        compilerSettingsDialog = null
         if (::editorViewport.isInitialized) editorViewport.dispose()
         clang21FeatureDelivery?.close()
         clang21FeatureDelivery = null

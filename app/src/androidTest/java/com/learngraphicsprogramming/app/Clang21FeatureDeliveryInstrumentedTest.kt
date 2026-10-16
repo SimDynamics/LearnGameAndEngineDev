@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.WindowManager
+import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -74,9 +75,12 @@ class Clang21FeatureDeliveryInstrumentedTest {
     fun downloadPanelAppearsOnlyForFeatureBuilds() {
         ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                val section = activity.findViewById<View>(
+                assertFalse("Compiler settings do not occupy the standalone editor", activity.findViewById<View>(R.id.clangCompilerSelectorSection).isShown)
+                assertTrue(activity.findViewById<View>(R.id.clangCompilerMenuButton).isShown)
+                val settings = openCompilerSettings(activity)
+                val section = settings.findViewById<View>(
                     R.id.clang21FeatureSection
-                )
+                )!!
                 assertEquals(
                     if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED)
                         View.VISIBLE
@@ -90,13 +94,13 @@ class Clang21FeatureDeliveryInstrumentedTest {
                 )
                 assertEquals("Compiler choice remains visible in every APK",
                     View.VISIBLE,
-                    activity.findViewById<View>(R.id.clangCompilerSelectorSection).visibility)
-                val defaultRadio = activity.findViewById<android.widget.RadioButton>(
+                    settings.findViewById<View>(R.id.clangCompilerSelectorSection)!!.visibility)
+                val defaultRadio = settings.findViewById<android.widget.RadioButton>(
                     R.id.clang23RadioButton
-                )
-                val optionalRadio = activity.findViewById<android.widget.RadioButton>(
+                )!!
+                val optionalRadio = settings.findViewById<android.widget.RadioButton>(
                     R.id.clang21RadioButton
-                )
+                )!!
                 assertEquals("The checked row must name the actual default compiler",
                     BuildConfig.LGP_CLANG23_ENABLED, defaultRadio.isChecked)
                 assertEquals(!BuildConfig.LGP_CLANG23_ENABLED, optionalRadio.isChecked)
@@ -109,7 +113,7 @@ class Clang21FeatureDeliveryInstrumentedTest {
                 if (BuildConfig.LGP_CLANG23_ENABLED && !BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) {
                     assertFalse("This APK cannot pretend Clang 21 can be executed", optionalRadio.isEnabled)
                     assertEquals(activity.getString(R.string.clang21_unavailable_in_build),
-                        activity.findViewById<android.widget.TextView>(R.id.clangCompilerAvailability).text.toString())
+                        settings.findViewById<android.widget.TextView>(R.id.clangCompilerAvailability)!!.text.toString())
                 }
                 if (optionalRadio.isEnabled) {
                     optionalRadio.performClick()
@@ -119,6 +123,11 @@ class Clang21FeatureDeliveryInstrumentedTest {
                         assertTrue("The user must be able to return to Clang 23", defaultRadio.isChecked)
                     }
                 }
+                settings.dismiss()
+                activity.findViewById<View>(R.id.clangCompilerMenuButton).performClick()
+                val closing = CppPrototypeActivity::class.java.getDeclaredField("compilerSettingsDialog")
+                    .apply { isAccessible = true }.get(activity) as AlertDialog
+                assertFalse("A rapid second tap cannot steal the host before the old onDismiss returns it", closing.isShowing)
             }
         }
     }
@@ -220,10 +229,12 @@ class Clang21FeatureDeliveryInstrumentedTest {
                     assertEquals("An unavailable choice must not launch a different compiler", output,
                         activity.findViewById<android.widget.TextView>(R.id.outputText).text.toString())
                     assertUnavailableChoice(activity)
-                    activity.findViewById<android.widget.RadioButton>(R.id.clang23RadioButton).apply {
+                    val settings = openCompilerSettings(activity)
+                    settings.findViewById<android.widget.RadioButton>(R.id.clang23RadioButton)!!.apply {
                         performClick()
                         assertTrue("Returning to Clang 23 requires an explicit user choice", isChecked)
                     }
+                    settings.dismiss()
                 }
             } finally {
                 scenario.onActivity { it.requestedOrientation = originalOrientation }
@@ -260,32 +271,43 @@ class Clang21FeatureDeliveryInstrumentedTest {
     }
 
     @Test
-    fun compilerSelectorAppearsAfterCompilationResults() {
+    fun compilerSelectorAppearsOnlyAfterAnExplicitStandaloneToolbarAction() {
         ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val run = activity.findViewById<View>(R.id.runButton)
                 val output = activity.findViewById<View>(R.id.outputText)
-                val selector = activity.findViewById<View>(R.id.clangCompilerSelectorSection)
-                val feature = activity.findViewById<View>(R.id.clang21FeatureSection)
+                val host = activity.findViewById<View>(R.id.clangCompilerSettingsHost)
+                val button = activity.findViewById<View>(R.id.clangCompilerMenuButton)
                 val parent = output.parent as android.view.ViewGroup
 
                 assertTrue("Run button and output must share a container", run.parent === parent)
-                assertTrue("Compiler selector must share the output container", selector.parent === parent)
-                assertTrue("Download panel must share the output container", feature.parent === parent)
                 assertTrue(
                     "The compilation output must remain below the Run button",
                     parent.indexOfChild(run) < parent.indexOfChild(output)
                 )
-                assertTrue(
-                    "Compiler selection must appear below the result box",
-                    parent.indexOfChild(output) < parent.indexOfChild(selector)
-                )
-                assertTrue(
-                    "Optional module download controls must follow compiler selection",
-                    parent.indexOfChild(selector) < parent.indexOfChild(feature)
-                )
+                assertEquals("Advanced compiler controls occupy no normal-page space", View.GONE, host.visibility)
+                assertTrue("The explicit compiler action belongs to the code toolbar", button.parent === activity.findViewById<View>(R.id.codeHeader))
+                val settings = openCompilerSettings(activity)
+                assertTrue(settings.findViewById<View>(R.id.clangCompilerSelectorSection)!!.isShown)
+                assertEquals(if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) View.VISIBLE else View.GONE,
+                    settings.findViewById<View>(R.id.clang21FeatureSection)!!.visibility)
+                settings.dismiss()
+            }
+            // DialogInterface delivers onDismiss through its main-thread handler.
+            // Inspect the restored Activity after that existing lifecycle callback.
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertEquals("Closing settings restores the compact standalone page", View.GONE,
+                    activity.findViewById<View>(R.id.clangCompilerSettingsHost).visibility)
+                openCompilerSettings(activity).dismiss()
             }
         }
+    }
+
+    private fun openCompilerSettings(activity: CppPrototypeActivity): AlertDialog {
+        activity.findViewById<View>(R.id.clangCompilerMenuButton).performClick()
+        return (CppPrototypeActivity::class.java.getDeclaredField("compilerSettingsDialog").apply { isAccessible = true }
+            .get(activity) as AlertDialog).also { assertTrue(it.isShowing) }
     }
 
     @Test

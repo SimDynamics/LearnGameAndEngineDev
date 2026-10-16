@@ -6357,10 +6357,13 @@ class LessonActivity : AppCompatActivity() {
         var projectControls: View? = null
         val inputLabel = TextView(this).apply {
             text = getString(R.string.cpp_prepared_input)
+            setTextColor(Color.rgb(174, 180, 190))
             setPadding(0, dp(16), 0, dp(4))
         }
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
+            setTextColor(Color.rgb(230, 237, 243))
+            setHintTextColor(Color.rgb(174, 180, 190))
             contentDescription = getString(R.string.cpp_prepared_input)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                 android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
@@ -7100,7 +7103,10 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
         }
-        lessonContent.addView(compilerSelector)
+        // Preserve the saved choice and existing provider without exposing an
+        // irrelevant control. No current curricular lab requests version changes.
+        compilerSelector.visibility = View.GONE
+        header.addView(compilerSelector)
 
         /*
          * BOTÓN COMPILAR.
@@ -7175,79 +7181,37 @@ class LessonActivity : AppCompatActivity() {
             statusText
         )
 
-        /*
-         * CONSOLA.
-         */
-        val outputText =
-            TextView(this)
-        outputText.tag = "cpp_compilation_output"
-
-        outputText.typeface =
-            Typeface.MONOSPACE
-
-        outputText.textSize =
-            18f
-
-        outputText.setTextColor(
-            Color.rgb(
-                121,
-                226,
-                157
-            )
-        )
-
-        outputText.setBackgroundColor(
-            Color.rgb(
-                5,
-                6,
-                7
-            )
-        )
-
-        outputText.setPadding(
-            dp(16),
-            dp(16),
-            dp(16),
-            dp(16)
-        )
-
-        outputText.minHeight =
-            dp(120)
-
-        outputText.setTextIsSelectable(
-            true
-        )
-
-        fun addOutputLabel(title: Int) {
-            lessonContent.addView(TextView(this).apply {
-                text = getString(title)
-                setPadding(0, dp(8), 0, dp(4))
-            })
+        // One visible console; all original channels stay independently available.
+        val console = CppConsoleView(this)
+        val outputText = console.diagnostics
+        val programOutput = console.stdout
+        val programError = console.stderr
+        lessonContent.addView(console)
+        makeCodeCardFullWidth(console, extendInPortrait = false)
+        fun offerCompilerRecovery() {
+            // A preserved choice may outlive its optional installation. Recovery
+            // stays explicit and does not add a permanent selector to this lab.
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.clang_compiler_selector_title)
+                .setMessage(R.string.clang21_selected_unavailable)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.cpp_compiler_use_default) { _, _ -> compilerSelector.setSelection(0) }
+                .show()
         }
-        addOutputLabel(R.string.cpp_build_diagnostics)
-        lessonContent.addView(outputText)
-        makeCodeCardFullWidth(outputText, extendInPortrait = false)
-        fun addProgramOutput(title: Int, viewTag: String): TextView {
-            addOutputLabel(title)
-            return TextView(this).apply {
-                tag = viewTag
-                typeface = Typeface.MONOSPACE
-                textSize = 18f
-                setTextColor(Color.rgb(121, 226, 157))
-                setBackgroundColor(Color.rgb(5, 6, 7))
-                setPadding(dp(16), dp(16), dp(16), dp(16))
-                minHeight = dp(48)
-                setTextIsSelectable(true)
-                lessonContent.addView(this)
-                makeCodeCardFullWidth(this, extendInPortrait = false)
-            }
-        }
-        val programOutput = addProgramOutput(R.string.cpp_program_stdout, "cpp_stdout")
-        val programError = addProgramOutput(R.string.cpp_program_stderr, "cpp_stderr")
         if (cmakeConfiguration != null) {
             cmakeLab = CppCmakeLabController(this, cmakeConfiguration, draftKey, requireNotNull(projectEditor),
                 sourceCode, { compilerVariants[compilerSelector.selectedItemPosition] }, lessonContent,
-                inputLabel, runButton, statusText, outputText, programOutput, programError, standardInput)
+                inputLabel, runButton, statusText, outputText, programOutput, programError, standardInput) { result ->
+                console.present(when {
+                    result.execution == null -> CppLabPresentationPolicy.Channel.DIAGNOSTICS
+                    result.exitCode != 0 -> CppLabPresentationPolicy.Channel.STDERR
+                    else -> CppLabPresentationPolicy.Channel.STDOUT
+                })
+                if (result.exitCode != 0 && compilerVariants[compilerSelector.selectedItemPosition] ==
+                    CppCompilerVariant.OPTIONAL_CLANG_21 && !CppCompiler.isOptionalClang21Available(this)) {
+                    offerCompilerRecovery()
+                }
+            }
         }
 
         /*
@@ -7664,6 +7628,7 @@ class LessonActivity : AppCompatActivity() {
             standardInput.setText(initialStandardInput)
             programOutput.text = ""
             programError.text = ""
+            console.present()
 
             if (projectEditor != null) projectEditor.reset() else sourceCode.setText(initialCode)
             cmakeLab?.reset()
@@ -7768,6 +7733,7 @@ class LessonActivity : AppCompatActivity() {
             outputText.text = ""
             programOutput.text = ""
             programError.text = ""
+            console.present()
 
             val source =
                 sourceCode.text.toString()
@@ -7776,6 +7742,7 @@ class LessonActivity : AppCompatActivity() {
             if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21 &&
                 !CppCompiler.isOptionalClang21Available(this)) {
                 statusText.text = getString(R.string.clang21_selected_unavailable)
+                offerCompilerRecovery()
                 return@setOnClickListener
             }
             val projectSnapshot = runCatching { projectEditor?.project() }
@@ -7853,6 +7820,11 @@ class LessonActivity : AppCompatActivity() {
                             }.trimEnd()
                         programOutput.text = execution?.stdout.orEmpty()
                         programError.text = execution?.stderr.orEmpty()
+                        console.present(when {
+                            execution == null -> CppLabPresentationPolicy.Channel.DIAGNOSTICS
+                            execution.exitCode != 0 -> CppLabPresentationPolicy.Channel.STDERR
+                            else -> CppLabPresentationPolicy.Channel.STDOUT
+                        })
                     }
 
                     result.onFailure { error ->
@@ -7862,6 +7834,7 @@ class LessonActivity : AppCompatActivity() {
 
                         android.util.Log.w("LessonCompiler", "Could not compile or run the source", error)
                         outputText.text = getString(R.string.exercise_execution_failed)
+                        console.present(CppLabPresentationPolicy.Channel.DIAGNOSTICS)
                     }
                 }
             }.start()

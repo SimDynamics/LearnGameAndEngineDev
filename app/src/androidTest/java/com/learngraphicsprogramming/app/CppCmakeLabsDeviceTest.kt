@@ -63,7 +63,7 @@ class CppCmakeLabsDeviceTest {
     private var screenWakeLock: PowerManager.WakeLock? = null
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
-            if (activity is LessonActivity && activity.packageName == QA_PACKAGE)
+            if (activity is LessonActivity && activity.packageName in QA_PACKAGES)
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         override fun onActivityStarted(activity: Activity) = Unit
@@ -75,8 +75,8 @@ class CppCmakeLabsDeviceTest {
     }
 
     @Before fun requireQaAndPreserveAllStateBeforeAnyWrite() {
-        assertEquals("Never target the student's normal application", QA_PACKAGE, context.packageName)
-        assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
+        assertTrue("Never target the student's normal application", context.packageName in QA_PACKAGES)
+        assertEquals(context.packageName, BuildConfig.APPLICATION_ID)
         val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         assertTrue("Wake the device before native acceptance checks", power.isInteractive)
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
@@ -90,7 +90,7 @@ class CppCmakeLabsDeviceTest {
         }
         preserved = true
         @Suppress("DEPRECATION")
-        val lock = power.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE, "$QA_PACKAGE:CmakeQa")
+        val lock = power.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE, "${context.packageName}:CmakeQa")
         screenWakeLock = lock
         lock.acquire(1_200_000L)
         (context.applicationContext as Application).registerActivityLifecycleCallbacks(screenGuard)
@@ -103,7 +103,7 @@ class CppCmakeLabsDeviceTest {
     }
 
     @After fun restoreEveryQaPreferenceIncludingDraftsAndProgress() {
-        if (context.packageName != QA_PACKAGE || BuildConfig.APPLICATION_ID != QA_PACKAGE || !preserved) return
+        if (context.packageName !in QA_PACKAGES || BuildConfig.APPLICATION_ID != context.packageName || !preserved) return
         try {
             instrumentation.waitForIdleSync()
             (preferenceFiles() + preferences.keys).forEach { name ->
@@ -1044,7 +1044,7 @@ class CppCmakeLabsDeviceTest {
         val metadataFile = File(evidenceDirectory(), "$name.json")
         val metadata = JSONObject(metadataFile.readText())
         scenario.onActivity { activity ->
-            val diagnostic = tagged(activity, "cpp_compilation_output") as TextView
+            val diagnostic = evidenceTarget(activity, "cpp_compilation_output") as TextView
             val visible = Rect()
             assertTrue("The first native diagnostic segment is visible below the full status", diagnostic.getGlobalVisibleRect(visible))
             val rootOrigin = IntArray(2)
@@ -1080,7 +1080,7 @@ class CppCmakeLabsDeviceTest {
         scenario.onActivity { activity ->
             hideIme(activity)
             activity.currentFocus?.clearFocus()
-            val target = tagged(activity, tag)
+            val target = evidenceTarget(activity, tag)
             val bounds = Rect()
             target.getDrawingRect(bounds)
             val scroll = activity.findViewById<ScrollView>(R.id.lessonScroll)
@@ -1097,7 +1097,7 @@ class CppCmakeLabsDeviceTest {
         try {
             while (SystemClock.uptimeMillis() < deadline) {
                 scenario.onActivity { activity ->
-                    val target = tagged(activity, tag)
+                    val target = evidenceTarget(activity, tag)
                     assertTrue("The evidence target has real Android window focus", target.hasWindowFocus())
                     assertTrue(target.getGlobalVisibleRect(rect))
                     assertEquals("The entire evidence target width is visible", target.width, rect.width())
@@ -1123,7 +1123,8 @@ class CppCmakeLabsDeviceTest {
                 assertTrue(requireNotNull(current).compress(Bitmap.CompressFormat.PNG, 100, it))
             }
             val metadata = resultMetadata(result).put("lessonId", fixture.id).put("authoredBlockSha256", sha(fixture.block.toString()))
-                .put("targetTag", tag).put("boundsCoordinateSpace", "displayPixels")
+                .put("targetTag", tag).put("visibleTargetTag", if (tag in RAW_CONSOLE_TAGS) "cpp_console_display" else tag)
+                .put("boundsCoordinateSpace", "displayPixels")
                 .put("nativeBounds", JSONArray(listOf(rect.left, rect.top, rect.right, rect.bottom)))
                 .put("stableConsecutiveFrames", consecutive).put("sampledFrames", samples).put("samplingIntervalMillis", 250)
             scenario.onActivity { activity -> metadata.put("status", text(activity, "cpp_status"))
@@ -1155,6 +1156,21 @@ class CppCmakeLabsDeviceTest {
             metadata.put("preservedGeneratedFiles", nativeFiles)
             saveMetadata(name, metadata)
         } finally { previousCrop?.recycle(); current?.recycle() }
+    }
+
+    /** Raw channel providers stay GONE; screenshots use the one real displayed console. */
+    private fun evidenceTarget(activity: LessonActivity, tag: String): View {
+        val channel = when (tag) {
+            "cpp_compilation_output" -> CppLabPresentationPolicy.Channel.DIAGNOSTICS
+            "cpp_stdout" -> CppLabPresentationPolicy.Channel.STDOUT
+            "cpp_stderr" -> CppLabPresentationPolicy.Channel.STDERR
+            else -> return tagged(activity, tag)
+        }
+        val console = descendants(content(activity)).filterIsInstance<CppConsoleView>().single()
+        console.selectChannel(channel)
+        assertEquals("Raw channel remains available without occupying another output pane", View.GONE, tagged(activity, tag).visibility)
+        assertEquals((tagged(activity, tag) as TextView).text.toString(), console.display.text.toString())
+        return console.display
     }
     private fun resultMetadata(result: CppCmakeResult) = JSONObject().put("phase", result.phase.name)
         .put("exitCode", result.exitCode).put("timedOut", result.timedOut).put("stdout", result.stdout).put("stderr", result.stderr)
@@ -1199,7 +1215,8 @@ class CppCmakeLabsDeviceTest {
         .filter { it.name.endsWith(".xml") }.map { it.name.removeSuffix(".xml") }.toSet()
 
     companion object {
-        private const val QA_PACKAGE = "com.learngraphicsprogramming.app.curricularqa"
+        private val QA_PACKAGES = setOf("com.learngraphicsprogramming.app.curricularqa", "com.learngraphicsprogramming.app.realdownloadsqa")
+        private val RAW_CONSOLE_TAGS = setOf("cpp_compilation_output", "cpp_stdout", "cpp_stderr")
         private const val ROUTE = "programming"
         private const val ATTEMPTS = "attempt_reserve_seconds_test"
         private const val SOURCE_LESSON = "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida"

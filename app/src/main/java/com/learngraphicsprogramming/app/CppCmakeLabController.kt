@@ -34,7 +34,8 @@ internal class CppCmakeLabController(
     private val diagnostics: TextView,
     private val stdout: TextView,
     private val stderr: TextView,
-    private val standardInput: EditText
+    private val standardInput: EditText,
+    private val onResultDisplayed: (CppCmakeResult) -> Unit = {}
 ) {
     init {
         require(config.keys().asSequence().all { it in setOf("target", "options", "buildType") })
@@ -256,6 +257,7 @@ internal class CppCmakeLabController(
         }.trimEnd()
         stdout.text = result.execution?.stdout.orEmpty()
         stderr.text = result.execution?.stderr.orEmpty()
+        onResultDisplayed(result)
     }
 
     private fun clean(value: String) = value.replace(engine.workspace.absolutePath + "/project/", "")

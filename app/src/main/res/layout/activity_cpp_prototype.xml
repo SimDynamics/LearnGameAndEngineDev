@@ -88,6 +88,25 @@
                     android:paddingBottom="8dp"
                     android:drawableStart="@drawable/ic_code_reset" />
 
+                <TextView
+                    android:id="@+id/clangCompilerMenuButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="64dp"
+                    android:minHeight="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/clang_compiler_selector_title"
+                    android:drawableEnd="@android:drawable/arrow_down_float"
+                    android:drawablePadding="2dp"
+                    android:gravity="center"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/cpp_compiler_compact"
+                    android:textColor="#E1E4EB"
+                    android:textSize="13sp" />
+
                 <View
                     android:layout_width="0dp"
                     android:layout_height="1dp"
@@ -256,7 +275,16 @@
             android:textIsSelectable="true"
             android:textSize="18sp" />
 
-        <!-- Compiler choice follows the result panel, before optional download controls. -->
+        <!-- The same settings views move into the Clang dialog when requested.
+             Keeping their hidden home preserves IDs and native hierarchy restoration. -->
+        <LinearLayout
+            android:id="@+id/clangCompilerSettingsHost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
         <LinearLayout
             android:id="@+id/clangCompilerSelectorSection"
             android:layout_width="match_parent"
@@ -383,6 +411,8 @@
                     android:textAllCaps="false"
                     android:visibility="gone" />
             </LinearLayout>
+        </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>
