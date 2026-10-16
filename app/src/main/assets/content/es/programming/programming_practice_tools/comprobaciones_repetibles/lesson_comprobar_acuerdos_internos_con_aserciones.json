@@ -1,0 +1,217 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones",
+  "title": "Comprobar acuerdos internos con aserciones (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar durante la ejecución una condición que debería cumplirse"
+        },
+        {
+          "type": "paragraph",
+          "text": "En C++ 1 utilizaste static_assert para comprobar condiciones constantes durante la compilación. Recuperaremos esa distinción al introducir assert: cuando está habilitada, esta aserción comprueba su condición durante la ejecución, con los valores que el programa tiene en ese momento. Si la condición es verdadera, continúa; si es falsa, informa del incumplimiento y provoca una terminación anormal. No produce un bool para que el llamador decida qué hacer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una aserción permite hacer visible una contradicción con un acuerdo interno: algo que el programa suponía que debía cumplirse en ese punto. La fuente recomienda estas comprobaciones para detectar incumplimientos inesperados y distingue esa interrupción del tratamiento que permite recuperarse de datos rechazados (Kernighan & Pike, 1999, pp. 141–142). Su utilidad depende de elegir una condición pertinente y de interpretar qué comprobó realmente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_ejecucion_y_compilacion",
+          "question": "Un programa se construyó correctamente. Durante su ejecución llega a una aserción habilitada cuya condición resulta falsa. ¿Qué consecuencia corresponde a assert?",
+          "options": [
+            "El resultado de la construcción pasa a ser un error de compilación, como si fallara static_assert.",
+            "La ejecución se interrumpe de forma anormal tras informar del incumplimiento de la condición.",
+            "La expresión devuelve false y el programa continúa hasta que el llamador compruebe ese bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "La condición se comprobó al ejecutar una construcción ya obtenida. Una aserción habilitada que falla provoca la interrupción; no devuelve al llamador un estado de rechazo recuperable.",
+          "reviewFeedback": [
+            "Distingue en qué momento se obtuvieron los valores de esta condición y en qué etapa se produjo el incumplimiento.",
+            "Relaciona la consecuencia con el punto de ejecución en que la condición interna dejó de cumplirse.",
+            "Revisa si esta comprobación proporciona al llamador una alternativa de tratamiento o interrumpe la ejecución."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rechazo recuperable y una contradicción interna tienen otros papeles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el cliente de cajas: intentar_cajas recibe cualquier int, rechaza cantidades fuera de 0 a 20 y conserva el destino cuando devuelve false. El cliente explica el rechazo y puede continuar con la petición siguiente. Una cantidad de -1 puede aparecer como dato rechazado sin contradecir ese funcionamiento. La comprobación normal debe permanecer para cumplir ese acuerdo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro del cálculo, después de aceptar una cantidad, podemos comprobar una propiedad distinta: las plazas de las cajas calculadas deben cubrir esas piezas. Si una cantidad válida de cinco piezas produce sólo una caja de cuatro plazas, hay una contradicción en el cálculo que queremos detectar. La persona que proporcionó cinco no incumplió el intervalo admitido. El diagnóstico interno debe ayudarnos a localizar esa contradicción, en vez de atribuirla a un dato que sí aceptamos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_rechazo_que_debe_permanecer",
+          "question": "El cliente debe informar de una cantidad fuera de 0..20 y seguir con las peticiones posteriores. ¿Cómo se relaciona esa obligación con añadir una aserción interna al cálculo?",
+          "options": [
+            "Puede sustituir el rechazo por una aserción de intervalo, porque comparar los mismos límites conserva la misma política.",
+            "Puede retirar la decisión de aceptación si añade un mensaje en el cálculo, porque informar conserva el tratamiento del lote.",
+            "Debe conservar el rechazo normal; la aserción tiene otro propósito y no sustituye la continuación prometida al cliente."
+          ],
+          "correctIndex": 2,
+          "explanation": "El acuerdo externo incluye cómo rechazar y continuar, además de qué valores admite. Una comprobación que puede interrumpir no equivale a devolver false y permitir procesar la siguiente petición. La condición interna observa otro requisito después de aceptar los datos.",
+          "reviewFeedback": [
+            "Compara las consecuencias de ambas comprobaciones, además de la relación numérica que escriben.",
+            "Distingue presentar un mensaje de decidir si se calcula y si el lote puede continuar según el acuerdo.",
+            "Relaciona cada comprobación con el acuerdo externo o la propiedad interna que necesita conservar."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una condición interna que se comprueba al ejecutar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <cassert> proporciona la macro assert. Escribe assert(condicion);, sin std:: delante: aquí no estás llamando a una función de ese espacio de nombres. La condición debe representar lo que esperas que ya sea cierto. En el ejemplo sólo observa cajas, piezas_por_caja y piezas; el cálculo y el return permanecen fuera de la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El cálculo inicial está alterado deliberadamente para que puedas estudiar un incumplimiento seguro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, sigue por separado las peticiones -1 y 5 de la entrada preparada. Anota cuál se rechaza sin llamar al cálculo, qué capacidad obtiene la otra y si la condición interna será verdadera. Recupera el límite del cliente: como máximo ocho enteros completos representables, seguidos del final normal de la entrada. Sólo 0..20 llega al cálculo, el divisor es cuatro y los productos de esta comprobación caben en int. Conserva ese dominio durante los tres estados del laboratorio."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta primero este estado con la aserción habilitada. Conserva por separado la salida normal, el diagnóstico y la información de terminación que muestre el laboratorio. Localiza el mensaje público de la primera petición y la expresión del incumplimiento interno de la segunda. No predigas una frase literal del diagnóstico de assert: el formato depende de la implementación. Una interrupción anormal no significa que main haya alcanzado su return con un valor elegido allí. Si tu configuración no llega a mostrar el incumplimiento, revisa si la aserción estaba habilitada antes de interpretar el cálculo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Desactivar la comprobación conserva el defecto del cálculo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el segundo estado, añade exactamente #define NDEBUG al principio de este archivo, antes de incluir <cassert>. Esta línea define un nombre del preprocesador; no crea una variable bool. En este uso mínimo, definirlo antes de esa inclusión hace que assert no evalúe su condición. La cabecera permite desactivar estas comprobaciones (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El nombre de una configuración, como Debug o Release, no sustituye comprobar cómo se construyó tu programa. No cambies ajustes de la aplicación: aquí la diferencia queda visible en el archivo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar el segundo estado con la misma entrada, predice si cambió el cálculo y qué comprobación sigue rechazando -1. Después registra otra vez ambos canales y la terminación. La petición válida de cinco llega ahora a mostrar Cajas=1, aunque esa capacidad sea insuficiente. El diagnóstico público de -1 permanece y el return de main devuelve 1 porque hubo ese rechazo recuperable. Haber retirado la comprobación interna no reparó la operación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_desactivada_y_codigo_final",
+          "question": "En el segundo estado se muestra Cajas=1, se informa del rechazo de -1 y main devuelve 1. ¿Qué explica esa combinación?",
+          "options": [
+            "La aserción desactivada devuelve 1 para informar del incumplimiento y main conserva ese resultado.",
+            "El cliente sigue rechazando -1 y marca ese rechazo en su retorno; el cálculo defectuoso continúa sin la comprobación interna.",
+            "El diagnóstico público de -1 demuestra que la condición de assert continuó ejecutándose con otro formato."
+          ],
+          "correctIndex": 1,
+          "explanation": "El retorno normal procede de hubo_rechazos en main. El if de intentar_cajas sigue activo; desactivar assert no elimina esa decisión ni corrige la fórmula de cajas_para.",
+          "reviewFeedback": [
+            "Localiza qué expresión del archivo determina el retorno de main y qué aporta realmente assert cuando está desactivada.",
+            "Relaciona el tratamiento de la primera petición con el valor que devuelve main al terminar el lote.",
+            "Identifica qué función emite ese diagnóstico público y qué condición provoca su llamada."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar el cálculo y precisar qué garantiza una condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el tercer estado retira la línea educativa #define NDEBUG y recupera la fórmula de cajas ya desarrollada. Conserva el valor local y la aserción que observa su capacidad. Antes de ejecutar, predice el resultado de cinco y distingue el retorno normal que todavía corresponde al rechazo de -1. Copia esta referencia en el mismo laboratorio y conserva la entrada -1 5."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta los tres estados con tus predicciones: cálculo alterado con comprobación, mismo cálculo sin comprobación y cálculo reparado con comprobación. En el último se muestra Cajas=2 y la aserción permite continuar. El mensaje de rechazo y el retorno normal 1 permanecen por la primera petición. Explica qué evidencia atribuyes a cada mecanismo. Una aserción verdadera sólo acredita esa condición para la ejecución que llegó a ella; aquí comprueba cobertura, sin demostrar por sí sola que elegimos la menor cantidad de cajas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_cobertura_no_demuestra_minimalidad",
+          "question": "Otro cálculo devuelve cinco cajas para cinco piezas. Cumple cajas * piezas_por_caja >= piezas. ¿Esa condición basta para acreditar que devolvió la menor cantidad de cajas necesaria?",
+          "options": [
+            "Sí: cumplir una propiedad interna del resultado acredita todas las obligaciones de ese cálculo.",
+            "Sí, siempre que el programa termine normalmente; esa terminación completa la comprobación de minimalidad.",
+            "No: la capacidad puede cubrir las piezas y aun así utilizar cajas de más; falta contrastar la obligación de minimalidad."
+          ],
+          "correctIndex": 2,
+          "explanation": "La condición compara plazas disponibles con piezas. Un resultado mayor de lo necesario también puede satisfacer esa desigualdad. Elegir una condición útil no convierte esa observación parcial en una comprobación de todo el contrato.",
+          "reviewFeedback": [
+            "Separa la propiedad escrita en esa desigualdad de las otras obligaciones que exige calcular una cantidad mínima.",
+            "Revisa qué información añade terminar normalmente sobre la cantidad de cajas elegida.",
+            "Relaciona el alcance de la desigualdad con la obligación específica que todavía necesita evidencia."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El trabajo necesario debe sobrevivir a la comprobación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera registrar_visita y su contador inicializado, estudiados al observar sin repetir operaciones. Esta vez la llamada necesaria quedó dentro de assert. Analiza este programa por lectura, sin añadir otra ejecución al laboratorio: si la comprobación está habilitada, la llamada registra una visita; si se desactiva antes de incluir <cassert>, la condición no se evalúa y la visita no se registra. El problema no es que C++ prohíba escribir una llamada ahí, sino que hicimos depender una operación requerida de una comprobación que puede desaparecer."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    assert(registrar_visita() > 0);\n    std::cout << \"Visitas=\" << numero_visita << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_conservar_operacion_necesaria",
+          "question": "El programa debe registrar exactamente una visita tanto con assert habilitada como desactivada. ¿Qué reorganización conserva ese trabajo y permite comprobar el resultado cuando corresponda?",
+          "options": [
+            "Ejecutar registrar_visita una vez fuera de assert, conservar su resultado y comprobar después ese valor sin repetir la operación.",
+            "Mantener registrar_visita dentro de assert y cambiar la comparación a >= 1 para que exprese el registro requerido.",
+            "Mantener la llamada dentro de assert y añadir otra llamada después para compensar cuando se desactive la comprobación."
+          ],
+          "correctIndex": 0,
+          "explanation": "La operación requerida se ejecuta fuera de la condición. La aserción puede observar su resultado sin decidir si se registra la visita. Añadir llamadas de compensación también modificaría la historia cuando la comprobación estuviera habilitada.",
+          "reviewFeedback": [
+            "Comprueba por separado cuántas veces se registra la visita en cada configuración y qué parte sólo observa un valor.",
+            "Revisa si cambiar una comparación hace que su llamada llegue a evaluarse cuando la comprobación está desactivada.",
+            "Cuenta las llamadas que se ejecutarían con la comprobación habilitada y verifica la cantidad requerida."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const int primera = registrar_visita();\nassert(primera > 0);\nstd::cout << \"Visitas=\" << numero_visita << \";Primera=\" << primera << \"\\n\";\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al revisar tus propios programas, elige una condición interna y explica tres cosas en los comentarios de tu borrador: qué acuerdo comprueba, qué operaciones deben ejecutarse aunque se desactive y qué tratamiento recuperable debe conservar el cliente. Después vuelve al caso de cajas y justifica, sin cambiar la entrada, por qué el retorno normal 1 de los estados segundo y tercero tiene una causa distinta de la interrupción del primero. Si no puedes atribuir la diferencia a una condición concreta y al flujo que la alcanza, recupera el recorrido antes de dar por explicada la prueba."
+        }
+      ]
+    }
+  ]
+}

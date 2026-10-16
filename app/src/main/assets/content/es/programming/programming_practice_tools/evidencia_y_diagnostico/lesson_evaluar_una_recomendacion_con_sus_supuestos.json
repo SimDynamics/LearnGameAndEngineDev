@@ -1,0 +1,206 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__evaluar_una_recomendacion_con_sus_supuestos",
+  "title": "Evaluar una recomendación con sus supuestos (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir un consejo en una pregunta que puedas investigar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Encuentras esta nota técnica, creada expresamente para la actividad: «Si un vector sólo se lee mediante su parámetro, pásalo por const&: evitas la copia y el programa conserva sus resultados». Es una recomendación original de este ejercicio; no es una cita de los libros. Antes de aceptarla como regla, formula qué necesitas saber para aplicarla al programa que vas a mantener."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya conoces copias, referencias y const de C++ 1. Aquí los recuperarás para aprender a examinar una recomendación: identificar qué afirma, buscar información pertinente, contrastar sus supuestos y reformular lo que puedas sostener. El aprendizaje nuevo es esa revisión del conocimiento que incorporarás a tu trabajo. La fuente relaciona aprender continuamente con analizar críticamente lo que lees y preguntar por su contexto y condiciones de uso (Thomas & Hunt, 2020, pp. 14–18)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una pregunta concreta en tus propias palabras antes de continuar; podrás conservarla en un comentario del laboratorio. Distingue una duda sobre qué significa const& de otra sobre si este cambio conserva el comportamiento de un programa particular. Un consejo breve puede dejar sin expresar información que necesitas para responder a la segunda."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_pregunta_de_aprendizaje",
+          "question": "Quieres saber si puedes aplicar esa nota a un programa que debe conservar sus resultados. ¿Qué pregunta dirige la investigación hacia ese propósito?",
+          "options": [
+            "¿En qué condiciones el cambio de parámetro conserva los resultados de este programa?",
+            "¿Cuántas formas distintas de escribir una referencia aparecen en los ejemplos que encuentro?",
+            "¿Qué recomendación sobre el paso de vectores se repite con más frecuencia entre otras personas?"
+          ],
+          "correctIndex": 0,
+          "explanation": "La pregunta relaciona el consejo con la obligación que debes conservar y busca sus condiciones. Contar formas o recomendaciones puede reunir información, pero no decide por sí solo cuándo se mantiene ese comportamiento.",
+          "reviewFeedback": [
+            "Relaciona la pregunta con la propiedad del programa que necesitas conservar al aplicar el consejo.",
+            "Revisa qué aprenderías al contar escrituras y si eso responde a la condición de conservación que te preocupa.",
+            "Distingue cuántas personas repiten una recomendación de qué información permite justificarla en tu programa."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar una fuente para responder una duda, no para cerrar todas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera lo que ya practicaste: un parámetro vector por valor crea su propio objeto a partir del argumento; una referencia const permite leer el objeto referido sin modificarlo por esa vía. Esa restricción no vuelve constantes todos los otros accesos al objeto ni convierte la referencia en una copia de su estado. Son hechos que ayudan a precisar la pregunta, no una conclusión automática sobre cualquier función."
+        },
+        {
+          "type": "paragraph",
+          "text": "La lectura sobre interfaces distingue conservar información mediante copias de compartir acceso a información que otra operación puede cambiar (Kernighan & Pike, 1999, p. 107). Ésa es la contribución que utilizamos aquí. La página no contiene nuestra nota sobre pasar este vector por const& ni verifica los programas originales de esta actividad. Examina qué parte de tu duda responde una fuente y qué parte necesita información del caso."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_alcance_de_la_fuente",
+          "question": "La lectura pertinente aclara la diferencia entre una copia y un acceso compartido. ¿Qué permite hacer con la nota técnica de la actividad?",
+          "options": [
+            "Aceptar ya que todos los resultados se conservan, porque la lectura explica la diferencia de parámetros.",
+            "Comprender esa diferencia y seguir investigando cómo se utilizan los objetos en el programa concreto.",
+            "Descartarla sin examinar su contenido, porque un libro publicado en 1999 no puede aportar nada a este caso."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una fuente puede resolver una parte de la pregunta sin establecer la conclusión para un programa que no examina. Su fecha ayuda a situarla; ni su antigüedad la invalida automáticamente ni una explicación pertinente acredita todas las recomendaciones que relacionemos con ella.",
+          "reviewFeedback": [
+            "Revisa si la lectura examinó el comportamiento de este programa o si aclaró una propiedad que todavía debes aplicar a sus usos.",
+            "Distingue qué información aclaró la lectura de qué condiciones del programa necesitas examinar a continuación.",
+            "Considera qué afirmación concreta estás evaluando y qué parte del contenido podría seguir siendo pertinente para responderla."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Anota qué supones sobre la función y sus llamadas antes de probar el cambio. No necesitas una secuencia única de pasos: puedes volver a la lectura cuando el código plantee otra duda. Lo importante es distinguir lo que ya comprendías, lo que sólo suponías y lo que la nueva evidencia permite aprender."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: preguntar qué contexto necesita el consejo"
+        },
+        {
+          "type": "paragraph",
+          "text": "registrar_y_medir recibe dos vectores, añade 7 mediante el segundo parámetro y devuelve un tamaño consultado mediante el primero. La versión inicial recibe antes por valor. La nota propone cambiar sólo ese primer parámetro por const std::vector<int>&. Antes de hacerlo, escribe tu pregunta y predice si la recomendación conservará las observaciones de main. Examina qué relaciones entre los argumentos permite la firma; no hay una condición que exija objetos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas están separadas de la salida para observar después los resultados y los tamaños. Cada ejecución comienza con sus objetos nuevos. Se usan vectores de cero a tres enteros al entrar; el único push_back deja como máximo cuatro elementos. Por ese límite, static_cast<int>(antes.size()) representa exactamente el tamaño conocido. Las referencias del programa se vinculan a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Recuperas estas operaciones de C++ 1."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    // Escribe tu pregunta y tus predicciones antes de ejecutar.\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero predice y ejecuta la versión por valor, conservando su salida completa. Cambia después únicamente la declaración del primer parámetro a const std::vector<int>& antes; deja iguales el cuerpo, las llamadas y los datos. Predice otra vez antes de construir y ejecutar. Compara por separado Separados, Entrada, Compartido y los dos campos Actual. Ambas ejecuciones terminan con código 0; ese código no compara las dos versiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe junto a tu pregunta qué observación apoya o limita la nota y qué información del código la explica. Distingue los dos objetos entrada y destino del uso de compartido en las dos posiciones. No basta copiar una salida: relaciona el resultado con cuándo se consulta el objeto que nombra cada parámetro. Intenta el contraste y una conclusión provisional antes de consultar la referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: un ejemplo favorable no decide todos los usos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia aplica exactamente el cambio de parámetro sugerido. No añade otra modificación. La primera comparación mantiene dos objetos independientes; la segunda permite que ambos parámetros se refieran al mismo vector del llamador. Son contextos diferentes de uso de la misma función."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    // Escribe tu pregunta y tus predicciones antes de ejecutar.\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La versión por valor escribe Separados=2;Entrada=2;Actual=2 y después Compartido=2;Actual=3. Con el parámetro por referencia, la primera línea es igual, pero la segunda escribe Compartido=3;Actual=3. Todas las líneas terminan con salto; stderr queda vacío y ambos códigos son 0. En la segunda llamada del main, la copia inicial conservaba tamaño 2; la referencia permite consultar el vector que ya tiene tres elementos después del añadido. La restricción const sólo afecta a las modificaciones mediante antes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_alcance_del_contraste",
+          "question": "Las versiones coinciden con entrada y destino separados, pero difieren al utilizar compartido en ambas posiciones. ¿Qué conclusión está respaldada?",
+          "options": [
+            "La nota vale sin más condiciones: la comparación con dos objetos distintos confirmó la regla general.",
+            "Debe evitarse const& en cualquier función que reciba un vector, porque aquí cambió un resultado.",
+            "La conservación de resultados necesita condiciones sobre el uso de los objetos; la nota no las expresaba."
+          ],
+          "correctIndex": 2,
+          "explanation": "El caso compartido contradice la afirmación sin condiciones. El caso separado también importa: muestra que no corresponde convertir el hallazgo en una prohibición general de const&. Aprender de la comparación exige acotar la recomendación.",
+          "reviewFeedback": [
+            "Revisa si una observación favorable permite ignorar la otra situación que también admite esta firma.",
+            "Distingue un contexto que limita la recomendación de una conclusión sobre todas las funciones y todos sus usos.",
+            "Relaciona la conclusión con las condiciones que cambiaron entre ambas situaciones y con las dos observaciones."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reformular lo aprendido con una condición pertinente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a la pregunta que escribiste. Una reformulación provisional puede advertir que reemplazar una copia por una referencia requiere revisar si alguna vía modifica el objeto antes de la consulta que debía conservar su resultado. En esta función, actual puede hacerlo cuando comparte objeto con antes. La revisión no se decide sólo por el tamaño del vector o por la presencia de const en una firma."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    const int cantidad_anterior = static_cast<int>(antes.size());\n    actual.push_back(7);\n    return cantidad_anterior;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_momento_de_la_consulta",
+          "question": "Lee esta variante de la función para el mismo vector compartido inicialmente {2,5}. ¿Qué detalle permite devolver el tamaño previo aunque actual añada un elemento?",
+          "options": [
+            "La firma contiene const&, de modo que el cuerpo ya no puede cambiar ningún objeto recibido.",
+            "El vector compartido pasa a ser una copia independiente cuando se declara cantidad_anterior.",
+            "El tamaño se copia a un int antes del añadido; el retorno utiliza esa cantidad conservada."
+          ],
+          "correctIndex": 2,
+          "explanation": "cantidad_anterior guarda el número 2 antes de modificar el vector. El añadido sigue produciéndose y el vector compartido queda con tres elementos. Lo conservado es ese entero, no una copia del vector. Esta lectura evita concluir que compartir objeto sea siempre incompatible con devolver el tamaño previo.",
+          "reviewFeedback": [
+            "Identifica por qué parámetro se realiza el añadido y qué acceso restringe realmente const.",
+            "Comprueba el tipo del nuevo objeto y distingue guardar una cantidad de copiar la colección completa.",
+            "Sigue el momento en que se obtiene la cantidad y qué objeto se utiliza después para producir el retorno."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento se lee en el contexto del laboratorio y permite razonar sobre el momento de la consulta. La diferencia entre parámetro por valor y referencia describe el modelo de objetos del ejemplo; las salidas contrastadas no miden una mejora de tiempo. Registra una conclusión que responda a tu pregunta, sin extenderla a afirmaciones que esta práctica no examinó."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar una pregunta mejor y recuperar el criterio después"
+        },
+        {
+          "type": "paragraph",
+          "text": "Junto a tu pregunta inicial, escribe ahora qué comprendiste, qué evidencia cambió o acotó tu idea y qué duda sigue abierta. Una nota útil podría señalar el papel del otro parámetro y el momento de la consulta, en vez de sustituir la regla inicial por «siempre» o «nunca». Mantén separadas las palabras de la recomendación, el aporte de la fuente y las observaciones de tu programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión, intenta explicar el contraste antes de abrir sus resultados. Prepara para ti otra pregunta sobre el mismo consejo, por ejemplo qué ocurriría con un vector compartido vacío. Deduce el tamaño que conserva cada versión y qué sería necesario observar para revisar esa predicción. Puedes recuperar el mismo laboratorio con los datos que decidiste, manteniendo explícito el límite de tres elementos al entrar."
+        },
+        {
+          "type": "note",
+          "text": "Incorporar conocimiento a tu trabajo requiere poder volver a justificarlo. Elegir una pregunta concreta, consultar información pertinente y revisar su alcance puede ocurrir en varios recorridos, con vueltas entre lectura y código. El propósito es mejorar lo que comprendes y puedes aplicar, sin convertir ese trabajo en una lista de lecturas o de pasos cumplidos."
+        }
+      ]
+    }
+  ]
+}
