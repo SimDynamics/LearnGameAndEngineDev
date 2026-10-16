@@ -5,6 +5,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CppTabColumnsTest {
+    @Test fun onlyAnExplicitTabCompletesThePartialCellAndNeverConsumesAFullManualCell() {
+        for (count in 0..15) {
+            val source = " ".repeat(count)
+            val start = CppTabColumns.completedUnitStart(source, source.length)
+            assertEquals(count - count % 4, start)
+            val completed = source.substring(0, start) + '\t'
+            assertEquals((count / 4 + 1) * 4, CppTabColumns.tabs(completed).last().target)
+            assertEquals("Backspace leaves complete cells typed manually", " ".repeat(count - count % 4),
+                completed.dropLast(1))
+        }
+    }
+
+    @Test fun completionRespectsPreviousTabsLinesTextAndUtf16SelectionOffsets() {
+        listOf(
+            "\t\t\t " to 3, "a  " to 1, "ab " to 2, "abc" to 3,
+            "abcd " to 4, "\r\n   " to 2, "\n\t   " to 2,
+            "\ud83d\ude00  " to 2, "\ud83d\ude00abc " to 5, "" to 0
+        ).forEach { (source, expected) ->
+            assertEquals(source, expected, CppTabColumns.completedUnitStart(source, source.length))
+        }
+        assertEquals(0, CppTabColumns.completedUnitStart("   selected tail", 3))
+        assertEquals(4, CppTabColumns.completedUnitStart("    selected tail", 4))
+    }
     @Test fun tabsAdvanceToTheNextFourColumnBoundaryRatherThanAddingFourSpaces() {
         assertEquals(listOf(4, 8, 12, 16), CppTabColumns.tabs("\t\t\t \t").map { it.target })
         assertEquals(listOf(4), CppTabColumns.tabs("abc\t").map { it.target })

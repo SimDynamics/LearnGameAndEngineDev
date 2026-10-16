@@ -24,6 +24,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.ceil
 import org.junit.Assert.assertEquals
@@ -39,6 +42,7 @@ import org.junit.runner.RunWith
 class CppEditorViewportInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val application = instrumentation.targetContext.applicationContext as Application
+    private val savedStates = mutableListOf<Bundle>()
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
             if (activity is CppPrototypeActivity) activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -47,11 +51,14 @@ class CppEditorViewportInstrumentedTest {
         override fun onActivityResumed(activity: Activity) = Unit
         override fun onActivityPaused(activity: Activity) = Unit
         override fun onActivityStopped(activity: Activity) = Unit
-        override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
+        override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) {
+            if (activity is CppPrototypeActivity) savedStates += Bundle(state)
+        }
         override fun onActivityDestroyed(activity: Activity) = Unit
     }
 
     @Before fun keepOnlyTheTestActivitiesAwake() {
+        savedStates.clear()
         application.registerActivityLifecycleCallbacks(screenGuard)
         for (command in listOf("input keyevent KEYCODE_WAKEUP", "wm dismiss-keyguard")) {
             ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).use { it.readBytes() }
@@ -277,6 +284,15 @@ class CppEditorViewportInstrumentedTest {
             source(activity).scrollX == savedX && source(activity).scrollY == savedY
         }
         scenario.recreate()
+        scenario.onActivity {
+            val saved = savedStates.last()
+            assertEquals("The real lifecycle must save the panned X before restoration", savedX,
+                saved.getInt("cpp_prototype_scroll_x"))
+            assertEquals("The real lifecycle must save the panned Y before restoration", savedY,
+                saved.getInt("cpp_prototype_scroll_y"))
+            assertTrue("Manual-pan cursor suppression belongs to that same saved viewport",
+                saved.getBoolean("cpp_prototype_manual_viewport"))
+        }
         await(scenario, "Recreated editor must restore its actual saved viewport and selection") { activity ->
             val input = source(activity)
             input.showSoftInputOnFocus = false
@@ -288,6 +304,35 @@ class CppEditorViewportInstrumentedTest {
             assertGutterBaselineAlignment(activity)
             assertEquals(savedX, horizontal(activity).progress)
             assertEquals(savedY, vertical(activity).progress)
+            assertTrue(source(activity).suppressCursorAutoScroll)
+        }
+        // A second real layout/insets pass exercises TextView's pre-draw cursor reveal,
+        // rather than accepting a scrollTo value observed before the pending traversal.
+        val drawn = CountDownLatch(1)
+        scenario.onActivity { activity ->
+            source(activity).doOnPreDraw { drawn.countDown() }
+            source(activity).requestLayout()
+            ViewCompat.requestApplyInsets(activity.findViewById(android.R.id.content))
+        }
+        assertTrue("The restored editor must actually traverse another native pre-draw",
+            drawn.await(5, TimeUnit.SECONDS))
+        instrumentation.waitForIdleSync()
+        scenario.onActivity { activity ->
+            assertEquals(savedX, source(activity).scrollX)
+            assertEquals(savedY, source(activity).scrollY)
+            assertSelection(activity, 4, 12)
+            assertTrue(fullscreenFits(activity))
+            assertFullscreenPanelsHidden(activity)
+            assertGutterBaselineAlignment(activity)
+        }
+        scenario.recreate()
+        await(scenario, "A second recreation must retain the same viewport, selection and fullscreen") { activity ->
+            val input = source(activity)
+            input.showSoftInputOnFocus = false
+            fullscreenFits(activity) && input.text.toString() == longSource &&
+                input.selectionStart == 4 && input.selectionEnd == 12 &&
+                input.scrollX == savedX && input.scrollY == savedY &&
+                horizontal(activity).progress == savedX && vertical(activity).progress == savedY
         }
     }
 

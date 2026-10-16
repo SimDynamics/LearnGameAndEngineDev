@@ -3,6 +3,7 @@ package com.learngraphicsprogramming.app.math
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.RectF
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.InputDevice
@@ -129,27 +130,59 @@ class MathFullscreenGesturesDeviceTest {
     @Test fun interactiveDiagramKeepsTapOwnershipWhilePinchStillZooms() {
         lateinit var graph: MathCartesianView
         lateinit var holder: ViewGroup
-        lateinit var wrapped: View
+        var pointChanges = 0
         ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
             scenario.onActivity { activity ->
-                graph = MathCartesianView(activity, JSONObject(), Color.GREEN, true)
-                wrapped = show(activity, graph)
+                graph = MathCartesianView(activity,
+                    JSONObject("""{"points":[{"x":-2,"y":1,"draggable":true}]}"""), Color.GREEN, true)
+                graph.onPointsChanged = { pointChanges++ }
+                show(activity, graph)
                 holder = graph.parent as ViewGroup
             }
             instrumentation.waitForIdleSync()
             scenario.onActivity {
+                assertTrue(graph.editable)
+                assertTrue(graph.canMovePoint(0))
+                assertFalse(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(graph))
+                // Locate an actual draggable point using the drawing's measured plot.
+                // Send the complete one-finger gesture through its real inline parent.
+                val plot = MathCartesianView::class.java.getDeclaredField("plot")
+                    .apply { isAccessible = true }.get(graph) as RectF
+                assertTrue("La gráfica editable debe tener geometría medida", plot.width() > 0 && plot.height() > 0)
+                fun x(value: Double) = graph.left + plot.left + ((value + 5) / 10 * plot.width()).toFloat()
+                fun y(value: Double) = graph.top + plot.bottom - ((value + 5) / 10 * plot.height()).toFloat()
+                drag(holder, x(-2.0), y(1.0), x(1.0) - x(-2.0), y(2.0) - y(1.0))
+                assertEquals("Un dedo sigue editando el punto sin ampliar la gráfica",
+                    listOf(MathPoint(1.0, 2.0)), graph.points())
+                assertEquals(1, pointChanges)
+                assertSame(holder, graph.parent)
+            }
+            // Finish the previous synthetic gesture before starting a distinct double tap.
+            SystemClock.sleep(ViewConfiguration.getDoubleTapTimeout().toLong() + 40)
+            scenario.onActivity {
+                // Since abf1c811, editable representations support the same deliberate
+                // double-tap fullscreen action as static ones. Edge-dismiss remains separate.
                 doubleTap(holder)
-                assertSame("Los taps de un diagrama editable no abren fullscreen", holder, graph.parent)
-                descendants(wrapped).single { it.tag == "math_expand_representation" }.performClick()
             }
             instrumentation.waitForIdleSync()
             scenario.onActivity {
+                assertNotSame("El doble toque también amplía una representación editable", holder, graph.parent)
                 val points = graph.points()
                 val viewport = graph.parent as MathZoomViewport
-                pinch(viewport)
-                assertTrue(viewport.zoomScale > 1f)
+                val gesture = pinch(viewport)
+                assertTrue("Pinch amplía el mismo diagrama editable: $gesture", viewport.zoomScale > 1f)
                 assertEquals("El gesto con dos dedos no arrastra puntos", points, graph.points())
+                assertEquals("Pinch no notifica una edición curricular", 1, pointChanges)
+                assertTrue(graph.editable)
+                assertFalse(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(graph))
                 descendants(graph.rootView).single { it.tag == "math_exit_representation" }.performClick()
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity {
+                assertSame("El mismo diagrama vuelve a su contenedor original", holder, graph.parent)
+                assertEquals(listOf(MathPoint(1.0, 2.0)), graph.points())
+                assertEquals(1f, graph.scaleX, 0f)
+                assertTrue(graph.editable)
             }
         }
     }

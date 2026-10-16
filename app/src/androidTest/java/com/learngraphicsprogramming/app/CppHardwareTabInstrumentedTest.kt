@@ -290,20 +290,56 @@ class CppHardwareTabInstrumentedTest {
         }
     }
 
-    @Test fun loadedIndentationUnitsAreRemovedByNativeImeAndHardwareBackwardDeletion() {
+    @Test fun loadedManualIndentationRemainsIndividualForNativeImeAndHardwareDeletion() {
         withWindowEditor { scenario ->
             var connection: InputConnection? = null
             try {
                 scenario.onActivity { activity ->
                     val editor = activity.findViewById<EditText>(R.id.sourceCode)
-                    editor.setText(CppIndentationUnits.loadedText("        x", seedPredefined = true))
+                    editor.setText("        x")
                     editor.setSelection(8)
                     val native = requireNotNull(editor.onCreateInputConnection(EditorInfo()))
                     connection = native
                     assertTrue(native.deleteSurroundingText(1, 0))
                 }
                 instrumentation.waitForIdleSync()
-                assertWindowEditor(scenario, "    x", 4)
+                assertWindowEditor(scenario, "       x", 7)
+                instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+                instrumentation.waitForIdleSync()
+                assertWindowEditor(scenario, "      x", 6)
+            } finally {
+                scenario.onActivity { connection?.closeConnection() }
+            }
+        }
+    }
+
+    @Test fun recreationKeepsTheCompletedTabDistinctFromFourManuallyCommittedSpaces() {
+        withWindowEditor { scenario ->
+            var connection: InputConnection? = null
+            try {
+                scenario.onActivity { activity ->
+                    val editor = activity.findViewById<EditText>(R.id.sourceCode)
+                    editor.setText("   x")
+                    editor.setSelection(3)
+                    CppCodeInputRules.insertTab(editor)
+                    assertEquals("\tx", editor.text.toString())
+                    val native = requireNotNull(editor.onCreateInputConnection(EditorInfo()))
+                    connection = native
+                    assertTrue(native.commitText("    ", 1))
+                }
+                instrumentation.waitForIdleSync()
+                assertWindowEditor(scenario, "\t    x", 5)
+                scenario.onActivity { connection?.closeConnection(); connection = null }
+
+                // The source itself owns the tab; no inferred whitespace metadata.
+                scenario.recreate()
+                focusEditorWithOriginalIme(scenario)
+                assertWindowEditor(scenario, "\t    x", 5)
+                for (manualSpaces in 3 downTo 0) {
+                    instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+                    instrumentation.waitForIdleSync()
+                    assertWindowEditor(scenario, "\t" + " ".repeat(manualSpaces) + "x", 1 + manualSpaces)
+                }
                 instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
                 instrumentation.waitForIdleSync()
                 assertWindowEditor(scenario, "x", 0)
@@ -313,37 +349,33 @@ class CppHardwareTabInstrumentedTest {
         }
     }
 
-    @Test fun recreationKeepsLoadedIndentationDistinctFromFourManuallyCommittedSpaces() {
+    @Test fun hardwareAndFloatingTabCompletePartialCellsAndBackspaceDeletesTheWholeUnit() {
         withWindowEditor { scenario ->
-            var connection: InputConnection? = null
-            try {
-                scenario.onActivity { activity ->
-                    val editor = activity.findViewById<EditText>(R.id.sourceCode)
-                    editor.setText(CppIndentationUnits.loadedText("    x", seedPredefined = true))
-                    editor.setSelection(4)
-                    val native = requireNotNull(editor.onCreateInputConnection(EditorInfo()))
-                    connection = native
-                    assertTrue(native.commitText("    ", 1))
-                }
-                instrumentation.waitForIdleSync()
-                assertWindowEditor(scenario, "        x", 8)
-                scenario.onActivity { connection?.closeConnection(); connection = null }
-
-                // The Activity saves and restores its own Bundle sidecar. The test
-                // never creates or reapplies provenance for the manually entered spaces.
-                scenario.recreate()
-                focusEditorWithOriginalIme(scenario)
-                assertWindowEditor(scenario, "        x", 8)
-                for (manualSpaces in 3 downTo 0) {
+            awaitActivity(scenario, "The actual TAB shortcut is visible") { activity ->
+                val keys = activity.findViewById<LinearLayout>(R.id.programmingKeyboardBarContent)
+                keys.childCount > 0 && keys.getChildAt(0).isShown
+            }
+            for (spaces in 0..3) {
+                for (physical in listOf(true, false)) {
+                    val frame = CountDownLatch(1)
+                    scenario.onActivity { activity ->
+                        activity.findViewById<EditText>(R.id.sourceCode).apply {
+                            setText(" ".repeat(spaces) + "x")
+                            setSelection(spaces)
+                            doOnPreDraw { frame.countDown() }
+                        }
+                    }
+                    assertTrue("The native editor has laid out the partial cell", frame.await(5, TimeUnit.SECONDS))
+                    if (physical) instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_TAB)
+                    else scenario.onActivity { activity ->
+                        assertTrue(activity.findViewById<LinearLayout>(R.id.programmingKeyboardBarContent).getChildAt(0).performClick())
+                    }
+                    instrumentation.waitForIdleSync()
+                    assertWindowEditor(scenario, "\tx", 1)
                     instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
                     instrumentation.waitForIdleSync()
-                    assertWindowEditor(scenario, " ".repeat(4 + manualSpaces) + "x", 4 + manualSpaces)
+                    assertWindowEditor(scenario, "x", 0)
                 }
-                instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
-                instrumentation.waitForIdleSync()
-                assertWindowEditor(scenario, "x", 0)
-            } finally {
-                scenario.onActivity { connection?.closeConnection() }
             }
         }
     }

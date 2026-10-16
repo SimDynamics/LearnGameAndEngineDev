@@ -24,8 +24,9 @@ internal object CppCodeInputRules {
         val editable = input.text ?: return
         val start = minOf(input.selectionStart, input.selectionEnd).coerceIn(0, editable.length)
         val end = maxOf(input.selectionStart, input.selectionEnd).coerceIn(start, editable.length)
-        editable.replace(start, end, KeyboardShortcutSettingsRepository.getTabText())
-        input.setSelection((start + 1).coerceAtMost(editable.length))
+        val unitStart = CppTabColumns.completedUnitStart(editable, start)
+        editable.replace(unitStart, end, KeyboardShortcutSettingsRepository.getTabText())
+        input.setSelection((unitStart + 1).coerceAtMost(editable.length))
     }
 
     fun install(
@@ -73,7 +74,6 @@ internal object CppCodeInputRules {
 
         var previousText =
             ""
-        var predefinedBackspaceStart: Int? = null
 
         /*
          * Algunos teclados insertan automáticamente
@@ -123,10 +123,6 @@ internal object CppCodeInputRules {
                         return
                     }
 
-                    predefinedBackspaceStart = (text as? Editable)?.let {
-                        CppIndentationUnits.beforeEdit(it, start, count, after,
-                            input.selectionStart, input.selectionEnd)
-                    }
                     previousText =
                         text?.toString()
                             .orEmpty()
@@ -157,20 +153,6 @@ internal object CppCodeInputRules {
                         internalChange ||
                         editable == null
                     ) {
-                        return
-                    }
-
-                    // Only a preserved, loaded indentation unit can expand a native
-                    // one-character Backspace. Manual spaces never acquire such a mark.
-                    val unitStart = predefinedBackspaceStart
-                    predefinedBackspaceStart = null
-                    if (unitStart != null && removedCount == 1 && addedCount == 0 &&
-                        unitStart in 0..changeStart && changeStart <= editable.length) {
-                        internalChange = true
-                        try {
-                            editable.delete(unitStart, changeStart)
-                            input.setSelection(unitStart)
-                        } finally { internalChange = false }
                         return
                     }
 
@@ -439,6 +421,21 @@ internal object CppCodeInputRules {
                         }
                     }
 
+                    // Some IMEs commit a TAB instead of returning KEYCODE_TAB.
+                    // Complete the same cell as the physical key/shortcut, including
+                    // replacement of a selection. Bulk source loads are left intact.
+                    if (addedCount == 1 && changeStart in editable.indices && editable[changeStart] == '\t') {
+                        val unitStart = CppTabColumns.completedUnitStart(editable, changeStart)
+                        if (unitStart < changeStart) {
+                            internalChange = true
+                            try {
+                                editable.delete(unitStart, changeStart)
+                                input.setSelection(unitStart + 1)
+                            } finally { internalChange = false }
+                        }
+                        return
+                    }
+
                     /*
                      * Desde aquí, el resto de la lógica
                      * corresponde a una sola tecla escrita.
@@ -506,8 +503,7 @@ internal object CppCodeInputRules {
                                     "{"
                                 )
 
-                        fun inheritedBase() = CppIndentationUnits.inheritedIndentation(editable,
-                            previousLineStart, previousLineStart + baseIndent.length)
+                        fun inheritedBase() = baseIndent
                         val childIndent = SpannableStringBuilder(inheritedBase()).apply {
                             if (opensBlock) append('\t')
                         }

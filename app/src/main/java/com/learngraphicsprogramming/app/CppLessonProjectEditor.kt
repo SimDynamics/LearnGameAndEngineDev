@@ -29,7 +29,6 @@ internal class CppLessonProjectEditor(
     private val files = linkedMapOf<String, String>()
     private val sources = linkedSetOf<String>()
     private val cursors = mutableMapOf<String, Int>()
-    private val indentation = mutableMapOf<String, String>()
     private var selected = ""
     private var switching = false
     private val usesCmake = block.optJSONObject("cmake") != null
@@ -60,9 +59,6 @@ internal class CppLessonProjectEditor(
             CppProject.validateFiles(initialFiles)
         } else CppProject(initialFiles, initialSources)
         files.putAll(initialFiles)
-        initialFiles.forEach { (path, code) ->
-            indentation[path] = CppIndentationUnits.snapshot(CppIndentationUnits.loadedText(code, seedPredefined = true))
-        }
         sources.addAll(initialSources)
         selected = initialFiles.keys.firstOrNull { it == "main.cpp" } ?: initialFiles.keys.first()
         preferences.getString("$draftKey/project", null)?.let { saved ->
@@ -86,13 +82,6 @@ internal class CppLessonProjectEditor(
                 require(restoredSources.all { it in restored && CppProject.isSourceFile(it) })
                 files.clear()
                 files.putAll(restored)
-                val savedIndentation = draft.optJSONObject("indentation")
-                indentation.clear()
-                restored.forEach { (path, code) ->
-                    // A legacy draft can contain manually typed spaces. Never infer provenance.
-                    val savedUnits = savedIndentation?.opt(path) as? String
-                    indentation[path] = CppIndentationUnits.snapshot(CppIndentationUnits.loadedText(code, savedUnits))
-                }
                 sources.clear()
                 sources.addAll(restoredSources)
                 selected = draft.optString("selected").takeIf(files::containsKey) ?: files.keys.first()
@@ -122,7 +111,6 @@ internal class CppLessonProjectEditor(
                     files.remove(selected)
                     sources.remove(selected)
                     cursors.remove(selected)
-                    indentation.remove(selected)
                     selected = files.keys.first()
                     showSelected()
                 }
@@ -141,7 +129,6 @@ internal class CppLessonProjectEditor(
             override fun afterTextChanged(s: Editable?) {
                 if (!switching) {
                     files[selected] = s.toString()
-                    indentation[selected] = CppIndentationUnits.snapshot(s ?: "")
                     save()
                 }
             }
@@ -151,7 +138,7 @@ internal class CppLessonProjectEditor(
 
     private fun showSelected() {
         switching = true
-        editor.setText(CppIndentationUnits.loadedText(files.getValue(selected), indentation[selected]))
+        editor.setText(files.getValue(selected))
         editor.setSelection((cursors[selected] ?: 0).coerceIn(0, editor.length()))
         editor.contentDescription = selected
         compileFile.visibility = if (!usesCmake && CppProject.isSourceFile(selected)) View.VISIBLE else View.GONE
@@ -201,7 +188,6 @@ internal class CppLessonProjectEditor(
                 } else {
                     captureSelected()
                     files[path] = ""
-                    indentation[path] = CppIndentationUnits.snapshot("")
                     if (CppProject.isSourceFile(path)) sources.add(path)
                     selected = path
                     showSelected()
@@ -231,10 +217,6 @@ internal class CppLessonProjectEditor(
     fun reset() {
         files.clear()
         files.putAll(initialFiles)
-        indentation.clear()
-        initialFiles.forEach { (path, code) ->
-            indentation[path] = CppIndentationUnits.snapshot(CppIndentationUnits.loadedText(code, seedPredefined = true))
-        }
         sources.clear()
         sources.addAll(initialSources)
         cursors.clear()
@@ -245,7 +227,6 @@ internal class CppLessonProjectEditor(
     private fun captureSelected() {
         files[selected] = editor.text.toString()
         cursors[selected] = editor.selectionStart
-        indentation[selected] = CppIndentationUnits.snapshot(editor.text)
     }
 
     private fun save() {
@@ -253,7 +234,6 @@ internal class CppLessonProjectEditor(
         files.forEach { (path, code) -> entries.put(JSONObject().put("path", path).put("code", code)) }
         val draft = JSONObject().put("files", entries).put("sources", JSONArray(sources.toList()))
             .put("selected", selected).put("cursors", JSONObject(cursors.toMap()))
-            .put("indentation", JSONObject(indentation.toMap()))
         preferences.edit().putString("$draftKey/project", draft.toString()).apply()
     }
 }

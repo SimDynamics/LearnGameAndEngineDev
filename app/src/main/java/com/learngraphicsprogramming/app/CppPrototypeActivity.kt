@@ -14,6 +14,7 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -79,6 +80,9 @@ class CppPrototypeActivity : AppCompatActivity() {
     private var statusExitCode: Int? = null
     private var rawOutput = ""
     private var compilationTimedOut = false
+    private data class EditorViewportRestore(val x: Int, val y: Int, val manualPan: Boolean)
+    private var pendingEditorViewport: EditorViewportRestore? = null
+    private var viewportRestorePreDraw: ViewTreeObserver.OnPreDrawListener? = null
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -121,9 +125,14 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         } else {
 
-            binding.sourceCode.setText(CppIndentationUnits.loadedText(
-                savedInstanceState.getString(STATE_SOURCE) ?: SAMPLE_SOURCE,
-                savedInstanceState.getString(STATE_INDENTATION)))
+            binding.sourceCode.setText(savedInstanceState.getString(STATE_SOURCE) ?: SAMPLE_SOURCE)
+            val restoredX = savedInstanceState.getInt(STATE_SCROLL_X).coerceAtLeast(0)
+            val restoredY = savedInstanceState.getInt(STATE_SCROLL_Y).coerceAtLeast(0)
+            pendingEditorViewport = EditorViewportRestore(restoredX, restoredY,
+                savedInstanceState.getBoolean(STATE_MANUAL_VIEWPORT, restoredX != 0 || restoredY != 0))
+            // TextView reveals the selection in onPreDraw/onLayout. Keep the saved
+            // viewport authoritative while fullscreen and its final Layout are restored.
+            binding.sourceCode.suppressCursorAutoScroll = true
 
             setStatus(
                 savedInstanceState.getInt(STATE_STATUS, R.string.cpp_runtime_ready),
@@ -230,14 +239,41 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.sourceCode.setSelection(start.coerceIn(0, textLength), end.coerceIn(0, textLength))
             editorViewport.refresh()
             if (savedInstanceState?.getBoolean(STATE_FULLSCREEN) == true) setFullscreen(true, savedInstanceState)
-            binding.sourceCode.post {
-                updateCompilerAvailability()
-                binding.sourceCode.scrollTo(
-                    savedInstanceState?.getInt(STATE_SCROLL_X) ?: 0,
-                    savedInstanceState?.getInt(STATE_SCROLL_Y) ?: 0
-                )
+            updateCompilerAvailability()
+            if (pendingEditorViewport != null) restoreNativeEditorViewport()
+            else binding.sourceCode.scrollTo(0, 0)
+        }
+    }
+
+    private fun restoreNativeEditorViewport() {
+        val restore = pendingEditorViewport ?: return
+        val input = binding.sourceCode
+        val observer = input.viewTreeObserver
+        viewportRestorePreDraw?.let { if (observer.isAlive) observer.removeOnPreDrawListener(it) }
+        val listener = object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                if (isFinishing || isDestroyed) return true
+                if (input.layout == null || input.width <= 0 || input.height <= 0 ||
+                    input.isLayoutRequested || binding.codeEditorBody.isLayoutRequested ||
+                    binding.codeCard.isLayoutRequested || binding.compilerScroll.isLayoutRequested) return true
+                if (fullscreen && (binding.codeCard.height != binding.compilerScroll.height ||
+                        input.height != binding.codeEditorBody.height)) return true
+                editorViewport.updateHorizontalBar()
+                editorViewport.updateVerticalBar()
+                if (input.isLayoutRequested || binding.codeEditorBody.isLayoutRequested) return true
+                input.scrollTo(restore.x.coerceIn(0, binding.editorHorizontalBar.max),
+                    restore.y.coerceIn(0, binding.editorVerticalBar.max))
+                input.suppressCursorAutoScroll = restore.manualPan
+                pendingEditorViewport = null
+                input.viewTreeObserver.takeIf { it.isAlive }?.removeOnPreDrawListener(this)
+                viewportRestorePreDraw = null
+                editorViewport.refresh()
+                return true
             }
         }
+        viewportRestorePreDraw = listener
+        observer.addOnPreDrawListener(listener)
+        input.invalidate()
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -767,7 +803,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private fun resetEditor() {
 
-        binding.sourceCode.setText(CppIndentationUnits.loadedText(SAMPLE_SOURCE, seedPredefined = true))
+        binding.sourceCode.setText(SAMPLE_SOURCE)
 
         /*
          * Colocamos el cursor dentro de main,
@@ -993,8 +1029,6 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.sourceCode.text.toString()
         )
 
-        outState.putString(STATE_INDENTATION, CppIndentationUnits.snapshot(binding.sourceCode.text ?: ""))
-
         outState.putInt(
             STATE_STATUS,
             statusResource
@@ -1018,8 +1052,10 @@ class CppPrototypeActivity : AppCompatActivity() {
         outState.putBoolean(STATE_FULLSCREEN, fullscreen)
         outState.putInt(STATE_SELECTION_START, binding.sourceCode.selectionStart)
         outState.putInt(STATE_SELECTION_END, binding.sourceCode.selectionEnd)
-        outState.putInt(STATE_SCROLL_X, binding.sourceCode.scrollX)
-        outState.putInt(STATE_SCROLL_Y, binding.sourceCode.scrollY)
+        outState.putInt(STATE_SCROLL_X, pendingEditorViewport?.x ?: binding.sourceCode.scrollX)
+        outState.putInt(STATE_SCROLL_Y, pendingEditorViewport?.y ?: binding.sourceCode.scrollY)
+        outState.putBoolean(STATE_MANUAL_VIEWPORT,
+            pendingEditorViewport?.manualPan ?: binding.sourceCode.suppressCursorAutoScroll)
         outState.putInt(STATE_NORMAL_SCREEN_SCROLL, normalScreenScrollY)
         outState.putInt(STATE_NORMAL_BARS, normalSystemBars)
         outState.putInt(STATE_NORMAL_BARS_BEHAVIOR, normalSystemBarsBehavior)
@@ -1031,6 +1067,11 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        if (::binding.isInitialized) viewportRestorePreDraw?.let { listener ->
+            binding.sourceCode.viewTreeObserver.takeIf { it.isAlive }?.removeOnPreDrawListener(listener)
+        }
+        viewportRestorePreDraw = null
+        pendingEditorViewport = null
         compilerSettingsDialog?.dismiss()
         compilerSettingsDialog = null
         if (::editorViewport.isInitialized) editorViewport.dispose()
@@ -1068,7 +1109,6 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private companion object {
 
-        const val STATE_INDENTATION = "cpp_prototype_indentation_units_v1"
         const val STATE_SOURCE =
             "cpp_prototype_source"
 
@@ -1091,6 +1131,7 @@ class CppPrototypeActivity : AppCompatActivity() {
         const val STATE_SELECTION_END = "cpp_prototype_selection_end"
         const val STATE_SCROLL_X = "cpp_prototype_scroll_x"
         const val STATE_SCROLL_Y = "cpp_prototype_scroll_y"
+        const val STATE_MANUAL_VIEWPORT = "cpp_prototype_manual_viewport"
         const val STATE_NORMAL_SCREEN_SCROLL = "cpp_prototype_normal_screen_scroll"
         const val STATE_NORMAL_BARS = "cpp_prototype_normal_bars"
         const val STATE_NORMAL_BARS_BEHAVIOR = "cpp_prototype_normal_bars_behavior"

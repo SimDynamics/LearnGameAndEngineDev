@@ -6865,9 +6865,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
         val restoredSource = labDrafts.getString("$draftKey/source", initialCode) ?: initialCode
-        sourceCode.setText(CppIndentationUnits.loadedText(restoredSource,
-            labDrafts.getString("$draftKey/sourceIndentation", null),
-            seedPredefined = !labDrafts.contains("$draftKey/source")))
+        sourceCode.setText(restoredSource)
         sourceCode.text?.let(CppSyntaxHighlighter::applyTo)
 
         editorBody.addView(
@@ -7069,8 +7067,7 @@ class LessonActivity : AppCompatActivity() {
                 if (text == null) return
                 CppSyntaxHighlighter.applyTo(text)
                 if (!block.has("projectFiles")) {
-                    labDrafts.edit().putString("$draftKey/source", text.toString())
-                        .putString("$draftKey/sourceIndentation", CppIndentationUnits.snapshot(text)).apply()
+                    labDrafts.edit().putString("$draftKey/source", text.toString()).apply()
                 }
             }
         })
@@ -7637,8 +7634,7 @@ class LessonActivity : AppCompatActivity() {
             programError.text = ""
             console.present()
 
-            if (projectEditor != null) projectEditor.reset() else sourceCode.setText(
-                CppIndentationUnits.loadedText(initialCode, seedPredefined = true))
+            if (projectEditor != null) projectEditor.reset() else sourceCode.setText(initialCode)
             cmakeLab?.reset()
 
             val cursorPosition =

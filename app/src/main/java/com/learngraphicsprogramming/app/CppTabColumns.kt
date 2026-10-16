@@ -8,6 +8,35 @@ internal object CppTabColumns {
 
     data class Tab(val offset: Int, val paragraphStart: Int, val column: Int, val target: Int)
 
+    /** Only an explicit TAB can complete the spaces in its current four-column cell.
+     * Complete manual cells and source characters before that cell stay untouched. */
+    fun completedUnitStart(source: CharSequence, offset: Int): Int {
+        require(offset in 0..source.length)
+        var lineStart = offset
+        while (lineStart > 0 && source[lineStart - 1] != '\n') lineStart--
+        var column = 0
+        var cursor = lineStart
+        while (cursor < offset) {
+            when (source[cursor]) {
+                '\t' -> column = (column / WIDTH + 1) * WIDTH
+                '\r' -> Unit
+                else -> {
+                    column++
+                    if (Character.isHighSurrogate(source[cursor]) && cursor + 1 < offset &&
+                        Character.isLowSurrogate(source[cursor + 1])) cursor++
+                }
+            }
+            cursor++
+        }
+        var remaining = column % WIDTH
+        var start = offset
+        while (remaining > 0 && start > lineStart && source[start - 1] == ' ') {
+            start--
+            remaining--
+        }
+        return start
+    }
+
     fun tabs(source: CharSequence): List<Tab> = buildList {
         var start = 0
         var column = 0
