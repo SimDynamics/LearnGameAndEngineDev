@@ -406,6 +406,13 @@ class LessonActivity : AppCompatActivity() {
     private val mathNarrationSources = mutableMapOf<String, MutableMap<Int, () -> JSONObject>>()
     private data class ReadingPresentation(val configuration: String, val script: LessonNarrationScript)
     private val readingPresentations = mutableMapOf<String, ReadingPresentation>()
+    /** Presentation for the controller's one current review, never another reader bookmark. */
+    private data class IncorrectReadingPresentation(
+        val pageIdentity: String, val blockIndex: Int, val script: LessonNarrationScript,
+        val language: NarrationLanguage, val engine: NarrationEngine,
+        var token: Long? = null, var identity: String? = null, var playbackKey: String? = null
+    )
+    private var incorrectReadingPresentation: IncorrectReadingPresentation? = null
     private var relocatingReadingPresentation = false
     private var deferredReadingPresentation = false
     private var readingRenderBlockIndex: Int? = null
@@ -457,7 +464,7 @@ class LessonActivity : AppCompatActivity() {
         readingTextPages[narrationPageIdentity()]?.register(blockIndex, view)
     }
 
-    /** A result keeps its native ink and actions; only narrated success joins reading progress. */
+    /** A result keeps its native ink and actions while the current spoken review follows playback. */
     private fun exerciseFeedbackText(blockIndex: Int): ReadingTextView {
         val identity = narrationPageIdentity()
         var previousText = ""
@@ -491,7 +498,11 @@ class LessonActivity : AppCompatActivity() {
                 currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
                 NarrationSettingsRepository.get(this).language)
         }
-        if (role == MathPuzzleRenderer.TextRole.CORRECT_FEEDBACK) page.register(blockIndex, view, feedback = true)
+        if (role == MathPuzzleRenderer.TextRole.CORRECT_FEEDBACK || role == MathPuzzleRenderer.TextRole.INCORRECT_FEEDBACK) {
+            page.register(blockIndex, view, feedback = true,
+                incorrect = role == MathPuzzleRenderer.TextRole.INCORRECT_FEEDBACK)
+        }
+        bindIncorrectReadingPresentation()
         // Presentation mappings can grow when feedback appears, retaining the same real
         // playback intervals and alignments. This neither restarts nor synthesizes audio.
         narrationScript(NarrationSettingsRepository.get(this).language)
@@ -516,16 +527,50 @@ class LessonActivity : AppCompatActivity() {
 
     private fun readingPlaybackChanged(progress: NarrationPlaybackProgress) {
         if (relocatingReadingPresentation) return
+        if (progress.feedbackToken != null) {
+            val review = incorrectReadingPresentation ?: return
+            if (progress.pageIdentity != review.pageIdentity || progress.feedbackBlockIndex != review.blockIndex ||
+                (review.token != null && review.token != progress.feedbackToken)) return
+            if (progress.phase == com.learngraphicsprogramming.app.narration.NarrationPlaybackPhase.STOPPED) {
+                // Replacing a review may dismiss its old token after the UI has already
+                // supplied the next visible transcript for this same puzzle.
+                if (review.token != progress.feedbackToken) return
+                review.identity?.let(readingProgress::forget)
+                incorrectReadingPresentation = null
+            } else {
+                review.token = progress.feedbackToken
+                review.identity = "${review.pageIdentity}:incorrect:${progress.feedbackToken}"
+                review.playbackKey = progress.playbackKey
+                bindIncorrectReadingPresentation()
+                readingProgress.update(progress.copy(pageIdentity = requireNotNull(review.identity)))
+            }
+            if (::lessonJson.isInitialized && progress.pageIdentity == narrationPageIdentity()) applyReadingPresentation()
+            return
+        }
         readingProgress.update(progress)
         if (::lessonJson.isInitialized && progress.pageIdentity == narrationPageIdentity()) applyReadingPresentation()
+    }
+
+    private fun bindIncorrectReadingPresentation() {
+        val review = incorrectReadingPresentation ?: return
+        val identity = review.identity ?: return
+        val plan = review.script.readingPlan(review.engine) ?: return
+        val parts = if (review.engine == NarrationEngine.ANDROID) NarrationSegments.prepare(review.script.texts, 250)
+            else NarrationSegments.sentences(review.script.texts)
+        readingProgress.bind(identity, plan, review.playbackKey,
+            readingTextPages[review.pageIdentity]?.wordMappings(parts, plan.origins, review.language,
+                incorrectFeedback = true).orEmpty())
     }
 
     private fun applyReadingPresentation() {
         if (!::lessonJson.isInitialized) return
         val identity = narrationPageIdentity()
+        val reviewIdentity = incorrectReadingPresentation?.takeIf { it.pageIdentity == identity }?.identity
         readingTextPages[identity]?.show(readingProgress.states(identity),
-            NarrationSettingsRepository.get(this).enabled, readingProgress.unreadWords(identity),
-            readingProgress.presentationCompletedSegments(identity))
+            NarrationSettingsRepository.get(this).enabled, readingProgress.unreadWords(identity) +
+                (reviewIdentity?.let(readingProgress::unreadWords).orEmpty()),
+            readingProgress.presentationCompletedSegments(identity),
+            reviewIdentity?.let(readingProgress::presentationCompletedSegments).orEmpty())
     }
 
     private fun clearReadingPages() {
@@ -534,6 +579,7 @@ class LessonActivity : AppCompatActivity() {
         mathNarrationSources.clear()
         readingPresentations.clear()
         deferredReadingPresentation = false
+        incorrectReadingPresentation = null
         readingProgress.clear()
         readingRenderBlockIndex = null
     }
@@ -3922,8 +3968,8 @@ class LessonActivity : AppCompatActivity() {
         return getString(prefix) + "\n" + cppIncorrectGuidance(block, selectedIndex)
     }
 
-    /** An explicit wrong submission may speak its safe process guidance once. Rendering
-     * or restoring feedback never enters this path, and success remains behind its gate. */
+    /** An explicit wrong submission starts its visible review. Rendering or restoring
+     * feedback never starts audio, and success remains behind its original gate. */
     private fun narrateIncorrectAttempt(pageIndex: Int, blockIndex: Int, guidance: List<String>) {
         if (!::lessonJson.isInitialized || currentPage != pageIndex || isDestroyed || isFinishing) return
         val settings = NarrationSettingsRepository.get(this)
@@ -3937,6 +3983,11 @@ class LessonActivity : AppCompatActivity() {
             guidance, language, forKokoro = selected.engine != NarrationEngine.ANDROID)
         if (texts.isEmpty()) return
         val script = narrationScript(language)
+        incorrectReadingPresentation?.identity?.let(readingProgress::forget)
+        incorrectReadingPresentation = IncorrectReadingPresentation(narrationPageIdentity(), blockIndex,
+            LessonNarrationScript(texts, emptyList(), List(texts.size) {
+                com.learngraphicsprogramming.app.narration.NarrationTextOrigin(blockIndex, feedback = true)
+            }), language, selected.engine)
         // Bind the real page, including its existing success gates, even when its first
         // play action is a review. This is silent and never creates a second bookmark.
         controller.readIncorrectFeedback(texts, language, narrationPageIdentity(), blockIndex,
@@ -4618,7 +4669,7 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(
@@ -5266,7 +5317,7 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(
@@ -6448,7 +6499,7 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(
@@ -11690,7 +11741,7 @@ class LessonActivity : AppCompatActivity() {
 
                 result.text = incorrectReview
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(
@@ -13782,7 +13833,7 @@ class LessonActivity : AppCompatActivity() {
                 result.text =
                     incorrectReview
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(cppIncorrectGuidance(block, selectedIndex)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(
@@ -15154,7 +15205,7 @@ class LessonActivity : AppCompatActivity() {
 
                 result.text = inlineIncorrectReview()
 
-                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(getString(R.string.cpp_review_fill)))
+                narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 
                 result.setTextColor(
                     Color.rgb(

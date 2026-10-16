@@ -119,7 +119,7 @@ internal object NarrationPuzzleWordMappings {
         return result
     }
 
-    /** Only the app-generated successful-feedback heading differs from the script. */
+    /** Native verdict marks follow their actual words without becoming spoken symbols. */
     private fun feedbackPresentation(displayed: CharSequence, language: NarrationLanguage,
                                      feedback: Boolean): NarrationSourceProjection.Projection {
         val original = NarrationSourceProjection.Projection(displayed.toString(),
@@ -127,6 +127,17 @@ internal object NarrationPuzzleWordMappings {
         val source = original.text
         val ordinary = { original }
         if (!feedback) return ordinary()
+        val iconPrefix = IncorrectFeedbackNarration.verdictIconPrefix(source)
+        if (iconPrefix > 0 && source.length > iconPrefix) {
+            val owners = original.owners.drop(iconPrefix).toMutableList()
+            // The nonspoken verdict mark follows its first real word visually too.
+            owners[0] = ReadingTextRange(0, owners[0].endExclusive)
+            return NarrationSourceProjection.Projection(source.drop(iconPrefix), owners,
+                original.formulas.mapNotNull {
+                    if (it.endExclusive <= iconPrefix) null else ReadingTextRange(
+                        (it.start - iconPrefix).coerceAtLeast(0), it.endExclusive - iconPrefix)
+                })
+        }
         val heading = listOf("✓ Correcto", "✓ Correct", "✓ ¡Correcto!").firstOrNull {
             source == it || source.startsWith("$it\n")
         } ?: return ordinary()

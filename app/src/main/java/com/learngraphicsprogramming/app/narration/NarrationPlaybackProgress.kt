@@ -36,5 +36,8 @@ data class NarrationPlaybackProgress(
     /** Explicit forward control, for visual coverage only; never evidence of heard feedback. */
     val manualForwardFrom: NarrationGatePosition? = null,
     /** The explicit visual skip reaches the measured end of the final source recording. */
-    val manualForwardToEnd: Boolean = false
+    val manualForwardToEnd: Boolean = false,
+    /** The current visible incorrect review shares the player, but never the page's gate. */
+    val feedbackToken: Long? = null,
+    val feedbackBlockIndex: Int? = null
 )

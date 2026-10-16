@@ -341,10 +341,8 @@ class WrongFeedbackNarrationDeviceTest {
                 val guide = requireNotNull(field<Any?>(reader, "incorrectFeedback"))
                 firstGuideToken = field(guide, "token")
                 val parts = field<List<Any>>(guide, "parts")
-                val expectedGuidance = if (fixture.mathematical)
-                    listOf(activity.getString(R.string.math_ui_response, 1) + ": " + fixture.guide)
-                else listOf(fixture.guide)
-                assertEquals("Only the displayed guidance enters the ordinary language speech front end",
+                val expectedGuidance = listOf(feedback(activity, fixture).text.toString())
+                assertEquals("The complete visible review enters the ordinary language speech front end",
                     NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(expectedGuidance, language, true)),
                     parts.map { field<String>(it, "text") })
                 val guideText = parts.joinToString(" ") { field<String>(it, "text") }
@@ -368,7 +366,7 @@ class WrongFeedbackNarrationDeviceTest {
                 phaseEvents.put(JSONObject().put("stage", "real-guide-playing").put("audio", metadata))
                 val result = feedback(activity, fixture)
                 assertTrue("The original incorrect feedback remains visible", result.text.toString().contains(fixture.guide))
-                assertTrue("Red feedback is not word-shaded", field<List<ReadingTextRange>>(result, "unreadRanges").isEmpty())
+                assertTrue("The unspoken review suffix stays shaded", field<List<ReadingTextRange>>(result, "unreadRanges").isNotEmpty())
                 captureView(result, "${language.tag}-incorrect-visible")
                 reader.pauseKeepingPosition()
                 assertNull("Pausing a guide also releases the same MediaPlayer", field<MediaPlayer?>(reader, "player"))
@@ -395,7 +393,7 @@ class WrongFeedbackNarrationDeviceTest {
             assertEquals("Resume/seek reuse the compatible recording", guideSha, sha(guideAudio.readBytes()))
             awaitNative(host, "The guide stops naturally without entering the page success gate", 120_000L) { activity ->
                 val reader = controller(activity)
-                field<Any?>(reader, "incorrectFeedback") == null && !reader.isPlaying
+                field<Any?>(reader, "incorrectFeedback")?.let { field<Boolean>(it, "finished") } == true && !reader.isPlaying
             }
             host.onActivity { activity ->
                 val reader = controller(activity)

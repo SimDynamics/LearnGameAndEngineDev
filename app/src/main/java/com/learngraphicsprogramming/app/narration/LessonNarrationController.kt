@@ -118,6 +118,8 @@ class LessonNarrationController(
         val token: Long, val blockIndex: Int, val parts: MutableList<Segment>,
         val wasWaiting: Boolean, val wasPlaying: Boolean,
         var index: Int = 0, var offset: Long = 0L,
+        @Volatile var finished: Boolean = false,
+        var pendingManualForward: NarrationGatePosition? = null,
         val pending: MutableSet<Int> = mutableSetOf()
     )
     @Volatile private var incorrectFeedback: IncorrectFeedback? = null
@@ -126,9 +128,15 @@ class LessonNarrationController(
     private var pendingManualForward: NarrationGatePosition? = null
     private val wordCheckpoint = object : Runnable {
         override fun run() {
-            if (!trackWords || closed || !playing || !playerReady || finished || incorrectFeedback != null) return
-            publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED).copy(
-                positionMs = playbackPoint().positionMs))
+            if (!trackWords || closed || !playing || !playerReady) return
+            val guide = incorrectFeedback
+            if (guide != null) publishGuideProgress(guide, NarrationPlaybackPhase.ADVANCED,
+                feedbackPlaybackPosition(guide))
+            else {
+                if (finished) return
+                publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED).copy(
+                    positionMs = playbackPoint().positionMs))
+            }
             main.postDelayed(this, 50L)
         }
     }
@@ -196,15 +204,19 @@ class LessonNarrationController(
     }
 
     private fun prepareWordAlignment(request: Synthesis) {
-        if (request.feedbackToken != null || !trackWords || request.settings.engine == NarrationEngine.ANDROID || !isCurrent(request)) return
+        if (!trackWords || request.settings.engine == NarrationEngine.ANDROID || !isCurrent(request)) return
+        val guide = requestFeedback(request)
         val identity = activePageIdentity
         val key = resumeKey
         val count = segments.size
         val service = wordAlignmentService ?: KokoroWordAlignment(appContext).also { wordAlignmentService = it }
         service.prepare(request.text, request.settings.language, request.settings.kokoroVoice, request.file,
             isCancelled = { !isCurrent(request) }) { alignment ->
-            if (alignment != null && isCurrent(request) && segments.getOrNull(request.index)?.file == request.file) {
-                publishProgress(NarrationPlaybackProgress(identity, request.generation, request.index, count,
+            val parts = guide?.parts ?: segments
+            if (alignment != null && isCurrent(request) && parts.getOrNull(request.index)?.file == request.file) {
+                if (guide != null) publishProgress(guideProgressSnapshot(guide,
+                    NarrationPlaybackPhase.ALIGNMENT_AVAILABLE).copy(segmentIndex = request.index, alignment = alignment))
+                else publishProgress(NarrationPlaybackProgress(identity, request.generation, request.index, count,
                     NarrationPlaybackPhase.ALIGNMENT_AVAILABLE, key, alignment = alignment))
             }
         }
@@ -442,24 +454,84 @@ class LessonNarrationController(
         val wasPlaying = previous?.wasPlaying ?: playing
         if (previous != null) finishIncorrectFeedback(restoreWaiting = false, prepareOriginal = false)
         pause()
-        incorrectFeedback = IncorrectFeedback(++incorrectFeedbackSequence, blockIndex,
+        val feedback = IncorrectFeedback(++incorrectFeedbackSequence, blockIndex,
             prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying)
+        incorrectFeedback = feedback
+        publishGuideProgress(feedback, NarrationPlaybackPhase.PREPARED)
         resume()
+    }
+
+    private fun feedbackPlaybackKey(feedback: IncorrectFeedback): String = "$resumeKey:incorrect:${feedback.token}"
+
+    private fun feedbackPlaybackPosition(feedback: IncorrectFeedback): Long =
+        if (incorrectFeedback === feedback && playerReady)
+            runCatching { player?.currentPosition?.toLong() ?: feedback.offset }.getOrDefault(feedback.offset)
+        else feedback.offset
+
+    private fun guideProgressSnapshot(feedback: IncorrectFeedback, phase: NarrationPlaybackPhase,
+                                      positionMs: Long = feedback.offset): NarrationPlaybackProgress =
+        NarrationPlaybackProgress(activePageIdentity, generation, feedback.index, feedback.parts.size,
+            phase, feedbackPlaybackKey(feedback), positionMs.coerceAtLeast(0L),
+            android.os.SystemClock.uptimeMillis(), NarrationSettingsRepository.get(appContext).rate,
+            feedbackToken = feedback.token, feedbackBlockIndex = feedback.blockIndex)
+
+    private fun publishGuideProgress(feedback: IncorrectFeedback, phase: NarrationPlaybackPhase,
+                                     positionMs: Long = feedback.offset) {
+        if (phase != NarrationPlaybackPhase.POSITION_CHANGED) {
+            publishProgress(guideProgressSnapshot(feedback, phase, positionMs))
+            return
+        }
+        val point = NarrationGatePosition(feedback.index, positionMs)
+        val projection = if (positionMs < 0L) NarrationVisualSeek.resolveBackward(point, feedback.parts.map { it.duration })
+            else NarrationVisualSeek.resolve(point, feedback.parts.map { it.duration }) { _, proposed -> proposed }
+        if (!projection.resolved) return
+        val from = feedback.pendingManualForward
+        val destination = projection.destination
+        val forward = from != null && (destination.segment > from.segment ||
+            (destination.segment == from.segment && destination.positionMs > from.positionMs))
+        publishProgress(guideProgressSnapshot(feedback, phase, destination.positionMs).copy(
+            segmentIndex = destination.segment,
+            manualForwardFrom = from.takeIf { forward },
+            manualForwardToEnd = forward && destination.segment == feedback.parts.lastIndex &&
+                destination.positionMs == feedback.parts.last().duration?.toLong()))
+        feedback.pendingManualForward = null
+    }
+
+    /** A finished guide remains seekable metadata; the decoder and audio focus are released. */
+    private fun completeIncorrectFeedback(feedback: IncorrectFeedback) {
+        if (incorrectFeedback !== feedback) return
+        val shouldWait = playing && (feedback.wasWaiting || feedback.wasPlaying)
+        feedback.index = feedback.parts.lastIndex
+        feedback.offset = feedback.parts.last().duration?.toLong() ?: feedback.offset
+        feedback.finished = true
+        feedback.pendingManualForward = null
+        releasePlayer()
+        main.removeCallbacks(playbackCheckpoint)
+        clearGuideRequests(feedback)
+        playing = false
+        waitingForExercise = shouldWait
+        NarrationPlaybackOwner.release(this)
+        foregroundPlayback?.close()
+        foregroundPlayback = null
+        releaseFocus()
+        rememberPlaybackPosition()
+        onState(false)
+        publishGuideProgress(feedback, NarrationPlaybackPhase.FINISHED)
+        if (settings.engine != NarrationEngine.ANDROID && !finished) {
+            ensureSegment(index)
+            ensureSegment(index + 1)
+        }
     }
 
     /** Cancel only this transient guide; completed and pending page recordings remain reusable. */
     private fun finishIncorrectFeedback(restoreWaiting: Boolean, prepareOriginal: Boolean = true) {
         val feedback = incorrectFeedback ?: return
-        val shouldWait = restoreWaiting && playing && (feedback.wasWaiting || feedback.wasPlaying)
+        val shouldWait = restoreWaiting && (waitingForExercise || (playing && (feedback.wasWaiting || feedback.wasPlaying)))
+        publishGuideProgress(feedback, NarrationPlaybackPhase.STOPPED, feedbackPlaybackPosition(feedback))
         releasePlayer()
         main.removeCallbacks(playbackCheckpoint)
-        val marker = "_guide_${feedback.token}"
-        watchdogs.keys.filter { it.endsWith(marker) }.toList().forEach { id ->
-            watchdogs.remove(id)?.let(main::removeCallbacks)
-        }
+        clearGuideRequests(feedback)
         incorrectFeedback = null
-        feedback.pending.clear()
-        if (pending.isEmpty()) releaseSynthesisCpu()
         playing = false
         waitingForExercise = shouldWait
         NarrationPlaybackOwner.release(this)
@@ -473,6 +545,15 @@ class LessonNarrationController(
             ensureSegment(index)
             ensureSegment(index + 1)
         }
+    }
+
+    private fun clearGuideRequests(feedback: IncorrectFeedback) {
+        val marker = "_guide_${feedback.token}"
+        watchdogs.keys.filter { it.endsWith(marker) }.toList().forEach { id ->
+            watchdogs.remove(id)?.let(main::removeCallbacks)
+        }
+        feedback.pending.clear()
+        if (pending.isEmpty()) releaseSynthesisCpu()
     }
 
     private fun startPage(prepared: List<String>, selected: NarrationSettings,
@@ -618,7 +699,9 @@ class LessonNarrationController(
         foregroundPlayback = null
         releaseFocus()
         if (wasPlaying) onState(false)
-        if (segments.isNotEmpty() && feedback == null) {
+        if (feedback != null) {
+            publishGuideProgress(feedback, if (feedback.finished) NarrationPlaybackPhase.FINISHED else NarrationPlaybackPhase.PAUSED)
+        } else if (segments.isNotEmpty()) {
             publishProgress(if (finished) NarrationPlaybackPhase.FINISHED else NarrationPlaybackPhase.PAUSED)
         }
     }
@@ -626,6 +709,7 @@ class LessonNarrationController(
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
         incorrectFeedback?.let { feedback ->
+            if (feedback.finished) return
             NarrationPlaybackOwner.acquire(this) { pause() }
             if (!acquireFocus()) {
                 NarrationPlaybackOwner.release(this)
@@ -636,6 +720,7 @@ class LessonNarrationController(
             playing = true
             foregroundPlayback = foregroundPlayback ?: NarrationWorkPriority.beginInteractive()
             onState(true)
+            publishGuideProgress(feedback, NarrationPlaybackPhase.BUFFERING)
             ensureSegment(feedback.index, feedback)
             ensureSegment(feedback.index + 1, feedback)
             return
@@ -819,12 +904,19 @@ class LessonNarrationController(
         releasePlayer()
         feedback.index = next.coerceIn(0, feedback.parts.lastIndex)
         feedback.offset = position
+        feedback.finished = false
+        waitingForExercise = false
+        publishGuideProgress(feedback, NarrationPlaybackPhase.POSITION_CHANGED)
+        if (playing) publishGuideProgress(feedback, NarrationPlaybackPhase.BUFFERING)
         ensureSegment(feedback.index, feedback)
     }
 
     private fun seekIncorrectFeedback(feedback: IncorrectFeedback, seconds: Int) {
+        if (feedback.finished && seconds >= 0) return
         var position = (if (playerReady) runCatching { player?.currentPosition?.toLong() }
             .getOrNull() else null) ?: feedback.offset
+        val from = NarrationGatePosition(feedback.index, position)
+        if (playerReady && playing) publishGuideProgress(feedback, NarrationPlaybackPhase.ADVANCED, position)
         position += seconds.toLong() * 1000L
         var target = feedback.index
         var previousUnknown = false
@@ -834,6 +926,7 @@ class LessonNarrationController(
             if (duration == null) { previousUnknown = true; break }
             position += duration
         }
+        feedback.pendingManualForward = if (seconds > 0) feedback.pendingManualForward ?: from else null
         selectIncorrectFeedback(feedback, target, if (previousUnknown) position else position.coerceAtLeast(0))
     }
 
@@ -845,11 +938,15 @@ class LessonNarrationController(
         if (request.feedbackToken == null) pending else requestFeedback(request)?.pending
 
     private fun ensureSegment(next: Int, feedback: IncorrectFeedback? = null) {
-        if (feedback != null && incorrectFeedback !== feedback) return
+        if (feedback != null && (incorrectFeedback !== feedback || feedback.finished)) return
         val parts = feedback?.parts ?: segments
         if (closed || !NarrationSettingsRepository.isEnabled(appContext) || next !in parts.indices) return
         val segment = parts[next]
         if (segment.file?.isFile == true) {
+            if (feedback != null && next == feedback.index && trackWords) {
+                prepareWordAlignment(Synthesis(generation, configuration, next, segment.text,
+                    requireNotNull(segment.file), settings, feedback.token))
+            }
             if (playing && next == (feedback?.index ?: index) && player == null &&
                 ((feedback != null) == (incorrectFeedback != null))) preparePlayer(segment, feedback)
             return
@@ -1128,7 +1225,11 @@ class LessonNarrationController(
                 segment.file = request.file
                 segment.duration = duration
                 if (feedback != null) {
+                    if (feedback.pendingManualForward != null || feedback.offset < 0L ||
+                        (request.index == feedback.index && player == null))
+                        publishGuideProgress(feedback, NarrationPlaybackPhase.POSITION_CHANGED)
                     if (playing && request.index == feedback.index && player == null) preparePlayer(segment, feedback)
+                    prepareWordAlignment(request)
                     if (request.settings.engine != NarrationEngine.ANDROID) ensureSegment(request.index + 2, feedback)
                     return@post
                 }
@@ -1176,7 +1277,7 @@ class LessonNarrationController(
         }
         if (selectedOffset() >= duration) {
             if (selectedIndex() == parts.lastIndex) {
-                if (feedback == null) finishPage() else finishIncorrectFeedback(restoreWaiting = true)
+                if (feedback == null) finishPage() else completeIncorrectFeedback(feedback)
                 return
             }
             // Do not carry the unused part of a forward seek across a feedback boundary.
@@ -1187,6 +1288,7 @@ class LessonNarrationController(
             return
         }
         setOffset(selectedOffset().coerceIn(0,(duration-1).coerceAtLeast(0).toLong()))
+        if (feedback != null) publishGuideProgress(feedback, NarrationPlaybackPhase.POSITION_CHANGED)
         val currentGeneration = generation
         val currentIndex = selectedIndex()
         try {
@@ -1211,8 +1313,8 @@ class LessonNarrationController(
                             media.start()
                             if (feedback == null) {
                                 publishProgress(NarrationPlaybackPhase.PLAYING)
-                                startWordObservation()
-                            }
+                            } else publishGuideProgress(feedback, NarrationPlaybackPhase.PLAYING)
+                            startWordObservation()
                         }
                         rememberPlaybackPosition()
                         if (selectedIndex()+1 < parts.size) ensureSegment(selectedIndex()+1, feedback)
@@ -1235,8 +1337,9 @@ class LessonNarrationController(
                 if (!current()) return@setOnCompletionListener
                 if (feedback != null) {
                     feedback.offset = duration.toLong()
+                    publishGuideProgress(feedback, NarrationPlaybackPhase.SEGMENT_COMPLETED)
                     if (feedback.index < feedback.parts.lastIndex) selectIncorrectFeedback(feedback, feedback.index+1, 0)
-                    else finishIncorrectFeedback(restoreWaiting = true)
+                    else completeIncorrectFeedback(feedback)
                     return@setOnCompletionListener
                 }
                 playbackGate?.completedNaturally(currentIndex)
@@ -1307,7 +1410,7 @@ class LessonNarrationController(
         // invalidates queued requests. AUTO and Kokoro both use the neural pipeline.
         NarrationSettingsRepository.isEngineAllowed(appContext, request.settings.engine) &&
         request.generation == generation && request.configuration == configuration &&
-        (request.feedbackToken == null || incorrectFeedback?.token == request.feedbackToken)
+        (request.feedbackToken == null || incorrectFeedback?.let { it.token == request.feedbackToken && !it.finished } == true)
     private fun fail(message: String) {
         stopInternal(phase = NarrationPlaybackPhase.UNAVAILABLE)
         if (!closed) onError(message)

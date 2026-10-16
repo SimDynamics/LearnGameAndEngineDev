@@ -351,14 +351,14 @@ class MathPuzzleRenderer(
             val guidance = MathPuzzleFeedback.incorrectGuidance(hasSelections, spec.incorrectFeedback, details,
                 context.getString(R.string.math_ui_review_process))
             val visibleDetails = if (details.isEmpty() && (hasSelections || spec.incorrectFeedback.isBlank())) guidance else details
-            MathTextRenderer.apply(feedback, (listOf("✗ $heading") + visibleDetails).filter { it.isNotBlank() }.joinToString("\n"))
+            val visibleFeedback = (listOf("✗ $heading") + visibleDetails).filter { it.isNotBlank() }.joinToString("\n")
+            MathTextRenderer.apply(feedback, visibleFeedback)
             feedback.setTextColor(Color.rgb(240, 166, 166))
             onTextReady?.invoke(feedback, TextRole.INCORRECT_FEEDBACK)
             save()
-            // This is a deliberate, evaluable submission, unlike a restored feedback
-            // view or a presentation callback. Only already-visible process guidance
-            // is offered; validators and successful explanations are never traversed.
-            onIncorrectAttempt?.invoke(guidance)
+            // Narrate exactly this visible review, including its verdict and heading.
+            // Validators and absent alternatives remain outside the speech source.
+            onIncorrectAttempt?.invoke(listOf(visibleFeedback))
         }
     }
 

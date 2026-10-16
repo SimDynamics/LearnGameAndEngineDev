@@ -12,6 +12,11 @@ import com.learngraphicsprogramming.app.math.MathPuzzleUiInstructions
  */
 internal object NarrationUiInstructions {
     fun forBlock(context: Context, blockType: String): String {
+        if (blockType == "note") {
+            // The native note is this formatted resource plus its authored body.
+            // Read its existing heading without synthesizing another copy of the body.
+            return UiLanguageSettings.localizedContext(context).getString(R.string.lesson_note, "")
+        }
         val resource = when (blockType) {
             "order_code" -> R.string.exercise_order_instruction
             "drag_fill_code" -> R.string.exercise_fill_instruction

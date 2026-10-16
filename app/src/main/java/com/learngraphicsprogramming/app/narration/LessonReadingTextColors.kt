@@ -20,20 +20,21 @@ enum class ReadingBlockState { UNREAD, CURRENT, READ }
 
 /** A page owns these existing text views. No text, spans, layout or interaction is replaced. */
 class LessonReadingTextColors {
-    private data class Entry(val block: Int, val view: TextView, val original: ColorStateList, val feedback: Boolean, val target: Int)
+    private data class Entry(val block: Int, val view: TextView, val original: ColorStateList,
+                             val feedback: Boolean, val incorrect: Boolean, val target: Int)
     private val entries = linkedMapOf<TextView, Entry>()
     private var nextTarget = Int.MIN_VALUE
     private val sourceSegments = mutableMapOf<Int, Set<Int>>()
     private val unreadColors = mutableMapOf<Int, Int>()
     private val unreadSurfaceColors = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
 
-    fun register(blockIndex: Int, view: TextView, feedback: Boolean = false) {
+    fun register(blockIndex: Int, view: TextView, feedback: Boolean = false, incorrect: Boolean = false) {
         if (view is EditText || (view !is ReadingTextHost &&
             (view is Button || view.isClickable || view.isLongClickable)) || view.text.isNullOrBlank() ||
             (hasForegroundSpans(view) && view !is ReadingTextHost)) return
         if (!entries.containsKey(view)) {
             val target = if (!feedback && entries.values.none { it.block == blockIndex && !it.feedback }) blockIndex else nextTarget++
-            entries[view] = Entry(blockIndex, view, view.textColors, feedback, target)
+            entries[view] = Entry(blockIndex, view, view.textColors, feedback, incorrect, target)
         }
     }
 
@@ -45,11 +46,12 @@ class LessonReadingTextColors {
 
     fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean,
              unreadWords: Map<Int, List<ReadingTextRange>> = emptyMap(),
-             completedSegments: Set<Int> = emptySet()) {
+             completedSegments: Set<Int> = emptySet(),
+             incorrectCompletedSegments: Set<Int> = emptySet()) {
         entries.values.forEach { entry ->
             val view = entry.view
             val pendingFeedback = entry.feedback && sourceSegments[entry.target].orEmpty().let {
-                it.isEmpty() || !completedSegments.containsAll(it)
+                it.isEmpty() || !(if (entry.incorrect) incorrectCompletedSegments else completedSegments).containsAll(it)
             }
             if (view is ReadingTextHost) {
                 val wordRanges = unreadWords[entry.target].takeIf { enabled && view.safeSupportsWordReading }
@@ -115,10 +117,12 @@ class LessonReadingTextColors {
 
     /** Require complete monotonic lexical identity; repeated words are never found by indexOf. */
     fun wordMappings(parts: List<String>, origins: List<NarrationTextOrigin>,
-                     language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
+                     language: NarrationLanguage = NarrationLanguage.SPANISH,
+                     incorrectFeedback: Boolean = false): Map<Int, NarrationWordMapping> {
         if (parts.size != origins.size) return emptyMap()
         val result = mutableMapOf<Int, NarrationWordMapping>()
-        entries.values.groupBy { it.block to it.feedback }.forEach { (origin, candidates) ->
+        entries.values.filter { it.incorrect == incorrectFeedback }
+            .groupBy { it.block to it.feedback }.forEach { (origin, candidates) ->
             val (block, feedback) = origin
             val views = candidates.filter { (it.view as? ReadingTextHost)?.safeSupportsWordReading == true }
                 .sortedWith { left, right -> compareVisualOrder(left.view, right.view) }

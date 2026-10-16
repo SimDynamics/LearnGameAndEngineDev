@@ -129,7 +129,9 @@ class MathPuzzleReadingHooksDeviceTest {
                 .put("targets", JSONArray().put(JSONObject().put("id", "b").put("label", "Destino original.")))
                 .put("validator", JSONObject().put("type", "matching").put("expected", JSONObject().put("a", "b")))))
         val matchRenderer = renderer(matching, events)
-        assertEquals(listOf("Relaciona las tarjetas.", "Compara ambas columnas.", "Ficha original.", "Destino original."),
+        assertEquals(listOf("Relaciona las tarjetas.", "Compara ambas columnas.",
+            context.getString(R.string.math_ui_tiles), "Ficha original.",
+            context.getString(R.string.math_ui_targets), "Destino original."),
             events.filter { it.role == MathPuzzleRenderer.TextRole.BODY }.map { it.text })
         val unassigned = tree(matchRenderer.view).filterIsInstance<TextView>()
             .single { it.text.toString() == context.getString(R.string.math_ui_unassigned) }
@@ -197,7 +199,8 @@ class MathPuzzleReadingHooksDeviceTest {
         tree(renderer.view).filterIsInstance<EditText>().single().setText("1")
         tree(renderer.view).filterIsInstance<Button>().single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
         val fallback = context.getString(R.string.math_ui_review_process)
-        assertEquals(listOf(listOf(fallback)), reviews)
+        val visible = tree(renderer.view).filterIsInstance<TextView>().single { it.text.startsWith("✗ ") }
+        assertEquals(listOf(listOf(visible.text.toString())), reviews)
         assertTrue("The spoken fallback must also be visible", tree(renderer.view).filterIsInstance<TextView>()
             .any { it.text.toString().contains(fallback) })
         assertFalse(reviews.flatten().joinToString(" ").contains("internal_number_id"))

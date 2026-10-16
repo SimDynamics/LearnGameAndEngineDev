@@ -7,6 +7,11 @@ object SpanishTechnicalSpeech {
     fun prepare(text: String, mathMode: String = "auto"): Preparation =
         prepareImpl(text, mathMode, emptyMap())
 
+    /** Observe the ordinary production pass without selecting terms or changing its text. */
+    internal fun prepareObserved(text: String, mathMode: String = "auto",
+                                 onPiece: (Int, Int, String) -> Unit): Preparation =
+        prepareImpl(text, mathMode, emptyMap(), onPiece)
+
     /** Select English readings while the original code context and whole identifiers remain visible. */
     internal fun prepareForKokoro(text: String, mathMode: String = "auto"): Preparation {
         if (text.isBlank()) return Preparation(text, false)

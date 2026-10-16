@@ -201,6 +201,111 @@ class NarrationPuzzleWordMappingsTest {
         }
     }
 
+    @Test fun completeIncorrectFeedbackMapsItsIconToTheFirstWordAndEveryVisibleSentenceProgressively() {
+        val cases = listOf(
+            Triple(NarrationLanguage.SPANISH, "Incorrecto.", "Revisa qué relación debe cumplir tu respuesta."),
+            Triple(NarrationLanguage.AMERICAN_ENGLISH, "Incorrect.", "Review the relation your answer must satisfy."),
+            Triple(NarrationLanguage.BRITISH_ENGLISH, "Incorrect.", "Review the relation your answer must satisfy."),
+            Triple(NarrationLanguage.FRENCH, "Incorrect.", "Réexaminez la relation que votre réponse doit respecter.")
+        )
+        for ((language, verdict, generic) in cases) {
+            val details = when (language) {
+                NarrationLanguage.SPANISH -> listOf(
+                    "Respuesta elegida: comprueba \\(6000 + 300 + 8 = 6308\\); conserva las posiciones.",
+                    "Respuesta elegida: revisa #include <iostream> y std::cout antes de responder.")
+                NarrationLanguage.FRENCH -> listOf(
+                    "Réponse choisie : vérifiez \\(6000 + 300 + 8 = 6308\\) ; conservez les positions.",
+                    "Réponse choisie : vérifiez #include <iostream> et std::cout avant de répondre.")
+                else -> listOf(
+                    "Selected answer: check \\(6000 + 300 + 8 = 6308\\); preserve the positions.",
+                    "Selected answer: review #include <iostream> and std::cout before answering.")
+            }
+            for (detail in details) {
+                val raw = "✗ $verdict\n$generic\n$detail"
+                val displayed = formulaSourceOrText(raw)
+                val before = displayed.toString()
+                val parts = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(listOf(raw), language, true))
+                val segments = parts.indices.associateWith { parts[it] }
+                val mapping = NarrationPuzzleWordMappings.forViews(8, listOf(81 to displayed),
+                    segments, language, feedback = true)
+                assertEquals("No visible verdict, guide or detail falls back to block reading in $language", segments.keys, mapping.keys)
+                val words = mapping.values.flatMap { it.displayed }
+                assertEquals("The decorative cross advances with the first pronounced word", 0, words.first().start)
+                assertTrue(words.first().endExclusive <= displayed.indexOf('\n') + 1)
+                assertTrue("The first word cannot illuminate the rest of the feedback", words.first().endExclusive < displayed.length)
+                assertTrue("Generic guidance and detail keep independent word ownership", words.distinct().size > 10)
+                assertEquals(displayed.indices.toSet(), words.flatMap { it.start until it.endExclusive }.toSet())
+                assertTrue(mapping.values.all { it.targets!!.all { target -> target == 81 } })
+                assertTrue(mapping.values.flatMap { it.displayed }.none { it.start == 0 && it.endExclusive == displayed.length })
+                mapping.forEach { (segment, item) ->
+                    assertEquals(NarrationSpokenWords.technicalAtoms(segments.getValue(segment), language)
+                        .map { ReadingTextRange(it.start, it.endExclusive) }, item.spoken)
+                }
+                assertRanges(listOf(81 to displayed), mapping)
+                assertEquals(before, displayed.toString())
+            }
+        }
+    }
+
+    @Test fun anIncorrectVerdictCannotBorrowAHiddenOrChangedFeedbackTranscript() {
+        val visible = "✗ Incorrecto.\nRevisa la relación de la opción elegida."
+        val actual = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(listOf(visible),
+            NarrationLanguage.SPANISH, true)).withIndex().associate { it.index to it.value }
+        val valid = NarrationPuzzleWordMappings.forViews(8, listOf(81 to visible), actual,
+            NarrationLanguage.SPANISH, feedback = true)
+        assertEquals(actual.keys, valid.keys)
+        val changed = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(
+            listOf("Correcto. La opción ausente es la respuesta."), NarrationLanguage.SPANISH, true))
+            .withIndex().associate { it.index to it.value }
+        assertTrue(NarrationPuzzleWordMappings.forViews(8, listOf(81 to visible), changed,
+            NarrationLanguage.SPANISH, feedback = true).isEmpty())
+    }
+
+    @Test fun repeatedNativeWrongMathReviewMapsUnmarkedRelationsAndPartialTypesetSpansWithoutWholeSentenceFallback() {
+        val review = "Revisa la igualdad 6 × 100 = 600 y la descomposición 6000 + 300 + 8 = 6308; " +
+            "cada símbolo conserva el significado de la expresión y después debes comparar los precios."
+        val visible = "✗ Revisa tu respuesta e inténtalo de nuevo.\nRespuesta 1: $review"
+        val expressions = listOf("6 × 100 = 600", "6000 + 300 + 8 = 6308")
+        // The current native auto renderer creates arithmetic spans, while '=' and
+        // its right-hand side remain ordinary text. The source characters stay identical.
+        val spans = listOf("6 × 100", "6000 + 300 + 8").map { arithmetic ->
+            val start = visible.indexOf(arithmetic)
+            ReadingTextRange(start, start + arithmetic.length)
+        }
+        val parts = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(listOf(visible),
+            NarrationLanguage.SPANISH, true))
+        val segments = parts.indices.associateWith { parts[it] }
+        for (shown in listOf<CharSequence>(visible, NarrationSourceProjection.Source(visible, spans))) {
+            val mapping = NarrationPuzzleWordMappings.forViews(8, listOf(81 to shown), segments,
+                NarrationLanguage.SPANISH, feedback = true)
+            assertEquals("The complete actual review must map both with and without native formula metadata", segments.keys, mapping.keys)
+            val ownership = mapping.values.flatMap { it.displayed }.distinct()
+            for (expression in expressions) {
+                val start = visible.indexOf(expression)
+                val atoms = Regex("\\d+|[×+=]").findAll(expression).map {
+                    ReadingTextRange(start + it.range.first, start + it.range.last + 1)
+                }.toList()
+                assertTrue("${expression}: every number and operator must keep a spoken owner", atoms.all { atom ->
+                    ownership.any { it.start < atom.endExclusive && it.endExclusive > atom.start }
+                })
+                assertTrue("${expression}: normalization must retain several independent formula owners",
+                    ownership.count { it.start < start + expression.length && it.endExclusive > start } >= 3)
+            }
+            assertEquals(visible.indices.toSet(), ownership.flatMap { it.start until it.endExclusive }.toSet())
+            assertRanges(listOf(81 to shown), mapping)
+        }
+    }
+
+    /** Test the existing pure semantic projection; native span creation belongs to Android QA. */
+    private fun formulaSourceOrText(full: String): CharSequence {
+        val opening = full.indexOf("\\(")
+        if (opening < 0) return full
+        val closing = full.indexOf("\\)", opening + 2)
+        require(closing > opening + 2)
+        val shown = full.substring(0, opening) + full.substring(opening + 2, closing) + full.substring(closing + 2)
+        return NarrationSourceProjection.Source(shown, listOf(ReadingTextRange(opening, closing - 2)))
+    }
+
     private fun mapped(views: List<Pair<Int, CharSequence>>, segments: Map<Int, String>) =
         NarrationPuzzleWordMappings.forViews(8, views, segments, NarrationLanguage.SPANISH)
 

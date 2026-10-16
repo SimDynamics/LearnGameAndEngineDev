@@ -1327,7 +1327,7 @@ class WordReadingDeviceTest {
         assertEquals(authored, LessonRepository.loadLessonJson(context, "programming", lesson).toString())
     }
 
-    @Test fun actualPuzzleOptionsAndSuccessFollowRealKokoroWhileIncorrectFeedbackKeepsItsInk() {
+    @Test fun actualPuzzleOptionsAndBothFeedbackKindsFollowRealKokoroAndKeepTheirInk() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
         val authored = LessonRepository.loadLessonJson(context, "programming", lesson)
         val block = authored.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(4)
@@ -1376,9 +1376,9 @@ class WordReadingDeviceTest {
         instrumentation.waitForIdleSync()
         host.onActivity { activity ->
             result = texts(activity).filterIsInstance<ReadingTextView>().single { it.currentTextColor == android.graphics.Color.rgb(240, 150, 150) }
-            assertTrue("Incorrect feedback is never shaded", field<List<ReadingTextRange>>(result, "unreadRanges").isEmpty())
+            assertTrue("The narrated incorrect review keeps its unspoken words shaded", field<List<ReadingTextRange>>(result, "unreadRanges").isNotEmpty())
             assertEquals(0, field<Int>(activity, "completedExercises"))
-            capture("puzzle-incorrect-feedback-no-shading")
+            capture("puzzle-incorrect-feedback-pending-native")
             option.performClick()
             assertTrue(option.isChecked)
             assertTrue(texts(activity).filterIsInstance<Button>().single { it.text.toString() == activity.getString(R.string.exercise_check) }.performClick())

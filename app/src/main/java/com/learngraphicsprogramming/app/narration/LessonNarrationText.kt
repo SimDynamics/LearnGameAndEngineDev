@@ -48,7 +48,14 @@ object LessonNarrationText {
     private fun block(output: MutableList<String>, block: JSONObject) {
         val type = block.string("type")
         when (type) {
-            "heading", "paragraph", "note" -> append(output, block.string("text"), block.mode())
+            "heading", "paragraph" -> append(output, block.string("text"), block.mode())
+            "note" -> {
+                // addNote shows a localized heading in the same TextView as the body.
+                // Retain the body's existing speech/cache identity and project both items
+                // onto that original view, rather than leaving an unspoken visible prefix.
+                append(output, visibleInstruction(type), "text")
+                append(output, block.string("text"), block.mode())
+            }
             "code" -> output.add(localized("Ejemplo de código", "Example of", "Exemple de code") +
                 " ${codeLanguage(block.string("language"))}" + localized(".", " code.", "."))
             "cpp_compiler" -> output.add(localized("Editor de código C más más.", "C plus plus code editor.", "Éditeur de code C plus plus."))

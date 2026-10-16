@@ -172,9 +172,65 @@ object SpanishFluidG2P {
                 owners += List(lexical.size) { owner }
             }
             if (nextOwner != sourceWords.size) return null
-            // Individual expansion supplies ownership only. The whole-context normalization
-            // remains authoritative, and any changed formula/code context fails closed.
-            if (words(normalized) != expected) return null
+            // A residual relation can enter the production technical pass contextually
+            // (e.g. an already spoken operand before '= 600 ...;'). Observe that exact
+            // pass only when independent token expansion cannot prove its ownership.
+            // Audio still comes exclusively from the existing whole-context normalizer.
+            if (words(normalized) != expected) {
+                // Limit this observer to the reported partially verbalized equality.
+                // Other raw identifiers/complex notation retain their existing fallback.
+                if (!Regex("(?<![\\p{L}\\p{N}_])\\p{L}{2,}\\s*=\\s*[−-]?\\d")
+                        .containsMatchIn(source)) return null
+                val sourceOwners = IntArray(source.length) { -1 }
+                pattern.findAll(source).forEachIndexed { owner, match ->
+                    for (index in match.range) sourceOwners[index] = owner
+                }
+                val contextual = StringBuilder()
+                val contextualOwners = mutableListOf<Int>()
+                var ambiguous = false
+                val observed = SpanishTechnicalSpeech.prepareObserved(source) { start, end, rendered ->
+                    if (start !in 0..source.length || end !in start..source.length) {
+                        ambiguous = true
+                    } else {
+                        contextual.append(rendered)
+                        if (rendered == source.substring(start, end)) {
+                            for (index in start until end) contextualOwners += sourceOwners[index]
+                        } else {
+                            val selected = (start until end).map { sourceOwners[it] }.filter { it >= 0 }.distinct()
+                            if (selected.size > 1) ambiguous = true
+                            val owner = selected.singleOrNull() ?: -1
+                            repeat(rendered.length) { contextualOwners += owner }
+                        }
+                    }
+                }
+                val rewritten = contextual.toString()
+                if (ambiguous || rewritten.filterNot(Char::isWhitespace) != observed.text.filterNot(Char::isWhitespace)) return null
+                val rewrittenCpp = cpp.findAll(rewritten).map { it.range }.toList()
+                expected.clear()
+                owners.clear()
+                var previousOwner = -1
+                items.findAll(rewritten).forEach { match ->
+                    if (match.value == "+" && rewrittenCpp.any { match.range.first in it }) return@forEach
+                    val selected = match.range.map { contextualOwners[it] }.filter { it >= 0 }.distinct()
+                    if (selected.size > 1) return null
+                    val owner = selected.singleOrNull() ?: -1
+                    if (owner >= 0) {
+                        if (owner < previousOwner) return null
+                        previousOwner = owner
+                    }
+                    val operator = match.value.singleOrNull()?.let { it in normalizationOperators } == true
+                    val expanded = when {
+                        rewrittenCpp.any { it.first == match.range.first } -> "ce más más"
+                        operator || match.value.any(Char::isDigit) -> normalizeText(match.value)
+                        else -> match.value
+                    }
+                    val lexical = words(expanded)
+                    if (lexical.isEmpty()) return null
+                    expected += lexical
+                    owners += List(lexical.size) { owner }
+                }
+                if (words(normalized) != expected) return null
+            }
             val tokens = normalizedTokens(normalized, lexicon, foreignTokens)
             if (tokens.count { it.word } != owners.size) return null
             val joined = StringBuilder()
