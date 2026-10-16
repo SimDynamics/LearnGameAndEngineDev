@@ -1,6 +1,8 @@
 package com.learngraphicsprogramming.app
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.text.Editable
@@ -13,11 +15,14 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.learngraphicsprogramming.app.narration.KokoroContinuousNarrationService
+import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -37,6 +42,7 @@ class CppPhysicalKeyboardProbeDeviceTest {
     private val preferences = linkedMapOf<String, Map<String, *>>()
     private var preferenceNames = emptySet<String>()
     private var captured = false
+    private var originalLanguage = ""
 
     @Before fun preserveOnlyOptedInQaState() {
         assumeTrue("Requires cppPhysicalTabProbe=true and one human physical Tab press",
@@ -49,12 +55,19 @@ class CppPhysicalKeyboardProbeDeviceTest {
                 if (value is Set<*>) value.toSet() else value
             }
         }
+        originalLanguage = UiLanguageSettings.selectedTag(context)
         captured = true
+        instrumentation.runOnMainSync {
+            NarrationSettingsRepository.saveEnabled(context, false)
+            UiLanguageSettings.select(context, "es")
+        }
+        context.stopService(Intent(context, KokoroContinuousNarrationService::class.java))
     }
 
     @After fun restoreQaPreferences() {
         if (!captured) return
         instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLanguage) }
         (preferenceFiles() + preferences.keys).forEach { name ->
             if (name !in preferenceNames) assertTrue(context.deleteSharedPreferences(name))
             else {
@@ -85,9 +98,21 @@ class CppPhysicalKeyboardProbeDeviceTest {
             kinds += kind
             lastRelevant.set(SystemClock.uptimeMillis())
         }
-        ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
+        val lessonSurface = InstrumentationRegistry.getArguments().getString("cppPhysicalTabSurface") == "lesson"
+        val intent = if (lessonSurface) {
+            ProgressRepository.saveCurrentPage(context, "programming", LESSON, 4)
+            context.getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE).edit()
+                .remove("programming/$LESSON/4/2/source")
+                .remove("programming/$LESSON/4/2/input").commit()
+            Intent(context, LessonActivity::class.java).putExtra("routeId", "programming")
+                .putExtra("courseId", "cpp_fundamentals")
+                .putExtra("unitId", "cpp_fundamentals__programas_y_ejecucion")
+                .putExtra("lessonId", LESSON).putExtra("lessonNumber", 2).putExtra("lessonTotal", 5)
+        } else Intent(context, CppPrototypeActivity::class.java)
+        ActivityScenario.launch<Activity>(intent).use { scenario ->
             lateinit var editor: FreeScrollEditText
             var original: ((Int, KeyEvent) -> Boolean)? = null
+            var originalEditorAction: ((Int) -> Boolean)? = null
             lateinit var focusObserver: ViewTreeObserver.OnGlobalFocusChangeListener
             lateinit var textObserver: TextWatcher
             var installed = false
@@ -96,12 +121,13 @@ class CppPhysicalKeyboardProbeDeviceTest {
                     activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 await(scenario, "Unlock the QA device and wait for the compiler window/layout") { activity ->
-                    val input = activity.findViewById<FreeScrollEditText>(R.id.sourceCode)
-                    activity.hasWindowFocus() && input.width > 0 && input.height > 0 && input.layout != null
+                    val input = findEditor(activity, lessonSurface)
+                    activity.hasWindowFocus() && input != null && input.width > 0 && input.height > 0 && input.layout != null
                 }
                 scenario.onActivity { activity ->
-                    editor = activity.findViewById(R.id.sourceCode)
+                    editor = requireNotNull(findEditor(activity, lessonSurface))
                     original = editor.cppHardwareKeyHandler
+                    originalEditorAction = editor.cppEditorActionHandler
                     editor.cppHardwareKeyHandler = { keyCode, event ->
                         val route = Thread.currentThread().stackTrace.firstOrNull {
                             it.className == FreeScrollEditText::class.java.name &&
@@ -117,6 +143,14 @@ class CppPhysicalKeyboardProbeDeviceTest {
                             " consumed=$consumed before=[$before] after=[${state(activity.currentFocus, editor)}]")
                         if (keyCode == KeyEvent.KEYCODE_TAB || event.characters?.contains('\t') == true)
                             observe("KEY_TAB/$route")
+                        consumed
+                    }
+                    editor.cppEditorActionHandler = { action ->
+                        val before = state(activity.currentFocus, editor)
+                        val consumed = originalEditorAction?.invoke(action) ?: false
+                        Log.i(TAG, "EDITOR_ACTION_HANDLER id=$action consumed=$consumed before=[$before]" +
+                            " after=[${state(activity.currentFocus, editor)}]")
+                        if (action == EditorInfo.IME_ACTION_NEXT) observe("IME_ACTION_NEXT")
                         consumed
                     }
                     editor.setOnEditorActionListener { _, action, event ->
@@ -139,8 +173,19 @@ class CppPhysicalKeyboardProbeDeviceTest {
                     }
                     editor.addTextChangedListener(textObserver)
                     installed = true
-                    editor.setText("   x")
-                    editor.setSelection(3)
+                    if (!lessonSurface) {
+                        editor.setText("   x")
+                        editor.setSelection(3)
+                    } else {
+                        val source = editor.text.toString()
+                        val blankLine = source.indexOf("\n    \n")
+                        editor.setSelection(if (blankLine >= 0) blankLine + 5 else source.length)
+                        val stdin = activity.window.decorView.findViewWithTag<EditText>("cpp_input")
+                        assertTrue("The original curricular prepared-input field must remain present", stdin != null)
+                        Log.i(TAG, "LESSON lesson=$LESSON pageIndex=4 compilerBlockIndex=2" +
+                            " stdin=${view(stdin)} stdinVisible=${stdin.isShown} stdinFocusable=${stdin.isFocusable}" +
+                            " originalSource=[${source.replace("\t", "\\t").replace("\n", "\\n")}]")
+                    }
                     editor.showSoftInputOnFocus = true
                     assertTrue(editor.requestFocus())
                     Log.i(TAG, "INPUT_DEVICES " + InputDevice.getDeviceIds().joinToString { device(InputDevice.getDevice(it)) })
@@ -155,7 +200,14 @@ class CppPhysicalKeyboardProbeDeviceTest {
                 await(scenario, "The original IME must be visible; no keyboard configuration was changed") { activity ->
                     ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) == true
                 }
-                scenario.onActivity { activity -> Log.i(TAG, "READY press physical TAB once; ${state(activity.currentFocus, editor)}") }
+                scenario.onActivity { activity ->
+                    val info = EditorInfo()
+                    editor.onCreateInputConnection(info)
+                    Log.i(TAG, "EDITOR_INFO surface=${if (lessonSurface) "lesson" else "prototype"}" +
+                        " imeOptions=0x${info.imeOptions.toString(16)} action=${info.imeOptions and EditorInfo.IME_MASK_ACTION}" +
+                        " inputType=0x${info.inputType.toString(16)} nextFocus=${view(editor.focusSearch(View.FOCUS_FORWARD))}")
+                    Log.i(TAG, "READY press physical TAB once; ${state(activity.currentFocus, editor)}")
+                }
                 instrumentation.sendStatus(0, Bundle().apply {
                     putString("stream", "CppPhysicalTab READY: press physical TAB once; observing up to 90 seconds.\n")
                 })
@@ -175,6 +227,7 @@ class CppPhysicalKeyboardProbeDeviceTest {
             } finally {
                 if (installed) scenario.onActivity { activity ->
                     editor.cppHardwareKeyHandler = original
+                    editor.cppEditorActionHandler = originalEditorAction
                     editor.setOnEditorActionListener(null)
                     editor.removeTextChangedListener(textObserver)
                     activity.window.decorView.viewTreeObserver.takeIf { it.isAlive }
@@ -184,8 +237,8 @@ class CppPhysicalKeyboardProbeDeviceTest {
         }
     }
 
-    private fun await(scenario: ActivityScenario<CppPrototypeActivity>, message: String,
-                      ready: (CppPrototypeActivity) -> Boolean) {
+    private fun await(scenario: ActivityScenario<Activity>, message: String,
+                      ready: (Activity) -> Boolean) {
         val deadline = SystemClock.uptimeMillis() + 12_000L
         do {
             var result = false
@@ -195,6 +248,10 @@ class CppPhysicalKeyboardProbeDeviceTest {
         } while (SystemClock.uptimeMillis() < deadline)
         throw AssertionError(message)
     }
+
+    private fun findEditor(activity: Activity, lessonSurface: Boolean): FreeScrollEditText? =
+        if (lessonSurface) activity.window.decorView.findViewWithTag("cpp_code_input")
+        else activity.findViewById(R.id.sourceCode)
 
     private fun state(focus: View?, input: FreeScrollEditText) =
         "focus=${view(focus)} text=${input.text.toString().replace("\t", "\\t").replace("\n", "\\n")}" +
@@ -210,5 +267,8 @@ class CppPhysicalKeyboardProbeDeviceTest {
     private fun preferenceFiles() = File(context.applicationInfo.dataDir, "shared_prefs").listFiles().orEmpty()
         .filter { it.extension == "xml" }.map { it.nameWithoutExtension }.toSet()
 
-    companion object { private const val TAG = "CppPhysicalTab" }
+    companion object {
+        private const val TAG = "CppPhysicalTab"
+        private const val LESSON = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+    }
 }

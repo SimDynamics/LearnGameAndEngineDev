@@ -2,6 +2,10 @@ package com.learngraphicsprogramming.app
 
 import android.content.Context
 import android.graphics.Typeface
+import android.text.NoCopySpan
+import android.text.Spanned
+import android.text.style.MetricAffectingSpan
+import android.text.style.ReplacementSpan
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +20,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Native source characters are the indentation units; no predefined-space provenance is inferred. */
+/** Native TABs and explicitly loaded indentation retain their distinct editing origins. */
 @RunWith(AndroidJUnit4::class)
 class CppIndentationUnitsDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -121,7 +125,7 @@ class CppIndentationUnitsDeviceTest {
         assertEquals("\tvalue;", input.text.toString())
     }
 
-    @Test fun loadingPredefinedAndCopiedCodeNeverConvertsItsSpacesIntoDeletionUnits() = onMain {
+    @Test fun loadingUntrustedAndCopiedCodeNeverInfersFourSpaceDeletionUnits() = onMain {
         val source = "        return 0;\n\t    helper();"
         val fixture = Fixture(source)
         val input = fixture.input
@@ -204,7 +208,7 @@ class CppIndentationUnitsDeviceTest {
             assertEquals(main, input.text.toString())
             input.setSelection(4)
             backspace(input)
-            assertEquals("   main();", input.text.toString())
+            assertEquals("main();", input.text.toString())
             CppCodeInputRules.insertTab(input)
             assertEquals("\tmain();", input.text.toString())
             file(project, "helper.cpp").performClick()
@@ -229,16 +233,17 @@ class CppIndentationUnitsDeviceTest {
             backspace(restoredInput)
             assertEquals(helper, restoredInput.text.toString())
             backspace(restoredInput)
-            assertEquals("   helper();", restoredInput.text.toString())
+            assertEquals("helper();", restoredInput.text.toString())
             val saved = JSONObject(requireNotNull(preferences.getString("$key/project", null)))
-            assertFalse("Persistent units are source TABs, not an indentation sidecar", saved.has("indentation"))
+            assertTrue("The existing draft retains optional predefined-space provenance per file", saved.has("indentationV2"))
 
             val legacy = JSONObject().put("files", JSONArray()
                 .put(JSONObject().put("path", "main.cpp").put("code", main))
                 .put(JSONObject().put("path", "helper.cpp").put("code", "\thelper();")))
                 .put("sources", JSONArray().put("main.cpp").put("helper.cpp"))
                 .put("selected", "main.cpp")
-                .put("indentation", JSONObject().put("main.cpp", "obsolete or malformed metadata"))
+                .put("indentation", JSONObject().put("main.cpp", CppIndentationUnits.snapshot(
+                    CppIndentationUnits.loadedText(main, seedPredefined = true))))
             assertTrue(preferences.edit().putString("$key/project", legacy.toString()).commit())
             val legacyInput = Fixture("").input
             val legacyProject = CppLessonProjectEditor(context, block, key, legacyInput) { }
@@ -252,11 +257,181 @@ class CppIndentationUnitsDeviceTest {
             assertEquals(main, legacyInput.text.toString())
             legacyInput.setSelection(4)
             backspace(legacyInput)
-            assertEquals("   main();", legacyInput.text.toString())
+            assertEquals("main();", legacyInput.text.toString())
             assertEquals(original, block.toString())
         } finally {
             assertTrue(preferences.edit().remove("$key/project").commit())
         }
+    }
+
+    @Test fun explicitlyPredefinedUnitsAreNonMetricAndDeleteOneLevelWithoutConvertingTheirCharacters() = onMain {
+        val code = "        return 0;\n\t    helper();"
+        val prepared = CppIndentationUnits.loadedText(code, seedPredefined = true)
+        assertEquals(code, prepared.toString())
+        val marks = (prepared as Spanned).getSpans(0, prepared.length, Any::class.java)
+        assertEquals(3, marks.size)
+        assertTrue(marks.none { it is NoCopySpan || it is MetricAffectingSpan || it is ReplacementSpan })
+        val fixture = Fixture("")
+        val input = fixture.input
+        input.setText(prepared)
+        CppSyntaxHighlighter.applyTo(requireNotNull(input.text))
+        fixture.settle()
+        assertEquals(listOf(0, 4, code.indexOf('\t') + 1), starts(requireNotNull(input.text)))
+        input.setSelection(8)
+        backspace(input)
+        assertEquals("    return 0;\n\t    helper();", input.text.toString())
+        assertEquals(4, input.selectionStart)
+        backspace(input)
+        assertEquals("return 0;\n\t    helper();", input.text.toString())
+        assertEquals(0, input.selectionStart)
+        input.setSelection(requireNotNull(input.text).indexOf('\t') + 5)
+        backspace(input)
+        assertEquals("return 0;\n\thelper();", input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+    }
+
+    @Test fun predefinedUnitPlusThreeManualSpacesRemainIndependentUntilExplicitTabCompletesThem() = onMain {
+        val input = Fixture("").input
+        input.setText(CppIndentationUnits.loadedText("    value;", seedPredefined = true))
+        input.setSelection(4)
+        requireNotNull(input.text).insert(4, "   ")
+        input.setSelection(7)
+        assertEquals(listOf(0), starts(requireNotNull(input.text)))
+        for (remaining in 2 downTo 0) {
+            backspace(input)
+            assertEquals(" ".repeat(4 + remaining) + "value;", input.text.toString())
+            assertEquals(4 + remaining, input.selectionStart)
+        }
+        backspace(input)
+        assertEquals("value;", input.text.toString())
+
+        input.setText(CppIndentationUnits.loadedText("    value;", seedPredefined = true))
+        input.setSelection(4)
+        requireNotNull(input.text).insert(4, "   ")
+        input.setSelection(7)
+        CppCodeInputRules.insertTab(input)
+        assertEquals("    \tvalue;", input.text.toString())
+        backspace(input)
+        assertEquals("    value;", input.text.toString())
+        backspace(input)
+        assertEquals("value;", input.text.toString())
+    }
+
+    @Test fun restoredMetadataPreservesOnlyVerifiedOffsetsAndNeverInfersLegacyOrInvalidOrigins() = onMain {
+        val code = "    value;\nplain    tail;"
+        val valid = CppIndentationUnits.snapshot(CppIndentationUnits.loadedText(code, seedPredefined = true))
+        val input = Fixture("").input
+        input.setText(CppIndentationUnits.loadedText(code, valid))
+        assertEquals(listOf(0), starts(requireNotNull(input.text)))
+        input.setSelection(4)
+        backspace(input)
+        assertEquals("value;\nplain    tail;", input.text.toString())
+        val invalid = listOf("not JSON",
+            JSONObject(valid).put("version", 99).toString(),
+            JSONObject(valid).put("version", 1.5).toString(),
+            JSONObject(valid).put("sha256", "0".repeat(64)).toString(),
+            JSONObject(valid).put("starts", JSONArray().put(0).put(0)).toString(),
+            JSONObject(valid).put("starts", JSONArray().put(-1)).toString(),
+            JSONObject(valid).put("starts", JSONArray().put(code.length)).toString(),
+            JSONObject(valid).put("starts", JSONArray().put(code.indexOf("    tail"))).toString(),
+            JSONObject(valid).put("starts", JSONArray().put("0")).toString())
+        for (saved in invalid) {
+            val restored = CppIndentationUnits.loadedText(code, saved, seedPredefined = true)
+            assertEquals(code, restored.toString())
+            assertEquals("Invalid metadata cannot authorize a fresh inference", emptyList<Int>(), starts(restored))
+        }
+        assertEquals(emptyList<Int>(), starts(CppIndentationUnits.loadedText(" $code", valid)))
+        val manual = CppIndentationUnits.snapshot(code)
+        assertEquals(emptyList<Int>(), starts(CppIndentationUnits.loadedText(code, manual, seedPredefined = true)))
+        assertEquals(emptyList<Int>(), starts(CppIndentationUnits.loadedText(code)))
+    }
+
+    @Test fun interiorEditsSelectionReplacementAndForwardDeleteInvalidateOnlyAffectedOrigins() = onMain {
+        val input = Fixture("").input
+        val code = "        first;\n    second;"
+        val second = code.indexOf("    second")
+        input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+        input.setSelection(2)
+        requireNotNull(input.text).insert(2, " ")
+        assertEquals(listOf(5, second + 1), starts(requireNotNull(input.text)))
+        input.setSelection(5, 9)
+        val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try { assertTrue(connection.commitText("", 1)) }
+        finally { connection.closeConnection() }
+        assertEquals("     first;\n    second;", input.text.toString())
+        assertEquals(listOf(second - 3), starts(requireNotNull(input.text)))
+
+        input.setText(CppIndentationUnits.loadedText("    value;", seedPredefined = true))
+        input.setSelection(0)
+        val forward = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try { assertTrue(forward.deleteSurroundingText(0, 1)) }
+        finally { forward.closeConnection() }
+        assertEquals("   value;", input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+    }
+
+    @Test fun enterCopiesOnlyExistingPredefinedOriginsAndKeepsRealBlockTabsAsSeparateUnits() = onMain {
+        for (predefined in listOf(true, false)) {
+            val input = Fixture("").input
+            input.setText(CppIndentationUnits.loadedText("    value;", seedPredefined = predefined))
+            input.setSelection(input.length())
+            requireNotNull(input.text).insert(input.length(), "\n")
+            assertEquals("    value;\n    ", input.text.toString())
+            input.setSelection(input.length())
+            backspace(input)
+            assertEquals(if (predefined) "    value;\n" else "    value;\n   ", input.text.toString())
+
+            input.setText(CppIndentationUnits.loadedText("    {}", seedPredefined = predefined))
+            input.setSelection(5)
+            requireNotNull(input.text).insert(5, "\n")
+            assertEquals("    {\n    \t\n    }", input.text.toString())
+            val childStart = requireNotNull(input.text).indexOf('\n') + 1
+            val closingStart = requireNotNull(input.text).lastIndexOf('\n') + 1
+            assertEquals(if (predefined) listOf(0, childStart, closingStart) else emptyList<Int>(), starts(requireNotNull(input.text)))
+            input.setSelection(childStart + 5)
+            backspace(input)
+            assertEquals("    {\n    \n    }", input.text.toString())
+            backspace(input)
+            assertEquals(if (predefined) "    {\n\n    }" else "    {\n   \n    }", input.text.toString())
+        }
+    }
+
+    @Test fun predefinedIndentationNeverGroupsSignificantSpacesInsideRawOrContinuedLiterals() = onMain {
+        val code = "void sample() {\n" +
+            "    auto raw = R\"tag(\n" +
+            "    raw content\n" +
+            "    )tag\";\n" +
+            "    auto continued = \"first\\\n" +
+            "    second\";\n" +
+            "    action();\n}"
+        val rawPrefix = code.indexOf("    raw content")
+        val quotedPrefix = code.indexOf("    second")
+        val expected = listOf(code.indexOf("    auto raw"), code.indexOf("    auto continued"),
+            code.indexOf("    action"))
+        val prepared = CppIndentationUnits.loadedText(code, seedPredefined = true)
+        assertEquals(code, prepared.toString())
+        assertEquals(expected, starts(prepared))
+        val input = Fixture("").input
+        for (prefix in listOf(rawPrefix, quotedPrefix)) {
+            input.setText(prepared)
+            input.setSelection(prefix + 4)
+            backspace(input)
+            assertEquals(code.removeRange(prefix + 3, prefix + 4), input.text.toString())
+            assertEquals(prefix + 3, input.selectionStart)
+        }
+        input.setText(prepared)
+        val external = expected.last()
+        input.setSelection(external + 4)
+        backspace(input)
+        assertEquals(code.removeRange(external, external + 4), input.text.toString())
+        val invalidLiteral = JSONObject(CppIndentationUnits.snapshot(prepared))
+            .put("starts", JSONArray().put(rawPrefix)).toString()
+        assertEquals(emptyList<Int>(), starts(CppIndentationUnits.loadedText(code, invalidLiteral)))
+    }
+
+    private fun starts(text: CharSequence): List<Int> {
+        val values = JSONObject(CppIndentationUnits.snapshot(text)).getJSONArray("starts")
+        return (0 until values.length()).map { values.getInt(it) }
     }
 
     private inner class Fixture(source: String) {

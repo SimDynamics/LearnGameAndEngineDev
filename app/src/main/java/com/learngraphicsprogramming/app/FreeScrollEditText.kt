@@ -16,6 +16,7 @@ class FreeScrollEditText @JvmOverloads constructor(
     private val cppTabStops = CppEditorTabStops()
 
     internal var cppHardwareKeyHandler: ((Int, KeyEvent) -> Boolean)? = null
+    internal var cppEditorActionHandler: ((Int) -> Boolean)? = null
     internal var cppEditorViewport: CppEditorViewportController? = null
 
     init {
@@ -41,6 +42,13 @@ class FreeScrollEditText @JvmOverloads constructor(
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (cppHardwareKeyHandler?.invoke(event.keyCode, event) == true) return true
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun onEditorAction(actionCode: Int) {
+        // Some IMEs follow a handled physical TAB with a separate NEXT action.
+        // C++ inputs consume that navigation without inserting a second TAB.
+        if (cppEditorActionHandler?.invoke(actionCode) == true) return
+        super.onEditorAction(actionCode)
     }
 
     /*

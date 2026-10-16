@@ -74,6 +74,7 @@ internal object CppCodeInputRules {
 
         var previousText =
             ""
+        var predefinedBackspaceStart: Int? = null
 
         /*
          * Algunos teclados insertan automáticamente
@@ -106,7 +107,15 @@ internal object CppCodeInputRules {
         }
         // A physical key reaches pre-IME first. Keys sent back by InputConnection
         // are post-IME, so retain the same handler on both paths without a second edit.
-        (input as? FreeScrollEditText)?.cppHardwareKeyHandler = hardwareKey
+        (input as? FreeScrollEditText)?.apply {
+            cppHardwareKeyHandler = hardwareKey
+            cppEditorActionHandler = { actionCode ->
+                // Some IMEs follow an already-handled physical TAB with NEXT.
+                // Consume only its navigation; inserting here would duplicate TAB.
+                actionCode == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT &&
+                    isEnabled && keyListener != null
+            }
+        }
         input.setOnKeyListener { _, keyCode, event -> hardwareKey(keyCode, event) }
 
         input.addTextChangedListener(
@@ -123,6 +132,10 @@ internal object CppCodeInputRules {
                         return
                     }
 
+                    predefinedBackspaceStart = (text as? Editable)?.let {
+                        CppIndentationUnits.beforeEdit(it, start, count, after,
+                            input.selectionStart, input.selectionEnd)
+                    }
                     previousText =
                         text?.toString()
                             .orEmpty()
@@ -153,6 +166,20 @@ internal object CppCodeInputRules {
                         internalChange ||
                         editable == null
                     ) {
+                        return
+                    }
+
+                    // Only intact units from the authored source can expand a native
+                    // Backspace. Manually inserted spaces never receive these marks.
+                    val unitStart = predefinedBackspaceStart
+                    predefinedBackspaceStart = null
+                    if (unitStart != null && removedCount == 1 && addedCount == 0 &&
+                        unitStart in 0..changeStart && changeStart <= editable.length) {
+                        internalChange = true
+                        try {
+                            editable.delete(unitStart, changeStart)
+                            input.setSelection(unitStart)
+                        } finally { internalChange = false }
                         return
                     }
 
@@ -503,7 +530,8 @@ internal object CppCodeInputRules {
                                     "{"
                                 )
 
-                        fun inheritedBase() = baseIndent
+                        fun inheritedBase() = CppIndentationUnits.inheritedIndentation(editable,
+                            previousLineStart, previousLineStart + baseIndent.length)
                         val childIndent = SpannableStringBuilder(inheritedBase()).apply {
                             if (opensBlock) append('\t')
                         }

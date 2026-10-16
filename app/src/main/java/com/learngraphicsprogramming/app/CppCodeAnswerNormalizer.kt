@@ -73,7 +73,7 @@ object CppCodeAnswerNormalizer {
         return result
     }
 
-    private fun literalRanges(text: String): List<IntRange> {
+    internal fun literalRanges(text: String): List<IntRange> {
         val ranges = mutableListOf<IntRange>()
         var index = 0
         while (index < text.length) {

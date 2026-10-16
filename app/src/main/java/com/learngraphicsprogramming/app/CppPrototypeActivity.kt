@@ -125,7 +125,9 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         } else {
 
-            binding.sourceCode.setText(savedInstanceState.getString(STATE_SOURCE) ?: SAMPLE_SOURCE)
+            binding.sourceCode.setText(CppIndentationUnits.loadedText(
+                savedInstanceState.getString(STATE_SOURCE) ?: SAMPLE_SOURCE,
+                savedInstanceState.getString(STATE_INDENTATION_V2)))
             val restoredX = savedInstanceState.getInt(STATE_SCROLL_X).coerceAtLeast(0)
             val restoredY = savedInstanceState.getInt(STATE_SCROLL_Y).coerceAtLeast(0)
             pendingEditorViewport = EditorViewportRestore(restoredX, restoredY,
@@ -803,7 +805,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private fun resetEditor() {
 
-        binding.sourceCode.setText(SAMPLE_SOURCE)
+        binding.sourceCode.setText(CppIndentationUnits.loadedText(SAMPLE_SOURCE, seedPredefined = true))
 
         /*
          * Colocamos el cursor dentro de main,
@@ -1028,6 +1030,7 @@ class CppPrototypeActivity : AppCompatActivity() {
             STATE_SOURCE,
             binding.sourceCode.text.toString()
         )
+        outState.putString(STATE_INDENTATION_V2, CppIndentationUnits.snapshot(binding.sourceCode.text ?: ""))
 
         outState.putInt(
             STATE_STATUS,
@@ -1108,6 +1111,8 @@ class CppPrototypeActivity : AppCompatActivity() {
     }
 
     private companion object {
+
+        const val STATE_INDENTATION_V2 = "cpp_prototype_indentation_units_v2"
 
         const val STATE_SOURCE =
             "cpp_prototype_source"
