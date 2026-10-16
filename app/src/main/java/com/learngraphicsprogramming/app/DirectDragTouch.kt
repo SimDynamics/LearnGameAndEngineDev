@@ -17,10 +17,10 @@ object DirectDragTouch {
         var downX = 0f
         var downY = 0f
         var dragging = false
-        // LDPlayer can turn wheel ticks into quick touchscreen swipes. Use the same
-        // deliberate-press gate as the floating reader, including permanent rejection
-        // of an early-moving stream so it cannot become a drag later.
-        val dragGate = FloatingReaderDragGate()
+        // Reuse the reader's pointer/source gate with a shorter puzzle-only hold.
+        // A responsive card drag takes priority over filtering slow emulator wheel
+        // translations; native wheel events still never start a drag.
+        val dragGate = FloatingReaderDragGate(touchHoldMs = 20L)
         val density = view.resources.displayMetrics.density
         // Same responsive threshold as Programming's existing ordering/code palette.
         val threshold = maxOf((2 * density).toInt(), ViewConfiguration.get(view.context).scaledTouchSlop / 2)

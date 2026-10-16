@@ -26,6 +26,13 @@ internal class NarrationResumeStore(context: Context) {
         if (updated != old) write(updated)
     }
 
+    fun relocate(oldKey: String, newKey: String,
+                 transform: (NarrationResumePoint) -> NarrationResumePoint?) = synchronized(lock) {
+        val old = read()
+        val updated = NarrationResumePolicy.relocate(old, oldKey, newKey, transform)
+        if (updated != old) write(updated)
+    }
+
     private fun read(): NarrationResumeHistory = runCatching {
         val entries = (0 until NarrationResumePolicy.MAX_BOOKMARKS).mapNotNull { index ->
             val key = preferences.getString("key_$index", null) ?: return@mapNotNull null

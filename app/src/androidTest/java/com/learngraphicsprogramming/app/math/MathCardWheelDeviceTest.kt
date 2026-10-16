@@ -70,7 +70,7 @@ class MathCardWheelDeviceTest {
         }
     }
 
-    @Test fun wheelAndFastEmulatedTouchSwipesNeverDragOrSelectPublishedCards() = withPublishedOrdering { scenario ->
+    @Test fun nativeWheelAndSubTwentyMillisecondSwipesCannotDragOrSelectPublishedCards() = withPublishedOrdering { scenario ->
         lateinit var card: View
         var started = 0
         val location = FloatArray(2)
@@ -99,7 +99,7 @@ class MathCardWheelDeviceTest {
         try {
             pointer(down, down, MotionEvent.ACTION_DOWN, location[0], location[1])
             pointerOpen = true
-            pointer(down, down + 25, MotionEvent.ACTION_MOVE, location[0], location[1] - 70f)
+            pointer(down, down + 10, MotionEvent.ACTION_MOVE, location[0], location[1] - 70f)
             instrumentation.waitForIdleSync()
             scenario.onActivity {
                 assertEquals("A wheel-like swipe must never arm startDragAndDrop", 1f, card.alpha, .001f)
@@ -131,7 +131,7 @@ class MathCardWheelDeviceTest {
         }
     }
 
-    @Test fun heldTouchStartsRealNativeDragAndOrdinaryCardTapsStillReorder() = withPublishedOrdering { scenario ->
+    @Test fun twentyFiveMillisecondTouchStartsNativeDragAndOrdinaryCardTapsStillReorder() = withPublishedOrdering { scenario ->
         lateinit var dragged: View
         var started = 0
         val source = FloatArray(2)
@@ -152,7 +152,7 @@ class MathCardWheelDeviceTest {
         }
         val down = SystemClock.uptimeMillis()
         pointer(down, down, MotionEvent.ACTION_DOWN, source[0], source[1])
-        SystemClock.sleep(110)
+        SystemClock.sleep(25)
         try {
             for (step in 1..12) {
                 val fraction = step / 12f

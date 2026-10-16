@@ -403,18 +403,45 @@ class LessonActivity : AppCompatActivity() {
     private var narrationExerciseObserver: com.learngraphicsprogramming.app.narration.LessonNarrationExerciseState? = null
     private val readingProgress = LessonReadingProgressModel()
     private val readingTextPages = mutableMapOf<String, LessonReadingTextColors>()
+    private val mathNarrationSources = mutableMapOf<String, MutableMap<Int, () -> JSONObject>>()
+    private data class ReadingPresentation(val configuration: String, val script: LessonNarrationScript)
+    private val readingPresentations = mutableMapOf<String, ReadingPresentation>()
+    private var relocatingReadingPresentation = false
+    private var deferredReadingPresentation = false
     private var readingRenderBlockIndex: Int? = null
     private var readingPlaybackOwner: Any? = null
     private val floatingInteractions by lazy { LessonFloatingInteractions(this) }
 
     private fun narrationScript(language: com.learngraphicsprogramming.app.narration.NarrationLanguage): LessonNarrationScript {
-        val script = LessonNarrationScript.page(lessonJson,currentPage,language,
-            forKokoro = com.learngraphicsprogramming.app.narration.MixedSpanishG2P.productionEnabled &&
-                NarrationSettingsRepository.forLanguage(this, language).engine !=
-                com.learngraphicsprogramming.app.narration.NarrationEngine.ANDROID) { type ->
-            NarrationUiInstructions.forBlock(this,type)
+        val selected = NarrationSettingsRepository.forLanguage(this, language)
+        val neural = com.learngraphicsprogramming.app.narration.MixedSpanishG2P.productionEnabled &&
+            selected.engine != com.learngraphicsprogramming.app.narration.NarrationEngine.ANDROID
+        val identity = narrationPageIdentity()
+        val script = LessonNarrationScript.presentedPage(lessonJson,currentPage,language,
+            forKokoro = neural,
+            instruction = { type -> NarrationUiInstructions.forBlock(this,type) },
+            presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block })
+        val configuration = "${language.tag}/${selected.engine}/${selected.kokoroVoice}/${selected.androidVoice}"
+        val previous = readingPresentations[identity]?.takeIf { it.configuration == configuration }?.script
+            ?: LessonNarrationScript.presentedPage(lessonJson, currentPage, language, neural,
+                instruction = { type -> if (type in setOf("order_code", "drag_fill_code"))
+                    NarrationUiInstructions.forBlock(this, type) else "" },
+                presentation = { _, block -> com.learngraphicsprogramming.app.math.MathNarrationPresentation.legacyBlock(block) })
+        val update = try {
+            relocatingReadingPresentation = true
+            narrationController?.relocatePresentation(previous, script, language, identity)
+        } finally { relocatingReadingPresentation = false }
+        if (update?.deferred == true) {
+            deferredReadingPresentation = true
+            return previous
         }
+        deferredReadingPresentation = false
+        readingPresentations[identity] = ReadingPresentation(configuration, script)
         prepareReadingPage(script, language)
+        if (update?.rebind == true) {
+            if (update.resume) narrationController?.toggle(script.texts, language, identity, script.gates, narrationCorrectBlocks())
+            else narrationController?.bindPausedPresentation(script.texts, language, identity, script.gates, narrationCorrectBlocks())
+        }
         return script
     }
 
@@ -488,6 +515,7 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun readingPlaybackChanged(progress: NarrationPlaybackProgress) {
+        if (relocatingReadingPresentation) return
         readingProgress.update(progress)
         if (::lessonJson.isInitialized && progress.pageIdentity == narrationPageIdentity()) applyReadingPresentation()
     }
@@ -503,6 +531,9 @@ class LessonActivity : AppCompatActivity() {
     private fun clearReadingPages() {
         readingTextPages.values.forEach { it.clear() }
         readingTextPages.clear()
+        mathNarrationSources.clear()
+        readingPresentations.clear()
+        deferredReadingPresentation = false
         readingProgress.clear()
         readingRenderBlockIndex = null
     }
@@ -562,7 +593,14 @@ class LessonActivity : AppCompatActivity() {
         }
         narrationController = LessonNarrationController(
             this,
-            onState = { playing -> narrationControls?.refresh(playing) },
+            onState = { playing ->
+                narrationControls?.refresh(playing)
+                if (!playing && deferredReadingPresentation) lessonContent.post {
+                    if (deferredReadingPresentation && !isDestroyed && ::lessonJson.isInitialized) {
+                        narrationScript(NarrationSettingsRepository.get(this).language)
+                    }
+                }
+            },
             onError = { message -> Toast.makeText(this, message, Toast.LENGTH_LONG).show() },
             onProgress = { progress ->
                 if (readingPlaybackOwner === playbackOwner) readingPlaybackChanged(progress)
@@ -9091,6 +9129,7 @@ class LessonActivity : AppCompatActivity() {
                 "blocks"
             )
 
+        mathNarrationSources.remove(narrationPageIdentity())
         readingTextPages.remove(narrationPageIdentity())?.clear()
         readingTextPages[narrationPageIdentity()] = LessonReadingTextColors()
 
@@ -9317,6 +9356,8 @@ class LessonActivity : AppCompatActivity() {
                 if (currentPage == puzzlePage) completedExercises = updated
             }
             if (renderer.isCorrect) completedExercises++
+            mathNarrationSources.getOrPut(narrationPageIdentity()) { mutableMapOf() }[blockIndex] =
+                renderer::narrationSourceBlock
             lessonContent.addView(renderer.view)
             renderer.fullscreenButton.setOnClickListener {
                 if (exerciseFullscreenActive) {

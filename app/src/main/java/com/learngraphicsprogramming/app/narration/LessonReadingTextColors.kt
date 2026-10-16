@@ -8,6 +8,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -120,6 +121,7 @@ class LessonReadingTextColors {
         entries.values.groupBy { it.block to it.feedback }.forEach { (origin, candidates) ->
             val (block, feedback) = origin
             val views = candidates.filter { (it.view as? ReadingTextHost)?.safeSupportsWordReading == true }
+                .sortedWith { left, right -> compareVisualOrder(left.view, right.view) }
             val segments = origins.indices.filter { origins[it].blockIndex == block && origins[it].feedback == feedback }
                 .associateWith { parts[it] }
             candidates.forEach { sourceSegments[it.target] = segments.keys }
@@ -130,6 +132,29 @@ class LessonReadingTextColors {
             }
         }
         return result
+    }
+
+    /** Native child order also works before layout and after a card is moved or restored.
+     * Registration order is only a fallback for unrelated windows. */
+    private fun compareVisualOrder(left: View, right: View): Int {
+        if (left.rootView !== right.rootView) return 0
+        fun path(view: View): List<Int> {
+            val result = mutableListOf<Int>()
+            var child = view
+            while (true) {
+                val parent = child.parent as? ViewGroup ?: break
+                result += parent.indexOfChild(child)
+                child = parent
+            }
+            return result.asReversed()
+        }
+        val a = path(left)
+        val b = path(right)
+        for (index in 0 until minOf(a.size, b.size)) {
+            val compared = a[index].compareTo(b[index])
+            if (compared != 0) return compared
+        }
+        return a.size.compareTo(b.size)
     }
 
     private fun hasForegroundSpans(view: TextView): Boolean {

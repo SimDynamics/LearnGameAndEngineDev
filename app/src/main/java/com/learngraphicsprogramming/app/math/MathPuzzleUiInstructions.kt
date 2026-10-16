@@ -1,0 +1,37 @@
+package com.learngraphicsprogramming.app.math
+
+import org.json.JSONObject
+
+/** Describes only the static help that the existing native controls visibly display.
+ * Keys resolve through the same localized UI resources; answers and current values are absent. */
+internal object MathPuzzleUiInstructions {
+    const val TILES = "math_matching_drag:tiles"
+    const val TARGETS = "math_matching_drag:targets"
+    const val EDIT_COORDINATES = "math_graph:edit_coordinates"
+    const val POSITION = "math_number_line:position"
+    const val INTERVAL_DIRECTION = "math_number_line:interval_direction"
+    const val AUXILIARY_TOOL = "math_puzzle:auxiliary_tool"
+
+    fun heading(type: String, config: JSONObject, resolve: (String) -> String): String =
+        if (type in defaultHeadingTypes) config.optString("label", resolve(type))
+        else config.optString("label", "")
+
+    fun supplementary(type: String, resolve: (String) -> String): List<String> = when (type) {
+        "math_coordinate_graph_builder", "math_geometry_builder" -> listOf(resolve(EDIT_COORDINATES))
+        "math_number_line" -> listOf(resolve(POSITION), resolve(INTERVAL_DIRECTION))
+        else -> emptyList()
+    }
+
+    /** The renderer uses this whitelist to bind these already visible TextViews to reading ink. */
+    fun visible(type: String, config: JSONObject, resolve: (String) -> String): List<String> = buildList {
+        add(heading(type, config, resolve))
+        addAll(supplementary(type, resolve))
+        if (type == "math_matching_drag") {
+            add(resolve(TILES))
+            add(resolve(TARGETS))
+        }
+    }.filter(String::isNotBlank)
+
+    private val defaultHeadingTypes = setOf("math_multiple_choice_single", "math_multiple_choice_multi",
+        "math_ordering_drag", "math_matching_drag")
+}

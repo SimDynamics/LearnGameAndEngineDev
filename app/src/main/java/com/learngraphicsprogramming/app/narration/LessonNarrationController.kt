@@ -26,6 +26,13 @@ import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
 import java.util.UUID
 
+/** The Activity installs the new reading plan before rebinding or resuming playback. */
+data class NarrationPresentationUpdate(
+    val deferred: Boolean = false,
+    val rebind: Boolean = false,
+    val resume: Boolean = false
+)
+
 /** TTS and Kokoro synthesize temporary files; one player supplies pause, seek and speed. */
 class LessonNarrationController(
     context: Context,
@@ -373,6 +380,35 @@ class LessonNarrationController(
         else NarrationSegments.sentences(texts)
 
     /**
+     * Reorders runtime-only puzzle text within its existing bounded bookmark. This
+     * never starts playback or promotes a page. An active page first uses the same
+     * checkpoint/release path as every ordinary page change; its caller then binds
+     * the new reading plan and resumes only when [NarrationPresentationUpdate.resume] is true.
+     * An incorrect-answer guide retains ownership until it stops or is dismissed.
+     */
+    fun relocatePresentation(previous: LessonNarrationScript, current: LessonNarrationScript,
+                             language: NarrationLanguage, pageIdentity: String): NarrationPresentationUpdate {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (closed || pageIdentity.isBlank()) return NarrationPresentationUpdate()
+        val selected = NarrationSettingsRepository.forLanguage(appContext, language)
+        val oldParts = narrationParts(previous.texts, selected)
+        val newParts = narrationParts(current.texts, selected)
+        if (oldParts.isEmpty() || newParts.isEmpty()) return NarrationPresentationUpdate()
+        val oldKey = playbackIdentity(pageIdentity, selected, oldParts)
+        val newKey = playbackIdentity(pageIdentity, selected, newParts)
+        if (oldKey == newKey) return NarrationPresentationUpdate()
+        val active = activePageIdentity == pageIdentity && resumeKey == oldKey &&
+            this.language == language && segments.map { it.text } == oldParts
+        if (active && incorrectFeedback != null) return NarrationPresentationUpdate(deferred = true)
+        val resume = active && playing
+        if (active) stopInternal()
+        resumeStore.relocate(oldKey, newKey) { point ->
+            NarrationPresentationRemap.remap(point, previous, current, selected.engine)
+        }
+        return NarrationPresentationUpdate(rebind = active, resume = resume)
+    }
+
+    /**
      * Read only the guidance from one explicit failed submission, then stop. The original
      * page, permission gate, synthesis queue and bounded bookmark remain the playback source.
      * Texts are prepared by the same language frontend as pageTexts, exactly once. Supplying
@@ -473,6 +509,30 @@ class LessonNarrationController(
         if (selected.engine != NarrationEngine.ANDROID) preservePagePriority(prepared,selected)
         publishProgress(if (finished) NarrationPlaybackPhase.FINISHED else NarrationPlaybackPhase.PREPARED)
         return true
+    }
+
+    /** Bind a relocated paused bookmark even when Android TTS has no passive synthesis. */
+    fun bindPausedPresentation(texts: List<String>, pageLanguage: NarrationLanguage,
+                               pageIdentity: String, feedbackGates: List<NarrationTextGate> = emptyList(),
+                               correctBlocks: Set<Int> = emptySet()) = onMain {
+        if (closed) return@onMain
+        val selected = NarrationSettingsRepository.forLanguage(appContext, pageLanguage)
+        if (selected.engine != NarrationEngine.ANDROID) {
+            prefetchPage(texts, pageLanguage, pageIdentity, feedbackGates, correctBlocks)
+            return@onMain
+        }
+        if (!selected.enabled) return@onMain
+        val prepared = narrationParts(texts, selected)
+        if (prepared.isEmpty()) return@onMain
+        val key = playbackIdentity(pageIdentity, selected, prepared)
+        if (resumeKey == key && language == pageLanguage && segments.map { it.text } == prepared) {
+            updateSolvedExercises(pageIdentity, correctBlocks)
+            return@onMain
+        }
+        // Restore the same bookmark and word progress without initializing TTS,
+        // taking audio focus, synthesizing or promoting another history slot.
+        startPage(prepared, selected, pageIdentity,
+            NarrationScriptSegments.gates(texts, selected.engine, feedbackGates), correctBlocks)
     }
 
     /**

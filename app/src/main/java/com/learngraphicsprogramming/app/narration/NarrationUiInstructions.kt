@@ -3,6 +3,7 @@ package com.learngraphicsprogramming.app.narration
 import android.content.Context
 import com.learngraphicsprogramming.app.R
 import com.learngraphicsprogramming.app.UiLanguageSettings
+import com.learngraphicsprogramming.app.math.MathPuzzleUiInstructions
 
 /**
  * Instructions displayed immediately below exercise headings.
@@ -14,6 +15,16 @@ internal object NarrationUiInstructions {
         val resource = when (blockType) {
             "order_code" -> R.string.exercise_order_instruction
             "drag_fill_code" -> R.string.exercise_fill_instruction
+            "math_multiple_choice_single" -> R.string.math_ui_select_answer
+            "math_multiple_choice_multi" -> R.string.math_ui_select_all_answers
+            "math_ordering_drag" -> R.string.math_ui_ordering_help
+            "math_matching_drag" -> R.string.math_ui_matching_help
+            MathPuzzleUiInstructions.TILES -> R.string.math_ui_tiles
+            MathPuzzleUiInstructions.TARGETS -> R.string.math_ui_targets
+            MathPuzzleUiInstructions.EDIT_COORDINATES -> R.string.math_ui_edit_coordinates
+            MathPuzzleUiInstructions.POSITION -> R.string.math_ui_position
+            MathPuzzleUiInstructions.INTERVAL_DIRECTION -> R.string.math_ui_interval_direction
+            MathPuzzleUiInstructions.AUXILIARY_TOOL -> R.string.math_ui_auxiliary_tool
             else -> return ""
         }
         return UiLanguageSettings.localizedContext(context).getString(resource)

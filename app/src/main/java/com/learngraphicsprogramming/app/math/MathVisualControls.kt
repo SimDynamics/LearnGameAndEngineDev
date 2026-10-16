@@ -401,7 +401,7 @@ object MathVisualControls {
         setPadding(0, dp(context, 6), 0, dp(context, 6))
         setBackgroundColor(Color.rgb(28, 31, 36))
     }
-    private fun label(context: Context, value: String): TextView = TextView(context).apply {
+    private fun label(context: Context, value: String): TextView = com.learngraphicsprogramming.app.narration.ReadingTextView(context).apply {
         MathTextRenderer.apply(this, value)
         setTextColor(Color.WHITE)
         textSize = 18f

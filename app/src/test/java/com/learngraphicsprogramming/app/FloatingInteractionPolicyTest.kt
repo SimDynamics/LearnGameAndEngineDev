@@ -91,6 +91,30 @@ class FloatingInteractionPolicyTest {
         gate.end()
     }
 
+    @Test fun puzzleTouchCanStartAtTwentyMillisecondsWithoutChangingReaderHold() {
+        val puzzle = FloatingReaderDragGate(touchHoldMs = 20L)
+        puzzle.begin(1_000L, mouse = false, primaryPressed = false)
+        assertFalse(puzzle.mayDrag(1_019L, true, mouse = false, primaryPressed = false))
+        assertTrue(puzzle.isRejected)
+        assertFalse("Early motion cannot become a delayed card drag in the same stream",
+            puzzle.mayDrag(1_020L, true, mouse = false, primaryPressed = false))
+        puzzle.end()
+
+        puzzle.begin(2_000L, mouse = false, primaryPressed = false)
+        assertFalse(puzzle.mayDrag(2_019L, false, mouse = false, primaryPressed = false))
+        assertTrue(puzzle.canClick)
+        assertTrue(puzzle.mayDrag(2_020L, true, mouse = false, primaryPressed = false))
+        puzzle.end()
+
+        val reader = FloatingReaderDragGate()
+        reader.begin(2_000L, mouse = false, primaryPressed = false)
+        assertFalse("The floating reader keeps its existing 90 ms distinction",
+            reader.mayDrag(2_020L, true, mouse = false, primaryPressed = false))
+        reader.end()
+        reader.begin(3_000L, mouse = false, primaryPressed = false)
+        assertTrue(reader.mayDrag(3_090L, true, mouse = false, primaryPressed = false))
+    }
+
     @Test fun mixedPointerSourceOrSecondFingerCannotStartReaderDrag() {
         val gate = FloatingReaderDragGate()
         gate.begin(100L,mouse = false,primaryPressed = false)

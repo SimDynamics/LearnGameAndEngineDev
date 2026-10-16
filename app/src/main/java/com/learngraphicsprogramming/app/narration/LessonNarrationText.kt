@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
 import com.learngraphicsprogramming.app.math.MathPuzzleTypes
+import com.learngraphicsprogramming.app.math.MathPuzzleUiInstructions
 import com.learngraphicsprogramming.app.CodeExerciseLanguage
 import org.json.JSONArray
 import org.json.JSONObject
@@ -70,8 +71,15 @@ object LessonNarrationText {
                 append(output, block.string("prompt").ifBlank { block.string("question") }, block.mode())
                 objects(block.optJSONArray("representations")).forEach { representation(output, it) }
                 objects(block.optJSONArray("tools")).forEach {
-                    if (it.optBoolean("interactive", false)) append(output, it.string("label"))
-                    else representation(output, it)
+                    if (it.optBoolean("interactive", false)) {
+                        append(output, it.optString("label", visibleInstruction(MathPuzzleUiInstructions.AUXILIARY_TOOL)))
+                        val controlType = when (it.string("type")) {
+                            "math_coordinate_graph" -> "math_coordinate_graph_builder"
+                            else -> it.string("type")
+                        }
+                        MathPuzzleUiInstructions.supplementary(controlType, visibleInstruction)
+                            .forEach { help -> append(output, help) }
+                    } else representation(output, it)
                 }
                 objects(block.optJSONArray("responses")).forEach { response(output, it) }
             }
@@ -84,7 +92,9 @@ object LessonNarrationText {
     }
 
     private fun response(output: MutableList<String>, response: JSONObject) {
-        append(output, response.string("label"), response.mode())
+        val type = response.string("type")
+        append(output, MathPuzzleUiInstructions.heading(type, response, visibleInstruction), response.mode())
+        MathPuzzleUiInstructions.supplementary(type, visibleInstruction).forEach { append(output, it) }
         val fields = objects(response.optJSONArray("fields")).associateBy { it.string("id") }
         val segments = response.optJSONArray("segments")
         val table = response.optJSONArray("rows").takeIf { response.string("layout") == "table" }
@@ -114,7 +124,13 @@ object LessonNarrationText {
         // Lists are visible choices/cards; their IDs and expected order have no speech meaning.
         options(output, response.optJSONArray("options"))
         for (key in listOf("items", "sources", "targets")) {
-            objects(response.optJSONArray(key)).forEach { rich(output, it) }
+            if (type == "math_matching_drag" && key == "sources")
+                append(output, visibleInstruction(MathPuzzleUiInstructions.TILES))
+            if (type == "math_matching_drag" && key == "targets")
+                append(output, visibleInstruction(MathPuzzleUiInstructions.TARGETS))
+            val items = if (key == "items" && type == "math_ordering_drag") orderingItems(response)
+                else objects(response.optJSONArray(key))
+            items.forEach { rich(output, it) }
         }
         objects(response.optJSONArray("parameters")).forEach { append(output, it.string("label")) }
         append(output, response.string("unit"))
@@ -123,6 +139,17 @@ object LessonNarrationText {
     private fun fieldText(field: JSONObject): String = if (field.string("type") == "fixed") {
         field.string("text")
     } else field.string("label").ifBlank { blank } + field.string("unit").let { if (it.isBlank()) "" else " $it" }
+
+    /** This is presentation order only. The native control applies the same initialOrder,
+     * independently of validator.expected; malformed input remains for the parser to reject. */
+    private fun orderingItems(response: JSONObject): List<JSONObject> {
+        val items = objects(response.optJSONArray("items"))
+        val order = response.optJSONArray("initialOrder") ?: return items
+        val ids = (0 until order.length()).map { order.opt(it) as? String ?: return items }
+        val byId = items.associateBy { it.string("id") }
+        if (ids.size != items.size || ids.toSet().size != ids.size || ids.toSet() != byId.keys) return items
+        return ids.map { byId.getValue(it) }
+    }
 
     private fun options(output: MutableList<String>, options: JSONArray?) {
         if (options == null) return

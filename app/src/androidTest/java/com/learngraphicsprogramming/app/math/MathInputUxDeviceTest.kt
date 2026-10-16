@@ -424,7 +424,7 @@ class MathInputUxDeviceTest {
         pointer(started, MotionEvent.ACTION_DOWN, from[0], from[1])
         // A short deliberate press distinguishes card dragging from LDPlayer's
         // wheel-to-touch swipes; this is still below Android's long-press delay.
-        android.os.SystemClock.sleep(110)
+        android.os.SystemClock.sleep(25)
         for (step in 1..12) {
             android.os.SystemClock.sleep(24)
             val ratio = step / 12f

@@ -12,6 +12,7 @@ import com.learngraphicsprogramming.app.AppearanceUi
 import com.learngraphicsprogramming.app.ExerciseAnswerIdentity
 import com.learngraphicsprogramming.app.ProgressRepository
 import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.narration.NarrationUiInstructions
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -42,12 +43,19 @@ class MathPuzzleRenderer(
     private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, context.getString(R.string.math_ui_restart), accent)
     private val feedback = MathWidgetUi.text(context, "")
     private val spec = MathPuzzleParser.parse(block)
+    private val narrationSource = block
     private val fingerprint = MathPuzzleState.fingerprint(block)
     private val responses = linkedMapOf<String, MathResponseControl>()
     private val tools = linkedMapOf<String, MathResponseControl>()
     private val initialResponses = linkedMapOf<String, MathAnswer>()
     private val initialTools = linkedMapOf<String, MathAnswer>()
     private var initializing = true
+    /** Existing source fields, projected through the same order that draws the native cards. */
+    fun narrationSourceBlock(): JSONObject = MathNarrationPresentation.block(narrationSource,
+        responses.mapNotNull { (id, control) ->
+            (control.answer() as? MathAnswer.Order)?.let { id to it.ids }
+        }.toMap())
+
     var isCorrect: Boolean = false
         private set
 
@@ -81,9 +89,11 @@ class MathPuzzleRenderer(
                     ?: throw IllegalArgumentException("Herramienta no disponible: $type")
                 tools[id] = control
                 initialTools[id] = control.answer()
-                addReadableRepresentation(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))),
-                    listOf(tool.optString("label")))
+                addReadableRepresentation(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))))
                 view.addView(control.view)
+                collectReadableText(control.view, MathPuzzleUiInstructions.supplementary(type) {
+                    NarrationUiInstructions.forBlock(context, it)
+                })
             } else addReadableRepresentation(MathRepresentationRenderer.render(context, tool, accent), representationTexts(tool))
         }
         spec.responses.forEach { response ->
@@ -94,7 +104,8 @@ class MathPuzzleRenderer(
             responses[response.id] = control
             initialResponses[response.id] = control.answer()
             view.addView(control.view)
-            collectReadableText(control.view, responseTexts(response.config))
+            collectReadableText(control.view, responseTexts(response.config) + MathPuzzleUiInstructions.visible(
+                response.type, response.config) { NarrationUiInstructions.forBlock(context, it) })
         }
         view.addView(checkButton.apply { layoutParams = LinearLayout.LayoutParams(-1, -2) })
         feedback.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE

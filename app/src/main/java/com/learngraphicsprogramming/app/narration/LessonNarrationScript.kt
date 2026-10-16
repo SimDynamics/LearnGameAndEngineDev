@@ -26,7 +26,13 @@ data class LessonNarrationScript(
         /** Authoring/validation trees stay private. Only explicit successful feedback is included. */
         fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
                  forKokoro: Boolean = false,
-                 instruction: (String) -> String = { "" }): LessonNarrationScript {
+                 instruction: (String) -> String = { "" }): LessonNarrationScript =
+            presentedPage(lesson, pageIndex, language, forKokoro, instruction) { _, block -> block }
+
+        /** Reuses existing source fields in their native presentation, never a validator tree. */
+        internal fun presentedPage(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                 forKokoro: Boolean, instruction: (String) -> String,
+                 presentation: (Int, JSONObject) -> JSONObject): LessonNarrationScript {
             val blocks = lesson.optJSONArray("pages")?.optJSONObject(pageIndex)?.optJSONArray("blocks")
                 ?: return LessonNarrationScript(emptyList(), emptyList())
             val texts = mutableListOf<String>()
@@ -45,7 +51,7 @@ data class LessonNarrationScript(
             if (pageIndex == 0) append(paragraph(lesson.optString("title", "")), -1)
             for (index in 0 until blocks.length()) {
                 val block = blocks.optJSONObject(index) ?: continue
-                append(authored(block), index)
+                append(authored(presentation(index, block)), index)
                 val type = block.optString("type", "")
                 if (!isExercise(type)) continue
                 val start = texts.size

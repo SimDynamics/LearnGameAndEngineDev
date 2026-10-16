@@ -55,6 +55,27 @@ internal object NarrationResumePolicy {
     fun owns(history: NarrationResumeHistory, key: String, owner: String?): Boolean =
         owner != null && owner.isNotEmpty() && history.activeKey == key && history.activeOwner == owner
 
+    /** A presentation change updates its existing slot without promoting or evicting a page. */
+    fun relocate(history: NarrationResumeHistory, oldKey: String, newKey: String,
+                 transform: (NarrationResumePoint) -> NarrationResumePoint?): NarrationResumeHistory {
+        require(oldKey.isNotEmpty() && newKey.isNotEmpty())
+        if (oldKey == newKey) return history
+        val previous = history.entries.firstOrNull { it.key == oldKey } ?: return history
+        if (history.entries.any { it.key == newKey }) {
+            // A newer recording of this exact presentation takes precedence. The
+            // former owner's token must not gain permission to overwrite it.
+            val entries = history.entries.filterNot { it.key == oldKey }
+            return if (history.activeKey == oldKey) history.copy(entries = entries, activeKey = "", activeOwner = "")
+                else history.copy(entries = entries)
+        }
+        val point = transform(previous.point)?.takeIf {
+            it.segment >= 0 && it.positionMs >= 0 && it.feedbackHeardThrough >= 0
+        } ?: return history
+        return history.copy(entries = history.entries.map {
+            if (it.key == oldKey) NarrationResumeEntry(newKey, point) else it
+        }, activeKey = if (history.activeKey == oldKey) newKey else history.activeKey)
+    }
+
     /** Only an explicit playback request promotes a page or evicts the oldest bookmark. */
     fun begin(history: NarrationResumeHistory, key: String, owner: String,
               point: NarrationResumePoint): NarrationResumeHistory {

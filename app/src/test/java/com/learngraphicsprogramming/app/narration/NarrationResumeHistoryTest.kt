@@ -153,4 +153,54 @@ class NarrationResumeHistoryTest {
         previous?.let(NarrationPlaybackOwner::release)
         assertEquals(0, openPlayers)
     }
+
+    @Test fun presentationRelocationRetainsTheSameThreeSlotsWithoutPromotingThePage() {
+        val history = begin(begin(begin(NarrationResumeHistory(), "a"), "b"), "c")
+        val moved = NarrationResumePolicy.relocate(history, "b", "b-new") { it.copy(segment = 7) }
+        assertEquals(listOf("c", "b-new", "a"), moved.entries.map { it.key })
+        assertEquals(point.copy(segment = 7), NarrationResumePolicy.restore(moved, "b-new", 8))
+        assertNull(NarrationResumePolicy.restore(moved, "b", 8))
+        assertEquals(history.activeKey, moved.activeKey)
+        assertEquals(history.activeOwner, moved.activeOwner)
+        val fourth = begin(moved, "d")
+        assertEquals(listOf("d", "c", "b-new"), fourth.entries.map { it.key })
+    }
+
+    @Test fun relocatingTheActivePageChangesItsKeyAndRetainsOnlyItsCurrentOwner() {
+        val history = begin(NarrationResumeHistory(), "old")
+        val moved = NarrationResumePolicy.relocate(history, "old", "new") { it.copy(positionMs = 8_752) }
+        assertFalse(NarrationResumePolicy.owns(moved, "old", "owner-old"))
+        assertTrue(NarrationResumePolicy.owns(moved, "new", "owner-old"))
+        assertEquals(moved, NarrationResumePolicy.update(moved, "old", "owner-old", point))
+        assertEquals(moved, NarrationResumePolicy.update(moved, "new", "stale-owner", point))
+    }
+
+    @Test fun completedPageKeepsItsBoundedSlotAndReleasedOwnershipDuringRelocation() {
+        val initial = begin(begin(begin(NarrationResumeHistory(), "a"), "b"), "c")
+        val done = NarrationResumePolicy.update(initial, "c", "owner-c",
+            NarrationResumePoint(4, 19_700, finished = true, feedbackHeardThrough = 4))
+        val moved = NarrationResumePolicy.relocate(done, "c", "c-new") { it.copy(segment = 6, feedbackHeardThrough = 6) }
+        assertEquals(listOf("c-new", "b", "a"), moved.entries.map { it.key })
+        assertEquals(NarrationResumePoint(6, 19_700, finished = true, feedbackHeardThrough = 6),
+            NarrationResumePolicy.restore(moved, "c-new", 7))
+        assertEquals("", moved.activeKey)
+        assertEquals("", moved.activeOwner)
+    }
+
+    @Test fun existingDestinationWinsAndOldOwnerCannotOverwriteIt() {
+        val history = begin(begin(begin(NarrationResumeHistory(), "new"), "other"), "old")
+        val moved = NarrationResumePolicy.relocate(history, "old", "new") { error("Do not replace an existing destination") }
+        assertEquals(listOf("other", "new"), moved.entries.map { it.key })
+        assertEquals(point, NarrationResumePolicy.restore(moved, "new", 10))
+        assertEquals("", moved.activeOwner)
+        assertEquals(moved, NarrationResumePolicy.update(moved, "new", "owner-old", point.copy(positionMs = 1)))
+    }
+
+    @Test fun unsuccessfulOrAbsentRelocationDoesNotCreateOrEvictBookmarks() {
+        val history = begin(begin(begin(NarrationResumeHistory(), "a"), "b"), "c")
+        assertEquals(history, NarrationResumePolicy.relocate(history, "missing", "new") { error("Missing source") })
+        assertEquals(history, NarrationResumePolicy.relocate(history, "a", "new") { null })
+        assertEquals(history, NarrationResumePolicy.relocate(history, "a", "new") { it.copy(positionMs = -1) })
+        assertEquals(history, NarrationResumePolicy.relocate(history, "a", "a") { error("Same identity") })
+    }
 }
