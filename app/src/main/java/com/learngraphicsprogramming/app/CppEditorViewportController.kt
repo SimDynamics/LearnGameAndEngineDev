@@ -32,6 +32,9 @@ internal class CppEditorViewportController(
     private var verticalRange = 0
     private var gestureAxis = 0
     private var nativeSelectionGesture = false
+    private var startedInEmptySpace = false
+    private var pendingEmptyDown: MotionEvent? = null
+    private var delegatesGesture = false
     private var touchX = 0f
     private var touchY = 0f
     private var initialScrollX = 0
@@ -58,6 +61,8 @@ internal class CppEditorViewportController(
             stopObservingLayout()
             source.removeCallbacks(refreshTask)
             source.removeCallbacks(revealTask)
+            pendingEmptyDown?.recycle()
+            pendingEmptyDown = null
         }
     }
     private val textWatcher = object : TextWatcher {
@@ -74,6 +79,7 @@ internal class CppEditorViewportController(
     }
 
     init {
+        source.cppEditorViewport = this
         // The custom bars avoid device-specific native EditText scrollbar drawables.
         source.isHorizontalScrollBarEnabled = false
         source.isVerticalScrollBarEnabled = false
@@ -86,8 +92,10 @@ internal class CppEditorViewportController(
         if (source.isAttachedToWindow) observeLayout()
         source.setOnScrollChangeListener { _, _, _, _, _ -> synchronizeScroll() }
         source.setOnLongClickListener {
-            nativeSelectionGesture = true
-            false // Let TextView start its native selection/action mode.
+            if (startedInEmptySpace) true else {
+                nativeSelectionGesture = true
+                false // Let TextView start its native selection/action mode.
+            }
         }
         source.setOnTouchListener { _, event -> handleSourceTouch(event) }
         horizontalBar.setOnSeekBarChangeListener(barListener(horizontal = true))
@@ -193,15 +201,7 @@ internal class CppEditorViewportController(
 
     fun updateHorizontalBar() {
         if (disposed) return
-        val layout = source.layout
-        val width = (source.width - source.totalPaddingLeft - source.totalPaddingRight).coerceAtLeast(1)
-        // Android includes trailing whitespace in getLineWidth even when the
-        // wrapped text fits. Wrapping must never retain a horizontal pan range.
-        horizontalRange = if (wrapEnabled || layout == null || source.width <= 0) 0 else {
-            var widest = 0f
-            for (line in 0 until layout.lineCount) widest = maxOf(widest, layout.getLineWidth(line))
-            (widest - width).toInt().coerceAtLeast(0)
-        }
+        horizontalRange = actualHorizontalRange()
         horizontalBar.max = horizontalRange
         horizontalBar.progress = source.scrollX.coerceIn(0, horizontalRange)
         val compact = isFullscreen() && isKeyboardVisible() &&
@@ -211,19 +211,59 @@ internal class CppEditorViewportController(
         if (clamped != source.scrollX) source.scrollTo(clamped, source.scrollY)
     }
 
+    private fun actualHorizontalRange(): Int {
+        val layout = source.layout
+        val width = (source.width - source.totalPaddingLeft - source.totalPaddingRight).coerceAtLeast(1)
+        // Android includes trailing whitespace in getLineWidth even when the
+        // wrapped text fits. Wrapping must never retain a horizontal pan range.
+        return if (wrapEnabled || layout == null || source.width <= 0) 0 else {
+            var widest = 0f
+            for (line in 0 until layout.lineCount) widest = maxOf(widest, layout.getLineWidth(line))
+            (widest - width).toInt().coerceAtLeast(0)
+        }
+    }
+
     fun updateVerticalBar() {
         if (disposed) return
         updateBottomSafety()
-        val layout = source.layout
-        val height = (source.height - source.totalPaddingTop - source.totalPaddingBottom).coerceAtLeast(1)
-        verticalRange = if (layout == null || source.height <= 0) 0 else (layout.height - height).coerceAtLeast(0)
-        if (verticalRange <= dp(1)) verticalRange = 0
+        verticalRange = actualVerticalRange()
         verticalBar.max = verticalRange
         verticalBar.progress = source.scrollY.coerceIn(0, verticalRange)
         verticalBar.visibility = if (verticalRange > 0) View.VISIBLE else View.GONE
         val clamped = source.scrollY.coerceIn(0, verticalRange)
         if (clamped != source.scrollY) source.scrollTo(source.scrollX, clamped)
     }
+
+    private fun actualVerticalRange(): Int {
+        val layout = source.layout ?: return 0
+        if (source.height <= 0) return 0
+        val height = (source.height - source.totalPaddingTop - source.totalPaddingBottom).coerceAtLeast(1)
+        return (layout.height - height).coerceAtLeast(0).let { if (it <= dp(1)) 0 else it }
+    }
+
+    /** Same Layout coordinates as TextView selection, without snapping blank space to a word. */
+    private fun isTouchOnText(x: Float, y: Float): Boolean {
+        val layout = source.layout ?: return true // Unknown geometry keeps native ownership.
+        val textX = x + source.scrollX - source.totalPaddingLeft
+        val textY = y + source.scrollY - source.totalPaddingTop
+        if (textY < 0f || textY >= layout.height) return false
+        val line = layout.getLineForVertical(textY.toInt())
+        val text = source.text ?: return false
+        if (layout.getLineEnd(line) > text.length) return true // A pending edit has not been laid out yet.
+        if ((layout.getLineStart(line) until layout.getLineEnd(line)).all { text[it].isWhitespace() }) return false
+        val left = minOf(layout.getLineLeft(line), layout.getLineRight(line))
+        val right = maxOf(layout.getLineLeft(line), layout.getLineRight(line))
+        return textX >= left && textX <= right
+    }
+
+    fun startsInEmptySpace(rawX: Float, rawY: Float): Boolean {
+        val location = IntArray(2)
+        source.getLocationOnScreen(location)
+        return !isTouchOnText(rawX - location[0], rawY - location[1])
+    }
+
+    fun ownsHorizontalGestureAt(rawX: Float, rawY: Float): Boolean =
+        !startsInEmptySpace(rawX, rawY) || actualHorizontalRange() > 0
 
     fun setWrapEnabled(enabled: Boolean) {
         if (disposed) return
@@ -267,9 +307,14 @@ internal class CppEditorViewportController(
 
     private fun handleSourceTouch(event: MotionEvent): Boolean {
         if (disposed) return false
-        onEditorGesture()
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                pendingEmptyDown?.recycle()
+                pendingEmptyDown = null
+                startedInEmptySpace = !isTouchOnText(event.x, event.y)
+                delegatesGesture = false
+                updateHorizontalBar()
+                updateVerticalBar()
                 source.parent?.requestDisallowInterceptTouchEvent(true)
                 touchX = event.x
                 touchY = event.y
@@ -279,18 +324,36 @@ internal class CppEditorViewportController(
                 initialSelectionEnd = source.selectionEnd
                 gestureAxis = 0
                 val elapsed = event.eventTime - lastTapTime
-                nativeSelectionGesture = elapsed in 0..ViewConfiguration.getDoubleTapTimeout().toLong() &&
+                nativeSelectionGesture = !startedInEmptySpace && elapsed in 0..ViewConfiguration.getDoubleTapTimeout().toLong() &&
                     abs(event.x - lastTapX) <= configuration.scaledDoubleTapSlop &&
                     abs(event.y - lastTapY) <= configuration.scaledDoubleTapSlop
+                if (startedInEmptySpace) {
+                    // Do not let a long hold in blank space select the nearest word.
+                    // A stationary tap is delivered to TextView on UP instead.
+                    pendingEmptyDown = MotionEvent.obtain(event)
+                    return true
+                }
+                onEditorGesture()
                 source.suppressCursorAutoScroll = false
                 return false // Native taps, double taps and long presses retain selection handles.
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
+                onEditorGesture()
+                source.parent?.requestDisallowInterceptTouchEvent(true)
+                pendingEmptyDown?.let { down ->
+                    try { source.onTouchEvent(down) } finally { down.recycle() }
+                    pendingEmptyDown = null
+                }
+                startedInEmptySpace = false
+                delegatesGesture = false
                 nativeSelectionGesture = true
                 return gestureAxis != 0
             }
             MotionEvent.ACTION_MOVE -> {
-                if (nativeSelectionGesture) return false
+                if (delegatesGesture) return true
+                // A committed pan has already cancelled (or never entered) TextView.
+                // A second pointer must not resume it with an orphan native MOVE.
+                if (nativeSelectionGesture) return gestureAxis != 0
                 if (gestureAxis == 0 && source.selectionStart != source.selectionEnd &&
                     (source.selectionStart != initialSelectionStart || source.selectionEnd != initialSelectionEnd)) {
                     nativeSelectionGesture = true
@@ -300,9 +363,24 @@ internal class CppEditorViewportController(
                 val dy = event.y - touchY
                 if (gestureAxis == 0 && maxOf(abs(dx), abs(dy)) >= dragThreshold) {
                     gestureAxis = if (abs(dx) > abs(dy)) 1 else 2
+                    if (startedInEmptySpace &&
+                        (if (gestureAxis == 1) horizontalRange else verticalRange) == 0 && !isFullscreen()) {
+                        delegatesGesture = true
+                        pendingEmptyDown?.recycle()
+                        pendingEmptyDown = null
+                        // ScrollView saw the original DOWN. It can intercept the next
+                        // vertical MOVE normally; horizontal navigation remains in Activity.
+                        source.parent?.requestDisallowInterceptTouchEvent(false)
+                        return true
+                    }
+                    onEditorGesture()
                     source.suppressCursorAutoScroll = true
-                    val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-                    try { source.onTouchEvent(cancel) } finally { cancel.recycle() }
+                    if (!startedInEmptySpace) {
+                        val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+                        try { source.onTouchEvent(cancel) } finally { cancel.recycle() }
+                    }
+                    pendingEmptyDown?.recycle()
+                    pendingEmptyDown = null
                     val length = source.text?.length ?: 0
                     if (initialSelectionStart >= 0 && initialSelectionEnd >= 0) {
                         source.setSelection(initialSelectionStart.coerceIn(0, length), initialSelectionEnd.coerceIn(0, length))
@@ -310,11 +388,21 @@ internal class CppEditorViewportController(
                 }
                 if (gestureAxis == 1) source.scrollTo((initialScrollX - dx).toInt().coerceIn(0, horizontalRange), initialScrollY)
                 else if (gestureAxis == 2) source.scrollTo(initialScrollX, (initialScrollY - dy).toInt().coerceIn(0, verticalRange))
-                return gestureAxis != 0
+                return startedInEmptySpace || gestureAxis != 0
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                val consumed = startedInEmptySpace || gestureAxis != 0
+                pendingEmptyDown?.let { down ->
+                    try {
+                        if (event.actionMasked == MotionEvent.ACTION_UP && gestureAxis == 0) {
+                            source.suppressCursorAutoScroll = false
+                            source.onTouchEvent(down)
+                            source.onTouchEvent(event)
+                        }
+                    } finally { down.recycle() }
+                    pendingEmptyDown = null
+                }
                 source.parent?.requestDisallowInterceptTouchEvent(false)
-                val consumed = gestureAxis != 0
                 if (event.actionMasked == MotionEvent.ACTION_UP && !consumed) {
                     lastTapTime = event.eventTime
                     lastTapX = event.x
@@ -322,6 +410,8 @@ internal class CppEditorViewportController(
                 } else lastTapTime = Long.MIN_VALUE
                 gestureAxis = 0
                 nativeSelectionGesture = false
+                startedInEmptySpace = false
+                delegatesGesture = false
                 return consumed
             }
         }
@@ -331,6 +421,9 @@ internal class CppEditorViewportController(
     fun dispose() {
         if (disposed) return
         disposed = true
+        pendingEmptyDown?.recycle()
+        pendingEmptyDown = null
+        if (source.cppEditorViewport === this) source.cppEditorViewport = null
         source.removeCallbacks(refreshTask)
         source.removeCallbacks(revealTask)
         source.removeTextChangedListener(textWatcher)

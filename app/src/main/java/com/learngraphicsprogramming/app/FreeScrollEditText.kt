@@ -16,6 +16,7 @@ class FreeScrollEditText @JvmOverloads constructor(
     private val cppTabStops = CppEditorTabStops()
 
     internal var cppHardwareKeyHandler: ((Int, KeyEvent) -> Boolean)? = null
+    internal var cppEditorViewport: CppEditorViewportController? = null
 
     init {
         addTextChangedListener(object : TextWatcher {

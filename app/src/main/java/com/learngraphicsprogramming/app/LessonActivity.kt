@@ -244,6 +244,7 @@ class LessonActivity : AppCompatActivity() {
         mutableListOf<(Boolean) -> Unit>()
 
     private var ignoreCurrentSwipe = false
+    private var swipeStartedInEmptyCppEditor = false
 
     /*
  * Mientras el compilador está en fullscreen,
@@ -7895,6 +7896,7 @@ class LessonActivity : AppCompatActivity() {
                         android.R.id.content
                     )
 
+                swipeStartedInEmptyCppEditor = LessonGesturePolicy.startsInEmptyCppEditor(root, event.rawX, event.rawY)
                 ignoreCurrentSwipe = LessonGesturePolicy.isOwnedByControl(root, event.rawX, event.rawY) ||
                     (currentRouteId != AppearanceSettingsRepository.ROUTE_MATH_PHYSICS &&
                         isTouchInsideActiveHorizontalScroll(root, event.rawX, event.rawY))
@@ -7910,7 +7912,8 @@ class LessonActivity : AppCompatActivity() {
             MotionEvent.ACTION_MOVE -> {
                 // Once a gesture commits to vertical reading, it cannot later turn into a page swipe.
                 val selectedText = currentFocus as? TextView
-                if (event.eventTime - event.downTime >= android.view.ViewConfiguration.getLongPressTimeout() &&
+                if (!swipeStartedInEmptyCppEditor &&
+                    event.eventTime - event.downTime >= android.view.ViewConfiguration.getLongPressTimeout() &&
                     selectedText?.isEnabled == true && selectedText.hasSelection()) ignoreCurrentSwipe = true
                 val dx = kotlin.math.abs(event.x - touchStartX)
                 val dy = kotlin.math.abs(event.y - touchStartY)

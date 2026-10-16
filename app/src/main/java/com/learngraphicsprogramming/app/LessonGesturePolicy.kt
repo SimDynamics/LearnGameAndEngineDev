@@ -12,7 +12,7 @@ import android.widget.TextView
 internal object LessonGesturePolicy {
     const val INTERACTIVE_TAG = "math_gesture_owner"
 
-    fun isOwnedByControl(view: View, rawX: Float, rawY: Float): Boolean {
+    private fun hitPath(view: View, rawX: Float, rawY: Float): List<View> {
         val bounds = Rect()
         val path = mutableListOf<View>()
         fun hit(candidate: View): Boolean {
@@ -26,11 +26,21 @@ internal object LessonGesturePolicy {
             }
             return true
         }
-        if (!hit(view) || path.any { !it.isEnabled }) return false
+        return if (hit(view) && path.none { !it.isEnabled }) path else emptyList()
+    }
+
+    fun startsInEmptyCppEditor(view: View, rawX: Float, rawY: Float): Boolean =
+        hitPath(view, rawX, rawY).filterIsInstance<FreeScrollEditText>().any {
+            it.cppEditorViewport?.startsInEmptySpace(rawX, rawY) == true
+        }
+
+    fun isOwnedByControl(view: View, rawX: Float, rawY: Float): Boolean {
         // Tap targets do not require horizontal ownership; short formulas can be swiped.
-        return path.any { target ->
+        return hitPath(view, rawX, rawY).any { target ->
             when (target) {
                 is HorizontalScrollView -> target.canScrollHorizontally(-1) || target.canScrollHorizontally(1)
+                is FreeScrollEditText -> target.cppEditorViewport?.ownsHorizontalGestureAt(rawX, rawY)
+                    ?: (target.hasFocus() && target.isFocusable)
                 is EditText -> target.hasFocus() && target.isFocusable
                 is SeekBar -> true
                 else -> target.tag == INTERACTIVE_TAG ||
