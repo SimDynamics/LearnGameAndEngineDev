@@ -14,6 +14,15 @@ object SpanishMathSpeech {
     private val root = Regex("√(?:\\d+(?:[.,]\\d+)?|[a-zA-Zπ]|\\([^\\n()]+\\))")
     private val coordinates = Regex("\\([−-]?\\d+(?:[.,]\\d+)?,\\s*[−-]?\\d+(?:[.,]\\d+)?\\)")
     private val arithmetic = Regex("[−-]?\\d+(?:[.,]\\d+)?(?:\\s*[×÷+−*-]\\s*[−-]?\\d+(?:[.,]\\d+)?)+")
+    private val numericOperand = "[−-]?\\d+(?:[.,]\\d+)?"
+    // A partial arithmetic reading followed by a literal '= number;' can become
+    // an apparent C++ assignment in the later Spanish frontend ("ocho = 6308;").
+    // Consume that complete mathematical clause before its ordinary semicolon.
+    // Other formulas retain their established text, phones and cache identities.
+    private val punctuatedNumericEquation = Regex(
+        "$numericOperand(?:\\s*[×÷+−*/-]\\s*$numericOperand)+\\s*=\\s*" +
+            "$numericOperand(?:\\s*[×÷+−*/-]\\s*$numericOperand)*(?=\\s*;)"
+    )
     private val relation = Regex("[xyab]\\s*[=<>≤≥≠≈]\\s*(?:[−-]?\\d+(?:[.,]\\d+)?[xyab]?|[xyab])(?:\\s*[+−-]\\s*(?:\\d+[xyab]?|[xyab]))*")
     private val wholeMath = Regex("[\\d\\s.,;:a-zA-Zα-ωπ∞=<>≤≥≠≈→+−*/×÷·()\\[\\]{}|?²³⁴⁵⁶⁷⁸⁹⁰¹^_%!√-]+")
     private val protectedToken = Regex("https?://\\S+|[A-Za-z]:[/\\\\]\\S+|(?<![\\p{L}\\p{N}\\\\])/\\S+|[A-Za-z_][\\w.-]*[/\\\\][\\w./\\\\-]+|\\d{1,4}/\\d{1,2}/\\d{1,4}")
@@ -78,19 +87,21 @@ object SpanishMathSpeech {
 
     /** auto recognizes explicit math and safe fragments. text preserves paths/code and plain prose. */
     fun text(text: String, mathMode: String = "auto"): String = renderMathText(
-        text, mathMode, ::speak, "expresión matemática no interpretable"
+        text, mathMode, ::speak, "expresión matemática no interpretable", completePunctuatedEquations = true
     )
 
     /** Observes the existing replacements; source and emitted speech remain unchanged. */
     internal fun textObserved(text: String, mathMode: String = "auto",
                               onPiece: (Int, Int, String) -> Unit): String = renderMathText(
-        text, mathMode, ::speak, "expresión matemática no interpretable", granularReading = true, onPiece = onPiece
+        text, mathMode, ::speak, "expresión matemática no interpretable", granularReading = true,
+        completePunctuatedEquations = true, onPiece = onPiece
     )
 
     /** Shared parsing boundary: callers provide an AST visitor, never translated Spanish speech. */
     internal fun renderMathText(
         text: String, mathMode: String, render: (MathExpression) -> String, unreadable: String,
         granularReading: Boolean = false,
+        completePunctuatedEquations: Boolean = false,
         onPiece: ((Int, Int, String) -> Unit)? = null
     ): String {
         fun observeFormula(start: Int, end: Int, source: String, base: Int,
@@ -169,7 +180,8 @@ object SpanishMathSpeech {
                     continue
                 }
             }
-            val candidate = listOf(fraction, root, power, arithmetic, relation, coordinates).mapNotNull {
+            val candidate = listOfNotNull(fraction, root, power,
+                punctuatedNumericEquation.takeIf { completePunctuatedEquations }, arithmetic, relation, coordinates).mapNotNull {
                 it.matchAt(text, index)
             }.maxByOrNull { it.value.length }
             if (candidate != null && safeBoundary(text, index - 1) && safeBoundary(text, candidate.range.last + 1) &&

@@ -18,10 +18,11 @@ class MathResidualWordTraceTest {
     @Test fun bothReportedGreenFeedbacksRetainWholeProductionPhonesAndEveryOriginalLexicalOwner() {
         for (visible in listOf(
             "El 6 está en las centenas y aporta 6 × 100 = 600.",
-            "5006 = 5000 + 0 + 0 + 6. Los dos ceros mantienen centenas y decenas."
+            "5006 = 5000 + 0 + 0 + 6. Los dos ceros mantienen centenas y decenas.",
+            "6000 + 300 + 8 = 6308; no hay decenas y se conserva esa posición con cero."
         )) {
             val prepared = prepared(visible)
-            assertTrue(visible, '=' in prepared)
+            assertTrue(visible, ManualEnglishSpeech.isPrepared(prepared))
             NarrationSegments.sentences(listOf(prepared)).forEach(::assertTrace)
         }
     }

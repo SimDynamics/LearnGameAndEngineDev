@@ -1714,18 +1714,162 @@ class WordReadingDeviceTest {
         assertEquals(sourceIdentity, LessonRepository.loadLessonJson(context, ROUTE, MATH_PLACE_VALUE_LESSON).toString())
     }
 
-    private fun openActualMathPlaceValuePage(): Pair<ActivityScenario<LessonActivity>, JSONObject> {
+    @Test fun actualMathPageThreeDecompositionFeedbackRevealsEachNumberAndOperatorWithNativeTiming() {
+        val pageIndex = 2
+        val block = 2
+        val expression = "6000 + 300 + 8 = 6308"
+        val (host, source) = openActualMathPlaceValuePage(pageIndex)
+        val sourceIdentity = source.toString()
+        val script = LessonNarrationScript.page(source, pageIndex, NarrationLanguage.SPANISH, forKokoro = true) {
+            NarrationUiInstructions.forBlock(context, it)
+        }
+        val plan = requireNotNull(script.readingPlan(NarrationEngine.KOKORO))
+        val sentences = NarrationSegments.sentences(script.texts)
+        val segments = plan.origins.indices.filter { plan.origins[it].blockIndex == block && plan.origins[it].feedback }
+        assertTrue("The real published successful feedback is narrated", segments.isNotEmpty())
+        // The first feedback segment is the existing "Correcto." heading; the
+        // following one owns this published mathematical explanation.
+        val first = segments.drop(1).first()
+        val last = segments.last()
+        lateinit var result: ReadingTextView
+        lateinit var originals: List<TextFact>
+        host.onActivity { activity ->
+            val card = actualMathCard(activity, source, block, pageIndex)
+            assertTrue(descendants(card).single { it.contentDescription == activity.getString(R.string.math_ui_restart) }.performClick())
+            descendants(card).filterIsInstance<EditText>().single().setText("6308")
+            assertTrue(descendants(card).single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick())
+        }
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            result = actualMathFeedback(activity, source, block, pageIndex)
+            assertTrue(result.safeSupportsWordReading)
+            assertMathSemanticCoverage(result, expression)
+            val expressionStart = result.text.indexOf(expression)
+            assertTrue("All of the original expression starts pending", expression.indices.filter { !expression[it].isWhitespace() }
+                .all { offset -> field<List<ReadingTextRange>>(result, "unreadRanges").any { expressionStart + offset in it.start until it.endExclusive } })
+            originals = facts(result)
+            result.requestRectangleOnScreen(Rect(0, 0, result.width, result.height), true)
+            saveParagraph(result, "actual-math-page-three-feedback-before-native")
+            // Resume at the existing feedback boundary without crediting any heard audio.
+            val key = NarrationResumePolicy.key(identity(activity), NarrationLanguage.SPANISH.tag,
+                NarrationEngine.KOKORO.name, "ef_dora", sentences)
+            NarrationResumeStore(activity).begin(key, NarrationResumePoint(first, 0L))
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Real Kokoro starts the original page-three feedback audio", 180_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                ready = reader.isPlaying && field<Int>(reader, "index") == first &&
+                    field<Boolean>(reader, "playerReady") &&
+                    requireNotNull(field<MediaPlayer?>(reader, "player")).currentPosition >= 400
+            }
+            ready
+        }
+        val expressionStart = result.text.indexOf(expression)
+        val atoms = Regex("\\d+|[+=]").findAll(expression).map {
+            ReadingTextRange(expressionStart + it.range.first, expressionStart + it.range.last + 1)
+        }.toList()
+        val firstReads = linkedMapOf<Int, Long>()
+        var mixedCaptured = false
+        val evidence = JSONArray()
+        host.onActivity { activity ->
+            // Capture the baseline before checking ownership: this is a genuine native
+            // reproduction, not a synthetic alignment or replacement lesson fixture.
+            controller(activity).pauseKeepingPosition()
+            assertNull("The inspection pause releases MediaPlayer", field<MediaPlayer?>(controller(activity), "player"))
+            saveParagraph(result, "actual-math-page-three-feedback-native-start")
+            capture("actual-math-page-three-feedback-native-start")
+        }
+        await("The played page-three feedback retains model-native alignment at its real paused position", 10_000) {
+            var ready = false
+            host.onActivity { activity -> ready = alignment(activity) != null }
+            ready
+        }
+        host.onActivity { activity ->
+            val mapping = requireNotNull(pageMappings(activity)[first])
+            for ((ordinal, atom) in atoms.withIndex()) {
+                val owners = mapping.displayed.filter { it.start < atom.endExclusive && it.endExclusive > atom.start }
+                assertTrue("Every original number/operator has a source-audio owner: ${result.text.subSequence(atom.start, atom.endExclusive)}", owners.isNotEmpty())
+                assertTrue("An expression-wide owner must never delay number/operator $ordinal until the whole formula finishes: $owners",
+                    owners.none { owner -> atoms.withIndex().any { (other, range) -> other != ordinal &&
+                        owner.start < range.endExclusive && owner.endExclusive > range.start } })
+            }
+            val current = requireNotNull(alignment(activity)) {
+                "The actual page-three feedback audio must expose its model-native word alignment; the native baseline capture precedes this assertion"
+            }
+            assertEquals(mapping.spoken, current.words.map { ReadingTextRange(it.start, it.endExclusive) })
+            assertEquals(sha256(field(field<List<Any>>(controller(activity), "segments")[first], "file")), current.audioSha256)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("Every number and operator progressively becomes read during genuine Kokoro feedback playback", 90_000) {
+            var done = false
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val index = field<Int>(reader, "index")
+                if (reader.isPlaying && index in segments && field<Boolean>(reader, "playerReady")) {
+                    val mask = field<List<ReadingTextRange>>(result, "unreadRanges")
+                    val player = requireNotNull(field<MediaPlayer?>(reader, "player"))
+                    atoms.forEachIndexed { ordinal, atom ->
+                        if (mask.none { it.start < atom.endExclusive && it.endExclusive > atom.start })
+                            firstReads.putIfAbsent(ordinal, player.currentPosition.toLong())
+                    }
+                    if (!mixedCaptured && firstReads.size in 1 until atoms.size) {
+                        mixedCaptured = true
+                        assertMixedPixels(result)
+                        saveParagraph(result, "actual-math-page-three-feedback-expression-mixed-native")
+                        capture("actual-math-page-three-feedback-expression-mixed")
+                    }
+                    evidence.put(JSONObject().put("segment", index).put("positionMs", player.currentPosition)
+                        .put("readAtoms", JSONArray(firstReads.keys.toList()))
+                        .put("pending", JSONArray(mask.map { JSONArray(listOf(it.start, it.endExclusive)) })))
+                }
+                done = index > last
+            }
+            done
+        }
+        host.onActivity { activity ->
+            val reader = controller(activity)
+            reader.pauseKeepingPosition()
+            assertTrue("The same expression contains normal and pending glyphs during actual speech", mixedCaptured)
+            assertEquals("Every original number and operator becomes read before leaving its spoken segment", atoms.indices.toSet(), firstReads.keys)
+            assertTrue("Numbers and operators cannot all whiten at the same whole-expression boundary", firstReads.values.distinct().size >= 5)
+            assertTrue(field<List<ReadingTextRange>>(result, "unreadRanges").isEmpty())
+            assertEquals(android.graphics.Color.rgb(180, 220, 190), result.currentTextColor)
+            assertMathSemanticCoverage(result, expression)
+            assertFacts(originals)
+            assertNull("A retained feedback position releases MediaPlayer", field<MediaPlayer?>(reader, "player"))
+            val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+            val heard = gate.heardThrough
+            repeat(4) { assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick()) }
+            val rewound = field<List<ReadingTextRange>>(result, "unreadRanges").sumOf { it.endExclusive - it.start }
+            assertTrue("Rewinding restores pending feedback glyphs", rewound > 0)
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonForwardFive).performClick())
+            assertTrue(field<List<ReadingTextRange>>(result, "unreadRanges").sumOf { it.endExclusive - it.start } < rewound)
+            assertEquals("Visual skips do not grant successful-feedback listening credit", heard, gate.heardThrough)
+            assertNull(field<MediaPlayer?>(reader, "player"))
+            saveParagraph(result, "actual-math-page-three-feedback-after-seeks-native")
+            assertEquals(sourceIdentity, field<JSONObject>(activity, "lessonJson").toString())
+            File(evidence(), "actual-math-page-three-feedback-word-regression.json").writeText(JSONObject()
+                .put("lesson", MATH_PLACE_VALUE_LESSON).put("pageIndex", pageIndex).put("block", block)
+                .put("expression", expression).put("numberAndOperatorFirstReadsMs", JSONObject(firstReads.mapKeys { it.key.toString() }))
+                .put("actualPlaybackSamples", evidence).put("sourceTextSpansDimensionsAndAnswersPreserved", true).toString(2))
+        }
+        assertEquals(sourceIdentity, LessonRepository.loadLessonJson(context, ROUTE, MATH_PLACE_VALUE_LESSON).toString())
+    }
+
+    private fun openActualMathPlaceValuePage(pageIndex: Int = 1): Pair<ActivityScenario<LessonActivity>, JSONObject> {
         val source = LessonRepository.loadLessonJson(context, ROUTE, MATH_PLACE_VALUE_LESSON)
-        ProgressRepository.saveCurrentPage(context, ROUTE, MATH_PLACE_VALUE_LESSON, 1)
+        ProgressRepository.saveCurrentPage(context, ROUTE, MATH_PLACE_VALUE_LESSON, pageIndex)
         val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
             .putExtra("routeId", ROUTE).putExtra("courseId", "math_course_01")
             .putExtra("unitId", "numeros_y_operaciones").putExtra("lessonId", MATH_PLACE_VALUE_LESSON)
             .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)).also { scenario = it }
-        await("The unchanged published mathematics page two opens with its original puzzle controls", 15_000) {
+        await("The unchanged published mathematics page ${pageIndex + 1} opens with its original puzzle controls", 15_000) {
             var ready = false
             host.onActivity { activity ->
-                ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == 1 &&
-                    texts(activity).any { it.text.startsWith("En nuestro sistema de numeración") } &&
+                ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == pageIndex &&
+                    texts(activity).any { it.text.startsWith(if (pageIndex == 1) "En nuestro sistema de numeración" else "Una descomposición") } &&
                     !content(activity).isLayoutRequested
             }
             ready
@@ -1744,8 +1888,8 @@ class WordReadingDeviceTest {
         return texts(activity).single { it.text.toString() == expected } as ReadingTextView
     }
 
-    private fun actualMathCard(activity: LessonActivity, source: JSONObject, block: Int): ViewGroup {
-        val prompt = source.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks").getJSONObject(block).getString("prompt")
+    private fun actualMathCard(activity: LessonActivity, source: JSONObject, block: Int, pageIndex: Int = 1): ViewGroup {
+        val prompt = source.getJSONArray("pages").getJSONObject(pageIndex).getJSONArray("blocks").getJSONObject(block).getString("prompt")
         return descendants(content(activity)).filterIsInstance<ViewGroup>().single { card ->
             card.tag == MathPuzzleRenderer.INTERACTION_TAG && descendants(card).filterIsInstance<TextView>()
                 .any { it.text.toString() == MathTextRenderer.render(prompt).toString() }
@@ -1763,10 +1907,10 @@ class WordReadingDeviceTest {
         }
     }
 
-    private fun actualMathFeedback(activity: LessonActivity, source: JSONObject, block: Int): ReadingTextView {
-        val expected = source.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks").getJSONObject(block)
+    private fun actualMathFeedback(activity: LessonActivity, source: JSONObject, block: Int, pageIndex: Int = 1): ReadingTextView {
+        val expected = source.getJSONArray("pages").getJSONObject(pageIndex).getJSONArray("blocks").getJSONObject(block)
             .getJSONObject("feedback").getString("correct")
-        return descendants(actualMathCard(activity, source, block)).filterIsInstance<ReadingTextView>()
+        return descendants(actualMathCard(activity, source, block, pageIndex)).filterIsInstance<ReadingTextView>()
             .single { it.text.toString().contains(MathTextRenderer.render(expected).toString()) && it.currentTextColor == android.graphics.Color.rgb(180, 220, 190) }
     }
 

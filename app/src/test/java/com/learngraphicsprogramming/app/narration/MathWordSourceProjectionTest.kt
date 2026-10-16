@@ -7,6 +7,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MathWordSourceProjectionTest {
+    @Test fun decompositionFeedbackOwnsEachNumberAndOperatorBeforeItsFollowingProse() {
+        val source = "6000 + 300 + 8 = 6308; no hay decenas y se conserva esa posición con cero."
+        val (parts, mapping) = mapping(source, NarrationLanguage.SPANISH)
+        assertEquals("Every spoken segment needs original source ownership: $parts", parts.keys, mapping.keys)
+        val atoms = Regex("6000|300|6308|8|[+=]").findAll(source).toList()
+        val owners = atoms.map { atom ->
+            mapping.values.flatMap { it.displayed }.distinct().single {
+                atom.range.first in it.start until it.endExclusive
+            }
+        }
+        assertEquals("The expression must reveal seven original atoms, not a single formula: $parts/$mapping",
+            atoms.size, owners.distinct().size)
+        owners.zipWithNext().forEach { (before, after) -> assertTrue(before.endExclusive <= after.start) }
+        assertTrue("Following prose cannot own the complete expression", owners.last().endExclusive <= source.indexOf("no hay"))
+    }
+
     @Test fun observedFlatMathematicsKeepsExactAudioInputAndIndividualSourceAtomsInEveryLanguage() {
         for (language in NarrationLanguage.entries) for (expression in listOf(
             "6 × 100 = 600", "5006 = 5000 + 0 + 0 + 6", "3047=3000+0+40+7",
