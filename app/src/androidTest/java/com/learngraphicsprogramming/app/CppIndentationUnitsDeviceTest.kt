@@ -209,6 +209,21 @@ class CppIndentationUnitsDeviceTest {
             input.setSelection(4)
             backspace(input)
             assertEquals("main();", input.text.toString())
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(main, input.text.toString())
+            assertEquals(listOf(0), starts(requireNotNull(input.text)))
+            // Reopen directly from the saved draft. Do not ask the original project
+            // for a snapshot first: that could conceal a missing post-undo save.
+            val immediatelyRestored = Fixture("").input
+            CppLessonProjectEditor(context, block, key, immediatelyRestored) { }
+            assertEquals(main, immediatelyRestored.text.toString())
+            assertEquals(listOf(0), starts(requireNotNull(immediatelyRestored.text)))
+            immediatelyRestored.setSelection(4)
+            backspace(immediatelyRestored)
+            assertEquals("main();", immediatelyRestored.text.toString())
+            input.setSelection(4)
+            backspace(input)
+            assertEquals("main();", input.text.toString())
             CppCodeInputRules.insertTab(input)
             assertEquals("\tmain();", input.text.toString())
             file(project, "helper.cpp").performClick()
@@ -429,6 +444,301 @@ class CppIndentationUnitsDeviceTest {
         assertEquals(emptyList<Int>(), starts(CppIndentationUnits.loadedText(code, invalidLiteral)))
     }
 
+    @Test fun nativeUndoAndRedoRestoreAuthoredUnitOriginsAndAtomicDeletionRepeatedly() = onMain {
+        val code = "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}"
+        for (token in listOf("std::cout", "return")) {
+            val input = Fixture("").input
+            input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+            val caret = code.indexOf(token)
+            val unit = caret - 4
+            val withoutUnit = code.removeRange(unit, caret)
+            val authoredStarts = starts(requireNotNull(input.text))
+            input.setSelection(caret)
+            backspace(input)
+            assertEquals(withoutUnit, input.text.toString())
+            assertEquals(unit, input.selectionStart)
+
+            repeat(3) {
+                nativeHistory(input, android.R.id.undo)
+                assertEquals("One native undo restores all four authored characters", code, input.text.toString())
+                assertEquals(caret, input.selectionStart)
+                assertEquals(caret, input.selectionEnd)
+                assertEquals("Undo restores provenance as well as text", authoredStarts, starts(requireNotNull(input.text)))
+                nativeHistory(input, android.R.id.redo)
+                assertEquals(withoutUnit, input.text.toString())
+                assertEquals(unit, input.selectionStart)
+                nativeHistory(input, android.R.id.undo)
+                assertEquals(code, input.text.toString())
+                backspace(input)
+                assertEquals("Backspace remains a whole unit after every undo", withoutUnit, input.text.toString())
+                assertEquals(unit, input.selectionStart)
+                assertEquals(unit, input.selectionEnd)
+            }
+        }
+    }
+
+    @Test fun nativeUndoNeverPromotesFourManualSpacesToAnAuthoredUnit() = onMain {
+        val input = Fixture("value;").input
+        input.setSelection(0)
+        val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try { assertTrue(connection.commitText("    ", 1)) }
+        finally { connection.closeConnection() }
+        assertEquals("    value;", input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+        backspace(input)
+        assertEquals("   value;", input.text.toString())
+        repeat(3) {
+            nativeHistory(input, android.R.id.undo)
+            assertEquals("    value;", input.text.toString())
+            assertEquals(4, input.selectionStart)
+            assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.redo)
+            assertEquals("   value;", input.text.toString())
+            nativeHistory(input, android.R.id.undo)
+            backspace(input)
+            assertEquals("Undo must not infer an origin from four consecutive spaces", "   value;", input.text.toString())
+            assertEquals(3, input.selectionStart)
+        }
+    }
+
+    @Test fun nativeUndoOfASelectionReplacementRestoresOnlyItsOriginalPredefinedUnits() = onMain {
+        val code = "    first();\n    second();"
+        for ((start, end) in listOf(0 to 4, 4 to 0)) {
+            val input = Fixture("").input
+            input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+            input.setSelection(start, end)
+            val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+            try { assertTrue(connection.commitText("x", 1)) }
+            finally { connection.closeConnection() }
+            assertEquals("xfirst();\n    second();", input.text.toString())
+            assertEquals(1, input.selectionStart)
+            assertEquals(1, input.selectionEnd)
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(code, input.text.toString())
+            assertEquals(listOf(0, code.indexOf("    second")), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.redo)
+            assertEquals("xfirst();\n    second();", input.text.toString())
+            assertEquals(listOf("xfirst();\n".length), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.undo)
+            input.setSelection(4)
+            backspace(input)
+            assertEquals("first();\n    second();", input.text.toString())
+            assertEquals(0, input.selectionStart)
+        }
+    }
+
+    @Test fun nativeUndoRestoresExplicitTabAndItsManualPrefixWithoutChangingEitherOrigin() = onMain {
+        for (spaces in 1..3) {
+            val input = Fixture(" ".repeat(spaces) + "value;").input
+            input.setSelection(spaces)
+            CppCodeInputRules.insertTab(input)
+            assertEquals("\tvalue;", input.text.toString())
+            assertEquals(1, input.selectionStart)
+            backspace(input)
+            assertEquals("value;", input.text.toString())
+            repeat(2) {
+                nativeHistory(input, android.R.id.undo)
+                assertEquals("\tvalue;", input.text.toString())
+                assertEquals(1, input.selectionStart)
+                nativeHistory(input, android.R.id.redo)
+                assertEquals("value;", input.text.toString())
+                nativeHistory(input, android.R.id.undo)
+                backspace(input)
+                assertEquals("A restored real TAB still deletes in one native operation", "value;", input.text.toString())
+            }
+            nativeHistory(input, android.R.id.undo)
+            nativeHistory(input, android.R.id.undo)
+            assertEquals("Undoing TAB completion restores its original manual prefix", " ".repeat(spaces) + "value;", input.text.toString())
+            assertEquals(spaces, input.selectionStart)
+            assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+            backspace(input)
+            assertEquals(" ".repeat(spaces - 1) + "value;", input.text.toString())
+        }
+    }
+
+    @Test fun nativeHistoryDistinguishesIdenticalSourceWithAuthoredAndManualIndentationOrigins() = onMain {
+        val code = "    value;"
+        for ((start, end) in listOf(0 to 4, 4 to 0)) {
+            val input = Fixture("").input
+            input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+            input.setSelection(start, end)
+            val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+            try { assertTrue(connection.commitText("    ", 1)) }
+            finally { connection.closeConnection() }
+            assertEquals("The replacement intentionally preserves every source character", code, input.text.toString())
+            assertEquals("Replacement characters have manual origin", emptyList<Int>(), starts(requireNotNull(input.text)))
+            assertEquals(4, input.selectionStart)
+
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(code, input.text.toString())
+            assertEquals("Undo must select the original origin, not any matching text hash", listOf(0), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.redo)
+            assertEquals(code, input.text.toString())
+            assertEquals("Redo restores manually entered spaces even though source bytes match", emptyList<Int>(), starts(requireNotNull(input.text)))
+            input.setSelection(4)
+            backspace(input)
+            assertEquals("   value;", input.text.toString())
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(code, input.text.toString())
+            assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(code, input.text.toString())
+            assertEquals(listOf(0), starts(requireNotNull(input.text)))
+            input.setSelection(4)
+            backspace(input)
+            assertEquals("value;", input.text.toString())
+        }
+    }
+
+    @Test fun nativeBatchUndoRestoresAuthoredOriginsAfterRepeatedIdenticalManualRetyping() = onMain {
+        val code = "    value;"
+        val input = Fixture("").input
+        input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+        val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try {
+            assertTrue(connection.beginBatchEdit())
+            repeat(2) {
+                input.setSelection(0, 4)
+                assertTrue(connection.commitText("", 1))
+                assertEquals("value;", input.text.toString())
+                assertTrue(connection.commitText("    ", 1))
+                assertEquals(code, input.text.toString())
+                assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+            }
+        } finally {
+            connection.endBatchEdit()
+            connection.closeConnection()
+        }
+        nativeHistory(input, android.R.id.undo)
+        assertEquals("One Android batch is undone as one native edit", code, input.text.toString())
+        assertEquals("Repeated equal snapshots must not hide the batch's original provenance", listOf(0), starts(requireNotNull(input.text)))
+        nativeHistory(input, android.R.id.redo)
+        assertEquals(code, input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+        nativeHistory(input, android.R.id.undo)
+        input.setSelection(4)
+        backspace(input)
+        assertEquals("value;", input.text.toString())
+    }
+
+    @Test fun anEditAfterNativeUndoDiscardsRedoProvenanceWithoutChangingManualSpaceRules() = onMain {
+        val code = "    value;"
+        val input = Fixture("").input
+        input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+        input.setSelection(4)
+        backspace(input)
+        assertEquals("value;", input.text.toString())
+        nativeHistory(input, android.R.id.undo)
+        assertEquals(code, input.text.toString())
+        assertEquals(listOf(0), starts(requireNotNull(input.text)))
+        input.setSelection(0, 4)
+        val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try { assertTrue(connection.commitText("   ", 1)) }
+        finally { connection.closeConnection() }
+        assertEquals("   value;", input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+        // TextView consumes the menu command even when its redo stack is empty.
+        // Observe the actual source/origin state rather than its boolean result.
+        input.onTextContextMenuItem(android.R.id.redo)
+        assertEquals("The discarded deletion branch must not run", "   value;", input.text.toString())
+        assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+        assertEquals(3, input.selectionStart)
+        backspace(input)
+        assertEquals("  value;", input.text.toString())
+        assertEquals(2, input.selectionStart)
+        nativeHistory(input, android.R.id.undo)
+        nativeHistory(input, android.R.id.undo)
+        assertEquals(code, input.text.toString())
+        assertEquals("Undo of the new branch restores the original authored unit", listOf(0), starts(requireNotNull(input.text)))
+        input.setSelection(4)
+        backspace(input)
+        assertEquals("value;", input.text.toString())
+    }
+
+    @Test fun nativeHistoryReplaysAutoPairsAndEnterIndentationWithoutApplyingTheRulesTwice() = onMain {
+        for ((opening, pair) in listOf("(" to "()", "[" to "[]", "{" to "{}", "\"" to "\"\"", "'" to "''")) {
+            val input = Fixture("").input
+            input.setSelection(0)
+            val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+            try { assertTrue(connection.commitText(opening, 1)) }
+            finally { connection.closeConnection() }
+            assertEquals(pair, input.text.toString())
+            repeat(3) {
+                nativeHistory(input, android.R.id.undo)
+                assertEquals("Undo removes the original automatic pair as one native operation", "", input.text.toString())
+                nativeHistory(input, android.R.id.redo)
+                assertEquals("Redo must replay the recorded pair without appending another closing character", pair, input.text.toString())
+                assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+            }
+        }
+
+        val input = Fixture("").input
+        val original = "    {}"
+        val expanded = "    {\n    \t\n    }"
+        input.setText(CppIndentationUnits.loadedText(original, seedPredefined = true))
+        input.setSelection(5)
+        val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+        try { assertTrue(connection.commitText("\n", 1)) }
+        finally { connection.closeConnection() }
+        assertEquals(expanded, input.text.toString())
+        val expandedStarts = listOf(0, expanded.indexOf('\n') + 1, expanded.lastIndexOf('\n') + 1)
+        assertEquals(expandedStarts, starts(requireNotNull(input.text)))
+        repeat(3) {
+            nativeHistory(input, android.R.id.undo)
+            assertEquals(original, input.text.toString())
+            assertEquals(listOf(0), starts(requireNotNull(input.text)))
+            nativeHistory(input, android.R.id.redo)
+            assertEquals("Redo must not generate additional lines or indentation", expanded, input.text.toString())
+            assertEquals(expandedStarts, starts(requireNotNull(input.text)))
+        }
+    }
+
+    @Test fun nativeNoOpClosingDelimiterSkipPreservesOriginsAndDiscardsTheOldRedoBranch() = onMain {
+        val code = "    ()"
+        for (skipAfterUndo in listOf(false, true)) {
+            val input = Fixture("").input
+            input.setText(CppIndentationUnits.loadedText(code, seedPredefined = true))
+            if (skipAfterUndo) {
+                // Build an identical-text redo state whose indentation is manual.
+                input.setSelection(0, 4)
+                val replacement = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+                try { assertTrue(replacement.commitText("    ", 1)) }
+                finally { replacement.closeConnection() }
+                assertEquals(code, input.text.toString())
+                assertEquals(emptyList<Int>(), starts(requireNotNull(input.text)))
+                nativeHistory(input, android.R.id.undo)
+                assertEquals(code, input.text.toString())
+                assertEquals(listOf(0), starts(requireNotNull(input.text)))
+            }
+            input.setSelection(5)
+            val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
+            try { assertTrue(connection.commitText(")", 1)) }
+            finally { connection.closeConnection() }
+            assertEquals("Skipping an existing delimiter changes neither source nor origins", code, input.text.toString())
+            assertEquals(6, input.selectionStart)
+            assertEquals(listOf(0), starts(requireNotNull(input.text)))
+            if (skipAfterUndo) {
+                input.onTextContextMenuItem(android.R.id.redo)
+                assertEquals("The new skip must discard the previous manual-origin redo branch", code, input.text.toString())
+                assertEquals(listOf(0), starts(requireNotNull(input.text)))
+                assertEquals(6, input.selectionStart)
+            } else {
+                repeat(2) {
+                    nativeHistory(input, android.R.id.undo)
+                    assertEquals(code, input.text.toString())
+                    assertEquals(listOf(0), starts(requireNotNull(input.text)))
+                    nativeHistory(input, android.R.id.redo)
+                    assertEquals(code, input.text.toString())
+                    assertEquals(listOf(0), starts(requireNotNull(input.text)))
+                }
+            }
+            input.setSelection(4)
+            backspace(input)
+            assertEquals("A no-op native transaction cannot erase the predefined TAB identity", "()", input.text.toString())
+            assertEquals(0, input.selectionStart)
+        }
+    }
+
     private fun starts(text: CharSequence): List<Int> {
         val values = JSONObject(CppIndentationUnits.snapshot(text)).getJSONArray("starts")
         return (0 until values.length()).map { values.getInt(it) }
@@ -461,6 +771,11 @@ class CppIndentationUnitsDeviceTest {
         val connection = requireNotNull(input.onCreateInputConnection(EditorInfo()))
         try { assertTrue("Android performs its ordinary one-character deletion", connection.deleteSurroundingText(1, 0)) }
         finally { connection.closeConnection() }
+    }
+
+    private fun nativeHistory(input: FreeScrollEditText, action: Int) {
+        assertTrue("The native TextView history handles undo/redo without a test-owned history",
+            input.onTextContextMenuItem(action))
     }
 
     private fun file(project: CppLessonProjectEditor, path: String) = tree(project.controls).single { it.tag == "cpp_file_$path" }

@@ -11,6 +11,10 @@ import java.security.MessageDigest
 internal object CppIndentationUnits {
     private class UnitMark
     private data class Prefix(val start: Int, val end: Int)
+    internal data class State(val sha256: String, val starts: List<Int>) {
+        fun encoded(): String = JSONObject().put("version", 1).put("sha256", sha256)
+            .put("starts", JSONArray(starts)).toString()
+    }
 
     fun loadedText(code: String, saved: String? = null, seedPredefined: Boolean = false): CharSequence {
         val result = SpannableString(code)
@@ -33,8 +37,19 @@ internal object CppIndentationUnits {
     }
 
     /** The existing draft owns the code; this optional sidecar stores only validated offsets. */
-    fun snapshot(text: CharSequence): String = JSONObject().put("version", 1)
-        .put("sha256", hash(text.toString())).put("starts", JSONArray(validStarts(text))).toString()
+    fun snapshot(text: CharSequence): String = capture(text).encoded()
+
+    fun capture(text: CharSequence): State = State(hash(text.toString()), validStarts(text))
+
+    /** Native Android history restores Strings, so reattach only the recorded, validated origin. */
+    fun restore(text: Editable, state: State) {
+        if (state.sha256 != hash(text.toString())) return
+        val prefixes = prefixes(text)
+        text.getSpans(0, text.length, UnitMark::class.java).forEach(text::removeSpan)
+        state.starts.filter { validStart(text, it, prefixes) }.forEach {
+            text.setSpan(UnitMark(), it, it + 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
 
     /** Copy only the existing units of an automatically inherited indentation. Fresh marker
      * identities let the child and closing-brace lines each retain their own independent unit. */

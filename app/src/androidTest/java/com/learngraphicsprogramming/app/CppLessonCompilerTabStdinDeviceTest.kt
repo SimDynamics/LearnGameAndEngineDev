@@ -223,6 +223,64 @@ class CppLessonCompilerTabStdinDeviceTest {
         }
     }
 
+    @Test fun realLessonCtrlZAndCtrlShiftZPreserveBothAuthoredIndentationsAndStdinFocus() = withLesson { scenario, initial ->
+        focusWithIme(scenario)
+        for (token in listOf("std::cout", "return")) {
+            scenario.onActivity { activity ->
+                tagged(activity, "cpp_reset").performClick()
+                stdin(activity).setText(STDIN)
+                assertTrue(source(activity).requestFocus())
+            }
+            val caret = initial.indexOf(token)
+            val start = caret - 4
+            assertTrue("The exact P1/U1/L2/P5 source keeps its authored four-space $token indentation",
+                caret >= 4 && initial.substring(start, caret) == "    ")
+            scenario.onActivity { source(it).setSelection(caret) }
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+            val deleted = initial.removeRange(start, caret)
+            assertEditor(scenario, deleted, start)
+            repeat(3) {
+                nativeHistoryKey(redo = false)
+                assertEditor(scenario, initial, caret)
+                nativeHistoryKey(redo = true)
+                assertEditor(scenario, deleted, start)
+                nativeHistoryKey(redo = false)
+                assertEditor(scenario, initial, caret)
+                instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+                assertEditor(scenario, deleted, start)
+            }
+        }
+    }
+
+    @Test fun realLessonCtrlZRetainsManualSpacesAndExplicitCompletedTabAsDifferentOrigins() = withLesson { scenario, _ ->
+        focusWithIme(scenario)
+        setEditor(scenario, "value;", 0)
+        scenario.onActivity { activity ->
+            val connection = requireNotNull(source(activity).onCreateInputConnection(EditorInfo()))
+            try { assertTrue(connection.commitText("    ", 1)) }
+            finally { connection.closeConnection() }
+        }
+        assertEditor(scenario, "    value;", 4)
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+        assertEditor(scenario, "   value;", 3)
+        nativeHistoryKey(redo = false)
+        assertEditor(scenario, "    value;", 4)
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+        assertEditor(scenario, "   value;", 3)
+        tab(scenario, physical = true)
+        assertEditor(scenario, "\tvalue;", 1)
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+        assertEditor(scenario, "value;", 0)
+        nativeHistoryKey(redo = false)
+        assertEditor(scenario, "\tvalue;", 1)
+        nativeHistoryKey(redo = true)
+        assertEditor(scenario, "value;", 0)
+        nativeHistoryKey(redo = false)
+        assertEditor(scenario, "\tvalue;", 1)
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DEL)
+        assertEditor(scenario, "value;", 0)
+    }
+
     private fun withLesson(test: (ActivityScenario<LessonActivity>, String) -> Unit) {
         val lesson = LessonRepository.loadLessonJson(context, "programming", LESSON)
         val authored = lesson.toString()
@@ -312,6 +370,19 @@ class CppLessonCompilerTabStdinDeviceTest {
         assertTrue("The window receives the HID-shaped TAB", instrumentation.uiAutomation.injectInputEvent(event, true))
     }
 
+    private fun nativeHistoryKey(redo: Boolean) {
+        val down = SystemClock.uptimeMillis()
+        val modifiers = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON or
+            if (redo) KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON else 0
+        for (action in listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
+            val event = KeyEvent(down, SystemClock.uptimeMillis(), action, KeyEvent.KEYCODE_Z, 0, modifiers,
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 44, KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD)
+            assertTrue("The real window receives native ${if (redo) "Ctrl+Shift+Z" else "Ctrl+Z"}",
+                instrumentation.uiAutomation.injectInputEvent(event, true))
+        }
+        instrumentation.waitForIdleSync()
+    }
+
     private fun assertEditor(scenario: ActivityScenario<LessonActivity>, expected: String, caret: Int) {
         instrumentation.waitForIdleSync()
         scenario.onActivity { activity ->
@@ -322,6 +393,10 @@ class CppLessonCompilerTabStdinDeviceTest {
             assertEquals(state, expected, input.text.toString())
             assertEquals(state, caret, input.selectionStart)
             assertEquals(state, caret, input.selectionEnd)
+            assertEquals("Draft provenance must include marks restored after native undo/redo",
+                CppIndentationUnits.snapshot(requireNotNull(input.text)),
+                context.getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+                    .getString("$DRAFT/sourceIndentation_v2", null))
             assertEquals(STDIN, stdin(activity).text.toString())
             assertEquals(4, field(activity, "currentPage"))
         }

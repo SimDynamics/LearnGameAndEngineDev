@@ -33,6 +33,7 @@ internal object CppCodeInputRules {
         input: EditText
     ) {
         if (input.getTag(R.id.cpp_editor_input_rules) != null) return
+        val indentationHistory = (input as? FreeScrollEditText)?.cppIndentationHistory
 
         // All native programming fields stay in the lesson in landscape. The IME's
         // extract editor would replace this surface and consume its usable viewport.
@@ -127,8 +128,8 @@ internal object CppCodeInputRules {
                     count: Int,
                     after: Int
                 ) {
-
-                    if (internalChange) {
+                    indentationHistory?.beforeEdit(text, count, after)
+                    if (internalChange || indentationHistory?.replaying == true) {
                         return
                     }
 
@@ -164,6 +165,7 @@ internal object CppCodeInputRules {
 
                     if (
                         internalChange ||
+                        indentationHistory?.replaying == true ||
                         editable == null
                     ) {
                         return
@@ -803,5 +805,12 @@ internal object CppCodeInputRules {
                 }
             }
         )
+        // Registered after the editing rules: nested auto-edits form one metadata state,
+        // matching the single operation Android records for a TextWatcher's changes.
+        input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) { indentationHistory?.afterEdit(s) }
+        })
     }
 }

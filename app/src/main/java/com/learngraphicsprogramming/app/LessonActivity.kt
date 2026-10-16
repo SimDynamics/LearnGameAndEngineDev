@@ -7076,6 +7076,11 @@ class LessonActivity : AppCompatActivity() {
             }
         })
 
+        if (!block.has("projectFiles")) sourceCode.cppIndentationRestored = {
+            labDrafts.edit().putString("$draftKey/source", sourceCode.text.toString())
+                .putString("$draftKey/sourceIndentation_v2", CppIndentationUnits.snapshot(sourceCode.text ?: "")).apply()
+        }
+
         resetButton.tag = "cpp_reset"
         val projectEditor = if (block.has("projectFiles")) {
             CppLessonProjectEditor(this, block, draftKey, sourceCode) {

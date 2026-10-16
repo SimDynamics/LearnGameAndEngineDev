@@ -14,6 +14,8 @@ class FreeScrollEditText @JvmOverloads constructor(
 ) : AppCompatEditText(context, attrs, defStyleAttr) {
 
     private val cppTabStops = CppEditorTabStops()
+    internal val cppIndentationHistory = CppIndentationHistory()
+    internal var cppIndentationRestored: (() -> Unit)? = null
 
     internal var cppHardwareKeyHandler: ((Int, KeyEvent) -> Boolean)? = null
     internal var cppEditorActionHandler: ((Int) -> Boolean)? = null
@@ -49,6 +51,25 @@ class FreeScrollEditText @JvmOverloads constructor(
         // C++ inputs consume that navigation without inserting a second TAB.
         if (cppEditorActionHandler?.invoke(actionCode) == true) return
         super.onEditorAction(actionCode)
+    }
+
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        if (cppHardwareKeyHandler != null && id in setOf(android.R.id.undo, android.R.id.redo)) {
+            return cppIndentationHistory.replay(text, id == android.R.id.redo,
+                { super.onTextContextMenuItem(id) }, { cppIndentationRestored?.invoke() })
+        }
+        return super.onTextContextMenuItem(id)
+    }
+
+    override fun beginBatchEdit() {
+        if (cppHardwareKeyHandler != null) cppIndentationHistory.beginBatch(text)
+        super.beginBatchEdit()
+    }
+
+    override fun endBatchEdit() {
+        try { super.endBatchEdit() } finally {
+            if (cppHardwareKeyHandler != null) cppIndentationHistory.endBatch(text)
+        }
     }
 
     /*

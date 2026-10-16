@@ -145,6 +145,12 @@ internal class CppLessonProjectEditor(
                 }
             }
         })
+        (editor as? FreeScrollEditText)?.cppIndentationRestored = {
+            if (!switching) {
+                captureSelected()
+                save()
+            }
+        }
         showSelected()
     }
 
