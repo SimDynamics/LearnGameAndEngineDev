@@ -7,9 +7,52 @@ internal object MathTextSemantics {
     data class Range(val start: Int, val endExclusive: Int)
 
     private const val MATHEMATICAL = "\u0000mathematical-source\u0000"
-    // The renderer deliberately leaves a prose enumeration as ordinary text.
-    private val integerEnumeration = Regex("[−-]?[0-9]+(?:\\s*,\\s*[−-]?[0-9]+)*\\s+y\\s+[−-]?[0-9]+")
     private const val NUMBER = "[−+-]?[0-9]+(?:[.,][0-9]+)?"
+    private val standaloneNumber = Regex(NUMBER)
+    // Enumerations remain plain prose around their numbers (12 y 4).
+    private val integerEnumeration = Regex("[−-]?[0-9]+(?:\\s*,\\s*[−-]?[0-9]+)*\\s+y\\s+[−-]?[0-9]+")
+
+    // A mathematical quantity owns its number and any adjacent measurement/counting
+    // unit. Ordinary prose is not decorated just because it mentions a common noun.
+    // These are spellings for decoration only; no text or audio is rewritten.
+    private val measurementUnits = setOf(
+        "mm", "cm", "dm", "m", "km", "nm", "µm", "μm",
+        "mm²", "cm²", "m²", "km²", "mm³", "cm³", "m³",
+        "mg", "g", "kg", "t", "ml", "cl", "dl", "l", "hl",
+        "ms", "s", "min", "h", "km/h", "m/s", "°c", "°f", "%",
+        "milímetro", "milímetros", "centímetro", "centímetros",
+        "metro", "metros", "kilómetro", "kilómetros", "kilometro", "kilometros",
+        "gramo", "gramos", "kilogramo", "kilogramos", "litro", "litros",
+        "segundo", "segundos", "minuto", "minutos", "hora", "horas",
+        "día", "días", "semana", "semanas", "mes", "meses", "año", "años",
+        "pieza", "piezas", "unidad", "unidades", "decena", "decenas",
+        "centena", "centenas", "millar", "millares",
+        "caja", "cajas", "paquete", "paquetes", "bloque", "bloques",
+        "listón", "listones", "objeto", "objetos", "elemento", "elementos",
+        "moneda", "monedas", "peso", "pesos", "dólar", "dólares", "euro", "euros",
+        "millimeter", "millimeters", "millimetre", "millimetres",
+        "centimeter", "centimeters", "centimetre", "centimetres",
+        "meter", "meters", "metre", "metres", "kilometer", "kilometers",
+        "kilometre", "kilometres", "gram", "grams", "kilogram", "kilograms",
+        "liter", "liters", "litre", "litres", "second", "seconds",
+        "minute", "minutes", "hour", "hours", "day", "days",
+        "week", "weeks", "month", "months", "year", "years",
+        "piece", "pieces", "unit", "units", "item", "items",
+        "box", "boxes", "object", "objects", "block", "blocks",
+        "dollar", "dollars", "pound", "pounds",
+        "millimètre", "millimètres", "centimètre", "centimètres",
+        "mètre", "mètres", "kilomètre", "kilomètres", "gramme", "grammes",
+        "kilogramme", "kilogrammes", "seconde", "secondes",
+        "heure", "heures", "jour", "jours", "semaine", "semaines",
+        "mois", "an", "ans", "année", "années",
+        "pièce", "pièces", "unité", "unités", "boîte", "boîtes",
+        "objet", "objets", "bloc", "blocs"
+    )
+    private val unitToken = Regex("""[\p{L}\p{M}µμ°%]+(?:[²³])?(?:/[\p{L}\p{M}]+)?""")
+    private val explicitUnitLabel = Regex(
+        """(?iu)\b(?:unidad(?:es)?|unit(?:s)?|unité(?:s)?|medida|measure|mesure)\s*:\s*([\p{L}\p{M}µμ°%]+(?:[²³])?(?:/[\p{L}\p{M}]+)?)"""
+    )
+    private val cppVersion = Regex("""(?i)(?<![\p{L}\p{N}_])c\+\+\d+(?:\.\d+)?""")
     // A renderer/speech fragment may end before the relation in 6 × 100 = 600.
     // Decoration owns that complete numeric chain, without changing either fragment.
     private val numericChain = Regex("$NUMBER(?:\\s*[×÷·+−*/=<>≤≥≠≈-]\\s*$NUMBER)+")
@@ -64,25 +107,51 @@ internal object MathTextSemantics {
      */
     fun ranges(source: CharSequence, mode: String = "auto"): List<Range> {
         val text = source.toString()
-        if (text.isBlank() || mode == "text" ||
-            (mode == "auto" && integerEnumeration.matches(text.trim()))) return emptyList()
+        if (text.isBlank() || mode == "text") return emptyList()
         val found = mutableListOf<Range>()
-        SpanishMathSpeech.renderMathText(text, mode, { MATHEMATICAL }, "") { start, end, rendered ->
-            if (rendered.trim() != MATHEMATICAL) return@renderMathText
-            var first = start
-            var last = end
-            while (first < last && text[first].isWhitespace()) first++
-            while (last > first && text[last - 1].isWhitespace()) last--
-            if (first < last) found += Range(first, last)
+        if (mode != "auto" || !integerEnumeration.matches(text.trim())) {
+            SpanishMathSpeech.renderMathText(text, mode, { MATHEMATICAL }, "") { start, end, rendered ->
+                if (rendered.trim() != MATHEMATICAL) return@renderMathText
+                var first = start
+                var last = end
+                while (first < last && text[first].isWhitespace()) first++
+                while (last > first && text[last - 1].isWhitespace()) last--
+                if (first < last) found += Range(first, last)
+            }
         }
         if (mode == "auto") {
-            val protected = protectedSource.findAll(text).map { it.range }.toList()
+            val protected = (protectedSource.findAll(text).map { it.range } +
+                cppVersion.findAll(text).map { it.range }).toList()
+            fun protectedOverlap(first: Int, end: Int): Boolean =
+                protected.any { it.first < end && it.last >= first }
             numericChain.findAll(text).forEach { candidate ->
                 val first = candidate.range.first
                 val end = candidate.range.last + 1
                 if (safeNumericBoundary(text, first - 1) && safeNumericBoundary(text, end) &&
-                    protected.none { it.first < end && it.last >= first } &&
+                    !protectedOverlap(first, end) &&
                     MathLatexParser.parse(candidate.value) is MathLatexParser.Result.Success) {
+                    found += Range(first, end)
+                }
+            }
+
+            // A bare number is mathematical too; a single numeral must not require
+            // an equation sign. Attach units, but never absorb prose or punctuation.
+            standaloneNumber.findAll(text).forEach { match ->
+                val first = match.range.first
+                val end = match.range.last + 1
+                if (safeNumericBoundary(text, first - 1) &&
+                    safeNumericBoundary(text, end) && !protectedOverlap(first, end)) {
+                    val withUnit = followingUnitEnd(text, end)
+                    found += Range(first, withUnit.takeIf { !protectedOverlap(first, it) } ?: end)
+                }
+            }
+            // Some puzzles display a unit separately: "Unidad: cm".
+            explicitUnitLabel.findAll(text).forEach { match ->
+                val unit = match.groups[1] ?: return@forEach
+                val first = unit.range.first
+                val end = unit.range.last + 1
+                if (unit.value.lowercase() in measurementUnits &&
+                    safeNumericBoundary(text, end) && !protectedOverlap(first, end)) {
                     found += Range(first, end)
                 }
             }
@@ -95,6 +164,16 @@ internal object MathTextSemantics {
             } else result += range
         }
         return result
+    }
+
+    private fun followingUnitEnd(text: String, from: Int): Int {
+        var cursor = from
+        // A quantity never crosses a line break to borrow an unrelated label.
+        while (cursor < text.length && text[cursor] in " \t\u00a0\u202f") cursor++
+        val match = unitToken.matchAt(text, cursor) ?: return from
+        val end = match.range.last + 1
+        return if (match.value.lowercase() in measurementUnits &&
+            safeNumericBoundary(text, end)) end else from
     }
 
     private fun safeNumericBoundary(text: String, index: Int): Boolean {
