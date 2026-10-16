@@ -142,6 +142,6 @@ object KeyboardShortcutSettingsRepository {
 
     fun getTabText(): String {
 
-        return "    "
+        return "\t"
     }
 }

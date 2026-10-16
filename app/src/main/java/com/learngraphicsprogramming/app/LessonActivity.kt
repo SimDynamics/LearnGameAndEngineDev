@@ -1890,6 +1890,7 @@ class LessonActivity : AppCompatActivity() {
             activeCodeInput
                 ?: return
 
+        if (text == "\t") { CppCodeInputRules.insertTab(input); return }
         val editable =
             input.text
 
@@ -4146,8 +4147,8 @@ class LessonActivity : AppCompatActivity() {
         /*
          * CAMPO DE RESPUESTA.
          */
-        val input =
-            EditText(this)
+        val input: EditText =
+            FreeScrollEditText(this)
 
         input.tag =
             CODE_INPUT_TAG
@@ -6862,55 +6863,11 @@ class LessonActivity : AppCompatActivity() {
                 1f
             )
 
-        /*
-         * Compacta visualmente los espacios al 80 %.
-         * No elimina ni modifica caracteres del código.
-         */
-        fun compactCompilerSpaces(
-            editable: Editable
-        ) {
-
-            val previousSpans =
-                editable.getSpans(
-                    0,
-                    editable.length,
-                    android.text.style.ScaleXSpan::class.java
-                )
-
-            for (span in previousSpans) {
-                editable.removeSpan(span)
-            }
-
-            for (i in 0 until editable.length) {
-
-                if (editable[i] == ' ') {
-
-                    editable.setSpan(
-                        android.text.style.ScaleXSpan(
-                            0.80f
-                        ),
-                        i,
-                        i + 1,
-                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                }
-            }
-        }
-
-        sourceCode.setText(
-            labDrafts.getString("$draftKey/source", initialCode)
-        )
-
-        sourceCode.text?.let { editable ->
-
-            CppSyntaxHighlighter.applyTo(
-                editable
-            )
-
-            compactCompilerSpaces(
-                editable
-            )
-        }
+        val restoredSource = labDrafts.getString("$draftKey/source", initialCode) ?: initialCode
+        sourceCode.setText(CppIndentationUnits.loadedText(restoredSource,
+            labDrafts.getString("$draftKey/sourceIndentation", null),
+            seedPredefined = !labDrafts.contains("$draftKey/source")))
+        sourceCode.text?.let(CppSyntaxHighlighter::applyTo)
 
         editorBody.addView(
             lineNumberScroll
@@ -7110,9 +7067,9 @@ class LessonActivity : AppCompatActivity() {
             override fun afterTextChanged(text: Editable?) {
                 if (text == null) return
                 CppSyntaxHighlighter.applyTo(text)
-                compactCompilerSpaces(text)
                 if (!block.has("projectFiles")) {
-                    labDrafts.edit().putString("$draftKey/source", text.toString()).apply()
+                    labDrafts.edit().putString("$draftKey/source", text.toString())
+                        .putString("$draftKey/sourceIndentation", CppIndentationUnits.snapshot(text)).apply()
                 }
             }
         })
@@ -7679,7 +7636,8 @@ class LessonActivity : AppCompatActivity() {
             programError.text = ""
             console.present()
 
-            if (projectEditor != null) projectEditor.reset() else sourceCode.setText(initialCode)
+            if (projectEditor != null) projectEditor.reset() else sourceCode.setText(
+                CppIndentationUnits.loadedText(initialCode, seedPredefined = true))
             cmakeLab?.reset()
 
             val cursorPosition =
@@ -14379,8 +14337,8 @@ class LessonActivity : AppCompatActivity() {
                  * Campo editable.
                  */
 
-                val input =
-                    EditText(this)
+                val input: EditText =
+                    FreeScrollEditText(this)
 
                 input.tag =
                     CODE_INPUT_TAG

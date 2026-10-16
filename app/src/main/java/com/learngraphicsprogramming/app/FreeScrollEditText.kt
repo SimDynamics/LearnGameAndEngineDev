@@ -1,7 +1,10 @@
 package com.learngraphicsprogramming.app
 
 import android.content.Context
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.AttributeSet
+import android.view.KeyEvent
 import androidx.appcompat.widget.AppCompatEditText
 
 class FreeScrollEditText @JvmOverloads constructor(
@@ -9,6 +12,35 @@ class FreeScrollEditText @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = androidx.appcompat.R.attr.editTextStyle
 ) : AppCompatEditText(context, attrs, defStyleAttr) {
+
+    private val cppTabStops = CppEditorTabStops()
+
+    internal var cppHardwareKeyHandler: ((Int, KeyEvent) -> Boolean)? = null
+
+    init {
+        addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(text: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(text: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(text: Editable?) {
+                if (text != null) cppTabStops.update(text, paint, edited = true)
+            }
+        })
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        text?.let { cppTabStops.update(it, paint) }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+
+    override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
+        if (cppHardwareKeyHandler?.invoke(keyCode, event) == true) return true
+        return super.onKeyPreIme(keyCode, event)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (cppHardwareKeyHandler?.invoke(event.keyCode, event) == true) return true
+        return super.dispatchKeyEvent(event)
+    }
 
     /*
      * false:

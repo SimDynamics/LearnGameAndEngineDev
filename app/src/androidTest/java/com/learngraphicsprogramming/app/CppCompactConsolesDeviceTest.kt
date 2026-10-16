@@ -149,7 +149,7 @@ class CppCompactConsolesDeviceTest {
     }
 
     @Test fun standaloneCompilerChoiceLivesOnlyInItsToolbarAndPreservesTheEditorAcrossRecreationAndFullscreen() {
-        val source = "#include <iostream>\nint main() {\n  std::cout << \"standalone\";\n}\n"
+        val source = "#include <iostream>\nint main() {\n\tstd::cout << \"standalone\";\n}\n"
         ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
             awaitActivity(scenario, "Standalone editor completes native layout") { activity ->
                 activity.hasWindowFocus() && activity.findViewById<EditText>(R.id.sourceCode).layout != null

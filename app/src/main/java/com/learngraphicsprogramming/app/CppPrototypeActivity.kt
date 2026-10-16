@@ -121,12 +121,9 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         } else {
 
-            binding.sourceCode.setText(
-                savedInstanceState.getString(
-                    STATE_SOURCE
-                )
-                    ?: SAMPLE_SOURCE
-            )
+            binding.sourceCode.setText(CppIndentationUnits.loadedText(
+                savedInstanceState.getString(STATE_SOURCE) ?: SAMPLE_SOURCE,
+                savedInstanceState.getString(STATE_INDENTATION)))
 
             setStatus(
                 savedInstanceState.getInt(STATE_STATUS, R.string.cpp_runtime_ready),
@@ -178,10 +175,6 @@ class CppPrototypeActivity : AppCompatActivity() {
                     CppSyntaxHighlighter.applyTo(
                         text
                     )
-
-                    compactEditorSpaces(
-                        text
-                    )
                 }
             }
         )
@@ -189,10 +182,6 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.sourceCode.text?.let { editable ->
 
             CppSyntaxHighlighter.applyTo(
-                editable
-            )
-
-            compactEditorSpaces(
                 editable
             )
         }
@@ -463,6 +452,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private fun insertCppKeyboardShortcut(text: String) {
         val input = binding.sourceCode
+        if (text == "\t") { CppCodeInputRules.insertTab(input); return }
         val editable = input.text ?: return
         val start = minOf(
             input.selectionStart.coerceAtLeast(0),
@@ -727,40 +717,6 @@ class CppPrototypeActivity : AppCompatActivity() {
         }
     }
 
-    private fun compactEditorSpaces(
-        text: Editable
-    ) {
-
-        val previousSpans =
-            text.getSpans(
-                0,
-                text.length,
-                android.text.style.ScaleXSpan::class.java
-            )
-
-        for (span in previousSpans) {
-
-            text.removeSpan(
-                span
-            )
-        }
-
-        for (i in 0 until text.length) {
-
-            if (text[i] == ' ') {
-
-                text.setSpan(
-                    android.text.style.ScaleXSpan(
-                        0.80f
-                    ),
-                    i,
-                    i + 1,
-                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-        }
-    }
-
     private fun styleCodeCard() {
 
         val background =
@@ -811,9 +767,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private fun resetEditor() {
 
-        binding.sourceCode.setText(
-            SAMPLE_SOURCE
-        )
+        binding.sourceCode.setText(CppIndentationUnits.loadedText(SAMPLE_SOURCE, seedPredefined = true))
 
         /*
          * Colocamos el cursor dentro de main,
@@ -1039,6 +993,8 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.sourceCode.text.toString()
         )
 
+        outState.putString(STATE_INDENTATION, CppIndentationUnits.snapshot(binding.sourceCode.text ?: ""))
+
         outState.putInt(
             STATE_STATUS,
             statusResource
@@ -1112,6 +1068,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private companion object {
 
+        const val STATE_INDENTATION = "cpp_prototype_indentation_units_v1"
         const val STATE_SOURCE =
             "cpp_prototype_source"
 

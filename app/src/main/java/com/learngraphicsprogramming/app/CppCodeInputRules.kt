@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app
 
 import android.text.Editable
+import android.text.SpannableStringBuilder
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.widget.EditText
@@ -12,9 +13,25 @@ import android.widget.EditText
  * de borrado, sustituciones del IME, saltos sobre cierres e indentación.
  */
 internal object CppCodeInputRules {
+    private class ExplicitTab(val insert: () -> Unit)
+
+    fun insertTab(input: EditText) {
+        val action = input.getTag(R.id.cpp_editor_input_rules) as? ExplicitTab
+        if (action != null) action.insert() else replaceSelectionWithTab(input)
+    }
+
+    private fun replaceSelectionWithTab(input: EditText) {
+        val editable = input.text ?: return
+        val start = minOf(input.selectionStart, input.selectionEnd).coerceIn(0, editable.length)
+        val end = maxOf(input.selectionStart, input.selectionEnd).coerceIn(start, editable.length)
+        editable.replace(start, end, KeyboardShortcutSettingsRepository.getTabText())
+        input.setSelection((start + 1).coerceAtMost(editable.length))
+    }
+
     fun install(
         input: EditText
     ) {
+        if (input.getTag(R.id.cpp_editor_input_rules) != null) return
 
         // All native programming fields stay in the lesson in landscape. The IME's
         // extract editor would replace this surface and consume its usable viewport.
@@ -56,6 +73,7 @@ internal object CppCodeInputRules {
 
         var previousText =
             ""
+        var predefinedBackspaceStart: Int? = null
 
         /*
          * Algunos teclados insertan automáticamente
@@ -71,35 +89,25 @@ internal object CppCodeInputRules {
         var suppressAutoSpacePosition =
             -1
 
-        // The physical Tab key is the same explicit edit as the floating TAB
-        // shortcut. Keep modified Tab combinations available for focus navigation.
-        // This hook is installed only on the app's C++ inputs, never globally.
-        input.setOnKeyListener { _, keyCode, event ->
+        val explicitTab = ExplicitTab {
+            suppressAutoSpaceAfterSkip = false
+            suppressAutoSpacePosition = -1
+            replaceSelectionWithTab(input)
+        }
+        input.setTag(R.id.cpp_editor_input_rules, explicitTab)
+        val hardwareKey: (Int, KeyEvent) -> Boolean = { keyCode, event ->
             if (keyCode != KeyEvent.KEYCODE_TAB || !event.hasNoModifiers() ||
                 !input.isEnabled || input.keyListener == null ||
-                (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)) {
-                false
-            } else {
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    val editable = input.text
-                    if (editable != null) {
-                        // An explicit Tab is not an IME's automatic space after a
-                        // skipped closing delimiter, even in the same input cycle.
-                        suppressAutoSpaceAfterSkip = false
-                        suppressAutoSpacePosition = -1
-                        val start = minOf(input.selectionStart, input.selectionEnd)
-                            .coerceIn(0, editable.length)
-                        val end = maxOf(input.selectionStart, input.selectionEnd)
-                            .coerceIn(start, editable.length)
-                        val tab = KeyboardShortcutSettingsRepository.getTabText()
-                        editable.replace(start, end, tab)
-                        input.setSelection((start + tab.length).coerceAtMost(editable.length))
-                    }
-                }
-                // Consume key-up too: one press edits once and never transfers focus.
+                (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)) false
+            else {
+                if (event.action == KeyEvent.ACTION_DOWN) explicitTab.insert()
                 true
             }
         }
+        // A physical key reaches pre-IME first. Keys sent back by InputConnection
+        // are post-IME, so retain the same handler on both paths without a second edit.
+        (input as? FreeScrollEditText)?.cppHardwareKeyHandler = hardwareKey
+        input.setOnKeyListener { _, keyCode, event -> hardwareKey(keyCode, event) }
 
         input.addTextChangedListener(
             object : TextWatcher {
@@ -115,6 +123,10 @@ internal object CppCodeInputRules {
                         return
                     }
 
+                    predefinedBackspaceStart = (text as? Editable)?.let {
+                        CppIndentationUnits.beforeEdit(it, start, count, after,
+                            input.selectionStart, input.selectionEnd)
+                    }
                     previousText =
                         text?.toString()
                             .orEmpty()
@@ -148,6 +160,20 @@ internal object CppCodeInputRules {
                         return
                     }
 
+                    // Only a preserved, loaded indentation unit can expand a native
+                    // one-character Backspace. Manual spaces never acquire such a mark.
+                    val unitStart = predefinedBackspaceStart
+                    predefinedBackspaceStart = null
+                    if (unitStart != null && removedCount == 1 && addedCount == 0 &&
+                        unitStart in 0..changeStart && changeStart <= editable.length) {
+                        internalChange = true
+                        try {
+                            editable.delete(unitStart, changeStart)
+                            input.setSelection(unitStart)
+                        } finally { internalChange = false }
+                        return
+                    }
+
                     /*
  * El teclado puede hacer esto:
  *
@@ -177,8 +203,7 @@ internal object CppCodeInputRules {
 
                         val onlyWhitespace =
                             insertedText.all {
-                                it == ' ' ||
-                                        it == '\t'
+                                it == ' '
                             }
 
                         if (onlyWhitespace) {
@@ -438,7 +463,7 @@ internal object CppCodeInputRules {
                      * conserva la sangría actual.
                      *
                      * Si la línea termina en "{",
-                     * agrega cuatro espacios.
+                     * agrega una tabulación real de cuatro columnas.
                      */
                     if (
                         typedCharacter == '\n' &&
@@ -481,16 +506,11 @@ internal object CppCodeInputRules {
                                     "{"
                                 )
 
-                        val childIndent =
-                            if (opensBlock) {
-
-                                baseIndent +
-                                        "    "
-
-                            } else {
-
-                                baseIndent
-                            }
+                        fun inheritedBase() = CppIndentationUnits.inheritedIndentation(editable,
+                            previousLineStart, previousLineStart + baseIndent.length)
+                        val childIndent = SpannableStringBuilder(inheritedBase()).apply {
+                            if (opensBlock) append('\t')
+                        }
 
                         /*
                          * Caso especial:
@@ -520,9 +540,7 @@ internal object CppCodeInputRules {
 
                             editable.insert(
                                 changeStart + 1,
-                                childIndent +
-                                        "\n" +
-                                        baseIndent
+                                SpannableStringBuilder().append(childIndent).append('\n').append(inheritedBase())
                             )
 
                             val newCursorPosition =
@@ -667,13 +685,14 @@ internal object CppCodeInputRules {
                         ) {
 
                             var charactersToRemove =
-                                0
+                                if (editable[changeStart - 1] == '\t') 1 else 0
 
                             var position =
                                 changeStart - 1
 
                             while (
                                 position >= lineStart &&
+                                editable[changeStart - 1] != '\t' &&
                                 charactersToRemove < 4 &&
                                 editable[
                                     position
