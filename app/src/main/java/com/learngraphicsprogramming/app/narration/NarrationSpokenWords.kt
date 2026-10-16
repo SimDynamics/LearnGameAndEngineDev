@@ -48,18 +48,9 @@ internal object NarrationSpokenWords {
             // Observe the production normalizer, rather than maintaining another
             // table of French names or guessing which punctuation is pronounced.
             val replacements = linkedMapOf<Pair<Int, Int>, StringBuilder>()
-            var cursor = 0
-            fun observe(end: Int) {
-                val offset = cursor
-                FrenchSpeechSymbols.normalizeObserved(source.substring(cursor, end)) { start, finish, rendered ->
-                    replacements.getOrPut(start + offset to finish + offset) { StringBuilder() }.append(rendered)
-                }
+            FrenchSpeechSymbols.normalizeObserved(source) { start, finish, rendered ->
+                replacements.getOrPut(start to finish) { StringBuilder() }.append(rendered)
             }
-            annotations.forEach { annotation ->
-                observe(annotation.start)
-                cursor = annotation.endExclusive
-            }
-            observe(source.length)
             replacements.forEach { (range, rendered) ->
                 if (rendered.any { it.isLetter() } && rendered.toString().trim() != source.substring(range.first, range.second))
                     add(range.first, range.second)

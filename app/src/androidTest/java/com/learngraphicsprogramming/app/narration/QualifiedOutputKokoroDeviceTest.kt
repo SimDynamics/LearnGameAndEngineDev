@@ -54,6 +54,25 @@ class QualifiedOutputKokoroDeviceTest {
 
     @Test fun technicalSymbolsUseContinuousNativeSpeechAndTheirOwnObservedWordTimes() = verifySamples(SYMBOL_SAMPLES)
 
+    @Test fun technicalOperatorNamesUseNativePhonesAndOriginalWordOwnership() = verifySamples(OPERATOR_SAMPLES)
+
+    @Test fun realPageThreeSemicolonMentionsUseNativeSpeechAndKeepTheirSourceOwnership() {
+        val samples = listOf(NarrationLanguage.SPANISH, NarrationLanguage.FRENCH,
+            NarrationLanguage.AMERICAN_ENGLISH, NarrationLanguage.BRITISH_ENGLISH).map { language ->
+            val file = "content/${language.resourceGroup}/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json"
+            val lesson = JSONObject(app.assets.open(file).bufferedReader().use { it.readText() })
+            val blocks = lesson.getJSONArray("pages").getJSONObject(2).getJSONArray("blocks")
+            val paragraph = (0 until blocks.length()).map { blocks.getJSONObject(it).optString("text") }
+                .single { it.count { char -> char == ';' } == 3 }
+            val firstPeriod = paragraph.indexOf(";.") + 1
+            assertTrue(firstPeriod > 0)
+            val secondPeriod = paragraph.indexOf('.', firstPeriod + 1)
+            assertTrue(secondPeriod > firstPeriod)
+            Sample("${language.tag}-semicolon", language, language.defaultVoice, paragraph.substring(0, secondPeriod + 1))
+        }
+        verifySamples(samples)
+    }
+
     private fun verifySamples(samples: List<Sample>) {
         assertEquals("Use only the isolated APK", QA_PACKAGE, app.packageName)
         assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
@@ -107,14 +126,25 @@ class QualifiedOutputKokoroDeviceTest {
                 val original = lesson.toString()
                 val source = LessonNarrationText.page(lesson, 0, sample.language, forKokoro = true)
                 val segments = NarrationSegments.sentences(source)
-                assertEquals("A complete test phrase must remain one continuous segment", 1, segments.size)
-                val prepared = segments.single()
+                if (!sample.id.endsWith("-semicolon")) assertEquals("A complete test phrase must remain one continuous segment", 1, segments.size)
+                var namedSemicolons = 0
+                for ((segmentIndex, prepared) in segments.withIndex()) {
                 val phones = when (sample.language) {
                     NarrationLanguage.SPANISH -> MixedSpanishG2P.phonemizePrepared(prepared, spanish)
                     NarrationLanguage.FRENCH -> MixedFrenchG2P.phonemizePrepared(prepared, french)
                     else -> english.phonemize(prepared, sample.language == NarrationLanguage.BRITISH_ENGLISH)
                 }
                 val spoken = ManualEnglishSpeech.strip(prepared)
+                if (sample.id.endsWith("-semicolon")) {
+                    namedSemicolons += when (sample.language) {
+                        NarrationLanguage.SPANISH -> Regex("punto y coma").findAll(spoken).count()
+                        NarrationLanguage.FRENCH -> FrenchSpeechSymbols.resolvedOperatorReadings(prepared).count { it.symbol == ";" && it.words == "point-virgule" }
+                        else -> EnglishTechnicalSpeech.replacements(prepared).count { it.spoken == "semicolon" }
+                    }
+                }
+                report.put("currentSample", JSONObject().put("id", sample.id).put("source", sample.source)
+                    .put("prepared", prepared).put("spoken", spoken).put("phonemes", phones))
+                persist()
                 when (sample.id) {
                     "fr-cout" -> {
                         assertEquals(sample.source, spoken)
@@ -138,7 +168,37 @@ class QualifiedOutputKokoroDeviceTest {
                         assertTrue(phones.contains(ManualEnglishPronunciations.phones.getValue("include")))
                     }
                     "es-std-prefix" -> assertTrue("The bare namespace prefix is spelled rather than guessed: $spoken",
-                        spoken.contains("ese te de doble dos puntos"))
+                        spoken.contains("ese te de operador de resolución de ámbito"))
+                    "es-operators" -> {
+                        assertTrue(spoken, spoken.contains("ese te de operador de resolución de ámbito"))
+                        assertTrue(spoken, spoken.contains("asignación con y bit a bit"))
+                    }
+                    "fr-operators" -> {
+                        val normalized = FrenchSpeechSymbols.normalize(spoken)
+                        assertTrue(normalized, normalized.contains("opérateur de résolution de portée"))
+                        assertTrue(normalized, normalized.contains("addition et affectation"))
+                        assertTrue(normalized, normalized.contains("incrémentation"))
+                        assertTrue(phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
+                        assertTrue(phones.contains(EnglishTechnicalSpeech.coutPhones))
+                    }
+                    "fr-masked-negation" -> {
+                        val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french))
+                        val negation = trace.words.single { it.word == "!" }
+                        assertTrue("A foreign-token operand must not hide logical negation", negation.endExclusive > negation.start)
+                    }
+                    "fr-marked-update" -> {
+                        val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french))
+                        val update = trace.words.single { it.word == "++" }
+                        assertTrue("Removing code delimiters must not change an observed increment into plus plus", update.endExclusive > update.start)
+                    }
+                    "en-us-operators", "en-gb-operators" -> {
+                        val names = EnglishTechnicalSpeech.replacements(spoken).map { it.spoken }
+                        assertTrue(names.contains("scope resolution operator"))
+                        assertTrue(names.contains("addition assignment operator"))
+                        assertTrue(names.contains("increment operator"))
+                        assertTrue(phones.contains(EnglishTechnicalSpeech.STD_PHONES))
+                        assertTrue(phones.contains(EnglishTechnicalSpeech.coutPhones))
+                    }
                     "es-cmake-variable", "es-cmake-list" -> {
                         assertFalse("No unsupported dollar reaches the phonemizer", '$' in spoken)
                         assertTrue(spoken, spoken.contains("dólar abre llave"))
@@ -159,7 +219,7 @@ class QualifiedOutputKokoroDeviceTest {
                 val rms = sqrt(pcm.sumOf { it.toDouble() * it } / pcm.size)
                 val peak = pcm.maxOf { abs(it) }.toDouble()
                 assertTrue("Production PCM contains real speech, not silence", rms > .0001 && peak > .001)
-                val wav = File(output, "${sample.id}.wav")
+                val wav = File(output, "${sample.id}${if (segments.size > 1) "-$segmentIndex" else ""}.wav")
                 NarrationWavWriter.write(wav, pcm)
                 verifyWave(wav, pcm.size)
                 // Observe the exact same full-context frontend. Never divide the
@@ -235,6 +295,22 @@ class QualifiedOutputKokoroDeviceTest {
                         (left, right) -> prepared.substring(left.start, left.endExclusive) == "::" && left.endSample <= right.startSample
                     })
                 }
+                if (sample.id.endsWith("-operators") || sample.id.endsWith("-semicolon") || sample.id in setOf("fr-masked-negation", "fr-marked-update")) {
+                    val atoms = NarrationSpokenWords.technicalAtoms(prepared, sample.language)
+                    assertEquals(atoms.map { it.start to it.endExclusive }, alignment.words.map { it.start to it.endExclusive })
+                    if (sample.id.endsWith("-operators") && sample.language != NarrationLanguage.SPANISH) {
+                        for (symbol in listOf("::", "+=", "++")) {
+                            val owner = sources.single { prepared.substring(it.sourceStart, it.sourceEndExclusive) == symbol }
+                            assertTrue("$symbol must own its complete real phonetic expansion", owner.phoneEndExclusive > owner.phoneStart)
+                            val timed = alignment.words.single { it.start == owner.sourceStart && it.endExclusive == owner.sourceEndExclusive }
+                            assertTrue(timed.endSample > timed.startSample)
+                        }
+                    }
+                    val mapping = NarrationWordMappings.forBlock(0, sample.source, segments.withIndex().associate { it.index to it.value }, sample.language)
+                    assertEquals(segments.indices.toSet(), mapping.keys)
+                    assertEquals(sample.source.indices.toSet(), mapping.values.flatMap { it.displayed.flatMap { range -> range.start until range.endExclusive } }.toSet())
+                    assertTrue(mapping.values.flatMap { it.displayed }.none { it.start == 0 && it.endExclusive == sample.source.length })
+                }
                 if (sample.id == "fr-fixed-phrase") {
                     val lexical = NarrationSpokenWords.lexemes(prepared)
                     val parce = alignment.words[lexical.indexOfFirst { it.canonical == "parce" }]
@@ -246,6 +322,7 @@ class QualifiedOutputKokoroDeviceTest {
                 alignment.words.forEach { word -> words.put(JSONArray().put(word.start).put(word.endExclusive)
                     .put(word.startSample).put(word.endSample)) }
                 rows.put(JSONObject().put("id", sample.id).put("language", sample.language.tag).put("voice", sample.voice)
+                    .put("segmentIndex", segmentIndex).put("productionSegmentCount", segments.size)
                     .put("source", sample.source).put("spoken", spoken).put("phonemes", phones)
                     .put("inferenceCalls", inferenceCalls).put("inferenceMillis", SystemClock.elapsedRealtime() - started)
                     .put("sampleCount", pcm.size).put("durationSeconds", pcm.size / 24_000.0)
@@ -254,6 +331,8 @@ class QualifiedOutputKokoroDeviceTest {
                     .put("words", words).put("productionTracePhonesEqual", true).put("exactNativeDurationSamples", true)
                     .put("cacheKey", KokoroNarrationCache.key(sample.language.tag, sample.voice, prepared)))
                 persist()
+                }
+                if (sample.id.endsWith("-semicolon")) assertEquals("Both original technical mentions are actually spoken", 2, namedSemicolons)
             }
             report.put("status", "native-phonemes-and-continuous-pcm-verified")
             persist()
@@ -309,6 +388,14 @@ class QualifiedOutputKokoroDeviceTest {
             Sample("en-us-symbols", NarrationLanguage.AMERICAN_ENGLISH, "af_heart", "The #include <iostream> line contains { std::cout } and std:: indicates scope."),
             Sample("en-gb-symbols", NarrationLanguage.BRITISH_ENGLISH, "bf_emma", "The #include <iostream> line contains { std::cout } and std:: indicates scope."),
             Sample("es-symbol-regression", NarrationLanguage.SPANISH, "ef_dora", "La línea #include permite usar std::cout.")
+        )
+        private val OPERATOR_SAMPLES = listOf(
+            Sample("fr-operators", NarrationLanguage.FRENCH, "ff_siwis", "Le code std::cout utilise x += y et ++x."),
+            Sample("en-us-operators", NarrationLanguage.AMERICAN_ENGLISH, "af_heart", "The code std::cout uses x += y and ++x."),
+            Sample("en-gb-operators", NarrationLanguage.BRITISH_ENGLISH, "bf_emma", "The code std::cout uses x += y and ++x."),
+            Sample("es-operators", NarrationLanguage.SPANISH, "ef_dora", "El código std::cout usa x &= y e incrementa ++x."),
+            Sample("fr-masked-negation", NarrationLanguage.FRENCH, "ff_siwis", "La fonction main teste !std::empty(valeurs)."),
+            Sample("fr-marked-update", NarrationLanguage.FRENCH, "ff_siwis", "La fonction main lit `compteur++` puis continue.")
         )
         private val SAMPLES = listOf(
             Sample("fr-cout", NarrationLanguage.FRENCH, "ff_siwis", "La ligne std::cout affiche le résultat."),

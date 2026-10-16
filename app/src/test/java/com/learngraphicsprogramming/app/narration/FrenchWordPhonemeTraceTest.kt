@@ -2,6 +2,8 @@ package com.learngraphicsprogramming.app.narration
 
 import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import com.learngraphicsprogramming.app.narration.phonemes.FrenchRuleBasedG2P
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -163,6 +165,95 @@ class FrenchWordPhonemeTraceTest {
                 val expected = if ("cout" in source) MixedFrenchG2P.namespaceFrenchLetters else MixedFrenchG2P.namespaceUsPhones
                 assertEquals(expected, trace.phonemes.substring(std.start, std.endExclusive))
             }
+        }
+    }
+
+    @Test fun technicalOperatorNamesOwnTheSameOriginalOperatorWithoutBorrowingAdjacentWords() {
+        val french = frontend()
+        for (operator in listOf("::", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ".*", "->*")) {
+            val source = "La valeur gauche${operator}droite reste ouverte."
+            val prepared = FrenchTechnicalSpeech.prepareForKokoro(source)
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { source }
+            assertValid(prepared, trace)
+            assertEquals(MixedFrenchG2P.phonemizePrepared(prepared, french), trace.phonemes)
+            val start = prepared.indexOf(operator)
+            val actual = trace.words.single { it.sourceStart == start && it.sourceEndExclusive == start + operator.length }
+            assertEquals(operator, actual.word)
+            assertTrue(trace.phonemes.substring(actual.start, actual.endExclusive).isNotBlank())
+            assertTrue(trace.words.any { it.sourceEndExclusive == start })
+            assertTrue(trace.words.any { it.sourceStart == start + operator.length })
+        }
+        for (source in listOf("La valeur x++ reste ouverte.", "La valeur ++x reste ouverte.",
+            "La valeur x-- reste ouverte.", "La valeur --x reste ouverte.", "La valeur !condition reste ouverte.")) {
+            val prepared = FrenchTechnicalSpeech.prepareForKokoro(source)
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { source }
+            assertValid(prepared, trace)
+            assertEquals(MixedFrenchG2P.phonemizePrepared(prepared, french), trace.phonemes)
+            val operator = FrenchSpeechSymbols.changedOperatorReadings(prepared).single()
+            assertTrue(trace.words.any { it.sourceStart == operator.first && it.sourceEndExclusive == operator.second })
+        }
+    }
+
+    @Test fun annotatedOperandsAndCodeDelimitersUseOneContextPlanForSynthesisTraceAndAtoms() {
+        val french = frontend()
+        for ((source, operator, words) in listOf(
+            Triple("La fonction main utilise !std::empty(valeurs).", "!", "négation logique"),
+            Triple("La fonction main utilise `compteur++`.", "++", "incrémentation"),
+            Triple("La fonction main utilise `compteur--`.", "--", "décrémentation"),
+            Triple("La fonction main utilise `!condition`.", "!", "négation logique")
+        )) {
+            val prepared = FrenchTechnicalSpeech.prepareForKokoro(source)
+            assertTrue(ManualEnglishSpeech.spans(prepared).isNotEmpty())
+            val resolved = FrenchSpeechSymbols.resolvedOperatorReadings(prepared).single { it.symbol == operator }
+            assertEquals(words, resolved.words)
+            assertTrue(resolved.changed)
+            assertEquals(operator, prepared.substring(resolved.start, resolved.endExclusive))
+            val canonical = ManualEnglishSpeech.strip(prepared)
+            val canonicalStart = canonical.indexOf(operator)
+            assertTrue(FrenchTechnicalSpeech.changedOperatorReadings(prepared)
+                .contains(Triple(canonicalStart, canonicalStart + operator.length, words)))
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { source }
+            assertValid(prepared, trace)
+            assertEquals(MixedFrenchG2P.phonemizePrepared(prepared, french), trace.phonemes)
+            assertEquals(source, NarrationSpokenWords.technicalAtoms(prepared, NarrationLanguage.FRENCH)
+                .map { it.start to it.endExclusive }, trace.words.map { it.sourceStart to it.sourceEndExclusive })
+            val actual = trace.words.single { it.sourceStart == resolved.start && it.sourceEndExclusive == resolved.endExclusive }
+            assertTrue(trace.phonemes.substring(actual.start, actual.endExclusive).isNotBlank())
+        }
+    }
+
+    @Test fun aNamedSemicolonOwnsItsActualPhonesWhileASentenceSeparatorDoesNotBecomeAWord() {
+        val french = frontend()
+        for (source in listOf("La fonction main : n'ajoute pas ; à chaque ligne.",
+            "La fonction main se termine par ;.", "La fonction main ; une lecture reste ouverte.")) {
+            val prepared = FrenchTechnicalSpeech.prepareForKokoro(source)
+            val resolved = FrenchSpeechSymbols.resolvedOperatorReadings(prepared).single { it.symbol == ";" }
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { source }
+            assertValid(prepared, trace)
+            assertEquals(MixedFrenchG2P.phonemizePrepared(prepared, french), trace.phonemes)
+            val named = !source.contains("main ;")
+            assertEquals(named, resolved.changed)
+            assertEquals(named, trace.words.any { it.sourceStart == resolved.start && it.sourceEndExclusive == resolved.endExclusive })
+            assertEquals(named, NarrationSpokenWords.technicalAtoms(prepared, NarrationLanguage.FRENCH)
+                .any { it.start == resolved.start && it.endExclusive == resolved.endExclusive })
+            if (named) assertEquals("point-virgule", resolved.words) else assertNull(resolved.words)
+        }
+    }
+
+    @Test fun contextualOperatorsSurviveTheCompleteLessonMathAndSentencePipeline() {
+        val french = frontend()
+        for ((source, symbol) in listOf(
+            "La fonction main teste !std::empty(valeurs)." to "!",
+            "La fonction main lit `compteur++` puis continue." to "++"
+        )) {
+            val lesson = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray()
+                .put(JSONObject().put("type", "paragraph").put("text", source)))))
+            val sentences = NarrationSegments.sentences(LessonNarrationText.page(lesson, 0, NarrationLanguage.FRENCH, forKokoro = true))
+            val prepared = sentences.single()
+            val trace = requireNotNull(MixedFrenchG2P.traceWordsPrepared(prepared, french)) { prepared }
+            assertTrue("$source -> $prepared -> ${trace.words.map { it.word }}", trace.words.any { it.word == symbol })
+            assertEquals(NarrationSpokenWords.technicalAtoms(prepared, NarrationLanguage.FRENCH).map { it.start to it.endExclusive },
+                trace.words.map { it.sourceStart to it.sourceEndExclusive })
         }
     }
 

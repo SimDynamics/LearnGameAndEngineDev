@@ -59,8 +59,15 @@ object SpanishTechnicalSpeech {
                 val end = text.indexOf(delimiter, index + delimiter.length)
                 if (end >= 0) {
                     val code = text.substring(index + delimiter.length, end)
-                    output.append("código, ").append(readCode(code, index + delimiter.length, selected))
-                        .append(", fin de código")
+                    val regexPattern = regexCue.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))
+                    output.append("código, ")
+                    if (onPiece != null && !regexPattern) {
+                        onPiece(index, index + delimiter.length, "código, ")
+                        output.append(readCode(code, index + delimiter.length, selected, onPiece))
+                        onPiece(end, end + delimiter.length, ", fin de código")
+                        observedChildren = true
+                    } else output.append(if (regexPattern) readLiteral(code) else readCode(code, index + delimiter.length, selected))
+                    output.append(", fin de código")
                     index = end + delimiter.length
                     changed = true
                     continue
@@ -76,6 +83,12 @@ object SpanishTechnicalSpeech {
                 output.append(text[index++])
                 continue
             }
+            // Colons, hashes and operator-looking path characters inside a URL
+            // do not describe C++ operations.
+            url.matchAt(text, index)?.let { match ->
+                output.append(match.value)
+                index = match.range.last + 1
+            }?.also { continue }
             // The existing frontend already reads the language name. Its two
             // plus signs are not an increment operation or a new cache reading.
             if (text.regionMatches(index, "C++", 0, 3, ignoreCase = true) &&
@@ -121,7 +134,11 @@ object SpanishTechnicalSpeech {
             }?.also { continue }
             val operator = proseOperators.firstOrNull { text.startsWith(it.first, index) }
             if (operator != null) {
-                output.append(' ').append(operator.second).append(' ')
+                output.append(' ').append(when {
+                    operator.first == "--" && cliOptionAt(text, index) -> "guion guion"
+                    operator.first == "++" && compilerPlus.containsMatchIn(text.substring(0, index)) -> "más más"
+                    else -> operator.second
+                }).append(' ')
                 index += operator.first.length
                 changed = true
                 continue
@@ -136,6 +153,9 @@ object SpanishTechnicalSpeech {
                 '#' -> "almohadilla"
                 '_' -> "guion bajo"
                 '*' -> if (multiplicationAt(text, index)) "por" else "asterisco"
+                '!' -> if ((index == 0 || text[index - 1].isWhitespace() || text[index - 1] in "(=,;{?:&|") &&
+                    text.getOrNull(index + 1)?.let { it.isLetterOrDigit() || it in "_(!" } == true) "negación lógica" else null
+                ';' -> if (semicolonMention.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))) "punto y coma" else null
                 '§' -> "sección"
                 '–' -> "guion"
                 else -> null
@@ -366,7 +386,12 @@ object SpanishTechnicalSpeech {
             }
             val operator = codeOperators.firstOrNull { source.startsWith(it.first, index) }
             if (operator != null) {
-                result += if (operator.first == "&&" && previousIdentifier in typeNames) "doble ampersand" else operator.second
+                result += when {
+                    operator.first == "&&" && previousIdentifier in typeNames -> "doble ampersand"
+                    operator.first == "--" && cliOptionAt(source, index) -> "guion guion"
+                    operator.first == "++" && previousIdentifier in setOf("clang", "g") -> "más más"
+                    else -> operator.second
+                }
                 qualified = operator.first == "::"
                 if (!qualified) previousIdentifier = ""
                 index += operator.first.length
@@ -381,6 +406,7 @@ object SpanishTechnicalSpeech {
             }
             val name = when (char) {
                 '*' -> if (previousIdentifier !in typeNames && multiplicationAt(source, index)) "por" else "asterisco"
+                '!' -> "negación lógica"
                 '<' -> "menor que"
                 '>' -> "mayor que"
                 else -> codeSymbols[char]
@@ -495,11 +521,25 @@ object SpanishTechnicalSpeech {
         return next
     }
 
+    private fun cliOptionAt(text: String, index: Int): Boolean {
+        val before = text.substring((index - 160).coerceAtLeast(0), index)
+        val after = text.substring(index + 2, (index + 96).coerceAtMost(text.length))
+        return cliCue.containsMatchIn(before) || cliTail.containsMatchIn(after)
+    }
+
     private val section = Regex("§\\s*(\\d+(?:\\.\\d+)*)(?:\\s*[–-]\\s*(\\d+(?:\\.\\d+)*))?(?![\\p{L}\\p{N}])")
     private val ordinal = Regex("(?<![\\p{L}\\p{N}])(\\d{1,2})\\.([ªº])(?!\\p{L})")
     private val numericRange = Regex("(?<![\\p{L}\\p{N}.])([−-]?\\d+)\\s*(?:–|\\.\\.)\\s*([−-]?\\d+)(?![\\p{L}\\p{N}]|\\.\\d)")
     private val pureFormula = Regex("[\\d\\s.,;:a-zA-Zα-ωπ∞=<>≤≥≠≈→+−*/×÷·()\\[\\]{}|?²³⁴⁵⁶⁷⁸⁹⁰¹^_%!√-]+")
-    private val contextSignals = Regex("&&|\\|\\||==|!=|\\+\\+|--|[+*/%&|^-]=|\\.\\.")
+    private val contextSignals = Regex("::|<=>|<<=|>>=|&&|\\|\\||==|!=|\\+\\+|--|[+*/%&|^-]=|\\.\\.|(?<![\\p{L}\\p{N}_])!(?=[A-Za-z_(])")
+    private val url = Regex("(?:https?://|www\\.)\\S+", RegexOption.IGNORE_CASE)
+    // In prose a semicolon is usually a pause. Name it only when syntax makes
+    // it the object of an explanation; code and quoted characters use readCode.
+    private val semicolonMention = Regex("(?i)(?:\\b(?:con|sin|mediante)|\\b(?:añad(?:as|e|ir)|agreg(?:ues|a|ar)|pongas|pon|escrib(?:as|e|ir)|insert(?:es|a|ar)|quit(?:es|a|ar)|elimin(?:es|a|ar))|\\b(?:signo|símbolo|carácter|operador))\\s+$")
+    private val cliCue = Regex("(?iu)(?:\\b(?:cmake|ctest|clang(?:\\+\\+)?|gcc|g\\+\\+|ninja|git|gradle(?:w)?)(?![\\p{L}\\p{N}_])[^;!?\\n]*|\\b(?:opción|argumento|parámetro)\\s*[`\"'«]*)$")
+    private val cliTail = Regex("(?iu)^[A-Za-z][A-Za-z0-9-]*[`\"'»]?\\s+(?:es\\s+)?(?:una?\\s+)?(?:opción|argumento|parámetro)(?=\\s|[.,:;!?]|$)")
+    private val regexCue = Regex("(?iu)(?:expresión\\s+regular|patrón\\s+(?:regular|regex)|regex)\\s*[:=]?\\s*$")
+    private val compilerPlus = Regex("(?i)(?<![\\p{L}\\p{N}_])(?:clang|g)$")
     private val directive = Regex("#\\s*(include|ifndef|ifdef|define|endif|pragma|undef|elif|else|if)\\b")
     private val cmakeVariable = Regex("\\$\\{[A-Za-z_][A-Za-z_0-9]*\\}")
     private val header = Regex("<(?:iostream|string|string_view|vector|array|sstream|stdexcept|limits|iomanip|ios|utility|algorithm|cmath|cstdint|cassert|format|fstream|optional|map|set|memory)>")
@@ -529,7 +569,25 @@ object SpanishTechnicalSpeech {
     private val ordinalNames = mapOf(1 to "primero", 2 to "segundo", 3 to "tercero", 4 to "cuarto", 5 to "quinto", 6 to "sexto", 7 to "séptimo", 8 to "octavo", 9 to "noveno", 10 to "décimo")
     private val digitNames = listOf("cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve")
     private val letterNames = mapOf('a' to "a", 'b' to "be", 'c' to "ce", 'd' to "de", 'e' to "e", 'f' to "efe", 'g' to "ge", 'h' to "ache", 'i' to "i", 'j' to "jota", 'k' to "ka", 'l' to "ele", 'm' to "eme", 'n' to "ene", 'o' to "o", 'p' to "pe", 'q' to "cu", 'r' to "ere", 's' to "ese", 't' to "te", 'u' to "u", 'v' to "uve", 'w' to "uve doble", 'x' to "equis", 'y' to "i griega", 'z' to "zeta")
-    private val proseOperators = listOf("&&" to "y lógico", "||" to "o lógico", "*=" to "multiplica y asigna", "==" to "comparación de igualdad", "!=" to "distinto de", "<=" to "menor o igual que", ">=" to "mayor o igual que", "<<" to "doble menor que", ">>" to "doble mayor que", "++" to "incremento", "--" to "decremento")
-    private val codeOperators = listOf("<<=" to "doble menor que e igual", ">>=" to "doble mayor que e igual", "::" to "doble dos puntos", "&&" to "y lógico", "||" to "o lógico", "*=" to "multiplica y asigna", "+=" to "suma y asigna", "-=" to "resta y asigna", "/=" to "divide y asigna", "%=" to "resto y asignación", "==" to "comparación de igualdad", "!=" to "distinto de", "<=" to "menor o igual que", ">=" to "mayor o igual que", "<<" to "doble menor que", ">>" to "doble mayor que", "++" to "incremento", "--" to "decremento", "->" to "flecha")
+    // Longest tokens first. Neutral names remain deliberate for symbols whose
+    // role needs type information (streams/shifts, pointers/references, arrows).
+    private val codeOperators = listOf(
+        "<=>" to "comparación de tres vías",
+        "<<=" to "asignación con desplazamiento a la izquierda",
+        ">>=" to "asignación con desplazamiento a la derecha",
+        "->*" to "acceso a miembro mediante puntero a miembro",
+        "::" to "operador de resolución de ámbito",
+        "&&" to "y lógico", "||" to "o lógico",
+        "*=" to "multiplica y asigna", "+=" to "suma y asigna", "-=" to "resta y asigna",
+        "/=" to "divide y asigna", "%=" to "resto y asignación",
+        "&=" to "asignación con y bit a bit", "|=" to "asignación con o bit a bit",
+        "^=" to "asignación con o exclusivo bit a bit",
+        "==" to "comparación de igualdad", "!=" to "distinto de",
+        "<=" to "menor o igual que", ">=" to "mayor o igual que",
+        "<<" to "doble menor que", ">>" to "doble mayor que",
+        "++" to "incremento", "--" to "decremento", "->" to "flecha",
+        ".*" to "acceso a miembro mediante puntero a miembro"
+    )
+    private val proseOperators = codeOperators.filter { it.first !in setOf("->", "->*", ".*") }
     private val codeSymbols = mapOf('{' to "abre llave", '}' to "cierra llave", '[' to "abre corchete", ']' to "cierra corchete", '(' to "abre paréntesis", ')' to "cierra paréntesis", '&' to "ampersand", '|' to "barra vertical", '#' to "almohadilla", '_' to "guion bajo", '=' to "asigna", '+' to "más", '-' to "menos", '/' to "barra", '%' to "resto", ':' to "dos puntos", ';' to "punto y coma", ',' to "coma", '.' to "punto", '!' to "admiración", '?' to "interrogación", '^' to "acento circunflejo", '~' to "tilde", '\'' to "comilla simple", '"' to "comilla doble", '\\' to "barra inversa", '*' to "asterisco", '<' to "menor que", '>' to "mayor que")
 }

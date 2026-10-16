@@ -52,8 +52,20 @@ internal object KokoroNarrationCache {
                 }
             }
         }
-        if (language == NarrationLanguage.FRENCH.tag && FrenchTechnicalSpeech.hasChangedSymbolPronunciation(text)) {
-            parts += FrenchTechnicalSpeech.SYMBOL_CACHE_REVISION
+        if (language == NarrationLanguage.FRENCH.tag) {
+            if (FrenchTechnicalSpeech.hasLegacySymbolRevision(text)) {
+                parts += FrenchTechnicalSpeech.SYMBOL_CACHE_REVISION
+            }
+            val operators = FrenchTechnicalSpeech.changedOperatorReadings(text)
+            if (operators.isNotEmpty()) {
+                // Keep valid dièse-only and ordinary recordings. Names and source
+                // ownership change the identity only where speech actually changes.
+                parts += "french-technical-operator-names-v1"
+                operators.forEach { (start, end, words) ->
+                    parts += "$start:$end"
+                    parts += words
+                }
+            }
         }
         if (annotated) {
             val terms = ManualEnglishSpeech.spans(text)

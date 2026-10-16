@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.system.Os
 import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -466,7 +467,7 @@ class WordReadingDeviceTest {
             afterCppSegment = field(controller(activity), "index")
             assertFalse("All of C++ and its closing period are read after its natural completion",
                 pending(activity, 1).any { it.start < cppStart + 4 && it.endExclusive > cppStart })
-            assertGlyphColor(paragraph, cppStart + 1, 2, paragraph.currentTextColor)
+            assertReadGlyphColor(paragraph, cppStart + 1, 2)
             assertSameCachedAudio(sourceAudio, sourceHash, sourceIdentity, sourceKey, generationCount)
             saveParagraph(paragraph, "published-cpp-after-spoken-native")
             assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
@@ -850,7 +851,7 @@ class WordReadingDeviceTest {
             assertTrue("Replaying the question starts with a still-pending suffix", replayPending > 0)
             assertSourceFrontier(activity, setOf(1, 2, 3))
             assertMixedPixels(view)
-            assertGlyphColor(view, questionStart + 1, "Qué".length, view.currentTextColor)
+            assertReadGlyphColor(view, questionStart + 1, "Qué".length)
             assertGlyphColor(view, tail, "directamente".length, pendingGray)
             assertGlyphColor(view, question.lastIndex, 1, pendingGray)
             assertSameCachedAudio(audio, hash, fileIdentity, key, generations)
@@ -872,7 +873,7 @@ class WordReadingDeviceTest {
             assertNull(field<MediaPlayer?>(controller(activity), "player"))
             assertTrue("The spoken closing question mark becomes read only after playback finishes the question",
                 field<List<ReadingTextRange>>(view, "unreadRanges").isEmpty())
-            assertGlyphColor(view, question.lastIndex, 1, view.currentTextColor)
+            assertReadGlyphColor(view, question.lastIndex, 1)
             assertSameCachedAudio(audio, hash, fileIdentity, key, generations)
             assertFacts(originalFacts)
             capture("actual-question-read-after-replaying")
@@ -1063,7 +1064,7 @@ class WordReadingDeviceTest {
                                     .first { !paragraphText[it].isWhitespace() }
                                 val pendingGlyph = (pending.start until pending.endExclusive)
                                     .first { !paragraphText[it].isWhitespace() }
-                                assertGlyphColor(paragraph, normalGlyph, 1, paragraph.currentTextColor)
+                                assertReadGlyphColor(paragraph, normalGlyph, 1)
                                 assertGlyphColor(paragraph, pendingGlyph, 1, gray)
                                 mixedTechnicalSegments += index
                                 saveParagraph(paragraph, "actual-library-technical-mixed-$index-native")
@@ -1086,7 +1087,7 @@ class WordReadingDeviceTest {
                 mixedTechnicalSegments.isNotEmpty())
             assertTrue("The entire paragraph becomes read only after its real natural completion",
                 field<List<ReadingTextRange>>(paragraph, "unreadRanges").isEmpty())
-            assertGlyphColor(paragraph, finalWord, "distintas".length, paragraph.currentTextColor)
+            assertReadGlyphColor(paragraph, finalWord, "distintas".length)
             saveParagraph(paragraph, "actual-library-naturally-complete-native")
             val beyondParagraph = field<Int>(reader, "index")
             repeat(2) { assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick()) }
@@ -1267,7 +1268,7 @@ class WordReadingDeviceTest {
                                 assertMixedPixels(paragraph)
                                 val normalGlyph = (normal.start until normal.endExclusive).first { !paragraphText[it].isWhitespace() }
                                 val pendingGlyph = (pending.start until pending.endExclusive).first { !paragraphText[it].isWhitespace() }
-                                assertGlyphColor(paragraph, normalGlyph, 1, paragraph.currentTextColor)
+                                assertReadGlyphColor(paragraph, normalGlyph, 1)
                                 assertGlyphColor(paragraph, pendingGlyph, 1, gray)
                                 mixed += index
                                 saveParagraph(paragraph, "actual-$label-library-mixed-$index-native")
@@ -1360,16 +1361,27 @@ class WordReadingDeviceTest {
             listOf(it, text.getSpanStart(it), text.getSpanEnd(it), text.getSpanFlags(it))
         }
     }.orEmpty()
+    private fun assertReadGlyphColor(view: ReadingTextView, start: Int, length: Int) {
+        val styled = view.text as? Spanned
+        for (offset in start until start + length) {
+            val color = styled?.getSpans(offset, offset + 1, ForegroundColorSpan::class.java)
+                ?.lastOrNull()?.foregroundColor ?: view.currentTextColor
+            assertGlyphColor(view, offset, 1, color)
+        }
+    }
     private fun assertMixedPixels(view: ReadingTextView) {
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         try {
             view.draw(Canvas(bitmap))
             val gray = field<Int>(view, "unreadColor")
+            val readPalette = setOf(view.currentTextColor) + (view.text as? Spanned)?.let { text ->
+                text.getSpans(0, text.length, ForegroundColorSpan::class.java).map { it.foregroundColor }
+            }.orEmpty()
             var normalPixels = 0
             var pendingPixels = 0
             for (y in 0 until bitmap.height) for (x in 0 until bitmap.width) {
                 when (bitmap.getPixel(x, y)) {
-                    view.currentTextColor -> normalPixels++
+                    in readPalette -> normalPixels++
                     gray -> pendingPixels++
                 }
             }

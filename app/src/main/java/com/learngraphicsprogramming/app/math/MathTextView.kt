@@ -20,6 +20,14 @@ class MathTextView(context: Context) : TextView(context) {
 }
 
 object MathTextRenderer {
+    /** Display ownership of the formulas already typeset by this renderer. */
+    internal fun formulaRanges(text: CharSequence): List<IntRange> {
+        val rendered = text as? Spanned ?: return emptyList()
+        return rendered.getSpans(0, rendered.length, MathFormulaSpan::class.java).map {
+            rendered.getSpanStart(it) until rendered.getSpanEnd(it)
+        }
+    }
+
     private val numericFraction = Regex("[−-]?\\d+(?:[.,]\\d+)?/\\d+(?:[.,]\\d+)?")
     private val coordinates = Regex("\\([−-]?\\d+(?:[.,]\\d+)?,\\s*[−-]?\\d+(?:[.,]\\d+)?\\)")
     private val relation = Regex("[−-]?(?:\\d+(?:[.,]\\d+)?|[xyab])\\s*[≤≥<>≠=]\\s*[−-]?(?:\\d+(?:[.,]\\d+)?|[xyab])")

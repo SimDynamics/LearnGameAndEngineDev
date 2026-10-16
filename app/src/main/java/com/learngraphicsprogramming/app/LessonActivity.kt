@@ -415,8 +415,14 @@ class LessonActivity : AppCompatActivity() {
         return script
     }
 
-    /** Runtime references only: the curriculum and the displayed CharSequences stay unchanged. */
-    private fun registerReadingText(view: TextView, blockIndex: Int? = readingRenderBlockIndex) {
+    /** Runtime decoration and reading references over the original curricular characters. */
+    private fun registerReadingText(view: TextView, blockIndex: Int? = readingRenderBlockIndex,
+                                    mathMode: String = "auto") {
+        if (view is ReadingTextView) {
+            LessonTechnicalText.apply(view,
+                currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
+                NarrationSettingsRepository.get(this).language, mathMode)
+        }
         if (blockIndex == null) return
         readingTextPages[narrationPageIdentity()]?.register(blockIndex, view)
     }
@@ -3806,7 +3812,7 @@ class LessonActivity : AppCompatActivity() {
         view.layoutParams =
             params
 
-        registerReadingText(view)
+        registerReadingText(view, mathMode = mathMode)
         lessonContent.addView(view)
     }
 
@@ -11703,7 +11709,7 @@ class LessonActivity : AppCompatActivity() {
             dp(10)
         )
 
-        registerReadingText(view)
+        registerReadingText(view, mathMode = mathMode)
         lessonContent.addView(
             view
         )
@@ -11746,7 +11752,7 @@ class LessonActivity : AppCompatActivity() {
             dp(18)
         )
 
-        registerReadingText(view)
+        registerReadingText(view, mathMode = mathMode)
         lessonContent.addView(
             view
         )

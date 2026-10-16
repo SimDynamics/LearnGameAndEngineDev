@@ -37,10 +37,10 @@ class SpanishIncludeReadingTest {
 
     @Test fun standaloneNamespaceBeforeProseUsesSpanishLetterNamesAndKeepsTheScopeOperator() {
         for ((source, expected) in listOf(
-            "std:: indica que el nombre pertenece a esa biblioteca." to "ese te de doble dos puntos indica que el nombre pertenece a esa biblioteca.",
-            "El prefijo std:: tiene dos signos." to "El prefijo ese te de doble dos puntos tiene dos signos.",
-            "std::cout" to "ese te de doble dos puntos cout",
-            "std::vector<int>" to "ese te de doble dos puntos vector abre ángulo int cierra ángulo"
+            "std:: indica que el nombre pertenece a esa biblioteca." to "ese te de operador de resolución de ámbito indica que el nombre pertenece a esa biblioteca.",
+            "El prefijo std:: tiene dos signos." to "El prefijo ese te de operador de resolución de ámbito tiene dos signos.",
+            "std::cout" to "ese te de operador de resolución de ámbito cout",
+            "std::vector<int>" to "ese te de operador de resolución de ámbito vector abre ángulo int cierra ángulo"
         )) assertEquals(source, expected, SpanishTechnicalSpeech.prepare(source).text)
         for (source in listOf("El nombre stdio sigue igual.", "mis_std::", "std_total::")) {
             assertFalse(source, SpanishTechnicalSpeech.prepare(source).text.contains("ese te de"))

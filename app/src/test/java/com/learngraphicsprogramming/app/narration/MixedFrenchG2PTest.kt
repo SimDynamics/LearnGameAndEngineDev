@@ -15,7 +15,8 @@ class MixedFrenchG2PTest {
         "ouverte" to "uvˈɛʁt", "public" to "pyblˈik", "continue" to "kɔ̃tinˈy", "lecture" to "lɛktˈyʁ",
         "une" to "yn", "double" to "dˈubl", "un" to "œ̃", "long" to "lˈɔ̃", "moment" to "mɔmˈɑ̃",
         "dièse" to "djˈɛz", "chevron" to "ʃəvʁˈɔ̃", "ouvrant" to "uvʁˈɑ̃", "fermant" to "fɛʁmˈɑ̃",
-        "deux" to "dˈø", "points" to "pwˈɛ̃"
+        "deux" to "dˈø", "points" to "pwˈɛ̃", "opérateur" to "ɔpeʁatˈœʁ",
+        "de" to "də", "résolution" to "ʁezolysjˈɔ̃", "portée" to "pɔʁtˈe"
         )
         val vocabulary = (entries.values.joinToString("") +
             ManualEnglishPronunciations.phones.values.joinToString("") + MixedFrenchG2P.namespaceFrenchLetters + " .,;").toSet()
@@ -30,7 +31,7 @@ class MixedFrenchG2PTest {
         terms.forEach { assertTrue(phones.contains(ManualEnglishPronunciations.phonemes(it.entry))) }
         assertTrue(phones.startsWith("la fɔ̃ksjˈɔ̃ "))
         assertTrue(phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
-        assertTrue(phones.contains("dˈubl dˈø pwˈɛ̃"))
+        assertTrue(phones.contains(frontend().phonemize("opérateur de résolution de portée")))
         assertFalse(phones.contains("stɑ̃dˈaʁ"))
         assertFalse(phones.contains(","))
         assertEquals(1, phones.count { it == '.' })

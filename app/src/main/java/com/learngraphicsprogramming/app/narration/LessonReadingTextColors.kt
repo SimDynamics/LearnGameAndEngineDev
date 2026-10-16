@@ -23,6 +23,7 @@ class LessonReadingTextColors {
     private data class Entry(val block: Int, val view: TextView, val original: ColorStateList)
     private val entries = IdentityHashMap<TextView, Entry>()
     private val unreadColors = mutableMapOf<Int, Int>()
+    private val unreadSurfaceColors = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
 
     fun register(blockIndex: Int, view: TextView) {
         // A caller identifies prose, but a misplaced registration must never recolor controls
@@ -41,15 +42,26 @@ class LessonReadingTextColors {
                 val surface = if (wordRanges != null) backgroundColor(view) else null
                 if (surface != null) {
                     if (view.textColors !== entry.original) view.setTextColor(entry.original)
-                    view.setUnreadWordRanges(wordRanges,
-                        unreadColors.getOrPut(surface) { LessonReadingColor.unread(surface) })
+                    setPendingInk(view, wordRanges, surface)
                     return@forEach
+                }
+                if (wordRanges == null && enabled && view.safeSupportsWordReading &&
+                    states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)) {
+                    backgroundColor(view)?.let { background ->
+                        if (hasForegroundSpans(view) || view.effectiveReadingSurface(background) != background) {
+                            if (view.textColors !== entry.original) view.setTextColor(entry.original)
+                            setPendingInk(view, listOf(ReadingTextRange(0, view.text.length)), background)
+                            return@forEach
+                        }
+                    }
                 }
                 view.setUnreadWordRanges(null, 0)
             }
             // Missing safe word provenance is never permission to whiten an entire current block.
             val unread = enabled && states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)
-            val background = if (unread) backgroundColor(view) else null
+            val background = if (unread) backgroundColor(view)?.let { color ->
+                (view as? ReadingTextView)?.effectiveReadingSurface(color) ?: color
+            } else null
             val color = background?.let { unreadColors.getOrPut(it) { LessonReadingColor.unread(it) } }
             if (color == null || view.isClickable || view.isLongClickable || hasForegroundSpans(view)) {
                 if (view.textColors !== entry.original) view.setTextColor(entry.original)
@@ -57,6 +69,20 @@ class LessonReadingTextColors {
                 // No invalidation is needed when a player checkpoint repeats the same state.
             } else view.setTextColor(color)
         }
+    }
+
+    private fun setPendingInk(view: ReadingTextView, ranges: List<ReadingTextRange>?, surface: Int) {
+        val semanticSurface = view.effectiveReadingSurface(surface)
+        val grays = unreadSurfaceColors.getOrPut(surface to semanticSurface) {
+            val semanticGray = unreadColors.getOrPut(semanticSurface) { LessonReadingColor.unread(semanticSurface) }
+            val common = if (LessonReadingColor.contrast(semanticGray, surface) >= LessonReadingColor.MIN_CONTRAST) semanticGray
+                else (0..255).asSequence().map { channel -> 0xff000000.toInt() or (channel shl 16) or (channel shl 8) or channel }
+                    .filter { LessonReadingColor.contrast(it, surface) >= LessonReadingColor.MIN_CONTRAST &&
+                        LessonReadingColor.contrast(it, semanticSurface) >= LessonReadingColor.MIN_CONTRAST }
+                    .minByOrNull { kotlin.math.abs((it and 255) - (semanticGray and 255)) }
+            (common ?: unreadColors.getOrPut(surface) { LessonReadingColor.unread(surface) }) to (common ?: semanticGray)
+        }
+        view.setUnreadWordRanges(ranges, grays.first, grays.second)
     }
 
     fun restore() {
@@ -70,6 +96,7 @@ class LessonReadingTextColors {
         restore()
         entries.clear()
         unreadColors.clear()
+        unreadSurfaceColors.clear()
     }
 
     /** Require complete monotonic lexical identity; repeated words are never found by indexOf. */

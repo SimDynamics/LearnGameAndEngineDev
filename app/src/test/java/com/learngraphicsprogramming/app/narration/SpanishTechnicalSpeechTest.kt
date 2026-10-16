@@ -63,7 +63,7 @@ class SpanishTechnicalSpeechTest {
     }
 
     @Test fun qualifiedNamesCastsAndNestedTemplatesPreserveEachDelimiter() {
-        assertEquals("ese te de doble dos puntos vector abre ángulo int cierra ángulo", read("std::vector<int>"))
+        assertEquals("ese te de operador de resolución de ámbito vector abre ángulo int cierra ángulo", read("std::vector<int>"))
         val nested = read("std::vector<std::vector<int>>")
         assertEquals(2, Regex("abre ángulo").findAll(nested).count())
         assertEquals(2, Regex("cierra ángulo").findAll(nested).count())
@@ -114,6 +114,35 @@ class SpanishTechnicalSpeechTest {
         assertEquals("código, a por be, fin de código", read("`a*b`"))
     }
 
+    @Test fun technicalNamesKeepNamespaceSpellingAndEveryCompoundOperatorIntact() {
+        assertEquals("operador de resolución de ámbito", read("::"))
+        assertEquals("a operador de resolución de ámbito be", read("a::b"))
+        assertEquals("El operador operador de resolución de ámbito resuelve un nombre.",
+            read("El operador :: resuelve un nombre."))
+        val names = linkedMapOf(
+            "<<=" to "asignación con desplazamiento a la izquierda",
+            ">>=" to "asignación con desplazamiento a la derecha",
+            "&=" to "asignación con y bit a bit", "|=" to "asignación con o bit a bit",
+            "^=" to "asignación con o exclusivo bit a bit",
+            "<=>" to "comparación de tres vías",
+            "->*" to "acceso a miembro mediante puntero a miembro",
+            ".*" to "acceso a miembro mediante puntero a miembro"
+        )
+        for ((operator, name) in names) {
+            assertEquals(operator, "código, equis $name uno punto y coma, fin de código", read("`x $operator 1;`"))
+            if (operator in listOf("<<=", ">>=")) assertEquals("equis $name uno", read("x${operator}1"))
+        }
+        assertEquals("código, negación lógica listo, fin de código", read("`!listo`"))
+        assertEquals("negación lógica listo", read("!listo"))
+        assertEquals("Evalúa negación lógica listo y continúa.", read("Evalúa !listo y continúa."))
+        for (source in listOf("¡Bien! Continúa.", "¡No!Sigue.", "https://example.org/std::cout?x+=2", "www.example.org/a::b")) {
+            assertEquals(SpanishTechnicalSpeech.Preparation(source, false), SpanishTechnicalSpeech.prepare(source))
+        }
+        assertEquals("código, abre comilla doble admiración cierra comilla doble, fin de código", read("`\"!\"`"))
+        assertEquals("código, abre comilla doble más asigna cierra comilla doble, fin de código", read("`\"+=\"`"))
+        assertEquals("código, abre comilla doble dos puntos dos puntos cierra comilla doble, fin de código", read("`\"::\"`"))
+    }
+
     @Test fun identifiersKeepTheirUnderscoresAndDigitsWithoutSpellingProse() {
         assertEquals("total guion bajo count dos", read("total_count2"))
         assertEquals("nombre guion bajo guion bajo valor", read("nombre__valor"))
@@ -153,6 +182,48 @@ class SpanishTechnicalSpeechTest {
             assertEquals("código, $expected, fin de código", speech)
             assertFalse(speech, speech.any(Char::isDigit))
         }
+    }
+
+    @Test fun technicalSemicolonMentionsAreSpokenWithoutNamingOrdinaryClausePunctuation() {
+        assertEquals("No añadas punto y coma a cualquier línea.", read("No añadas ; a cualquier línea."))
+        assertEquals("Cada instrucción termina con punto y coma.", read("Cada instrucción termina con ;."))
+        for (source in listOf("El código termina; después continúa.", "Primero ; después sigue.", "main; estudiaremos los tipos.")) {
+            assertEquals(SpanishTechnicalSpeech.Preparation(source, false), SpanishTechnicalSpeech.prepare(source))
+        }
+        val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
+        val file = requireNotNull(resources.absoluteFile.parentFile).resolve(
+            "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json")
+        val lesson = JSONObject(file.readText())
+        val before = lesson.toString()
+        val blocks = lesson.getJSONArray("pages").getJSONObject(2).getJSONArray("blocks")
+        val source = (0 until blocks.length()).map { blocks.getJSONObject(it).optString("text") }
+            .single { it.contains("No añadas ;") }
+        val prepared = SpanishTechnicalSpeech.prepareForKokoro(source).text
+        val spoken = ManualEnglishSpeech.strip(prepared)
+        assertEquals(2, Regex("punto y coma").findAll(spoken).count())
+        assertTrue(spoken.contains("instrucciones; tampoco"))
+        val parts = NarrationSegments.sentences(listOf(prepared)).withIndex().associate { it.index to it.value }
+        val mapping = NarrationWordMappings.forBlock(0, source, parts)
+        assertEquals(parts.keys, mapping.keys)
+        assertEquals(source.indices.toSet(), mapping.values.flatMap { it.displayed.flatMap { range -> range.start until range.endExclusive } }.toSet())
+        assertEquals(before, lesson.toString())
+    }
+
+    @Test fun commandOptionsAndExplicitRegularExpressionsAreNotCppUpdateOrMemberOperators() {
+        for (source in listOf("cmake --build salida", "La opción --version consulta la versión.", "`clang++ --version`")) {
+            val spoken = read(source)
+            assertTrue(source, spoken.contains("guion guion"))
+            assertFalse(source, spoken.contains("decremento"))
+            if (source.contains("clang++")) {
+                assertTrue(source, spoken.contains("más más"))
+                assertFalse(source, spoken.contains("incremento"))
+            }
+        }
+        val regex = read("La expresión regular `.*` conserva sus signos.")
+        assertTrue(regex, regex.contains("punto asterisco"))
+        assertFalse(regex, regex.contains("puntero a miembro"))
+        assertTrue(read("`--contador;`"), read("`--contador;`").contains("decremento"))
+        assertTrue(read("`objeto.*miembro`"), read("`objeto.*miembro`").contains("puntero a miembro"))
     }
 
     @Test fun unsupportedNotationIsPreservedForStrictFrontendRejectionAndPreparationIsIdempotent() {

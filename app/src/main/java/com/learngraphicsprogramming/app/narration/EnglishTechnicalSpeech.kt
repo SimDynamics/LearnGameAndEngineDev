@@ -46,6 +46,19 @@ internal object EnglishTechnicalSpeech {
         '\\' to "backslash", '%' to "percent", '&' to "ampersand",
         '|' to "vertical bar", '^' to "caret", '~' to "tilde", '_' to "underscore"
     )
+    private val operationNames = mapOf(
+        "<<=" to "left shift assignment operator", ">>=" to "right shift assignment operator",
+        "+=" to "addition assignment operator", "-=" to "subtraction assignment operator",
+        "*=" to "multiplication assignment operator", "/=" to "division assignment operator",
+        "%=" to "remainder assignment operator", "&=" to "bitwise and assignment operator",
+        "|=" to "bitwise or assignment operator", "^=" to "bitwise exclusive or assignment operator",
+        "==" to "equality operator",
+        "->*" to "pointer to member operator", ".*" to "pointer to member operator"
+    )
+    // This is a conservative naming mask, not a C++ parser. Literal data still has
+    // its signs read, but is never reclassified as an operation on an operand.
+    private val literals = Regex("""R"([^()\s\\]{0,16})\([\s\S]*?\)\1"|"(?:\\[\s\S]|[^"\\])*"|(?<![\p{L}\p{N}_])'(?:\\[\s\S]|[^'\\\r\n])*'(?![\p{L}\p{N}_])""")
+    private val explicitMath = Regex("""\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|[$][$][\s\S]*?[$][$]|[$][^$\r\n]+[$]""")
 
     /**
      * The existing English frontend discards many SYM/NFP tokens before dictionary lookup.
@@ -60,6 +73,14 @@ internal object EnglishTechnicalSpeech {
             .associateBy { it.range.first }
         val outputs = qualifiedOutputMatches(text).filter { available(it.start, it.endExclusive) }.associateBy { it.coutStart }
         val code = codePositions(text)
+        val literalNaming = BooleanArray(text.length)
+        val quotedNaming = BooleanArray(text.length)
+        literals.findAll(text).forEach { match ->
+            for (position in match.range) { literalNaming[position] = true; quotedNaming[position] = true }
+        }
+        explicitMath.findAll(text).forEach { match ->
+            for (position in match.range) literalNaming[position] = true
+        }
         val result = mutableListOf<Replacement>()
         var index = 0
         while (index < text.length) {
@@ -75,10 +96,24 @@ internal object EnglishTechnicalSpeech {
                 continue
             }
             val operator = operators.entries.firstOrNull {
-                text.startsWith(it.key, index) && (it.key != "--" || code[index] || decrementAt(text, index))
+                text.startsWith(it.key, index) && (it.key != "--" || code[index] || quotedSymbol(text, index, it.key.length) ||
+                    decrementAt(text, index) || operatorCueAt(text, index, it.key.length))
             }
             if (operator != null) {
-                result += Replacement(index, index + operator.key.length, operator.value)
+                val literalContext = literalNaming[index] || (operator.key == "--" && commandOptionAt(text, index)) ||
+                    (operator.key == "++" && compilerNameAt(text, index)) ||
+                    (operator.key in setOf(".*", "->*") && regularExpressionAt(text, index))
+                val name = if (operator.key == "&&" && (quotedNaming[index] || typedReferenceAt(text, index))) "double ampersand"
+                else if (literalContext) operator.value else when {
+                    operator.key == "++" && !languageNameAt(text, index) &&
+                        (code[index] || updateOperandAt(text, index, 2) || operatorCueAt(text, index, 2)) -> "increment operator"
+                    operator.key == "--" &&
+                        (code[index] || updateOperandAt(text, index, 2) || operatorCueAt(text, index, 2)) -> "decrement operator"
+                    operator.key in operationNames &&
+                        (code[index] || binaryOperandsAt(text, index, operator.key.length) || operatorCueAt(text, index, operator.key.length)) -> operationNames.getValue(operator.key)
+                    else -> operator.value
+                }
+                result += Replacement(index, index + operator.key.length, name)
                 index += operator.key.length
                 continue
             }
@@ -89,6 +124,7 @@ internal object EnglishTechnicalSpeech {
             val name = when {
                 character == '-' && (code[index] || quotedSymbol(text, index) || minusAt(text, index)) -> "minus"
                 character == '!' && (code[index] || quotedSymbol(text, index) || negationAt(text, index)) -> "logical not"
+                character == ';' && (code[index] || quotedSymbol(text, index) || semicolonMentionAt(text, index)) -> "semicolon"
                 else -> symbols[character]
             }
             if (name != null) result += Replacement(index, index + 1, name)
@@ -98,6 +134,76 @@ internal object EnglishTechnicalSpeech {
     }
 
     fun hasChangedSymbolPronunciation(text: String): Boolean = replacements(text).isNotEmpty()
+
+    private fun commandOptionAt(text: String, start: Int): Boolean {
+        val before = text.substring((start - 160).coerceAtLeast(0), start)
+        val after = text.substring(start + 2, (start + 2 + 80).coerceAtMost(text.length))
+        val command = Regex("(?i)(?<![\\p{L}\\p{N}_])(?:cmake|clang(?:\\+\\+)?|ctest|ninja|git|gcc|g\\+\\+|gradle(?:w)?(?:\\.bat)?)\\s+[^;!?,`\\r\\n]*$")
+        val optionBefore = Regex("(?i)\\b(?:options?|flags?|arguments?)\\s+(?:(?:named|called)\\s+)?[`'\"“‘]?$")
+        val optionAfter = Regex("(?i)^[\\p{L}\\p{N}_-]+[`'\"”’]?\\s+(?:is\\s+(?:an?\\s+)?)?(?:options?|flags?|arguments?)\\b")
+        return command.containsMatchIn(before) || optionBefore.containsMatchIn(before) || optionAfter.containsMatchIn(after)
+    }
+
+    private fun compilerNameAt(text: String, start: Int): Boolean =
+        Regex("(?i)(?<![\\p{L}\\p{N}_])(?:clang|g)$").containsMatchIn(text.substring((start - 16).coerceAtLeast(0), start))
+
+    private fun regularExpressionAt(text: String, start: Int): Boolean =
+        Regex("(?i)\\b(?:regex|regexp|regular[ -]expressions?)\\b")
+            .containsMatchIn(text.substring((start - 96).coerceAtLeast(0), (start + 96).coerceAtMost(text.length)))
+
+    private fun typedReferenceAt(text: String, start: Int): Boolean =
+        Regex("(?<![\\p{L}\\p{N}_])(?:auto|bool|char|char8_t|char16_t|char32_t|wchar_t|short|int|long|float|double|void)(?:\\s+(?:const|volatile))*\\s*$")
+            .containsMatchIn(text.substring((start - 64).coerceAtLeast(0), start))
+
+    private fun semicolonMentionAt(text: String, index: Int): Boolean {
+        if (text.trim() == ";") return true
+        // Ordinary semicolons separate clauses, including prose with spaces around
+        // punctuation. Only an explicit reference to the written sign is named.
+        val before = text.substring((index - 64).coerceAtLeast(0), index)
+        val after = text.substring(index + 1, (index + 32).coerceAtMost(text.length))
+        // The established math/text cleanup removes spaces before punctuation, and
+        // segmentation may leave this sign at the end of a sentence. Recognize the
+        // explicit preceding cue in both representations without needing the tail.
+        if (Regex("(?i)\\b(?:add|append|insert|remove|delete|omit|write|type|use|place|put|include|with|without|semicolon|symbol|character|token|sign|terminator|punctuation(?: mark)?)\\s*$")
+                .containsMatchIn(before)) return true
+        val signSubject = index == 0 || Regex("(?i)\\b(?:the|a|an|this|that|each|every)\\s*$").containsMatchIn(before)
+        return signSubject && Regex("(?i)^\\s+(?:symbols?|characters?|tokens?|signs?|terminators?|punctuation|terminates?|separates?)\\b")
+            .containsMatchIn(after)
+    }
+
+    private fun languageNameAt(text: String, index: Int): Boolean = index > 0 &&
+        text[index - 1].equals('C', ignoreCase = true) &&
+        text.getOrNull(index - 2)?.let { it.isLetterOrDigit() || it == '_' } != true
+
+    private fun operatorCueAt(text: String, start: Int, length: Int): Boolean {
+        val before = text.substring((start - 32).coerceAtLeast(0), start)
+        val after = text.substring(start + length, (start + length + 20).coerceAtMost(text.length))
+        return Regex("(?i)\\b(?:operators?|compound assignment)\\s*$").containsMatchIn(before) ||
+            Regex("(?i)^\\s+operators?\\b").containsMatchIn(after)
+    }
+
+    private fun binaryOperandsAt(text: String, start: Int, length: Int): Boolean {
+        val before = text.substring(0, start).trimEnd().lastOrNull()
+        val after = text.substring(start + length).trimStart().firstOrNull()
+        return before?.let { it.isLetterOrDigit() || it in ")]'\"" } == true &&
+            after?.let { it.isLetterOrDigit() || it in "(['\"_!~*&+-" } == true
+    }
+
+    private fun updateOperandAt(text: String, start: Int, length: Int): Boolean {
+        val before = text.getOrNull(start - 1)
+        val after = text.getOrNull(start + length)
+        val prefix = before == null || before.isWhitespace() || before in "([=,:&|?{;"
+        val suffix = after == null || after.isWhitespace() || after in ")],;}:<>=+*/%&|^"
+        if (prefix && after?.let { it.isLetter() || it == '_' } == true) return true
+        if (suffix && before?.let { it.isLetterOrDigit() || it in "_)]" } == true) {
+            // A bare A++ may be a grade. Keep this ambiguous prose reading literal;
+            // code fences and a statement terminator provide explicit C++ context.
+            val singleUppercase = before?.isUpperCase() == true &&
+                text.getOrNull(start - 2)?.let { it.isLetterOrDigit() || it == '_' } != true
+            return !singleUppercase || text.substring(start + length).trimStart().startsWith(';')
+        }
+        return false
+    }
 
     private fun codePositions(text: String): BooleanArray {
         val code = BooleanArray(text.length)
@@ -113,11 +219,11 @@ internal object EnglishTechnicalSpeech {
         return code
     }
 
-    private fun quotedSymbol(text: String, index: Int): Boolean = when (text.getOrNull(index - 1)) {
-        '\'' -> text.getOrNull(index + 1) == '\''
-        '"' -> text.getOrNull(index + 1) == '"'
-        '‘' -> text.getOrNull(index + 1) == '’'
-        '“' -> text.getOrNull(index + 1) == '”'
+    private fun quotedSymbol(text: String, index: Int, length: Int = 1): Boolean = when (text.getOrNull(index - 1)) {
+        '\'' -> text.getOrNull(index + length) == '\''
+        '"' -> text.getOrNull(index + length) == '"'
+        '‘' -> text.getOrNull(index + length) == '’'
+        '“' -> text.getOrNull(index + length) == '”'
         else -> false
     }
 

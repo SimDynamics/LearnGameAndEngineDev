@@ -65,12 +65,22 @@ internal object MixedFrenchG2P {
     private data class Input(val text: Owned, val foreign: Map<Char, String>)
 
     private fun prepareInput(text: String, observe: Boolean): Input {
+        val operatorPlan = FrenchSpeechSymbols.resolvedOperatorReadings(text)
+        val trackOwners = observe || operatorPlan.isNotEmpty()
         fun raw(start: Int, end: Int) = Owned(text.substring(start, end),
-            if (observe) (start until end).map { it to it + 1 } else null)
+            if (trackOwners) (start until end).map { it to it + 1 } else null)
         fun symbols(input: Owned): Owned {
-            if (!observe) return Owned(FrenchSpeechSymbols.normalize(input.text), null)
+            val projected = operatorPlan.map { operator ->
+                val indices = input.owners!!.indices.filter { index ->
+                    val owner = input.owners[index]
+                    owner.first >= operator.start && owner.second <= operator.endExclusive
+                }
+                check(indices.isNotEmpty()) { "Une limite d'opérateur a disparu de la préparation" }
+                operator.copy(start = indices.first(), endExclusive = indices.last() + 1)
+            }
+            if (!observe) return Owned(FrenchSpeechSymbols.normalizeResolvedObserved(input.text, projected), null)
             val owners = mutableListOf<Pair<Int, Int>>()
-            val normalized = FrenchSpeechSymbols.normalizeObserved(input.text) { start, end, rendered ->
+            val normalized = FrenchSpeechSymbols.normalizeResolvedObserved(input.text, projected) { start, end, rendered ->
                 val source = input.owners!!.subList(start, end)
                 val range = source.minOf { it.first } to source.maxOf { it.second }
                 repeat(rendered.length) { owners += range }
@@ -82,7 +92,7 @@ internal object MixedFrenchG2P {
         val selected = ManualEnglishSpeech.spans(text)
         if (selected.isEmpty()) {
             val original = raw(0, text.length)
-            return Input(symbols(original.replace(Regex(ManualEnglishSpeech.PREPARED.toString())) { Owned("", if (observe) emptyList() else null) }), emptyMap())
+            return Input(symbols(original.replace(Regex(ManualEnglishSpeech.PREPARED.toString())) { Owned("", if (trackOwners) emptyList() else null) }), emptyMap())
         }
         require(selected.size <= 6_000) { "Trop de termes techniques dans une phrase" }
         val occupied = text.toHashSet()
@@ -95,7 +105,7 @@ internal object MixedFrenchG2P {
             return next++.toChar().also { foreign[it] = phones }
         }
         var last = 0
-        val maskedOwners = if (observe) mutableListOf<Pair<Int, Int>>() else null
+        val maskedOwners = if (trackOwners) mutableListOf<Pair<Int, Int>>() else null
         val maskedText = buildString {
             fun appendPlain(start: Int, end: Int) {
                 for (index in start until end) if (text[index] != ManualEnglishSpeech.PREPARED) {
@@ -126,7 +136,7 @@ internal object MixedFrenchG2P {
                 markerFor(namespaces[masked.text[it.range.last + 1]] ?: namespaceUsPhones).toString())
             val scope = masked.slice(it.range.first + 3, it.range.last + 1)
             Owned(prefix.text + scope.text,
-                if (observe) prefix.owners!! + scope.owners!! else null)
+                if (trackOwners) prefix.owners!! + scope.owners!! else null)
         }
         val directives = namespaceNotation.replace(Regex("#\\s*(?=$marker)")) {
             namespaceNotation.rendered(it.range.first, it.range.last + 1, "dièse ")
@@ -137,9 +147,9 @@ internal object MixedFrenchG2P {
             val middle = directives.slice(captured.range.first, captured.range.last + 1)
             val after = directives.rendered(match.range.last, match.range.last + 1, " chevron fermant")
             Owned(before.text + middle.text + after.text,
-                if (observe) before.owners!! + middle.owners!! + after.owners!! else null)
+                if (trackOwners) before.owners!! + middle.owners!! + after.owners!! else null)
         }
-        val notation = headers.replace(Regex("`")) { Owned("", if (observe) emptyList() else null) }
+        val notation = headers.replace(Regex("`")) { Owned("", if (trackOwners) emptyList() else null) }
         return Input(symbols(notation), foreign)
     }
 }

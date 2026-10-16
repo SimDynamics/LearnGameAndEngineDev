@@ -72,6 +72,32 @@ class MultilingualReadingCorpusTest {
         }
     }
 
+    @Test fun namedOperatorsKeepEveryOriginalGlyphInEveryLanguage() {
+        for (language in listOf(NarrationLanguage.SPANISH) + languages) {
+            for (symbol in listOf("::", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ".*", "->*", "<=>", "++", "--", "!")) {
+                val expression = when (symbol) { "++", "--" -> "x$symbol"; "!" -> "!x"; else -> "x${symbol}y" }
+                val source = when (language) {
+                    NarrationLanguage.SPANISH -> "Lee $expression y después std::cout. Conserva el texto."
+                    NarrationLanguage.FRENCH -> "Lis $expression puis std::cout. Conserve le texte."
+                    else -> "Read $expression then std::cout. Keep the text."
+                }
+                assertMapping(source, "auto", language, "named-operator=$symbol")
+            }
+        }
+    }
+
+    @Test fun actualPageThreeSemicolonExplanationKeepsWordOwnershipAfterSentenceSplitting() {
+        for (language in listOf(NarrationLanguage.SPANISH) + languages) {
+            val lesson = JSONObject(assets().resolve("${language.resourceGroup}/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json").readText())
+            val original = lesson.toString()
+            val blocks = lesson.getJSONArray("pages").getJSONObject(2).getJSONArray("blocks")
+            val source = (0 until blocks.length()).map { blocks.getJSONObject(it).optString("text") }
+                .single { it.count { char -> char == ';' } == 3 }
+            assertMapping(source, "auto", language, "U1/L2/P3/semicolon-explanation")
+            assertEquals(original, lesson.toString())
+        }
+    }
+
     @Test fun technicalBlocksFromBothProgrammingCoursesRemainAutomaticallyCompatible() {
         val technical = Regex("#include|std::|[{}]|<<|>>|->|&&|\\|\\|")
         for (language in languages) {

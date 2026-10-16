@@ -6,7 +6,13 @@ internal object FrenchTechnicalSpeech {
 
     /** Old recordings could predate residual symbol reading; scope also gains its own speech. */
     internal fun hasChangedSymbolPronunciation(text: String): Boolean =
+        hasLegacySymbolRevision(text) || changedOperatorReadings(text).isNotEmpty()
+
+    internal fun hasLegacySymbolRevision(text: String): Boolean =
         ManualEnglishSpeech.strip(text).let { '#' in it || "::" in it }
+
+    internal fun changedOperatorReadings(text: String): List<Triple<Int, Int, String>> =
+        FrenchSpeechSymbols.changedOperatorReadings(ManualEnglishSpeech.strip(text))
 
     fun prepareForKokoro(text: String, mathMode: String = "auto"): String = prepare(text, mathMode, null)
 
