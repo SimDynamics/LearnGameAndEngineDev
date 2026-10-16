@@ -2,12 +2,12 @@ package com.learngraphicsprogramming.app.narration
 
 /** Offsets only: both sources remain owned by the existing script and TextView. */
 data class NarrationWordMapping(val blockIndex: Int, val spoken: List<ReadingTextRange>,
-                                val displayed: List<ReadingTextRange>)
+                                val displayed: List<ReadingTextRange>, val targets: List<Int>? = null)
 
 /** Position-bound presentation: listened and explicitly skipped visual intervals stay distinct. */
 internal class LessonWordReadingProgress {
     private data class Interval(val start: Long, val end: Long)
-    private class Page(val mapping: Map<Int, NarrationWordMapping>) {
+    private class Page(var mapping: Map<Int, NarrationWordMapping>) {
         val alignments = mutableMapOf<Int, NarrationWordAlignment>()
         val covered = mutableMapOf<Int, MutableList<Interval>>()
         val skipped = mutableMapOf<Int, MutableList<Interval>>()
@@ -27,8 +27,8 @@ internal class LessonWordReadingProgress {
 
     fun bind(identity: String, mapping: Map<Int, NarrationWordMapping>, replace: Boolean) {
         val old = pages[identity]
-        if (replace || old == null || old.mapping != mapping) pages[identity] = Page(mapping.toMap())
-        else old.visible = true
+        if (replace || old == null) pages[identity] = Page(mapping.toMap())
+        else { old.mapping = mapping.toMap(); old.visible = true }
     }
 
     fun update(event: NarrationPlaybackProgress) {
@@ -47,11 +47,8 @@ internal class LessonWordReadingProgress {
             }
             NarrationPlaybackPhase.ALIGNMENT_AVAILABLE -> {
                 val alignment = event.alignment ?: return
-                val mapping = page.mapping[segment] ?: return
-                if (alignment.words.size != mapping.spoken.size || alignment.words.indices.any {
-                    alignment.words[it].start != mapping.spoken[it].start ||
-                        alignment.words[it].endExclusive != mapping.spoken[it].endExclusive
-                }) return
+                // Metadata may arrive before successful feedback becomes visible. Retain the
+                // real alignment; validate it against each presentation mapping when drawing.
                 page.alignments[segment] = alignment
             }
             NarrationPlaybackPhase.PLAYING -> {
@@ -172,19 +169,30 @@ internal class LessonWordReadingProgress {
             .filterTo(mutableSetOf()) { visuallyComplete(page, it) }
     }
 
+    fun presentationCompletedSegments(identity: String): Set<Int> {
+        val page = pages[identity] ?: return emptySet()
+        if (!page.visible) return emptySet()
+        return visuallyCompletedSegments(identity) + page.unknown.filterValues { it == Long.MAX_VALUE }.keys
+    }
+
     /** Only pending glyph ranges are returned; no TextView content is retained or rewritten. */
     fun unread(identity: String): Map<Int, List<ReadingTextRange>> {
         val page = pages[identity] ?: return emptyMap()
         if (!page.visible) return emptyMap()
         val result = mutableMapOf<Int, MutableList<ReadingTextRange>>()
         page.mapping.forEach { (segment, mapping) ->
-            val ranges = result.getOrPut(mapping.blockIndex) { mutableListOf() }
-            val alignment = page.alignments[segment]
+            val alignment = page.alignments[segment]?.takeIf { value ->
+                value.words.size == mapping.spoken.size && value.words.indices.all {
+                    value.words[it].start == mapping.spoken[it].start &&
+                        value.words[it].endExclusive == mapping.spoken[it].endExclusive
+                }
+            }
             val skipped = page.skipped[segment].orEmpty()
             // An unsupported alignment still has a reliable whole-segment boundary.
             // This union changes presentation only; skipped audio never becomes heard audio.
             val knownComplete = visuallyComplete(page, segment)
             mapping.displayed.forEachIndexed { index, displayed ->
+                val ranges = result.getOrPut(mapping.targets?.getOrNull(index) ?: mapping.blockIndex) { mutableListOf() }
                 val word = alignment?.words?.getOrNull(index)
                 val unknown = page.unknown[segment]
                 val ordinary = knownComplete || unknown == Long.MAX_VALUE ||

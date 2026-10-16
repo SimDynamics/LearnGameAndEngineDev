@@ -909,7 +909,9 @@ class LessonReadingProgressDeviceTest {
     private fun descendants(view: View): List<View> = listOf(view) + if (view is ViewGroup)
         (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
     @Suppress("UNCHECKED_CAST") private fun <T> field(instance: Any, name: String): T =
-        instance.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(instance) as T
+        (if (name == "unreadRanges" && instance is ReadingTextHost) instance.readingInk else instance).let { owner ->
+            owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner) as T
+        }
     private fun setField(instance: Any, name: String, value: Any) = instance.javaClass.getDeclaredField(name)
         .apply { isAccessible = true }.set(instance, value)
     private fun invoke(instance: Any, name: String) = instance.javaClass.getDeclaredMethod(name)

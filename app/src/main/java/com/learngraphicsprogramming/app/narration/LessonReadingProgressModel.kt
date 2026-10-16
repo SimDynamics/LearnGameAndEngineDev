@@ -208,6 +208,8 @@ class LessonReadingProgressModel {
         }
     }
 
+    fun presentationCompletedSegments(pageIdentity: String) = words.presentationCompletedSegments(pageIdentity)
+
     fun unreadWords(pageIdentity: String) = words.unread(pageIdentity)
 
     fun clear() { pages.clear(); words.clear() }

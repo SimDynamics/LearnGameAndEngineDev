@@ -57,6 +57,8 @@ import com.learngraphicsprogramming.app.math.MathKeyboardHost
 import com.learngraphicsprogramming.app.narration.LessonNarrationController
 import com.learngraphicsprogramming.app.narration.LessonNarrationControls
 import com.learngraphicsprogramming.app.narration.LessonNarrationText
+import com.learngraphicsprogramming.app.narration.ReadingTextHost
+import com.learngraphicsprogramming.app.narration.ReadingRadioButton
 import com.learngraphicsprogramming.app.narration.NarrationUiInstructions
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import com.learngraphicsprogramming.app.narration.LessonNarrationScript
@@ -418,13 +420,53 @@ class LessonActivity : AppCompatActivity() {
     /** Runtime decoration and reading references over the original curricular characters. */
     private fun registerReadingText(view: TextView, blockIndex: Int? = readingRenderBlockIndex,
                                     mathMode: String = "auto") {
-        if (view is ReadingTextView) {
+        if (view is ReadingTextHost) {
             LessonTechnicalText.apply(view,
                 currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
                 NarrationSettingsRepository.get(this).language, mathMode)
         }
         if (blockIndex == null) return
         readingTextPages[narrationPageIdentity()]?.register(blockIndex, view)
+    }
+
+    /** A result keeps its native ink and actions; only narrated success joins reading progress. */
+    private fun exerciseFeedbackText(blockIndex: Int): ReadingTextView {
+        val identity = narrationPageIdentity()
+        var previousText = ""
+        return object : ReadingTextView(this) {
+            override fun onTextChanged(content: CharSequence?, start: Int, lengthBefore: Int, lengthAfter: Int) {
+                super.onTextChanged(content, start, lengthBefore, lengthAfter)
+                val value = content?.toString().orEmpty()
+                if (value == previousText) return
+                previousText = value
+                readingTextPages[identity]?.unregister(this)
+                post {
+                    if (identity != narrationPageIdentity() || isDestroyed || !isAttachedToWindow) return@post
+                    updatePuzzleText(this, blockIndex,
+                        if (text.isBlank()) MathPuzzleRenderer.TextRole.CLEARED
+                        else if (currentTextColor == Color.rgb(180, 220, 190)) MathPuzzleRenderer.TextRole.CORRECT_FEEDBACK
+                        else MathPuzzleRenderer.TextRole.INCORRECT_FEEDBACK)
+                }
+            }
+        }
+    }
+
+    private fun updatePuzzleText(view: TextView, blockIndex: Int, role: MathPuzzleRenderer.TextRole) {
+        val page = readingTextPages[narrationPageIdentity()] ?: return
+        if (role == MathPuzzleRenderer.TextRole.BODY) {
+            registerReadingText(view, blockIndex)
+            return
+        }
+        page.unregister(view)
+        if (role != MathPuzzleRenderer.TextRole.CLEARED) {
+            LessonTechnicalText.apply(view,
+                currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
+                NarrationSettingsRepository.get(this).language)
+        }
+        if (role == MathPuzzleRenderer.TextRole.CORRECT_FEEDBACK) page.register(blockIndex, view, feedback = true)
+        // Presentation mappings can grow when feedback appears, retaining the same real
+        // playback intervals and alignments. This neither restarts nor synthesizes audio.
+        narrationScript(NarrationSettingsRepository.get(this).language)
     }
 
     private fun prepareReadingPage(script: LessonNarrationScript, language: NarrationLanguage) {
@@ -453,7 +495,8 @@ class LessonActivity : AppCompatActivity() {
         if (!::lessonJson.isInitialized) return
         val identity = narrationPageIdentity()
         readingTextPages[identity]?.show(readingProgress.states(identity),
-            NarrationSettingsRepository.get(this).enabled, readingProgress.unreadWords(identity))
+            NarrationSettingsRepository.get(this).enabled, readingProgress.unreadWords(identity),
+            readingProgress.presentationCompletedSegments(identity))
     }
 
     private fun clearReadingPages() {
@@ -1887,6 +1930,9 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun updateProgrammingKeyboardBarVisibility() {
+        // Focus can clear after ActivityThread has removed the old decor during recreation.
+        if (isDestroyed || isFinishing) return
+        val lessonHeader = findViewById<View>(R.id.lessonHeader) ?: return
         updateNarrationVisibility()
         if (!::programmingKeyboardBar.isInitialized) return
         val shouldShow =
@@ -2091,7 +2137,6 @@ class LessonActivity : AppCompatActivity() {
 
         // Configuration can change before the resized content receives its new height.
         // Restoring the header into the old landscape viewport would clear focus again.
-        val lessonHeader = findViewById<View>(R.id.lessonHeader)
         if (lessonHeader.visibility == View.VISIBLE && lessonHeader.measuredHeight > 0) {
             programmingLessonHeaderHeight = lessonHeader.measuredHeight
         }
@@ -4199,7 +4244,7 @@ class LessonActivity : AppCompatActivity() {
          * RESULTADO.
          */
         val result =
-            TextView(this)
+            exerciseFeedbackText(blockIndex)
 
         result.textSize =
             16f
@@ -4841,7 +4886,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val result =
-            TextView(this)
+            exerciseFeedbackText(blockIndex)
 
         result.textSize =
             18f
@@ -5201,7 +5246,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val instruction =
-            TextView(this)
+            ReadingTextView(this)
 
         instruction.text =
             getString(R.string.exercise_order_instruction)
@@ -5220,6 +5265,7 @@ class LessonActivity : AppCompatActivity() {
             dp(14)
         )
 
+        registerReadingText(instruction, blockIndex)
         lessonContent.addView(
             instruction
         )
@@ -5712,7 +5758,7 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
-        val result = TextView(this)
+        val result = exerciseFeedbackText(blockIndex)
         fun currentOrderAnswer() = org.json.JSONArray((0 until orderContainer.childCount).map {
             orderContainer.getChildAt(it).tag as Int
         })
@@ -6356,22 +6402,24 @@ class LessonActivity : AppCompatActivity() {
         val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
         var projectControls: View? = null
         val inputLabel = TextView(this).apply {
-            text = getString(R.string.cpp_prepared_input)
-            setTextColor(Color.rgb(174, 180, 190))
-            setPadding(0, dp(16), 0, dp(4))
+            // Retain the CMake insertion anchor without a developer-facing explanation.
+            visibility = View.GONE
         }
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
             setTextColor(Color.rgb(230, 237, 243))
             setHintTextColor(Color.rgb(174, 180, 190))
-            contentDescription = getString(R.string.cpp_prepared_input)
+            contentDescription = getString(R.string.cpp_input_hint)
+            hint = getString(R.string.cpp_input_hint)
+            background = null
+            setPadding(dp(8), dp(4), dp(8), dp(4))
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                 android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                 android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             imeOptions = android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
             gravity = Gravity.TOP or Gravity.START
             typeface = Typeface.MONOSPACE
-            minLines = 2
+            minLines = 1
             setText(labDrafts.getString("$draftKey/input", initialStandardInput))
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -6989,6 +7037,7 @@ class LessonActivity : AppCompatActivity() {
             editorVerticalBar, editorHorizontalBar,
             isFullscreen = { compilerFullscreenActive },
             isKeyboardVisible = { keyboardVisible || programmingImeAnimations.isNotEmpty() },
+            compactNormalContent = true,
             onEditorGesture = { ignoreCurrentSwipe = true }
         )
         cppEditorViewportControllers.add(viewportController)
@@ -7137,7 +7186,7 @@ class LessonActivity : AppCompatActivity() {
 
         runParams.setMargins(
             0,
-            dp(20),
+            dp(8),
             0,
             0
         )
@@ -7172,9 +7221,9 @@ class LessonActivity : AppCompatActivity() {
 
         statusText.setPadding(
             0,
-            dp(20),
+            dp(8),
             0,
-            dp(10)
+            dp(8)
         )
 
         lessonContent.addView(
@@ -9245,6 +9294,7 @@ class LessonActivity : AppCompatActivity() {
         try {
             val renderer = MathPuzzleRenderer(
                 this, currentRouteId, currentLessonId, puzzlePage, blockIndex, block,
+                onTextReady = { view, role -> updatePuzzleText(view, blockIndex, role) },
                 attemptEvaluation = { identity, evaluate ->
                     evaluateExerciseAttempt(puzzlePage, blockIndex, identity,
                         evaluation = evaluate,
@@ -9261,7 +9311,6 @@ class LessonActivity : AppCompatActivity() {
             }
             if (renderer.isCorrect) completedExercises++
             lessonContent.addView(renderer.view)
-            renderer.narrationTextViews.forEach { registerReadingText(it, blockIndex) }
             renderer.fullscreenButton.setOnClickListener {
                 if (exerciseFullscreenActive) {
                     closeExerciseFullscreenHost()
@@ -9585,7 +9634,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val instruction =
-            TextView(this)
+            ReadingTextView(this)
 
         instruction.text =
             getString(R.string.exercise_fill_instruction)
@@ -9604,6 +9653,7 @@ class LessonActivity : AppCompatActivity() {
             dp(14)
         )
 
+        registerReadingText(instruction, blockIndex)
         lessonContent.addView(
             instruction
         )
@@ -11362,7 +11412,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val result =
-            TextView(this)
+            exerciseFeedbackText(blockIndex)
 
         result.textSize =
             18f
@@ -13231,7 +13281,7 @@ class LessonActivity : AppCompatActivity() {
         ) {
 
             val radioButton =
-                RadioButton(this)
+                ReadingRadioButton(this)
 
             radioButton.id =
                 View.generateViewId()
@@ -13253,6 +13303,7 @@ class LessonActivity : AppCompatActivity() {
                 dp(8)
             )
 
+            registerReadingText(radioButton, blockIndex)
             radioGroup.addView(
                 radioButton
             )
@@ -13314,7 +13365,7 @@ class LessonActivity : AppCompatActivity() {
          * RESULTADO
          */
         val result =
-            TextView(this)
+            exerciseFeedbackText(blockIndex)
 
         result.textSize =
             18f
@@ -14812,7 +14863,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val result =
-            TextView(this)
+            exerciseFeedbackText(blockIndex)
 
         result.textSize =
             18f

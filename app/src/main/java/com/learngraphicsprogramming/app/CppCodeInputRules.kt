@@ -2,6 +2,7 @@ package com.learngraphicsprogramming.app
 
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.widget.EditText
 
 /**
@@ -69,6 +70,36 @@ internal object CppCodeInputRules {
 
         var suppressAutoSpacePosition =
             -1
+
+        // The physical Tab key is the same explicit edit as the floating TAB
+        // shortcut. Keep modified Tab combinations available for focus navigation.
+        // This hook is installed only on the app's C++ inputs, never globally.
+        input.setOnKeyListener { _, keyCode, event ->
+            if (keyCode != KeyEvent.KEYCODE_TAB || !event.hasNoModifiers() ||
+                !input.isEnabled || input.keyListener == null ||
+                (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)) {
+                false
+            } else {
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    val editable = input.text
+                    if (editable != null) {
+                        // An explicit Tab is not an IME's automatic space after a
+                        // skipped closing delimiter, even in the same input cycle.
+                        suppressAutoSpaceAfterSkip = false
+                        suppressAutoSpacePosition = -1
+                        val start = minOf(input.selectionStart, input.selectionEnd)
+                            .coerceIn(0, editable.length)
+                        val end = maxOf(input.selectionStart, input.selectionEnd)
+                            .coerceIn(start, editable.length)
+                        val tab = KeyboardShortcutSettingsRepository.getTabText()
+                        editable.replace(start, end, tab)
+                        input.setSelection((start + tab.length).coerceAtMost(editable.length))
+                    }
+                }
+                // Consume key-up too: one press edits once and never transfers focus.
+                true
+            }
+        }
 
         input.addTextChangedListener(
             object : TextWatcher {

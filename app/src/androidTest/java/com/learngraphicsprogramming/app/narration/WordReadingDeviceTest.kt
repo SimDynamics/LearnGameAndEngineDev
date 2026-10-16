@@ -1325,6 +1325,137 @@ class WordReadingDeviceTest {
         assertEquals(authored, LessonRepository.loadLessonJson(context, "programming", lesson).toString())
     }
 
+    @Test fun actualPuzzleOptionsAndSuccessFollowRealKokoroWhileIncorrectFeedbackKeepsItsInk() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val authored = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val block = authored.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(4)
+        val untouched = block.toString()
+        val id = "cpp_fundamentals__programas_y_ejecucion__puzzle_ink_qa_${UUID.randomUUID().toString().replace("-", "")}"
+        val fixture = JSONObject().put("id", id).put("title", "").put("pages", JSONArray().put(
+            JSONObject().put("blocks", JSONArray().put(JSONObject(untouched)))))
+        ProgressRepository.saveCurrentPage(context, "programming", lesson, 0)
+        val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", "programming").putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lesson)
+            .putExtra("lessonNumber", 2).putExtra("lessonTotal", 1)).also { scenario = it }
+        await("The real lesson host is stable before isolating its unmodified published puzzle", 15_000) {
+            var ready = false
+            host.onActivity { ready = it.hasWindowFocus() && !content(it).isLayoutRequested }
+            ready
+        }
+        host.onActivity { activity ->
+            setField(activity, "currentLessonId", id)
+            setField(activity, "lessonJson", fixture)
+            setField(activity, "currentPage", 0)
+            setField(activity, "totalPages", 1)
+            listOf("pageViewCache", "pageRequiredExercises", "pageCompletedExercises").forEach {
+                field<MutableMap<Int, Any>>(activity, it).clear()
+            }
+            NarrationSettingsRepository.saveEnabled(activity, true)
+            invoke(activity, "renderCurrentPage")
+        }
+        awaitLayout(host, id)
+        lateinit var option: ReadingRadioButton
+        lateinit var result: ReadingTextView
+        var optionGeometry = emptyList<Int>()
+        host.onActivity { activity ->
+            val options = texts(activity).filterIsInstance<ReadingRadioButton>()
+            assertEquals(3, options.size)
+            option = options[1]
+            optionGeometry = listOf(option.width, option.height, option.compoundPaddingLeft)
+            assertEquals(block.getJSONArray("options").getString(1), option.text.toString())
+            assertTrue(option.safeSupportsWordReading)
+            assertTrue("Pending option labels use the same native glyph mask", field<List<ReadingTextRange>>(option, "unreadRanges").isNotEmpty())
+            assertTrue("Original code receives console syntax colors", (option.text as Spanned).getSpans(0, option.length(), ForegroundColorSpan::class.java).isNotEmpty())
+            options[0].performClick()
+            assertTrue(options[0].isChecked)
+            assertTrue(texts(activity).filterIsInstance<Button>().single { it.text.toString() == activity.getString(R.string.exercise_check) }.performClick())
+        }
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            result = texts(activity).filterIsInstance<ReadingTextView>().single { it.currentTextColor == android.graphics.Color.rgb(240, 150, 150) }
+            assertTrue("Incorrect feedback is never shaded", field<List<ReadingTextRange>>(result, "unreadRanges").isEmpty())
+            assertEquals(0, field<Int>(activity, "completedExercises"))
+            capture("puzzle-incorrect-feedback-no-shading")
+            option.performClick()
+            assertTrue(option.isChecked)
+            assertTrue(texts(activity).filterIsInstance<Button>().single { it.text.toString() == activity.getString(R.string.exercise_check) }.performClick())
+        }
+        await("Success retains green ink while its unspoken original text is pending", 10_000) {
+            var ready = false
+            host.onActivity { activity ->
+                ready = result.currentTextColor == android.graphics.Color.rgb(180, 220, 190) &&
+                    field<List<ReadingTextRange>>(result, "unreadRanges").isNotEmpty() &&
+                    pageMappings(activity).values.any { it.targets?.any { target -> target < -1 } == true }
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            assertFalse("Feedback stays immutable display text, never an editable buffer", result.text is android.text.Editable)
+            assertTrue(result.safeSupportsWordReading)
+            assertTrue("Technical correct feedback has syntax spans", (result.text as Spanned).getSpans(0, result.length(), ForegroundColorSpan::class.java).isNotEmpty())
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("The actual published C++ option has heard and pending words together", 180_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val mask = field<List<ReadingTextRange>>(option, "unreadRanges")
+                ready = controller(activity).isPlaying && alignment(activity) != null && mask.isNotEmpty() &&
+                    mask.none { it.start == 0 } && mask.any { it.endExclusive == option.length() }
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            option.requestRectangleOnScreen(Rect(0, 0, option.width, option.height), true)
+            capture("puzzle-option-real-word-progress")
+            saveParagraph(option, "puzzle-option-native")
+            assertEquals(optionGeometry, listOf(option.width, option.height, option.compoundPaddingLeft))
+            assertEquals(block.getJSONArray("options").getString(1), option.text.toString())
+        }
+        await("Correct feedback is revealed by actual Kokoro word timings after its exercise gate", 180_000) {
+            var ready = false
+            host.onActivity { activity ->
+                val mask = field<List<ReadingTextRange>>(result, "unreadRanges")
+                ready = controller(activity).isPlaying && alignment(activity) != null && mask.isNotEmpty() &&
+                    mask.any { it.start > result.text.indexOf("std::cout") } &&
+                    mask.none { it.start == 0 } &&
+                    field<List<Any>>(controller(activity), "segments").let { segments ->
+                        val at = field<Int>(controller(activity), "index")
+                        field<String>(segments[at], "text").contains("instrucción")
+                    }
+            }
+            ready
+        }
+        host.onActivity { activity ->
+            controller(activity).pauseKeepingPosition()
+            assertNull("The original pause policy releases the decoder", field<MediaPlayer?>(controller(activity), "player"))
+            assertMixedPixels(result)
+            result.requestRectangleOnScreen(Rect(0, 0, result.width, result.height), true)
+            capture("puzzle-correct-feedback-real-word-progress")
+            saveParagraph(result, "puzzle-correct-feedback-native")
+            val before = field<List<ReadingTextRange>>(result, "unreadRanges").sumOf { it.endExclusive - it.start }
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonBackThree).performClick())
+            val after = field<List<ReadingTextRange>>(result, "unreadRanges").sumOf { it.endExclusive - it.start }
+            assertTrue("Rewinding reshades future feedback words", after >= before)
+            assertEquals(untouched, field<JSONObject>(activity, "lessonJson").getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(0).toString())
+            assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+        }
+        await("The existing released-player resume completes this unchanged puzzle narration", 100_000) {
+            var ready = false
+            host.onActivity { activity -> ready = !controller(activity).isPlaying &&
+                field<List<ReadingTextRange>>(result, "unreadRanges").isEmpty() &&
+                field<List<ReadingTextRange>>(option, "unreadRanges").isEmpty() }
+            ready
+        }
+        host.onActivity { activity ->
+            assertNull(field<MediaPlayer?>(controller(activity), "player"))
+            assertEquals(android.graphics.Color.rgb(180, 220, 190), result.currentTextColor)
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            capture("puzzle-narration-finished-original-green-and-syntax")
+        }
+    }
+
     private fun fixture(): JSONObject {
         val published = LessonRepository.loadLessonJson(context, ROUTE,
             "math_geometria_plana__fundamentos_geometricos__del_trazo_a_la_figura_geometrica")
@@ -1459,7 +1590,9 @@ class WordReadingDeviceTest {
     private fun descendants(view: View): List<View> = listOf(view) + if (view is ViewGroup)
         (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
     @Suppress("UNCHECKED_CAST") private fun <T> field(instance: Any, name: String): T =
-        instance.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(instance) as T
+        (if (name in setOf("unreadRanges", "unreadColor") && instance is ReadingTextHost) instance.readingInk else instance).let { owner ->
+            owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner) as T
+        }
     private fun setField(instance: Any, name: String, value: Any) = instance.javaClass.getDeclaredField(name)
         .apply { isAccessible = true }.set(instance, value)
     private fun invoke(instance: Any, name: String) = instance.javaClass.getDeclaredMethod(name).apply { isAccessible = true }.invoke(instance)

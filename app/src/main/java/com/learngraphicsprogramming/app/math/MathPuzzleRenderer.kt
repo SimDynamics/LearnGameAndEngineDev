@@ -24,11 +24,14 @@ class MathPuzzleRenderer(
     private val blockIndex: Int,
     block: JSONObject,
     private val attemptEvaluation: ((String, () -> List<MathValidationResult>) -> List<MathValidationResult>?)? = null,
+    private val onTextReady: ((TextView, TextRole) -> Unit)? = null,
     private val onCompletionChanged: (Boolean) -> Unit
 ) {
+    enum class TextRole { BODY, CORRECT_FEEDBACK, INCORRECT_FEEDBACK, ERROR_FEEDBACK, CLEARED }
+
     val view = MathWidgetUi.column(context)
     private val readableTexts = mutableListOf<TextView>()
-    /** Existing prompt/representation views only; response controls and feedback stay independent. */
+    /** Passive authored text already included in the narration; never editable answers or feedback. */
     val narrationTextViews: List<TextView> get() = readableTexts.toList()
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
     val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, context.getString(R.string.math_ui_fullscreen))
@@ -59,7 +62,9 @@ class MathPuzzleRenderer(
         toolbar.addView(resetButton)
         view.addView(toolbar)
         addReadableRepresentation(MathWidgetUi.text(context, spec.prompt, true))
-        spec.representations.forEach { addReadableRepresentation(MathRepresentationRenderer.render(context, it, accent)) }
+        spec.representations.forEach { representation ->
+            addReadableRepresentation(MathRepresentationRenderer.render(context, representation, accent), representationTexts(representation))
+        }
         spec.tools.forEachIndexed { index, tool ->
             if (tool.optBoolean("interactive", false)) {
                 val type = when (tool.getString("type")) {
@@ -75,9 +80,10 @@ class MathPuzzleRenderer(
                     ?: throw IllegalArgumentException("Herramienta no disponible: $type")
                 tools[id] = control
                 initialTools[id] = control.answer()
-                view.addView(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))))
+                addReadableRepresentation(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))),
+                    listOf(tool.optString("label")))
                 view.addView(control.view)
-            } else addReadableRepresentation(MathRepresentationRenderer.render(context, tool, accent))
+            } else addReadableRepresentation(MathRepresentationRenderer.render(context, tool, accent), representationTexts(tool))
         }
         spec.responses.forEach { response ->
             val control = MathInputControls.create(context, response, accent, ::changed)
@@ -87,6 +93,7 @@ class MathPuzzleRenderer(
             responses[response.id] = control
             initialResponses[response.id] = control.answer()
             view.addView(control.view)
+            collectReadableText(control.view, responseTexts(response.config))
         }
         view.addView(checkButton.apply { layoutParams = LinearLayout.LayoutParams(-1, -2) })
         feedback.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
@@ -247,6 +254,7 @@ class MathPuzzleRenderer(
     private fun changed() {
         if (initializing || isCorrect) return
         MathTextRenderer.apply(feedback, "")
+        onTextReady?.invoke(feedback, TextRole.CLEARED)
         updateActionState()
         save()
     }
@@ -290,6 +298,7 @@ class MathPuzzleRenderer(
             }
             MathTextRenderer.apply(feedback, details.joinToString("\n"))
             feedback.setTextColor(MathWidgetUi.muted)
+            onTextReady?.invoke(feedback, TextRole.ERROR_FEEDBACK)
             return
         }
         if (results.all { it.second.correct }) {
@@ -327,6 +336,7 @@ class MathPuzzleRenderer(
                 else spec.incorrectFeedback.ifBlank { context.getString(R.string.math_ui_incorrect) }
             MathTextRenderer.apply(feedback, (listOf("✗ $heading") + details).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))
+            onTextReady?.invoke(feedback, TextRole.INCORRECT_FEEDBACK)
             save()
         }
     }
@@ -337,6 +347,7 @@ class MathPuzzleRenderer(
     private fun showCorrect() {
         MathTextRenderer.apply(feedback, context.getString(R.string.math_ui_correct_heading) + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty())
         feedback.setTextColor(Color.rgb(180, 220, 190))
+        onTextReady?.invoke(feedback, TextRole.CORRECT_FEEDBACK)
         checkButton.text = context.getString(R.string.math_ui_correct_button)
         checkButton.isEnabled = false
         responses.values.forEach { it.setEditable(false) }
@@ -351,6 +362,7 @@ class MathPuzzleRenderer(
         tools.forEach { (id, control) -> control.setEditable(true); control.restore(initialTools.getValue(id)) }
         checkButton.text = context.getString(R.string.math_ui_check)
         MathTextRenderer.apply(feedback, "")
+        onTextReady?.invoke(feedback, TextRole.CLEARED)
         initializing = false
         updateActionState()
         save()
@@ -387,18 +399,106 @@ class MathPuzzleRenderer(
         ProgressRepository.saveExerciseState(context, routeId, lessonId, pageIndex, blockIndex, state)
     }
 
-    private fun addReadableRepresentation(representation: View) {
+    private fun addReadableRepresentation(representation: View, sources: Collection<String>? = null) {
         view.addView(representation)
+        collectReadableText(representation, sources)
+    }
+
+    private fun collectReadableText(representation: View, sources: Collection<String>?) {
+        val displayedSources = sources?.filter(String::isNotBlank)?.flatMap { source ->
+            listOf("text", "auto", "inline", "block").map { MathTextRenderer.render(source, it).toString() }
+        }?.toSet()
         fun collect(candidate: View) {
-            if (candidate.isClickable || candidate.isLongClickable ||
-                candidate is android.widget.EditText || candidate is android.widget.Button) return
-            if (candidate is TextView && !candidate.text.isNullOrBlank()) readableTexts += candidate
+            if (candidate.visibility != View.VISIBLE || candidate is android.widget.EditText ||
+                candidate is android.widget.Button || candidate is android.widget.AdapterView<*> ||
+                candidate is MathExpressionEditor || candidate is MathKeyboardView) return
+            // A choice/drag card owns the gesture, while its rich body is ordinary passive text.
+            // Descend those containers without ever registering their native controls or answers.
+            if (candidate is TextView && !candidate.isClickable && !candidate.isLongClickable &&
+                !candidate.text.isNullOrBlank() && (displayedSources == null || candidate.text.toString() in displayedSources) &&
+                readableTexts.none { it === candidate }) {
+                readableTexts += candidate
+                onTextReady?.invoke(candidate, TextRole.BODY)
+            }
             if (candidate is ViewGroup) {
                 for (index in 0 until candidate.childCount) collect(candidate.getChildAt(index))
             }
         }
         collect(representation)
     }
+
+    /** Whitelist the same authored, visible fields read by LessonNarrationText. This only matches
+     * existing views: validator values, hints, current answers and generated control labels cannot
+     * become narration targets merely because they are descendants of a response card. */
+    private fun responseTexts(response: JSONObject): List<String> = buildList {
+        add(response.optString("label"))
+        val fields = MathWidgetUi.objects(response.optJSONArray("fields"))
+        fields.forEach { field ->
+            add(if (field.optString("type") == "fixed") field.optString("text") else field.optString("label"))
+            if (field.optString("type") != "fixed") add(field.optString("unit"))
+        }
+        MathWidgetUi.objects(response.optJSONArray("segments")).forEach { segment ->
+            if (!segment.has("field")) add(segment.optString("text"))
+        }
+        if (response.optString("layout") == "table") {
+            addAll(scalars(response.optJSONArray("headers")))
+            val rows = response.optJSONArray("rows")
+            if (rows != null) for (index in 0 until rows.length()) addAll(scalars(rows.optJSONArray(index)))
+        }
+        for (key in listOf("options", "items", "sources", "targets")) {
+            MathWidgetUi.objects(response.optJSONArray(key)).forEach { addAll(richTexts(it)) }
+        }
+        MathWidgetUi.objects(response.optJSONArray("parameters")).forEach { add(it.optString("label")) }
+        add(response.optString("unit"))
+    }
+
+    private fun richTexts(item: JSONObject): List<String> = buildList {
+        val content = item.optJSONArray("content")
+        if (content == null || content.length() == 0) add(item.optString("label", item.optString("text")))
+        else for (index in 0 until content.length()) {
+            val part = content.optJSONObject(index)
+            if (part == null) addAll(scalars(JSONArray().put(content.opt(index))))
+            else addAll(representationTexts(part))
+        }
+        add(item.optString("explanation"))
+    }
+
+    private fun representationTexts(representation: JSONObject): List<String> = buildList {
+        val config = representation.optJSONObject("config") ?: representation
+        when (representation.optString("type", "text")) {
+            "text" -> add(config.optString("text", config.optString("value")))
+            "math_formula" -> add(listOf("latex", "text", "formula", "value").firstNotNullOfOrNull {
+                config.optString(it).takeIf(String::isNotBlank)
+            }.orEmpty())
+            "math_table" -> {
+                addAll(scalars(config.optJSONArray("headers")))
+                val rows = config.optJSONArray("rows")
+                if (rows != null) for (index in 0 until rows.length()) addAll(scalars(rows.optJSONArray(index)))
+            }
+            "rich_answer_option" -> addAll(richTexts(config))
+            "geometry_2d_diagram", "geometry_3d_diagram" -> {
+                add(config.optString("label"))
+                addAll(scalars(config.optJSONArray("labels"), limit = 3))
+            }
+            "venn_diagram" -> {
+                for (key in listOf("universeLabel", "leftLabel", "leftOnly", "intersection", "rightLabel", "rightOnly", "outside")) {
+                    add(config.optString(key))
+                }
+            }
+            "math_coordinate_graph", "coordinate_graph", "math_number_line" -> {
+                add(config.optString("label"))
+                add(config.optString("description"))
+            }
+        }
+    }
+
+    private fun scalars(values: JSONArray?, limit: Int = Int.MAX_VALUE): List<String> = if (values == null) emptyList() else
+        (0 until minOf(values.length(), limit)).mapNotNull { index ->
+            when (val value = values.opt(index)) {
+                is String, is Number -> value.toString()
+                else -> null
+            }
+        }
 
     companion object {
         const val INTERACTION_TAG = "math_puzzle_interaction"

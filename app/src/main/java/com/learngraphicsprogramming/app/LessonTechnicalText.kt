@@ -1,6 +1,8 @@
 package com.learngraphicsprogramming.app
 
 import android.graphics.Color
+import android.widget.TextView
+import com.learngraphicsprogramming.app.narration.ReadingTextHost
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -17,9 +19,9 @@ import com.learngraphicsprogramming.app.narration.TechnicalDelimiterSpan
 internal object LessonTechnicalText {
     private class TechnicalInkSpan(color: Int) : ForegroundColorSpan(color)
 
-    fun apply(view: ReadingTextView, mathematics: Boolean, language: NarrationLanguage, mode: String = "auto") {
+    fun apply(view: TextView, mathematics: Boolean, language: NarrationLanguage, mode: String = "auto") {
         val original = view.text
-        if (original.isNullOrEmpty() || view.isClickable || view.isLongClickable || view.isTextSelectable) return
+        if (view !is ReadingTextHost || original.isNullOrEmpty() || view.isLongClickable || view.isTextSelectable) return
         if (mathematics) {
             val formulas = MathTextRenderer.formulaRanges(original)
             val ranges = MathTextSemantics.ranges(original, mode).map { ReadingTextRange(it.start, it.endExclusive) } +

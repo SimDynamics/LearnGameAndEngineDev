@@ -11,7 +11,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import java.util.IdentityHashMap
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -20,25 +19,39 @@ enum class ReadingBlockState { UNREAD, CURRENT, READ }
 
 /** A page owns these existing text views. No text, spans, layout or interaction is replaced. */
 class LessonReadingTextColors {
-    private data class Entry(val block: Int, val view: TextView, val original: ColorStateList)
-    private val entries = IdentityHashMap<TextView, Entry>()
+    private data class Entry(val block: Int, val view: TextView, val original: ColorStateList, val feedback: Boolean, val target: Int)
+    private val entries = linkedMapOf<TextView, Entry>()
+    private var nextTarget = Int.MIN_VALUE
+    private val sourceSegments = mutableMapOf<Int, Set<Int>>()
     private val unreadColors = mutableMapOf<Int, Int>()
     private val unreadSurfaceColors = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
 
-    fun register(blockIndex: Int, view: TextView) {
-        // A caller identifies prose, but a misplaced registration must never recolor controls
-        // or syntax spans. In particular, icons in this app are ordinary clickable TextViews.
-        if (view is EditText || view is Button || view.isClickable || view.isLongClickable ||
-            view.text.isNullOrBlank() || (hasForegroundSpans(view) && view !is ReadingTextView)) return
-        if (!entries.containsKey(view)) entries[view] = Entry(blockIndex, view, view.textColors)
+    fun register(blockIndex: Int, view: TextView, feedback: Boolean = false) {
+        if (view is EditText || (view !is ReadingTextHost &&
+            (view is Button || view.isClickable || view.isLongClickable)) || view.text.isNullOrBlank() ||
+            (hasForegroundSpans(view) && view !is ReadingTextHost)) return
+        if (!entries.containsKey(view)) {
+            val target = if (!feedback && entries.values.none { it.block == blockIndex && !it.feedback }) blockIndex else nextTarget++
+            entries[view] = Entry(blockIndex, view, view.textColors, feedback, target)
+        }
+    }
+
+    /** Feedback changes role and ink in the same native view; never restore stale success colors. */
+    fun unregister(view: TextView) {
+        (view as? ReadingTextHost)?.setUnreadWordRanges(null, 0)
+        entries.remove(view)?.let { sourceSegments.remove(it.target) }
     }
 
     fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean,
-             unreadWords: Map<Int, List<ReadingTextRange>> = emptyMap()) {
+             unreadWords: Map<Int, List<ReadingTextRange>> = emptyMap(),
+             completedSegments: Set<Int> = emptySet()) {
         entries.values.forEach { entry ->
             val view = entry.view
-            if (view is ReadingTextView) {
-                val wordRanges = unreadWords[entry.block].takeIf { enabled && view.safeSupportsWordReading }
+            val pendingFeedback = entry.feedback && sourceSegments[entry.target].orEmpty().let {
+                it.isEmpty() || !completedSegments.containsAll(it)
+            }
+            if (view is ReadingTextHost) {
+                val wordRanges = unreadWords[entry.target].takeIf { enabled && view.safeSupportsWordReading }
                 val surface = if (wordRanges != null) backgroundColor(view) else null
                 if (surface != null) {
                     if (view.textColors !== entry.original) view.setTextColor(entry.original)
@@ -46,21 +59,19 @@ class LessonReadingTextColors {
                     return@forEach
                 }
                 if (wordRanges == null && enabled && view.safeSupportsWordReading &&
-                    states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)) {
+                    (pendingFeedback || (!entry.feedback && states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)))) {
                     backgroundColor(view)?.let { background ->
-                        if (hasForegroundSpans(view) || view.effectiveReadingSurface(background) != background) {
-                            if (view.textColors !== entry.original) view.setTextColor(entry.original)
-                            setPendingInk(view, listOf(ReadingTextRange(0, view.text.length)), background)
-                            return@forEach
-                        }
+                        if (view.textColors !== entry.original) view.setTextColor(entry.original)
+                        setPendingInk(view, listOf(ReadingTextRange(0, view.text.length)), background)
+                        return@forEach
                     }
                 }
                 view.setUnreadWordRanges(null, 0)
             }
             // Missing safe word provenance is never permission to whiten an entire current block.
-            val unread = enabled && states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)
+            val unread = enabled && (pendingFeedback || (!entry.feedback && states[entry.block] in setOf(ReadingBlockState.UNREAD, ReadingBlockState.CURRENT)))
             val background = if (unread) backgroundColor(view)?.let { color ->
-                (view as? ReadingTextView)?.effectiveReadingSurface(color) ?: color
+                (view as? ReadingTextHost)?.readingInk?.effectiveReadingSurface(color) ?: color
             } else null
             val color = background?.let { unreadColors.getOrPut(it) { LessonReadingColor.unread(it) } }
             if (color == null || view.isClickable || view.isLongClickable || hasForegroundSpans(view)) {
@@ -71,8 +82,8 @@ class LessonReadingTextColors {
         }
     }
 
-    private fun setPendingInk(view: ReadingTextView, ranges: List<ReadingTextRange>?, surface: Int) {
-        val semanticSurface = view.effectiveReadingSurface(surface)
+    private fun setPendingInk(view: ReadingTextHost, ranges: List<ReadingTextRange>?, surface: Int) {
+        val semanticSurface = view.readingInk.effectiveReadingSurface(surface)
         val grays = unreadSurfaceColors.getOrPut(surface to semanticSurface) {
             val semanticGray = unreadColors.getOrPut(semanticSurface) { LessonReadingColor.unread(semanticSurface) }
             val common = if (LessonReadingColor.contrast(semanticGray, surface) >= LessonReadingColor.MIN_CONTRAST) semanticGray
@@ -87,7 +98,7 @@ class LessonReadingTextColors {
 
     fun restore() {
         entries.values.forEach { entry ->
-            (entry.view as? ReadingTextView)?.setUnreadWordRanges(null, 0)
+            (entry.view as? ReadingTextHost)?.setUnreadWordRanges(null, 0)
             if (entry.view.textColors !== entry.original) entry.view.setTextColor(entry.original)
         }
     }
@@ -95,6 +106,8 @@ class LessonReadingTextColors {
     fun clear() {
         restore()
         entries.clear()
+        sourceSegments.clear()
+        nextTarget = Int.MIN_VALUE
         unreadColors.clear()
         unreadSurfaceColors.clear()
     }
@@ -104,13 +117,17 @@ class LessonReadingTextColors {
                      language: NarrationLanguage = NarrationLanguage.SPANISH): Map<Int, NarrationWordMapping> {
         if (parts.size != origins.size) return emptyMap()
         val result = mutableMapOf<Int, NarrationWordMapping>()
-        entries.values.groupBy { it.block }.forEach { (block, candidates) ->
-            if (candidates.size != 1) return@forEach
-            val view = candidates.single().view as? ReadingTextView ?: return@forEach
-            if (!view.safeSupportsWordReading) return@forEach
-            val segments = origins.indices.filter { origins[it].blockIndex == block && !origins[it].feedback }
-            result += NarrationWordMappings.forView(block, view.text,
-                segments.associateWith { parts[it] }, language)
+        entries.values.groupBy { it.block to it.feedback }.forEach { (origin, candidates) ->
+            val (block, feedback) = origin
+            val views = candidates.filter { (it.view as? ReadingTextHost)?.safeSupportsWordReading == true }
+            val segments = origins.indices.filter { origins[it].blockIndex == block && origins[it].feedback == feedback }
+                .associateWith { parts[it] }
+            candidates.forEach { sourceSegments[it.target] = segments.keys }
+            if (views.size == 1 && views.single().target == block) {
+                result += NarrationWordMappings.forView(block, views.single().view.text, segments, language)
+            } else {
+                result += NarrationPuzzleWordMappings.forViews(block, views.map { it.target to it.view.text }, segments, language, feedback = feedback)
+            }
         }
         return result
     }
@@ -124,7 +141,8 @@ class LessonReadingTextColors {
         var surface = 0
         var ancestor: View? = view
         while (ancestor != null) {
-            val drawable = ancestor.background
+            // A native radio ripple is transient control feedback, outside label ink.
+            val drawable = if (ancestor === view && view is ReadingRadioButton) null else ancestor.background
             if (drawable != null) {
                 val color = drawableColor(drawable, ancestor.drawableState) ?: return null
                 surface = LessonReadingColor.composite(surface, color)

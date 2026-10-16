@@ -267,4 +267,69 @@ class LessonWordReadingProgressTest {
         assertEquals(ranges, progress.pending())
         assertTrue(progress.unread(other)[0].orEmpty().isEmpty())
     }
+
+    @Test fun registeringAdditionalViewsDuringPlaybackPreservesCoverageAlignmentAndCurrentWord() {
+        val progress = model()
+        progress.update(event(NarrationPlaybackPhase.PLAYING))
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 500, 1_500))
+        val secondView = listOf(ReadingTextRange(0, 4), ReadingTextRange(5, 11))
+        val multiView = mapping.getValue(0).copy(
+            displayed = ranges.take(2) + secondView,
+            targets = listOf(21, 21, 22, 22))
+
+        // The script and recording have not changed; only its visible projections have.
+        progress.bind(identity, mapOf(0 to multiView), replace = false)
+        assertTrue(progress.unread(identity).getValue(21).isEmpty())
+        assertEquals(secondView, progress.unread(identity)[22])
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 800, 1_800))
+        assertTrue(progress.unread(identity).getValue(21).isEmpty())
+        assertEquals(secondView.drop(1), progress.unread(identity)[22])
+    }
+
+    @Test fun rewindingWithinASegmentRestoresPendingWordsAcrossItsDifferentViewTargets() {
+        val secondView = listOf(ReadingTextRange(0, 4), ReadingTextRange(5, 11))
+        val multiView = mapping.getValue(0).copy(
+            displayed = ranges.take(2) + secondView,
+            targets = listOf(21, 21, 22, 22))
+        val progress = LessonWordReadingProgress()
+        progress.bind(identity, mapOf(0 to multiView), replace = true)
+        progress.update(event(NarrationPlaybackPhase.ALIGNMENT_AVAILABLE, alignment = alignment))
+        progress.update(event(NarrationPlaybackPhase.PLAYING))
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 1_100, 2_100))
+        assertTrue(progress.unread(identity).values.all { it.isEmpty() })
+
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 350, 2_110))
+        assertEquals(ranges.take(2).drop(1), progress.unread(identity)[21])
+        assertEquals(secondView, progress.unread(identity)[22])
+        progress.update(event(NarrationPlaybackPhase.PLAYING, 350, 3_000))
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 500, 3_150))
+        assertTrue(progress.unread(identity).getValue(21).isEmpty())
+        assertEquals(secondView, progress.unread(identity)[22])
+        progress.update(event(NarrationPlaybackPhase.ADVANCED, 800, 3_450))
+        assertEquals(secondView.drop(1), progress.unread(identity)[22])
+
+        progress.update(event(NarrationPlaybackPhase.POSITION_CHANGED, 100, 3_460))
+        assertEquals(ranges.take(2), progress.unread(identity)[21])
+        assertEquals(secondView, progress.unread(identity)[22])
+    }
+
+    @Test fun feedbackRegisteredAfterItsAlignmentArrivesUsesOnlyThatExactStoredAlignment() {
+        val progress = LessonWordReadingProgress()
+        progress.bind(identity, mapping, replace = true)
+        // Successful feedback is gated initially, so its view has not been registered yet.
+        progress.update(event(NarrationPlaybackPhase.ALIGNMENT_AVAILABLE,
+            segment = 1, count = 2, alignment = alignment))
+        progress.update(event(NarrationPlaybackPhase.PLAYING, segment = 1, count = 2))
+        progress.update(event(NarrationPlaybackPhase.PAUSED, 650, 1_650, segment = 1, count = 2))
+        val feedback = NarrationWordMapping(7, ranges, ranges, List(ranges.size) { -51 })
+        progress.bind(identity, mapping + (1 to feedback), replace = false)
+        assertEquals(ranges.drop(2), progress.unread(identity)[-51])
+
+        // Retaining metadata must never give unrelated words the old recording's timings.
+        val unrelated = feedback.copy(spoken = ranges.map {
+            ReadingTextRange(it.start + 1, it.endExclusive + 1)
+        })
+        progress.bind(identity, mapping + (1 to unrelated), replace = false)
+        assertEquals(ranges, progress.unread(identity)[-51])
+    }
 }

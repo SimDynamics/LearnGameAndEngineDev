@@ -10,6 +10,7 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -18,6 +19,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -359,6 +361,130 @@ class CppCompactConsolesDeviceTest {
             screenshot("curricular-runtime-channel-selector")
         }
         assertEquals("UI acceptance cannot rewrite curriculum", authored,
+            LessonRepository.loadLessonJson(context, ROUTE, READING).toString())
+    }
+
+    @Test fun realLessonFitsItsSourceAndKeepsHardwareTabInputAndFullscreenIndependentOfCompilation() {
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, READING)
+        val authored = lesson.toString()
+        val pages = lesson.getJSONArray("pages")
+        val page = (0 until pages.length()).single { index ->
+            val blocks = pages.getJSONObject(index).getJSONArray("blocks")
+            (0 until blocks.length()).any {
+                val block = blocks.getJSONObject(it)
+                block.optString("type") == "cpp_compiler" && block.optString("initialStandardInput") == "Rita 4"
+            }
+        }
+        context.getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE).edit().clear().commit()
+        ProgressRepository.resetLesson(context, ROUTE, READING)
+        ProgressRepository.saveCurrentPage(context, ROUTE, READING, page)
+        val parts = READING.split("__")
+        val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", ROUTE)
+            .putExtra("courseId", parts[0]).putExtra("unitId", parts[1]).putExtra("lessonId", READING)
+            .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)
+        fun editor(activity: Activity) = tagged(activity, "cpp_code_input") as FreeScrollEditText
+        fun body(input: EditText) = input.parent.parent as ViewGroup
+        fun rows(input: EditText, count: Int) =
+            input.compoundPaddingTop + input.lineHeight * count + input.compoundPaddingBottom
+        fun vertical(input: EditText) = descendants(input.parent as View).filterIsInstance<SeekBar>().single()
+        fun wrap(activity: Activity, enabled: Boolean) {
+            val input = editor(activity)
+            val card = body(input).parent as View
+            val descriptions = listOf(R.string.exercise_wrap_disabled, R.string.exercise_wrap_enabled).map(activity::getString)
+            val control = descendants(card).single { it.contentDescription?.toString() in descriptions }
+            if (control.contentDescription.toString() != activity.getString(
+                    if (enabled) R.string.exercise_wrap_enabled else R.string.exercise_wrap_disabled)) control.performClick()
+        }
+        ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+            awaitActivity(scenario, "The authored input lab has its native editor") {
+                it.hasWindowFocus() && descendants(it.window.decorView).any { view -> view.tag == "cpp_code_input" }
+            }
+            var completed = 0
+            scenario.onActivity { activity ->
+                completed = field(activity, "completedExercises") as Int
+                val input = editor(activity)
+                input.showSoftInputOnFocus = false
+                (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .hideSoftInputFromWindow(input.windowToken, 0)
+                val stdin = tagged(activity, "cpp_input") as EditText
+                assertTrue("Prepared input remains an editable control", stdin.isShown && stdin.isEnabled && stdin.keyListener != null)
+                assertEquals("Rita 4", stdin.text.toString())
+                assertEquals(1, stdin.minLines)
+                assertNull("The compact input has no old underline", stdin.background)
+                assertEquals(activity.getString(R.string.cpp_input_hint), stdin.hint.toString())
+                assertFalse("The developer explanation occupies no visible space", descendants(activity.window.decorView)
+                    .filterIsInstance<TextView>().any { it.isShown && it.text.toString() == activity.getString(R.string.cpp_prepared_input) })
+                stdin.setText("Mara 6")
+                wrap(activity, enabled = false)
+                input.setText("int value = 1;")
+            }
+            awaitActivity(scenario, "A short real editor reserves four rows") { activity ->
+                val input = editor(activity)
+                input.layout?.lineCount == 1 && body(input).height == rows(input, 4)
+            }
+            scenario.onActivity { editor(it).setText((1..8).joinToString("\n") { row -> "// row $row" }) }
+            awaitActivity(scenario, "Eight source rows receive one editable row rather than a fixed empty body") { activity ->
+                val input = editor(activity)
+                input.layout?.lineCount == 8 && body(input).height == rows(input, 9)
+            }
+            val longSource = "int value = 1; // " + "long_token ".repeat(240)
+            scenario.onActivity { activity ->
+                editor(activity).setText(longSource)
+                wrap(activity, enabled = true)
+            }
+            awaitActivity(scenario, "Actual continuation rows reach the cap and retain vertical panning") { activity ->
+                val input = editor(activity)
+                (input.layout?.lineCount ?: 0) > 10 && body(input).height == rows(input, 10) && vertical(input).max > 0
+            }
+            scenario.onActivity { activity ->
+                val input = editor(activity)
+                input.scrollTo(0, vertical(input).max)
+                assertEquals(vertical(input).max, input.scrollY)
+                assertEquals(longSource, input.text.toString())
+                input.setText("abcd")
+                input.requestFocus()
+                input.setSelection(1, 3)
+                val tab = KeyboardShortcutSettingsRepository.getTabText()
+                assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_TAB)))
+                assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_TAB)))
+                assertEquals("a${tab}d", input.text.toString())
+                assertEquals(1 + tab.length, input.selectionStart)
+                assertEquals(input.selectionStart, input.selectionEnd)
+                assertTrue("Physical Tab edits the source instead of transferring focus", input.hasFocus())
+                assertEquals("Mara 6", (tagged(activity, "cpp_input") as EditText).text.toString())
+                tagged(activity, "cpp_compiler_fullscreen").performClick()
+            }
+            awaitActivity(scenario, "Fullscreen keeps its separate viewport height") { activity ->
+                val input = editor(activity)
+                val card = body(input).parent as View
+                val viewport = activity.findViewById<ScrollView>(R.id.lessonScroll)
+                val params = body(input).layoutParams as android.widget.LinearLayout.LayoutParams
+                field(activity, "compilerFullscreenActive") == true && params.weight == 1f &&
+                    card.height > 0 && kotlin.math.abs(card.height - viewport.height) <= 2
+            }
+            scenario.onActivity { activity ->
+                assertEquals("a${KeyboardShortcutSettingsRepository.getTabText()}d", editor(activity).text.toString())
+                assertEquals(1 + KeyboardShortcutSettingsRepository.getTabText().length, editor(activity).selectionStart)
+                activity.onBackPressedDispatcher.onBackPressed()
+            }
+            awaitActivity(scenario, "Leaving fullscreen restores the compact source height") { activity ->
+                val input = editor(activity)
+                field(activity, "compilerFullscreenActive") == false && body(input).height == rows(input, 4)
+            }
+            screenshot("curricular-compact-editor-tab-and-input")
+            scenario.recreate()
+            awaitActivity(scenario, "Code and editable stdin survive recreation without compilation") { activity ->
+                val input = editor(activity)
+                input.text.toString() == "a${KeyboardShortcutSettingsRepository.getTabText()}d" &&
+                    (tagged(activity, "cpp_input") as EditText).text.toString() == "Mara 6" && body(input).height == rows(input, 4)
+            }
+            scenario.onActivity { activity ->
+                assertEquals(completed, field(activity, "completedExercises"))
+                assertTrue(tagged(activity, "cpp_run").isEnabled)
+                assertCompactConsole(activity)
+            }
+        }
+        assertEquals("The editor adapts without rewriting the lesson", authored,
             LessonRepository.loadLessonJson(context, ROUTE, READING).toString())
     }
 

@@ -15,7 +15,7 @@ import kotlin.math.min
  * lesson text scale: fractions and scripts grow with the surrounding words and share a baseline.
  * This is deliberately a documented TeX subset, rather than a remote WebView or a full TeX engine.
  */
-class MathTextView(context: Context) : TextView(context) {
+class MathTextView(context: Context) : com.learngraphicsprogramming.app.narration.ReadingTextView(context) {
     fun setMathContent(value: String, mode: String = "auto") = MathTextRenderer.apply(this, value, mode)
 }
 

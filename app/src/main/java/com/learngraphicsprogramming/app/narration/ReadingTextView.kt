@@ -13,6 +13,7 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.LineBackgroundSpan
 import android.text.style.ReplacementSpan
 import android.widget.TextView
+import android.widget.RadioButton
 
 /** Display offsets into the TextView's existing CharSequence; no curricular text is retained. */
 data class ReadingTextRange(val start: Int, val endExclusive: Int)
@@ -30,7 +31,26 @@ internal class TechnicalDelimiterSpan : ReplacementSpan() {
  * Recolors only the drawing of reliably aligned prose. Its existing CharSequence, spans,
  * Layout, colors and measurements remain owned by TextView and are never replaced.
  */
-class ReadingTextView(context: Context) : TextView(context) {
+interface ReadingTextHost {
+    val readingInk: ReadingTextInk
+    val safeSupportsWordReading: Boolean get() = readingInk.safeSupportsWordReading
+    fun setSemanticBackgroundRanges(ranges: List<ReadingTextRange>, color: Int) = readingInk.setSemanticBackgroundRanges(ranges, color)
+    fun setUnreadWordRanges(ranges: List<ReadingTextRange>?, color: Int, semanticColor: Int = color) = readingInk.setUnreadWordRanges(ranges, color, semanticColor)
+}
+
+open class ReadingTextView(context: Context) : TextView(context), ReadingTextHost {
+    override val readingInk = ReadingTextInk(this)
+    internal fun effectiveReadingSurface(background: Int): Int = readingInk.effectiveReadingSurface(background)
+    override fun onDraw(canvas: Canvas) = readingInk.draw(canvas) { super.onDraw(canvas) }
+}
+
+/** Native option control: only label glyphs are shaded; its indicator and click behavior stay native. */
+class ReadingRadioButton(context: Context) : RadioButton(context), ReadingTextHost {
+    override val readingInk = ReadingTextInk(this, interactiveLabel = true)
+    override fun onDraw(canvas: Canvas) = readingInk.draw(canvas) { super.onDraw(canvas) }
+}
+
+class ReadingTextInk(private val view: TextView, private val interactiveLabel: Boolean = false) {
     private var unreadRanges: List<ReadingTextRange> = emptyList()
     private var rangeText: CharSequence? = null
     private var rangeLength = 0
@@ -49,12 +69,12 @@ class ReadingTextView(context: Context) : TextView(context) {
     /** Ambiguous display offsets or non-text drawing retain their ordinary presentation. */
     val safeSupportsWordReading: Boolean
         get() {
-            val content = text ?: return false
-            if (content.isEmpty() || content is Editable || isClickable || isLongClickable ||
-                isTextSelectable || selectionStart >= 0 || selectionEnd >= 0 ||
-                movementMethod != null || transformationMethod != null || ellipsize != null ||
-                scrollX != 0 || scrollY != 0 ||
-                compoundDrawables.any { it != null } || compoundDrawablesRelative.any { it != null }) return false
+            val content = view.text ?: return false
+            if (content.isEmpty() || content is Editable || (!interactiveLabel && view.isClickable) || view.isLongClickable ||
+                view.isTextSelectable || view.selectionStart >= 0 || view.selectionEnd >= 0 ||
+                view.movementMethod != null || view.transformationMethod != null || view.ellipsize != null ||
+                view.scrollX != 0 || view.scrollY != 0 ||
+                view.compoundDrawables.any { it != null } || view.compoundDrawablesRelative.any { it != null }) return false
             if (content is Spanned && (
                     content.getSpans(0, content.length, ReplacementSpan::class.java).any { it !is TechnicalDelimiterSpan } ||
                     content.getSpans(0, content.length, BackgroundColorSpan::class.java).isNotEmpty() ||
@@ -64,7 +84,7 @@ class ReadingTextView(context: Context) : TextView(context) {
 
     /** Decorative ink under the existing native layout; never part of the pending glyph layer. */
     fun setSemanticBackgroundRanges(ranges: List<ReadingTextRange>, color: Int) {
-        val content = text
+        val content = view.text
         val valid = if (color ushr 24 == 0 || ranges.any {
                 it.start < 0 || it.endExclusive <= it.start || it.endExclusive > content.length ||
                     !isUtf16Boundary(content, it.start) || !isUtf16Boundary(content, it.endExclusive)
@@ -76,17 +96,17 @@ class ReadingTextView(context: Context) : TextView(context) {
         semanticBackgroundText = nextText
         semanticBackgroundLength = content.length
         semanticBackgroundPaint.color = color
-        invalidate()
+        view.invalidate()
     }
 
     /** Pending ink must also contrast with the subtle mathematical underlay. */
     internal fun effectiveReadingSurface(background: Int): Int =
-        if (semanticBackgroundText === text && semanticBackgroundLength == text.length && semanticBackgroundRanges.isNotEmpty())
+        if (semanticBackgroundText === view.text && semanticBackgroundLength == view.text.length && semanticBackgroundRanges.isNotEmpty())
             LessonReadingColor.composite(semanticBackgroundPaint.color, background) else background
 
     /** Null, empty or untrustworthy ranges restore ordinary TextView drawing immediately. */
     fun setUnreadWordRanges(ranges: List<ReadingTextRange>?, color: Int, semanticColor: Int = color) {
-        val content = text
+        val content = view.text
         val normalized = if (ranges.isNullOrEmpty() || !safeSupportsWordReading ||
             color ushr 24 != 255 || semanticColor ushr 24 != 255) {
             emptyList()
@@ -119,13 +139,13 @@ class ReadingTextView(context: Context) : TextView(context) {
             semanticUnreadColor = semanticColor
             semanticUnreadPaint.colorFilter = PorterDuffColorFilter(semanticColor, PorterDuff.Mode.SRC_IN)
         }
-        invalidate()
+        view.invalidate()
     }
 
     @Suppress("DEPRECATION") // DIFFERENCE supports the application's API 24 and 25 devices.
-    override fun onDraw(canvas: Canvas) {
-        val existingLayout = layout
-        if (semanticBackgroundText !== text || semanticBackgroundLength != text.length) {
+    fun draw(canvas: Canvas, drawOriginal: () -> Unit) {
+        val existingLayout = view.layout
+        if (semanticBackgroundText !== view.text || semanticBackgroundLength != view.text.length) {
             semanticBackgroundRanges = emptyList()
             semanticBackgroundText = null
             semanticBackgroundLength = 0
@@ -137,12 +157,12 @@ class ReadingTextView(context: Context) : TextView(context) {
                 existingLayout.getSelectionPath(range.start, range.endExclusive, rangePath)
                 semanticBackgroundPath.addPath(rangePath)
             }
-            semanticBackgroundPath.offset(compoundPaddingLeft.toFloat(), totalPaddingTop.toFloat())
+            semanticBackgroundPath.offset(view.compoundPaddingLeft.toFloat(), view.totalPaddingTop.toFloat())
             canvas.drawPath(semanticBackgroundPath, semanticBackgroundPaint)
         }
-        if (unreadRanges.isEmpty() || rangeText !== text || rangeLength != text.length ||
+        if (unreadRanges.isEmpty() || rangeText !== view.text || rangeLength != view.text.length ||
             existingLayout == null || !safeSupportsWordReading) {
-            super.onDraw(canvas)
+            drawOriginal()
             return
         }
         unreadPath.reset()
@@ -151,31 +171,31 @@ class ReadingTextView(context: Context) : TextView(context) {
             existingLayout.getSelectionPath(range.start, range.endExclusive, rangePath)
             unreadPath.addPath(rangePath)
         }
-        unreadPath.offset(compoundPaddingLeft.toFloat(), totalPaddingTop.toFloat())
+        unreadPath.offset(view.compoundPaddingLeft.toFloat(), view.totalPaddingTop.toFloat())
 
         // Complementary clips avoid painting gray under normal glyphs or changing their edges.
         val originalSave = canvas.save()
         try {
             canvas.clipPath(unreadPath, Region.Op.DIFFERENCE)
-            super.onDraw(canvas)
+            drawOriginal()
         } finally {
             canvas.restoreToCount(originalSave)
         }
         val separateSemanticInk = semanticBackgroundRanges.isNotEmpty() && semanticUnreadColor != unreadColor
-        drawUnreadInk(canvas, unreadPaint, if (separateSemanticInk) false else null)
-        if (separateSemanticInk) drawUnreadInk(canvas, semanticUnreadPaint, true)
+        drawUnreadInk(canvas, unreadPaint, if (separateSemanticInk) false else null, drawOriginal)
+        if (separateSemanticInk) drawUnreadInk(canvas, semanticUnreadPaint, true, drawOriginal)
     }
 
     @Suppress("DEPRECATION")
-    private fun drawUnreadInk(canvas: Canvas, paint: Paint, insideSemanticBackground: Boolean?) {
+    private fun drawUnreadInk(canvas: Canvas, paint: Paint, insideSemanticBackground: Boolean?, drawOriginal: () -> Unit) {
         val unreadSave = canvas.save()
         try {
             canvas.clipPath(unreadPath)
             if (insideSemanticBackground == true) canvas.clipPath(semanticBackgroundPath)
             else if (insideSemanticBackground == false) canvas.clipPath(semanticBackgroundPath, Region.Op.DIFFERENCE)
-            val layerSave = canvas.saveLayer(0f, 0f, width.toFloat(), height.toFloat(), paint)
+            val layerSave = canvas.saveLayer(0f, 0f, view.width.toFloat(), view.height.toFloat(), paint)
             try {
-                super.onDraw(canvas)
+                drawOriginal()
             } finally {
                 canvas.restoreToCount(layerSave)
             }

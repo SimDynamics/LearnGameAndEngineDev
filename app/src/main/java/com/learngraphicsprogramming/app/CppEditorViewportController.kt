@@ -23,6 +23,7 @@ internal class CppEditorViewportController(
     private val horizontalBar: SeekBar,
     private val isFullscreen: () -> Boolean,
     private val isKeyboardVisible: () -> Boolean,
+    private val compactNormalContent: Boolean = false,
     private val onEditorGesture: () -> Unit = {}
 ) {
     private var disposed = false
@@ -174,7 +175,14 @@ internal class CppEditorViewportController(
     fun updateNormalHeight() {
         if (disposed || isFullscreen()) return
         updateBottomSafety()
-        val height = source.compoundPaddingTop + source.lineHeight * 10 + source.compoundPaddingBottom
+        val rows = if (compactNormalContent) {
+            // Layout owns visual rows after wrapping. A final authored newline already
+            // provides the editable row; reserve one only when it does not exist yet.
+            val visualRows = source.layout?.lineCount ?: ((source.text?.count { it == '\n' } ?: 0) + 1)
+            val editingRow = if (source.text?.lastOrNull() == '\n') 0 else 1
+            (visualRows + editingRow).coerceIn(4, 10)
+        } else 10
+        val height = source.compoundPaddingTop + source.lineHeight * rows + source.compoundPaddingBottom
         val params = editorBody.layoutParams ?: return
         if (params.height != height) {
             params.height = height
