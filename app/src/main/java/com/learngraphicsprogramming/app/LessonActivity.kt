@@ -3927,23 +3927,30 @@ class LessonActivity : AppCompatActivity() {
         pageCompletedExercises[currentPage] = completedExercises
         pageRequiredExercises[currentPage] = requiredExercises
 
-        // The inline C++ answer fields are disabled immediately after a correct
-        // check. If their old IME retains focus, Android can consume the FIRST
-        // subsequent Enter merely to leave that field; only the second press
-        // reaches the order-code check or the Continue button.
-        //
-        // Release focus now, while the just-completed field is still identifiable.
-        // Do not disturb active multiline compiler editors, unfinished inputs,
-        // keyboard indentation or ordinary Tab handling.
+        // Comprobar disables the answered fields or buttons in the same callback.
+        // The now-obsolete focused View/IME can otherwise swallow the first Enter
+        // intended for the next puzzle or Continue. Retire only focus belonging to
+        // this lesson's completed interaction, never a real multiline compiler.
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
-            val previous = currentFocus as? EditText
-            if (previous != null && previous.tag == CODE_INPUT_TAG &&
-                PuzzleAnswerSubmit.isSingleLine(previous)) {
+            val previous = currentFocus
+            var member: View? = previous
+            var belongsToLesson = false
+            while (member != null) {
+                if (member === lessonContent) {
+                    belongsToLesson = true
+                    break
+                }
+                member = member.parent as? View
+            }
+            val codeInput = previous as? EditText
+            val protectedEditor = codeInput != null &&
+                (codeInput.tag != CODE_INPUT_TAG || !PuzzleAnswerSubmit.isSingleLine(codeInput))
+            if (previous != null && belongsToLesson && !protectedEditor) {
                 val neutralHost = findViewById<View>(android.R.id.content)
                 neutralHost.isFocusableInTouchMode = true
-                if (neutralHost.requestFocus()) {
+                if (neutralHost.requestFocus() && codeInput != null) {
                     (getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
-                        ?.hideSoftInputFromWindow(previous.windowToken, 0)
+                        ?.hideSoftInputFromWindow(codeInput.windowToken, 0)
                 }
             }
         }
