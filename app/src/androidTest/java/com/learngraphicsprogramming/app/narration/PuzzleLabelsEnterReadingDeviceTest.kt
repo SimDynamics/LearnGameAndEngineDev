@@ -348,6 +348,90 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun lessonFourSecondChoiceRetryWorksAfterWrongAudioAndMappedPauseTouch() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val blocks = published.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks")
+        assertEquals("multiple_choice", blocks.getJSONObject(3).getString("type"))
+        assertEquals("multiple_choice", blocks.getJSONObject(4).getString("type"))
+        assertEquals(0, blocks.getJSONObject(3).getInt("correctIndex"))
+        assertEquals(0, blocks.getJSONObject(4).getInt("correctIndex"))
+
+        for (block in 3..4) {
+            ProgressRepository.saveExerciseState(context, "programming", lesson, 0, block,
+                JSONObject().put("correct", false).put("selectedIndex", -1))
+        }
+        val host = openProgramming(lesson, 0, narrate = true)
+        fun buttonFor(activity: LessonActivity, block: Int, choice: Int): android.widget.RadioButton {
+            val option = blocks.getJSONObject(block).getJSONArray("options").getString(choice)
+            return descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == option }
+        }
+
+        host.onActivity { activity ->
+            assertTrue(buttonFor(activity, 3, 0).performClick())
+            assertEquals(2, field<Int>(activity, "requiredExercises"))
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertTrue("The first question is completed", ProgressRepository
+                .getExerciseState(context, lesson, 0, 3)?.optBoolean("correct", false) == true)
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            // The wrong choice in the second question is intentional.
+            assertTrue(buttonFor(activity, 4, 1).performClick())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            val wrong = requireNotNull(ProgressRepository.getExerciseState(context, lesson, 0, 4))
+            assertFalse("The first Enter grades the wrong answer rather than losing it",
+                wrong.optBoolean("correct", false))
+            assertEquals(1, wrong.getInt("selectedIndex"))
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+
+            val check = descendants(content(activity)).filterIsInstance<Button>()
+                .single { it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled }
+            val shortcuts = field<Any>(activity, "puzzleEnterShortcut")
+            assertSame("The second question is the current Enter target",
+                check, field<View?>(shortcuts, "touchedCheck"))
+            // LDPlayer's one-touch mapping for the narration button injects a
+            // touch OUTSIDE the choice card before the listener is paused.
+            // Reproduce both operations, without replacing the actual reader.
+            val pause = activity.findViewById<View>(R.id.buttonLessonListen)
+            assertNotNull(pause)
+            assertTrue(pause.performClick())
+            shortcuts.javaClass.getDeclaredMethod("trackTouch",
+                Float::class.javaPrimitiveType, Float::class.javaPrimitiveType)
+                .apply { isAccessible = true }.invoke(shortcuts, -20f, -20f)
+            controller(activity).pauseKeepingPosition()
+            assertSame("A mapped Pause tap must not forget the active puzzle",
+                check, field<View?>(shortcuts, "touchedCheck"))
+            assertTrue("The correct retry is a fresh selection on the same question",
+                buttonFor(activity, 4, 0).performClick())
+            assertSame(check, field<View?>(shortcuts, "touchedCheck"))
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertTrue("Exactly one Enter accepts the corrected second choice",
+                ProgressRepository.getExerciseState(context, lesson, 0, 4)?.optBoolean("correct", false) == true)
+            assertEquals(2, field<Int>(activity, "completedExercises"))
+            assertEquals(0, field<Int>(activity, "currentPage"))
+            assertTrue(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("One fresh Enter goes to page 2 without being swallowed", 1,
+                field<Int>(activity, "currentPage"))
+            assertEquals("The lesson contents must remain original", published.toString(),
+                LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+        }
+    }
+
     @Test fun lessonThreePageFiveChecksBothConsecutivePuzzlesWithOneEnterEachThenAdvances() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)
