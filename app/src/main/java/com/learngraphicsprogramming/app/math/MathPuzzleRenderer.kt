@@ -43,6 +43,8 @@ class MathPuzzleRenderer(
     private val checkButton = MathWidgetUi.button(context, context.getString(R.string.math_ui_check), accent).apply {
         tag = CHECK_ACTION_TAG
     }
+    /** Enter delegates to the exact button used by tapping Comprobar. */
+    val checkActionView: View get() = checkButton
     private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, context.getString(R.string.math_ui_restart), accent)
     private val feedback = MathWidgetUi.text(context, "")
     private val spec = MathPuzzleParser.parse(block)

@@ -12,6 +12,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
@@ -77,6 +78,8 @@ import com.learngraphicsprogramming.app.math.MathExpressionEditor
 import com.google.android.material.button.MaterialButton
 
 class LessonActivity : AppCompatActivity() {
+
+    private val puzzleEnterShortcut = PuzzleEnterShortcut()
 
     private var calculatorResultTarget:
             View? =
@@ -4360,6 +4363,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val button =
             MaterialButton(this)
+        puzzleEnterShortcut.register(button, answerCard)
 
         button.text =
             getString(R.string.exercise_check)
@@ -5005,6 +5009,7 @@ class LessonActivity : AppCompatActivity() {
 
         val button =
             MaterialButton(this)
+        puzzleEnterShortcut.register(button, answerCard)
 
         button.text =
             getString(R.string.exercise_check)
@@ -5643,6 +5648,7 @@ class LessonActivity : AppCompatActivity() {
 
         val checkButton =
             MaterialButton(this)
+        puzzleEnterShortcut.register(checkButton, codeCard)
 
         checkButton.text =
             getString(R.string.exercise_check)
@@ -8000,7 +8006,16 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
+    /** Route unmodified Enter to the active puzzle's existing Check action. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (puzzleEnterShortcut.dispatch(event, currentFocus, compilerFullscreenActive)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            puzzleEnterShortcut.trackTouch(event.rawX, event.rawY)
+        }
 
         /*
  * FULLSCREEN DEL COMPILADOR.
@@ -9069,6 +9084,7 @@ class LessonActivity : AppCompatActivity() {
         readingRenderBlockIndex = null
         readingTextPages.values.forEach { it.restore() }
 
+        puzzleEnterShortcut.clear()
         lessonContent.removeAllViews()
 
         val pages =
@@ -9433,6 +9449,7 @@ class LessonActivity : AppCompatActivity() {
             mathNarrationSources.getOrPut(narrationPageIdentity()) { mutableMapOf() }[blockIndex] =
                 renderer::narrationSourceBlock
             lessonContent.addView(renderer.view)
+            puzzleEnterShortcut.register(renderer.checkActionView, renderer.view)
             renderer.fullscreenButton.setOnClickListener {
                 if (exerciseFullscreenActive) {
                     closeExerciseFullscreenHost()
@@ -10191,6 +10208,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val checkButton =
             MaterialButton(this)
+        puzzleEnterShortcut.register(checkButton, codeCard)
 
         checkButton.text =
             getString(R.string.exercise_check)
@@ -13456,6 +13474,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val button =
             MaterialButton(this)
+        puzzleEnterShortcut.register(button, answerCard)
 
         button.text =
             getString(R.string.exercise_check)
@@ -14711,6 +14730,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val checkButton =
             MaterialButton(this)
+        puzzleEnterShortcut.register(checkButton, codeCard)
 
         checkButton.text =
             getString(R.string.exercise_check)
