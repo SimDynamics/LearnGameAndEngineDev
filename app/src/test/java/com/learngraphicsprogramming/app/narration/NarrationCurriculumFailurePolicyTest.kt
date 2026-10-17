@@ -22,6 +22,15 @@ class NarrationCurriculumFailurePolicyTest {
         assertEquals(2, policy.missingCount)
     }
 
+    @Test fun roadmapPlaceholderMayBeSkippedButCorruptPublishedContentMustNot() {
+        org.junit.Assert.assertTrue(NarrationCurriculumScanSafety.isUnpublishedCourse(
+            FileNotFoundException("Future course manifest not packaged")))
+        org.junit.Assert.assertFalse(NarrationCurriculumScanSafety.isUnpublishedCourse(
+            IOException("The published course manifest is unreadable")))
+        org.junit.Assert.assertFalse(NarrationCurriculumScanSafety.isUnpublishedCourse(
+            JSONException("The packaged manifest is corrupt")))
+    }
+
     @Test fun installedJsonAndUnexpectedIoFailuresAreNeverSuppressed() {
         val policy = NarrationCurriculumFailurePolicy()
         val path = "content/es/programming/course_01/units.json"

@@ -74,7 +74,8 @@ internal object NarrationCurriculum {
                     .onFailure { unavailable(context, "Unavailable curriculum course", it,
                         mapOf("route" to route, "course" to course.id)) }
                     .getOrElse { failure ->
-                        if (requireComplete) throw failure
+                        if (requireComplete && !NarrationCurriculumScanSafety.isUnpublishedCourse(failure))
+                            throw failure
                         emptyList()
                     }.sortedBy { it.number }
                 for (unit in units) {
@@ -127,6 +128,16 @@ internal object NarrationCurriculum {
             }
         }
     }
+}
+
+/**
+ * courses.json publishes the full future roadmap. A course without its own
+ * course_<id>.json manifest has no packaged pages, so its missing manifest is
+ * an expected placeholder. Once a course manifest exists, missing unit or
+ * lesson assets must abort a destructive ownership scan.
+ */
+internal object NarrationCurriculumScanSafety {
+    fun isUnpublishedCourse(failure: Throwable): Boolean = failure is FileNotFoundException
 }
 
 /** Optional future-course assets are expected; corrupt installed JSON must keep its full error. */
