@@ -11,13 +11,22 @@ object KeyboardShortcutSettingsRepository {
     private const val KEY_SHORTCUTS =
         "cpp_shortcuts"
 
+    /**
+     * Additional punctuation belongs to the defaults, not a forced migration:
+     * existing personal shortcut arrays are returned unchanged. TAB remains
+     * the separate fixed first key supplied by LessonActivity.
+     */
     private val DEFAULT_SHORTCUTS =
         listOf(
             "(",
+            ")",
             "{",
+            "}",
             "[",
+            "]",
             ";",
             "\"",
+            "'",
             "<",
             ">",
             "=",
@@ -25,14 +34,34 @@ object KeyboardShortcutSettingsRepository {
             "-",
             "*",
             "/",
+            "\\",
+            "%",
             "&",
             "|",
             "!",
+            "?",
             ",",
+            ".",
             ":",
             "::",
             "<<",
-            ">>"
+            ">>",
+            "->",
+            "++",
+            "--",
+            "&&",
+            "||",
+            "==",
+            "!=",
+            "<=",
+            ">=",
+            "^",
+            "~",
+            "#",
+            "##",
+            "...",
+            "->*",
+            ".*"
         )
 
     fun getShortcuts(
