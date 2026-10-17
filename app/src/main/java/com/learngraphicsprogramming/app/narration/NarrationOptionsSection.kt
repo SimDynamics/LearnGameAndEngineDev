@@ -32,6 +32,19 @@ class NarrationOptionsSection(private val activity: Activity) {
     private var closed = false
     private val availability = NarrationControlAvailability()
     private val masterSwitch = Switch(activity)
+    private val advanceSwitch = Switch(activity).apply {
+        text = s(R.string.narration_advance_generation)
+        setTextColor(Color.WHITE)
+        minHeight = dp(48)
+        isChecked = NarrationSettingsRepository.advanceGenerationEnabled(activity)
+        setOnCheckedChangeListener { _, enabled ->
+            if (!bindingAdvance && !closed) {
+                NarrationSettingsRepository.saveAdvanceGenerationEnabled(activity, enabled)
+                KokoroBackgroundNarrationWorker.start(activity.applicationContext)
+            }
+        }
+    }
+    private var bindingAdvance = false
     private var bindingMaster = false
     private var openDialog: AlertDialog? = null
     private val preferences = activity.applicationContext.getSharedPreferences(
@@ -128,7 +141,7 @@ class NarrationOptionsSection(private val activity: Activity) {
             modelStatus, progress, downloadButton, cancelButton, removeButton,
             languageStatus, installLanguageButton, removeLanguageButton,
             storageTitle, storageDetail, storageSlider, storageMaximum,
-            storageExplanation).forEach { host.addView(it) }
+            storageExplanation, advanceSwitch).forEach { host.addView(it) }
         storageSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) { storageDragging = true }
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -243,6 +256,9 @@ class NarrationOptionsSection(private val activity: Activity) {
         if (settings.enabled) availability.apply(host, true, masterSwitch)
         bindingMaster = true
         masterSwitch.isChecked = settings.enabled
+        bindingAdvance = true
+        advanceSwitch.isChecked = NarrationSettingsRepository.advanceGenerationEnabled(activity)
+        bindingAdvance = false
         bindingMaster = false
         engineButton.text = when (settings.engine) {
             NarrationEngine.AUTO -> s(R.string.narration_engine_auto)

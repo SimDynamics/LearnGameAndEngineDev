@@ -13,6 +13,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.widget.Toast
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 import androidx.work.WorkManager
 
 /**
@@ -31,7 +34,30 @@ internal object KokoroNarrationSessionMonitor {
     private var startedActivities = 0
     private lateinit var application: Application
     private var waitingForStorage = false
+    private var resumedGenerationNoticePending = false
+    private var resumedToastWaitingForVisibleActivity = false
     private const val STORAGE_RECHECK_MS = 60_000L
+
+    private fun showResumedNoticeWhenVisible() {
+        if (!resumedToastWaitingForVisibleActivity || startedActivities <= 0) return
+        resumedToastWaitingForVisibleActivity = false
+        val localized = UiLanguageSettings.localizedContext(application)
+        Toast.makeText(localized, localized.getString(R.string.narration_storage_resumed),
+            Toast.LENGTH_SHORT).show()
+    }
+
+    /** Show the notice only after a real new Kokoro recording has been saved. */
+    fun onAudioGenerated() {
+        val notify = {
+            if (initialized && resumedGenerationNoticePending) {
+                resumedGenerationNoticePending = false
+                resumedToastWaitingForVisibleActivity = true
+                showResumedNoticeWhenVisible()
+                KokoroNarrationDiagnostics.event(application, TAG, "Kokoro resumed generating audio after storage pause")
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) notify() else main.post { notify() }
+    }
 
     // Restart offline synthesis when the user makes room. This polls only
     // while paused for storage; no wake lock or foreground service is held.
@@ -40,6 +66,7 @@ internal object KokoroNarrationSessionMonitor {
             if (!initialized || !waitingForStorage) return
             val settings = NarrationSettingsRepository.get(application)
             if (!settings.enabled || settings.engine == NarrationEngine.ANDROID ||
+                !NarrationSettingsRepository.advanceGenerationEnabled(application) ||
                 NarrationStorageBudget.savedLimit(application) == 0L) {
                 waitingForStorage = false
                 return
@@ -48,9 +75,9 @@ internal object KokoroNarrationSessionMonitor {
                 NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(application),
                     4L * NarrationStorageBudget.MIB)
             }.getOrDefault(false)
-            if (room && startedActivities > 0) {
+            if (room && startedActivities > 0 && startService()) {
                 waitingForStorage = false
-                startService()
+                resumedGenerationNoticePending = true
             } else {
                 // Keep the intent to resume until the user returns to the app.
                 // Do not relaunch a foreground service from a hidden activity.
@@ -74,8 +101,17 @@ internal object KokoroNarrationSessionMonitor {
     // SharedPreferences keeps listeners weakly; the application monitor owns this
     // one for its lifetime, including sessions with no visible activity.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == "enabled" || key == "engine") {
-            val update = { startService() }
+        if (key == "enabled" || key == "engine" ||
+            key == NarrationSettingsRepository.KEY_ADVANCE_GENERATION) {
+            val update = {
+                if (!NarrationSettingsRepository.advanceGenerationEnabled(application)) {
+                    waitingForStorage = false
+                    resumedGenerationNoticePending = false
+                    resumedToastWaitingForVisibleActivity = false
+                    main.removeCallbacks(storageRecheck)
+                }
+                startService()
+            }
             if (Looper.myLooper() == Looper.getMainLooper()) update()
             else main.post { update() }
         }
@@ -110,7 +146,13 @@ internal object KokoroNarrationSessionMonitor {
             override fun onActivityStarted(activity: Activity) {
                 startedActivities++
                 KokoroNarrationDiagnostics.update(application, mapOf("startedActivities" to startedActivities))
-                if (startedActivities == 1) startService()
+                showResumedNoticeWhenVisible()
+                if (startedActivities == 1) {
+                    if (waitingForStorage) {
+                        main.removeCallbacks(storageRecheck)
+                        main.post(storageRecheck)
+                    } else startService()
+                }
             }
             override fun onActivityResumed(activity: Activity) = Unit
             override fun onActivityPaused(activity: Activity) = Unit
@@ -153,25 +195,28 @@ internal object KokoroNarrationSessionMonitor {
         }, delayMillis)
     }
 
-    private fun startService() {
+    private fun startService(): Boolean {
         val settings = NarrationSettingsRepository.get(application)
-        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) {
+        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID ||
+            !NarrationSettingsRepository.advanceGenerationEnabled(application)) {
             KokoroNarrationDiagnostics.update(application, mapOf("sessionState" to "disabled-or-android-tts"))
             // Do not cancel a startForegroundService request before Android has
             // delivered onCreate/onStartCommand: that violates its promotion
             // deadline. A live service observes these settings itself; a queued
             // instance promotes first, then exits without launching synthesis.
-            return
+            return false
         }
-        if (startedActivities <= 0) return
+        if (startedActivities <= 0) return false
         val intent = Intent(application, KokoroContinuousNarrationService::class.java)
         try {
             if (Build.VERSION.SDK_INT >= 26) application.startForegroundService(intent)
             else application.startService(intent)
+            return true
         } catch (error: RuntimeException) {
             // Foreground launch restrictions can still be imposed by Android
             // or the phone manufacturer; report them, never silently swallow.
             KokoroNarrationDiagnostics.event(application, TAG, "Could not start offline narration foreground service", error)
+            return false
         }
     }
 }

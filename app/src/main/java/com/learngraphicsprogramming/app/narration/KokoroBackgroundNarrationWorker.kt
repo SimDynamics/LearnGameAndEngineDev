@@ -30,7 +30,8 @@ internal class KokoroBackgroundNarrationWorker(
     fun runSlice(activeSession: () -> Boolean): Outcome {
         val slice = cancellation.get()
         val settings = NarrationSettingsRepository.get(app)
-        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Outcome.PAUSED
+        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID ||
+            !NarrationSettingsRepository.advanceGenerationEnabled(app)) return Outcome.PAUSED
         if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
 
         val modelStore = KokoroModelStore(app)
@@ -55,7 +56,8 @@ internal class KokoroBackgroundNarrationWorker(
         val pageChange = KokoroPagePreparationQueue.onChanged(cancel)
         val contextChange = plan.onChanged(cancel)
         fun pageChanged() = KokoroPagePreparationQueue.snapshot(app)?.revision != pageRevision || !plan.isCurrent(planEpoch)
-        fun enabled() = NarrationSettingsRepository.isEngineAllowed(app, NarrationEngine.KOKORO)
+        fun enabled() = NarrationSettingsRepository.isEngineAllowed(app, NarrationEngine.KOKORO) &&
+            NarrationSettingsRepository.advanceGenerationEnabled(app)
         fun active() = enabled() && slice == cancellation.get() && activeSession() &&
             !NarrationWorkPriority.isBusy && !pageChanged()
         fun selectBudget(foreground: Boolean) {
@@ -175,6 +177,7 @@ internal class KokoroBackgroundNarrationWorker(
                                     "No se pudo guardar el audio generado"
                                 }
                                 generated++
+                                KokoroNarrationSessionMonitor.onAudioGenerated()
                             } finally { temporary.delete() }
                         }
                         if (scope == "page" && pageRevision != null) KokoroPagePreparationQueue.markCompleted(app, pageRevision, hash)

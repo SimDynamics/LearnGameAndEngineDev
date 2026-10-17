@@ -22,6 +22,7 @@ object NarrationSettingsRepository {
 
     private const val PREFERENCES_NAME = "lesson_narration_settings"
     private const val KEY_ENABLED = "enabled"
+    internal const val KEY_ADVANCE_GENERATION = "kokoro_advance_generation"
     private const val KEY_CONTROLS_VISIBLE = "controls_visible"
     private const val KEY_ENGINE = "engine"
     private const val KEY_KOKORO_VOICE = "kokoro_voice"
@@ -80,6 +81,14 @@ object NarrationSettingsRepository {
 
     fun saveEnabled(context: Context, enabled: Boolean) {
         preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+    }
+
+    /** Controls optional next-lesson/course generation, not the currently visited page. */
+    fun advanceGenerationEnabled(context: Context): Boolean =
+        preferences(context).getBoolean(KEY_ADVANCE_GENERATION, true)
+
+    fun saveAdvanceGenerationEnabled(context: Context, enabled: Boolean) {
+        preferences(context).edit().putBoolean(KEY_ADVANCE_GENERATION, enabled).apply()
     }
 
     /** Also checked by queued work, before a settings observer can run on main. */

@@ -39,7 +39,8 @@ internal class KokoroContinuousNarrationService : Service() {
     private lateinit var settingsPreferences: SharedPreferences
     // Keep a strong reference: SharedPreferences listeners are weakly held.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == "enabled" || key == "engine") {
+        if (key == "enabled" || key == "engine" ||
+            key == NarrationSettingsRepository.KEY_ADVANCE_GENERATION) {
             val stopIfDisabled = {
                 if (!narrationAllowed()) {
                     running = false
@@ -183,7 +184,8 @@ internal class KokoroContinuousNarrationService : Service() {
         try {
             while (running && !Thread.currentThread().isInterrupted) {
                 val selection = NarrationSettingsRepository.get(applicationContext)
-                if (!selection.enabled || selection.engine == NarrationEngine.ANDROID) break
+                if (!selection.enabled || selection.engine == NarrationEngine.ANDROID ||
+                    !NarrationSettingsRepository.advanceGenerationEnabled(applicationContext)) break
                 if (NarrationWorkPriority.isBusy) {
                     // With the screen locked, remain schedulable until the
                     // higher-priority speech/editor operation is finished.
@@ -197,7 +199,8 @@ internal class KokoroContinuousNarrationService : Service() {
                 val outcome = currentWorker.runSlice {
                     val settings = NarrationSettingsRepository.get(applicationContext)
                     running && !Thread.currentThread().isInterrupted &&
-                        settings.enabled && settings.engine != NarrationEngine.ANDROID
+                        settings.enabled && settings.engine != NarrationEngine.ANDROID &&
+                            NarrationSettingsRepository.advanceGenerationEnabled(applicationContext)
                 }
                 KokoroNarrationDiagnostics.update(applicationContext, mapOf("lastOutcome" to outcome.name))
                 when (outcome) {
@@ -263,7 +266,8 @@ internal class KokoroContinuousNarrationService : Service() {
 
     private fun narrationAllowed(): Boolean {
         if (!NarrationSettingsRepository.isEnabled(applicationContext)) return false
-        return NarrationSettingsRepository.get(applicationContext).engine != NarrationEngine.ANDROID
+        return NarrationSettingsRepository.get(applicationContext).engine != NarrationEngine.ANDROID &&
+            NarrationSettingsRepository.advanceGenerationEnabled(applicationContext)
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
