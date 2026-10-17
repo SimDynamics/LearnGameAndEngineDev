@@ -405,8 +405,8 @@ class PuzzleLabelsEnterReadingDeviceTest {
         instrumentation.waitForIdleSync()
         assertTrue("A single new Enter on page six completes the lesson",
             ProgressRepository.isLessonCompleted(context, lesson))
-        scenario = null
         host.close()
+        scenario = null
     }
 
     @Test fun enterFromPageFiveOpensPageSixOnceAndDoesNotSkipToLessonMenu() {
@@ -515,6 +515,36 @@ class PuzzleLabelsEnterReadingDeviceTest {
         host.onActivity { activity ->
             assertEquals("Outside compiler edit mode Enter advances normally", 7,
                 field<Int>(activity, "currentPage"))
+        }
+    }
+
+    @Test fun enterChecksAFullscreenMathematicsChoiceWithoutAdvancingThePage() {
+        val host = openMathLesson(LESSON, "numeros_y_operaciones", 0, narrate = false,
+            requireTextInput = false)
+        host.onActivity { activity ->
+            val card = mathCard(activity, 0, 4)
+            reset(card, activity)
+            val options = descendants(card).filterIsInstance<android.widget.RadioButton>()
+            assertTrue(options[1].performClick())
+            val fullscreen = descendants(card).single {
+                it.contentDescription == activity.getString(R.string.exercise_fullscreen)
+            }
+            assertTrue(fullscreen.performClick())
+            assertTrue("The fullscreen puzzle owns the screen",
+                field<Boolean>(activity, "exerciseFullscreenActive"))
+            val check = descendants(card).single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }
+            assertTrue("Comprobar remains visible inside the fullscreen puzzle",
+                check.isShown && check.isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Enter in puzzle fullscreen must never navigate", 0,
+                field<Int>(activity, "currentPage"))
+            assertTrue("The first Enter checks the chosen answer inside fullscreen",
+                ProgressRepository.getExerciseState(context, LESSON, 0, 4)?.optBoolean("correct", false) == true)
+            assertFalse("The other unsolved puzzle keeps Continue disabled",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
         }
     }
 
