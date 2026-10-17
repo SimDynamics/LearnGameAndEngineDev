@@ -566,6 +566,7 @@ class CppPrototypeActivity : AppCompatActivity() {
                     else getString(R.string.clang21_confirm_message))
                 .setNegativeButton(R.string.clang21_confirm_no, null)
                 .setPositiveButton(R.string.clang21_confirm_yes) { _, _ ->
+                    MobileDataDownloadNotice.showIfCellular(this)
                     installer.requestInstall { state ->
                         runOnUiThread {
                             if (!isFinishing && !isDestroyed) {

@@ -21,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.learngraphicsprogramming.app.R
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
+import com.learngraphicsprogramming.app.MobileDataDownloadNotice
 
 /** Preferences and optional resources share the existing global options screen. */
 class NarrationOptionsSection(private val activity: Activity) {
@@ -615,7 +616,11 @@ class NarrationOptionsSection(private val activity: Activity) {
             .setMessage(s(R.string.narration_download_confirmation, size(artifacts.sumOf { it.bytes }), compatibilityReason(NarrationSettingsRepository.get(activity).language)))
             .setNegativeButton(s(R.string.narration_cancel), null)
             .setPositiveButton(s(R.string.narration_download)) { _, _ ->
-                if (narrationEnabled()) { models.startDownload(true, artifacts); inspect() }
+                if (narrationEnabled()) {
+                    MobileDataDownloadNotice.showIfCellular(activity)
+                    models.startDownload(true, artifacts)
+                    inspect()
+                }
             }.showReaderDialog()
     }
 
