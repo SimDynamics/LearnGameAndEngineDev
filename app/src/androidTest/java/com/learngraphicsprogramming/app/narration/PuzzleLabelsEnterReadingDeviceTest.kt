@@ -365,6 +365,7 @@ class PuzzleLabelsEnterReadingDeviceTest {
             .put("correct", false).put("order", JSONArray().put(0).put(1).put(2).put(3)))
         val host = openProgramming(lesson, 4, narrate = false)
         lateinit var originalEditor: EditText
+        lateinit var orderCheck: Button
         host.onActivity { activity ->
             val inputs = descendants(content(activity)).filterIsInstance<EditText>()
                 .filter { it.tag == "cpp_code_input" }
@@ -401,7 +402,7 @@ class PuzzleLabelsEnterReadingDeviceTest {
             assertEquals("Only the order puzzle remains to check", 1, enabledChecks.size)
             // Reproduce the real native-focus handoff after touching the second
             // puzzle: Enter must execute it once, then release its old button focus.
-            val orderCheck = enabledChecks.single()
+            orderCheck = enabledChecks.single()
             orderCheck.isFocusableInTouchMode = true
             assertTrue(orderCheck.requestFocus())
         }
@@ -412,6 +413,8 @@ class PuzzleLabelsEnterReadingDeviceTest {
             assertTrue("One Enter checks the second order-code puzzle",
                 ProgressRepository.getExerciseState(context, lesson, 4, 2)?.optBoolean("correct", false) == true)
             assertEquals(2, field<Int>(activity, "completedExercises"))
+            assertFalse("The finished, disabled order-check button also releases keyboard focus",
+                orderCheck.hasFocus())
             assertTrue("Continue is enabled as soon as both puzzles are complete",
                 activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
             assertEquals("Checking cannot skip the current page", 4,
