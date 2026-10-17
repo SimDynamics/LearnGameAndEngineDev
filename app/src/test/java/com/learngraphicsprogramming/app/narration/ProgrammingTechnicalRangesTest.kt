@@ -138,6 +138,23 @@ class ProgrammingTechnicalRangesTest {
         }
     }
 
+    @Test fun lessonFourMissingSemicolonIsMarkedInTheSourceTechnicalRange() {
+        val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
+        val sourceFile = resources.absoluteFile.parentFile!!.resolve(
+            "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
+        val lesson = JSONObject(sourceFile.readText())
+        val unchanged = lesson.toString()
+        val question = lesson.getJSONArray("pages").getJSONObject(1)
+            .getJSONArray("blocks").getJSONObject(3).getString("question")
+        val at = question.indexOf(';')
+        assertTrue(question.contains("no tiene su ;"))
+        assertTrue(covered(analysis(question), at, at + 1))
+        val prose = "El texto termina; luego continúa."
+        val punctuation = prose.indexOf(';')
+        assertFalse(covered(analysis(prose), punctuation, punctuation + 1))
+        assertEquals(unchanged, lesson.toString())
+    }
+
     @Test fun metalinguisticSemicolonsAreDistinctFromClausePunctuationInEachLanguage() {
         for ((source, language) in listOf("No añadas ; a cualquier línea; conserva la prosa." to NarrationLanguage.SPANISH,
             "Do not add ; to every line; keep the prose." to NarrationLanguage.AMERICAN_ENGLISH,

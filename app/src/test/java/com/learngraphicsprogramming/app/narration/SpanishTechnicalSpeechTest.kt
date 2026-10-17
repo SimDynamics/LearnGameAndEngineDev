@@ -184,6 +184,23 @@ class SpanishTechnicalSpeechTest {
         }
     }
 
+    @Test fun publishedLessonFourPageTwoMissingSemicolonIsTechnicalSpeech() {
+        val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
+        val sourceFile = resources.absoluteFile.parentFile!!.resolve(
+            "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
+        val lesson = JSONObject(sourceFile.readText())
+        val unchanged = lesson.toString()
+        val question = lesson.getJSONArray("pages").getJSONObject(1)
+            .getJSONArray("blocks").getJSONObject(3).getString("question")
+        assertTrue(question.contains("no tiene su ;"))
+        val spoken = SpanishTechnicalSpeech.prepare(question)
+        assertTrue(spoken.changed)
+        assertTrue(spoken.text.contains("no tiene su punto y coma"))
+        assertEquals(unchanged, lesson.toString())
+        // A clause delimiter must remain ordinary punctuation.
+        assertFalse(SpanishTechnicalSpeech.prepare("Termina la instrucción; continúa la lectura.").changed)
+    }
+
     @Test fun technicalSemicolonMentionsAreSpokenWithoutNamingOrdinaryClausePunctuation() {
         assertEquals("No añadas punto y coma a cualquier línea.", read("No añadas ; a cualquier línea."))
         assertEquals("Cada instrucción termina con punto y coma.", read("Cada instrucción termina con ;."))
