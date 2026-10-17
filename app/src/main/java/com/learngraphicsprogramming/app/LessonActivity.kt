@@ -494,11 +494,13 @@ class LessonActivity : AppCompatActivity() {
 
     /** Runtime decoration and reading references over the original curricular characters. */
     private fun registerReadingText(view: TextView, blockIndex: Int? = readingRenderBlockIndex,
-                                    mathMode: String = "auto") {
+                                    mathMode: String = "auto",
+                                    semanticTintReference: Int? = null) {
         if (view is ReadingTextHost) {
             LessonTechnicalText.apply(view,
                 currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
-                NarrationSettingsRepository.get(this).language, mathMode)
+                NarrationSettingsRepository.get(this).language, mathMode,
+                semanticTintReference ?: view.currentTextColor)
         }
         if (blockIndex == null) return
         readingTextPages[narrationPageIdentity()]?.register(blockIndex, view)
@@ -1504,11 +1506,7 @@ class LessonActivity : AppCompatActivity() {
             View.OVER_SCROLL_NEVER
 
         scroll.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         val content =
@@ -1958,11 +1956,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         background.setColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         background.cornerRadius =
@@ -3927,7 +3921,7 @@ class LessonActivity : AppCompatActivity() {
         // nunca coloreamos su fondo ni lo convertimos en una cápsula.
         buttonNarrationToggle.setBackgroundColor(Color.TRANSPARENT)
         buttonNarrationToggle.imageTintList = ColorStateList.valueOf(
-            if (enabled) accent else Color.rgb(170, 174, 183)
+            if (enabled) accent else getColor(R.color.lesson_text_muted)
         )
         buttonNarrationToggle.isActivated = enabled
         buttonNarrationToggle.isEnabled = masterEnabled
@@ -4011,7 +4005,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         view.setTextColor(
-            Color.rgb(225, 225, 235)
+            getColor(R.color.lesson_text_primary)
         )
 
         view.textSize = 17f
@@ -4027,7 +4021,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         background.setColor(
-            Color.rgb(38, 35, 48)
+            getColor(R.color.lesson_note)
         )
 
         background.cornerRadius =
@@ -4193,11 +4187,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -4242,11 +4232,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         /*
@@ -4259,11 +4245,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -4403,11 +4385,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         input.setHintTextColor(
-            Color.rgb(
-                140,
-                145,
-                155
-            )
+            getColor(R.color.lesson_text_muted)
         )
 
         input.typeface =
@@ -4870,11 +4848,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -4919,11 +4893,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         val languageLabel =
@@ -4933,11 +4903,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -5059,11 +5025,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         input.setHintTextColor(
-            Color.rgb(
-                140,
-                145,
-                155
-            )
+            getColor(R.color.lesson_text_muted)
         )
 
         input.typeface =
@@ -5507,7 +5469,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.exercise_order_instruction)
 
         instruction.setTextColor(
-            Color.rgb(180, 185, 195)
+            getColor(R.color.lesson_text_secondary)
         )
 
         instruction.textSize =
@@ -5535,11 +5497,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         codeBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         codeBackground.cornerRadius =
@@ -5566,11 +5524,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
 
@@ -5583,11 +5537,7 @@ class LessonActivity : AppCompatActivity() {
         languageLabel.tag = "order_code_language_$blockIndex"
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -5789,11 +5739,7 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.VERTICAL
 
         lineNumberColumn.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         lineNumberColumn.layoutParams =
@@ -5829,11 +5775,7 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             number.setTextColor(
-                Color.rgb(
-                    111,
-                    119,
-                    130
-                )
+                getColor(R.color.lesson_line_number)
             )
 
             number.setPadding(
@@ -6080,7 +6022,7 @@ class LessonActivity : AppCompatActivity() {
                 18f
 
             row.setTextColor(
-                Color.rgb(225, 230, 235)
+                getColor(R.color.lesson_text_primary)
             )
 
             row.setPadding(
@@ -6094,7 +6036,7 @@ class LessonActivity : AppCompatActivity() {
                 GradientDrawable()
 
             background.setColor(
-                Color.rgb(30, 33, 39)
+                getColor(R.color.lesson_surface_low)
             )
 
             background.cornerRadius =
@@ -6102,7 +6044,7 @@ class LessonActivity : AppCompatActivity() {
 
             background.setStroke(
                 dp(1),
-                Color.rgb(65, 69, 78)
+                getColor(R.color.lesson_outline)
             )
 
             row.background =
@@ -6667,8 +6609,8 @@ class LessonActivity : AppCompatActivity() {
         }
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
-            setTextColor(Color.rgb(230, 237, 243))
-            setHintTextColor(Color.rgb(174, 180, 190))
+            setTextColor(getColor(R.color.lesson_text_primary))
+            setHintTextColor(getColor(R.color.lesson_text_secondary))
             contentDescription = getString(R.string.cpp_input_hint)
             hint = getString(R.string.cpp_input_hint)
             background = null
@@ -6703,11 +6645,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -6739,11 +6677,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         val languageLabel =
@@ -6753,11 +6687,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -6935,11 +6865,7 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.HORIZONTAL
 
         editorBody.setBackgroundColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         /*
@@ -6962,19 +6888,11 @@ class LessonActivity : AppCompatActivity() {
                     Gravity.END
 
         lineNumbers.setTextColor(
-            Color.rgb(
-                111,
-                119,
-                130
-            )
+            getColor(R.color.lesson_line_number)
         )
 
         lineNumbers.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         lineNumbers.setPadding(
@@ -7434,11 +7352,7 @@ class LessonActivity : AppCompatActivity() {
             18f
 
         statusText.setTextColor(
-            Color.rgb(
-                174,
-                180,
-                190
-            )
+            getColor(R.color.lesson_text_secondary)
         )
 
         statusText.setPadding(
@@ -9777,11 +9691,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         background.setColor(
-            Color.rgb(
-                30,
-                33,
-                39
-            )
+            getColor(R.color.lesson_surface_low)
         )
 
         background.cornerRadius =
@@ -10021,7 +9931,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.exercise_fill_instruction)
 
         instruction.setTextColor(
-            Color.rgb(180, 185, 195)
+            getColor(R.color.lesson_text_secondary)
         )
 
         instruction.textSize =
@@ -10060,7 +9970,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         paletteBackground.setColor(
-            Color.rgb(24, 26, 31)
+            getColor(R.color.lesson_inset)
         )
 
         paletteBackground.cornerRadius =
@@ -10083,7 +9993,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         codeBackground.setColor(
-            Color.rgb(28, 31, 36)
+            getColor(R.color.lesson_card)
         )
 
         codeBackground.cornerRadius =
@@ -10109,11 +10019,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         val languageLabel =
@@ -10123,11 +10029,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -10361,11 +10263,7 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.VERTICAL
 
         lineNumberColumn.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         lineNumberColumn.layoutParams =
@@ -10550,11 +10448,7 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             number.setTextColor(
-                Color.rgb(
-                    111,
-                    119,
-                    130
-                )
+                getColor(R.color.lesson_line_number)
             )
 
             number.setPadding(
@@ -10691,11 +10585,7 @@ class LessonActivity : AppCompatActivity() {
 
                 slotBackground.setStroke(
                     dp(1),
-                    Color.rgb(
-                        120,
-                        125,
-                        140
-                    )
+                    getColor(R.color.lesson_outline_strong)
                 )
 
                 slot.background =
@@ -11706,11 +11596,7 @@ class LessonActivity : AppCompatActivity() {
                     View.VISIBLE
 
                 floatingHost.setBackgroundColor(
-                    Color.rgb(
-                        24,
-                        26,
-                        31
-                    )
+                    getColor(R.color.lesson_inset)
                 )
 
                 /*
@@ -12048,7 +11934,7 @@ class LessonActivity : AppCompatActivity() {
             text
 
         view.setTextColor(
-            Color.WHITE
+            getColor(R.color.lesson_text_primary)
         )
 
         view.textSize =
@@ -12087,7 +11973,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         view.setTextColor(
-            Color.WHITE
+            getColor(R.color.lesson_text_primary)
         )
 
         view.textSize =
@@ -12126,11 +12012,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         view.setTextColor(
-            Color.rgb(
-                205,
-                208,
-                215
-            )
+            getColor(R.color.lesson_text_body)
         )
 
         view.textSize =
@@ -12148,7 +12030,9 @@ class LessonActivity : AppCompatActivity() {
             dp(18)
         )
 
-        registerReadingText(view, mathMode = mathMode)
+        // The semantic capsule stays neutral; the word-shading engine is unchanged.
+        registerReadingText(view, mathMode = mathMode,
+            semanticTintReference = getColor(R.color.lesson_semantic_reference))
         lessonContent.addView(
             view
         )
@@ -12310,11 +12194,7 @@ class LessonActivity : AppCompatActivity() {
             FrameLayout(this)
 
         overlay.setBackgroundColor(
-            Color.rgb(
-                18,
-                20,
-                24
-            )
+            getColor(R.color.lesson_canvas)
         )
 
         overlay.layoutParams =
@@ -12698,11 +12578,7 @@ class LessonActivity : AppCompatActivity() {
                         LinearLayout.VERTICAL
 
                     fullscreenCodeSection.setBackgroundColor(
-                        Color.rgb(
-                            28,
-                            31,
-                            36
-                        )
+                        getColor(R.color.lesson_card)
                     )
 
                     fullscreenCodeSection.layoutParams =
@@ -12789,11 +12665,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -12839,11 +12711,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         val languageLabel =
@@ -12865,11 +12733,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, readableLanguage)
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.textSize =
@@ -13123,19 +12987,11 @@ class LessonActivity : AppCompatActivity() {
                     Gravity.END
 
         lineNumbers.setTextColor(
-            Color.rgb(
-                111,
-                119,
-                130
-            )
+            getColor(R.color.lesson_line_number)
         )
 
         lineNumbers.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         lineNumbers.setPadding(
@@ -13447,11 +13303,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -13496,11 +13348,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         val languageLabel =
@@ -13510,11 +13358,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -13663,7 +13507,7 @@ class LessonActivity : AppCompatActivity() {
                 options.getString(i)
 
             radioButton.setTextColor(
-                Color.WHITE
+                getColor(R.color.lesson_text_primary)
             )
 
             radioButton.textSize =
@@ -14194,11 +14038,7 @@ class LessonActivity : AppCompatActivity() {
             GradientDrawable()
 
         cardBackground.setColor(
-            Color.rgb(
-                28,
-                31,
-                36
-            )
+            getColor(R.color.lesson_card)
         )
 
         cardBackground.cornerRadius =
@@ -14244,11 +14084,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         header.setBackgroundColor(
-            Color.rgb(
-                37,
-                40,
-                46
-            )
+            getColor(R.color.lesson_card_header)
         )
 
         /*
@@ -14262,11 +14098,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            Color.rgb(
-                225,
-                228,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         languageLabel.setTypeface(
@@ -14512,11 +14344,7 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.VERTICAL
 
         lineNumberColumn.setBackgroundColor(
-            Color.rgb(
-                24,
-                26,
-                31
-            )
+            getColor(R.color.lesson_inset)
         )
 
         lineNumberColumn.setPadding(
@@ -14647,11 +14475,7 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             lineNumber.setTextColor(
-                Color.rgb(
-                    111,
-                    119,
-                    130
-                )
+                getColor(R.color.lesson_line_number)
             )
 
             lineNumber.setPadding(
@@ -14815,11 +14639,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 input.setHintTextColor(
-                    Color.rgb(
-                        130,
-                        135,
-                        145
-                    )
+                    getColor(R.color.lesson_text_muted)
                 )
 
                 input.hint =
@@ -14845,11 +14665,7 @@ class LessonActivity : AppCompatActivity() {
                     GradientDrawable()
 
                 inputBackground.setColor(
-                    Color.rgb(
-                        42,
-                        45,
-                        53
-                    )
+                    getColor(R.color.lesson_field)
                 )
 
                 inputBackground.cornerRadius =
@@ -14857,11 +14673,7 @@ class LessonActivity : AppCompatActivity() {
 
                 inputBackground.setStroke(
                     dp(1),
-                    Color.rgb(
-                        120,
-                        125,
-                        140
-                    )
+                    getColor(R.color.lesson_outline_strong)
                 )
 
                 input.background =
@@ -15765,11 +15577,7 @@ class LessonActivity : AppCompatActivity() {
             0
 
         view.setTextColor(
-            Color.rgb(
-                225,
-                230,
-                235
-            )
+            getColor(R.color.lesson_text_primary)
         )
 
         return view

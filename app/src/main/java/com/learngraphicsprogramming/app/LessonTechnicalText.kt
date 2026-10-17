@@ -19,7 +19,8 @@ import com.learngraphicsprogramming.app.narration.TechnicalDelimiterSpan
 internal object LessonTechnicalText {
     private class TechnicalInkSpan(color: Int) : ForegroundColorSpan(color)
 
-    fun apply(view: TextView, mathematics: Boolean, language: NarrationLanguage, mode: String = "auto") {
+    fun apply(view: TextView, mathematics: Boolean, language: NarrationLanguage, mode: String = "auto",
+              semanticTintReference: Int = view.currentTextColor) {
         val original = view.text
         if (view !is ReadingTextHost || original.isNullOrEmpty() || view.isLongClickable || view.isTextSelectable) return
         if (mathematics) {
@@ -36,7 +37,7 @@ internal object LessonTechnicalText {
                     wrapper.endExclusive, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
                 view.text = styled
             }
-            view.setSemanticBackgroundRanges(ranges.distinct(), underlay(view.currentTextColor, 16))
+            view.setSemanticBackgroundRanges(ranges.distinct(), underlay(semanticTintReference, 16))
             return
         }
         val analysis = ProgrammingTechnicalRanges.analyze(original, language)
@@ -63,7 +64,7 @@ internal object LessonTechnicalText {
             // Retain the console's exact palette. A light surface needs the console's
             // dark backing; the usual dark lesson surface only needs a discreet tint.
             if (LessonReadingColor.contrast(view.currentTextColor, Color.WHITE) >= LessonReadingColor.MIN_CONTRAST)
-                Color.rgb(31, 35, 48) else underlay(view.currentTextColor, 8))
+                Color.rgb(31, 35, 48) else underlay(semanticTintReference, 8))
     }
 
     private fun underlay(foreground: Int, alpha: Int): Int = (foreground and 0x00ffffff) or (alpha shl 24)
