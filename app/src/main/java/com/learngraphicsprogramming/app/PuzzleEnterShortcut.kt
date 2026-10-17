@@ -37,8 +37,8 @@ internal class PuzzleEnterShortcut {
         touchedCheck = null
     }
 
-    /** A deliberately selected puzzle can override a stale editor focus belonging
-     * to another registered puzzle. The C++ compiler is never registered here.
+    /** A deliberate selection overrides a stale field from another puzzle
+     * or the independent compiler. Its own editing field remains protected.
      */
     fun selectedPuzzleOverridesFocusedEditor(focused: View?): Boolean {
         if (focused !is EditText) return false
@@ -46,7 +46,8 @@ internal class PuzzleEnterShortcut {
             it.check === touchedCheck && it.check.isEnabled &&
                 it.check.isAttachedToWindow && it.check.isShown
         } ?: return false
-        return entries.any { entry ->
+        if (belongsTo(focused, selected.region) || belongsTo(focused, selected.check)) return false
+        return focused.tag == "cpp_code_input" || entries.any { entry ->
             entry !== selected &&
                 (belongsTo(focused, entry.region) || belongsTo(focused, entry.check))
         }
@@ -58,7 +59,7 @@ internal class PuzzleEnterShortcut {
         if (entries.any { it.check === check }) touchedCheck = check
     }
 
-    fun trackTouch(rawX: Float, rawY: Float) {
+    fun trackTouch(rawX: Float, rawY: Float): Boolean {
         fun contains(view: View): Boolean {
             val rect = Rect()
             return view.isShown && view.getGlobalVisibleRect(rect) &&
@@ -66,8 +67,9 @@ internal class PuzzleEnterShortcut {
         }
         // A one-touch LDPlayer mapping for Pause/Resume touches outside all puzzles.
         // It must NOT discard the student's previous deliberate puzzle selection.
-        entries.lastOrNull { contains(it.region) || contains(it.check) }
-            ?.check?.let(::select)
+        val target = entries.lastOrNull { contains(it.region) || contains(it.check) }
+        target?.check?.let(::select)
+        return target != null
     }
 
     private fun belongsTo(view: View?, ancestor: View): Boolean {

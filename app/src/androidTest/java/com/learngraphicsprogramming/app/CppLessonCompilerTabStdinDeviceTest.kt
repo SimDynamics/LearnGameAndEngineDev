@@ -112,6 +112,45 @@ class CppLessonCompilerTabStdinDeviceTest {
         assertEquals(originalFiles, preferenceFiles())
     }
 
+    @Test fun hidingTheShortcutMenuAlsoRetiresTheCompilerCaretWithoutRewritingSource() =
+        withLesson { scenario, initial ->
+            focusWithIme(scenario)
+            scenario.onActivity { activity ->
+                val editor = source(activity)
+                val bar = field(activity, "programmingKeyboardBar") as View
+                assertEquals("The shortcut menu is initially visible", View.VISIBLE, bar.visibility)
+                assertTrue(editor.hasFocus())
+                activity.getSystemService(InputMethodManager::class.java)
+                    .hideSoftInputFromWindow(editor.windowToken, 0)
+            }
+            await(scenario, "Hiding the native IME dismisses shortcuts and compiler caret") { activity ->
+                val bar = field(activity, "programmingKeyboardBar") as View
+                ViewCompat.getRootWindowInsets(activity.window.decorView)
+                    ?.isVisible(WindowInsetsCompat.Type.ime()) == false &&
+                    bar.visibility == View.GONE && !source(activity).hasFocus()
+            }
+            scenario.onActivity { activity ->
+                assertEquals("Editor text is unchanged", initial, source(activity).text.toString())
+                assertTrue("A tap can resume editing", source(activity).requestFocus())
+            }
+        }
+
+    @Test fun pressingCompileAndRunKeepsSourceFocusAndItsShortcutMenu() =
+        withLesson { scenario, initial ->
+            focusWithIme(scenario)
+            scenario.onActivity { activity ->
+                val editor = source(activity)
+                val bar = field(activity, "programmingKeyboardBar") as View
+                val caret = editor.selectionStart
+                assertEquals(View.VISIBLE, bar.visibility)
+                assertTrue(tagged(activity, "cpp_run").performClick())
+                assertTrue("Run does not steal source focus", editor.hasFocus())
+                assertEquals("Run does not rewrite edited code", initial, editor.text.toString())
+                assertEquals("Run retains source caret", caret, editor.selectionStart)
+                assertEquals("Run leaves shortcuts available", View.VISIBLE, bar.visibility)
+            }
+        }
+
     @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->
         for (fullscreen in listOf(false, true)) {
             mode(scenario, fullscreen)

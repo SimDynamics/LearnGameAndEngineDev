@@ -339,6 +339,9 @@ class LessonActivity : AppCompatActivity() {
     private var activeCodeInput:
             EditText? =
         null
+    // A tap on another puzzle retires a stale code editor focus only after
+    // the real target has handled that gesture.
+    private var pendingOtherPuzzleEditor: EditText? = null
 
     private var keyboardVisible =
         false
@@ -2056,6 +2059,19 @@ class LessonActivity : AppCompatActivity() {
         )
     }
 
+    /** The source editor stays editable, but its caret is retired when the
+     * floating shortcuts are dismissed. Compilar y ejecutar never calls this.
+     */
+    private fun endProgrammingEditing(input: EditText, hideKeyboard: Boolean) {
+        if (!input.hasFocus() || !input.isAttachedToWindow || input.tag != CODE_INPUT_TAG) return
+        val neutral = findViewById<View>(android.R.id.content)
+        neutral.isFocusableInTouchMode = true
+        if (neutral.requestFocus() && hideKeyboard) {
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+                ?.hideSoftInputFromWindow(input.windowToken, 0)
+        }
+    }
+
     private fun updateProgrammingKeyboardBarVisibility() {
         // Focus can clear after ActivityThread has removed the old decor during recreation.
         if (isDestroyed || isFinishing) return
@@ -2068,6 +2084,7 @@ class LessonActivity : AppCompatActivity() {
                         ?.hasFocus() ==
                     true
 
+        val shortcutBarWasVisible = programmingKeyboardBar.visibility == View.VISIBLE
         programmingKeyboardBar.visibility =
             if (
                 shouldShow
@@ -2078,6 +2095,14 @@ class LessonActivity : AppCompatActivity() {
             }
 
         if (currentRouteId != AppearanceSettingsRepository.ROUTE_PROGRAMMING) return
+
+        // Android (especially LDPlayer) can hide the keyboard while retaining
+        // a native EditText caret. Esc/Back should end both modes together.
+        // A transient IME opening/resize must not trigger this focus release.
+        if (shortcutBarWasVisible && !shouldShow && !keyboardVisible &&
+            programmingImeAnimations.isEmpty()) {
+            activeCodeInput?.let { endProgrammingEditing(it, hideKeyboard = false) }
+        }
 
         updateProgrammingFullscreenResize()
 
@@ -8158,6 +8183,7 @@ class LessonActivity : AppCompatActivity() {
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            pendingOtherPuzzleEditor = null
             // LDPlayer's one-touch Pause mapping hits the floating narration
             // overlay, which may sit directly above a different puzzle.
             // Never let a tap on the reader select a puzzle hidden beneath it.
@@ -8170,7 +8196,29 @@ class LessonActivity : AppCompatActivity() {
                 android.util.Log.d("LgpEnterTrace",
                     "readerTouch focus=${currentFocus?.javaClass?.simpleName ?: "none"} page=$currentPage")
             }
-            if (!touchedReader) puzzleEnterShortcut.trackTouch(event.rawX, event.rawY)
+            if (!touchedReader && puzzleEnterShortcut.trackTouch(event.rawX, event.rawY) &&
+                !compilerFullscreenActive && !exerciseFullscreenActive) {
+                pendingOtherPuzzleEditor = (currentFocus as? EditText)
+                    ?.takeIf { it.tag == CODE_INPUT_TAG &&
+                        puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(it) }
+            }
+        } else if (event.actionMasked == MotionEvent.ACTION_UP ||
+            event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            val previousEditor = pendingOtherPuzzleEditor
+            pendingOtherPuzzleEditor = null
+            // Wait until the click has been delivered; do not interfere with
+            // scrolls/drags, Run, keyboard shortcuts, or focus newly acquired
+            // by a different editable puzzle.
+            if (event.actionMasked == MotionEvent.ACTION_UP && previousEditor != null &&
+                kotlin.math.abs(event.x - touchStartX) < dp(16) &&
+                kotlin.math.abs(event.y - touchStartY) < dp(16)) {
+                lessonContent.post {
+                    if (!isFinishing && !isDestroyed && previousEditor.hasFocus() &&
+                        puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(previousEditor)) {
+                        endProgrammingEditing(previousEditor, hideKeyboard = true)
+                    }
+                }
+            }
         }
 
         /*
