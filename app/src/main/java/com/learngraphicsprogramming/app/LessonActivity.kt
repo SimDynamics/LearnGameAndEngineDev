@@ -8036,7 +8036,7 @@ class LessonActivity : AppCompatActivity() {
             event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         val focused = currentFocus
         if (enter) {
-            val editorOwnsEnter = compilerFullscreenActive ||
+            val editorOwnsEnter = compilerFullscreenActive || exerciseFullscreenActive ||
                 focused is MathExpressionEditor ||
                 focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
             val otherActionOwnsEnter = focused != null &&
