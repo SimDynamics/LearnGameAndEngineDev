@@ -201,6 +201,16 @@ class SpanishTechnicalSpeechTest {
         assertFalse(SpanishTechnicalSpeech.prepare("Termina la instrucción; continúa la lectura.").changed)
     }
 
+    @Test fun spokenSemicolonFollowsSpacingRatherThanAListOfCueWords() {
+        assertEquals("¿Conviene quitar sólo el punto y coma, o cambiar el texto?",
+            read("¿Conviene quitar sólo el ;, o cambiar el texto?"))
+        assertEquals("El error consiste en olvidar el punto y coma en C++.",
+            read("El error consiste en olvidar el ; en C++."))
+        val ordinary = "El compilador informa del error; revisa la línea."
+        assertEquals(SpanishTechnicalSpeech.Preparation(ordinary, false),
+            SpanishTechnicalSpeech.prepare(ordinary))
+    }
+
     @Test fun technicalSemicolonMentionsAreSpokenWithoutNamingOrdinaryClausePunctuation() {
         assertEquals("No añadas punto y coma a cualquier línea.", read("No añadas ; a cualquier línea."))
         assertEquals("Cada instrucción termina con punto y coma.", read("Cada instrucción termina con ;."))

@@ -160,7 +160,8 @@ object SpanishTechnicalSpeech {
                 '*' -> if (multiplicationAt(text, index)) "por" else "asterisco"
                 '!' -> if ((index == 0 || text[index - 1].isWhitespace() || text[index - 1] in "(=,;{?:&|") &&
                     text.getOrNull(index + 1)?.let { it.isLetterOrDigit() || it in "_(!" } == true) "negación lógica" else null
-                ';' -> if (semicolonMention.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))) "punto y coma" else null
+                ';' -> if (TechnicalSemicolonContext.isExplicitSymbol(text, index) ||
+                    semicolonMention.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))) "punto y coma" else null
                 '§' -> "sección"
                 '–' -> "guion"
                 else -> null
@@ -540,7 +541,7 @@ object SpanishTechnicalSpeech {
     private val url = Regex("(?:https?://|www\\.)\\S+", RegexOption.IGNORE_CASE)
     // In prose a semicolon is usually a pause. Name it only when syntax makes
     // it the object of an explanation; code and quoted characters use readCode.
-    private val semicolonMention = Regex("(?i)(?:\\b(?:con|sin|mediante)|\\b(?:añad(?:as|e|ir)|agreg(?:ues|a|ar)|pongas|pon|escrib(?:as|e|ir)|insert(?:es|a|ar)|quit(?:es|a|ar)|elimin(?:es|a|ar))|\\b(?:signo|símbolo|carácter|operador|su))\\s+$")
+    private val semicolonMention = Regex("(?i)(?:\\b(?:con|sin|mediante)|\\b(?:añad(?:as|e|ir)|agreg(?:ues|a|ar)|pongas|pon|escrib(?:as|e|ir)|insert(?:es|a|ar)|quit(?:es|a|ar)|elimin(?:es|a|ar))|\\b(?:signo|símbolo|carácter|operador))\\s+$")
     private val cliCue = Regex("(?iu)(?:\\b(?:cmake|ctest|clang(?:\\+\\+)?|gcc|g\\+\\+|ninja|git|gradle(?:w)?)(?![\\p{L}\\p{N}_])[^;!?\\n]*|\\b(?:opción|argumento|parámetro)\\s*[`\"'«]*)$")
     private val cliTail = Regex("(?iu)^[A-Za-z][A-Za-z0-9-]*[`\"'»]?\\s+(?:es\\s+)?(?:una?\\s+)?(?:opción|argumento|parámetro)(?=\\s|[.,:;!?]|$)")
     private val regexCue = Regex("(?iu)(?:expresión\\s+regular|patrón\\s+(?:regular|regex)|regex)\\s*[:=]?\\s*$")

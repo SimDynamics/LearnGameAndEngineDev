@@ -1,5 +1,18 @@
 package com.learngraphicsprogramming.app.narration
 
+/** An isolated semicolon is C++ notation when it is deliberately separated
+ * from the preceding prose word. A punctuation semicolon attaches to that word.
+ * This lexical rule is shared by narration and semantic display, not curriculum.
+ */
+internal object TechnicalSemicolonContext {
+    fun isExplicitSymbol(text: CharSequence, position: Int): Boolean {
+        if (position <= 0 || position >= text.length || text[position] != ';') return false
+        if (text[position - 1] != ' ' && text[position - 1] != '\t') return false
+        val next = text.getOrNull(position + 1)
+        return next == null || next.isWhitespace() || next in "\"')]}.,!?:»"
+    }
+}
+
 /** Presentation-only C++ ranges over the original text, shared by all programming lessons. */
 internal object ProgrammingTechnicalRanges {
     data class Range(val start: Int, val endExclusive: Int)
@@ -100,6 +113,11 @@ internal object ProgrammingTechnicalRanges {
                     "operator" in part.spoken || part.spoken == "semicolon" || symbolCue.containsMatchIn(before)) add(part.start, part.endExclusive)
             }
         }
+        // An isolated semicolon is a technical token in any programming language
+        // shown. Ordinary clause punctuation ("palabra; siguiente") stays prose.
+        text.indices.filter { TechnicalSemicolonContext.isExplicitSymbol(text, it) }
+            .forEach { add(it, it + 1) }
+
         // Metalinguistic sign lists have a shared visual meaning even when a
         // language's normalizer leaves that single glyph as ordinary punctuation.
         englishNotation.forEach { part ->

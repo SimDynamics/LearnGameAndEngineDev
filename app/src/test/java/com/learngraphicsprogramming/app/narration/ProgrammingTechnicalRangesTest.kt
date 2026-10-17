@@ -155,6 +155,24 @@ class ProgrammingTechnicalRangesTest {
         assertEquals(unchanged, lesson.toString())
     }
 
+    @Test fun isolatedWhitespaceSemicolonsUseOneSharedLexicalRuleForAllLanguages() {
+        for ((source, technical) in listOf(
+            "La instrucción no tiene su ;." to true,
+            "¿Conviene quitar sólo el ;, o cambiar el texto?" to true,
+            "Escribe ; para terminar." to true,
+            "La instrucción termina; después sigue." to false,
+            "Cambiar el texto; luego probar." to false,
+            "El texto ;continuará." to false
+        )) {
+            val index = source.indexOf(';')
+            assertEquals(source, technical, TechnicalSemicolonContext.isExplicitSymbol(source, index))
+            for (language in languages) {
+                assertEquals("$language: $source", technical,
+                    covered(analysis(source, language), index, index + 1))
+            }
+        }
+    }
+
     @Test fun metalinguisticSemicolonsAreDistinctFromClausePunctuationInEachLanguage() {
         for ((source, language) in listOf("No añadas ; a cualquier línea; conserva la prosa." to NarrationLanguage.SPANISH,
             "Do not add ; to every line; keep the prose." to NarrationLanguage.AMERICAN_ENGLISH,
