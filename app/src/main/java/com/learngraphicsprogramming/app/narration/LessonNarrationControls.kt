@@ -43,7 +43,7 @@ class LessonNarrationControls(
         isClickable = true
         elevation = dp(8).toFloat()
         setPadding(dp(4),dp(4),dp(4),dp(4))
-        background = GradientDrawable().apply { setColor(Color.rgb(32,33,38)); cornerRadius = dp(30).toFloat() }
+        background = GradientDrawable().apply { setColor(activity.getColor(R.color.lesson_card)); cornerRadius = dp(30).toFloat() }
     }
     private val listen = ImageButton(activity).apply {
         id = R.id.buttonLessonListen
@@ -62,7 +62,7 @@ class LessonNarrationControls(
     private val restart = ImageButton(activity).apply {
         id = R.id.buttonLessonRestartPage
         setImageResource(R.drawable.ic_code_reset)
-        imageTintList = ColorStateList.valueOf(Color.rgb(170,174,183))
+        imageTintList = ColorStateList.valueOf(Color.rgb(176, 176, 176))
         setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription = activity.getString(R.string.narration_restart_current_page)
         setBackgroundResource(android.R.drawable.list_selector_background)

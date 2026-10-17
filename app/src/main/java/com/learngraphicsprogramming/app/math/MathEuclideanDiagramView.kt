@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -20,7 +21,7 @@ class MathEuclideanDiagramView(context: Context, config: JSONObject, private val
     private val density = resources.displayMetrics.density.toDouble()
     private val fontDensity = resources.displayMetrics.scaledDensity.toDouble()
     private var textScale = 1.0
-    private val background = Color.rgb(16, 17, 20)
+    private val background = context.getColor(R.color.lesson_canvas)
 
     init {
         setBackgroundColor(background)

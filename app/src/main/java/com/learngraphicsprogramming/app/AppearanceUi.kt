@@ -209,7 +209,7 @@ object AppearanceUi {
             is CheckBox -> {
                 // Selection labels sit on the dark card, rather than on an accent-filled button.
                 view.buttonTintList = ColorStateList.valueOf(accentColor)
-                view.setTextColor(Color.rgb(235, 239, 245))
+                view.setTextColor(Color.rgb(230, 230, 230))
             }
 
             is SeekBar -> {
@@ -266,11 +266,7 @@ object AppearanceUi {
     ) {
 
         val disabledColor =
-            Color.rgb(
-                72,
-                74,
-                82
-            )
+            Color.rgb(76, 76, 76)
 
         button.backgroundTintList =
             ColorStateList(
@@ -310,11 +306,7 @@ object AppearanceUi {
                 ),
                 intArrayOf(
                     enabledTextColor,
-                    Color.rgb(
-                        170,
-                        174,
-                        183
-                    )
+                    Color.rgb(174, 174, 174)
                 )
             )
         )
@@ -351,11 +343,7 @@ object AppearanceUi {
                 ),
                 intArrayOf(
                     accentColor,
-                    Color.rgb(
-                        120,
-                        124,
-                        134
-                    )
+                    Color.rgb(132, 132, 132)
                 )
             )
     }
@@ -375,11 +363,7 @@ object AppearanceUi {
                 ),
                 intArrayOf(
                     accentColor,
-                    Color.rgb(
-                        145,
-                        148,
-                        158
-                    )
+                    Color.rgb(154, 154, 154)
                 )
             )
 
@@ -398,9 +382,9 @@ object AppearanceUi {
                     ),
                     Color.argb(
                         90,
-                        120,
-                        124,
-                        134
+                        132,
+                        132,
+                        132
                     )
                 )
             )
