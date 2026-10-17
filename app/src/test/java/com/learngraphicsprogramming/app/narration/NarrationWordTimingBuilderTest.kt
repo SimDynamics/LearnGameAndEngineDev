@@ -35,6 +35,7 @@ class NarrationWordTimingBuilderTest {
     @Test fun curricularTemperatureScalesKeepWordTimingsWithoutChangingKokoroAudio() {
         val sentences = listOf(
             "Una temperatura de -3 °C describe un estado.",
+            "Una temperatura de -3 °C describe un estado. Un aumento de 5 °C describe un cambio.",
             "Un aumento de 5 °C describe un cambio.",
             "La lectura de 32 °F también se conserva."
         )

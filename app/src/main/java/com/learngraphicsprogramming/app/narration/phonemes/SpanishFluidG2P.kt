@@ -141,17 +141,18 @@ object SpanishFluidG2P {
             // °C and °F are expanded by the production frontend into two words.
             // The visible C/F token owns the exact observed phone range, including
             // "grados"; preserve the degree glyph for display-side ownership.
-            val temperatureScales = Regex("°\\\\s*([CF])(?!\\\\p{L})", RegexOption.IGNORE_CASE)
-                .findAll(source).associate { match -> match.range.last to match.groupValues[1].uppercase(Locale.ROOT) }
+            val temperatureMatches = Regex("°\\s*([CF])(?!\\p{L})", RegexOption.IGNORE_CASE)
+                .findAll(source).toList()
+            val temperatureScales = temperatureMatches.associate {
+                it.range.last to it.groupValues[1].uppercase(Locale.ROOT)
+            }
+            val degreeMarks = temperatureMatches.mapTo(hashSetOf()) { it.range.first }
             if (source.indices.any { index ->
                     val char = source[index]
                     !char.isLetterOrDigit() && !char.isWhitespace() && char !in prosePunctuation &&
                         char !in normalizationOperators &&
                         char !in foreignTokens &&
-                        !(char == '°' && temperatureScales.keys.any { scale ->
-                            source.substring(index + 1, scale).all(Char::isWhitespace) &&
-                                source[scale].uppercaseChar() in "CF" && scale > index
-                        }) &&
+                        !(char == '°' && index in degreeMarks) &&
                         !(char == '+' && cppRanges.any { index in it })
                 }) return null
             val pattern = Regex("\\p{L}+|[−-]?\\d+(?:[.,]\\d+)?|[\\uE100-\\uF8FF]")
