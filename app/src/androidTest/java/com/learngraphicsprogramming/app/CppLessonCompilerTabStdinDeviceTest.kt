@@ -172,7 +172,45 @@ class CppLessonCompilerTabStdinDeviceTest {
             }
         }
 
-    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->
+    @Test fun dismissingShortcutsAllowsEnterToAdvanceACompletedCompilerPage() {
+        // Keep the exercise state deterministic without changing the authored lesson.
+        ProgressRepository.saveExerciseState(context, "programming", LESSON, 4, 4,
+            JSONObject().put("correct", false).put("selectedIndex", -1))
+        withLesson { scenario, _ ->
+            scenario.onActivity { activity ->
+                val lesson = LessonRepository.loadLessonJson(context, "programming", LESSON)
+                val question = lesson.getJSONArray("pages").getJSONObject(4)
+                    .getJSONArray("blocks").getJSONObject(4)
+                val answer = question.getJSONArray("options").getString(question.getInt("correctIndex"))
+                val radio = descendants(activity.window.decorView)
+                    .filterIsInstance<android.widget.RadioButton>()
+                    .single { it.text.toString() == answer }
+                radio.performClick()
+                assertTrue(radio.isChecked)
+                val check = descendants(activity.window.decorView).filterIsInstance<android.widget.Button>()
+                    .single { it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled }
+                assertTrue(check.performClick())
+                assertTrue(activity.findViewById<View>(R.id.buttonContinue).isEnabled)
+            }
+            focusWithIme(scenario)
+            scenario.onActivity { activity ->
+                val editor = source(activity)
+                assertTrue(editor.hasFocus())
+                activity.getSystemService(InputMethodManager::class.java)
+                    .hideSoftInputFromWindow(editor.windowToken, 0)
+            }
+            await(scenario, "The hidden shortcuts release compiler keyboard focus") { activity ->
+                (field(activity, "programmingKeyboardBar") as View).visibility == View.GONE &&
+                    !source(activity).hasFocus()
+            }
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+            await(scenario, "One Enter navigates instead of adding a code newline") { activity ->
+                field(activity, "currentPage") == 5
+            }
+        }
+    }
+
+    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->
         for (fullscreen in listOf(false, true)) {
             mode(scenario, fullscreen)
             focusWithIme(scenario)

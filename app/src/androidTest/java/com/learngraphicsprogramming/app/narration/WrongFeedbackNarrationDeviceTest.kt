@@ -247,7 +247,7 @@ class WrongFeedbackNarrationDeviceTest {
         }
     }
 
-    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
+    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
         val language = NarrationLanguage.SPANISH
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
         NarrationSettingsRepository.saveLanguage(context, language)
