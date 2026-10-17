@@ -399,6 +399,11 @@ class PuzzleLabelsEnterReadingDeviceTest {
             val enabledChecks = descendants(content(activity)).filterIsInstance<Button>()
                 .filter { it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled }
             assertEquals("Only the order puzzle remains to check", 1, enabledChecks.size)
+            // Reproduce the real native-focus handoff after touching the second
+            // puzzle: Enter must execute it once, then release its old button focus.
+            val orderCheck = enabledChecks.single()
+            orderCheck.isFocusableInTouchMode = true
+            assertTrue(orderCheck.requestFocus())
         }
 
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
