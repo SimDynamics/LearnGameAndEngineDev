@@ -58,7 +58,10 @@ internal class PuzzleEnterShortcut {
             focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)) return false
 
         val available = entries.filter { it.check.isAttachedToWindow && it.check.isShown }
-        val chosen = available.lastOrNull { belongsTo(focused, it.region) || belongsTo(focused, it.check) }
+        val focusedPuzzle = available.lastOrNull { belongsTo(focused, it.region) || belongsTo(focused, it.check) }
+        // A separately focused navigation or settings button keeps its own Enter behavior.
+        if (focusedPuzzle == null && touchedCheck == null && focused?.isClickable == true) return false
+        val chosen = focusedPuzzle
             ?: available.lastOrNull { it.check === touchedCheck }
             ?: available.singleOrNull()
             ?: return false

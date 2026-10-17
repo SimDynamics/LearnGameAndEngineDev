@@ -289,6 +289,53 @@ class PuzzleLabelsEnterReadingDeviceTest {
         assertEquals(original, LessonRepository.loadLessonJson(context, ROUTE, LESSON).toString())
     }
 
+    @Test fun physicalEnterChecksSelectedMathematicsChoiceWithoutAnAnswerTextField() {
+        val host = openMathLesson(LESSON, "numeros_y_operaciones", 0, narrate = false, requireTextInput = false)
+        host.onActivity { activity ->
+            val card = mathCard(activity, 0, 4)
+            reset(card, activity)
+            val options = descendants(card).filterIsInstance<android.widget.RadioButton>()
+            assertEquals(3, options.size)
+            assertTrue(options[1].performClick())
+            assertTrue(options[1].requestFocus())
+            val button = descendants(card).single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }
+            assertTrue(button.isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity {
+            val state = ProgressRepository.getExerciseState(context, LESSON, 0, 4)
+            assertTrue("Enter must use the original Comprobar action for a math choice",
+                state?.optBoolean("correct", false) == true)
+        }
+    }
+
+    @Test fun physicalEnterChecksASelectedProgrammingChoiceWithoutAnAnswerTextField() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val host = openProgramming(lesson, 0, narrate = false)
+        host.onActivity { activity ->
+            val block = field<JSONObject>(activity, "lessonJson").getJSONArray("pages")
+                .getJSONObject(0).getJSONArray("blocks").getJSONObject(4)
+            val correctIndex = block.getInt("correctIndex")
+            val expected = block.getJSONArray("options").getString(correctIndex)
+            val reset = descendants(content(activity)).single {
+                it.contentDescription == activity.getString(R.string.exercise_reset)
+            }
+            assertTrue(reset.performClick())
+            val option = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == expected }
+            assertTrue(option.performClick())
+            assertTrue(option.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_NUMPAD_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity {
+            val state = ProgressRepository.getExerciseState(context, lesson, 0, 4)
+            assertTrue("Numpad Enter must submit the original C++ multiple-choice check",
+                state?.optBoolean("correct", false) == true)
+        }
+    }
+
     @Test fun physicalEnterSubmitsTheRealSingleLineMathematicsAnswer() {
         val host = openMath(4, narrate = false)
         prepareSingleAnswer(host)
@@ -578,7 +625,8 @@ class PuzzleLabelsEnterReadingDeviceTest {
     }
     private fun openMath(page: Int, narrate: Boolean): ActivityScenario<LessonActivity> =
         openMathLesson(LESSON, "numeros_y_operaciones", page, narrate)
-    private fun openMathLesson(lesson: String, unit: String, page: Int, narrate: Boolean): ActivityScenario<LessonActivity> {
+    private fun openMathLesson(lesson: String, unit: String, page: Int, narrate: Boolean,
+                               requireTextInput: Boolean = true): ActivityScenario<LessonActivity> {
         ProgressRepository.saveCurrentPage(context, ROUTE, lesson, page)
         val host = ActivityScenario.launch<LessonActivity>(Intent(context, LessonActivity::class.java)
             .putExtra("routeId", ROUTE).putExtra("courseId", "math_course_01")
@@ -587,7 +635,8 @@ class PuzzleLabelsEnterReadingDeviceTest {
         await("The exact published mathematics page ${page + 1} opens", 15_000) {
             var ready = false
             host.onActivity { activity -> ready = activity.hasWindowFocus() && field<Int>(activity, "currentPage") == page &&
-                descendants(content(activity)).filterIsInstance<EditText>().isNotEmpty() && !content(activity).isLayoutRequested }
+                (!requireTextInput || descendants(content(activity)).filterIsInstance<EditText>().isNotEmpty()) &&
+                !content(activity).isLayoutRequested }
             ready
         }
         if (narrate) host.onActivity { activity ->
