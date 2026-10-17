@@ -207,6 +207,29 @@ internal object KokoroNarrationCache {
         }
     }
 
+    /**
+     * A read-only inventory for course statistics. It never calls lookup(),
+     * creates the cache directory, changes file timestamps or removes files.
+     * Count only fully verified, final audio files; exclude stages and rejects.
+     */
+    fun verifiedInventory(context: Context, cancelled: () -> Boolean = {
+        Thread.currentThread().isInterrupted
+    }): Map<String, KokoroCachedAudio> {
+        val directory = File(context.applicationContext.filesDir, DIRECTORY)
+        if (!directory.isDirectory) return emptyMap()
+        val items = mutableMapOf<String, KokoroCachedAudio>()
+        for (file in directory.listFiles().orEmpty()) {
+            if (cancelled()) throw InterruptedException("Audio inventory interrupted")
+            if (!file.isFile || file.extension !in setOf("wav", "ogg")) continue
+            val hash = file.nameWithoutExtension
+            if (hash.length != 64 || hash.any { it !in '0'..'9' && it !in 'a'..'f' }) continue
+            if (!validatedAudio(file)) continue
+            val previous = items[hash] ?: KokoroCachedAudio(0, 0L)
+            items[hash] = KokoroCachedAudio(previous.files + 1, previous.bytes + file.length())
+        }
+        return items
+    }
+
     /** Remove only abandoned partial writes. Complete WAV/Opus files are permanent. */
     @Synchronized
     fun prune(context: Context) {

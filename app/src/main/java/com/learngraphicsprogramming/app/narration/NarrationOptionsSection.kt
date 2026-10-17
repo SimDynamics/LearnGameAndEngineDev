@@ -20,6 +20,7 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 
 /** Preferences and optional resources share the existing global options screen. */
 class NarrationOptionsSection(private val activity: Activity) {
@@ -83,6 +84,14 @@ class NarrationOptionsSection(private val activity: Activity) {
     private var storageRefreshRequested = false
     private var storageDragging = false
     private val storageStepBytes = NarrationStorageBudget.MIB
+    // A dismissed dialog or a closed settings screen cancels expensive scanning.
+    @Volatile private var courseAudioReportRevision = 0L
+    private val programmingAudiosButton = button(s(R.string.narration_course_audio_programming)) {
+        manageCourseAudio(AppearanceSettingsRepository.ROUTE_PROGRAMMING)
+    }
+    private val mathAudiosButton = button(s(R.string.narration_course_audio_math)) {
+        manageCourseAudio(AppearanceSettingsRepository.ROUTE_MATH_PHYSICS)
+    }
     private val systemStatus = text(s(R.string.narration_checking_android), 15f)
     private val modelStatus = text(s(R.string.narration_checking_model), 16f)
     private val languageStatus = text("", 15f)
@@ -141,7 +150,9 @@ class NarrationOptionsSection(private val activity: Activity) {
             modelStatus, progress, downloadButton, cancelButton, removeButton,
             languageStatus, installLanguageButton, removeLanguageButton,
             storageTitle, storageDetail, storageSlider, storageMaximum,
-            storageExplanation, advanceSwitch).forEach { host.addView(it) }
+            storageExplanation, advanceSwitch,
+            text(s(R.string.narration_course_audio_manage), 16f),
+            programmingAudiosButton, mathAudiosButton).forEach { host.addView(it) }
         storageSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) { storageDragging = true }
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -225,7 +236,11 @@ class NarrationOptionsSection(private val activity: Activity) {
     private fun formatGiB(bytes: Long): String =
         s(R.string.narration_storage_gib, bytes.toDouble() / NarrationStorageBudget.RESERVE_BYTES)
 
-    fun onStop() { active = false; handler.removeCallbacks(poll) }
+    fun onStop() {
+        active = false
+        courseAudioReportRevision++
+        handler.removeCallbacks(poll)
+    }
     fun close() {
         closed = true
         onStop()
@@ -350,6 +365,87 @@ class NarrationOptionsSection(private val activity: Activity) {
                 NarrationSettingsRepository.saveAndroidVoice(activity, if (index == 0) null else androidVoices[index - 1].name)
                 dialog.dismiss(); refreshSelections()
             }.setNegativeButton(s(R.string.narration_cancel), null).showReaderDialog()
+    }
+
+    /** Read-only course statistics, computed off the UI thread with no cache mutations. */
+    private fun manageCourseAudio(routeId: String) {
+        if (!narrationEnabled() || !active || routeId !in NarrationAudioPlan.ROUTES) return
+        val revision = ++courseAudioReportRevision
+        val waiting = AlertDialog.Builder(activity)
+            .setTitle(courseAudioRoute(routeId))
+            .setMessage(s(R.string.narration_course_audio_scanning))
+            .setNegativeButton(s(R.string.narration_cancel), null)
+            .showReaderDialog()
+        waiting.setOnDismissListener {
+            if (courseAudioReportRevision == revision) courseAudioReportRevision++
+        }
+        Thread({
+            val outcome = runCatching {
+                KokoroCourseAudioStats.scan(activity.applicationContext, routeFilter = routeId) {
+                    revision != courseAudioReportRevision || Thread.currentThread().isInterrupted
+                }
+            }
+            handler.post {
+                if (closed || !active || revision != courseAudioReportRevision ||
+                    !waiting.isShowing || openDialog !== waiting || activity.isDestroyed) return@post
+                waiting.dismiss()
+                outcome.onSuccess { report -> showCourseAudioList(routeId, report) }
+                    .onFailure { error ->
+                        android.util.Log.w("KokoroCourseAudio", "Could not read course audio coverage", error)
+                        Toast.makeText(activity, s(R.string.narration_course_audio_error), Toast.LENGTH_LONG).show()
+                    }
+            }
+        }, "KokoroCourseAudioInventory").start()
+    }
+
+    private fun courseAudioRoute(routeId: String): String =
+        s(if (routeId == AppearanceSettingsRepository.ROUTE_PROGRAMMING)
+            R.string.settings_programming_color_title else R.string.settings_math_color_title)
+
+    private fun courseAudioPercent(value: Int?): String =
+        value?.let { "$it%" } ?: s(R.string.narration_course_audio_unknown)
+
+    private fun showCourseAudioList(routeId: String, report: KokoroCourseAudioStats.Report) {
+        if (closed || !active || !narrationEnabled() || activity.isDestroyed) return
+        val courses = report.courses.filter { it.routeId == routeId }
+        val labels = courses.map { course ->
+            val coverage = course.coverage
+            s(R.string.narration_course_audio_row,
+                course.number, course.title, coverage.generatedSentences,
+                coverage.expectedSentences, courseAudioPercent(coverage.percent),
+                coverage.files, size(coverage.bytes))
+        }.ifEmpty { listOf(s(R.string.narration_course_audio_no_courses)) }.toTypedArray()
+        AlertDialog.Builder(activity)
+            .setTitle(courseAudioRoute(routeId))
+            .setItems(labels) { _, index ->
+                if (!narrationEnabled()) return@setItems
+                courses.getOrNull(index)?.let(::showCourseAudioDetails)
+            }
+            .setPositiveButton(s(R.string.narration_course_audio_refresh)) { _, _ ->
+                manageCourseAudio(routeId)
+            }
+            .setNeutralButton(s(R.string.narration_course_audio_info)) { _, _ ->
+                AlertDialog.Builder(activity)
+                    .setTitle(s(R.string.narration_course_audio_manage))
+                    .setMessage(s(R.string.narration_course_audio_note))
+                    .setPositiveButton(s(R.string.narration_close), null)
+                    .showReaderDialog()
+            }
+            .setNegativeButton(s(R.string.narration_close), null)
+            .showReaderDialog()
+    }
+
+    private fun showCourseAudioDetails(course: KokoroCourseAudioStats.Course) {
+        if (!narrationEnabled()) return
+        val coverage = course.coverage
+        AlertDialog.Builder(activity)
+            .setTitle(s(R.string.narration_course_audio_course_title,
+                courseAudioRoute(course.routeId), course.number, course.title))
+            .setMessage(s(R.string.narration_course_audio_details,
+                coverage.generatedSentences, coverage.expectedSentences,
+                courseAudioPercent(coverage.percent), coverage.files, size(coverage.bytes)))
+            .setPositiveButton(s(R.string.narration_close), null)
+            .showReaderDialog()
     }
 
     private fun manageVoices() {
