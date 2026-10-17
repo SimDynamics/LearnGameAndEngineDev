@@ -13,6 +13,21 @@ class CppExerciseAnswersTest {
         JSONObject(content.resolve(path).readText()).getJSONArray("pages")
             .getJSONObject(page - 1).getJSONArray("blocks").getJSONObject(index - 1)
 
+    @Test fun singleLineInputPolicyPreservesAuthoredMultilineAnswers() {
+        val operator = block("programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json", 2, 5)
+        assertEquals("fill_code", operator.getString("type"))
+        assertEquals("<<", operator.getJSONArray("answers").getString(0))
+        assertTrue(CppExerciseAnswers.usesSingleLineAnswer(operator))
+
+        val shortOutput = JSONObject().put("answers", JSONArray(listOf("Listo", "OK")))
+        assertTrue(CppExerciseAnswers.usesSingleLineAnswer(shortOutput))
+        val multiOutput = JSONObject().put("answers", JSONArray(listOf("Primera\nSegunda", "OK")))
+        assertFalse(CppExerciseAnswers.usesSingleLineAnswer(multiOutput))
+        assertFalse(CppExerciseAnswers.usesSingleLineAnswer(
+            JSONObject().put("answers", JSONArray(listOf("A\r\nB")))))
+        assertFalse(CppExerciseAnswers.usesSingleLineAnswer(JSONObject()))
+    }
+
     @Test fun allFivePublishedExactOutputsRejectAdditionalBoundaryCharacters() {
         val locations = listOf(
             Triple("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 2, 4),

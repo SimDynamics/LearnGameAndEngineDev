@@ -7,6 +7,16 @@ import org.json.JSONObject
 object CppExerciseAnswers {
     const val DECIMAL_LITERAL_VALUE = "cpp_decimal_literal_value"
 
+    /** Enter submits only when every authored accepted answer is a single line.
+     * A text puzzle with a multiline answer must retain normal newline editing.
+     */
+    fun usesSingleLineAnswer(block: JSONObject): Boolean {
+        val answers = block.optJSONArray("answers") ?: return false
+        return answers.length() > 0 && (0 until answers.length()).all { index ->
+            (answers.opt(index) as? String)?.let { '\n' !in it && '\r' !in it } == true
+        }
+    }
+
     fun normalizeOutput(block: JSONObject, answer: String): String {
         val mode = if (block.has("outputComparison")) {
             block.get("outputComparison") as? String

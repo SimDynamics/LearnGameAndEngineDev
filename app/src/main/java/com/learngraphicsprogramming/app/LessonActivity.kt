@@ -3913,6 +3913,20 @@ class LessonActivity : AppCompatActivity() {
         )
     }
 
+    /** A choice tapped above a different puzzle invalidates the old editor
+     * focus, but never disables that other editor for deliberate later edits.
+     */
+    private fun releaseFocusFromUnselectedPuzzleEditor() {
+        val editor = currentFocus as? EditText ?: return
+        if (!puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(editor)) return
+        val neutralHost = findViewById<View>(android.R.id.content)
+        neutralHost.isFocusableInTouchMode = true
+        if (neutralHost.requestFocus()) {
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+                ?.hideSoftInputFromWindow(editor.windowToken, 0)
+        }
+    }
+
     private fun saveCurrentPageState() {
 
         pageRequiredExercises[currentPage] =
@@ -4102,6 +4116,7 @@ class LessonActivity : AppCompatActivity() {
                 "answer",
                 ""
             ) ?: ""
+        val submitOnEnter = CppExerciseAnswers.usesSingleLineAnswer(block)
 
         val savedCorrect =
             savedState?.optBoolean(
@@ -4337,6 +4352,10 @@ class LessonActivity : AppCompatActivity() {
         input.tag =
             CODE_INPUT_TAG
 
+        // Authored one-line answers should check, never insert a newline.
+        // Preserve multilines and the native Tab/indent rules when needed.
+        if (submitOnEnter) input.setSingleLine(true)
+
         enableCppAutoClose(
             input
         )
@@ -4425,6 +4444,10 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             button
         )
+        if (submitOnEnter) PuzzleAnswerSubmit.install(input, button)
+        input.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && button.isEnabled) puzzleEnterShortcut.select(button)
+        }
 
         /*
          * RESULTADO.
@@ -4534,6 +4557,7 @@ class LessonActivity : AppCompatActivity() {
                     button.isEnabled =
                         input.text.isNotEmpty() &&
                                 !answeredCorrectly
+                    if (button.isEnabled && input.hasFocus()) puzzleEnterShortcut.select(button)
                 }
             }
         )
@@ -4774,6 +4798,7 @@ class LessonActivity : AppCompatActivity() {
                 "answer",
                 ""
             ) ?: ""
+        val submitOnEnter = CppExerciseAnswers.usesSingleLineAnswer(block)
 
         val savedCorrect =
             savedState?.optBoolean(
@@ -5026,6 +5051,8 @@ class LessonActivity : AppCompatActivity() {
         input.background =
             null
 
+        if (submitOnEnter) input.setSingleLine(true)
+
         input.setText(
             savedAnswer
         )
@@ -5073,6 +5100,10 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             button
         )
+        if (submitOnEnter) PuzzleAnswerSubmit.install(input, button)
+        input.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && button.isEnabled) puzzleEnterShortcut.select(button)
+        }
 
         val result =
             exerciseFeedbackText(blockIndex)
@@ -5181,6 +5212,7 @@ class LessonActivity : AppCompatActivity() {
                             .toString()
                             .isNotBlank() &&
                                 !answeredCorrectly
+                    if (button.isEnabled && input.hasFocus()) puzzleEnterShortcut.select(button)
                 }
             }
         )
@@ -8074,7 +8106,8 @@ class LessonActivity : AppCompatActivity() {
         val focused = currentFocus?.takeIf { it.isAttachedToWindow && it.isShown }
         val editorOwnsEnter = compilerFullscreenActive ||
             focused is MathExpressionEditor ||
-            focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
+            focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused) &&
+                !puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(focused)
         // A fullscreen puzzle may still use Enter to check, but must never
         // advance the page behind its editing/interaction overlay.
         val canNavigate = !exerciseFullscreenActive &&
@@ -9476,6 +9509,29 @@ class LessonActivity : AppCompatActivity() {
         }
 
         readingRenderBlockIndex = null
+
+        // Avoid giving a lower text answer the keyboard before its preceding
+        // puzzle is considered. This runs only on a newly built page; revisits
+        // from the cache preserve the student's existing view/caret state.
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
+            val puzzleTypes = setOf(
+                "multiple_choice", "fill_code", "inline_fill_code",
+                "output_prediction", "order_code", "drag_fill_code"
+            )
+            val textTypes = setOf("fill_code", "inline_fill_code", "output_prediction")
+            var previousPuzzle = false
+            var textBoxBelowAnotherPuzzle = false
+            for (index in 0 until blocks.length()) {
+                val type = blocks.getJSONObject(index).optString("type")
+                if (previousPuzzle && type in textTypes) textBoxBelowAnotherPuzzle = true
+                if (type in puzzleTypes) previousPuzzle = true
+            }
+            if (textBoxBelowAnotherPuzzle) {
+                val neutralHost = findViewById<View>(android.R.id.content)
+                neutralHost.isFocusableInTouchMode = true
+                neutralHost.requestFocus()
+            }
+        }
 
         /*
          * Aplicamos el tamaño efectivo de texto
@@ -13707,7 +13763,10 @@ class LessonActivity : AppCompatActivity() {
 
             // A response is the authoritative puzzle choice. Native RadioButton
             // focus may be stale after LDPlayer maps Pause to a synthetic touch.
-            if (button.isEnabled) puzzleEnterShortcut.select(button)
+            if (button.isEnabled) {
+                puzzleEnterShortcut.select(button)
+                releaseFocusFromUnselectedPuzzleEditor()
+            }
             updateResetButton()
 
             saveCurrentSelectionState()

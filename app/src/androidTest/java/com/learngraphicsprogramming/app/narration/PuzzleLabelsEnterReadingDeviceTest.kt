@@ -418,6 +418,76 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun lessonFourPageTwoUpperChoiceOwnsEnterBeforeLowerOneLineCodeAnswer() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val blocks = published.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+        assertEquals("multiple_choice", blocks.getJSONObject(3).getString("type"))
+        assertEquals("fill_code", blocks.getJSONObject(4).getString("type"))
+        assertEquals("<<", blocks.getJSONObject(4).getJSONArray("answers").getString(0))
+        ProgressRepository.saveExerciseState(context, "programming", lesson, 1, 3,
+            JSONObject().put("correct", false).put("selectedIndex", -1))
+        ProgressRepository.saveExerciseState(context, "programming", lesson, 1, 4,
+            JSONObject().put("correct", false).put("answer", ""))
+        val host = openProgramming(lesson, 1, narrate = false)
+        lateinit var lowerInput: EditText
+        host.onActivity { activity ->
+            lowerInput = descendants(content(activity)).filterIsInstance<EditText>()
+                .single { it.hint.toString() == activity.getString(R.string.exercise_missing_code) }
+            lowerInput.showSoftInputOnFocus = false
+            assertEquals("The code answer has no authored newline", 1, lowerInput.maxLines)
+            assertFalse("A lower puzzle must not auto-focus", lowerInput.hasFocus())
+            lowerInput.setText("fd")
+            assertTrue(lowerInput.requestFocus())
+            assertTrue(lowerInput.hasFocus())
+            val wrongText = blocks.getJSONObject(3).getJSONArray("options").getString(1)
+            val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == wrongText }
+            assertTrue(radio.performClick())
+            assertFalse("Choosing the upper answer retires lower editor focus", lowerInput.hasFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            val wrong = requireNotNull(ProgressRepository.getExerciseState(context, lesson, 1, 3))
+            assertEquals("The upper wrong choice is checked immediately", 1, wrong.getInt("selectedIndex"))
+            assertFalse(wrong.optBoolean("correct", false))
+            assertEquals("fd", lowerInput.text.toString())
+            assertEquals(1, field<Int>(activity, "currentPage"))
+            val rightText = blocks.getJSONObject(3).getJSONArray("options").getString(0)
+            val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == rightText }
+            assertTrue(radio.performClick())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertTrue("One Enter checks the corrected choice",
+                ProgressRepository.getExerciseState(context, lesson, 1, 3)?.optBoolean("correct", false) == true)
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            assertEquals(1, field<Int>(activity, "currentPage"))
+            assertTrue(lowerInput.requestFocus())
+            lowerInput.setText("<<")
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertTrue("One Enter checks the lower code answer",
+                ProgressRepository.getExerciseState(context, lesson, 1, 4)?.optBoolean("correct", false) == true)
+            assertEquals("<<", lowerInput.text.toString())
+            assertEquals(2, field<Int>(activity, "completedExercises"))
+            assertEquals(1, field<Int>(activity, "currentPage"))
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("One distinct Enter advances to page three", 2,
+                field<Int>(activity, "currentPage"))
+            assertEquals(published.toString(),
+                LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+        }
+    }
+
     @Test fun lessonFourSecondChoiceRetryWorksAfterWrongAudioAndMappedPauseTouch() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)

@@ -37,6 +37,21 @@ internal class PuzzleEnterShortcut {
         touchedCheck = null
     }
 
+    /** A deliberately selected puzzle can override a stale editor focus belonging
+     * to another registered puzzle. The C++ compiler is never registered here.
+     */
+    fun selectedPuzzleOverridesFocusedEditor(focused: View?): Boolean {
+        if (focused !is EditText) return false
+        val selected = entries.lastOrNull {
+            it.check === touchedCheck && it.check.isEnabled &&
+                it.check.isAttachedToWindow && it.check.isShown
+        } ?: return false
+        return entries.any { entry ->
+            entry !== selected &&
+                (belongsTo(focused, entry.region) || belongsTo(focused, entry.check))
+        }
+    }
+
     /** The user's actual answer selection, not Android's incidental keyboard focus,
      * chooses which puzzle receives Enter. Narration controls never own this choice. */
     fun select(check: View) {
@@ -77,7 +92,8 @@ internal class PuzzleEnterShortcut {
             event.keyCode != KeyEvent.KEYCODE_NUMPAD_ENTER) return false
         if (!event.hasNoModifiers() || compilerFullscreen) return false
         if (focused is MathExpressionEditor ||
-            focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)) return false
+            focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused) &&
+                !selectedPuzzleOverridesFocusedEditor(focused)) return false
 
         val eligible = entries.filter {
             it.check.isAttachedToWindow && it.check.isShown &&
