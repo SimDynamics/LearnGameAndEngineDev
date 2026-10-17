@@ -14817,6 +14817,24 @@ class LessonActivity : AppCompatActivity() {
 
 
         val inlineResult = exerciseFeedbackText(blockIndex)
+        // Only multi-blank inline puzzles treat Tab as field navigation. The
+        // floating Tab and native Tab share CppCodeInputRules; no TAB character,
+        // autoindent marker, draft text or selection is rewritten by navigation.
+        if (inputs.size > 1) {
+            inputs.forEachIndexed { index, input ->
+                fun focusBlank(target: EditText) {
+                    if (!target.isEnabled || !target.isAttachedToWindow) return
+                    target.requestFocus()
+                    if (target.selectionStart < 0) target.setSelection(target.text.length)
+                    target.requestRectangleOnScreen(Rect(0, 0, target.width, target.height), true)
+                }
+                CppCodeInputRules.configureBlankNavigation(
+                    input,
+                    forward = { focusBlank(inputs[(index + 1) % inputs.size]) },
+                    backward = { focusBlank(inputs[(index - 1 + inputs.size) % inputs.size]) }
+                )
+            }
+        }
         inputs.forEach { PuzzleAnswerSubmit.install(it, checkButton) }
         fun currentInlineAnswers() = org.json.JSONArray(inputs.map { it.text.toString() })
         fun inlineIncorrectReview() = getString(R.string.exercise_wrong_spacing) + "\n" + getString(R.string.cpp_review_fill)

@@ -74,8 +74,11 @@ class CppLessonAnswerTabsDeviceTest {
     @Test fun authoredFillCodeAnswerRetainsNativeTabSelectionAndItsExistingEvaluation() =
         exercise("cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida", 2, 5, "fill_code")
 
-    @Test fun authoredInlineAnswersRetainNativeSingleLineTabsAndTheirExistingEvaluation() =
+    @Test fun authoredInlineBlanksUseTabNavigationWithoutModifyingTheirAnswers() =
         exercise("cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones", 2, 4, "inline_fill_code")
+
+    @Test fun theScreenshotCourseOneLessonThreeTwoBlanksUseTheSameTabNavigation() =
+        exercise("cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato", 5, 2, "inline_fill_code")
 
     private fun exercise(sourceId: String, sourcePage: Int, sourceBlock: Int, type: String) {
         val authored = LessonRepository.loadLessonJson(context, "programming", sourceId)
@@ -120,18 +123,35 @@ class CppLessonAnswerTabsDeviceTest {
                     assertTrue("The actual lesson input owns native TAB geometry", input is FreeScrollEditText)
                     input.showSoftInputOnFocus = false
                     assertTrue(input.requestFocus())
-                    for ((start, end) in listOf(1 to 5, 5 to 1)) {
+                    if (type == "inline_fill_code" && inputs.size > 1) {
+                        val following = inputs[(index + 1) % inputs.size]
+                        val preceding = inputs[(index - 1 + inputs.size) % inputs.size]
                         input.setText("prefix")
-                        input.setSelection(start, end)
+                        input.setSelection(3)
                         assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_TAB)))
                         assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_TAB)))
-                        assertEquals("p\tx", input.text.toString())
-                        assertEquals(2, input.selectionStart)
-                        assertEquals(2, input.selectionEnd)
-                        assertSame(input, activity.currentFocus)
+                        assertSame("Physical Tab focuses the next authored blank", following, activity.currentFocus)
+                        assertEquals("Tab must not change the source answer", "prefix", input.text.toString())
+                        assertEquals("The original caret stays intact", 3, input.selectionStart)
+                        assertTrue(following.dispatchKeyEvent(KeyEvent(0, 0,
+                            KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_TAB, 0, KeyEvent.META_SHIFT_ON)))
+                        assertTrue(following.dispatchKeyEvent(KeyEvent(0, 0,
+                            KeyEvent.ACTION_UP, KeyEvent.KEYCODE_TAB, 0, KeyEvent.META_SHIFT_ON)))
+                        assertSame("Shift+Tab focuses the previous blank", input, activity.currentFocus)
+                    } else {
+                        for ((start, end) in listOf(1 to 5, 5 to 1)) {
+                            input.setText("prefix")
+                            input.setSelection(start, end)
+                            assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_TAB)))
+                            assertTrue(input.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_TAB)))
+                            assertEquals("p\tx", input.text.toString())
+                            assertEquals(2, input.selectionStart)
+                            assertEquals(2, input.selectionEnd)
+                            assertSame(input, activity.currentFocus)
+                        }
                     }
                     val answer = answers.getString(if (type == "fill_code") 0 else index)
-                    input.setText("\t$answer\t")
+                    input.setText(if (type == "fill_code") "\t$answer\t" else answer)
                 }
                 val check = descendants(activity.window.decorView).filterIsInstance<Button>()
                     .single { it.text.toString() == activity.getString(R.string.exercise_check) }

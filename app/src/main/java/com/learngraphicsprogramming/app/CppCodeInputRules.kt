@@ -13,11 +13,30 @@ import android.widget.EditText
  * de borrado, sustituciones del IME, saltos sobre cierres e indentación.
  */
 internal object CppCodeInputRules {
-    private class ExplicitTab(val insert: () -> Unit)
+    /** Both the physical key and the floating Tab button use this same action. */
+    private class ExplicitTab(
+        val insert: () -> Unit,
+        var nextField: (() -> Unit)? = null,
+        var previousField: (() -> Unit)? = null
+    ) {
+        fun press(reverse: Boolean = false) {
+            val move = if (reverse) previousField else nextField
+            if (move != null) move() else if (!reverse) insert()
+        }
+    }
+
+    /** Only an authored exercise with multiple independent blanks opts into navigation.
+     * The compiler, regular code answers and indentation history are unchanged. */
+    fun configureBlankNavigation(input: EditText, forward: () -> Unit, backward: () -> Unit) {
+        val tab = input.getTag(R.id.cpp_editor_input_rules) as? ExplicitTab
+            ?: error("C++ input rules must be installed before configuring its Tab behavior")
+        tab.nextField = forward
+        tab.previousField = backward
+    }
 
     fun insertTab(input: EditText) {
         val action = input.getTag(R.id.cpp_editor_input_rules) as? ExplicitTab
-        if (action != null) action.insert() else replaceSelectionWithTab(input)
+        if (action != null) action.press() else replaceSelectionWithTab(input)
     }
 
     private fun replaceSelectionWithTab(input: EditText) {
@@ -98,11 +117,18 @@ internal object CppCodeInputRules {
         }
         input.setTag(R.id.cpp_editor_input_rules, explicitTab)
         val hardwareKey: (Int, KeyEvent) -> Boolean = { keyCode, event ->
-            if (keyCode != KeyEvent.KEYCODE_TAB || !event.hasNoModifiers() ||
+            val backward = event.isShiftPressed && !event.isCtrlPressed &&
+                !event.isAltPressed && !event.isMetaPressed
+            val plain = event.hasNoModifiers()
+            val navigableReverse = backward && explicitTab.previousField != null
+            if (keyCode != KeyEvent.KEYCODE_TAB || !(plain || navigableReverse) ||
                 !input.isEnabled || input.keyListener == null ||
                 (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)) false
             else {
-                if (event.action == KeyEvent.ACTION_DOWN) explicitTab.insert()
+                if (event.action == KeyEvent.ACTION_DOWN &&
+                    (explicitTab.nextField == null || event.repeatCount == 0)) {
+                    explicitTab.press(reverse = navigableReverse)
+                }
                 true
             }
         }
