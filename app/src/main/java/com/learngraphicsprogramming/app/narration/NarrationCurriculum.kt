@@ -46,7 +46,8 @@ internal object NarrationCurriculum {
     fun sentences(context: Context): Sequence<Sentence> = pages(context).flatMap { it.sentences.asSequence() }
 
     /** The existing manifests remain the sole source of route/course/page order. */
-    fun pages(context: Context, routeFilter: String? = null, courseFilter: String? = null): Sequence<Page> = sequence {
+    fun pages(context: Context, routeFilter: String? = null, courseFilter: String? = null,
+              requireComplete: Boolean = false): Sequence<Page> = sequence {
         fun checkCancelled() {
             if (Thread.currentThread().isInterrupted) throw InterruptedException("Curriculum preparation cancelled")
         }
@@ -63,32 +64,47 @@ internal object NarrationCurriculum {
             val courses = runCatching { CourseRepository.loadCourses(context, route) }
                 .onFailure { unavailable(context, "Unavailable curriculum route", it,
                     mapOf("route" to route)) }
-                .getOrDefault(emptyList()).sortedBy { it.number }
+                .getOrElse { failure ->
+                        if (requireComplete) throw failure
+                        emptyList()
+                    }.sortedBy { it.number }
             for (course in courses.filter { courseFilter == null || it.id == courseFilter }) {
                 checkCancelled()
                 val units = runCatching { UnitRepository.loadUnits(context, route, course.id) }
                     .onFailure { unavailable(context, "Unavailable curriculum course", it,
                         mapOf("route" to route, "course" to course.id)) }
-                    .getOrDefault(emptyList()).sortedBy { it.number }
+                    .getOrElse { failure ->
+                        if (requireComplete) throw failure
+                        emptyList()
+                    }.sortedBy { it.number }
                 for (unit in units) {
                     checkCancelled()
                     val lessons = runCatching {
                         LessonRepository.loadLessons(context, route, course.id, unit.id)
                     }.onFailure { unavailable(context, "Unavailable curriculum unit", it,
                         mapOf("route" to route, "course" to course.id, "unit" to unit.id)) }
-                        .getOrDefault(emptyList()).sortedBy { it.number }
+                        .getOrElse { failure ->
+                        if (requireComplete) throw failure
+                        emptyList()
+                    }.sortedBy { it.number }
                     for (lesson in lessons) {
                         checkCancelled()
                         val parsed = runCatching {
                             LessonRepository.loadLessonJson(context, route, lesson.id)
                         }
                         if (parsed.isFailure) {
-                            unavailable(context, "Skipping unavailable lesson", requireNotNull(parsed.exceptionOrNull()),
+                            val failure = requireNotNull(parsed.exceptionOrNull())
+                            unavailable(context, "Skipping unavailable lesson", failure,
                                 mapOf("lesson" to lesson.id))
+                            if (requireComplete) throw failure
                             continue
                         }
                         val json = parsed.getOrThrow()
-                        val pages = json.optJSONArray("pages") ?: continue
+                        val pages = json.optJSONArray("pages")
+                        if (pages == null) {
+                            if (requireComplete) error("Lesson pages unavailable: $route/${lesson.id}")
+                            continue
+                        }
                         for (pageIndex in 0 until pages.length()) {
                             checkCancelled()
                             val language = NarrationLanguage.forLesson(json, pageIndex, preference.language)

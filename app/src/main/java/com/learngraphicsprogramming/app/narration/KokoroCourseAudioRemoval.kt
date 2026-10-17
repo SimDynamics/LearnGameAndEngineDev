@@ -47,7 +47,9 @@ internal object KokoroCourseAudioRemoval {
         val references = linkedMapOf<KokoroCourseRef, MutableSet<String>>()
         // Scan both learning paths, never just the selected list: a common
         // sentence in another course must retain its physical audio file.
-        for (page in NarrationCurriculum.pages(app)) {
+        // The report tolerates unpublished lessons, but safe ownership deletion
+        // must not mistake an incomplete scan for proof that a hash is exclusive.
+        for (page in NarrationCurriculum.pages(app, requireComplete = true)) {
             check()
             val owner = KokoroCourseRef(page.routeId, page.courseId)
             val keys = references.getOrPut(owner) { linkedSetOf() }
