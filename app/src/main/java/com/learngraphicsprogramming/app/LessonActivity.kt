@@ -8237,8 +8237,11 @@ class LessonActivity : AppCompatActivity() {
             "${currentParts[0]}__${currentParts[1]}"
 
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            // The mathematics route used to bypass per-course learning-flow preferences
+            // and advance within a unit even when automaticBetweenLessons was disabled.
             val next = NavigationRepository.getNextLessonInUnit(this, currentRouteId, currentLessonId)
-            if (next != null) openNextLesson(next)
+            val flow = LearningFlowSettingsRepository.getSettingsForCourse(this, currentCourseId)
+            if (next != null && flow.automaticBetweenLessons) openNextLesson(next)
             else returnToContainingMathUnit(currentCourseId, currentUnitId)
             return
         }
