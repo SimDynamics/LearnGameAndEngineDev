@@ -32,26 +32,27 @@ class LessonPageAdvancePolicyTest {
             gate.up("5/6", key, 1100, 1160, canceled = false))
     }
 
-    @Test fun firstEnterAdvancesExactlyOnePageAndRapidSecondCannotFinishLesson() {
+    @Test fun onePressAdvancesOnePageAndAnImmediateNewPressFinishesTheNextPage() {
         val gate = LessonPageAdvanceEnterGate()
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
             gate.down("5/6", key, 2000, 2000, 0, true, false))
+        // Held Enter is a repeat, never a second navigation command.
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
             gate.down("5/6", key, 2000, 2040, 1, true, false))
         assertEquals(LessonPageAdvanceEnterGate.Route.NAVIGATE,
             gate.up("5/6", key, 2000, 2100, false))
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
             gate.up("6/6", key, 2000, 2100, false))
+        // A duplicated DOWN/UP from the first press must not finish page 6.
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("6/6", key, 2200, 2200, 0, true, false))
+            gate.down("6/6", key, 2000, 2110, 0, true, false))
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("6/6", key, 2200, 2270, false))
-        // Once the new page has settled a fresh deliberate key press works.
-        val after = 2100 + LessonPageAdvanceEnterGate.PAGE_TRANSITION_GUARD_MS + 1L
+            gate.up("6/6", key, 2000, 2150, false))
+        // A genuinely new press works even before 650 ms. No artificial delay.
         assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("6/6", key, after, after, 0, true, false))
+            gate.down("6/6", key, 2160, 2160, 0, true, false))
         assertEquals(LessonPageAdvanceEnterGate.Route.NAVIGATE,
-            gate.up("6/6", key, after, after + 45, false))
+            gate.up("6/6", key, 2160, 2200, false))
     }
 
     @Test fun editorOwnsEnterRegardlessOfExerciseCompletion() {

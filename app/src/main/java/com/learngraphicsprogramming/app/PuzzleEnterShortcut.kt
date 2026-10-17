@@ -66,16 +66,18 @@ internal class PuzzleEnterShortcut {
             focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)) return false
 
         val available = entries.filter { it.check.isAttachedToWindow && it.check.isShown }
+        if (available.isEmpty()) return false
         val focusedPuzzle = available.lastOrNull {
             belongsTo(focused, it.region) || belongsTo(focused, it.check)
         }
-        if (focusedPuzzle == null && touchedCheck == null &&
-            focused?.isClickable == true) return false
+        // A selected response wins over an unrelated focused button (e.g. Run in
+        // the C++ lab). Never send Enter to that button while a puzzle is pending.
         val chosen = focusedPuzzle
             ?: available.lastOrNull { it.check === touchedCheck }
-            ?: available.singleOrNull()
-            ?: return false
-        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
+            ?: available.filter { it.check.isEnabled && it.check.isClickable }.singleOrNull()
+        // No valid selection, or multiple equally eligible puzzles: do not
+        // guess and accidentally consume a life on an unrelated answer.
+        if (chosen != null && event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
             chosen.check.isEnabled && chosen.check.isClickable) chosen.check.performClick()
         return true
     }

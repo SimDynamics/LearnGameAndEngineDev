@@ -400,16 +400,15 @@ class PuzzleLabelsEnterReadingDeviceTest {
             assertEquals(6, field<Int>(activity, "totalPages"))
             assertTrue("The last page has no puzzles, so Finish is enabled",
                 activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
-            // Simulate another very quick full press, including a separate UP.
-            // It must not leave the lesson even though the new page is already ready.
+            // The same physical press cannot re-enter the new page, even when its
+            // original down/up events are replayed after navigation.
             val gate = field<Any>(activity, "lessonAdvanceEnterGate")
-            val last = field<Long>(gate, "lastNavigationTime")
-            val t = last + 100L
-            assertTrue(activity.dispatchKeyEvent(KeyEvent(t, t, KeyEvent.ACTION_DOWN,
-                KeyEvent.KEYCODE_ENTER, 0)))
-            assertTrue(activity.dispatchKeyEvent(KeyEvent(t, t + 35L, KeyEvent.ACTION_UP,
-                KeyEvent.KEYCODE_ENTER, 0)))
-            assertEquals("Rapid follow-up Enter must not skip page 6", 5,
+            val oldDownTime = requireNotNull(field<Pair<Int, Long>?>(gate, "lastNavigationKey")).second
+            assertTrue(activity.dispatchKeyEvent(KeyEvent(oldDownTime, oldDownTime + 100,
+                KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0)))
+            assertTrue(activity.dispatchKeyEvent(KeyEvent(oldDownTime, oldDownTime + 135,
+                KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER, 0)))
+            assertEquals("Replayed key press must not skip page 6", 5,
                 field<Int>(activity, "currentPage"))
         }
         assertEquals("No lesson content is changed by keyboard navigation", published.toString(),

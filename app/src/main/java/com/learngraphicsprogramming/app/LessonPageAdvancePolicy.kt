@@ -11,8 +11,8 @@ internal object LessonPageAdvancePolicy {
  *
  * Never reconsider the action on UP: checking the last puzzle on DOWN can
  * enable Continue before UP arrives. Likewise, a release from an earlier page
- * cannot navigate the newly rendered page. The short transition guard prevents
- * a rapid double press from skipping a newly displayed page.
+ * cannot navigate the newly rendered page. An independent new DOWN/UP pair
+ * may navigate immediately; holding or replaying the same physical press may not.
  */
 internal class LessonPageAdvanceEnterGate {
     enum class Route { NAVIGATE, PUZZLE, EDITOR, CONSUME }
@@ -25,7 +25,6 @@ internal class LessonPageAdvanceEnterGate {
     )
 
     private var pending: Press? = null
-    private var lastNavigationTime: Long? = null
     private var lastNavigationKey: Pair<Int, Long>? = null
 
     fun down(
@@ -46,13 +45,11 @@ internal class LessonPageAdvanceEnterGate {
         if (held != null && held.keyCode == keyCode && held.downTime == downTime)
             return if (held.route == Route.NAVIGATE) Route.CONSUME else held.route
 
-        val tooSoon = lastNavigationTime?.let {
-            eventTime >= it && eventTime - it < PAGE_TRANSITION_GUARD_MS
-        } == true || lastNavigationKey == (keyCode to downTime)
+        val sameCompletedPress = lastNavigationKey == (keyCode to downTime)
 
         val route = when {
             editorOwnsEnter -> Route.EDITOR
-            canNavigate -> if (tooSoon) Route.CONSUME else Route.NAVIGATE
+            canNavigate -> if (sameCompletedPress) Route.CONSUME else Route.NAVIGATE
             else -> Route.PUZZLE
         }
         pending = Press(page, keyCode, downTime, route)
@@ -65,13 +62,9 @@ internal class LessonPageAdvanceEnterGate {
         pending = null
         if (press.page != page || canceled) return Route.CONSUME
         if (press.route == Route.NAVIGATE) {
-            lastNavigationTime = eventTime
             lastNavigationKey = keyCode to downTime
         }
         return press.route
     }
 
-    companion object {
-        const val PAGE_TRANSITION_GUARD_MS = 650L
-    }
 }
