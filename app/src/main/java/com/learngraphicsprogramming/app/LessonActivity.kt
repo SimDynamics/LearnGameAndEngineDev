@@ -8099,7 +8099,15 @@ class LessonActivity : AppCompatActivity() {
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            puzzleEnterShortcut.trackTouch(event.rawX, event.rawY)
+            // LDPlayer's one-touch Pause mapping hits the floating narration
+            // overlay, which may sit directly above a different puzzle.
+            // Never let a tap on the reader select a puzzle hidden beneath it.
+            val narrationOverlay = findViewById<View>(R.id.lessonNarrationControls)
+            val touchedReader = narrationOverlay?.isShown == true && Rect().let { bounds ->
+                narrationOverlay.getGlobalVisibleRect(bounds) &&
+                    bounds.contains(event.rawX.toInt(), event.rawY.toInt())
+            }
+            if (!touchedReader) puzzleEnterShortcut.trackTouch(event.rawX, event.rawY)
         }
 
         /*
