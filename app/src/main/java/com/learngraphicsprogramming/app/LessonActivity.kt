@@ -8038,7 +8038,9 @@ class LessonActivity : AppCompatActivity() {
             return super.dispatchKeyEvent(event)
         }
 
-        val focused = currentFocus
+        // The previous page may have detached a focused compiler EditText.
+        // Only an attached, visible editor in the current page owns this Enter.
+        val focused = currentFocus?.takeIf { it.isAttachedToWindow && it.isShown }
         val editorOwnsEnter = compilerFullscreenActive || exerciseFullscreenActive ||
             focused is MathExpressionEditor ||
             focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
