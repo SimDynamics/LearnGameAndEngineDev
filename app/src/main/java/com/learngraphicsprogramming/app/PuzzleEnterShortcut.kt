@@ -37,13 +37,22 @@ internal class PuzzleEnterShortcut {
         touchedCheck = null
     }
 
+    /** The user's actual answer selection, not Android's incidental keyboard focus,
+     * chooses which puzzle receives Enter. Narration controls never own this choice. */
+    fun select(check: View) {
+        if (entries.any { it.check === check }) touchedCheck = check
+    }
+
     fun trackTouch(rawX: Float, rawY: Float) {
         fun contains(view: View): Boolean {
             val rect = Rect()
             return view.isShown && view.getGlobalVisibleRect(rect) &&
                 rect.contains(rawX.toInt(), rawY.toInt())
         }
-        touchedCheck = entries.lastOrNull { contains(it.region) || contains(it.check) }?.check
+        // A one-touch LDPlayer mapping for Pause/Resume touches outside all puzzles.
+        // It must NOT discard the student's previous deliberate puzzle selection.
+        entries.lastOrNull { contains(it.region) || contains(it.check) }
+            ?.check?.let(::select)
     }
 
     private fun belongsTo(view: View?, ancestor: View): Boolean {
@@ -70,10 +79,11 @@ internal class PuzzleEnterShortcut {
                 it.check.isEnabled && it.check.isClickable
         }
         if (eligible.isEmpty()) return entries.isNotEmpty()
-        val chosen = eligible.lastOrNull {
-            belongsTo(focused, it.region) || belongsTo(focused, it.check)
-        } ?: eligible.lastOrNull { it.check === touchedCheck }
-          ?: eligible.singleOrNull()
+        val chosen = eligible.lastOrNull { it.check === touchedCheck }
+            ?: eligible.lastOrNull {
+                belongsTo(focused, it.region) || belongsTo(focused, it.check)
+            }
+            ?: eligible.singleOrNull()
         // Only a selected/active or unambiguous puzzle is submitted. We do not
         // guess among multiple prepared answers and consume students' attempts.
         if (chosen != null && event.action == KeyEvent.ACTION_DOWN &&

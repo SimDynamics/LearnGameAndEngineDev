@@ -26,6 +26,28 @@ class LessonPageAdvancePolicyTest {
         assertEquals(skip, gate.up("lesson/5", enter, 900L, 1040L, false))
     }
 
+    @Test fun virtualEnterCanReuseTheExactTimestampAfterEachRelease() {
+        val gate = LessonPageAdvanceEnterGate()
+        val sameClock = 500L
+        assertEquals(puzzle, gate.down("lesson/p1", enter, sameClock, sameClock, 0, false, false))
+        assertEquals(skip, gate.up("lesson/p1", enter, sameClock, sameClock, false))
+        // LDPlayer may inject a new synthetic key event with the same time values.
+        // The prior implementation permanently swallowed this second press.
+        assertEquals(puzzle, gate.down("lesson/p2", enter, sameClock, sameClock, 0, false, false))
+        assertEquals(skip, gate.up("lesson/p2", enter, sameClock, sameClock, false))
+        assertEquals(go, gate.down("lesson/p2", enter, sameClock, sameClock, 0, true, false))
+        assertEquals(skip, gate.up("lesson/p3", enter, sameClock, sameClock, false))
+    }
+
+    @Test fun duplicatedDownInsideOnePressStillCannotDoubleSubmit() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(puzzle, gate.down("lesson/p2", enter, 42L, 43L, 0, false, false))
+        assertEquals(skip, gate.down("lesson/p2", enter, 42L, 43L, 0, false, false))
+        assertEquals(skip, gate.down("lesson/p2", enter, 42L, 45L, 1, true, false))
+        assertEquals(skip, gate.up("lesson/p2", enter, 42L, 46L, false))
+        assertEquals(go, gate.down("lesson/p2", enter, 42L, 43L, 0, true, false))
+    }
+
     @Test fun secondDistinctPressActsImmediatelyWithoutWaiting650msOrChangingDownTime() {
         val gate = LessonPageAdvanceEnterGate()
         assertEquals(go, gate.down("lesson/5", enter, 0L, 1000L, 0, true, false))

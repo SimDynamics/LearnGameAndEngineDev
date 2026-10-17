@@ -13673,6 +13673,9 @@ class LessonActivity : AppCompatActivity() {
                 radioGroup.checkedRadioButtonId != -1 &&
                         !answeredCorrectly
 
+            // A response is the authoritative puzzle choice. Native RadioButton
+            // focus may be stale after LDPlayer maps Pause to a synthetic touch.
+            if (button.isEnabled) puzzleEnterShortcut.select(button)
             updateResetButton()
 
             saveCurrentSelectionState()

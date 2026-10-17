@@ -14,9 +14,11 @@ internal object LessonPageAdvancePolicy {
  */
 internal class LessonPageAdvanceEnterGate {
     enum class Route { NAVIGATE, PUZZLE, EDITOR, CONSUME }
-    private data class Press(val page: String, val keyCode: Int, val route: Route)
+    private data class Press(
+        val page: String, val keyCode: Int, val downTime: Long,
+        val eventTime: Long, val route: Route
+    )
     private var pending: Press? = null
-    private var lastDownIdentity: Triple<Int, Long, Long>? = null
 
     fun down(
         page: String,
@@ -31,24 +33,26 @@ internal class LessonPageAdvanceEnterGate {
             return if (pending?.route == Route.EDITOR && pending?.keyCode == keyCode) Route.EDITOR
                 else Route.CONSUME
         }
-        val identity = Triple(keyCode, downTime, eventTime)
-        // A repeated dispatch of the SAME native event must never trigger twice.
-        // Distinct presses with the same downTime are allowed, a real LDPlayer case.
-        if (eventTime > 0 && lastDownIdentity == identity) return Route.CONSUME
-        lastDownIdentity = identity
+        // A duplicate DOWN while the key is still held must not run another
+        // action. After its UP, even a virtual keyboard reusing identical time
+        // stamps represents a fresh deliberate press.
+        val previous = pending
+        if (previous != null && previous.keyCode == keyCode &&
+            previous.downTime == downTime && previous.eventTime == eventTime)
+            return Route.CONSUME
         val route = when {
             editorOwnsEnter -> Route.EDITOR
             canNavigate -> Route.NAVIGATE
             else -> Route.PUZZLE
         }
-        pending = Press(page, keyCode, route)
+        pending = Press(page, keyCode, downTime, eventTime, route)
         return route
     }
 
     @Suppress("UNUSED_PARAMETER")
     fun up(page: String, keyCode: Int, downTime: Long, eventTime: Long, canceled: Boolean): Route {
         val press = pending ?: return Route.CONSUME
-        if (press.keyCode != keyCode) return Route.CONSUME
+        if (press.keyCode != keyCode || press.downTime != downTime) return Route.CONSUME
         pending = null
         // The action already ran on DOWN. Never execute another action on UP,
         // even if the puzzle was just solved or the Activity opened the next page.
