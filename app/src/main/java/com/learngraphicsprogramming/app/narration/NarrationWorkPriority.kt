@@ -5,43 +5,66 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Central arbitration for *optional* offline narration generation.
- * Live Kokoro playback, compilation and graphics always win.
- * Each interactive lease must be closed in finally or on lifecycle pause.
+ * Central arbitration for optional background narration.
+ * Interactive playback, compilation and graphics always take precedence.
  */
 object NarrationWorkPriority {
     private val interactiveCount = AtomicInteger()
     private val interrupts = CopyOnWriteArrayList<() -> Unit>()
+    private val leaseLock = Any()
+    // Once a reader enters, this maintenance attempt may never resume deletion.
+    private var maintenanceActive = false
+    private var maintenancePreempted = false
 
     val isBusy: Boolean get() = interactiveCount.get() > 0
 
     fun beginInteractive(): AutoCloseable {
-        interactiveCount.incrementAndGet()
-        // Cancel any background ONNX Run immediately; it restarts from the
-        // first missing sentence using the persistent WAV cache.
+        synchronized(leaseLock) {
+            interactiveCount.incrementAndGet()
+            if (maintenanceActive) maintenancePreempted = true
+        }
         interrupts.forEach { listener -> runCatching { listener() } }
         val closed = AtomicBoolean()
         return AutoCloseable {
-            if (closed.compareAndSet(false, true)) interactiveCount.decrementAndGet()
+            if (closed.compareAndSet(false, true)) {
+                synchronized(leaseLock) { interactiveCount.decrementAndGet() }
+            }
         }
+    }
+
+    fun beginMaintenanceIfIdle(): AutoCloseable? {
+        synchronized(leaseLock) {
+            if (interactiveCount.get() != 0 || maintenanceActive) return null
+            maintenanceActive = true
+            maintenancePreempted = false
+            interactiveCount.incrementAndGet()
+        }
+        // Preempt background generation without keeping the bookkeeping lock.
+        interrupts.forEach { listener -> runCatching { listener() } }
+        val closed = AtomicBoolean()
+        return AutoCloseable {
+            if (closed.compareAndSet(false, true)) {
+                synchronized(leaseLock) {
+                    maintenanceActive = false
+                    interactiveCount.decrementAndGet()
+                }
+            }
+        }
+    }
+
+    val isMaintenanceExclusive: Boolean get() = synchronized(leaseLock) {
+        maintenanceActive && !maintenancePreempted && interactiveCount.get() == 1
     }
 
     /**
-     * Only an explicit user-confirmed cache maintenance operation uses this.
-     * Refuse while the live reader or another interactive task is active,
-     * and preempt optional background synthesis before touching any file.
+     * Hold the short critical section for one confirmed, verified deletion.
+     * A reader cannot acquire a lease midway through removing that file.
      */
-    fun beginMaintenanceIfIdle(): AutoCloseable? {
-        if (!interactiveCount.compareAndSet(0, 1)) return null
-        interrupts.forEach { listener -> runCatching { listener() } }
-        val closed = AtomicBoolean()
-        return AutoCloseable {
-            if (closed.compareAndSet(false, true)) interactiveCount.decrementAndGet()
-        }
+    internal fun runMaintenanceStep(action: () -> Unit): Boolean = synchronized(leaseLock) {
+        if (!maintenanceActive || maintenancePreempted || interactiveCount.get() != 1) return false
+        action()
+        true
     }
-
-    /** Abort cache maintenance if a reader becomes active during deletion. */
-    val isMaintenanceExclusive: Boolean get() = interactiveCount.get() == 1
 
     fun onPreempt(listener: () -> Unit): AutoCloseable {
         interrupts.add(listener)

@@ -257,12 +257,20 @@ internal object KokoroNarrationCache {
         for (hash in exclusiveKeys) for (extension in listOf("ogg", "wav")) {
             if (!permit()) return ExplicitRemoval(deleted, bytes, failed, true)
             val file = File(directory, "$hash.$extension")
-            if (!validatedAudio(file)) continue
-            val length = file.length()
-            if (file.delete()) {
-                deleted++
-                bytes += length
-            } else failed++
+            var interruptedWithinStep = false
+            val exclusive = NarrationWorkPriority.runMaintenanceStep {
+                if (!permit()) {
+                    interruptedWithinStep = true
+                } else if (validatedAudio(file)) {
+                    val length = file.length()
+                    if (file.delete()) {
+                        deleted++
+                        bytes += length
+                    } else failed++
+                }
+            }
+            if (!exclusive || interruptedWithinStep)
+                return ExplicitRemoval(deleted, bytes, failed, true)
         }
         return ExplicitRemoval(deleted, bytes, failed, false)
     }

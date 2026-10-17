@@ -63,13 +63,40 @@ class NarrationWorkPriorityTest {
             } finally {
                 reader.close()
             }
-            assertTrue(NarrationWorkPriority.isMaintenanceExclusive)
+            assertFalse("A preempted deletion must never resume under its old lease",
+                NarrationWorkPriority.isMaintenanceExclusive)
         } finally {
             maintenance?.close()
             maintenance?.close()
             callback.close()
         }
         assertFalse(NarrationWorkPriority.isBusy)
+    }
+
+    @Test fun maintenanceFilesRequireAnUninterruptedExclusiveLease() {
+        var filesTouched = 0
+        assertFalse(NarrationWorkPriority.runMaintenanceStep { filesTouched++ })
+        val maintenance = requireNotNull(NarrationWorkPriority.beginMaintenanceIfIdle())
+        try {
+            assertTrue(NarrationWorkPriority.runMaintenanceStep { filesTouched++ })
+            val reader = NarrationWorkPriority.beginInteractive()
+            try {
+                assertFalse(NarrationWorkPriority.runMaintenanceStep { filesTouched++ })
+            } finally {
+                reader.close()
+            }
+            assertFalse(NarrationWorkPriority.runMaintenanceStep { filesTouched++ })
+            assertEquals(1, filesTouched)
+        } finally {
+            maintenance.close()
+        }
+        val newMaintenance = requireNotNull(NarrationWorkPriority.beginMaintenanceIfIdle())
+        try {
+            assertTrue(NarrationWorkPriority.runMaintenanceStep { filesTouched++ })
+            assertEquals(2, filesTouched)
+        } finally {
+            newMaintenance.close()
+        }
     }
 
     @Test fun closingOneLeaseTwiceDoesNotReleaseAnotherInteractiveOperation() {
