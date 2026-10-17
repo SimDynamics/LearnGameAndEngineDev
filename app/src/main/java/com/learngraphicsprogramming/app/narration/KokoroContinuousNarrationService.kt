@@ -210,6 +210,11 @@ internal class KokoroContinuousNarrationService : Service() {
                     }
                     KokoroBackgroundNarrationWorker.Outcome.PAUSED -> {
                         KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration paused (settings/storage)")
+                        val full = runCatching {
+                            !NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(applicationContext),
+                                4L * NarrationStorageBudget.MIB)
+                        }.getOrDefault(false)
+                        if (full) KokoroNarrationSessionMonitor.resumeWhenStorageAvailable(applicationContext)
                         break
                     }
                     KokoroBackgroundNarrationWorker.Outcome.UNAVAILABLE -> {

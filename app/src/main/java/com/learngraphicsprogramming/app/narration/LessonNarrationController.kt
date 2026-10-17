@@ -39,12 +39,14 @@ class LessonNarrationController(
     private val onState: (Boolean) -> Unit,
     private val onError: (String) -> Unit,
     private val onProgress: (NarrationPlaybackProgress) -> Unit = {},
-    private val trackWords: Boolean = false
+    private val trackWords: Boolean = false,
+    private val onNotice: (String) -> Unit = onError
 ) {
     private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
     private fun s(id: Int, vararg args: Any): String = uiContext.getString(id, *args)
     private class UiFailure(val messageRes: Int, vararg val arguments: Any) : IllegalStateException()
     private class PassiveStoragePause : IllegalStateException()
+    private class StorageBudgetReached : IllegalStateException()
     private fun errorMessage(error: Exception, fallback: Int) =
         if (error is UiFailure) s(error.messageRes, *error.arguments) else s(fallback)
     private val appContext = context.applicationContext
@@ -107,6 +109,7 @@ class LessonNarrationController(
     private val pending = mutableSetOf<Int>()
     private val watchdogs = mutableMapOf<String, Runnable>()
     private var reportedFallback = false
+    private var reportedStorageStatus = false
     private var warnedNetwork = false
     private var playbackGate: NarrationExerciseGate? = null
     private var correctExercises = emptySet<Int>()
@@ -204,7 +207,8 @@ class LessonNarrationController(
     }
 
     private fun prepareWordAlignment(request: Synthesis) {
-        if (!trackWords || request.settings.engine == NarrationEngine.ANDROID || !isCurrent(request)) return
+        if (!trackWords || request.usedAndroidTts ||
+            request.settings.engine == NarrationEngine.ANDROID || !isCurrent(request)) return
         val guide = requestFeedback(request)
         val identity = activePageIdentity
         val key = resumeKey
@@ -335,6 +339,9 @@ class LessonNarrationController(
     private var systemEngine: String? = null
     private var voices: List<Voice> = emptyList()
     private val ttsPending = linkedMapOf<String, Synthesis>()
+    // This is a notification-only probe, never a request to synthesize a page.
+    // Kept on the worker thread and invalidated by the request generation.
+    private var storageVoiceProbe: Synthesis? = null
     private val removeResourceListener = NarrationResourceEvents.addListener {
         if (!closed) stopInternal(releaseNeuralResources = true)
     }
@@ -347,10 +354,16 @@ class LessonNarrationController(
         masterPreferences.registerOnSharedPreferenceChangeListener(masterListener)
     }
 
-    private data class Segment(val text: String, var file: File? = null, var duration: Int? = null)
+    private data class Segment(
+        val text: String,
+        var file: File? = null,
+        var duration: Int? = null,
+        var usedAndroidTts: Boolean = false
+    )
     private data class Synthesis(
         val generation: Long, val configuration: Long, val index: Int, val text: String,
-        val file: File, val settings: NarrationSettings, val feedbackToken: Long? = null
+        val file: File, val settings: NarrationSettings, val feedbackToken: Long? = null,
+        val usedAndroidTts: Boolean = false, val storageFallback: Boolean = false
     ) {
         val id = "narration_" + generation + "_" + configuration + "_" + index +
             (feedbackToken?.let { "_guide_$it" } ?: "")
@@ -857,6 +870,7 @@ class LessonNarrationController(
                     val previousFile = segment.file
                     segment.file = null
                     segment.duration = null
+                    segment.usedAndroidTts = false
                     if (previousFile != null) worker.post { deleteTemporaryAudio(previousFile) }
                 }
             }
@@ -943,7 +957,7 @@ class LessonNarrationController(
         if (closed || !NarrationSettingsRepository.isEnabled(appContext) || next !in parts.indices) return
         val segment = parts[next]
         if (segment.file?.isFile == true) {
-            if (feedback != null && next == feedback.index && trackWords) {
+            if (feedback != null && next == feedback.index && trackWords && !segment.usedAndroidTts) {
                 prepareWordAlignment(Synthesis(generation, configuration, next, segment.text,
                     requireNotNull(segment.file), settings, feedback.token))
             }
@@ -987,13 +1001,21 @@ class LessonNarrationController(
                     return
                 }
             }
+            var storageFallback = false
             if (request.settings.engine != NarrationEngine.ANDROID) {
-                if (!playing && !NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(appContext),
-                        4L * NarrationStorageBudget.MIB)) {
-                    deferPassiveRequest(request)
-                    return
+                // Persistent cache hits above always win, even when the user's
+                // configured limit has been reached. Never delete existing audio.
+                when (NarrationStorageBudget.onCacheMiss(
+                    NarrationStorageBudget.snapshot(appContext), playing)) {
+                    NarrationStorageBudget.CacheMissAction.KOKORO -> Unit
+                    NarrationStorageBudget.CacheMissAction.WAIT_FOR_SPACE -> {
+                        probeStorageTts(request)
+                        deferPassiveRequest(request)
+                        return
+                    }
+                    NarrationStorageBudget.CacheMissAction.ANDROID_TTS -> storageFallback = true
                 }
-                if (!playing && NarrationWorkPriority.isBusy) {
+                if (!storageFallback && !playing && NarrationWorkPriority.isBusy) {
                     // Passive page preparation yields to a compiler/graphics operation.
                     // Keep the request and durable page queue; retry without switching engines.
                     worker.postDelayed({ synthesize(request) }, 250L)
@@ -1001,11 +1023,11 @@ class LessonNarrationController(
                 }
                 // Cache misses that belong to the visible lesson outrank
                 // unrelated offline curriculum generation.
-                foregroundPreparation = NarrationWorkPriority.beginInteractive()
+                if (!storageFallback) foregroundPreparation = NarrationWorkPriority.beginInteractive()
             }
             val parent = request.file.parentFile ?: error("Directorio temporal no disponible")
             if (!parent.isDirectory && !parent.mkdirs()) error("No se pudo crear el audio temporal")
-            if (request.settings.engine != NarrationEngine.ANDROID) {
+            if (request.settings.engine != NarrationEngine.ANDROID && !storageFallback) {
                 try {
                     val root = models.directory()
                     if (!File(root, "model.onnx").isFile) throw UiFailure(R.string.narration_model_missing)
@@ -1035,10 +1057,13 @@ class LessonNarrationController(
                             }
                             if (!isCurrent(request)) throw InterruptedException("Se canceló la narración")
                             NarrationWavWriter.writeChunks(request.file, audioParts)
-                            if (!playing && !NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(appContext),
+                            if (!NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(appContext),
                                     request.file.length())) {
+                                // Only the uncommitted temporary audio is discarded.
+                                // Completed recordings in the persistent cache are immutable.
                                 deleteTemporaryAudio(request.file)
-                                throw PassiveStoragePause()
+                                if (playing) throw StorageBudgetReached()
+                                else throw PassiveStoragePause()
                             }
                             KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Page sentence generated",
                                 fields = mapOf("index" to request.index, "language" to request.settings.language.tag,
@@ -1053,8 +1078,12 @@ class LessonNarrationController(
                     generated(request.copy(file = ready))
                     return
                 } catch (_: PassiveStoragePause) {
+                    probeStorageTts(request)
                     deferPassiveRequest(request)
                     return
+                } catch (_: StorageBudgetReached) {
+                    // Space may have disappeared after the initial budget check.
+                    storageFallback = true
                 } catch (_: InterruptedException) {
                     // Cancellation invalidated the page/configuration before aborting its G2P.
                     return
@@ -1081,8 +1110,9 @@ class LessonNarrationController(
                 }
             }
             if (!isCurrent(request)) return
-            ttsPending[request.id] = request
-            if (ttsReady) synthesizeAndroid(request) else initializeTts()
+            val ttsRequest = request.copy(usedAndroidTts = true, storageFallback = storageFallback)
+            ttsPending[request.id] = ttsRequest
+            if (ttsReady) synthesizeAndroid(ttsRequest) else initializeTts()
         } catch (error: Exception) {
             KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Temporary audio failed", error)
             synthesisFailed(request, s(R.string.narration_temporary_audio_error))
@@ -1120,6 +1150,7 @@ class LessonNarrationController(
                     if (closed || initialization != ttsGeneration || !NarrationSettingsRepository.isEnabled(appContext)) return@post
                     ttsInitializing = false
                     if (status != TextToSpeech.SUCCESS) {
+                        reportStorageVoiceProbe()
                         failTtsPending(s(R.string.narration_android_configure))
                         runCatching { tts?.shutdown() }; tts = null
                         return@post
@@ -1129,15 +1160,51 @@ class LessonNarrationController(
                         engine.setOnUtteranceProgressListener(ttsListener())
                         voices = engine.voices.orEmpty().toList()
                         ttsReady = true
+                        reportStorageVoiceProbe()
                         ttsPending.values.toList().forEach(::synthesizeAndroid)
                     } catch (_: RuntimeException) {
+                        ttsReady = false
+                        reportStorageVoiceProbe()
                         failTtsPending(s(R.string.narration_android_configuration_error))
                     }
                 }
             }
         } catch (_: RuntimeException) {
             ttsInitializing = false
+            reportStorageVoiceProbe()
             failTtsPending(s(R.string.narration_android_open_error))
+        }
+    }
+
+    /** Check whether Android speech can handle a storage-limited page on entry.
+     * This probe never requests TTS synthesis or changes the saved engine choice.
+     */
+    private fun probeStorageTts(request: Synthesis) {
+        if (!isCurrent(request)) return
+        storageVoiceProbe = request
+        if (ttsReady) reportStorageVoiceProbe() else initializeTts()
+    }
+
+    private fun reportStorageVoiceProbe() {
+        val request = storageVoiceProbe ?: return
+        storageVoiceProbe = null
+        if (!isCurrent(request)) return
+        val engine = tts
+        val available = if (ttsReady && engine != null) runCatching {
+            SpanishVoices.available(voices.toSet(), request.settings.language).any {
+                engine.setVoice(it) == TextToSpeech.SUCCESS
+            }
+        }.getOrDefault(false) else false
+        reportStorageStatus(request, available)
+    }
+
+    private fun reportStorageStatus(request: Synthesis, androidAvailable: Boolean) {
+        main.post {
+            if (isCurrent(request) && !reportedStorageStatus) {
+                reportedStorageStatus = true
+                onNotice(s(if (androidAvailable) R.string.narration_storage_android_fallback
+                    else R.string.narration_storage_android_unavailable))
+            }
         }
     }
 
@@ -1156,11 +1223,17 @@ class LessonNarrationController(
             val result = engine.synthesizeToFile(ManualEnglishSpeech.strip(request.text), Bundle(), request.file, request.id)
             if (result != TextToSpeech.SUCCESS) {
                 ttsPending.remove(request.id)
-                synthesisFailed(request, s(R.string.narration_android_segment_error))
+                synthesisFailed(request, if (request.storageFallback)
+                    s(R.string.narration_storage_android_unavailable)
+                    else s(R.string.narration_android_segment_error))
+            } else if (request.storageFallback) {
+                reportStorageStatus(request, androidAvailable = true)
             }
         } catch (error: RuntimeException) {
             ttsPending.remove(request.id)
-            synthesisFailed(request, errorMessage(error, R.string.narration_android_synthesis_error))
+            synthesisFailed(request, if (request.storageFallback)
+                s(R.string.narration_storage_android_unavailable)
+                else errorMessage(error, R.string.narration_android_synthesis_error))
         }
     }
 
@@ -1176,11 +1249,13 @@ class LessonNarrationController(
             val id = utteranceId ?: return
             worker.post {
                 val request = ttsPending.remove(id) ?: return@post
-                synthesisFailed(request, when (errorCode) {
-                    TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> s(R.string.narration_android_network_error)
-                    TextToSpeech.ERROR_NOT_INSTALLED_YET -> s(R.string.narration_android_data_missing)
-                    else -> s(R.string.narration_android_failed)
-                })
+                val message = if (request.storageFallback) s(R.string.narration_storage_android_unavailable)
+                    else when (errorCode) {
+                        TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> s(R.string.narration_android_network_error)
+                        TextToSpeech.ERROR_NOT_INSTALLED_YET -> s(R.string.narration_android_data_missing)
+                        else -> s(R.string.narration_android_failed)
+                    }
+                synthesisFailed(request, message)
             }
         }
     }
@@ -1224,12 +1299,13 @@ class LessonNarrationController(
                 val segment = parts.getOrNull(request.index) ?: return@post
                 segment.file = request.file
                 segment.duration = duration
+                segment.usedAndroidTts = request.usedAndroidTts
                 if (feedback != null) {
                     if (feedback.pendingManualForward != null || feedback.offset < 0L ||
                         (request.index == feedback.index && player == null))
                         publishGuideProgress(feedback, NarrationPlaybackPhase.POSITION_CHANGED)
                     if (playing && request.index == feedback.index && player == null) preparePlayer(segment, feedback)
-                    prepareWordAlignment(request)
+                    if (!request.usedAndroidTts) prepareWordAlignment(request)
                     if (request.settings.engine != NarrationEngine.ANDROID) ensureSegment(request.index + 2, feedback)
                     return@post
                 }
@@ -1237,7 +1313,7 @@ class LessonNarrationController(
                     (pendingManualForward != null || offset < 0L || (request.index == index && player == null)))
                     publishPositionChanged()
                 if (incorrectFeedback == null && playing && request.index == index && player == null) preparePlayer(segment)
-                prepareWordAlignment(request)
+                if (!request.usedAndroidTts) prepareWordAlignment(request)
                 if (request.settings.engine != NarrationEngine.ANDROID) {
                     // Continue rendering the whole page in the background,
                     // even before Play is pressed. A two-sentence window
@@ -1399,7 +1475,10 @@ class LessonNarrationController(
     }
     private fun failTtsPending(message: String) {
         ttsReady = false
-        ttsPending.values.toList().forEach { synthesisFailed(it, message) }
+        ttsPending.values.toList().forEach {
+            synthesisFailed(it, if (it.storageFallback) s(R.string.narration_storage_android_unavailable)
+                else message)
+        }
         ttsPending.clear()
     }
     private fun neuralGenerationAllowed(): Boolean =
@@ -1448,13 +1527,14 @@ class LessonNarrationController(
         foregroundPlayback = null
         directory = null; segments.clear(); pending.clear(); releaseSynthesisCpu()
         index = 0; offset = 0; finished = false
-        reportedFallback = false; warnedNetwork = false
+        reportedFallback = false; reportedStorageStatus = false; warnedNetwork = false
         watchdogs.values.forEach(main::removeCallbacks); watchdogs.clear()
         releasePlayer(); releaseFocus()
         if (releaseNeuralResources) releaseWordAlignment()
         if (!closed) worker.post {
             runCatching { tts?.stop() }
             ttsPending.clear()
+            storageVoiceProbe = null
             // Keep the verified ONNX session and language frontends warm between
             // pages of the SAME lesson. The audio files are still discarded.
             // Remove them if narration is disabled, assets change or we close.

@@ -14,6 +14,25 @@ class NarrationStorageBudgetTest {
         assertEquals(0L, NarrationStorageBudget.capacity(0L, 0L))
     }
 
+    @Test fun cacheMissDoesNotWritePastLimitAndRestartsWhenSpaceReturns() {
+        val full = NarrationStorageBudget.Snapshot(
+            storedBytes = 2 * gib, availableBytes = 5 * gib,
+            maximumBytes = 6 * gib, configuredBytes = 2 * gib, effectiveBytes = 2 * gib)
+        assertEquals(NarrationStorageBudget.CacheMissAction.WAIT_FOR_SPACE,
+            NarrationStorageBudget.onCacheMiss(full, playbackRequested = false))
+        assertEquals(NarrationStorageBudget.CacheMissAction.ANDROID_TTS,
+            NarrationStorageBudget.onCacheMiss(full, playbackRequested = true))
+        // A changed ceiling does not touch saved recordings.
+        assertEquals(2 * gib, full.storedBytes)
+        val resumed = full.copy(configuredBytes = 4 * gib, effectiveBytes = 4 * gib)
+        assertEquals(NarrationStorageBudget.CacheMissAction.KOKORO,
+            NarrationStorageBudget.onCacheMiss(resumed, playbackRequested = false))
+        assertEquals(NarrationStorageBudget.CacheMissAction.KOKORO,
+            NarrationStorageBudget.onCacheMiss(resumed, playbackRequested = true))
+        assertEquals(NarrationStorageBudget.CacheMissAction.ANDROID_TTS,
+            NarrationStorageBudget.onCacheMiss(resumed.copy(availableBytes = gib), playbackRequested = true))
+    }
+
     @Test fun aSmallerLimitPausesWithoutDeletingExistingAudio() {
         val budget = NarrationStorageBudget.Snapshot(
             storedBytes = 3 * gib,

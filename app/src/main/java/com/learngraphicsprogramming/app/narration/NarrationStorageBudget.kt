@@ -56,4 +56,17 @@ internal object NarrationStorageBudget {
     fun fitsNext(snapshot: Snapshot, estimatedBytes: Long = 0): Boolean =
         snapshot.mayGenerate && estimatedBytes.coerceAtLeast(0) <=
             snapshot.effectiveBytes - snapshot.storedBytes
+
+    /**
+     * The cache is checked before this decision. Only a missing recording can
+     * fall back to Android TTS; reducing the budget never deletes cached audio.
+     */
+    internal enum class CacheMissAction { KOKORO, WAIT_FOR_SPACE, ANDROID_TTS }
+
+    internal fun onCacheMiss(snapshot: Snapshot, playbackRequested: Boolean,
+                             estimatedBytes: Long = 4L * MIB): CacheMissAction = when {
+        fitsNext(snapshot, estimatedBytes) -> CacheMissAction.KOKORO
+        playbackRequested -> CacheMissAction.ANDROID_TTS
+        else -> CacheMissAction.WAIT_FOR_SPACE
+    }
 }

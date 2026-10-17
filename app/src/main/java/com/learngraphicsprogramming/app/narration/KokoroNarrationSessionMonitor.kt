@@ -30,6 +30,47 @@ internal object KokoroNarrationSessionMonitor {
     private var initialized = false
     private var startedActivities = 0
     private lateinit var application: Application
+    private var waitingForStorage = false
+    private const val STORAGE_RECHECK_MS = 60_000L
+
+    // Restart offline synthesis when the user makes room. This polls only
+    // while paused for storage; no wake lock or foreground service is held.
+    private val storageRecheck = object : Runnable {
+        override fun run() {
+            if (!initialized || !waitingForStorage) return
+            val settings = NarrationSettingsRepository.get(application)
+            if (!settings.enabled || settings.engine == NarrationEngine.ANDROID ||
+                NarrationStorageBudget.savedLimit(application) == 0L) {
+                waitingForStorage = false
+                return
+            }
+            val room = runCatching {
+                NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(application),
+                    4L * NarrationStorageBudget.MIB)
+            }.getOrDefault(false)
+            if (room && startedActivities > 0) {
+                waitingForStorage = false
+                startService()
+            } else {
+                // Keep the intent to resume until the user returns to the app.
+                // Do not relaunch a foreground service from a hidden activity.
+                main.postDelayed(this, STORAGE_RECHECK_MS)
+            }
+        }
+    }
+
+    /** Background generation was paused specifically because space ran out. */
+    fun resumeWhenStorageAvailable(context: Context) {
+        val update = {
+            if (!initialized) install(context.applicationContext as Application)
+            if (NarrationStorageBudget.savedLimit(application) != 0L) {
+                waitingForStorage = true
+                main.removeCallbacks(storageRecheck)
+                main.postDelayed(storageRecheck, STORAGE_RECHECK_MS)
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) update() else main.post { update() }
+    }
     // SharedPreferences keeps listeners weakly; the application monitor owns this
     // one for its lifetime, including sessions with no visible activity.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -44,7 +85,10 @@ internal object KokoroNarrationSessionMonitor {
         val app = context.applicationContext as Application
         val update = {
             if (!initialized) install(app)
-            startService()
+            if (waitingForStorage) {
+                main.removeCallbacks(storageRecheck)
+                main.post(storageRecheck)
+            } else startService()
         }
         // MainActivity calls this inside onCreate. Registration must happen
         // NOW, before Android dispatches the first onActivityStarted callback.

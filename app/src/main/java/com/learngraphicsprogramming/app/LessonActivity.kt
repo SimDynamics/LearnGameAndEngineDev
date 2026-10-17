@@ -664,6 +664,7 @@ class LessonActivity : AppCompatActivity() {
                 }
             },
             onError = { message -> Toast.makeText(this, message, Toast.LENGTH_LONG).show() },
+            onNotice = { message -> Toast.makeText(this, message, Toast.LENGTH_SHORT).show() },
             onProgress = { progress ->
                 if (readingPlaybackOwner === playbackOwner) readingPlaybackChanged(progress)
             },
