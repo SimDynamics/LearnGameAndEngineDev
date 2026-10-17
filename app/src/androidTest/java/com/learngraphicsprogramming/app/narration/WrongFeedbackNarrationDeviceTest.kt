@@ -247,7 +247,7 @@ class WrongFeedbackNarrationDeviceTest {
         }
     }
 
-    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
+    @Test fun correctAnswerToAnotherPuzzleInterruptsTheCurrentIncorrectGuide() {
         val language = NarrationLanguage.SPANISH
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
         NarrationSettingsRepository.saveLanguage(context, language)
@@ -263,86 +263,111 @@ class WrongFeedbackNarrationDeviceTest {
         val fixture = base.copy(lesson = lesson)
         withFixture(fixture) { host ->
             host.onActivity { assertTrue(it.findViewById<View>(R.id.buttonLessonListen).performClick()) }
-            awaitNative(host, "The two-puzzle page starts actual Kokoro before its pause", 180_000L) { activity ->
+            awaitNative(host, "Original page speech is active", 180_000L) { activity ->
                 val reader = controller(activity)
                 val player = field<MediaPlayer?>(reader, "player")
-                reader.isPlaying && field<Boolean>(reader, "playerReady") && player != null && player.currentPosition > 300
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300
             }
-            var savedSegment = 0
-            var savedOffset = 0L
-            var bookmarks = emptyMap<String, Any?>()
             host.onActivity { activity ->
-                val reader = controller(activity)
-                assertTrue("The wrong submission interrupts a genuinely playing page", reader.isPlaying)
                 val choices = descendants(content(activity)).filterIsInstance<CompoundButton>()
                 assertEquals(4, choices.size)
                 choices[0].performClick()
-                assertTrue(choices[0].isChecked)
                 cppChecks(activity)[0].performClick()
                 assertFalse(saved(fixture).getBoolean("correct"))
-                val guide = requireNotNull(field<Any?>(reader, "incorrectFeedback"))
-                assertTrue("This exercises the prior-page-playing edge, not an already-paused page", field<Boolean>(guide, "wasPlaying"))
-                savedSegment = field(reader, "index")
-                savedOffset = field(reader, "offset")
-                assertTrue("The guide preserves an actual interrupted source offset", savedOffset > 0L)
-                bookmarks = resumePreferences().all.mapValues { it.value }
             }
-            awaitNative(host, "The first puzzle's wrong guide is really playing", 180_000L) { activity ->
+            awaitNative(host, "Wrong guide has already interrupted source playback", 180_000L) { activity ->
                 val reader = controller(activity)
                 val player = field<MediaPlayer?>(reader, "player")
                 field<Any?>(reader, "incorrectFeedback") != null && reader.isPlaying &&
-                    field<Boolean>(reader, "playerReady") && player != null && player.currentPosition > 350
+                    field<Boolean>(reader, "playerReady") && player != null &&
+                    player.currentPosition > 350
             }
-            lateinit var activeGuide: Any
-            lateinit var activePlayer: MediaPlayer
+            lateinit var oldKey: String
+            var originalBookmarks = emptySet<String>()
+            var expectedTarget = -1
             host.onActivity { activity ->
                 val reader = controller(activity)
-                activeGuide = requireNotNull(field<Any?>(reader, "incorrectFeedback"))
-                activePlayer = requireNotNull(field<MediaPlayer?>(reader, "player"))
-                assertEquals(0, field<Int>(activeGuide, "blockIndex"))
-                val choices = descendants(content(activity)).filterIsInstance<CompoundButton>()
-                choices[3].performClick()
-                assertTrue(choices[3].isChecked)
-                cppChecks(activity)[1].performClick()
-                assertTrue(requireNotNull(ProgressRepository.getExerciseState(context, fixture.id, 0, 1)).getBoolean("correct"))
-            }
-            instrumentation.waitForIdleSync()
-            host.onActivity { activity ->
-                val reader = controller(activity)
-                assertSame("A different puzzle's success does not cancel the requested guide", activeGuide,
-                    field<Any?>(reader, "incorrectFeedback"))
-                assertSame("The same active decoder continues the guide", activePlayer, field<MediaPlayer?>(reader, "player"))
-                assertTrue(reader.isPlaying)
-                assertEquals(savedSegment, field<Int>(reader, "index"))
-                assertEquals(savedOffset, field<Long>(reader, "offset"))
-                reader.pauseKeepingPosition()
-                assertNull("Pausing releases the same guide decoder", field<MediaPlayer?>(reader, "player"))
-                assertFalse(reader.isPlaying)
-                val choices = descendants(content(activity)).filterIsInstance<CompoundButton>()
-                choices[1].performClick()
-                assertTrue(choices[1].isChecked)
-                cppChecks(activity)[0].performClick()
-                assertTrue(saved(fixture).getBoolean("correct"))
-            }
-            awaitNative(host, "Correcting the guide's own exercise clears the transient guide", 10_000L) { activity ->
-                field<Any?>(controller(activity), "incorrectFeedback") == null
-            }
-            host.onActivity { activity ->
-                val reader = controller(activity)
-                assertFalse("A correct answer cannot resume a guide/page that the user paused", reader.isPlaying)
-                assertNull(field<MediaPlayer?>(reader, "player"))
-                assertEquals(savedSegment, field<Int>(reader, "index"))
-                assertEquals(savedOffset, field<Long>(reader, "offset"))
-                assertEquals("The interrupted guide never changes page bookmarks", bookmarks, resumePreferences().all)
+                oldKey = requireNotNull(field<String?>(reader, "resumeKey"))
+                originalBookmarks = bookmarkKeys()
                 val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
-                assertEquals("Neither success has been heard by solving either puzzle", 0, gate.heardThrough)
-                assertFalse("The final paragraph still requires both real successful explanations",
-                    gate.canPlay(field<List<Any>>(reader, "segments").lastIndex))
-                assertEquals(2, field<Int>(activity, "completedExercises"))
-                File(evidence(), "two-gate-paused-review.json").writeText(JSONObject()
-                    .put("firstGuideBlock", 0).put("unrelatedCorrectBlock", 1).put("samePlayerWhileGuideContinued", true)
-                    .put("ownCorrectAnswerWhilePausedKeptPagePaused", true).put("mainSegment", savedSegment)
-                    .put("mainOffsetMs", savedOffset).put("heardThrough", gate.heardThrough).toString(2))
+                val choice = descendants(content(activity)).filterIsInstance<CompoundButton>()
+                choice[3].performClick()
+                cppChecks(activity)[1].performClick()
+                assertTrue(requireNotNull(ProgressRepository.getExerciseState(
+                    context, fixture.id, 0, 1)).getBoolean("correct"))
+                assertNull("New correct answer immediately replaces earlier wrong guide",
+                    field<Any?>(reader, "incorrectFeedback"))
+                expectedTarget = requireNotNull(gate.feedbackStart(1)).segment
+                assertEquals("The new green feedback owns the source cursor immediately",
+                    expectedTarget, field<Int>(reader, "index"))
+                assertTrue(reader.isPlaying)
+                assertEquals("The first puzzle is still unanswered", 0, gate.heardThrough)
+                assertFalse("Previous unsuccessful feedback cannot be announced as correct",
+                    gate.canPlay(requireNotNull(gate.feedbackStart(0)).segment))
+                assertEquals("No fourth narration bookmark", originalBookmarks, bookmarkKeys())
+                assertEquals(oldKey, field<String?>(reader, "resumeKey"))
+            }
+            awaitNative(host, "The new green feedback is the actual playing WAV", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    field<Int>(reader, "index") == expectedTarget &&
+                    player != null && player.currentPosition > 250
+            }
+        }
+    }
+
+    @Test fun correctingAPausedWrongGuideKeepsPauseAndStartsGreenOnExplicitResume() {
+        val language = NarrationLanguage.SPANISH
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
+        NarrationSettingsRepository.saveLanguage(context, language)
+        NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
+        val fixture = fixture(language, mathematical = false)
+        withFixture(fixture) { host ->
+            host.onActivity { assertTrue(it.findViewById<View>(R.id.buttonLessonListen).performClick()) }
+            awaitNative(host, "Question speech is playing", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300
+            }
+            host.onActivity { activity ->
+                select(activity, fixture, correct = false)
+                check(activity, fixture).performClick()
+            }
+            awaitNative(host, "Wrong feedback guide is playing before user pause", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                field<Any?>(reader, "incorrectFeedback") != null && reader.isPlaying &&
+                    field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300
+            }
+            var savedIndex = -1
+            var savedOffset = -1L
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                reader.pauseKeepingPosition()
+                savedIndex = field(reader, "index")
+                savedOffset = field(reader, "offset")
+                select(activity, fixture, correct = true)
+                check(activity, fixture).performClick()
+                assertTrue(saved(fixture).getBoolean("correct"))
+                assertNull("Correcting the paused guide closes its temporary player",
+                    field<Any?>(reader, "incorrectFeedback"))
+                assertFalse("A user pause is still respected", reader.isPlaying)
+                assertEquals(savedIndex, field<Int>(reader, "index"))
+                assertEquals(savedOffset, field<Long>(reader, "offset"))
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            awaitNative(host, "Resuming the paused reader starts green success, not old options", 180_000L) { activity ->
+                val reader = controller(activity)
+                val gate = field<NarrationExerciseGate?>(reader, "playbackGate")
+                val player = field<MediaPlayer?>(reader, "player")
+                val start = gate?.feedbackStart(0)?.segment
+                start != null && reader.isPlaying && field<Int>(reader, "index") == start &&
+                    field<Boolean>(reader, "playerReady") && player != null &&
+                    player.currentPosition > 250
             }
         }
     }
@@ -519,14 +544,14 @@ class WrongFeedbackNarrationDeviceTest {
                 check(activity, fixture).performClick()
                 assertTrue(saved(fixture).getBoolean("correct"))
                 assertTrue(feedback(activity, fixture).text.toString().contains(fixture.success))
-                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
                 val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
-                val beforeSeek = gate.heardThrough
-                reader.seekBy(99)
-                assertEquals("A deliberate forward jump still cannot mark green feedback heard", beforeSeek, gate.heardThrough)
-                assertFalse("Even after the correct answer, unheard green feedback blocks the following paragraph",
-                    gate.canPlay(field<List<Any>>(reader, "segments").lastIndex))
-                assertTrue(field<Int>(reader, "index") < field<List<Any>>(reader, "segments").lastIndex)
+                val target = requireNotNull(gate.feedbackStart(0)).segment
+                assertTrue("A correct answer reads immediately, without tapping Play", reader.isPlaying)
+                assertEquals(target, field<Int>(reader, "index"))
+                assertEquals("Answering itself does not mark the explanation heard",
+                    originalHeard, gate.heardThrough)
+                assertFalse("The second green sentence waits for actual first playback",
+                    gate.canPlay(target + 1))
             }
             awaitNative(host, "Green feedback must complete before the later paragraph plays naturally", 180_000L) { activity ->
                 val reader = controller(activity)
