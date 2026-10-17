@@ -8041,10 +8041,13 @@ class LessonActivity : AppCompatActivity() {
         // The previous page may have detached a focused compiler EditText.
         // Only an attached, visible editor in the current page owns this Enter.
         val focused = currentFocus?.takeIf { it.isAttachedToWindow && it.isShown }
-        val editorOwnsEnter = compilerFullscreenActive || exerciseFullscreenActive ||
+        val editorOwnsEnter = compilerFullscreenActive ||
             focused is MathExpressionEditor ||
             focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
-        val canNavigate = ::lessonContinueButton.isInitialized &&
+        // A fullscreen puzzle may still use Enter to check, but must never
+        // advance the page behind its editing/interaction overlay.
+        val canNavigate = !exerciseFullscreenActive &&
+            ::lessonContinueButton.isInitialized &&
             lessonContinueButton.isEnabled && lessonContinueButton.isShown &&
             LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)
         val pageIdentity = "${currentRouteId}/${currentLessonId}/$currentPage"
