@@ -348,6 +348,67 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun singleEnterChecksOnPageFiveThenAdvancesAndFinishesWithoutExtraPresses() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        assertEquals(6, published.getJSONArray("pages").length())
+        // QA preferences are saved and restored around each test.
+        ProgressRepository.setLessonCompleted(context, lesson, false)
+        val host = openProgramming(lesson, 4, narrate = false)
+        host.onActivity { activity ->
+            val reset = descendants(content(activity)).single {
+                it.contentDescription == activity.getString(R.string.exercise_reset)
+            }
+            assertTrue(reset.performClick())
+            val question = published.getJSONArray("pages").getJSONObject(4)
+                .getJSONArray("blocks").getJSONObject(4)
+            val selectedAnswer = question.getJSONArray("options")
+                .getString(question.getInt("correctIndex"))
+            val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == selectedAnswer }
+            assertTrue(radio.performClick())
+            val readyCheck = descendants(content(activity)).filterIsInstance<Button>().single {
+                it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
+            }
+            assertTrue(readyCheck.isEnabled)
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            // Android may leave focus on a native control unrelated to the selected
+            // answer. Enter must check the puzzle immediately, not prime the focus.
+            val compilerRun = descendants(content(activity)).single { it.tag == "cpp_run" }
+            compilerRun.isFocusableInTouchMode = true
+            assertTrue(compilerRun.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Checking must not advance page five", 4, field<Int>(activity, "currentPage"))
+            assertTrue("A single Enter checks the selected puzzle",
+                ProgressRepository.getExerciseState(context, lesson, 4, 4)?.optBoolean("correct", false) == true)
+            assertTrue("Continue becomes available after the check",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            assertFalse("Checking the puzzle must not complete the lesson",
+                ProgressRepository.isLessonCompleted(context, lesson))
+        }
+
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("The next separate Enter opens page 6/6 without skipping it", 5,
+                field<Int>(activity, "currentPage"))
+            assertEquals(6, field<Int>(activity, "totalPages"))
+            assertTrue("Finish is enabled on the puzzle-free last page",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            assertFalse(ProgressRepository.isLessonCompleted(context, lesson))
+        }
+
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        assertTrue("A single new Enter on page six completes the lesson",
+            ProgressRepository.isLessonCompleted(context, lesson))
+        scenario = null
+        host.close()
+    }
+
     @Test fun enterFromPageFiveOpensPageSixOnceAndDoesNotSkipToLessonMenu() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)
