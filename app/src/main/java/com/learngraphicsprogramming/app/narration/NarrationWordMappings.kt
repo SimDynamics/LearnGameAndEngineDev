@@ -6,6 +6,13 @@ import com.learngraphicsprogramming.app.math.MathTextSemantics
 internal object NarrationWordMappings {
     private const val OPENING = "([{«“‘¿¡"
     private const val MATHEMATICAL_PENDING = "=<>≤≥≠≈+−×÷·"
+    /** A degree mark immediately before C or F is part of the scale's spoken word. */
+    private fun scaleStart(text: CharSequence, gapStart: Int, nextStart: Int, nextEnd: Int): Int? {
+        if (nextEnd != nextStart + 1 || nextStart !in text.indices || text[nextStart] !in "CcFf") return null
+        return (gapStart until nextStart).firstOrNull { index ->
+            text[index] == '°' && (index + 1 until nextStart).all { text[it].isWhitespace() }
+        }
+    }
 
     /**
      * A registered view can be only the question of an exercise whose narration also
@@ -59,7 +66,7 @@ internal object NarrationWordMappings {
                     (displayed[it] in MATHEMATICAL_PENDING && mathematics.any { range -> it >= range.start && it < range.endExclusive }) ||
                     (displayed[it] == '"' && it > gapStart && displayed[it - 1].isWhitespace())
             }
-            boundaries += opening ?: gapEnd
+            boundaries += opening ?: scaleStart(displayed, gapStart, gapEnd, visible[index].endExclusive) ?: gapEnd
         }
         boundaries += displayed.length
 

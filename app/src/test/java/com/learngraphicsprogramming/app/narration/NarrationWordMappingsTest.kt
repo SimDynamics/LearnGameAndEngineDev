@@ -6,6 +6,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NarrationWordMappingsTest {
+    @Test fun degreeScaleGlyphIsPaintedWithItsRealSpokenScaleWord() {
+        val source = "Una temperatura de -3 °C describe un estado. Un aumento de 5 °C describe un cambio."
+        val mapping = NarrationWordMappings.forBlock(1, source, mapOf(0 to source)).getValue(0)
+        val visible = mapping.displayed.map { source.substring(it.start, it.endExclusive) }
+        assertTrue(visible.contains("°C "))
+        assertEquals(2, visible.count { it == "°C " })
+        assertTrue(visible.any { it == "-3 " })
+        assertTrue(visible.any { it == "5 " })
+        assertEquals(source.indices.toList(), mapping.displayed.flatMap { it.start until it.endExclusive })
+    }
+
     @Test fun everyPendingGlyphIncludingOperatorsAndPunctuationBelongsToAWord() {
         val source = "¿Lee C++ (ahora), después; «bien»."
         val mapping = NarrationWordMappings.forBlock(2, source, mapOf(4 to source)).getValue(4)

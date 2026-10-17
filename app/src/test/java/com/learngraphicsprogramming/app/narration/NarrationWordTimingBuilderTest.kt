@@ -32,6 +32,29 @@ class NarrationWordTimingBuilderTest {
             phones, owners + owners.last(), listOf(phones), listOf(frames)))
     }
 
+    @Test fun curricularTemperatureScalesKeepWordTimingsWithoutChangingKokoroAudio() {
+        val sentences = listOf(
+            "Una temperatura de -3 °C describe un estado.",
+            "Un aumento de 5 °C describe un cambio.",
+            "La lectura de 32 °F también se conserva."
+        )
+        for (sentence in sentences) {
+            val prepared = ManualEnglishSpeech.PREPARED + sentence
+            val trace = requireNotNull(MixedSpanishG2P.traceWordsPrepared(prepared)) {
+                "Visible temperature scales must have traceable phonemes: $sentence"
+            }
+            assertEquals(MixedSpanishG2P.phonemizePrepared(prepared, emptyMap()), trace.phonemes)
+            val ticks = LongArray(trace.phonemes.length + 2) { 1L }
+            val alignment = requireNotNull(NarrationWordTimingBuilder.build(
+                prepared, hash, ticks.sum() * 600L, trace, ticks))
+            assertTrue(NarrationWordTimingBuilder.valid(prepared, alignment.sampleCount, alignment.words))
+            val displayed = alignment.words.map { prepared.substring(it.start, it.endExclusive) }
+            assertTrue(displayed.any { it.equals("C", true) || it.equals("F", true) })
+            assertTrue(displayed.any { it.any(Char::isDigit) })
+            assertTrue(alignment.words.zipWithNext().all { (a, b) -> a.endSample <= b.startSample })
+        }
+    }
+
     @Test fun cppLanguageNameGroupsItsExistingThreeWordReadingWithoutChangingSentencePhones() {
         val source = "Podemos discutir un algoritmo antes de decidir todos los detalles de C++."
         val trace = requireNotNull(SpanishFluidG2P.traceWords(source))

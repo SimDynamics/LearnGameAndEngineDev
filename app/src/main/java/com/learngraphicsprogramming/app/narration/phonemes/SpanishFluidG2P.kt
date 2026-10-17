@@ -138,11 +138,21 @@ object SpanishFluidG2P {
             val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
             val cppRanges = cpp.findAll(source).map { it.range }.toList()
             val normalizationOperators = "=+×÷·<>≤≥≠≈/\\−-"
+            // °C and °F are expanded by the production frontend into two words.
+            // The visible C/F token owns the exact observed phone range, including
+            // "grados"; preserve the degree glyph for display-side ownership.
+            val temperatureScales = Regex("°\\\\s*([CF])(?!\\\\p{L})", RegexOption.IGNORE_CASE)
+                .findAll(source).associate { match -> match.range.last to match.groupValues[1].uppercase(Locale.ROOT) }
             if (source.indices.any { index ->
                     val char = source[index]
                     !char.isLetterOrDigit() && !char.isWhitespace() && char !in prosePunctuation &&
                         char !in normalizationOperators &&
-                        char !in foreignTokens && !(char == '+' && cppRanges.any { index in it })
+                        char !in foreignTokens &&
+                        !(char == '°' && temperatureScales.keys.any { scale ->
+                            source.substring(index + 1, scale).all(Char::isWhitespace) &&
+                                source[scale].uppercaseChar() in "CF" && scale > index
+                        }) &&
+                        !(char == '+' && cppRanges.any { index in it })
                 }) return null
             val pattern = Regex("\\p{L}+|[−-]?\\d+(?:[.,]\\d+)?|[\\uE100-\\uF8FF]")
             fun words(value: String) = pattern.findAll(nfc(value)).map {
@@ -163,6 +173,8 @@ object SpanishFluidG2P {
                 val owner = if (operator) -1 else nextOwner++
                 val expanded = when {
                     cppRanges.any { it.first == match.range.first } -> "ce más más"
+                    match.range.first in temperatureScales ->
+                        if (temperatureScales.getValue(match.range.first) == "C") "grados Celsius" else "grados Fahrenheit"
                     operator || match.value.any(Char::isDigit) -> normalizeText(match.value)
                     else -> match.value
                 }
