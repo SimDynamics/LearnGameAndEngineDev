@@ -3921,7 +3921,7 @@ class LessonActivity : AppCompatActivity() {
         // nunca coloreamos su fondo ni lo convertimos en una cápsula.
         buttonNarrationToggle.setBackgroundColor(Color.TRANSPARENT)
         buttonNarrationToggle.imageTintList = ColorStateList.valueOf(
-            if (enabled) accent else getColor(R.color.lesson_text_muted)
+            if (enabled) accent else Color.rgb(170, 174, 183)
         )
         buttonNarrationToggle.isActivated = enabled
         buttonNarrationToggle.isEnabled = masterEnabled
@@ -4005,7 +4005,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         view.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(225, 225, 235)
         )
 
         view.textSize = 17f
@@ -4245,7 +4245,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -4385,7 +4389,11 @@ class LessonActivity : AppCompatActivity() {
         )
 
         input.setHintTextColor(
-            getColor(R.color.lesson_text_muted)
+            Color.rgb(
+                140,
+                145,
+                155
+            )
         )
 
         input.typeface =
@@ -4903,7 +4911,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -5025,7 +5037,11 @@ class LessonActivity : AppCompatActivity() {
         )
 
         input.setHintTextColor(
-            getColor(R.color.lesson_text_muted)
+            Color.rgb(
+                140,
+                145,
+                155
+            )
         )
 
         input.typeface =
@@ -5469,7 +5485,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.exercise_order_instruction)
 
         instruction.setTextColor(
-            getColor(R.color.lesson_text_secondary)
+            Color.rgb(180, 185, 195)
         )
 
         instruction.textSize =
@@ -5537,7 +5553,11 @@ class LessonActivity : AppCompatActivity() {
         languageLabel.tag = "order_code_language_$blockIndex"
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -5775,7 +5795,11 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             number.setTextColor(
-                getColor(R.color.lesson_line_number)
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
             )
 
             number.setPadding(
@@ -6022,7 +6046,7 @@ class LessonActivity : AppCompatActivity() {
                 18f
 
             row.setTextColor(
-                getColor(R.color.lesson_text_primary)
+                Color.rgb(225, 230, 235)
             )
 
             row.setPadding(
@@ -6609,8 +6633,8 @@ class LessonActivity : AppCompatActivity() {
         }
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
-            setTextColor(getColor(R.color.lesson_text_primary))
-            setHintTextColor(getColor(R.color.lesson_text_secondary))
+            setTextColor(Color.rgb(230, 237, 243))
+            setHintTextColor(Color.rgb(174, 180, 190))
             contentDescription = getString(R.string.cpp_input_hint)
             hint = getString(R.string.cpp_input_hint)
             background = null
@@ -6687,7 +6711,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -6888,7 +6916,11 @@ class LessonActivity : AppCompatActivity() {
                     Gravity.END
 
         lineNumbers.setTextColor(
-            getColor(R.color.lesson_line_number)
+            Color.rgb(
+                111,
+                119,
+                130
+            )
         )
 
         lineNumbers.setBackgroundColor(
@@ -7352,7 +7384,11 @@ class LessonActivity : AppCompatActivity() {
             18f
 
         statusText.setTextColor(
-            getColor(R.color.lesson_text_secondary)
+            Color.rgb(
+                174,
+                180,
+                190
+            )
         )
 
         statusText.setPadding(
@@ -9931,7 +9967,7 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.exercise_fill_instruction)
 
         instruction.setTextColor(
-            getColor(R.color.lesson_text_secondary)
+            Color.rgb(180, 185, 195)
         )
 
         instruction.textSize =
@@ -10029,7 +10065,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -10448,7 +10488,11 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             number.setTextColor(
-                getColor(R.color.lesson_line_number)
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
             )
 
             number.setPadding(
@@ -11934,7 +11978,7 @@ class LessonActivity : AppCompatActivity() {
             text
 
         view.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.WHITE
         )
 
         view.textSize =
@@ -11973,7 +12017,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         view.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.WHITE
         )
 
         view.textSize =
@@ -12030,9 +12074,10 @@ class LessonActivity : AppCompatActivity() {
             dp(18)
         )
 
-        // The semantic capsule stays neutral; the word-shading engine is unchanged.
+        // The semantic underlay retains its original hue; only body glyphs brighten.
+        // Reader word-level shading and timing are unchanged.
         registerReadingText(view, mathMode = mathMode,
-            semanticTintReference = getColor(R.color.lesson_semantic_reference))
+            semanticTintReference = Color.rgb(205, 208, 215))
         lessonContent.addView(
             view
         )
@@ -12733,7 +12778,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, readableLanguage)
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.textSize =
@@ -12987,7 +13036,11 @@ class LessonActivity : AppCompatActivity() {
                     Gravity.END
 
         lineNumbers.setTextColor(
-            getColor(R.color.lesson_line_number)
+            Color.rgb(
+                111,
+                119,
+                130
+            )
         )
 
         lineNumbers.setBackgroundColor(
@@ -13358,7 +13411,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -13507,7 +13564,7 @@ class LessonActivity : AppCompatActivity() {
                 options.getString(i)
 
             radioButton.setTextColor(
-                getColor(R.color.lesson_text_primary)
+                Color.WHITE
             )
 
             radioButton.textSize =
@@ -14098,7 +14155,11 @@ class LessonActivity : AppCompatActivity() {
             getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                228,
+                235
+            )
         )
 
         languageLabel.setTypeface(
@@ -14475,7 +14536,11 @@ class LessonActivity : AppCompatActivity() {
                         Gravity.END
 
             lineNumber.setTextColor(
-                getColor(R.color.lesson_line_number)
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
             )
 
             lineNumber.setPadding(
@@ -14639,7 +14704,11 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 input.setHintTextColor(
-                    getColor(R.color.lesson_text_muted)
+                    Color.rgb(
+                        130,
+                        135,
+                        145
+                    )
                 )
 
                 input.hint =
@@ -15577,7 +15646,11 @@ class LessonActivity : AppCompatActivity() {
             0
 
         view.setTextColor(
-            getColor(R.color.lesson_text_primary)
+            Color.rgb(
+                225,
+                230,
+                235
+            )
         )
 
         return view

@@ -76,71 +76,62 @@ class TechnicalTextIntegrationDeviceTest {
         }
     }
 
-    @Test fun neutralLessonPalettePreservesTheReaderShadeAndTechnicalTypography() = onMain {
-        val surface = context.getColor(R.color.lesson_canvas)
-        val brighter = context.getColor(R.color.lesson_text_body)
-        val semantic = context.getColor(R.color.lesson_semantic_reference)
-        assertEquals(Color.rgb(27, 27, 27), surface)
-        assertEquals(Color.rgb(218, 221, 228), brighter)
-
-        // No blue/green cast in non-accent surfaces, muted text or outlines.
+    @Test fun darkerCurricularSurfacesKeepOnlyTheRequestedBodyInkChangeAndOriginalWordShade() = onMain {
+        // Only curricular paragraph glyphs brighten; headings, choices, syntax,
+        // controls and every word-shading rule retain the original implementation.
+        val canvas = context.getColor(R.color.lesson_canvas)
+        assertEquals(Color.rgb(16, 16, 16), canvas)
+        assertEquals(Color.rgb(23, 23, 23), context.getColor(R.color.lesson_header))
+        assertEquals(Color.rgb(28, 28, 28), context.getColor(R.color.lesson_card))
+        assertEquals(Color.rgb(20, 20, 20), context.getColor(R.color.lesson_inset))
+        assertEquals(Color.rgb(37, 37, 37), context.getColor(R.color.lesson_field))
+        val body = context.getColor(R.color.lesson_text_body)
+        assertEquals(Color.rgb(218, 221, 228), body)
         for (id in intArrayOf(
             R.color.lesson_canvas, R.color.lesson_header, R.color.lesson_card,
             R.color.lesson_card_header, R.color.lesson_inset, R.color.lesson_surface_low,
             R.color.lesson_field, R.color.lesson_note, R.color.lesson_outline,
-            R.color.lesson_outline_strong, R.color.lesson_text_primary,
-            R.color.lesson_text_secondary, R.color.lesson_text_muted,
-            R.color.lesson_line_number, R.color.lesson_semantic_reference
+            R.color.lesson_outline_strong
         )) {
-            val color = context.getColor(id)
-            assertEquals("Neutral R/G $id", Color.red(color), Color.green(color))
-            assertEquals("Neutral G/B $id", Color.green(color), Color.blue(color))
+            val ink = context.getColor(id)
+            assertEquals("Neutral background red and green $id", Color.red(ink), Color.green(ink))
+            assertEquals("Neutral background green and blue $id", Color.green(ink), Color.blue(ink))
         }
-
-        for ((source, mathematics) in listOf(
-            "El programa utiliza \`std::cout\` antes de continuar." to false,
+        val previousInk = Color.rgb(205, 208, 215)
+        for ((text, mathematics) in listOf(
+            "El programa utiliza std::cout antes de continuar." to false,
             "La fracción \\(\\frac{1}{2}\\) representa una mitad." to true
         )) {
-            fun paragraph(color: Int): ReadingTextView = view(
-                if (mathematics) MathTextRenderer.render(source) else source,
-                surface, color
-            )
-            val previous = paragraph(Color.rgb(205, 208, 215))
-            val chosen = paragraph(brighter)
-            LessonTechnicalText.apply(previous, mathematics, NarrationLanguage.SPANISH,
-                semanticTintReference = semantic)
-            LessonTechnicalText.apply(chosen, mathematics, NarrationLanguage.SPANISH,
-                semanticTintReference = semantic)
-            measure(previous)
-            measure(chosen)
-            assertEquals("No line wrapping or layout shift", geometry(previous), geometry(chosen))
-            assertEquals("Curricular words remain unchanged", previous.text.toString(), chosen.text.toString())
-            assertEquals("Formula/C++ underlays keep their neutral surface",
-                previous.effectiveReadingSurface(surface), chosen.effectiveReadingSurface(surface))
-
-            val beforeReading = LessonReadingTextColors().apply { register(0, previous) }
-            val afterReading = LessonReadingTextColors().apply { register(0, chosen) }
-            val words = mapOf(0 to listOf(ReadingTextRange(0, previous.text.length)))
-            beforeReading.show(mapOf(0 to ReadingBlockState.CURRENT), true, words)
-            afterReading.show(mapOf(0 to ReadingBlockState.CURRENT), true, words)
-            assertTrue("The original pending-word shade remains pixel-identical",
-                render(previous).sameAs(render(chosen)))
-
-            beforeReading.show(mapOf(0 to ReadingBlockState.READ), true)
-            afterReading.show(mapOf(0 to ReadingBlockState.READ), true)
-            assertFalse("Only fully read body ink becomes brighter",
-                render(previous).sameAs(render(chosen)))
-            assertEquals(brighter, chosen.currentTextColor)
-
-            beforeReading.show(mapOf(0 to ReadingBlockState.CURRENT), true, words)
-            afterReading.show(mapOf(0 to ReadingBlockState.CURRENT), true, words)
-            assertTrue("Rewind restores exactly the original pending shade",
-                render(previous).sameAs(render(chosen)))
-            afterReading.show(mapOf(0 to ReadingBlockState.CURRENT), false)
-            assertEquals("Disabled narration still shows the chosen color",
-                brighter, chosen.currentTextColor)
-            beforeReading.clear()
-            afterReading.clear()
+            val source = if (mathematics) MathTextRenderer.render(text) else text
+            val old = view(source, canvas, previousInk)
+            val bright = view(source, canvas, body)
+            LessonTechnicalText.apply(old, mathematics, NarrationLanguage.SPANISH,
+                semanticTintReference = previousInk)
+            LessonTechnicalText.apply(bright, mathematics, NarrationLanguage.SPANISH,
+                semanticTintReference = previousInk)
+            measure(old); measure(bright)
+            assertEquals("No typography, wrapping or spacing changes", geometry(old), geometry(bright))
+            assertEquals("Exact original characters remain", old.text.toString(), bright.text.toString())
+            assertEquals("Technical backing remains identical", old.effectiveReadingSurface(canvas),
+                bright.effectiveReadingSurface(canvas))
+            val oldColors = LessonReadingTextColors().apply { register(0, old) }
+            val brightColors = LessonReadingTextColors().apply { register(0, bright) }
+            val pending = mapOf(0 to listOf(ReadingTextRange(0, old.text.length)))
+            oldColors.show(mapOf(0 to ReadingBlockState.CURRENT), true, pending)
+            brightColors.show(mapOf(0 to ReadingBlockState.CURRENT), true, pending)
+            assertTrue("Pending-word shading keeps the same colors",
+                render(old).sameAs(render(bright)))
+            oldColors.show(mapOf(0 to ReadingBlockState.READ), true)
+            brightColors.show(mapOf(0 to ReadingBlockState.READ), true)
+            assertFalse("Only fully read paragraph glyphs brighten",
+                render(old).sameAs(render(bright)))
+            assertEquals(body, bright.currentTextColor)
+            oldColors.show(mapOf(0 to ReadingBlockState.CURRENT), true, pending)
+            brightColors.show(mapOf(0 to ReadingBlockState.CURRENT), true, pending)
+            assertTrue("Rewind restores identical unread shade",
+                render(old).sameAs(render(bright)))
+            oldColors.clear()
+            brightColors.clear()
         }
     }
 

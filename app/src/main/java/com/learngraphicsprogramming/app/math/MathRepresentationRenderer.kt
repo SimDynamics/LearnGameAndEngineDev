@@ -209,7 +209,7 @@ private class VennDiagramView(context: Context, private val config: JSONObject, 
         val rightX = width * .60f
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2 * density
-        paint.color = Color.rgb(112, 112, 112)
+        paint.color = Color.rgb(98, 109, 121)
         canvas.drawRect(10 * density, 12 * density, width - 10 * density, height - 12 * density, paint)
         paint.color = accent
         canvas.drawCircle(leftX, centerY, radius, paint)

@@ -134,7 +134,7 @@ class MathCartesianView(
         plot.set(centerX - usableWidth / 2, centerY - usableHeight / 2, centerX + usableWidth / 2, centerY + usableHeight / 2)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = density
-        paint.color = Color.rgb(56, 56, 56)
+        paint.color = Color.rgb(51, 56, 65)
         var x = ceil(xMin / gridStep) * gridStep
         var gridCount = 0
         while (x <= xMax && gridCount++ <= 101) { canvas.drawLine(px(x), plot.top, px(x), plot.bottom, paint); x += gridStep }
@@ -142,7 +142,7 @@ class MathCartesianView(
         gridCount = 0
         while (y <= yMax && gridCount++ <= 101) { canvas.drawLine(plot.left, py(y), plot.right, py(y), paint); y += gridStep }
         canvas.drawRect(plot, paint)
-        paint.color = Color.rgb(200, 200, 200)
+        paint.color = Color.rgb(192, 201, 211)
         paint.strokeWidth = 1.5f * density
         if (0.0 in xMin..xMax) canvas.drawLine(px(0.0), plot.top, px(0.0), plot.bottom, paint)
         if (0.0 in yMin..yMax) canvas.drawLine(plot.left, py(0.0), plot.right, py(0.0), paint)

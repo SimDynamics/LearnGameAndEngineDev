@@ -62,7 +62,7 @@ class LessonNarrationControls(
     private val restart = ImageButton(activity).apply {
         id = R.id.buttonLessonRestartPage
         setImageResource(R.drawable.ic_code_reset)
-        imageTintList = ColorStateList.valueOf(Color.rgb(176, 176, 176))
+        imageTintList = ColorStateList.valueOf(Color.rgb(170,174,183))
         setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription = activity.getString(R.string.narration_restart_current_page)
         setBackgroundResource(android.R.drawable.list_selector_background)
