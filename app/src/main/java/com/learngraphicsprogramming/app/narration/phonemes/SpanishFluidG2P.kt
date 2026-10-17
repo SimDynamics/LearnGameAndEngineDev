@@ -164,15 +164,27 @@ object SpanishFluidG2P {
             val normalized = normalizeText(source)
             val expected = mutableListOf<String>()
             val owners = mutableListOf<Int>()
-            val items = Regex("${pattern.pattern}|[=+×÷·<>≤≥≠≈/\\\\−-]")
+            // Match consecutive comment slashes as one lexical pronunciation unit.
+            // G2P reads // in context; separately normalizing / can give a
+            // different mathematical reading and invalidate whole-sentence timing.
+            val items = Regex("//|${pattern.pattern}|[=+×÷·<>≤≥≠≈/\\\\−-]")
             var nextOwner = 0
             items.findAll(source).forEach { match ->
                 // C++ already belongs to its original lexical C atom. Its two +
                 // signs must not be counted a second time as residual operators.
                 if (match.value == "+" && cppRanges.any { match.range.first in it }) return@forEach
-                val operator = match.value.singleOrNull()?.let { it in normalizationOperators } == true
-                val owner = if (operator) -1 else nextOwner++
+                val commentSlashes = match.value == "//"
+                val operator = commentSlashes ||
+                    match.value.singleOrNull()?.let { it in normalizationOperators } == true
+                // The display associates this nonlexical mark with the previous
+                // word. Extend that real phone range through both spoken slashes.
+                val owner = when {
+                    commentSlashes && nextOwner > 0 -> nextOwner - 1
+                    operator -> -1
+                    else -> nextOwner++
+                }
                 val expanded = when {
+                    commentSlashes -> normalizeText(match.value)
                     cppRanges.any { it.first == match.range.first } -> "ce más más"
                     match.range.first in temperatureScales ->
                         if (temperatureScales.getValue(match.range.first) == "C") "grados Celsius" else "grados Fahrenheit"
@@ -233,6 +245,7 @@ object SpanishFluidG2P {
                     }
                     val operator = match.value.singleOrNull()?.let { it in normalizationOperators } == true
                     val expanded = when {
+                        match.value == "//" -> normalizeText(match.value)
                         rewrittenCpp.any { it.first == match.range.first } -> "ce más más"
                         operator || match.value.any(Char::isDigit) -> normalizeText(match.value)
                         else -> match.value

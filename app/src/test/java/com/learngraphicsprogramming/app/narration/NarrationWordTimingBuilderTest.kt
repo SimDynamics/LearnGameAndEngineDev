@@ -32,6 +32,33 @@ class NarrationWordTimingBuilderTest {
             phones, owners + owners.last(), listOf(phones), listOf(frames)))
     }
 
+    @Test fun curricularCppDoubleSlashKeepsNativeWordTimingAndExistingAudioPhones() {
+        val sentences = listOf(
+            "Fuera de un literal, // comienza un comentario que llega hasta el final de esa línea.",
+            "La línea con // es un comentario; no se ejecuta."
+        )
+        for (source in sentences) {
+            val prepared = ManualEnglishSpeech.PREPARED + source
+            val trace = requireNotNull(MixedSpanishG2P.traceWordsPrepared(prepared)) {
+                "El símbolo // no debe desactivar el sombreado por palabras: $source"
+            }
+            val production = MixedSpanishG2P.phonemizePrepared(prepared, emptyMap())
+            assertEquals("El trazado nunca altera los fonemas reales de Kokoro", production, trace.phonemes)
+            assertEquals(NarrationSpokenWords.lexemes(prepared).map { it.canonical },
+                trace.words.map { it.word })
+            val frames = LongArray(trace.phonemes.length + 2) { 1L }
+            val aligned = requireNotNull(NarrationWordTimingBuilder.build(
+                prepared, hash, frames.sum() * 600L, trace, frames))
+            assertTrue(NarrationWordTimingBuilder.valid(prepared, aligned.sampleCount, aligned.words))
+            assertEquals(NarrationSpokenWords.lexemes(prepared).size, aligned.words.size)
+            val index = trace.words.indexOfFirst { it.word == "literal" }
+                .takeIf { it >= 0 } ?: trace.words.indexOfFirst { it.word == "con" }
+            assertTrue(index >= 0)
+            assertTrue("Ambas barras pronunciadas pertenecen a un intervalo real",
+                trace.words[index].endExclusive > trace.words[index].start)
+        }
+    }
+
     @Test fun curricularTemperatureScalesKeepWordTimingsWithoutChangingKokoroAudio() {
         val sentences = listOf(
             "Una temperatura de -3 °C describe un estado.",

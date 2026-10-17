@@ -6,6 +6,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NarrationWordMappingsTest {
+    @Test fun doubleSlashAndRemainingLessonWordsKeepSeparateSourceRanges() {
+        val source = "Fuera de un literal, // comienza un comentario que llega hasta el final de esa línea."
+        val mapped = NarrationWordMappings.forBlock(1, source, mapOf(0 to source)).getValue(0)
+        assertEquals("Los caracteres originales se conservan una sola vez",
+            source.indices.toList(), mapped.displayed.flatMap { it.start until it.endExclusive })
+        assertEquals(NarrationSpokenWords.lexemes(source).size, mapped.displayed.size)
+        val slash = source.indexOf("//")
+        assertTrue("La marca de comentario conserva su posición",
+            mapped.displayed.any { it.start <= slash && it.endExclusive >= slash + 2 })
+        val next = source.indexOf("comienza")
+        assertTrue("La palabra siguiente no queda agrupada con toda la frase",
+            mapped.displayed.any { it.start <= next && it.endExclusive == next + "comienza".length + 1 })
+    }
+
     @Test fun degreeScaleGlyphIsPaintedWithItsRealSpokenScaleWord() {
         val source = "Una temperatura de -3 °C describe un estado. Un aumento de 5 °C describe un cambio."
         val mapping = NarrationWordMappings.forBlock(1, source, mapOf(0 to source)).getValue(0)
