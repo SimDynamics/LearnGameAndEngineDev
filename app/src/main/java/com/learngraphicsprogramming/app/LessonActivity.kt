@@ -3923,14 +3923,30 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun markExerciseCompleted() {
-
         completedExercises += 1
+        pageCompletedExercises[currentPage] = completedExercises
+        pageRequiredExercises[currentPage] = requiredExercises
 
-        pageCompletedExercises[currentPage] =
-            completedExercises
-
-        pageRequiredExercises[currentPage] =
-            requiredExercises
+        // The inline C++ answer fields are disabled immediately after a correct
+        // check. If their old IME retains focus, Android can consume the FIRST
+        // subsequent Enter merely to leave that field; only the second press
+        // reaches the order-code check or the Continue button.
+        //
+        // Release focus now, while the just-completed field is still identifiable.
+        // Do not disturb active multiline compiler editors, unfinished inputs,
+        // keyboard indentation or ordinary Tab handling.
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
+            val previous = currentFocus as? EditText
+            if (previous != null && previous.tag == CODE_INPUT_TAG &&
+                PuzzleAnswerSubmit.isSingleLine(previous)) {
+                val neutralHost = findViewById<View>(android.R.id.content)
+                neutralHost.isFocusableInTouchMode = true
+                if (neutralHost.requestFocus()) {
+                    (getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+                        ?.hideSoftInputFromWindow(previous.windowToken, 0)
+                }
+            }
+        }
     }
     private fun addNote(text: String, mathMode: String = "auto") {
 
