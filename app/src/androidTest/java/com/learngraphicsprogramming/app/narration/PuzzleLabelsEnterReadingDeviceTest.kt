@@ -348,6 +348,80 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun lessonThreePageFiveChecksBothConsecutivePuzzlesWithOneEnterEachThenAdvances() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val page = published.getJSONArray("pages").getJSONObject(4)
+        val blocks = page.getJSONArray("blocks")
+        assertEquals("inline_fill_code", blocks.getJSONObject(1).getString("type"))
+        assertEquals("order_code", blocks.getJSONObject(2).getString("type"))
+        assertEquals(8, published.getJSONArray("pages").length())
+
+        // Keep the test deterministic without changing any published curriculum.
+        // @After restores the isolated QA application's original progress data.
+        ProgressRepository.saveExerciseState(context, "programming", lesson, 4, 1, JSONObject()
+            .put("correct", false).put("answers", JSONArray().put("").put("")))
+        ProgressRepository.saveExerciseState(context, "programming", lesson, 4, 2, JSONObject()
+            .put("correct", false).put("order", JSONArray().put(0).put(1).put(2).put(3)))
+        val host = openProgramming(lesson, 4, narrate = false)
+        lateinit var originalEditor: EditText
+        host.onActivity { activity ->
+            val inputs = descendants(content(activity)).filterIsInstance<EditText>()
+                .filter { it.tag == "cpp_code_input" }
+            assertEquals("Two native C++ blanks appear on this page", 2, inputs.size)
+            inputs[0].setText("<<")
+            inputs[1].setText("\"Carga lista\"")
+            originalEditor = inputs[1]
+            assertTrue(originalEditor.requestFocus())
+            assertEquals(2, field<Int>(activity, "requiredExercises"))
+            assertEquals(0, field<Int>(activity, "completedExercises"))
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("One Enter checks the first inline-code puzzle", true,
+                ProgressRepository.getExerciseState(context, lesson, 4, 1)?.optBoolean("correct", false))
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            assertFalse("The completed, disabled C++ input must release native keyboard focus",
+                originalEditor.hasFocus())
+
+            // Arrange the real published draggable fragments via their supported
+            // click-to-order behavior. Never replace its validator or saved answer.
+            val rows = descendants(content(activity)).filterIsInstance<TextView>()
+                .filter { it.tag is Int && it.isClickable }
+            assertEquals(4, rows.size)
+            val wanted = blocks.getJSONObject(2).getJSONArray("correctOrder")
+            for (position in 0 until wanted.length()) {
+                assertTrue(rows.single { it.tag == wanted.getInt(position) }.performClick())
+            }
+            val enabledChecks = descendants(content(activity)).filterIsInstance<Button>()
+                .filter { it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled }
+            assertEquals("Only the order puzzle remains to check", 1, enabledChecks.size)
+        }
+
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertTrue("One Enter checks the second order-code puzzle",
+                ProgressRepository.getExerciseState(context, lesson, 4, 2)?.optBoolean("correct", false) == true)
+            assertEquals(2, field<Int>(activity, "completedExercises"))
+            assertTrue("Continue is enabled as soon as both puzzles are complete",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            assertEquals("Checking cannot skip the current page", 4,
+                field<Int>(activity, "currentPage"))
+        }
+
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("One more Enter moves from page 5 to page 6", 5,
+                field<Int>(activity, "currentPage"))
+            assertEquals(8, field<Int>(activity, "totalPages"))
+        }
+    }
+
     @Test fun singleEnterChecksOnPageFiveThenAdvancesAndFinishesWithoutExtraPresses() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)
