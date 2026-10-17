@@ -78,6 +78,29 @@ class LessonReadingProgressModelTest {
         assertTrue(model.states(page).isEmpty())
     }
 
+    @Test fun solvedBeforeOptionsFinishLightsEarlierBodyWithoutFakeListening() {
+        val origins = listOf(NarrationTextOrigin(-1), NarrationTextOrigin(3),
+            NarrationTextOrigin(3), NarrationTextOrigin(3, true), NarrationTextOrigin(4))
+        val model = LessonReadingProgressModel()
+        model.bind(page, NarrationReadingPlan(origins, "answered-question-skip"), key)
+        model.update(event(NarrationPlaybackPhase.PLAYING, index = 1, count = origins.size))
+        model.update(event(NarrationPlaybackPhase.POSITION_CHANGED, index = 3, count = origins.size)
+            .copy(manualForwardFrom = NarrationGatePosition(0)))
+        assertEquals(ReadingBlockState.READ, model.states(page)[-1])
+        assertEquals(ReadingBlockState.READ, model.states(page)[3])
+        assertEquals(ReadingBlockState.UNREAD, model.states(page)[4])
+        assertFalse("Green feedback remains pending",
+            model.presentationCompletedSegments(page).contains(3))
+        val pages = model.javaClass.getDeclaredField("pages").apply { isAccessible = true }
+            .get(model) as Map<*, *>
+        val state = requireNotNull(pages[page])
+        val heard = state.javaClass.getDeclaredField("heard").apply { isAccessible = true }
+            .get(state) as Set<*>
+        assertTrue("A visual skip does not invent heard audio", heard.isEmpty())
+        model.update(event(NarrationPlaybackPhase.RESTARTED, index = 0, count = origins.size))
+        assertEquals(ReadingBlockState.UNREAD, model.states(page)[3])
+    }
+
     @Test fun explicitManualSkipUpdatesUnmappedVisualBlocksWithoutCreditingHeardFeedback() {
         val model = LessonReadingProgressModel()
         val origins = listOf(NarrationTextOrigin(0), NarrationTextOrigin(1), NarrationTextOrigin(1, true))

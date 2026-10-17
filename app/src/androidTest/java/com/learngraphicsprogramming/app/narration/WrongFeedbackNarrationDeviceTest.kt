@@ -157,6 +157,49 @@ class WrongFeedbackNarrationDeviceTest {
     @Test fun britishEnglishMathIncorrectGuidanceUsesRealKokoroAndKeepsPageBookmarkAndSuccessGate() =
         exercise(NarrationLanguage.BRITISH_ENGLISH, mathematical = true)
 
+    @Test fun correctChoiceWhileQuestionIsSpokenJumpsToGreenFeedbackWithoutClaimingItHeard() {
+        val language = NarrationLanguage.SPANISH
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
+        NarrationSettingsRepository.saveLanguage(context, language)
+        NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
+        val fixture = fixture(language, mathematical = false)
+        withFixture(fixture) { host ->
+            host.onActivity { activity ->
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            awaitNative(host, "The original question is audibly playing before the choice", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                val gate = field<NarrationExerciseGate?>(reader, "playbackGate")
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300 &&
+                    gate?.boundary()?.let { field<Int>(reader, "index") < it.start } == true
+            }
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+                val target = requireNotNull(gate.boundary()).start
+                assertTrue(field<Int>(reader, "index") < target)
+                select(activity, fixture, correct = true)
+                assertTrue(check(activity, fixture).performClick())
+                assertTrue("The answer is genuinely saved correct", saved(fixture).getBoolean("correct"))
+                assertEquals("The first answer skips its remaining question/options", target,
+                    field<Int>(reader, "index"))
+                assertTrue("Reader continues on the permitted feedback", reader.isPlaying)
+                assertEquals("Correct feedback is not counted heard merely by answering",
+                    0, gate.heardThrough)
+                assertFalse("The next success sentence remains gated until the first is heard",
+                    gate.canPlay(target + 1))
+                val reading = field<LessonReadingProgressModel>(activity, "readingProgress")
+                val identity = "${fixture.route}/${fixture.id}/0"
+                assertEquals("The visibly skipped question becomes read",
+                    ReadingBlockState.READ, reading.states(identity)[0])
+                assertFalse("The explanation itself is still pending",
+                    reading.presentationCompletedSegments(identity).contains(target))
+            }
+        }
+    }
+
     @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
         val language = NarrationLanguage.SPANISH
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }

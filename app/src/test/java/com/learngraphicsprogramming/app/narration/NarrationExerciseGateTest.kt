@@ -85,6 +85,27 @@ class NarrationExerciseGateTest {
         assertEquals(null,gate.boundary())
     }
 
+    @Test fun submittedPuzzleSkipsOptionsButNotEarlierUnheardFeedback() {
+        val gate = NarrationExerciseGate(12, gates)
+        val beginning = NarrationGatePosition(0, 480)
+        assertEquals(NarrationGatePosition(3), gate.answerDestination(2, beginning))
+        assertFalse("Wrong feedback never unlocks success", gate.canPlay(3))
+        assertEquals(0, gate.heardThrough)
+        gate.updateCorrect(setOf(2))
+        assertEquals(NarrationGatePosition(3), gate.answerDestination(2, beginning))
+        assertTrue(gate.canPlay(3))
+        assertFalse(gate.canPlay(4))
+        gate.updateCorrect(setOf(2, 6))
+        assertEquals("Second puzzle cannot leapfrog first success narration",
+            NarrationGatePosition(3), gate.answerDestination(6, beginning))
+        gate.completedNaturally(3)
+        gate.completedNaturally(4)
+        assertEquals(NarrationGatePosition(8),
+            gate.answerDestination(6, NarrationGatePosition(5)))
+        assertNull(gate.answerDestination(2, NarrationGatePosition(3)))
+        assertNull(gate.answerDestination(77, beginning))
+    }
+
     @Test fun transientGuidanceMayOnlyBindAnActualExerciseOfTheOriginalPage() {
         val gate = NarrationExerciseGate(12, gates)
         assertTrue(gate.hasExercise(2))
