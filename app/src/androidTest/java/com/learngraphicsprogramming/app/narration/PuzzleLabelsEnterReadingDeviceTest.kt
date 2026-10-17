@@ -527,7 +527,7 @@ class PuzzleLabelsEnterReadingDeviceTest {
             val options = descendants(card).filterIsInstance<android.widget.RadioButton>()
             assertTrue(options[1].performClick())
             val fullscreen = descendants(card).single {
-                it.contentDescription == activity.getString(R.string.exercise_fullscreen)
+                it.contentDescription == activity.getString(R.string.math_ui_fullscreen)
             }
             assertTrue(fullscreen.performClick())
             assertTrue("The fullscreen puzzle owns the screen",

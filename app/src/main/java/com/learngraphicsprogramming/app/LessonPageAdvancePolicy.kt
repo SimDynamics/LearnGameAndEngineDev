@@ -27,6 +27,7 @@ internal class LessonPageAdvanceEnterGate {
     private var pending: Press? = null
     private var lastNavigationKey: Pair<Int, Long>? = null
 
+    @Suppress("UNUSED_PARAMETER") // Event time is retained for the keyboard event contract.
     fun down(
         page: String,
         keyCode: Int,
@@ -56,6 +57,7 @@ internal class LessonPageAdvanceEnterGate {
         return if (route == Route.NAVIGATE) Route.CONSUME else route
     }
 
+    @Suppress("UNUSED_PARAMETER") // UP duration is not a reason to ignore a deliberate new press.
     fun up(page: String, keyCode: Int, downTime: Long, eventTime: Long, canceled: Boolean): Route {
         val press = pending ?: return Route.CONSUME
         if (press.keyCode != keyCode || press.downTime != downTime) return Route.CONSUME
