@@ -151,7 +151,28 @@ class CppLessonCompilerTabStdinDeviceTest {
             }
         }
 
-    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->
+    @Test fun choosingAnotherRealPuzzleReleasesOldCompilerFocusAndKeyboard() =
+        withLesson { scenario, _ ->
+            focusWithIme(scenario)
+            scenario.onActivity { activity ->
+                val editor = source(activity)
+                val published = LessonRepository.loadLessonJson(context, "programming", LESSON)
+                val choice = published.getJSONArray("pages").getJSONObject(4)
+                    .getJSONArray("blocks").getJSONObject(4)
+                val answer = choice.getJSONArray("options").getString(choice.getInt("correctIndex"))
+                val radio = descendants(activity.window.decorView)
+                    .filterIsInstance<android.widget.RadioButton>()
+                    .single { it.text.toString() == answer }
+                assertTrue(editor.hasFocus())
+                radio.performClick()
+                assertTrue(radio.isChecked)
+                assertFalse("Choosing another puzzle closes editor caret", editor.hasFocus())
+                assertFalse("The shortcuts are no longer owned by a code editor",
+                    (field(activity, "programmingKeyboardBar") as View).visibility == View.VISIBLE)
+            }
+        }
+
+    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->    @Test fun realLessonHidTabAndFloatingTabKeepSourceFocusAndStdinInNormalAndFullscreen() = withLesson { scenario, _ ->
         for (fullscreen in listOf(false, true)) {
             mode(scenario, fullscreen)
             focusWithIme(scenario)

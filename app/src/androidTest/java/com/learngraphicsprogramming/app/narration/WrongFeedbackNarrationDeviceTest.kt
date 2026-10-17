@@ -200,7 +200,54 @@ class WrongFeedbackNarrationDeviceTest {
         }
     }
 
-    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
+    @Test fun backwardPastTheWrongGuideStartReturnsToTheSameOriginalPageSlot() {
+        val language = NarrationLanguage.SPANISH
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
+        NarrationSettingsRepository.saveLanguage(context, language)
+        NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
+        val fixture = fixture(language, mathematical = false)
+        withFixture(fixture) { host ->
+            host.onActivity { activity ->
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            awaitNative(host, "The original page must be playing before wrong feedback", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300
+            }
+            host.onActivity { activity ->
+                select(activity, fixture, correct = false)
+                check(activity, fixture).performClick()
+                assertFalse(saved(fixture).getBoolean("correct"))
+            }
+            awaitNative(host, "A new wrong-answer guide must actually play its first part", 180_000L) { activity ->
+                val reader = controller(activity)
+                val guide = field<Any?>(reader, "incorrectFeedback")
+                val player = field<MediaPlayer?>(reader, "player")
+                guide != null && field<Int>(guide, "index") == 0 &&
+                    reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300
+            }
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val originalKey = requireNotNull(field<String?>(reader, "resumeKey"))
+                val bookmarks = bookmarkKeys()
+                val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+                val before = gate.heardThrough
+                reader.seekBy(-120)
+                assertNull("Rewind crosses the temporary guide into the real page",
+                    field<Any?>(reader, "incorrectFeedback"))
+                assertTrue("The active reader continues from the earlier page audio", reader.isPlaying)
+                assertEquals(originalKey, field<String?>(reader, "resumeKey"))
+                assertEquals("No fourth bookmark is allocated", bookmarks, bookmarkKeys())
+                assertEquals("Wrong feedback never grants success", before, gate.heardThrough)
+                assertFalse(saved(fixture).getBoolean("correct"))
+            }
+        }
+    }
+
+    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {    @Test fun unrelatedCorrectPuzzleKeepsThePlayingGuideAndCorrectingAPausedGuideDoesNotResumeThePage() {
         val language = NarrationLanguage.SPANISH
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
         NarrationSettingsRepository.saveLanguage(context, language)
