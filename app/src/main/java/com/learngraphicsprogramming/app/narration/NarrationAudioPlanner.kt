@@ -96,12 +96,24 @@ internal class NarrationAudioPlan(
      * cached-only pages do not consume an alternating turn. Cursors are hints, never grounds
      * for skipping earlier files that may now be absent or invalid.
      */
+    // Original public contract remains unchanged for callers that provide
+    // their catalog as a trailing lambda (including the curriculum and tests).
     fun candidates(pageQueue: NarrationPageQueue.Snapshot?,
+                   catalog: (route: String, course: String?) -> Sequence<NarrationCurriculum.Page>): Sequence<PlannedPage> =
+        candidates(pageQueue, isCoursePaused = { _, _ -> false }, catalog = catalog)
+
+    /** Pausing a course omits only speculative COURSE/GENERAL work. A page the
+     * learner has opened remains eligible even when its course is paused. */
+    fun candidates(pageQueue: NarrationPageQueue.Snapshot?,
+                   isCoursePaused: (route: String, course: String) -> Boolean,
                    catalog: (route: String, course: String?) -> Sequence<NarrationCurriculum.Page>): Sequence<PlannedPage> = sequence {
         val start = snapshot()
         val selection = start.context
         val seen = mutableSetOf<String>()
         fun planned(page: NarrationCurriculum.Page, priority: NarrationAudioPriority): PlannedPage? {
+            // Skip before touching deduplication, completion hints or persisted cursors.
+            if (priority != NarrationAudioPriority.CURRENT_PAGE &&
+                isCoursePaused(page.routeId, page.courseId)) return null
             if (page.sentences.isEmpty() || !seen.add(page.identity) || !eligible(page)) return null
             return PlannedPage(page, priority, start.epoch)
         }
@@ -122,7 +134,8 @@ internal class NarrationAudioPlan(
             if (!isCurrent(start.epoch)) return@sequence
             currentPage?.let { page -> planned(page, NarrationAudioPriority.CURRENT_PAGE)?.let { yield(it) } }
         }
-        if (selection.routeId != null && selection.courseId != null) {
+        if (selection.routeId != null && selection.courseId != null &&
+            !isCoursePaused(selection.routeId, selection.courseId)) {
             for (page in catalog(selection.routeId, selection.courseId)) {
                 if (!isCurrent(start.epoch)) return@sequence
                 planned(page, NarrationAudioPriority.COURSE)?.let { yield(it) }

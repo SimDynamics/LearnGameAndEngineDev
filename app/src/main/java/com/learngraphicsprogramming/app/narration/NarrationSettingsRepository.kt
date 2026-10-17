@@ -23,6 +23,7 @@ object NarrationSettingsRepository {
     private const val PREFERENCES_NAME = "lesson_narration_settings"
     private const val KEY_ENABLED = "enabled"
     internal const val KEY_ADVANCE_GENERATION = "kokoro_advance_generation"
+    private const val KEY_PAUSED_COURSE_PREFIX = "kokoro_paused_course:"
     private const val KEY_CONTROLS_VISIBLE = "controls_visible"
     private const val KEY_ENGINE = "engine"
     private const val KEY_KOKORO_VOICE = "kokoro_voice"
@@ -90,6 +91,30 @@ object NarrationSettingsRepository {
     fun saveAdvanceGenerationEnabled(context: Context, enabled: Boolean) {
         preferences(context).edit().putBoolean(KEY_ADVANCE_GENERATION, enabled).apply()
     }
+
+    /** Per-course control affects pre-generation only, never on-demand narration or cache. */
+    private fun coursePauseKey(routeId: String, courseId: String): String {
+        require(routeId in NarrationAudioPlan.ROUTES && courseId.isNotBlank()) {
+            "Unknown curricular route or course"
+        }
+        return "$KEY_PAUSED_COURSE_PREFIX$routeId:$courseId"
+    }
+
+    fun courseGenerationPaused(context: Context, routeId: String, courseId: String): Boolean =
+        preferences(context).getBoolean(coursePauseKey(routeId, courseId), false)
+
+    fun saveCourseGenerationPaused(context: Context, routeId: String, courseId: String, paused: Boolean) {
+        val key = coursePauseKey(routeId, courseId)
+        val prefs = preferences(context)
+        if (prefs.getBoolean(key, false) == paused) return
+        val editor = prefs.edit()
+        if (paused) editor.putBoolean(key, true) else editor.remove(key)
+        editor.apply()
+    }
+
+    /** Used by the background service to react immediately to a changed course. */
+    internal fun isCourseGenerationPreference(key: String?): Boolean =
+        key?.startsWith(KEY_PAUSED_COURSE_PREFIX) == true
 
     /** Also checked by queued work, before a settings observer can run on main. */
     fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(KEY_ENABLED, true)

@@ -50,6 +50,7 @@ internal class KokoroBackgroundNarrationWorker(
         val planEpoch = plan.snapshot().epoch
         var cpuBudget: AutoCloseable? = null
         var frontendForeground: Boolean? = null
+        var currentPlanned: NarrationAudioPlan.PlannedPage? = null
         val started = SystemClock.elapsedRealtime()
         val cancel: () -> Unit = { this.cancel() }
         val interruption = NarrationWorkPriority.onPreempt(cancel)
@@ -58,8 +59,13 @@ internal class KokoroBackgroundNarrationWorker(
         fun pageChanged() = KokoroPagePreparationQueue.snapshot(app)?.revision != pageRevision || !plan.isCurrent(planEpoch)
         fun enabled() = NarrationSettingsRepository.isEngineAllowed(app, NarrationEngine.KOKORO) &&
             NarrationSettingsRepository.advanceGenerationEnabled(app)
-        fun active() = enabled() && slice == cancellation.get() && activeSession() &&
-            !NarrationWorkPriority.isBusy && !pageChanged()
+        fun coursePermitted(): Boolean = currentPlanned?.let { planned ->
+            planned.priority == NarrationAudioPriority.CURRENT_PAGE ||
+                !NarrationSettingsRepository.courseGenerationPaused(
+                    app, planned.page.routeId, planned.page.courseId)
+        } ?: true
+        fun active() = enabled() && coursePermitted() && slice == cancellation.get() &&
+            activeSession() && !NarrationWorkPriority.isBusy && !pageChanged()
         fun selectBudget(foreground: Boolean) {
             if (frontendForeground == foreground) return
             // The G2P pools also inherit the worker mask when constructed. Do not carry a
@@ -89,8 +95,13 @@ internal class KokoroBackgroundNarrationWorker(
             page?.let { KokoroNarrationDiagnostics.page(app, it) }
             // Validate every sentence, even when a previous pass marked it complete.
             // Completion is a progress hint, never a stale cache guarantee.
-            val candidates = plan.candidates(page, catalog)
+            val candidates = plan.candidates(page,
+                isCoursePaused = { route, course ->
+                    NarrationSettingsRepository.courseGenerationPaused(app, route, course)
+                }, catalog = catalog)
             for (planned in candidates) {
+                currentPlanned = planned
+                if (!coursePermitted()) continue
                 val foreground = planned.priority == NarrationAudioPriority.CURRENT_PAGE
                 val scope = when (planned.priority) {
                     NarrationAudioPriority.CURRENT_PAGE -> "page"
@@ -102,6 +113,7 @@ internal class KokoroBackgroundNarrationWorker(
                 try {
                     for ((sentenceIndex, item) in pageSentences.withIndex()) {
                         if (!enabled()) return Outcome.PAUSED
+                        if (!coursePermitted()) return Outcome.MORE
                         if (pageChanged()) return Outcome.MORE
                         if (slice != cancellation.get() || !activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
                         scanned++
@@ -170,6 +182,7 @@ internal class KokoroBackgroundNarrationWorker(
                             try {
                                 NarrationWavWriter.writeChunks(temporary, parts)
                                 state("saving", item, scope)
+                                if (!active()) throw InterruptedException("Course preparation paused before saving")
                                 if (!NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(app), temporary.length())) {
                                     throw StorageBudgetReached()
                                 }
@@ -224,7 +237,7 @@ internal class KokoroBackgroundNarrationWorker(
             return Outcome.PAUSED
         } catch (_: InterruptedException) {
             state("preempted")
-            return if (pageChanged()) Outcome.MORE else Outcome.BUSY
+            return if (pageChanged() || !coursePermitted()) Outcome.MORE else Outcome.BUSY
         } catch (error: Exception) {
             state("retry")
             KokoroNarrationDiagnostics.event(app, TAG, "Offline narration interrupted or resources unavailable", error)

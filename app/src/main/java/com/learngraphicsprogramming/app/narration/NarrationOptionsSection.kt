@@ -413,7 +413,11 @@ class NarrationOptionsSection(private val activity: Activity) {
             s(R.string.narration_course_audio_row,
                 course.number, course.title, coverage.generatedSentences,
                 coverage.expectedSentences, courseAudioPercent(coverage.percent),
-                coverage.files, size(coverage.bytes))
+                coverage.files, size(coverage.bytes)) +
+                if (NarrationSettingsRepository.courseGenerationPaused(
+                        activity, course.routeId, course.courseId))
+                    "\n" + s(R.string.narration_course_audio_paused_label)
+                else ""
         }.ifEmpty { listOf(s(R.string.narration_course_audio_no_courses)) }.toTypedArray()
         AlertDialog.Builder(activity)
             .setTitle(courseAudioRoute(routeId))
@@ -436,14 +440,28 @@ class NarrationOptionsSection(private val activity: Activity) {
     }
 
     private fun showCourseAudioDetails(course: KokoroCourseAudioStats.Course) {
-        if (!narrationEnabled()) return
+        if (!narrationEnabled() || !active || activity.isDestroyed) return
         val coverage = course.coverage
+        val paused = NarrationSettingsRepository.courseGenerationPaused(
+            activity, course.routeId, course.courseId)
+        val current = if (paused) R.string.narration_course_audio_paused_label
+            else R.string.narration_course_audio_active_label
         AlertDialog.Builder(activity)
             .setTitle(s(R.string.narration_course_audio_course_title,
                 courseAudioRoute(course.routeId), course.number, course.title))
             .setMessage(s(R.string.narration_course_audio_details,
                 coverage.generatedSentences, coverage.expectedSentences,
-                courseAudioPercent(coverage.percent), coverage.files, size(coverage.bytes)))
+                courseAudioPercent(coverage.percent), coverage.files, size(coverage.bytes)) +
+                "\n\n" + s(current) + "\n" + s(R.string.narration_course_audio_pause_explanation))
+            .setNeutralButton(s(if (paused) R.string.narration_course_audio_resume
+                else R.string.narration_course_audio_pause)) { _, _ ->
+                if (!narrationEnabled()) return@setNeutralButton
+                NarrationSettingsRepository.saveCourseGenerationPaused(
+                    activity, course.routeId, course.courseId, !paused)
+                if (paused) KokoroBackgroundNarrationWorker.start(activity.applicationContext)
+                // Refresh the visible state without recalculating audio or deleting files.
+                handler.post { showCourseAudioDetails(course) }
+            }
             .setPositiveButton(s(R.string.narration_close), null)
             .showReaderDialog()
     }

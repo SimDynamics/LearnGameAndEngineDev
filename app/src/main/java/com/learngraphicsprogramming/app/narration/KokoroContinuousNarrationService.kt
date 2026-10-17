@@ -53,6 +53,13 @@ internal class KokoroContinuousNarrationService : Service() {
             }
             if (Looper.myLooper() == Looper.getMainLooper()) stopIfDisabled()
             else main.post { stopIfDisabled() }
+        } else if (NarrationSettingsRepository.isCourseGenerationPreference(key)) {
+            // A course can be paused while phonemizing or synthesizing a
+            // sentence. Cancel only this background worker and reconsider
+            // eligible courses. The foreground reader is a different owner.
+            val reconsider = { worker?.cancel() }
+            if (Looper.myLooper() == Looper.getMainLooper()) reconsider()
+            else main.post { reconsider() }
         }
     }
     private var wakeRenewedAt = 0L

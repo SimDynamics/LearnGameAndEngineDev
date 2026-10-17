@@ -179,6 +179,66 @@ class NarrationAudioPlannerTest {
         assertTrue(plan.snapshot().cursors.isEmpty())
     }
 
+    @Test fun pausingOneCourseSkipsItsAdvancePagesButPreservesTheOpenPage() {
+        val visible = page(programming, 0, course = "course1")
+        val next = page(programming, 1, course = "course1")
+        val other = page(programming, 0, course = "course2")
+        val mathPage = page(math, 0)
+        val plan = NarrationAudioPlan()
+        val queue = NarrationPageQueue.Snapshot(9L, visible.sentences, emptySet())
+        plan.enter(programming, visible.courseId, visible.lessonId, visible.pageIndex, queue.revision)
+
+        val result = plan.candidates(queue,
+            isCoursePaused = { route, course -> route == programming && course == "course1" },
+            catalog = catalog(listOf(visible, next, other, mathPage))).toList()
+
+        assertEquals(listOf(visible.identity, other.identity, mathPage.identity),
+            result.map { it.page.identity })
+        assertEquals(listOf(NarrationAudioPriority.CURRENT_PAGE,
+            NarrationAudioPriority.GENERAL, NarrationAudioPriority.GENERAL),
+            result.map { it.priority })
+        assertTrue(plan.snapshot().cursors.isEmpty())
+        assertFalse(plan.hasDeferredWork())
+    }
+
+    @Test fun resumedCourseRecoversItsSkippedAudioWithoutAlteringPlanOrFiles() {
+        val stopped = page(programming, 0, course = "course1")
+        val other = page(programming, 1, course = "course2")
+        val mathPage = page(math, 0)
+        val plan = NarrationAudioPlan()
+        var paused = true
+        val excluded = plan.candidates(null,
+            isCoursePaused = { route, course -> paused && route == programming && course == "course1" },
+            catalog = catalog(listOf(stopped, other, mathPage))).toList()
+        assertEquals(listOf(other.identity, mathPage.identity), excluded.map { it.page.identity })
+        assertTrue(plan.snapshot().cursors.isEmpty())
+
+        paused = false
+        val resumed = plan.candidates(null,
+            isCoursePaused = { route, course -> paused && route == programming && course == "course1" },
+            catalog = catalog(listOf(stopped, other, mathPage))).toList()
+        assertEquals(listOf(stopped.identity, other.identity, mathPage.identity),
+            resumed.map { it.page.identity })
+        assertEquals(0L, plan.snapshot().epoch)
+        assertTrue(plan.snapshot().cursors.isEmpty())
+    }
+
+    @Test fun pausingDuringTheLazyCurriculumScanSkipsFurtherCoursePages() {
+        val first = page(programming, 0, course = "course1")
+        val pending = page(programming, 1, course = "course1")
+        val available = page(programming, 0, course = "course2")
+        val mathPage = page(math, 0)
+        val paused = mutableSetOf<Pair<String, String>>()
+        val plan = NarrationAudioPlan()
+        val iterator = plan.candidates(null,
+            isCoursePaused = { route, course -> (route to course) in paused },
+            catalog = catalog(listOf(first, pending, available, mathPage))).iterator()
+        assertEquals(first.identity, iterator.next().page.identity)
+        paused += (programming to "course1")
+        val remainder = iterator.asSequence().toList()
+        assertEquals(listOf(available.identity, mathPage.identity), remainder.map { it.page.identity })
+    }
+
     @Test fun restoredCursorNeverSkipsAnEarlierMissingOrInvalidRecording() {
         val pages = listOf(page(programming, 0), page(programming, 1))
         val plan = NarrationAudioPlan()
