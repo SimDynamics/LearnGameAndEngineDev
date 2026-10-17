@@ -20,6 +20,39 @@ class NarrationWordMappingsTest {
             mapped.displayed.any { it.start <= next && it.endExclusive == next + "comienza".length + 1 })
     }
 
+    @Test fun thePublishedCommentMarkerPageKeepsWordShadingAndUnmodifiedCurriculum() {
+        val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
+        val lessonFile = requireNotNull(resources.absoluteFile.parentFile).resolve(
+            "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json")
+        val lesson = JSONObject(lessonFile.readText())
+        val original = lesson.toString()
+        val paragraph = lesson.getJSONArray("pages").getJSONObject(3)
+            .getJSONArray("blocks").getJSONObject(1).getString("text")
+        assertTrue(paragraph.contains("literal, // comienza"))
+        val script = LessonNarrationScript.page(lesson, 3, NarrationLanguage.SPANISH, forKokoro = true)
+        val plan = requireNotNull(script.readingPlan(NarrationEngine.KOKORO))
+        val segments = NarrationSegments.sentences(script.texts)
+        val selected = plan.origins.indices.filter {
+            plan.origins[it].blockIndex == 1 && !plan.origins[it].feedback
+        }.associateWith { segments[it] }
+        val mapping = NarrationWordMappings.forBlock(1, paragraph, selected)
+        assertEquals("Ninguna frase del párrafo pierde la correspondencia", selected.keys, mapping.keys)
+        assertEquals(paragraph.indices.toList(), mapping.values.flatMap {
+            value -> value.displayed.flatMap { it.start until it.endExclusive }
+        })
+        val marked = selected.entries.single { it.value.contains("//") }
+        val spoken = marked.value
+        val trace = requireNotNull(MixedSpanishG2P.traceWordsPrepared(spoken)) {
+            "La lectura con // requiere tiempos de palabras nativos"
+        }
+        assertEquals(MixedSpanishG2P.phonemizePrepared(spoken, emptyMap()), trace.phonemes)
+        val slash = paragraph.indexOf("//")
+        assertTrue(mapping.getValue(marked.key).displayed.any {
+            it.start <= slash && it.endExclusive >= slash + 2
+        })
+        assertEquals(original, lesson.toString())
+    }
+
     @Test fun degreeScaleGlyphIsPaintedWithItsRealSpokenScaleWord() {
         val source = "Una temperatura de -3 °C describe un estado. Un aumento de 5 °C describe un cambio."
         val mapping = NarrationWordMappings.forBlock(1, source, mapOf(0 to source)).getValue(0)
