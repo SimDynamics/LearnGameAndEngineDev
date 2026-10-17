@@ -52,7 +52,10 @@ internal class LessonPageAdvanceEnterGate {
     @Suppress("UNUSED_PARAMETER")
     fun up(page: String, keyCode: Int, downTime: Long, eventTime: Long, canceled: Boolean): Route {
         val press = pending ?: return Route.CONSUME
-        if (press.keyCode != keyCode || press.downTime != downTime) return Route.CONSUME
+        // Virtual IMEs can return a different downTime in their release event.
+        // The action already happened on DOWN, so any UP for this key safely
+        // closes the held press without running a second action.
+        if (press.keyCode != keyCode) return Route.CONSUME
         pending = null
         // The action already ran on DOWN. Never execute another action on UP,
         // even if the puzzle was just solved or the Activity opened the next page.

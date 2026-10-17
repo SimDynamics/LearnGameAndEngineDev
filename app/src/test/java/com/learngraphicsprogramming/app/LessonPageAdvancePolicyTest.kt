@@ -39,6 +39,14 @@ class LessonPageAdvancePolicyTest {
         assertEquals(skip, gate.up("lesson/p3", enter, sameClock, sameClock, false))
     }
 
+    @Test fun virtualUpWithDifferentDownTimeStillEndsTheHeldPress() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(puzzle, gate.down("lesson/p2", enter, 99L, 120L, 0, false, false))
+        assertEquals(skip, gate.up("lesson/p2", enter, 0L, 125L, false))
+        assertEquals(go, gate.down("lesson/p2", enter, 99L, 120L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/p3", enter, 0L, 125L, false))
+    }
+
     @Test fun duplicatedDownInsideOnePressStillCannotDoubleSubmit() {
         val gate = LessonPageAdvanceEnterGate()
         assertEquals(puzzle, gate.down("lesson/p2", enter, 42L, 43L, 0, false, false))
