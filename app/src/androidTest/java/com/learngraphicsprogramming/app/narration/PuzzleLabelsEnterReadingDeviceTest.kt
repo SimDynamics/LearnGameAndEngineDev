@@ -585,6 +585,67 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun lessonThreeAllOutputPredictionFieldsShowExistingShortcutsForPlainTextAndSymbols() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
+        val original = LessonRepository.loadLessonJson(context, "programming", lesson).toString()
+        val pages = JSONObject(original).getJSONArray("pages")
+        // Page 1 contains RocaAzul, Ruta Sur and A:B; page 3 contains quoted
+        // strings and a backslash. Page 2 has authored multiline outputs.
+        for (page in 0..2) {
+            val blocks = pages.getJSONObject(page).getJSONArray("blocks")
+            val predictions = (0 until blocks.length()).mapNotNull { index ->
+                blocks.getJSONObject(index).takeIf { it.optString("type") == "output_prediction" }
+                    ?.let { index to it }
+            }
+            assertEquals(if (page == 0) 3 else 2, predictions.size)
+            predictions.forEach { (block, _) ->
+                ProgressRepository.saveExerciseState(context, "programming", lesson, page, block,
+                    JSONObject().put("correct", false).put("answer", ""))
+            }
+            val host = openProgramming(lesson, page, narrate = false)
+            host.onActivity { activity ->
+                val inputs = descendants(content(activity)).filterIsInstance<EditText>()
+                    .filter { it.hint.toString() == activity.getString(R.string.exercise_expected_output) }
+                assertEquals("All authored prediction fields are present", predictions.size, inputs.size)
+                val bar = activity.findViewById<View>(R.id.programmingKeyboardBar)
+                val keys = activity.findViewById<ViewGroup>(R.id.programmingKeyboardBarContent)
+                val neutral = activity.findViewById<View>(android.R.id.content)
+                neutral.isFocusableInTouchMode = true
+                // Simulate the already-reported IME-visible state. This checks
+                // ownership without requesting a real LDPlayer soft keyboard,
+                // which can be suppressed by a physical host keyboard.
+                val imeVisible = activity.javaClass.getDeclaredField("keyboardVisible").apply {
+                    isAccessible = true
+                }
+                for ((index, prediction) in predictions.withIndex()) {
+                    val input = inputs[index]
+                    val answer = prediction.second.getJSONArray("answers").getString(0)
+                    assertEquals("Every prediction gets the existing programming bar", "cpp_code_input", input.tag)
+                    assertEquals("One-line and multiline contracts are unchanged",
+                        '\n' !in answer, input.maxLines == 1)
+                    assertTrue(neutral.requestFocus())
+                    input.showSoftInputOnFocus = false
+                    assertTrue(input.requestFocus())
+                    assertSame("Focus should own exactly this output field",
+                        input, field<EditText?>(activity, "activeCodeInput"))
+                    imeVisible.setBoolean(activity, true)
+                    invoke(activity, "updateProgrammingKeyboardBarVisibility")
+                    assertEquals("The shortcuts work even for plain letters and spaces",
+                        View.VISIBLE, bar.visibility)
+                    assertTrue("Existing Tab/symbol shortcuts remain present", keys.childCount > 0)
+                    input.setText(answer)
+                    assertEquals("Do not transform student input", answer, input.text.toString())
+                    imeVisible.setBoolean(activity, false)
+                    invoke(activity, "updateProgrammingKeyboardBarVisibility")
+                    assertEquals("Exiting editing still hides shortcuts", View.GONE, bar.visibility)
+                }
+            }
+            closeCurrentScenario()
+        }
+        assertEquals("No published curricular JSON is modified", original,
+            LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+    }
+
     @Test fun lessonThreePageFiveChecksBothConsecutivePuzzlesWithOneEnterEachThenAdvances() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)

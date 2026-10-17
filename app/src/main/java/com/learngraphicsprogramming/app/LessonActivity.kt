@@ -5029,6 +5029,12 @@ class LessonActivity : AppCompatActivity() {
         val input =
             EditText(this)
 
+        // Output predictions are programming answer editors, even when the
+        // expected output is plain text. The shared shortcut bar is focus-
+        // driven, not punctuation-driven. Keep the original IME, Tab, Enter,
+        // single/multiline behavior and existing validation unchanged.
+        input.tag = CODE_INPUT_TAG
+
         input.hint =
             getString(R.string.exercise_expected_output)
 
