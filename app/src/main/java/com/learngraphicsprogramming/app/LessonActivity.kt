@@ -3936,7 +3936,7 @@ class LessonActivity : AppCompatActivity() {
             completedExercises
     }
 
-    private fun markExerciseCompleted() {
+    private fun markExerciseCompleted(blockIndex: Int) {
         completedExercises += 1
         pageCompletedExercises[currentPage] = completedExercises
         pageRequiredExercises[currentPage] = requiredExercises
@@ -3967,6 +3967,12 @@ class LessonActivity : AppCompatActivity() {
                         ?.hideSoftInputFromWindow(codeInput.windowToken, 0)
                 }
             }
+        }
+        // Notify only for a newly saved correct answer, not cached page rendering.
+        if (::lessonJson.isInitialized && !isDestroyed && !isFinishing) {
+            narrationController?.onCorrectSubmission(
+                narrationPageIdentity(), blockIndex, narrationCorrectBlocks()
+            )
         }
     }
     private fun addNote(text: String, mathMode: String = "auto") {
@@ -4741,7 +4747,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     input.isEnabled =
                         false
@@ -5398,7 +5404,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     input.isEnabled =
                         false
@@ -6570,7 +6576,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     checkButton.isEnabled =
                         false
@@ -11935,7 +11941,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     checkButton.isEnabled =
                         false
@@ -14039,7 +14045,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     for (
                     radio in optionButtons
@@ -15431,7 +15437,7 @@ class LessonActivity : AppCompatActivity() {
                     answeredCorrectly =
                         true
 
-                    markExerciseCompleted()
+                    markExerciseCompleted(blockIndex)
 
                     for (
                     input in inputs

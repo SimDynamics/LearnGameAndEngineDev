@@ -226,6 +226,48 @@ class LessonNarrationController(
         }
     }
 
+    /** A submitted answer visually completes preceding text, not actual audio.
+     * Correct: relocate active source playback to allowed successful feedback.
+     * Incorrect: keep the page's own resume point while its guide plays.
+     */
+    private fun skipAnsweredQuestion(blockIndex: Int, moveSourceAudio: Boolean) {
+        if (closed || finished || segments.isEmpty() || incorrectFeedback != null) return
+        val point = playbackPoint()
+        val destination = playbackGate?.answerDestination(
+            blockIndex, NarrationGatePosition(point.segment, point.positionMs)
+        ) ?: return
+        if (moveSourceAudio) {
+            if (playerReady && playing) {
+                // Record actual listening only up to the interrupted decoder offset.
+                publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED)
+                    .copy(positionMs = point.positionMs))
+            }
+            pendingManualForward = null
+            selectSegment(destination.segment, destination.positionMs)
+        }
+        // An answer deliberately supersedes the entire text before the permitted
+        // feedback. This presentation boundary needs no unsynthesized WAV durations;
+        // it never counts as hearing, and a later rewind restores unread words.
+        publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
+            segmentIndex = destination.segment,
+            positionMs = destination.positionMs,
+            manualForwardFrom = NarrationGatePosition(0)
+        ))
+    }
+
+    /** A correct submission interrupts an active question/options reading.
+     * A paused page never starts playing merely because an answer was submitted.
+     */
+    fun onCorrectSubmission(pageIdentity: String, blockIndex: Int, correctBlocks: Set<Int>) = onMain {
+        if (closed || pageIdentity != activePageIdentity ||
+            playbackGate?.hasExercise(blockIndex) != true) return@onMain
+        val readingPage = incorrectFeedback == null && (playing || waitingForExercise)
+        updateSolvedExercises(pageIdentity, correctBlocks)
+        if (readingPage && incorrectFeedback == null) {
+            skipAnsweredQuestion(blockIndex, moveSourceAudio = true)
+        }
+    }
+
     /** A changed answer only changes playback permission, never the pre-render queue. */
     fun updateSolvedExercises(pageIdentity: String, correctBlocks: Set<Int>) = onMain {
         if (closed || pageIdentity != activePageIdentity) return@onMain
@@ -466,6 +508,9 @@ class LessonNarrationController(
         val wasWaiting = previous?.wasWaiting ?: waitingForExercise
         val wasPlaying = previous?.wasPlaying ?: playing
         if (previous != null) finishIncorrectFeedback(restoreWaiting = false, prepareOriginal = false)
+        // The wrong-answer guide already interrupts page audio. If the page was
+        // being read, reveal the skipped prefix without moving its bookmark.
+        if (wasPlaying || wasWaiting) skipAnsweredQuestion(blockIndex, moveSourceAudio = false)
         pause()
         val feedback = IncorrectFeedback(++incorrectFeedbackSequence, blockIndex,
             prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying)
