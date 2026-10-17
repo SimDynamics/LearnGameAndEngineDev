@@ -200,6 +200,50 @@ class WrongFeedbackNarrationDeviceTest {
         }
     }
 
+    @Test fun mathCorrectAnswerWhileOptionsPlayInterruptsImmediatelyWithGreenFeedback() {
+        val language = NarrationLanguage.BRITISH_ENGLISH
+        instrumentation.runOnMainSync { UiLanguageSettings.select(context, "en") }
+        NarrationSettingsRepository.saveLanguage(context, language)
+        NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
+        val fixture = fixture(language, mathematical = true)
+        withFixture(fixture) { host ->
+            host.onActivity { activity ->
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            awaitNative(host, "Native maths question starts speaking before checking", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                reader.isPlaying && field<Boolean>(reader, "playerReady") &&
+                    player != null && player.currentPosition > 300 &&
+                    field<Int>(reader, "index") <
+                        requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate")).boundary()!!.start
+            }
+            var target = -1
+            host.onActivity { activity ->
+                val reader = controller(activity)
+                val gate = requireNotNull(field<NarrationExerciseGate?>(reader, "playbackGate"))
+                target = requireNotNull(gate.feedbackStart(0)).segment
+                select(activity, fixture, correct = true)
+                assertTrue(check(activity, fixture).performClick())
+                assertTrue("Math answer is persisted before the playback command",
+                    saved(fixture).getBoolean("correct"))
+                assertNull("Math correct answer must not retain wrong-guide audio",
+                    field<Any?>(reader, "incorrectFeedback"))
+                assertEquals("Math success starts at its own green text immediately",
+                    target, field<Int>(reader, "index"))
+                assertTrue("The reader remains active", reader.isPlaying)
+                assertEquals("Skipped options do not count as heard audio", 0, gate.heardThrough)
+            }
+            awaitNative(host, "The actual math success WAV plays instead of the remaining options", 180_000L) { activity ->
+                val reader = controller(activity)
+                val player = field<MediaPlayer?>(reader, "player")
+                reader.isPlaying && field<Int>(reader, "index") == target &&
+                    field<Boolean>(reader, "playerReady") && player != null &&
+                    player.currentPosition > 250
+            }
+        }
+    }
+
     @Test fun backwardPastTheWrongGuideStartReturnsToTheSameOriginalPageSlot() {
         val language = NarrationLanguage.SPANISH
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, "es") }
