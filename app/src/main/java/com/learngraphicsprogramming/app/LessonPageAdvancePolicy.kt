@@ -6,20 +6,17 @@ internal object LessonPageAdvancePolicy {
         required >= 0 && completed >= required
 }
 
-/** A physical Enter owns exactly one action. Trigger on the first DOWN, not on
- * the IME-dependent UP that can be consumed during focus transitions.
- *
- * Matching key-up and repeated DOWN are consumed; a genuinely new DOWN may act
- * immediately even when an emulator reports an unchanged key downTime.
+/** A physical Enter owns one action from its first non-repeated DOWN.
+ * Its UP cannot trigger anything else, even when an IME or LDPlayer drops it.
+ * Never equate two physical presses by timestamp: emulators can reuse both
+ * downTime and eventTime, especially after a mapped touch changes focus.
  */
 internal class LessonPageAdvanceEnterGate {
     enum class Route { NAVIGATE, PUZZLE, EDITOR, CONSUME }
-    private data class Press(
-        val page: String, val keyCode: Int, val downTime: Long,
-        val eventTime: Long, val route: Route
-    )
+    private data class Press(val page: String, val keyCode: Int, val route: Route)
     private var pending: Press? = null
 
+    @Suppress("UNUSED_PARAMETER") // Native timing is diagnostic, never a key identity.
     fun down(
         page: String,
         keyCode: Int,
@@ -33,19 +30,16 @@ internal class LessonPageAdvanceEnterGate {
             return if (pending?.route == Route.EDITOR && pending?.keyCode == keyCode) Route.EDITOR
                 else Route.CONSUME
         }
-        // A duplicate DOWN while the key is still held must not run another
-        // action. After its UP, even a virtual keyboard reusing identical time
-        // stamps represents a fresh deliberate press.
-        val previous = pending
-        if (previous != null && previous.keyCode == keyCode &&
-            previous.downTime == downTime && previous.eventTime == eventTime)
-            return Route.CONSUME
+        // A repeatCount == 0 is a new native key press, even if LDPlayer has
+        // consumed the preceding UP or reused identical downTime/eventTime.
+        // Never infer "still held" from the virtual keyboard's clock values.
+        // Android supplies repeatCount > 0 for actual held-key repeats.
         val route = when {
             editorOwnsEnter -> Route.EDITOR
             canNavigate -> Route.NAVIGATE
             else -> Route.PUZZLE
         }
-        pending = Press(page, keyCode, downTime, eventTime, route)
+        pending = Press(page, keyCode, route)
         return route
     }
 

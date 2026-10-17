@@ -47,13 +47,35 @@ class LessonPageAdvancePolicyTest {
         assertEquals(skip, gate.up("lesson/p3", enter, 0L, 125L, false))
     }
 
-    @Test fun duplicatedDownInsideOnePressStillCannotDoubleSubmit() {
+    @Test fun repeatedKeyDownCannotDoubleSubmitButNewPressAlwaysActs() {
         val gate = LessonPageAdvanceEnterGate()
         assertEquals(puzzle, gate.down("lesson/p2", enter, 42L, 43L, 0, false, false))
-        assertEquals(skip, gate.down("lesson/p2", enter, 42L, 43L, 0, false, false))
         assertEquals(skip, gate.down("lesson/p2", enter, 42L, 45L, 1, true, false))
         assertEquals(skip, gate.up("lesson/p2", enter, 42L, 46L, false))
         assertEquals(go, gate.down("lesson/p2", enter, 42L, 43L, 0, true, false))
+    }
+
+    @Test fun missingKeyUpCannotConsumeTheNextRealEnterAfterMappedGravePause() {
+        val gate = LessonPageAdvanceEnterGate()
+        val mapped = 500L
+        // The first wrong-answer Enter was handled, but Android/IME did not
+        // deliver its UP before the remapped Grave key tapped the reader.
+        assertEquals(puzzle, gate.down("lesson4/p1", enter, mapped, mapped, 0, false, false))
+        // The student's new correct selection must work on the very first Enter,
+        // including when LDPlayer reuses the exact same timestamps.
+        assertEquals(puzzle, gate.down("lesson4/p1", enter, mapped, mapped, 0, false, false))
+        assertEquals(skip, gate.up("lesson4/p1", enter, mapped, mapped, false))
+        // After the second correct answer the next Enter can advance.
+        assertEquals(go, gate.down("lesson4/p1", enter, mapped, mapped, 0, true, false))
+        assertEquals(skip, gate.up("lesson4/p2", enter, mapped, mapped, false))
+    }
+
+    @Test fun pendingOlderPageDoesNotPreventTheFirstEnterOnNextPage() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(go, gate.down("lesson3/p5", enter, 0L, 0L, 0, true, false))
+        // The virtual-key UP was intercepted; next page still receives a fresh DOWN.
+        assertEquals(go, gate.down("lesson3/p6", enter, 0L, 0L, 0, true, false))
+        assertEquals(skip, gate.up("lesson3/p6", enter, 0L, 0L, false))
     }
 
     @Test fun secondDistinctPressActsImmediatelyWithoutWaiting650msOrChangingDownTime() {
