@@ -64,7 +64,12 @@ internal class PuzzleEnterShortcut {
         return false
     }
 
-    fun dispatch(event: KeyEvent, focused: View?, compilerFullscreen: Boolean): Boolean {
+    fun dispatch(
+        event: KeyEvent,
+        focused: View?,
+        compilerFullscreen: Boolean,
+        acceptRecoveredUp: Boolean = false
+    ): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_TAB && event.action == KeyEvent.ACTION_DOWN)
             touchedCheck = null
         if (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP) return false
@@ -86,13 +91,18 @@ internal class PuzzleEnterShortcut {
             ?: eligible.singleOrNull()
         // Only a selected/active or unambiguous puzzle is submitted. We do not
         // guess among multiple prepared answers and consume students' attempts.
-        if (event.action == KeyEvent.ACTION_DOWN && BuildConfig.DEBUG) {
+        if ((event.action == KeyEvent.ACTION_DOWN || acceptRecoveredUp) && BuildConfig.DEBUG) {
             android.util.Log.d("LgpEnterTrace",
                 "puzzle eligible=${eligible.size} chosen=${chosen != null}" +
                     " selected=${touchedCheck != null} focused=${focused?.javaClass?.simpleName ?: "none"}")
         }
-        if (chosen != null && event.action == KeyEvent.ACTION_DOWN &&
-            event.repeatCount == 0 && !event.isCanceled) chosen.check.performClick()
+        // Ordinary UP never submits. The Activity gate alone can approve
+        // recovery when the real physical DOWN did not reach the Activity.
+        val submit = event.action == KeyEvent.ACTION_DOWN ||
+            (acceptRecoveredUp && event.action == KeyEvent.ACTION_UP)
+        if (chosen != null && submit && event.repeatCount == 0 && !event.isCanceled) {
+            chosen.check.performClick()
+        }
         return true
     }
 }

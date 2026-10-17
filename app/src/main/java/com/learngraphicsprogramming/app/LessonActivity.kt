@@ -8088,12 +8088,17 @@ class LessonActivity : AppCompatActivity() {
                 canNavigate, editorOwnsEnter
             )
             else -> lessonAdvanceEnterGate.up(
-                pageIdentity, event.keyCode, event.downTime, event.eventTime, event.isCanceled
+                pageIdentity, event.keyCode, event.downTime, event.eventTime, event.isCanceled,
+                canNavigate, editorOwnsEnter
             )
         }
-        if (BuildConfig.DEBUG && event.action == KeyEvent.ACTION_DOWN) {
+        if (BuildConfig.DEBUG && (event.action == KeyEvent.ACTION_DOWN ||
+                event.action == KeyEvent.ACTION_UP &&
+                    (route == LessonPageAdvanceEnterGate.Route.NAVIGATE ||
+                        route == LessonPageAdvanceEnterGate.Route.PUZZLE))) {
             android.util.Log.d("LgpEnterTrace",
                 "route=$route ready=$canNavigate editor=$editorOwnsEnter" +
+                    " recoveredUp=" + (event.action == KeyEvent.ACTION_UP) +
                     " lesson=$currentLessonId page=$currentPage")
         }
         return when (route) {
@@ -8103,8 +8108,10 @@ class LessonActivity : AppCompatActivity() {
                 true
             }
             LessonPageAdvanceEnterGate.Route.PUZZLE ->
-                puzzleEnterShortcut.dispatch(event, focused, compilerFullscreenActive) ||
-                    super.dispatchKeyEvent(event)
+                puzzleEnterShortcut.dispatch(
+                    event, focused, compilerFullscreenActive,
+                    acceptRecoveredUp = event.action == KeyEvent.ACTION_UP
+                ) || super.dispatchKeyEvent(event)
             LessonPageAdvanceEnterGate.Route.EDITOR -> super.dispatchKeyEvent(event)
             LessonPageAdvanceEnterGate.Route.CONSUME -> true
         }

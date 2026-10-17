@@ -348,6 +348,76 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun orphanNativeEnterReleasesCheckEachPuzzleAndAdvanceOnlyOnNextRelease() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        val blocks = published.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks")
+        for (block in 3..4) {
+            ProgressRepository.saveExerciseState(context, "programming", lesson, 0, block,
+                JSONObject().put("correct", false).put("selectedIndex", -1))
+        }
+        val host = openProgramming(lesson, 0, narrate = false)
+        fun chooseCorrect(activity: LessonActivity, block: Int) {
+            val question = blocks.getJSONObject(block)
+            val answer = question.getJSONArray("options").getString(question.getInt("correctIndex"))
+            val radio = descendants(content(activity))
+                .filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == answer }
+            assertTrue(radio.performClick())
+        }
+        var lastTime = 0L
+        fun sendOnlyUp(originalDownTime: Long? = null): Long {
+            val downTime = originalDownTime ?: maxOf(SystemClock.uptimeMillis() - 50L, lastTime + 1L)
+            lastTime = downTime
+            // The Android Activity receives exactly the user's observed event:
+            // one UP with no matching DOWN. This bypasses input-injection filters.
+            host.onActivity { activity ->
+                assertTrue(activity.dispatchKeyEvent(KeyEvent(
+                    downTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER, 0
+                )))
+            }
+            instrumentation.waitForIdleSync()
+            return downTime
+        }
+        host.onActivity { activity ->
+            chooseCorrect(activity, 3)
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        val firstUp = sendOnlyUp()
+        host.onActivity { activity ->
+            assertTrue("Orphan UP checks puzzle 1",
+                ProgressRepository.getExerciseState(context, lesson, 0, 3)?.optBoolean("correct", false) == true)
+            assertEquals(1, field<Int>(activity, "completedExercises"))
+            assertEquals(0, field<Int>(activity, "currentPage"))
+        }
+        sendOnlyUp(firstUp)
+        host.onActivity { activity ->
+            assertEquals("Duplicate UP cannot grade or navigate twice", 1,
+                field<Int>(activity, "completedExercises"))
+            chooseCorrect(activity, 4)
+        }
+        val secondUp = sendOnlyUp()
+        host.onActivity { activity ->
+            assertTrue("Orphan UP checks puzzle 2",
+                ProgressRepository.getExerciseState(context, lesson, 0, 4)?.optBoolean("correct", false) == true)
+            assertEquals(2, field<Int>(activity, "completedExercises"))
+            assertEquals(0, field<Int>(activity, "currentPage"))
+            assertTrue(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        sendOnlyUp(secondUp)
+        host.onActivity { activity ->
+            assertEquals("Same release never also advances", 0,
+                field<Int>(activity, "currentPage"))
+        }
+        sendOnlyUp()
+        host.onActivity { activity ->
+            assertEquals("Fresh orphan Enter release advances exactly once", 1,
+                field<Int>(activity, "currentPage"))
+            assertEquals(published.toString(),
+                LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+        }
+    }
+
     @Test fun lessonFourSecondChoiceRetryWorksAfterWrongAudioAndMappedPauseTouch() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
         val published = LessonRepository.loadLessonJson(context, "programming", lesson)

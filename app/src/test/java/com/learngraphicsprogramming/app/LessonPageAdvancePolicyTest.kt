@@ -115,4 +115,49 @@ class LessonPageAdvancePolicyTest {
         assertEquals(skip, gate.up("lesson/6", enter, 9L, 11L, false))
         assertEquals(go, gate.down("lesson/6", enter, 10L, 12L, 0, true, false))
     }
+    @Test fun aLonePhysicalKeyUpChecksOnceAndOnlyANewReleaseCanAdvance() {
+        val gate = LessonPageAdvanceEnterGate()
+        // Observed in LDPlayer even when keyboard mapping is disabled:
+        // the Activity sees ACTION_UP but its ACTION_DOWN never arrives.
+        assertEquals(puzzle, gate.up("lesson4/p1", enter, 1000L, 1130L, false,
+            canNavigate = false, editorOwnsEnter = false))
+        // After grading correctly the same release must not also continue.
+        assertEquals(skip, gate.up("lesson4/p1", enter, 1000L, 1140L, false,
+            canNavigate = true, editorOwnsEnter = false))
+        assertEquals(go, gate.up("lesson4/p1", enter, 1500L, 1610L, false,
+            canNavigate = true, editorOwnsEnter = false))
+        // Even a late duplicate cannot act on the new page.
+        assertEquals(skip, gate.up("lesson4/p2", enter, 1500L, 1615L, false,
+            canNavigate = true, editorOwnsEnter = false))
+    }
+
+    @Test fun completedDownUpCannotRepeatOrAdvanceAfterPuzzleIsSolved() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(puzzle, gate.down("lesson3/p5", enter, 1000L, 1000L, 0, false, false))
+        assertEquals(skip, gate.up("lesson3/p5", enter, 1000L, 1120L, false,
+            canNavigate = true, editorOwnsEnter = false))
+        assertEquals(skip, gate.up("lesson3/p5", enter, 1000L, 1140L, false,
+            canNavigate = true, editorOwnsEnter = false))
+        assertEquals(go, gate.down("lesson3/p5", enter, 1000L, 1000L, 0, true, false))
+        assertEquals(skip, gate.up("lesson3/p6", enter, 1000L, 1120L, false,
+            canNavigate = true, editorOwnsEnter = false))
+    }
+
+    @Test fun canceledInvalidAndEditorOwnedOrphanReleasesAreNotPuzzleClicks() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(skip, gate.up("lesson/p1", enter, 0L, 100L, false,
+            canNavigate = false, editorOwnsEnter = false))
+        assertEquals(skip, gate.up("lesson/p1", enter, 200L, 199L, false,
+            canNavigate = false, editorOwnsEnter = false))
+        assertEquals(skip, gate.up("lesson/p1", enter, 300L, 400L, true,
+            canNavigate = false, editorOwnsEnter = false))
+        assertEquals(skip, gate.up("lesson/p1", enter, 300L, 401L, false,
+            canNavigate = false, editorOwnsEnter = false))
+        assertEquals(edit, gate.up("lesson/p1", enter, 500L, 520L, false,
+            canNavigate = true, editorOwnsEnter = true))
+        assertEquals(puzzle, gate.up("lesson/p1", enter, 600L, 630L, false,
+            canNavigate = false, editorOwnsEnter = false))
+    }
+
+
 }

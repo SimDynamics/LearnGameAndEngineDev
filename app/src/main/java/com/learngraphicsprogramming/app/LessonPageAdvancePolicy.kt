@@ -6,15 +6,19 @@ internal object LessonPageAdvancePolicy {
         required >= 0 && completed >= required
 }
 
-/** A physical Enter owns one action from its first non-repeated DOWN.
- * Its UP cannot trigger anything else, even when an IME or LDPlayer drops it.
- * Never equate two physical presses by timestamp: emulators can reuse both
- * downTime and eventTime, especially after a mapped touch changes focus.
+/** An ordinary Enter acts on its first DOWN. LDPlayer sometimes delivers
+ * only UP for a physical press. Recover a valid, previously unseen release
+ * without allowing a later duplicate to trigger a second action.
+ *
+ * Release identity is only used to reject duplicate orphan UP events.
+ * Independent DOWN presses remain valid even if timestamps are reused.
  */
 internal class LessonPageAdvanceEnterGate {
     enum class Route { NAVIGATE, PUZZLE, EDITOR, CONSUME }
-    private data class Press(val page: String, val keyCode: Int, val route: Route)
+    private data class Press(val page: String, val keyCode: Int, val route: Route, val downTime: Long)
+    private data class ReleasedKey(val keyCode: Int, val downTime: Long)
     private var pending: Press? = null
+    private var lastFinishedRelease: ReleasedKey? = null
 
     @Suppress("UNUSED_PARAMETER") // Native timing is diagnostic, never a key identity.
     fun down(
@@ -39,21 +43,45 @@ internal class LessonPageAdvanceEnterGate {
             canNavigate -> Route.NAVIGATE
             else -> Route.PUZZLE
         }
-        pending = Press(page, keyCode, route)
+        pending = Press(page, keyCode, route, downTime)
         return route
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun up(page: String, keyCode: Int, downTime: Long, eventTime: Long, canceled: Boolean): Route {
-        val press = pending ?: return Route.CONSUME
-        // Virtual IMEs can return a different downTime in their release event.
-        // The action already happened on DOWN, so any UP for this key safely
-        // closes the held press without running a second action.
-        if (press.keyCode != keyCode) return Route.CONSUME
-        pending = null
-        // The action already ran on DOWN. Never execute another action on UP,
-        // even if the puzzle was just solved or the Activity opened the next page.
-        return if (!canceled && press.page == page && press.route == Route.EDITOR)
-            Route.EDITOR else Route.CONSUME
+    fun up(
+        page: String,
+        keyCode: Int,
+        downTime: Long,
+        eventTime: Long,
+        canceled: Boolean,
+        canNavigate: Boolean = false,
+        editorOwnsEnter: Boolean = false
+    ): Route {
+        val press = pending
+        if (press != null) {
+            if (press.keyCode != keyCode) return Route.CONSUME
+            pending = null
+            // The DOWN already checked or navigated. Never execute twice.
+            val releaseDownTime = downTime.takeIf { it > 0L } ?: press.downTime
+            if (releaseDownTime > 0L) {
+                lastFinishedRelease = ReleasedKey(keyCode, releaseDownTime)
+            }
+            return if (!canceled && press.page == page && press.route == Route.EDITOR)
+                Route.EDITOR else Route.CONSUME
+        }
+
+        // Some physical Enter presses from LDPlayer reach us as UP only.
+        // Only a new, valid key release without a pending DOWN can be recovered.
+        if (downTime <= 0L || eventTime < downTime) return Route.CONSUME
+        val released = ReleasedKey(keyCode, downTime)
+        if (lastFinishedRelease == released) return Route.CONSUME
+        lastFinishedRelease = released
+        if (canceled) return Route.CONSUME
+
+        // Preserve the native C++ editor; never synthesize a newline here.
+        return when {
+            editorOwnsEnter -> Route.EDITOR
+            canNavigate -> Route.NAVIGATE
+            else -> Route.PUZZLE
+        }
     }
 }
