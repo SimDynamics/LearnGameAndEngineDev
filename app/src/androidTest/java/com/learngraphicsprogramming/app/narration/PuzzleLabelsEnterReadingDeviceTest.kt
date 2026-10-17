@@ -289,6 +289,107 @@ class PuzzleLabelsEnterReadingDeviceTest {
         assertEquals(original, LessonRepository.loadLessonJson(context, ROUTE, LESSON).toString())
     }
 
+    @Test fun continueStaysGrayUntilEveryMathChoiceIsSolvedAndEnterAdvancesOnePage() {
+        val host = openMathLesson(LESSON, "numeros_y_operaciones", 0, narrate = false,
+            requireTextInput = false)
+        host.onActivity { activity ->
+            val continueButton = activity.findViewById<Button>(R.id.buttonContinue)
+            assertFalse("Two unsolved choices block the first page", continueButton.isEnabled)
+            val disabledTint = requireNotNull(continueButton.backgroundTintList)
+                .getColorForState(intArrayOf(-android.R.attr.state_enabled), Color.TRANSPARENT)
+            assertEquals("Disabled Continue uses the existing gray", Color.rgb(72, 74, 82), disabledTint)
+            for (block in listOf(4, 5)) {
+                val card = mathCard(activity, 0, block)
+                reset(card, activity)
+            }
+        }
+        host.onActivity { activity ->
+            for (block in listOf(4, 5)) {
+                val card = mathCard(activity, 0, block)
+                val options = descendants(card).filterIsInstance<android.widget.RadioButton>()
+                assertEquals(3, options.size)
+                assertTrue(options[1].performClick())
+                val check = descendants(card).single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }
+                assertTrue(check.isEnabled && check.performClick())
+                val expectedReady = block == 5
+                assertEquals("Advance is enabled only after the last puzzle", expectedReady,
+                    activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            }
+            val button = activity.findViewById<Button>(R.id.buttonContinue)
+            button.isFocusableInTouchMode = true
+            assertTrue(button.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("A single Enter must advance one page, not skip puzzles", 1,
+                field<Int>(activity, "currentPage"))
+            assertFalse("Next page has new unresolved puzzles",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            invoke(activity, "goPreviousPage")
+            assertEquals("Returning uses the original cached page", 0,
+                field<Int>(activity, "currentPage"))
+            val card = mathCard(activity, 0, 4)
+            reset(card, activity)
+            assertFalse("Resetting the cached page blocks Continue",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            val options = descendants(card).filterIsInstance<android.widget.RadioButton>()
+            assertTrue(options[1].performClick())
+            assertTrue(options[1].requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals(0, field<Int>(activity, "currentPage"))
+            assertTrue("Enter still checks a previously cached puzzle",
+                ProgressRepository.getExerciseState(context, LESSON, 0, 4)?.optBoolean("correct", false) == true)
+            assertTrue("Both cached puzzles are solved again",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+    }
+
+    @Test fun pagesWithoutPuzzlesAdvanceButCompilerEditorRetainsLiteralEnter() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
+        val host = openProgramming(lesson, 5, narrate = false)
+        host.onActivity { activity ->
+            val button = activity.findViewById<Button>(R.id.buttonContinue)
+            assertTrue("The published sixth page has no required puzzles", button.isEnabled)
+            button.isFocusableInTouchMode = true
+            assertTrue(button.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        var editor: EditText? = null
+        var before = ""
+        host.onActivity { activity ->
+            assertEquals("Enter goes to the next page", 6, field<Int>(activity, "currentPage"))
+            assertTrue(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            val input = descendants(content(activity)).filterIsInstance<EditText>()
+                .single { it.tag == "cpp_code_input" }
+            editor = input
+            before = input.text.toString()
+            assertTrue(input.requestFocus())
+            input.setSelection(input.text.length)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Enter in the compiler editor never advances", 6, field<Int>(activity, "currentPage"))
+            val actual = requireNotNull(editor).text.toString()
+            assertTrue("Enter must insert an actual compiler newline",
+                actual.count { it == '\n' } > before.count { it == '\n' })
+            val button = activity.findViewById<Button>(R.id.buttonContinue)
+            button.isFocusableInTouchMode = true
+            assertTrue(button.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_NUMPAD_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Outside compiler edit mode Enter advances normally", 7,
+                field<Int>(activity, "currentPage"))
+        }
+    }
+
     @Test fun physicalEnterChecksSelectedMathematicsChoiceWithoutAnAnswerTextField() {
         val host = openMathLesson(LESSON, "numeros_y_operaciones", 0, narrate = false, requireTextInput = false)
         host.onActivity { activity ->
