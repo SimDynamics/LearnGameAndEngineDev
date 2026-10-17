@@ -69,16 +69,6 @@ internal class NarrationExerciseGate(
         priority = Priority(gate.blockIndex, maxOf(gate.start, position.segment))
     }
 
-    /** Skip a deliberately answered question's pending options, but never
-     * bypass a previous unsolved puzzle or unheard successful feedback.
-     */
-    fun answerDestination(blockIndex: Int, from: NarrationGatePosition): NarrationGatePosition? {
-        val start = gates.firstOrNull { it.blockIndex == blockIndex }?.start ?: return null
-        if (from.segment >= start) return null
-        val permitted = clamp(NarrationGatePosition(start))
-        return permitted.takeIf { it.segment > from.segment }
-    }
-
     private fun invalidateUnsolved() {
         gates.firstOrNull { it.blockIndex !in correct && it.start < heardThrough }?.let {
             heardThrough = it.start

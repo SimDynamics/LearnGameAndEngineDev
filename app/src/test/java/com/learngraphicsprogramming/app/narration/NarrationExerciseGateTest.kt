@@ -85,25 +85,14 @@ class NarrationExerciseGateTest {
         assertEquals(null,gate.boundary())
     }
 
-    @Test fun submittedPuzzleSkipsOptionsButNotEarlierUnheardFeedback() {
+    @Test fun wrongAnswerVisualBoundaryDoesNotGrantLaterPagePlayback() {
         val gate = NarrationExerciseGate(12, gates)
-        val beginning = NarrationGatePosition(0, 480)
-        assertEquals(NarrationGatePosition(3), gate.answerDestination(2, beginning))
-        assertFalse("Wrong feedback never unlocks success", gate.canPlay(3))
+        assertEquals(NarrationGatePosition(3), gate.feedbackStart(2))
+        assertEquals(NarrationGatePosition(8), gate.feedbackStart(6))
+        assertNull(gate.feedbackStart(77))
+        assertFalse("Unanswered success feedback is still locked", gate.canPlay(3))
+        assertFalse("Incorrect feedback never unlocks the next paragraph", gate.canPlay(10))
         assertEquals(0, gate.heardThrough)
-        gate.updateCorrect(setOf(2))
-        assertEquals(NarrationGatePosition(3), gate.answerDestination(2, beginning))
-        assertTrue(gate.canPlay(3))
-        assertFalse(gate.canPlay(4))
-        gate.updateCorrect(setOf(2, 6))
-        assertEquals("Second puzzle cannot leapfrog first success narration",
-            NarrationGatePosition(3), gate.answerDestination(6, beginning))
-        gate.completedNaturally(3)
-        gate.completedNaturally(4)
-        assertEquals(NarrationGatePosition(8),
-            gate.answerDestination(6, NarrationGatePosition(5)))
-        assertNull(gate.answerDestination(2, NarrationGatePosition(3)))
-        assertNull(gate.answerDestination(77, beginning))
     }
 
     @Test fun newlyCorrectAnswerOverridesEarlierUnheardFeedbackWithoutFalseHearing() {
@@ -134,6 +123,23 @@ class NarrationExerciseGateTest {
         assertTrue(gate.canPlay(6))
         assertFalse("Another unsolved puzzle must still block its success", gate.canPlay(8))
         assertEquals(0, gate.heardThrough)
+    }
+
+    @Test fun threeAndFiveSecondSeeksWorkDuringAndAfterPrioritizedSuccess() {
+        val gate = NarrationExerciseGate(12, gates, correctBlocks = setOf(2))
+        assertEquals(NarrationGatePosition(3), gate.prioritizeCorrect(2))
+        for (millis in listOf(3_000L, 5_000L)) {
+            val from = NarrationGatePosition(3, 0L)
+            assertEquals(NarrationGatePosition(3, millis),
+                gate.seek(from, NarrationGatePosition(3, millis)))
+            assertEquals(NarrationGatePosition(3, 0L),
+                gate.seek(NarrationGatePosition(3, millis), from))
+            assertEquals(0, gate.heardThrough)
+        }
+        assertEquals(NarrationGatePosition(6, 500L),
+            gate.seek(NarrationGatePosition(4, 500L), NarrationGatePosition(6, 500L)))
+        assertTrue(gate.canPlay(6))
+        assertFalse(gate.canPlay(8))
     }
 
     @Test fun incorrectAnswerNeverActivatesPostFeedbackReading() {
