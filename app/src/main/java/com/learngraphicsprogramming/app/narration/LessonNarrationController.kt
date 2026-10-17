@@ -852,15 +852,33 @@ class LessonNarrationController(
         resume()
     }
 
-    /** Offsets are measured in source audio seconds, independent of playback speed. */
+    /** Offsets are measured in source audio seconds, independent of playback speed.
+     * Rewinding across the beginning of a temporary incorrect guide returns to
+     * the original page, instead of trapping the reader at the guide's 0 ms.
+     */
     fun seekBy(seconds: Int) = onMain {
         incorrectFeedback?.let { feedback ->
-            if (!closed && NarrationSettingsRepository.isEnabled(appContext)) seekIncorrectFeedback(feedback, seconds)
+            if (!closed && NarrationSettingsRepository.isEnabled(appContext)) {
+                val earlierPageMillis = seekIncorrectFeedback(feedback, seconds)
+                if (earlierPageMillis != null) {
+                    val wasPlaying = playing
+                    finishIncorrectFeedback(restoreWaiting = false)
+                    // Only the remaining backward time is applied to the actual
+                    // source. The original page bookmark remains the same slot.
+                    seekSourceByMillis(earlierPageMillis)
+                    if (wasPlaying && !finished) resume()
+                }
+            }
             return@onMain
         }
-        if (closed || !NarrationSettingsRepository.isEnabled(appContext) || segments.isEmpty() || (finished && seconds >= 0)) return@onMain
+        seekSourceByMillis(seconds.toLong() * 1_000L)
+    }
+
+    private fun seekSourceByMillis(deltaMs: Long) {
+        if (closed || !NarrationSettingsRepository.isEnabled(appContext) || segments.isEmpty() ||
+            (finished && deltaMs >= 0L)) return
         val point = playbackPoint()
-        var target = point.positionMs + seconds.toLong() * 1_000L
+        var target = point.positionMs + deltaMs
         var targetIndex = index
         var previousUnknown = false
         while (target < 0 && targetIndex > 0) {
@@ -877,7 +895,7 @@ class LessonNarrationController(
         // reporting the separate, voluntary visual skip. Neither event completes feedback.
         if (playerReady && playing) publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED)
             .copy(positionMs = point.positionMs))
-        pendingManualForward = if (seconds > 0) pendingManualForward ?: from else null
+        pendingManualForward = if (deltaMs > 0L) pendingManualForward ?: from else null
         val wasFinished = finished
         if (wasFinished) finished = false
         userPositionChosen = true
@@ -970,23 +988,24 @@ class LessonNarrationController(
         ensureSegment(feedback.index, feedback)
     }
 
-    private fun seekIncorrectFeedback(feedback: IncorrectFeedback, seconds: Int) {
-        if (feedback.finished && seconds >= 0) return
-        var position = (if (playerReady) runCatching { player?.currentPosition?.toLong() }
+    /** Returns only the negative remainder when Back crosses the guide's
+     * beginning. Unknown earlier WAV durations stay inside the guide until
+     * they are resolved, preserving the existing negative-offset seek policy.
+     */
+    private fun seekIncorrectFeedback(feedback: IncorrectFeedback, seconds: Int): Long? {
+        if (feedback.finished && seconds >= 0) return null
+        val position = (if (playerReady) runCatching { player?.currentPosition?.toLong() }
             .getOrNull() else null) ?: feedback.offset
         val from = NarrationGatePosition(feedback.index, position)
         if (playerReady && playing) publishGuideProgress(feedback, NarrationPlaybackPhase.ADVANCED, position)
-        position += seconds.toLong() * 1000L
-        var target = feedback.index
-        var previousUnknown = false
-        while (position < 0L && target > 0) {
-            target--
-            val duration = feedback.parts[target].duration
-            if (duration == null) { previousUnknown = true; break }
-            position += duration
-        }
+        val destination = IncorrectFeedbackRewind.resolve(
+            feedback.index, position, seconds.toLong() * 1000L,
+            feedback.parts.map { it.duration }
+        )
+        if (destination.pageRemainderMs != null) return destination.pageRemainderMs
         feedback.pendingManualForward = if (seconds > 0) feedback.pendingManualForward ?: from else null
-        selectIncorrectFeedback(feedback, target, if (previousUnknown) position else position.coerceAtLeast(0))
+        selectIncorrectFeedback(feedback, destination.segment, destination.positionMs)
+        return null
     }
 
     private fun requestFeedback(request: Synthesis): IncorrectFeedback? = incorrectFeedback?.takeIf {
