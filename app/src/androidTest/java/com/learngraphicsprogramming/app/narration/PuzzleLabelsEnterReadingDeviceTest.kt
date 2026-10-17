@@ -348,6 +348,74 @@ class PuzzleLabelsEnterReadingDeviceTest {
         }
     }
 
+    @Test fun enterFromPageFiveOpensPageSixOnceAndDoesNotSkipToLessonMenu() {
+        val lesson = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val published = LessonRepository.loadLessonJson(context, "programming", lesson)
+        assertEquals(6, published.getJSONArray("pages").length())
+        val host = openProgramming(lesson, 4, narrate = false)
+        lateinit var editor: EditText
+        var before = ""
+        host.onActivity { activity ->
+            assertEquals(4, field<Int>(activity, "currentPage"))
+            val next = activity.findViewById<Button>(R.id.buttonContinue)
+            val reset = descendants(content(activity)).single {
+                it.contentDescription == activity.getString(R.string.exercise_reset)
+            }
+            assertTrue(reset.performClick())
+            assertFalse("The last unresolved choice keeps Continue gray", next.isEnabled)
+
+            val choice = published.getJSONArray("pages").getJSONObject(4)
+                .getJSONArray("blocks").getJSONObject(4)
+            val correct = choice.getJSONArray("options").getString(choice.getInt("correctIndex"))
+            val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == correct }
+            assertTrue(radio.performClick())
+            val check = descendants(content(activity)).filterIsInstance<Button>().single {
+                it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
+            }
+            assertTrue(check.performClick())
+            assertTrue(next.isEnabled)
+            editor = descendants(content(activity)).filterIsInstance<EditText>()
+                .single { it.tag == "cpp_code_input" }
+            before = editor.text.toString()
+            assertTrue(editor.requestFocus())
+            editor.setSelection(editor.text.length)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Enter while editing C++ must keep page 5 visible", 4,
+                field<Int>(activity, "currentPage"))
+            assertTrue("Enter still inserts a compiler newline",
+                editor.text.count { it == '\n' } > before.count { it == '\n' })
+            val runButton = descendants(content(activity)).single { it.tag == "cpp_run" }
+            runButton.isFocusableInTouchMode = true
+            assertTrue("Moving outside the editor permits page navigation", runButton.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("One Enter must show page 6 of 6, not finish the lesson", 5,
+                field<Int>(activity, "currentPage"))
+            assertEquals(6, field<Int>(activity, "totalPages"))
+            assertTrue("The last page has no puzzles, so Finish is enabled",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            // Simulate another very quick full press, including a separate UP.
+            // It must not leave the lesson even though the new page is already ready.
+            val gate = field<Any>(activity, "lessonAdvanceEnterGate")
+            val last = field<Long>(gate, "lastNavigationTime")
+            val t = last + 100L
+            assertTrue(activity.dispatchKeyEvent(KeyEvent(t, t, KeyEvent.ACTION_DOWN,
+                KeyEvent.KEYCODE_ENTER, 0)))
+            assertTrue(activity.dispatchKeyEvent(KeyEvent(t, t + 35L, KeyEvent.ACTION_UP,
+                KeyEvent.KEYCODE_ENTER, 0)))
+            assertEquals("Rapid follow-up Enter must not skip page 6", 5,
+                field<Int>(activity, "currentPage"))
+        }
+        assertEquals("No lesson content is changed by keyboard navigation", published.toString(),
+            LessonRepository.loadLessonJson(context, "programming", lesson).toString())
+    }
+
     @Test fun pagesWithoutPuzzlesAdvanceButCompilerEditorRetainsLiteralEnter() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
         val host = openProgramming(lesson, 5, narrate = false)
