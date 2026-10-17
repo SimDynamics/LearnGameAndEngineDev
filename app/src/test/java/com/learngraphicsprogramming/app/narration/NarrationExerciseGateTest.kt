@@ -106,6 +106,54 @@ class NarrationExerciseGateTest {
         assertNull(gate.answerDestination(77, beginning))
     }
 
+    @Test fun newlyCorrectAnswerOverridesEarlierUnheardFeedbackWithoutFalseHearing() {
+        val gate = NarrationExerciseGate(12, gates, correctBlocks = setOf(6))
+        assertFalse(gate.canPlay(8))
+        assertEquals(NarrationGatePosition(8), gate.prioritizeCorrect(6))
+        assertTrue(gate.canPlay(8))
+        assertFalse("No answer means no older green feedback", gate.canPlay(3))
+        assertFalse(gate.canPlay(9))
+        assertEquals(0, gate.heardThrough)
+        gate.completedNaturally(8)
+        assertTrue(gate.canPlay(9))
+        gate.completedNaturally(9)
+        assertEquals("Earlier skipped explanation is not heard", 0, gate.heardThrough)
+        assertTrue("After correct feedback, later narration is allowed", gate.canPlay(10))
+    }
+
+    @Test fun correctFeedbackSupportsNativeBackwardAndForwardSeeks() {
+        val gate = NarrationExerciseGate(12, gates, correctBlocks = setOf(2))
+        assertEquals(NarrationGatePosition(3), gate.prioritizeCorrect(2))
+        assertEquals(NarrationGatePosition(1, 400L),
+            gate.seek(NarrationGatePosition(3, 150L), NarrationGatePosition(1, 400L)))
+        assertEquals(NarrationGatePosition(4, 500L),
+            gate.seek(NarrationGatePosition(1, 400L), NarrationGatePosition(4, 500L)))
+        assertTrue(gate.canPlay(4))
+        assertEquals(NarrationGatePosition(6),
+            gate.seek(NarrationGatePosition(4, 500L), NarrationGatePosition(6)))
+        assertTrue(gate.canPlay(6))
+        assertFalse("Another unsolved puzzle must still block its success", gate.canPlay(8))
+        assertEquals(0, gate.heardThrough)
+    }
+
+    @Test fun incorrectAnswerNeverActivatesPostFeedbackReading() {
+        val gate = NarrationExerciseGate(12, gates)
+        assertNull(gate.prioritizeCorrect(2))
+        assertEquals(NarrationGatePosition(3), gate.clamp(NarrationGatePosition(8)))
+        assertFalse(gate.canPlay(3))
+        assertFalse(gate.canPlay(10))
+    }
+
+    @Test fun priorityRestoresWithinTheSameBoundedPositionAndClearsOnRestart() {
+        val gate = NarrationExerciseGate(12, gates, correctBlocks = setOf(6))
+        gate.restoreAnsweredPosition(NarrationGatePosition(9, 520L))
+        assertEquals(NarrationGatePosition(9, 520L), gate.clamp(NarrationGatePosition(9, 520L)))
+        assertTrue(gate.canPlay(9))
+        assertEquals(0, gate.heardThrough)
+        gate.restart()
+        assertFalse(gate.canPlay(9))
+    }
+
     @Test fun transientGuidanceMayOnlyBindAnActualExerciseOfTheOriginalPage() {
         val gate = NarrationExerciseGate(12, gates)
         assertTrue(gate.hasExercise(2))
