@@ -29,7 +29,7 @@ internal class NarrationExerciseGate(
 
     fun updateCorrect(blocks: Set<Int>) {
         correct = blocks.toSet()
-        if (priority?.blockIndex !in correct) priority = null
+        if (priority?.blockIndex?.let { it !in correct } == true) priority = null
         invalidateUnsolved()
     }
     fun restoreHeard(value: Int) {
