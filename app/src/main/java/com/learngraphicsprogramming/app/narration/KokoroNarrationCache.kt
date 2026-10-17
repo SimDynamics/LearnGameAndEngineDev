@@ -230,6 +230,43 @@ internal object KokoroNarrationCache {
         return items
     }
 
+    data class ExplicitRemoval(
+        val deletedFiles: Int, val deletedBytes: Long,
+        val failedFiles: Int, val interrupted: Boolean
+    )
+
+    /**
+     * ONLY after the user's confirmation. Never called by pruning, budget
+     * management, playback or background generation.
+     *
+     * Hashes have already been checked against every course's source ownership.
+     * Revalidate each exact final WAV/Opus file before deleting it; stage,
+     * unverified and unknown cache files are never eligible.
+     */
+    @Synchronized
+    fun deleteExclusiveVerified(
+        context: Context, exclusiveKeys: Set<String>,
+        permit: () -> Boolean
+    ): ExplicitRemoval {
+        require(exclusiveKeys.all { it.matches(Regex("[a-f0-9]{64}")) })
+        val directory = File(context.applicationContext.filesDir, DIRECTORY)
+        if (!directory.isDirectory) return ExplicitRemoval(0, 0L, 0, false)
+        var deleted = 0
+        var bytes = 0L
+        var failed = 0
+        for (hash in exclusiveKeys) for (extension in listOf("ogg", "wav")) {
+            if (!permit()) return ExplicitRemoval(deleted, bytes, failed, true)
+            val file = File(directory, "$hash.$extension")
+            if (!validatedAudio(file)) continue
+            val length = file.length()
+            if (file.delete()) {
+                deleted++
+                bytes += length
+            } else failed++
+        }
+        return ExplicitRemoval(deleted, bytes, failed, false)
+    }
+
     /** Remove only abandoned partial writes. Complete WAV/Opus files are permanent. */
     @Synchronized
     fun prune(context: Context) {

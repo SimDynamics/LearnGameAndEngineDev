@@ -26,6 +26,23 @@ object NarrationWorkPriority {
         }
     }
 
+    /**
+     * Only an explicit user-confirmed cache maintenance operation uses this.
+     * Refuse while the live reader or another interactive task is active,
+     * and preempt optional background synthesis before touching any file.
+     */
+    fun beginMaintenanceIfIdle(): AutoCloseable? {
+        if (!interactiveCount.compareAndSet(0, 1)) return null
+        interrupts.forEach { listener -> runCatching { listener() } }
+        val closed = AtomicBoolean()
+        return AutoCloseable {
+            if (closed.compareAndSet(false, true)) interactiveCount.decrementAndGet()
+        }
+    }
+
+    /** Abort cache maintenance if a reader becomes active during deletion. */
+    val isMaintenanceExclusive: Boolean get() = interactiveCount.get() == 1
+
     fun onPreempt(listener: () -> Unit): AutoCloseable {
         interrupts.add(listener)
         if (isBusy) listener()

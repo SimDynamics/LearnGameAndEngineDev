@@ -453,17 +453,135 @@ class NarrationOptionsSection(private val activity: Activity) {
                 coverage.generatedSentences, coverage.expectedSentences,
                 courseAudioPercent(coverage.percent), coverage.files, size(coverage.bytes)) +
                 "\n\n" + s(current) + "\n" + s(R.string.narration_course_audio_pause_explanation))
-            .setNeutralButton(s(if (paused) R.string.narration_course_audio_resume
+            .setPositiveButton(s(if (paused) R.string.narration_course_audio_resume
                 else R.string.narration_course_audio_pause)) { _, _ ->
-                if (!narrationEnabled()) return@setNeutralButton
+                if (!narrationEnabled()) return@setPositiveButton
                 NarrationSettingsRepository.saveCourseGenerationPaused(
                     activity, course.routeId, course.courseId, !paused)
                 if (paused) KokoroBackgroundNarrationWorker.start(activity.applicationContext)
-                // Refresh the visible state without recalculating audio or deleting files.
                 handler.post { showCourseAudioDetails(course) }
             }
-            .setPositiveButton(s(R.string.narration_close), null)
+            .setNeutralButton(s(R.string.narration_course_audio_delete)) { _, _ ->
+                previewCourseAudioDeletion(course)
+            }
+            .setNegativeButton(s(R.string.narration_close), null)
             .showReaderDialog()
+    }
+
+    /** A destructive action always begins with a fresh, read-only ownership scan. */
+    private fun previewCourseAudioDeletion(course: KokoroCourseAudioStats.Course) {
+        if (!narrationEnabled() || !active || activity.isDestroyed) return
+        val revision = ++courseAudioReportRevision
+        val loading = AlertDialog.Builder(activity)
+            .setTitle(s(R.string.narration_course_audio_delete))
+            .setMessage(s(R.string.narration_course_audio_deletion_scanning))
+            .setNegativeButton(s(R.string.narration_cancel), null)
+            .showReaderDialog()
+        loading.setOnDismissListener {
+            if (courseAudioReportRevision == revision) courseAudioReportRevision++
+        }
+        Thread({
+            val result = runCatching {
+                KokoroCourseAudioRemoval.preview(
+                    activity.applicationContext, course.routeId, course.courseId) {
+                    revision != courseAudioReportRevision || Thread.currentThread().isInterrupted
+                }
+            }
+            handler.post {
+                if (closed || !active || activity.isDestroyed ||
+                    revision != courseAudioReportRevision ||
+                    !loading.isShowing || openDialog !== loading) return@post
+                loading.dismiss()
+                result.onSuccess { preview ->
+                    showCourseAudioDeletionConfirmation(course, preview)
+                }.onFailure { error ->
+                    android.util.Log.w("KokoroCourseAudio", "Could not prepare safe audio deletion", error)
+                    Toast.makeText(activity, s(R.string.narration_course_audio_delete_scan_error),
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }, "KokoroCourseAudioDeletionPreview").start()
+    }
+
+    private fun showCourseAudioDeletionConfirmation(
+        course: KokoroCourseAudioStats.Course,
+        preview: KokoroCourseAudioRemoval.Preview
+    ) {
+        if (!narrationEnabled() || !active || activity.isDestroyed) return
+        val plan = preview.ownership
+        val title = s(R.string.narration_course_audio_course_title,
+            courseAudioRoute(course.routeId), course.number, course.title)
+        if (plan.removableFiles == 0) {
+            AlertDialog.Builder(activity)
+                .setTitle(title)
+                .setMessage(s(R.string.narration_course_audio_nothing_to_delete,
+                    plan.sharedFiles))
+                .setPositiveButton(s(R.string.narration_close), null)
+                .showReaderDialog()
+            return
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(s(R.string.narration_course_audio_delete))
+            .setMessage(s(R.string.narration_course_audio_delete_confirmation, title,
+                plan.removableFiles, size(plan.removableBytes), plan.sharedFiles))
+            .setPositiveButton(s(R.string.narration_course_audio_delete)) { _, _ ->
+                executeCourseAudioDeletion(preview)
+            }
+            .setNegativeButton(s(R.string.narration_cancel), null)
+            .showReaderDialog()
+    }
+
+    private fun executeCourseAudioDeletion(preview: KokoroCourseAudioRemoval.Preview) {
+        if (!narrationEnabled() || !active || activity.isDestroyed) return
+        val revision = ++courseAudioReportRevision
+        val loading = AlertDialog.Builder(activity)
+            .setTitle(s(R.string.narration_course_audio_delete))
+            .setMessage(s(R.string.narration_course_audio_deleting))
+            // Once confirmed, do not present a misleading Cancel action that
+            // could leave a partially deleted collection without a result.
+            .setCancelable(false)
+            .showReaderDialog()
+        loading.setOnDismissListener {
+            if (courseAudioReportRevision == revision) courseAudioReportRevision++
+        }
+        Thread({
+            val result = runCatching {
+                KokoroCourseAudioRemoval.remove(activity.applicationContext, preview) {
+                    revision != courseAudioReportRevision || Thread.currentThread().isInterrupted
+                }
+            }
+            handler.post {
+                if (closed || !active || activity.isDestroyed ||
+                    revision != courseAudioReportRevision ||
+                    !loading.isShowing || openDialog !== loading) return@post
+                loading.dismiss()
+                result.onSuccess { deleted ->
+                    val text = when (deleted.status) {
+                        KokoroCourseAudioRemoval.Status.BUSY ->
+                            s(R.string.narration_course_audio_delete_busy)
+                        KokoroCourseAudioRemoval.Status.CHANGED ->
+                            s(R.string.narration_course_audio_delete_changed)
+                        KokoroCourseAudioRemoval.Status.CANCELLED ->
+                            s(R.string.narration_course_audio_delete_cancelled)
+                        KokoroCourseAudioRemoval.Status.COMPLETED ->
+                            if (deleted.failedFiles > 0 || deleted.stoppedEarly)
+                                s(R.string.narration_course_audio_delete_partial,
+                                    deleted.deletedFiles, deleted.failedFiles)
+                            else s(R.string.narration_course_audio_delete_done,
+                                deleted.deletedFiles, size(deleted.deletedBytes))
+                    }
+                    Toast.makeText(activity, text, Toast.LENGTH_LONG).show()
+                    if (deleted.status == KokoroCourseAudioRemoval.Status.COMPLETED) {
+                        refreshStorage()
+                        manageCourseAudio(preview.course.routeId)
+                    }
+                }.onFailure { error ->
+                    android.util.Log.e("KokoroCourseAudio", "Explicit audio deletion failed", error)
+                    Toast.makeText(activity, s(R.string.narration_course_audio_delete_error),
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }, "KokoroCourseAudioDeletion").start()
     }
 
     private fun manageVoices() {
