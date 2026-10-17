@@ -110,11 +110,11 @@ internal object CppCodeInputRules {
         var suppressAutoSpacePosition =
             -1
 
-        val explicitTab = ExplicitTab {
+        val explicitTab = ExplicitTab(insert = {
             suppressAutoSpaceAfterSkip = false
             suppressAutoSpacePosition = -1
             replaceSelectionWithTab(input)
-        }
+        })
         input.setTag(R.id.cpp_editor_input_rules, explicitTab)
         val hardwareKey: (Int, KeyEvent) -> Boolean = { keyCode, event ->
             val backward = event.isShiftPressed && !event.isCtrlPressed &&
