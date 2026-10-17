@@ -8054,6 +8054,14 @@ class LessonActivity : AppCompatActivity() {
      * no focus change or completed-puzzle callback can cause a second click.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (BuildConfig.DEBUG && event.keyCode in intArrayOf(
+                KeyEvent.KEYCODE_GRAVE, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+            // Diagnostic only: never records student's response text or alters input.
+            android.util.Log.d("LgpEnterTrace",
+                "key=${event.keyCode} action=${event.action} repeat=${event.repeatCount}" +
+                    " meta=${event.metaState} down=${event.downTime} time=${event.eventTime}" +
+                    " focus=${currentFocus?.javaClass?.simpleName ?: "none"} page=$currentPage")
+        }
         if (event.keyCode != KeyEvent.KEYCODE_ENTER &&
             event.keyCode != KeyEvent.KEYCODE_NUMPAD_ENTER ||
             !event.hasNoModifiers() ||
@@ -8083,6 +8091,11 @@ class LessonActivity : AppCompatActivity() {
                 pageIdentity, event.keyCode, event.downTime, event.eventTime, event.isCanceled
             )
         }
+        if (BuildConfig.DEBUG && event.action == KeyEvent.ACTION_DOWN) {
+            android.util.Log.d("LgpEnterTrace",
+                "route=$route ready=$canNavigate editor=$editorOwnsEnter" +
+                    " lesson=$currentLessonId page=$currentPage")
+        }
         return when (route) {
             LessonPageAdvanceEnterGate.Route.NAVIGATE -> {
                 // This is the *only* navigation path for this physical key press.
@@ -8106,6 +8119,10 @@ class LessonActivity : AppCompatActivity() {
             val touchedReader = narrationOverlay?.isShown == true && Rect().let { bounds ->
                 narrationOverlay.getGlobalVisibleRect(bounds) &&
                     bounds.contains(event.rawX.toInt(), event.rawY.toInt())
+            }
+            if (BuildConfig.DEBUG && touchedReader) {
+                android.util.Log.d("LgpEnterTrace",
+                    "readerTouch focus=${currentFocus?.javaClass?.simpleName ?: "none"} page=$currentPage")
             }
             if (!touchedReader) puzzleEnterShortcut.trackTouch(event.rawX, event.rawY)
         }

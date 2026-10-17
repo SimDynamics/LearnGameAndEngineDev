@@ -86,6 +86,11 @@ internal class PuzzleEnterShortcut {
             ?: eligible.singleOrNull()
         // Only a selected/active or unambiguous puzzle is submitted. We do not
         // guess among multiple prepared answers and consume students' attempts.
+        if (event.action == KeyEvent.ACTION_DOWN && BuildConfig.DEBUG) {
+            android.util.Log.d("LgpEnterTrace",
+                "puzzle eligible=${eligible.size} chosen=${chosen != null}" +
+                    " selected=${touchedCheck != null} focused=${focused?.javaClass?.simpleName ?: "none"}")
+        }
         if (chosen != null && event.action == KeyEvent.ACTION_DOWN &&
             event.repeatCount == 0 && !event.isCanceled) chosen.check.performClick()
         return true
