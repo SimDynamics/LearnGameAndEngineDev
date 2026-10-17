@@ -15,6 +15,34 @@ class ProgrammingTechnicalRangesTest {
     private fun covered(result: ProgrammingTechnicalRanges.Analysis, start: Int, end: Int) =
         (start until end).all { position -> result.fragments.any { position in it.start until it.endExclusive } }
 
+    @Test fun courseOneLessonThreePageSixColorsOnlyTheInsertionOperatorNotEsOrY() {
+        val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
+        val lessonFile = requireNotNull(resources.absoluteFile.parentFile).resolve(
+            "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json")
+        val lesson = JSONObject(lessonFile.readText())
+        val before = lesson.toString()
+        val text = lesson.getJSONArray("pages").getJSONObject(5)
+            .getJSONArray("blocks").getJSONObject(1).getString("text")
+        val expression = "es << y"
+        val start = text.indexOf(expression)
+        assertTrue(start >= 0)
+        val operator = start + "es ".length
+        val analysis = analysis(text)
+        assertTrue("Only the two insertion characters belong to the technical fragment",
+            analysis.fragments.any { it.start == operator && it.endExclusive == operator + 2 })
+        assertTrue("The preceding es must retain prose styling",
+            analysis.fragments.none { it.start <= start && it.endExclusive > start })
+        val conjunction = operator + 3
+        assertEquals('y', text[conjunction])
+        assertTrue("The following y must retain prose styling",
+            analysis.fragments.none { it.start <= conjunction && it.endExclusive > conjunction })
+        assertEquals(before, lesson.toString())
+        // A real C++ stream expression is still highlighted as a full statement.
+        val sourceCode = "std::cout << value;"
+        val stream = analysis(sourceCode)
+        assertTrue(stream.fragments.any { it.start == 0 && it.endExclusive >= sourceCode.length })
+    }
+
     @Test fun headersNamespacesDeclarationsAndCompleteExpressionsOwnExactSourceRanges() {
         val code = "#include <iostream>\nint count = 2; std::cout << \"ready\"; return 0;"
         val source = "Before: $code After."

@@ -16,6 +16,9 @@ internal object ProgrammingTechnicalRanges {
     private val returnStatement = Regex("(?<![\\p{L}\\p{N}_])return\\s+(?:[−+-]?\\d+(?:[.]\\d+)?|true|false|nullptr|\"(?:\\\\.|[^\"\\\\])*\")")
     private val call = Regex("(?<![\\p{L}\\p{N}_])($identifier)\\(")
     private val compoundExpression = Regex("(?<![\\p{L}\\p{N}_])(?:$identifier|\\d+)\\s*(?:&&|\\|\\||==|!=|<<|>>|[+*/%&|^-]=)\\s*(?:$identifier|[+-]?\\d+(?:[.]\\d+)?)(?:[ \\t]*;)?")
+    // An operator named in ordinary prose is not a full C++ expression.
+    // Example: "el operador ... es << y el literal ...".
+    private val proseCopulaConjunction = Regex("(?iu)^(?:es|est|is|are)\\s*(<<|>>)\\s*(?:y|o|and|or|et|ou)$")
     private val assignment = Regex("(?<![\\p{L}\\p{N}_])$identifier[ \\t]*=(?!=)")
     private val control = Regex("(?<![\\p{L}\\p{N}_])(?:if|for|while|switch|catch)[ \\t]*\\(")
     private val namedType = Regex("std[ \\t]*::(?:vector|array|string|string_view|map|set|optional|pair|size_t)$")
@@ -115,7 +118,17 @@ internal object ProgrammingTechnicalRanges {
                 if (end != null) add(match.range.first, end)
             }
         }
-        compoundExpression.findAll(text).forEach { add(it.range.first, it.range.last + 1) }
+        compoundExpression.findAll(text).forEach { match ->
+            val trimmed = match.value.trim()
+            val mentioned = proseCopulaConjunction.matchEntire(trimmed)
+            if (mentioned != null) {
+                // The adjacent copula and conjunction remain original prose.
+                // Keep only the exact operator under the C++ technical underlay.
+                val operator = mentioned.groupValues[1]
+                val start = match.range.first + match.value.indexOf(operator)
+                add(start, start + operator.length)
+            } else add(match.range.first, match.range.last + 1)
+        }
         assignment.findAll(text).forEach { match ->
             statementEnd(text, match.range.last + 1)?.let { add(match.range.first, it) }
         }
