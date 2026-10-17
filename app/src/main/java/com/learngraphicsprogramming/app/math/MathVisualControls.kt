@@ -185,7 +185,7 @@ object MathVisualControls {
                 it.setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8))
             }
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View = super.getDropDownView(position, convertView, parent).also {
-                it.setBackgroundColor(Color.rgb(28, 31, 36))
+                it.setBackgroundColor(context.getColor(R.color.lesson_card))
                 (it as TextView).setTextColor(Color.WHITE)
                 selectedTextSize = (direction.selectedView as? TextView)?.textSize ?: (baseTextSize ?: it.textSize) * layout.mathTextScale
                 it.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, selectedTextSize ?: it.textSize)
@@ -324,7 +324,7 @@ object MathVisualControls {
                 canvas.drawText("${MathCartesianView.formatCoordinate(widthValue)} × ${MathCartesianView.formatCoordinate(heightValue)}", width / 2f, height - 14 * resources.displayMetrics.density, paint)
             }
         }
-        preview.setBackgroundColor(Color.rgb(16, 17, 20))
+        preview.setBackgroundColor(context.getColor(R.color.lesson_canvas))
         layout.addView(MathExpandableRepresentation.wrap(context, preview, accent, if (graph != null) 1f else 1.2f))
         val seekBars = mutableMapOf<String, SeekBar>()
         val labels = mutableMapOf<String, TextView>()
@@ -399,7 +399,7 @@ object MathVisualControls {
     private fun column(context: Context): VisualColumn = VisualColumn(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(0, dp(context, 6), 0, dp(context, 6))
-        setBackgroundColor(Color.rgb(28, 31, 36))
+        setBackgroundColor(context.getColor(R.color.lesson_card))
     }
     private fun label(context: Context, value: String): TextView = com.learngraphicsprogramming.app.narration.ReadingTextView(context).apply {
         MathTextRenderer.apply(this, value)

@@ -42,7 +42,7 @@ class MathNumberLineView(
     }
 
     init {
-        setBackgroundColor(Color.rgb(16, 17, 20))
+        setBackgroundColor(context.getColor(R.color.lesson_canvas))
         tag = if (interactive) "math_gesture_owner" else null
         isFocusable = true
         updateDescription()
@@ -109,7 +109,7 @@ class MathNumberLineView(
             drawArrow(canvas, end, axis, markerDirection == "left")
         }
         paint.style = Paint.Style.FILL
-        paint.color = Color.rgb(16, 17, 20)
+        paint.color = context.getColor(R.color.lesson_canvas)
         canvas.drawCircle(markerX, axis, 8 * density, paint)
         paint.color = accentColor
         paint.style = if (markerClosed) Paint.Style.FILL else Paint.Style.STROKE

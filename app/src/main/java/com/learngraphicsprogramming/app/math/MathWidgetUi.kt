@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -16,8 +17,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 internal object MathWidgetUi {
-    val foreground: Int = Color.rgb(235, 239, 245)
-    val muted: Int = Color.rgb(174, 183, 198)
+    val foreground: Int = Color.rgb(230, 230, 230)
+    val muted: Int = Color.rgb(184, 184, 184)
     fun dp(context: Context, value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
 
@@ -34,9 +35,9 @@ internal object MathWidgetUi {
 
     fun background(context: Context, selected: Boolean = false, accent: Int = foreground) =
         GradientDrawable().apply {
-            setColor(Color.rgb(28, 31, 36))
+            setColor(context.getColor(R.color.lesson_card))
             cornerRadius = dp(context, 10).toFloat()
-            setStroke(dp(context, 1), if (selected) accent else Color.rgb(67, 73, 84))
+            setStroke(dp(context, 1), if (selected) accent else context.getColor(R.color.lesson_outline))
         }
 
     fun text(context: Context, value: String, bold: Boolean = false, mathMode: String = "auto"): TextView = MathTextView(context).apply {
@@ -62,9 +63,9 @@ internal object MathWidgetUi {
         setCompoundDrawables(drawable, null, null, null)
         compoundDrawableTintList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
-            intArrayOf(enabledColor, Color.rgb(95, 101, 113))
+            intArrayOf(enabledColor, Color.rgb(120, 120, 120))
         )
-        background = RippleDrawable(ColorStateList.valueOf(Color.argb(40, 235, 239, 245)), null, GradientDrawable().apply {
+        background = RippleDrawable(ColorStateList.valueOf(Color.argb(40, 230, 230, 230)), null, GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(Color.WHITE)
         })
@@ -77,7 +78,7 @@ internal object MathWidgetUi {
         textSize = 18f
         minHeight = dp(context, 48)
         val brightness = (Color.red(accent) * 299 + Color.green(accent) * 587 + Color.blue(accent) * 114) / 1000
-        setTextColor(if (brightness >= 160) Color.rgb(20, 23, 29) else Color.WHITE)
+        setTextColor(if (brightness >= 160) Color.rgb(24, 24, 24) else Color.WHITE)
         backgroundTintList = ColorStateList.valueOf(accent)
         layoutParams = LinearLayout.LayoutParams(-2, -2)
     }

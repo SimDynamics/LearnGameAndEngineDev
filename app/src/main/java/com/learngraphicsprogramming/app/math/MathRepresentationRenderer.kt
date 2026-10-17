@@ -79,7 +79,7 @@ object MathRepresentationRenderer {
             val row = TableRow(context)
             for (index in 0 until values.length()) {
                 val cell = text(context, values.optString(index))
-                cell.setBackgroundColor(if (header) Color.rgb(49, 56, 66) else Color.rgb(28, 31, 36))
+                cell.setBackgroundColor(if (header) context.getColor(R.color.lesson_card_header) else context.getColor(R.color.lesson_card))
                 if (header) cell.setTypeface(cell.typeface, android.graphics.Typeface.BOLD)
                 val params = TableRow.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 params.setMargins(1, 1, 1, 1)
@@ -112,7 +112,7 @@ private class GeometryDiagramView(
     }
 
     init {
-        setBackgroundColor(Color.rgb(16, 17, 20))
+        setBackgroundColor(context.getColor(R.color.lesson_canvas))
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 240))
         contentDescription = context.getString(R.string.math_ui_diagram_description, context.getString(if (threeDimensional) R.string.math_ui_diagram_3d else R.string.math_ui_diagram_geometry), context.mathShapeName(shape), (0 until labels.length()).joinToString { labels.optString(it) })
     }
@@ -196,7 +196,7 @@ private class VennDiagramView(context: Context, private val config: JSONObject, 
     }
 
     init {
-        setBackgroundColor(Color.rgb(16, 17, 20))
+        setBackgroundColor(context.getColor(R.color.lesson_canvas))
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 240))
         contentDescription = context.getString(R.string.math_ui_venn_description, config.optString("leftLabel", "A"), config.optString("leftOnly"), config.optString("intersection"), config.optString("rightLabel", "B"), config.optString("rightOnly"), config.optString("outside"))
     }
@@ -209,7 +209,7 @@ private class VennDiagramView(context: Context, private val config: JSONObject, 
         val rightX = width * .60f
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2 * density
-        paint.color = Color.rgb(98, 109, 121)
+        paint.color = Color.rgb(112, 112, 112)
         canvas.drawRect(10 * density, 12 * density, width - 10 * density, height - 12 * density, paint)
         paint.color = accent
         canvas.drawCircle(leftX, centerY, radius, paint)
