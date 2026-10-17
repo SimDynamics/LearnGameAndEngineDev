@@ -86,12 +86,16 @@ class LessonPageAdvancePolicyTest {
         assertEquals(skip, gate.up("lesson/6", enter, 0L, 1020L, false))
     }
 
-    @Test fun repeatedAndRedispatchedDownCannotAdvanceTwice() {
+    @Test fun repeatCountProtectsAgainstHeldEnterAndAnIndependentPressStillWorks() {
         val gate = LessonPageAdvanceEnterGate()
         assertEquals(go, gate.down("lesson/5", enter, 100L, 100L, 0, true, false))
+        // Holding the same physical key on a newly opened page generates a repeat,
+        // not a second navigation.
         assertEquals(skip, gate.down("lesson/6", enter, 100L, 101L, 1, true, false))
-        assertEquals(skip, gate.down("lesson/6", enter, 100L, 100L, 0, true, false))
         assertEquals(skip, gate.up("lesson/6", enter, 100L, 150L, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 100L, 150L, false))
+        // The next genuinely new press works even when LDPlayer sends 100/100 again.
+        assertEquals(go, gate.down("lesson/6", enter, 100L, 100L, 0, true, false))
         assertEquals(skip, gate.up("lesson/6", enter, 100L, 150L, false))
         assertEquals(go, gate.down("lesson/6", enter, 200L, 200L, 0, true, false))
     }
