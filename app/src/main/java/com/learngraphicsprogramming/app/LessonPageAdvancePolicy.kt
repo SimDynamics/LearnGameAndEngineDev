@@ -1,33 +1,23 @@
 package com.learngraphicsprogramming.app
 
-/** The bottom button and Enter share the exact same completion decision. */
+/** The Continue and Finish buttons share the same exercise gate as keyboard navigation. */
 internal object LessonPageAdvancePolicy {
     fun canAdvance(required: Int, completed: Int): Boolean =
         required >= 0 && completed >= required
 }
 
-/**
- * A press has exactly one owner from DOWN through UP.
+/** A physical Enter owns exactly one action. Trigger on the first DOWN, not on
+ * the IME-dependent UP that can be consumed during focus transitions.
  *
- * Never reconsider the action on UP: checking the last puzzle on DOWN can
- * enable Continue before UP arrives. Likewise, a release from an earlier page
- * cannot navigate the newly rendered page. An independent new DOWN/UP pair
- * may navigate immediately; holding or replaying the same physical press may not.
+ * Matching key-up and repeated DOWN are consumed; a genuinely new DOWN may act
+ * immediately even when an emulator reports an unchanged key downTime.
  */
 internal class LessonPageAdvanceEnterGate {
     enum class Route { NAVIGATE, PUZZLE, EDITOR, CONSUME }
-
-    private data class Press(
-        val page: String,
-        val keyCode: Int,
-        val downTime: Long,
-        val route: Route
-    )
-
+    private data class Press(val page: String, val keyCode: Int, val route: Route)
     private var pending: Press? = null
-    private var lastNavigationKey: Pair<Int, Long>? = null
+    private var lastDownIdentity: Triple<Int, Long, Long>? = null
 
-    @Suppress("UNUSED_PARAMETER") // Event time is retained for the keyboard event contract.
     fun down(
         page: String,
         keyCode: Int,
@@ -37,36 +27,32 @@ internal class LessonPageAdvanceEnterGate {
         canNavigate: Boolean,
         editorOwnsEnter: Boolean
     ): Route {
-        val held = pending
         if (repeatCount > 0) {
-            return if (held?.keyCode == keyCode && held.downTime == downTime) {
-                if (held.route == Route.NAVIGATE) Route.CONSUME else held.route
-            } else if (editorOwnsEnter) Route.EDITOR else Route.CONSUME
+            return if (pending?.route == Route.EDITOR && pending?.keyCode == keyCode) Route.EDITOR
+                else Route.CONSUME
         }
-        if (held != null && held.keyCode == keyCode && held.downTime == downTime)
-            return if (held.route == Route.NAVIGATE) Route.CONSUME else held.route
-
-        val sameCompletedPress = lastNavigationKey == (keyCode to downTime)
-
+        val identity = Triple(keyCode, downTime, eventTime)
+        // A repeated dispatch of the SAME native event must never trigger twice.
+        // Distinct presses with the same downTime are allowed, a real LDPlayer case.
+        if (eventTime > 0 && lastDownIdentity == identity) return Route.CONSUME
+        lastDownIdentity = identity
         val route = when {
             editorOwnsEnter -> Route.EDITOR
-            canNavigate -> if (sameCompletedPress) Route.CONSUME else Route.NAVIGATE
+            canNavigate -> Route.NAVIGATE
             else -> Route.PUZZLE
         }
-        pending = Press(page, keyCode, downTime, route)
-        return if (route == Route.NAVIGATE) Route.CONSUME else route
+        pending = Press(page, keyCode, route)
+        return route
     }
 
-    @Suppress("UNUSED_PARAMETER") // UP duration is not a reason to ignore a deliberate new press.
+    @Suppress("UNUSED_PARAMETER")
     fun up(page: String, keyCode: Int, downTime: Long, eventTime: Long, canceled: Boolean): Route {
         val press = pending ?: return Route.CONSUME
-        if (press.keyCode != keyCode || press.downTime != downTime) return Route.CONSUME
+        if (press.keyCode != keyCode) return Route.CONSUME
         pending = null
-        if (press.page != page || canceled) return Route.CONSUME
-        if (press.route == Route.NAVIGATE) {
-            lastNavigationKey = keyCode to downTime
-        }
-        return press.route
+        // The action already ran on DOWN. Never execute another action on UP,
+        // even if the puzzle was just solved or the Activity opened the next page.
+        return if (!canceled && press.page == page && press.route == Route.EDITOR)
+            Route.EDITOR else Route.CONSUME
     }
-
 }

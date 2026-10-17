@@ -65,20 +65,19 @@ internal class PuzzleEnterShortcut {
         if (focused is MathExpressionEditor ||
             focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)) return false
 
-        val available = entries.filter { it.check.isAttachedToWindow && it.check.isShown }
-        if (available.isEmpty()) return false
-        val focusedPuzzle = available.lastOrNull {
-            belongsTo(focused, it.region) || belongsTo(focused, it.check)
+        val eligible = entries.filter {
+            it.check.isAttachedToWindow && it.check.isShown &&
+                it.check.isEnabled && it.check.isClickable
         }
-        // A selected response wins over an unrelated focused button (e.g. Run in
-        // the C++ lab). Never send Enter to that button while a puzzle is pending.
-        val chosen = focusedPuzzle
-            ?: available.lastOrNull { it.check === touchedCheck }
-            ?: available.filter { it.check.isEnabled && it.check.isClickable }.singleOrNull()
-        // No valid selection, or multiple equally eligible puzzles: do not
-        // guess and accidentally consume a life on an unrelated answer.
-        if (chosen != null && event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
-            chosen.check.isEnabled && chosen.check.isClickable) chosen.check.performClick()
+        if (eligible.isEmpty()) return entries.isNotEmpty()
+        val chosen = eligible.lastOrNull {
+            belongsTo(focused, it.region) || belongsTo(focused, it.check)
+        } ?: eligible.lastOrNull { it.check === touchedCheck }
+          ?: eligible.singleOrNull()
+        // Only a selected/active or unambiguous puzzle is submitted. We do not
+        // guess among multiple prepared answers and consume students' attempts.
+        if (chosen != null && event.action == KeyEvent.ACTION_DOWN &&
+            event.repeatCount == 0 && !event.isCanceled) chosen.check.performClick()
         return true
     }
 }

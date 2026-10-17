@@ -4,72 +4,59 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LessonPageAdvancePolicyTest {
-    private val key = 66
+    private val enter = 66
+    private val go = LessonPageAdvanceEnterGate.Route.NAVIGATE
+    private val puzzle = LessonPageAdvanceEnterGate.Route.PUZZLE
+    private val edit = LessonPageAdvanceEnterGate.Route.EDITOR
+    private val skip = LessonPageAdvanceEnterGate.Route.CONSUME
 
-    @Test fun noPuzzlesMeansContinueIsEnabled() {
+    @Test fun noPuzzlesOrCompletedPageAllowsContinue() {
         assertTrue(LessonPageAdvancePolicy.canAdvance(0, 0))
-    }
-
-    @Test fun pendingPuzzlesKeepContinueAndFinishDisabled() {
         assertFalse(LessonPageAdvancePolicy.canAdvance(1, 0))
         assertFalse(LessonPageAdvancePolicy.canAdvance(3, 2))
         assertTrue(LessonPageAdvancePolicy.canAdvance(3, 3))
-        assertFalse(LessonPageAdvancePolicy.canAdvance(3, 2))
     }
 
-    @Test fun solvedLastPuzzleOnKeyDownNeverTurnsSameReleaseIntoNavigation() {
+    @Test fun theFirstDownChecksAndItsReleaseCannotAdvanceAfterSolving() {
         val gate = LessonPageAdvanceEnterGate()
-        assertEquals(LessonPageAdvanceEnterGate.Route.PUZZLE,
-            gate.down("5/6", key, 1000, 1000, 0, canNavigate = false, editorOwnsEnter = false))
-        // The real Check handler solved the last exercise between DOWN and UP.
-        assertEquals(LessonPageAdvanceEnterGate.Route.PUZZLE,
-            gate.up("5/6", key, 1000, 1070, canceled = false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("5/6", key, 1000, 1070, canceled = false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("5/6", key, 1100, 1100, 0, canNavigate = true, editorOwnsEnter = false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.NAVIGATE,
-            gate.up("5/6", key, 1100, 1160, canceled = false))
+        assertEquals(puzzle, gate.down("lesson/5", enter, 900L, 1000L, 0, false, false))
+        // The check handler has just solved the last puzzle, making Continue ready.
+        assertEquals(skip, gate.up("lesson/5", enter, 900L, 1020L, false))
+        assertEquals(go, gate.down("lesson/5", enter, 900L, 1030L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/5", enter, 900L, 1040L, false))
     }
 
-    @Test fun onePressAdvancesOnePageAndAnImmediateNewPressFinishesTheNextPage() {
+    @Test fun secondDistinctPressActsImmediatelyWithoutWaiting650msOrChangingDownTime() {
         val gate = LessonPageAdvanceEnterGate()
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("5/6", key, 2000, 2000, 0, true, false))
-        // Held Enter is a repeat, never a second navigation command.
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("5/6", key, 2000, 2040, 1, true, false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.NAVIGATE,
-            gate.up("5/6", key, 2000, 2100, false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("6/6", key, 2000, 2100, false))
-        // A duplicated DOWN/UP from the first press must not finish page 6.
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("6/6", key, 2000, 2110, 0, true, false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("6/6", key, 2000, 2150, false))
-        // A genuinely new press works even before 650 ms. No artificial delay.
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.down("6/6", key, 2160, 2160, 0, true, false))
-        assertEquals(LessonPageAdvanceEnterGate.Route.NAVIGATE,
-            gate.up("6/6", key, 2160, 2200, false))
+        assertEquals(go, gate.down("lesson/5", enter, 0L, 1000L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 0L, 1005L, false))
+        assertEquals(go, gate.down("lesson/6", enter, 0L, 1010L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 0L, 1020L, false))
     }
 
-    @Test fun editorOwnsEnterRegardlessOfExerciseCompletion() {
+    @Test fun repeatedAndRedispatchedDownCannotAdvanceTwice() {
         val gate = LessonPageAdvanceEnterGate()
-        assertEquals(LessonPageAdvanceEnterGate.Route.EDITOR,
-            gate.down("6/6", key, 100, 100, 0, true, true))
-        assertEquals(LessonPageAdvanceEnterGate.Route.EDITOR,
-            gate.up("6/6", key, 100, 140, false))
+        assertEquals(go, gate.down("lesson/5", enter, 100L, 100L, 0, true, false))
+        assertEquals(skip, gate.down("lesson/6", enter, 100L, 101L, 1, true, false))
+        assertEquals(skip, gate.down("lesson/6", enter, 100L, 100L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 100L, 150L, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 100L, 150L, false))
+        assertEquals(go, gate.down("lesson/6", enter, 200L, 200L, 0, true, false))
     }
 
-    @Test fun canceledOrOldPageReleaseNeverAdvances() {
+    @Test fun compilerKeepsBothKeyHalvesForMultilineEditing() {
         val gate = LessonPageAdvanceEnterGate()
-        gate.down("5/6", key, 100, 100, 0, true, false)
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("6/6", key, 100, 145, false))
-        gate.down("6/6", key, 200, 200, 0, true, false)
-        assertEquals(LessonPageAdvanceEnterGate.Route.CONSUME,
-            gate.up("6/6", key, 200, 245, true))
+        assertEquals(edit, gate.down("lesson/5", enter, 11L, 11L, 0, true, true))
+        assertEquals(edit, gate.up("lesson/5", enter, 11L, 20L, false))
+        assertEquals(edit, gate.down("lesson/5", enter, 25L, 25L, 0, false, true))
+        assertEquals(skip, gate.up("lesson/5", enter, 25L, 30L, true))
+    }
+
+    @Test fun evenAfterPageSwitchStaleUpCanNeverFinishLesson() {
+        val gate = LessonPageAdvanceEnterGate()
+        assertEquals(go, gate.down("lesson/5", enter, 9L, 9L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 9L, 10L, false))
+        assertEquals(skip, gate.up("lesson/6", enter, 9L, 11L, false))
+        assertEquals(go, gate.down("lesson/6", enter, 10L, 12L, 0, true, false))
     }
 }

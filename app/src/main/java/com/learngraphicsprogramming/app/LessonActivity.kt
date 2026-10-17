@@ -8027,8 +8027,8 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
-    /** One Enter belongs either to a puzzle, to an editor or to page navigation.
-     * Never reassess that ownership between down/up or after an exercise turns correct.
+    /** One Enter checks or advances on its first DOWN. UP only closes that action;
+     * no focus change or completed-puzzle callback can cause a second click.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode != KeyEvent.KEYCODE_ENTER &&
