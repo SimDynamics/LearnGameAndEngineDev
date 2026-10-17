@@ -9673,7 +9673,16 @@ class LessonActivity : AppCompatActivity() {
                     else pageCompletedExercises[puzzlePage] ?: 0
                 val updated = (count + if (correct) 1 else -1).coerceAtLeast(0)
                 pageCompletedExercises[puzzlePage] = updated
-                if (currentPage == puzzlePage) completedExercises = updated
+                if (currentPage == puzzlePage) {
+                    completedExercises = updated
+                    if (correct && !isDestroyed && !isFinishing) {
+                        // A mathematical puzzle uses the same immediate correct
+                        // feedback priority as every C++ puzzle.
+                        narrationController?.onCorrectSubmission(
+                            narrationPageIdentity(), blockIndex, narrationCorrectBlocks()
+                        )
+                    }
+                }
             }
             if (renderer.isCorrect) completedExercises++
             renderer.narrationSpokenAnchors.forEach { (position, label) ->

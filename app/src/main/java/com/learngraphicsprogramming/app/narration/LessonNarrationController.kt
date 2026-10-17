@@ -113,6 +113,7 @@ class LessonNarrationController(
     private var warnedNetwork = false
     private var playbackGate: NarrationExerciseGate? = null
     private var correctExercises = emptySet<Int>()
+    private var pendingPausedCorrectBlock: Int? = null
     private var activePageIdentity = ""
     private var waitingForExercise = false
     private var wordAlignmentService: KokoroWordAlignment? = null
@@ -226,28 +227,28 @@ class LessonNarrationController(
         }
     }
 
-    /** A submitted answer visually completes preceding text, not actual audio.
-     * Correct: relocate active source playback to allowed successful feedback.
-     * Incorrect: keep the page's own resume point while its guide plays.
+    /** Answering makes earlier question/option text VISUALLY read. It never
+     * completes previous audio or credits an earlier successful explanation.
+     * Correct submissions own the main player's next position immediately;
+     * incorrect submissions retain the same original-page bookmark.
      */
     private fun skipAnsweredQuestion(blockIndex: Int, moveSourceAudio: Boolean) {
         if (closed || finished || segments.isEmpty() || incorrectFeedback != null) return
         val point = playbackPoint()
-        val destination = playbackGate?.answerDestination(
-            blockIndex, NarrationGatePosition(point.segment, point.positionMs)
-        ) ?: return
+        val gate = playbackGate ?: return
+        val destination = if (moveSourceAudio) gate.prioritizeCorrect(blockIndex)
+            else gate.feedbackStart(blockIndex)
+        if (destination == null) return
         if (moveSourceAudio) {
             if (playerReady && playing) {
-                // Record actual listening only up to the interrupted decoder offset.
                 publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED)
                     .copy(positionMs = point.positionMs))
             }
             pendingManualForward = null
             selectSegment(destination.segment, destination.positionMs)
         }
-        // An answer deliberately supersedes the entire text before the permitted
-        // feedback. This presentation boundary needs no unsynthesized WAV durations;
-        // it never counts as hearing, and a later rewind restores unread words.
+        // Native segment indices are known independently of synthesized WAV
+        // durations. The omitted prefix becomes read ink, not listened audio.
         publishProgress(progressSnapshot(NarrationPlaybackPhase.POSITION_CHANGED).copy(
             segmentIndex = destination.segment,
             positionMs = destination.positionMs,
@@ -255,16 +256,35 @@ class LessonNarrationController(
         ))
     }
 
-    /** A correct submission interrupts an active question/options reading.
-     * A paused page never starts playing merely because an answer was submitted.
+    /** Every newly correct answer has priority over older questions, options,
+     * and even an unrelated incorrect guide still speaking. Only actual
+     * correctness unlocks later page narration. A manually paused reader
+     * remains paused, with its successful feedback queued for the next Play.
      */
     fun onCorrectSubmission(pageIdentity: String, blockIndex: Int, correctBlocks: Set<Int>) = onMain {
+        val gate = playbackGate ?: return@onMain
         if (closed || pageIdentity != activePageIdentity ||
-            playbackGate?.hasExercise(blockIndex) != true) return@onMain
-        val readingPage = incorrectFeedback == null && (playing || waitingForExercise)
-        updateSolvedExercises(pageIdentity, correctBlocks)
-        if (readingPage && incorrectFeedback == null) {
-            skipAnsweredQuestion(blockIndex, moveSourceAudio = true)
+            !gate.hasExercise(blockIndex) || blockIndex !in correctBlocks) return@onMain
+        val oldGuide = incorrectFeedback
+        val shouldSpeakNow = playing || waitingForExercise || oldGuide?.finished == true ||
+            (oldGuide == null && resumeOwner == null && !finished)
+        // This native check has already saved the student's result. The
+        // preference observer may be queued, but it cannot delay this action.
+        correctExercises = correctBlocks.toSet()
+        gate.updateCorrect(correctBlocks)
+        if (oldGuide != null) finishIncorrectFeedback(restoreWaiting = false)
+        if (!shouldSpeakNow) {
+            pendingPausedCorrectBlock = blockIndex
+            return@onMain
+        }
+        pendingPausedCorrectBlock = null
+        if (finished) finished = false
+        skipAnsweredQuestion(blockIndex, moveSourceAudio = true)
+        if (!playing) {
+            // A source selected after a transient guide must not be overwritten
+            // by the last paused bookmark on resume.
+            userPositionChosen = true
+            resume()
         }
     }
 
@@ -504,6 +524,7 @@ class LessonNarrationController(
         if (playbackGate?.hasExercise(blockIndex) != true) return@onMain
         val prepared = narrationParts(texts, selected)
         if (prepared.isEmpty()) return@onMain
+        pendingPausedCorrectBlock = null
         val previous = incorrectFeedback
         val wasWaiting = previous?.wasWaiting ?: waitingForExercise
         val wasPlaying = previous?.wasPlaying ?: playing
@@ -638,8 +659,10 @@ class LessonNarrationController(
         playbackGate = NarrationExerciseGate(segments.size,gates,correctBlocks,saved?.feedbackHeardThrough ?: 0)
         correctExercises = correctBlocks.toSet()
         val restored = NarrationGatePosition(saved?.segment ?: 0, saved?.positionMs ?: 0L)
+        playbackGate?.restoreAnsweredPosition(restored)
         val position = requireNotNull(playbackGate).clamp(restored)
         index = position.segment; offset = position.positionMs
+        pendingPausedCorrectBlock = null
         // A completed bookmark is retained only while the page and its exercise
         // permissions still match. A newly blocked answer must not be skipped.
         finished = saved?.finished == true && position == restored && index == segments.lastIndex
@@ -766,6 +789,11 @@ class LessonNarrationController(
 
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
+        if (incorrectFeedback == null) pendingPausedCorrectBlock?.let { blockIndex ->
+            pendingPausedCorrectBlock = null
+            skipAnsweredQuestion(blockIndex, moveSourceAudio = true)
+            userPositionChosen = true
+        }
         incorrectFeedback?.let { feedback ->
             if (feedback.finished) return
             NarrationPlaybackOwner.acquire(this) { pause() }
@@ -846,6 +874,7 @@ class LessonNarrationController(
         userPositionChosen = true
         finished = false
         playbackGate?.restart()
+        pendingPausedCorrectBlock = null
         index = 0; offset = 0
         rememberPlaybackPosition()
         publishProgress(NarrationPlaybackPhase.RESTARTED)
@@ -1579,6 +1608,7 @@ class LessonNarrationController(
         pendingManualForward = null
         playbackGate = null
         correctExercises = emptySet()
+        pendingPausedCorrectBlock = null
         activePageIdentity = ""
         waitingForExercise = false
         val previous = directory
