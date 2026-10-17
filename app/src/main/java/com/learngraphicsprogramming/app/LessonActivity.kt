@@ -8027,44 +8027,46 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
-    /** Keep Enter for puzzle checking until every required exercise is solved.
-     * Then use a separate physical key press to click the native Continue/Finish button.
-     * A compiler, multiline field or structured math editor always owns its Enter.
+    /** One Enter belongs either to a puzzle, to an editor or to page navigation.
+     * Never reassess that ownership between down/up or after an exercise turns correct.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val enter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
-            event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
-        val focused = currentFocus
-        if (enter) {
-            val editorOwnsEnter = compilerFullscreenActive || exerciseFullscreenActive ||
-                focused is MathExpressionEditor ||
-                focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
-            val otherActionOwnsEnter = focused != null &&
-                ::lessonContinueButton.isInitialized &&
-                focused !== lessonContinueButton && focused.isEnabled &&
-                focused.isFocusable && focused.isClickable
-            val ready = ::lessonContinueButton.isInitialized &&
-                lessonContinueButton.isEnabled && lessonContinueButton.visibility == View.VISIBLE &&
-                LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)
-            if (!editorOwnsEnter && !otherActionOwnsEnter && event.hasNoModifiers() && ready) {
-                val identity = "${currentRouteId}/${currentLessonId}/$currentPage"
-                when (event.action) {
-                    KeyEvent.ACTION_DOWN -> {
-                        lessonAdvanceEnterGate.down(identity, event.repeatCount)
-                        return true
-                    }
-                    KeyEvent.ACTION_UP -> {
-                        val advance = lessonAdvanceEnterGate.up(identity, event.isCanceled)
-                        if (advance && lessonContinueButton.isEnabled) {
-                            lessonContinueButton.performClick()
-                        }
-                        return true
-                    }
-                }
-            } else lessonAdvanceEnterGate.cancel()
+        if (event.keyCode != KeyEvent.KEYCODE_ENTER &&
+            event.keyCode != KeyEvent.KEYCODE_NUMPAD_ENTER ||
+            !event.hasNoModifiers() ||
+            event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP) {
+            return super.dispatchKeyEvent(event)
         }
-        if (puzzleEnterShortcut.dispatch(event, focused, compilerFullscreenActive)) return true
-        return super.dispatchKeyEvent(event)
+
+        val focused = currentFocus
+        val editorOwnsEnter = compilerFullscreenActive || exerciseFullscreenActive ||
+            focused is MathExpressionEditor ||
+            focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
+        val canNavigate = ::lessonContinueButton.isInitialized &&
+            lessonContinueButton.isEnabled && lessonContinueButton.isShown &&
+            LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)
+        val pageIdentity = "${currentRouteId}/${currentLessonId}/$currentPage"
+        val route = when (event.action) {
+            KeyEvent.ACTION_DOWN -> lessonAdvanceEnterGate.down(
+                pageIdentity, event.keyCode, event.downTime, event.eventTime, event.repeatCount,
+                canNavigate, editorOwnsEnter
+            )
+            else -> lessonAdvanceEnterGate.up(
+                pageIdentity, event.keyCode, event.downTime, event.eventTime, event.isCanceled
+            )
+        }
+        return when (route) {
+            LessonPageAdvanceEnterGate.Route.NAVIGATE -> {
+                // This is the *only* navigation path for this physical key press.
+                if (canNavigate && !isFinishing && !isDestroyed) lessonContinueButton.performClick()
+                true
+            }
+            LessonPageAdvanceEnterGate.Route.PUZZLE ->
+                puzzleEnterShortcut.dispatch(event, focused, compilerFullscreenActive) ||
+                    super.dispatchKeyEvent(event)
+            LessonPageAdvanceEnterGate.Route.EDITOR -> super.dispatchKeyEvent(event)
+            LessonPageAdvanceEnterGate.Route.CONSUME -> true
+        }
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -9144,7 +9146,8 @@ class LessonActivity : AppCompatActivity() {
             "${currentRouteId}/${currentLessonId}", currentPage,
             reused = pageViewCache.containsKey(currentPage)
         )
-        lessonAdvanceEnterGate.cancel()
+        // Retain the current DOWN ownership until its matching UP, even if the
+        // visible page changes while a hardware key is held.
         lessonContent.removeAllViews()
 
         val pages =
