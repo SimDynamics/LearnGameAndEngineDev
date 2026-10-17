@@ -890,7 +890,7 @@ class LessonNarrationController(
         val from = NarrationGatePosition(point.segment,point.positionMs)
         val requested = NarrationGatePosition(targetIndex,if(previousUnknown) target else target.coerceAtLeast(0))
         val bounded = if (previousUnknown) requested else playbackGate?.seek(from,requested) ?: requested
-        if (bounded == from) return@onMain
+        if (bounded == from) return
         // Close the genuinely played interval at its observed decoder position before
         // reporting the separate, voluntary visual skip. Neither event completes feedback.
         if (playerReady && playing) publishProgress(progressSnapshot(NarrationPlaybackPhase.ADVANCED)
