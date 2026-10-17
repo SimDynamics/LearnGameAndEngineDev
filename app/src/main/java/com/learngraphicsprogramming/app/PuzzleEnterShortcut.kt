@@ -26,7 +26,7 @@ internal class PuzzleEnterShortcut {
     }
 
     fun register(check: View, region: View) {
-        check(page >= 0) { "Activate a lesson page before adding puzzle shortcuts" }
+        require(page >= 0) { "Activate a lesson page before adding puzzle shortcuts" }
         pageEntries.getOrPut(page) { mutableListOf() }.add(Entry(check, region))
     }
 

@@ -8040,6 +8040,7 @@ class LessonActivity : AppCompatActivity() {
                 focused is MathExpressionEditor ||
                 focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
             val otherActionOwnsEnter = focused != null &&
+                ::lessonContinueButton.isInitialized &&
                 focused !== lessonContinueButton && focused.isEnabled &&
                 focused.isFocusable && focused.isClickable
             val ready = ::lessonContinueButton.isInitialized &&
