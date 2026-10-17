@@ -267,7 +267,7 @@ class LessonNarrationController(
             !gate.hasExercise(blockIndex) || blockIndex !in correctBlocks) return@onMain
         val oldGuide = incorrectFeedback
         val shouldSpeakNow = playing || waitingForExercise || oldGuide?.finished == true ||
-            (oldGuide == null && resumeOwner == null && !finished)
+            (oldGuide == null && resumeOwner == null)
         // This native check has already saved the student's result. The
         // preference observer may be queued, but it cannot delay this action.
         correctExercises = correctBlocks.toSet()
