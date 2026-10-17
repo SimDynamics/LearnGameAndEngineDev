@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -90,5 +91,71 @@ class KokoroNarrationCacheDeviceTest {
         assertArrayEquals(first.readBytes(), stored.readBytes())
         assertEquals(stored, KokoroNarrationCache.lookup(context, "es", "ef_dora", text))
         assertEquals(1, requireNotNull(stored.parentFile).listFiles().orEmpty().size)
+    }
+
+    @Test fun explicitMaintenanceRemovesOnlyChosenVerifiedRecording() = isolated { context, sandbox ->
+        val input = File(sandbox, "source.wav")
+        NarrationWavWriter.write(input, floatArrayOf(0f, 0.1f, -0.1f))
+        val selected = requireNotNull(KokoroNarrationCache.store(
+            context, "es", "ef_dora", "Only this test audio is removable.", input))
+        val shared = requireNotNull(KokoroNarrationCache.store(
+            context, "es", "ef_dora", "Keep this other course audio.", input))
+        val savedShared = shared.readBytes()
+        val unknownHash = "a".repeat(64)
+        val invalid = File(selected.parentFile, "$unknownHash.wav").apply { writeText("Invalid") }
+        val staging = File(selected.parentFile, ".unfinished-123.part").apply { writeText("Partial") }
+        val targetKeys = linkedSetOf(selected.nameWithoutExtension, unknownHash)
+
+        val denied = KokoroNarrationCache.deleteExclusiveVerified(context, targetKeys) { true }
+        assertTrue("Explicit deletion requires an exclusive maintenance lease", denied.interrupted)
+        assertEquals(0, denied.deletedFiles)
+        assertTrue(selected.isFile)
+
+        val lease = requireNotNull(NarrationWorkPriority.beginMaintenanceIfIdle())
+        try {
+            val result = KokoroNarrationCache.deleteExclusiveVerified(context, targetKeys) {
+                NarrationWorkPriority.isMaintenanceExclusive
+            }
+            assertFalse(result.interrupted)
+            assertEquals(1, result.deletedFiles)
+            assertEquals(input.length(), result.deletedBytes)
+            assertEquals(0, result.failedFiles)
+        } finally {
+            lease.close()
+        }
+        assertFalse(selected.exists())
+        assertArrayEquals(savedShared, shared.readBytes())
+        assertTrue("Invalid audio must not be removed", invalid.isFile)
+        assertTrue("Partial audio must not be removed", staging.isFile)
+    }
+
+    @Test fun interruptedMaintenanceDoesNotResumeAfterReaderCloses() = isolated { context, sandbox ->
+        val input = File(sandbox, "source.wav")
+        NarrationWavWriter.write(input, floatArrayOf(0f, 0.1f, -0.1f))
+        val first = requireNotNull(KokoroNarrationCache.store(
+            context, "es", "ef_dora", "First deletion fixture.", input))
+        val second = requireNotNull(KokoroNarrationCache.store(
+            context, "es", "ef_dora", "Second recording must remain.", input))
+
+        var reader: AutoCloseable? = null
+        val lease = requireNotNull(NarrationWorkPriority.beginMaintenanceIfIdle())
+        try {
+            val result = KokoroNarrationCache.deleteExclusiveVerified(context,
+                linkedSetOf(first.nameWithoutExtension, second.nameWithoutExtension)) {
+                if (!first.exists() && reader == null) {
+                    reader = NarrationWorkPriority.beginInteractive()
+                    reader?.close()
+                }
+                NarrationWorkPriority.isMaintenanceExclusive
+            }
+            assertTrue(result.interrupted)
+            assertEquals(1, result.deletedFiles)
+            assertFalse(first.exists())
+            assertTrue(second.isFile)
+            assertFalse(NarrationWorkPriority.isMaintenanceExclusive)
+        } finally {
+            reader?.close()
+            lease.close()
+        }
     }
 }
