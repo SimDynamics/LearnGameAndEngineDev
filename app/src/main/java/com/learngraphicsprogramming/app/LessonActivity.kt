@@ -8200,7 +8200,7 @@ class LessonActivity : AppCompatActivity() {
                 !compilerFullscreenActive && !exerciseFullscreenActive) {
                 pendingOtherPuzzleEditor = (currentFocus as? EditText)
                     ?.takeIf { it.tag == CODE_INPUT_TAG &&
-                        puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(it) }
+                        puzzleEnterShortcut.selectedOtherPuzzleThan(it) }
             }
         } else if (event.actionMasked == MotionEvent.ACTION_UP ||
             event.actionMasked == MotionEvent.ACTION_CANCEL) {
@@ -8214,7 +8214,7 @@ class LessonActivity : AppCompatActivity() {
                 kotlin.math.abs(event.y - touchStartY) < dp(16)) {
                 lessonContent.post {
                     if (!isFinishing && !isDestroyed && previousEditor.hasFocus() &&
-                        puzzleEnterShortcut.selectedPuzzleOverridesFocusedEditor(previousEditor)) {
+                        puzzleEnterShortcut.selectedOtherPuzzleThan(previousEditor)) {
                         endProgrammingEditing(previousEditor, hideKeyboard = true)
                     }
                 }

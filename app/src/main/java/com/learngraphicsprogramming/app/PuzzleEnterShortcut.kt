@@ -37,14 +37,14 @@ internal class PuzzleEnterShortcut {
         touchedCheck = null
     }
 
-    /** A deliberate selection overrides a stale field from another puzzle
-     * or the independent compiler. Its own editing field remains protected.
+    /** Spatial ownership is independent of whether another puzzle has enough
+     * input to enable Comprobar yet. Tapping its block still exits a stale
+     * compiler editor, but does not submit or alter that puzzle.
      */
-    fun selectedPuzzleOverridesFocusedEditor(focused: View?): Boolean {
+    fun selectedOtherPuzzleThan(focused: View?): Boolean {
         if (focused !is EditText) return false
         val selected = entries.lastOrNull {
-            it.check === touchedCheck && it.check.isEnabled &&
-                it.check.isAttachedToWindow && it.check.isShown
+            it.check === touchedCheck && it.check.isAttachedToWindow && it.check.isShown
         } ?: return false
         if (belongsTo(focused, selected.region) || belongsTo(focused, selected.check)) return false
         return focused.tag == "cpp_code_input" || entries.any { entry ->
@@ -52,6 +52,14 @@ internal class PuzzleEnterShortcut {
                 (belongsTo(focused, entry.region) || belongsTo(focused, entry.check))
         }
     }
+
+    /** A deliberate selected answer overrides a stale other-editor focus only
+     * when it is eligible to receive Enter. Disabled checks stay disabled.
+     */
+    fun selectedPuzzleOverridesFocusedEditor(focused: View?): Boolean =
+        selectedOtherPuzzleThan(focused) &&
+            entries.any { it.check === touchedCheck && it.check.isEnabled &&
+                it.check.isAttachedToWindow && it.check.isShown }
 
     /** The user's actual answer selection, not Android's incidental keyboard focus,
      * chooses which puzzle receives Enter. Narration controls never own this choice. */
