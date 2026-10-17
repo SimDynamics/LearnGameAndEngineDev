@@ -383,8 +383,26 @@ class LessonActivity : AppCompatActivity() {
 
     private lateinit var currentLessonId: String
 
+    private lateinit var lessonContinueButton: Button
+    private val lessonAdvanceEnterGate = LessonPageAdvanceEnterGate()
     private var requiredExercises = 0
+        set(value) {
+            field = value
+            updateContinueButtonState()
+        }
     private var completedExercises = 0
+        set(value) {
+            field = value
+            updateContinueButtonState()
+        }
+
+    /** The existing AppearanceUi state list renders disabled buttons in gray. */
+    private fun updateContinueButtonState() {
+        if (::lessonContinueButton.isInitialized) {
+            lessonContinueButton.isEnabled =
+                LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)
+        }
+    }
 
     private lateinit var lessonJson: JSONObject
 
@@ -876,6 +894,7 @@ class LessonActivity : AppCompatActivity() {
 
         val buttonContinue =
             findViewById<Button>(R.id.buttonContinue)
+        lessonContinueButton = buttonContinue
 
         val textTopLesson =
             findViewById<TextView>(R.id.textTopLesson)
@@ -1020,9 +1039,11 @@ class LessonActivity : AppCompatActivity() {
         }
 
         buttonContinue.setOnClickListener {
-
-            tryGoNextPage()
+            if (LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)) {
+                tryGoNextPage()
+            }
         }
+        updateContinueButtonState()
 
         loadLesson(currentLessonId)
         savedInstanceState?.getString(ATTEMPT_HISTORY_STATE)?.let { saved ->
@@ -8006,9 +8027,42 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
-    /** Route unmodified Enter to the active puzzle's existing Check action. */
+    /** Keep Enter for puzzle checking until every required exercise is solved.
+     * Then use a separate physical key press to click the native Continue/Finish button.
+     * A compiler, multiline field or structured math editor always owns its Enter.
+     */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (puzzleEnterShortcut.dispatch(event, currentFocus, compilerFullscreenActive)) return true
+        val enter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
+            event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+        val focused = currentFocus
+        if (enter) {
+            val editorOwnsEnter = compilerFullscreenActive ||
+                focused is MathExpressionEditor ||
+                focused is EditText && !PuzzleAnswerSubmit.isSingleLine(focused)
+            val otherActionOwnsEnter = focused != null &&
+                focused !== lessonContinueButton && focused.isEnabled &&
+                focused.isFocusable && focused.isClickable
+            val ready = ::lessonContinueButton.isInitialized &&
+                lessonContinueButton.isEnabled && lessonContinueButton.visibility == View.VISIBLE &&
+                LessonPageAdvancePolicy.canAdvance(requiredExercises, completedExercises)
+            if (!editorOwnsEnter && !otherActionOwnsEnter && event.hasNoModifiers() && ready) {
+                val identity = "${currentRouteId}/${currentLessonId}/$currentPage"
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        lessonAdvanceEnterGate.down(identity, event.repeatCount)
+                        return true
+                    }
+                    KeyEvent.ACTION_UP -> {
+                        val advance = lessonAdvanceEnterGate.up(identity, event.isCanceled)
+                        if (advance && lessonContinueButton.isEnabled) {
+                            lessonContinueButton.performClick()
+                        }
+                        return true
+                    }
+                }
+            } else lessonAdvanceEnterGate.cancel()
+        }
+        if (puzzleEnterShortcut.dispatch(event, focused, compilerFullscreenActive)) return true
         return super.dispatchKeyEvent(event)
     }
 
@@ -9084,7 +9138,12 @@ class LessonActivity : AppCompatActivity() {
         readingRenderBlockIndex = null
         readingTextPages.values.forEach { it.restore() }
 
-        puzzleEnterShortcut.clear()
+        // Retain Check shortcuts for reattached cached Views, not old pages.
+        puzzleEnterShortcut.activatePage(
+            "${currentRouteId}/${currentLessonId}", currentPage,
+            reused = pageViewCache.containsKey(currentPage)
+        )
+        lessonAdvanceEnterGate.cancel()
         lessonContent.removeAllViews()
 
         val pages =
