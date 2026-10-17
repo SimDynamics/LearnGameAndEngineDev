@@ -409,6 +409,19 @@ class PuzzleLabelsEnterReadingDeviceTest {
             controller(activity).pauseKeepingPosition()
             assertSame("A mapped Pause tap must not forget the active puzzle",
                 check, field<View?>(shortcuts, "touchedCheck"))
+        }
+
+        // User maps the physical grave/backtick key to a one-touch Pause in LDPlayer.
+        // Android injection cannot emulate the host mapping itself, but ensures
+        // KEYCODE_GRAVE never changes this lesson's Enter ownership if delivered.
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_GRAVE)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            val check = descendants(content(activity)).filterIsInstance<Button>()
+                .single { it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled }
+            val shortcuts = field<Any>(activity, "puzzleEnterShortcut")
+            assertSame("Grave input and Pause cannot replace the active puzzle",
+                check, field<View?>(shortcuts, "touchedCheck"))
             assertTrue("The correct retry is a fresh selection on the same question",
                 buttonFor(activity, 4, 0).performClick())
             assertSame(check, field<View?>(shortcuts, "touchedCheck"))
