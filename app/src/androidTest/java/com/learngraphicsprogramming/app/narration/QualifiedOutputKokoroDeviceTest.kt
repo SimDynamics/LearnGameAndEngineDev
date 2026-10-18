@@ -73,6 +73,11 @@ class QualifiedOutputKokoroDeviceTest {
         verifySamples(samples)
     }
 
+    @Test fun ordinarySpanishSemicolonKeepsItsPauseWithoutAddingSpokenWords() = verifySamples(listOf(
+        Sample("es-clause-punctuation", NarrationLanguage.SPANISH, NarrationLanguage.SPANISH.defaultVoice,
+            "Primero ; después sigue.")
+    ))
+
     private fun verifySamples(samples: List<Sample>) {
         assertEquals("Use only the isolated APK", QA_PACKAGE, app.packageName)
         assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
@@ -126,8 +131,11 @@ class QualifiedOutputKokoroDeviceTest {
                 val original = lesson.toString()
                 val source = LessonNarrationText.page(lesson, 0, sample.language, forKokoro = true)
                 val segments = NarrationSegments.sentences(source)
-                if (!sample.id.endsWith("-semicolon")) assertEquals("A complete test phrase must remain one continuous segment", 1, segments.size)
+                if (sample.id == "es-clause-punctuation") {
+                    assertEquals("Keep the reader's existing clause boundary at ordinary semicolons", 2, segments.size)
+                } else if (!sample.id.endsWith("-semicolon")) assertEquals("A complete test phrase must remain one continuous segment", 1, segments.size)
                 var namedSemicolons = 0
+                var originalProseWords = 0
                 for ((segmentIndex, prepared) in segments.withIndex()) {
                 val phones = when (sample.language) {
                     NarrationLanguage.SPANISH -> MixedSpanishG2P.phonemizePrepared(prepared, spanish)
@@ -146,6 +154,10 @@ class QualifiedOutputKokoroDeviceTest {
                     .put("prepared", prepared).put("spoken", spoken).put("phonemes", phones))
                 persist()
                 when (sample.id) {
+                    "es-clause-punctuation" -> {
+                        assertFalse("Clause punctuation must not add a spoken sign name", spoken.contains("punto y coma"))
+                        originalProseWords += NarrationSpokenWords.lexemes(prepared).size
+                    }
                     "fr-cout" -> {
                         assertEquals(sample.source, spoken)
                         assertTrue("std uses all three French letter names", phones.contains(MixedFrenchG2P.namespaceFrenchLetters))
@@ -295,7 +307,7 @@ class QualifiedOutputKokoroDeviceTest {
                         (left, right) -> prepared.substring(left.start, left.endExclusive) == "::" && left.endSample <= right.startSample
                     })
                 }
-                if (sample.id.endsWith("-operators") || sample.id.endsWith("-semicolon") || sample.id in setOf("fr-masked-negation", "fr-marked-update")) {
+                if (sample.id.endsWith("-operators") || sample.id.endsWith("-semicolon") || sample.id in setOf("fr-masked-negation", "fr-marked-update", "es-clause-punctuation")) {
                     val atoms = NarrationSpokenWords.technicalAtoms(prepared, sample.language)
                     assertEquals(atoms.map { it.start to it.endExclusive }, alignment.words.map { it.start to it.endExclusive })
                     if (sample.id.endsWith("-operators") && sample.language != NarrationLanguage.SPANISH) {
@@ -333,6 +345,7 @@ class QualifiedOutputKokoroDeviceTest {
                 persist()
                 }
                 if (sample.id.endsWith("-semicolon")) assertEquals("Both original technical mentions are actually spoken", 2, namedSemicolons)
+                if (sample.id == "es-clause-punctuation") assertEquals("Only the three original prose words reach synthesis", 3, originalProseWords)
             }
             report.put("status", "native-phonemes-and-continuous-pcm-verified")
             persist()

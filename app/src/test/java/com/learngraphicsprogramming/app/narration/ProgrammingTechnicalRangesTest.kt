@@ -155,7 +155,7 @@ class ProgrammingTechnicalRangesTest {
         assertEquals(unchanged, lesson.toString())
     }
 
-    @Test fun isolatedWhitespaceSemicolonsUseOneSharedLexicalRuleForAllLanguages() {
+    @Test fun explicitSemicolonMentionsUseOneSharedContextualRuleForAllLanguages() {
         for ((source, technical) in listOf(
             "La instrucción no tiene su ;." to true,
             "¿Conviene quitar sólo el ;, o cambiar el texto?" to true,
@@ -170,6 +170,40 @@ class ProgrammingTechnicalRangesTest {
                 assertEquals("$language: $source", technical,
                     covered(analysis(source, language), index, index + 1))
             }
+        }
+    }
+
+    @Test fun spacesAloneNeverTurnClausePunctuationIntoTechnicalInkInAnyLanguage() {
+        for (source in listOf("Primero ; después sigue.", "First ; next. This isn't code!",
+            "Je lis ; puis je continue.", "Il ajoute ; ensuite, il vérifie.",
+            "N'ajoute pas ; à chaque ligne ; conserve la prose.",
+            "6000 + 300 + 8 = 6308 ; no hay decenas.", "El resultado final ; después sigue.")) {
+            for (language in languages) {
+                val result = analysis(source, language)
+                val punctuation = source.lastIndexOf(';')
+                assertFalse("$language: $source", covered(result, punctuation, punctuation + 1))
+            }
+        }
+    }
+
+    @Test fun existingInterpreterSymbolMentionsKeepTheirSourceRangesWithoutRewritingContent() {
+        for (source in listOf("La operación exige ;.", "La asignación se rechaza por faltar ;.",
+            "Cada operación termina en ;.", "Se acepta una operación terminada en ;.",
+            "Descarta hasta el primer ;.", "El búfer contiene ; después del operando.",
+            "El lector entrega 6 y ;.", "8 y ; se reconocen.",
+            "Cada signo +, -, *, /, (, ) o ; es otro token.", "Prueba también [ 1 ; 3 ].",
+            "La operación devuelve ; al nivel superior.", "El token siguiente puede ser ;.",
+            "La recuperación llega al primer ;.", "El análisis comprueba ;.",
+            "El resultado se acepta después de ;.", "La validación de ; precede al resultado.",
+            "Los signos ; y = internos pertenecen a la expresión.", "El operador ; termina la instrucción.",
+            "El literal y ; termina la instrucción.",
+            "Si ; ya salió del origen, conserva esa unidad.", "La regla operación→sentencia ; termina aquí.",
+            "Signo: ; y Fin.", "Si encuentra +, -, ; o final, conserva el token.",
+            "La gramática inicial de sólo sumas y final ; conserva sus reglas.",
+            "Esta etapa acepta números, +, -, final ; y separadores.")) {
+            val at = source.indexOf(';')
+            assertTrue(source, TechnicalSemicolonContext.isExplicitSymbol(source, at))
+            assertTrue(source, covered(analysis(source), at, at + 1))
         }
     }
 

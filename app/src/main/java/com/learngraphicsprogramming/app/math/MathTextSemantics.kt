@@ -60,10 +60,18 @@ internal object MathTextSemantics {
     // formulas remain entirely owned by that detector, including parse failures.
     private val protectedSource = Regex(
         "https?://\\S+|[A-Za-z]:[/\\\\]\\S+|(?<![\\p{L}\\p{N}\\\\])/\\S+|" +
-            "[A-Za-z_][\\w.-]*[/\\\\][\\w./\\\\-]+|\\d{1,4}/\\d{1,2}/\\d{1,4}|" +
+            // '+' and '=' are valid filename characters, not equation boundaries.
+            // Keep this bounded to path characters rather than consuming neighboring prose.
+            "[A-Za-z_][\\w.-]*[/\\\\][\\w./\\\\+=-]+|\\d{1,4}/\\d{1,2}/\\d{1,4}|" +
             "```[\\s\\S]*?```|`[^`]*`|\\\\\\([\\s\\S]*?\\\\\\)|\\\\\\[[\\s\\S]*?\\\\\\]|" +
             "\\$\\$[\\s\\S]*?\\$\\$|\\$[^$]*\\$"
     )
+
+    /** Shared source exclusions for implicit math detection; explicit formula handling owns its delimiters. */
+    internal fun automaticMathExclusions(source: CharSequence): List<Range> =
+        (protectedSource.findAll(source).map { Range(it.range.first, it.range.last + 1) } +
+            cppVersion.findAll(source).map { Range(it.range.first, it.range.last + 1) })
+            .sortedBy { it.start }.toList()
 
     /** Balanced formatting delimiters only; callers preserve formula-owned source spans. */
     fun wrappers(source: CharSequence): List<Range> {
@@ -120,10 +128,9 @@ internal object MathTextSemantics {
             }
         }
         if (mode == "auto") {
-            val protected = (protectedSource.findAll(text).map { it.range } +
-                cppVersion.findAll(text).map { it.range }).toList()
+            val protected = automaticMathExclusions(text)
             fun protectedOverlap(first: Int, end: Int): Boolean =
-                protected.any { it.first < end && it.last >= first }
+                protected.any { it.start < end && it.endExclusive > first }
             numericChain.findAll(text).forEach { candidate ->
                 val first = candidate.range.first
                 val end = candidate.range.last + 1

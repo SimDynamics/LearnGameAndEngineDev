@@ -73,14 +73,33 @@ class CodeExerciseLanguageTest {
         assertEquals(original, block.toString())
     }
 
-    @Test fun publishedLegacyDragNeedsNoCurricularChangeAndKeepsItsOriginalResponse() {
+    @Test fun publishedDragGuidanceAndLegacyFallbackKeepTheOriginalExerciseContract() {
         val block = published("lesson_nombrar_reglas_y_separar_acuerdos.json", "regla_recuperar_los_papeles")
         val original = block.toString()
-        assertFalse(block.has("explanation"))
-        assertFalse(block.has("reviewFeedback"))
-        assertEquals("safe", CppExerciseFeedback.review(block, fallback = "safe"))
-        assertEquals("", CppExerciseFeedback.dragSuccessExplanation(block))
+        // Work added these optional fields in 2ab913c without changing any original
+        // exercise field. Check the integrated guidance and the legacy fallback separately.
+        assertEquals(block.getString("reviewFeedback"), CppExerciseFeedback.review(block, fallback = "safe"))
+        assertEquals(block.getString("explanation"), CppExerciseFeedback.dragSuccessExplanation(block))
+        assertEquals("drag_fill_code", block.getString("type"))
+        assertEquals("regla_recuperar_los_papeles", block.getString("id"))
+        assertEquals("Recupera ahora los dos acuerdos del envío, sin modificar sus declaraciones. Arrastra a cada hueco el nombre que corresponde a ese uso.",
+            block.getString("question"))
+        assertEquals("int cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + [] - 1) / piezas_por_caja;\n}\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= [];\n}\n",
+            block.getString("template"))
+        val choices = block.getJSONArray("choices")
+        assertEquals(listOf("dias_maximos", "dias", "piezas_por_caja", "piezas"),
+            (0 until choices.length()).map { choices.getString(it) })
         assertEquals("[2,0]", block.getJSONArray("correctOrder").toString())
+        assertEquals(original, block.toString())
+
+        val legacy = JSONObject(original).apply {
+            remove("reviewFeedback")
+            remove("explanation")
+        }
+        val legacyOriginal = legacy.toString()
+        assertEquals("safe", CppExerciseFeedback.review(legacy, fallback = "safe"))
+        assertEquals("", CppExerciseFeedback.dragSuccessExplanation(legacy))
+        assertEquals(legacyOriginal, legacy.toString())
         assertEquals(original, block.toString())
     }
 

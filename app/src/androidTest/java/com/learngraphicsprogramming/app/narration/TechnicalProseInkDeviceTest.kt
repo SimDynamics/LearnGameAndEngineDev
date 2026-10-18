@@ -118,21 +118,13 @@ class TechnicalProseInkDeviceTest {
         }
     }
 
-    @Test fun backgroundsAndFormulaReplacementsKeepTheirExistingConservativeDrawing() = onMain {
+    @Test fun backgroundsStayConservativeWhileTrustedFractionsTrackTheirExistingSingleOwner() = onMain {
         val backgroundText = SpannableString("Texte std::cout et suite.").apply {
             setSpan(BackgroundColorSpan(Color.rgb(42, 38, 57)), 6, 15, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             setSpan(ForegroundColorSpan(Color.rgb(171, 141, 227)), 6, 15, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         val background = view(backgroundText, Color.rgb(16, 17, 20), Color.WHITE, wordSafe = false)
-        val formula = ReadingTextView(context).apply {
-            textSize = 25f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(16, 17, 20))
-            MathTextRenderer.apply(this, "La fraction \\(\\frac{1}{2}\\) reste lisible.")
-            measure(this)
-        }
-        assertTrue((formula.text as Spanned).getSpans(0, formula.text.length, ReplacementSpan::class.java).isNotEmpty())
-        for (view in listOf(background, formula)) {
+        for (view in listOf(background)) {
             assertFalse("Unsupported drawing cannot acquire guessed word ranges", view.safeSupportsWordReading)
             val original = render(view)
             val content = view.text
@@ -146,6 +138,47 @@ class TechnicalProseInkDeviceTest {
             assertEquals(spans, spans(view.text))
             assertEquals(geometry, geometry(view))
         }
+
+        // Since 14753ea trusted formula spans supply their actual AST glyph bounds.
+        // A structural fraction remains one conservative owner, never guessed word atoms.
+        val formula = view("", Color.rgb(16, 17, 20), Color.WHITE, wordSafe = false)
+        MathTextRenderer.apply(formula, "La fraction \\(\\frac{1}{2}\\) reste lisible.")
+        measure(formula)
+        val content = formula.text as Spanned
+        val replacement = content.getSpans(0, content.length, ReplacementSpan::class.java).single()
+        assertTrue(replacement is ReadingReplacementSpan)
+        assertTrue(formula.safeSupportsWordReading)
+        val start = content.getSpanStart(replacement)
+        val end = content.getSpanEnd(replacement)
+        val original = render(formula)
+        val source = content.toString()
+        val layout = formula.layout
+        val spans = spans(content)
+        val geometry = geometry(formula)
+        val gray = LessonReadingColor.unread(Color.rgb(16, 17, 20))
+        val full = listOf(ReadingTextRange(0, content.length))
+        formula.setUnreadWordRanges(full, gray)
+        val pending = render(formula)
+        assertInk(pending, formula, 0, "La".length, gray)
+        assertInk(pending, formula, start, end - start, gray)
+        formula.setUnreadWordRanges(listOf(ReadingTextRange(start, start + 1)), gray)
+        val fractionPending = render(formula)
+        assertInk(fractionPending, formula, start, end - start, gray)
+        assertPixels(original, fractionPending, bounds(formula, 0, "La".length))
+        formula.setUnreadWordRanges(listOf(ReadingTextRange(end - 1, end)), gray)
+        assertTrue("Every source position in a complex fraction owns the same actual glyphs",
+            fractionPending.sameAs(render(formula)))
+        formula.setUnreadWordRanges(listOf(ReadingTextRange(end, content.length)), gray)
+        assertPixels(original, render(formula), bounds(formula, start, end - start))
+        formula.setUnreadWordRanges(full, gray)
+        assertTrue("Rewind restores pending prose and fraction without changing the AST", pending.sameAs(render(formula)))
+        formula.setUnreadWordRanges(emptyList(), gray)
+        assertTrue(original.sameAs(render(formula)))
+        assertSame(content, formula.text)
+        assertSame(layout, formula.layout)
+        assertEquals(source, formula.text.toString())
+        assertEquals(spans, spans(formula.text))
+        assertEquals(geometry, geometry(formula))
     }
 
     @Test fun semanticMathUnderlayStaysVisibleWhileOnlyPendingGlyphInkChanges() = onMain {
@@ -324,6 +357,103 @@ class TechnicalProseInkDeviceTest {
         assertEquals(geometry, geometry(view))
         reading.clear()
     }
+
+    @Test fun ordinaryAndExplicitTechnicalSemicolonsKeepDifferentIdentificationWhileBothTrackReading() = onMain {
+        val source = "Primero ; después sigue. No añadas ; a cualquier línea."
+        val ordinary = source.indexOf(';')
+        val technical = source.lastIndexOf(';')
+        val surface = Color.rgb(16, 17, 20)
+        val view = view(source, surface, Color.WHITE)
+        LessonTechnicalText.apply(view, mathematics = false, language = NarrationLanguage.SPANISH)
+        measure(view)
+        val content = view.text
+        val styled = content as Spanned
+        val semantic = semanticRanges(view)
+        assertFalse("Ordinary clause punctuation cannot acquire the code underlay",
+            semantic.any { it.start <= ordinary && it.endExclusive > ordinary })
+        assertTrue("An explicit symbol mention keeps its existing code identification",
+            semantic.any { it.start <= technical && it.endExclusive > technical })
+        assertTrue(styled.getSpans(ordinary, ordinary + 1, ForegroundColorSpan::class.java).isEmpty())
+        assertTrue(styled.getSpans(technical, technical + 1, ForegroundColorSpan::class.java).isNotEmpty())
+        assertEquals(source, content.toString())
+        assertTrue(view.safeSupportsWordReading)
+        val original = render(view)
+        val layout = view.layout
+        val spans = spans(content)
+        val geometry = geometry(view)
+        val gray = LessonReadingColor.unread(surface)
+        val full = listOf(ReadingTextRange(0, source.length))
+        view.setUnreadWordRanges(full, gray)
+        val pending = render(view)
+        assertInk(pending, view, ordinary, 1, gray)
+        assertInk(pending, view, technical, 1, gray)
+        view.setUnreadWordRanges(listOf(ReadingTextRange(ordinary + 1, source.length)), gray)
+        val partial = render(view)
+        assertPixels(original, partial, bounds(view, ordinary, 1))
+        assertInk(partial, view, technical, 1, gray)
+        view.setUnreadWordRanges(full, gray)
+        assertTrue("A rewind shades both punctuation owners again", pending.sameAs(render(view)))
+        view.setUnreadWordRanges(emptyList(), gray)
+        assertTrue(original.sameAs(render(view)))
+        assertSame(content, view.text)
+        assertSame(layout, view.layout)
+        assertEquals(spans, spans(view.text))
+        assertEquals(geometry, geometry(view))
+        assertEquals(semantic, semanticRanges(view))
+    }
+
+    @Test fun renderedFileNameWithMathCharactersKeepsOnlyTheAdjacentRealEquationUnderlaidAndTracked() = onMain {
+        val source = "El archivo src/6+3=9 conserva su nombre; la suma 2 + 3 = 5 es correcta."
+        val fileStart = source.indexOf("src/6+3=9")
+        val fileEnd = fileStart + "src/6+3=9".length
+        val mathStart = source.indexOf("2 + 3 = 5")
+        val mathEnd = mathStart + "2 + 3 = 5".length
+        val surface = Color.rgb(16, 17, 20)
+        val view = view(source, surface, Color.WHITE)
+        MathTextRenderer.apply(view, source)
+        LessonTechnicalText.apply(view, mathematics = true, language = NarrationLanguage.SPANISH)
+        measure(view)
+        assertEquals(source, view.text.toString())
+        val semantic = semanticRanges(view)
+        assertFalse("Filename characters must not become a mathematical underlay",
+            semantic.any { it.start < fileEnd && it.endExclusive > fileStart })
+        for (position in mathStart until mathEnd) {
+            assertTrue("The real equation must retain complete semantic ownership at $position",
+                semantic.any { it.start <= position && it.endExclusive > position })
+        }
+        assertFalse("The native formula renderer must not typeset a filename suffix as an equation",
+            MathTextRenderer.formulaRanges(view.text).any { it.first < fileEnd && it.last >= fileStart })
+        assertTrue(MathTextRenderer.formulaRanges(view.text).any { it.first >= mathStart && it.last < mathEnd })
+        assertTrue(view.safeSupportsWordReading)
+        val content = view.text
+        val original = render(view)
+        val layout = view.layout
+        val spans = spans(content)
+        val geometry = geometry(view)
+        val gray = LessonReadingColor.unread(surface)
+        val full = listOf(ReadingTextRange(0, source.length))
+        view.setUnreadWordRanges(full, gray)
+        val pending = render(view)
+        assertInk(pending, view, fileStart, 3, gray)
+        view.setUnreadWordRanges(listOf(ReadingTextRange(mathStart, source.length)), gray)
+        val partial = render(view)
+        assertPixels(original, partial, bounds(view, fileStart, "src/6+3=9".length))
+        view.setUnreadWordRanges(full, gray)
+        assertTrue("Rewinding keeps the semantic decoration independent of pending ink", pending.sameAs(render(view)))
+        view.setUnreadWordRanges(emptyList(), gray)
+        assertTrue(original.sameAs(render(view)))
+        assertSame(content, view.text)
+        assertSame(layout, view.layout)
+        assertEquals(spans, spans(view.text))
+        assertEquals(geometry, geometry(view))
+        assertEquals(semantic, semanticRanges(view))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun semanticRanges(view: ReadingTextView): List<ReadingTextRange> =
+        (ReadingTextInk::class.java.getDeclaredField("semanticBackgroundRanges").apply {
+            isAccessible = true
+        }.get(view.readingInk) as List<ReadingTextRange>).toList()
 
     private fun view(text: CharSequence, surface: Int, color: Int, wordSafe: Boolean = true) = ReadingTextView(context).apply {
         layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT,

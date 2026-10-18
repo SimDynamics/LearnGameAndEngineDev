@@ -86,7 +86,8 @@ object MathTextRenderer {
             appendContent(value.substring(contentStart))
             return output
         }
-        if (value.length <= 100 && wholeMath.matches(value.trim()) &&
+        val protected = MathTextSemantics.automaticMathExclusions(value)
+        if (protected.isEmpty() && value.length <= 100 && wholeMath.matches(value.trim()) &&
             !integerEnumeration.matches(value.trim())) {
             appendMath(value)
             return output
@@ -105,10 +106,17 @@ object MathTextRenderer {
                     continue
                 }
             }
+            val protectedSource = protected.firstOrNull { it.start == index }
+            if (protectedSource != null) {
+                output.append(value, protectedSource.start, protectedSource.endExclusive)
+                index = protectedSource.endExclusive
+                continue
+            }
             val candidate = listOf(numericFraction, coordinates, equation, relation, arithmetic, power).mapNotNull {
                 it.matchAt(value, index)
             }.maxByOrNull { it.value.length }
-            if (candidate != null && (index == 0 || !value[index - 1].isLetterOrDigit())) {
+            if (candidate != null && (index == 0 || !value[index - 1].isLetterOrDigit()) &&
+                protected.none { it.start <= candidate.range.last && it.endExclusive > index }) {
                 appendMath(candidate.value)
                 index = candidate.range.last + 1
             } else if (value[index] in "π≤≥≠×÷") {

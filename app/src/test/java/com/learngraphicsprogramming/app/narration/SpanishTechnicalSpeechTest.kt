@@ -201,7 +201,7 @@ class SpanishTechnicalSpeechTest {
         assertFalse(SpanishTechnicalSpeech.prepare("Termina la instrucción; continúa la lectura.").changed)
     }
 
-    @Test fun spokenSemicolonFollowsSpacingRatherThanAListOfCueWords() {
+    @Test fun anArticleCanIdentifyAMentionedSemicolonWithoutAnAdjacentActionVerb() {
         assertEquals("¿Conviene quitar sólo el punto y coma, o cambiar el texto?",
             read("¿Conviene quitar sólo el ;, o cambiar el texto?"))
         assertEquals("El error consiste en olvidar el punto y coma en C++.",
@@ -209,6 +209,23 @@ class SpanishTechnicalSpeechTest {
         val ordinary = "El compilador informa del error; revisa la línea."
         assertEquals(SpanishTechnicalSpeech.Preparation(ordinary, false),
             SpanishTechnicalSpeech.prepare(ordinary))
+    }
+
+    @Test fun correctedClausePunctuationAndTechnicalMentionKeepTheirOwnSourceOwners() {
+        val source = "Primero ; después sigue. No añadas ; a cualquier línea."
+        val pieces = mutableListOf<Triple<Int, Int, String>>()
+        val prepared = SpanishTechnicalSpeech.prepareForReading(source) { start, end, spoken ->
+            pieces += Triple(start, end, spoken)
+        }
+        assertEquals(SpanishTechnicalSpeech.prepareForKokoro(source), prepared)
+        val signs = pieces.filter { it.first < it.second && source.substring(it.first, it.second) == ";" }
+        assertEquals(2, signs.size)
+        assertEquals(";", signs[0].third.trim())
+        assertEquals("punto y coma", signs[1].third.trim())
+        val segments = NarrationSegments.sentences(listOf(prepared.text)).withIndex().associate { it.index to it.value }
+        val mapping = NarrationWordMappings.forBlock(0, source, segments)
+        assertEquals(segments.keys, mapping.keys)
+        assertEquals(source.indices.toSet(), mapping.values.flatMap { it.displayed.flatMap { range -> range.start until range.endExclusive } }.toSet())
     }
 
     @Test fun technicalSemicolonMentionsAreSpokenWithoutNamingOrdinaryClausePunctuation() {

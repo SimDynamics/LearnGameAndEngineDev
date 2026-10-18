@@ -1,15 +1,52 @@
 package com.learngraphicsprogramming.app.narration
 
-/** An isolated semicolon is C++ notation when it is deliberately separated
- * from the preceding prose word. A punctuation semicolon attaches to that word.
- * This lexical rule is shared by narration and semantic display, not curriculum.
- */
+/** Whitespace separates a mentioned sign, but also ordinary clause punctuation
+ * (especially in French). Require a grammatical reference to the sign itself.
+ * Narration and semantic display share this rule over the original source. */
 internal object TechnicalSemicolonContext {
+    private val determiner = Regex("(?iu)(?<![\\p{L}\\p{N}_])(?:el|al|del|la|los|las|un|una|unos|unas|su|sus|otro|otra|cada|the|an?|its|this|that|each|le|les|une?|son|sa|ses|ce|ces|au|du)(?:[ \\t]+(?:primer|último|mismo|first|last|premier|dernier))?[ \\t]*$")
+    private val mention = Regex("(?iu)(?<![\\p{L}\\p{N}_])(?:" +
+        "con|sin|mediante|tras|hasta|(?:después|antes|en lugar|falta|carece|requisito|validación)[ \\t]+de|" +
+        "termina(?:da|das|do|dos|n)?[ \\t]+en|" +
+        "añad(?:as|e|ir)|agreg(?:ues|a|ar)|pongas|pon|escrib(?:as|e|ir)|insert(?:es|a|ar)|quit(?:es|a|ar)|elimin(?:es|a|ar)|" +
+        "exig(?:e|en|ir)|exija|faltar|comprueba|validar|contiene|conserva|devuelve|encuentra|esperaba|ser|" +
+        "add|append|insert|remove|delete|omit|write|type|use|with|without|symbol|character|sign|terminator|" +
+        "(?:termine|terminer|finit|finir)[ \\t]+par" +
+        ")[ \\t]*$")
+    private val signNoun = Regex("(?iu)(?<![\\p{L}\\p{N}_])(?:signos?|símbolos?|carácter|caracteres|operador(?:es)?|operators?|tokens?|symboles?|signes?|caractères?|opérateurs?|terminateurs?)[ \\t]*:?[ \\t]*$")
+    private val frenchAction = Regex("(?iu)\\b(?:ajoute|ajouter|écris|écrire|insère|insérer|supprime|supprimer|retire|retirer)(?:[ \\t]+pas)?[ \\t]*$")
+    private val frenchActionTail = Regex("(?iu)^(?:à|avant|après|dans|pour|entre|sur|comme|ici)(?=\\s|$|[.,:;!?])")
+    private val enumerationTail = Regex("(?iu)(?:,|\\b(?:y|o|and|or|et|ou))[ \\t]*$")
+    private val enumerationRole = Regex("(?iu)\\b(?:signos?|tokens?|unidades?|literal|lector|entrega(?:r)?|devuelve|encuentra|secuencia|entre)\\b")
+    private val symbolSubject = Regex("(?iu)^[ \\t]+(?:(?:se[ \\t]+)?(?:reconoce[n]?|devuelve|consume|reserva|termina|separa)|ya[ \\t]+salió)(?=\\s|$|[.,;!?])")
+    private val conditionalSubject = Regex("(?iu)\\bsi[ \\t]*$")
+    private val grammarTail = Regex("(?iu)\\b(?:sentencia|final)[ \\t]*$")
+    private val grammarCue = Regex("(?iu)\\bgramática\\b|→|[+*/-][ \\t]*,[ \\t]*[+*/-]")
+    private val bracketedInteger = Regex("[ \\t+\\-0-9]+")
+
     fun isExplicitSymbol(text: CharSequence, position: Int): Boolean {
         if (position <= 0 || position >= text.length || text[position] != ';') return false
         if (text[position - 1] != ' ' && text[position - 1] != '\t') return false
         val next = text.getOrNull(position + 1)
-        return next == null || next.isWhitespace() || next in "\"')]}.,!?:»"
+        if (next != null && !next.isWhitespace() && next !in "\"')]}.,!?:»") return false
+        // A cue for an earlier symbol must never classify a later clause delimiter.
+        val prefix = text.subSequence((position - 160).coerceAtLeast(0), position).toString()
+        val before = prefix.substring(prefix.indexOfLast { it in ";.!?\r\n" } + 1)
+        if (determiner.containsMatchIn(before) || mention.containsMatchIn(before) || signNoun.containsMatchIn(before)) return true
+        val after = text.subSequence(position + 1, (position + 81).coerceAtMost(text.length)).toString()
+        val tail = after.trimStart()
+        if (frenchAction.containsMatchIn(before) &&
+            (tail.isEmpty() || tail.first() in ".,!?" || frenchActionTail.containsMatchIn(tail))) return true
+        if ((before.isBlank() || enumerationTail.containsMatchIn(before) || conditionalSubject.containsMatchIn(before)) &&
+            symbolSubject.containsMatchIn(after)) return true
+        if (enumerationTail.containsMatchIn(before) && enumerationRole.containsMatchIn(before)) return true
+        if (grammarTail.containsMatchIn(before) && grammarCue.containsMatchIn(before)) return true
+        // Explicit bracketed data such as [1 ; 3] names its delimiter, unlike a
+        // semicolon after a numeric result in ordinary mathematical prose.
+        val open = before.lastIndexOf('[')
+        val close = after.indexOf(']')
+        return open >= 0 && close >= 0 && before.substring(open + 1).matches(bracketedInteger) &&
+            after.substring(0, close).matches(bracketedInteger)
     }
 }
 
@@ -113,8 +150,8 @@ internal object ProgrammingTechnicalRanges {
                     "operator" in part.spoken || part.spoken == "semicolon" || symbolCue.containsMatchIn(before)) add(part.start, part.endExclusive)
             }
         }
-        // An isolated semicolon is a technical token in any programming language
-        // shown. Ordinary clause punctuation ("palabra; siguiente") stays prose.
+        // A bare symbol mention shares its original source range in every language.
+        // Whitespace around ordinary clause punctuation does not make it code.
         text.indices.filter { TechnicalSemicolonContext.isExplicitSymbol(text, it) }
             .forEach { add(it, it + 1) }
 

@@ -26,6 +26,19 @@ class KokoroNarrationCacheTest {
         assertTrue(first.matches(Regex("[a-f0-9]{64}")))
     }
 
+    @Test fun ordinarySpacedSemicolonUsesItsUnchangedPunctuationAudioRatherThanTheWrongSpokenSign() {
+        val text = "Primero ; después sigue."
+        val wrongReading = "Primero punto y coma después sigue."
+        val wrongKey = digest(listOf("kokoro-wav-v1", PINNED_MODEL_REVISION, "es", "ef_dora", text,
+            "spanish-technical-speech-v1", wrongReading))
+        assertEquals(legacyKey("es", "ef_dora", text), KokoroNarrationCache.key("es", "ef_dora", text))
+        assertNotEquals(wrongKey, KokoroNarrationCache.key("es", "ef_dora", text))
+        val technical = "No añadas ; a cualquier línea."
+        assertEquals(digest(listOf("kokoro-wav-v1", PINNED_MODEL_REVISION, "es", "ef_dora", technical,
+            "spanish-technical-speech-v1", "No añadas punto y coma a cualquier línea.")),
+            KokoroNarrationCache.key("es", "ef_dora", technical))
+    }
+
     @Test fun cacheCannotMixTextLanguageOrVoices() {
         val spanish = KokoroNarrationCache.key("es", "ef_dora", "Hola.")
         assertNotEquals(spanish, KokoroNarrationCache.key("es", "ef_dora", "Hola mundo."))

@@ -77,6 +77,35 @@ class MathTextSemanticsTest {
         assertTrue(MathTextSemantics.ranges("\\unsupported{6+3=9}", "block").isEmpty())
     }
 
+    @Test fun numericFileNamesRemainProtectedInEachSourceKindWithoutAbsorbingNeighboringMath() {
+        for (path in listOf(
+            "https://example.org/6+3=9",
+            "C:\\temp\\6+3=9",
+            "/tmp/6+3=9",
+            "src/6+3=9",
+            "src\\6+3=9",
+            "src/subdir/6+3=9.txt"
+        )) {
+            assertEquals(path, emptyList<String>(), fragments(path))
+            assertEquals(path, listOf("2 + 3 = 5", "4 × 2 = 8"),
+                fragments("Compara 2 + 3 = 5; consulta $path y calcula 4 × 2 = 8."))
+        }
+        // A path exclusion ends before ordinary punctuation, even without whitespace.
+        assertEquals(listOf("2+3=5"), fragments("Abre src/6+3=9;2+3=5."))
+        assertEquals(listOf("2+3=5"), fragments("Abre (src/6+3=9),2+3=5."))
+        assertEquals(listOf("6+3=9"), fragments("Calcula 6+3=9."))
+        assertEquals(listOf("6/3=2"), fragments("Calcula 6/3=2."))
+    }
+
+    @Test fun rendererAndDecorationShareSourceExclusionsButLeaveBareFractionsAvailableToMath() {
+        val source = "3/4; src/6+3=9; \\(x+1\\); C++23; `6+3=9`; 12/03/2026."
+        val excluded = MathTextSemantics.automaticMathExclusions(source)
+        assertEquals(listOf("src/6+3=9", "\\(x+1\\)", "C++23", "`6+3=9`", "12/03/2026"),
+            excluded.map { source.substring(it.start, it.endExclusive) })
+        assertEquals(listOf("3/4", "\\(x+1\\)"), fragments(source))
+        assertTrue(MathTextSemantics.automaticMathExclusions("6/3=2").isEmpty())
+    }
+
 
     @Test fun isolatedNumbersAndCountedUnitsReceiveSemanticDecorationWithoutStylingProse() {
         assertEquals(listOf("2", "300"), fragments("Compara 2 con 300."))
