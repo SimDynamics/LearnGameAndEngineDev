@@ -341,22 +341,37 @@ object EuclideanDiagramLayout {
             EuclideanDrawnArc(arc.id, circle.id, project(circle.center), circle.radius * factor, angles.first, angles.second)
         }
         val labels = mutableListOf<EuclideanDrawnLabel>()
-        fun addLabel(ownerId: String, text: String, anchor: EuclideanPosition, allowEdgeCandidates: Boolean = false) {
+        fun addLabel(ownerId: String, text: String, anchor: EuclideanPosition) {
             val metrics = measure(text, min(width * .43, width - 2 * edge))
             require(metrics.lines.isNotEmpty() && metrics.width.isFinite() && metrics.width >= 0 && metrics.lineHeight.isFinite() && metrics.lineHeight > 0)
             val labelWidth = metrics.width + 4 * unit
             val labelHeight = metrics.lines.size * metrics.lineHeight + 2 * unit
             val gap = max(10 * unit, textSize * .55)
-            val candidates = listOf(
-                EuclideanPosition(anchor.x + gap, anchor.y - labelHeight - gap),
-                EuclideanPosition(anchor.x + gap, anchor.y + gap),
-                EuclideanPosition(anchor.x - labelWidth - gap, anchor.y - labelHeight - gap),
-                EuclideanPosition(anchor.x - labelWidth - gap, anchor.y + gap),
-                EuclideanPosition(anchor.x - labelWidth / 2, anchor.y - labelHeight - gap),
-                EuclideanPosition(anchor.x - labelWidth / 2, anchor.y + gap),
-                EuclideanPosition(anchor.x + gap, anchor.y - labelHeight / 2),
-                EuclideanPosition(anchor.x - labelWidth - gap, anchor.y - labelHeight / 2)
-            ) + if (!allowEdgeCandidates) emptyList() else listOf(
+            val ownCircle = circles.singleOrNull { it.id == ownerId }
+            val ownArc = arcs.singleOrNull { it.id == ownerId }
+            // A curve offers many local anchors. Looking only near its upper-right
+            // point could send a small concentric circle's name to a viewport corner.
+            val anchors = when {
+                ownCircle != null -> (0 until 16).map { index ->
+                    val angle = Math.toRadians(-45.0 + index * 22.5)
+                    ownCircle.center + EuclideanPosition(cos(angle), sin(angle)) * ownCircle.radius
+                }
+                ownArc != null -> listOf(.5, .375, .625, .25, .75, .125, .875, 0.0, 1.0).map { fraction ->
+                    val angle = Math.toRadians(ownArc.startDegrees + ownArc.sweepDegrees * fraction)
+                    ownArc.center + EuclideanPosition(cos(angle), sin(angle)) * ownArc.radius
+                }
+                else -> listOf(anchor)
+            }
+            val candidates = anchors.flatMap { local -> listOf(
+                EuclideanPosition(local.x + gap, local.y - labelHeight - gap),
+                EuclideanPosition(local.x + gap, local.y + gap),
+                EuclideanPosition(local.x - labelWidth - gap, local.y - labelHeight - gap),
+                EuclideanPosition(local.x - labelWidth - gap, local.y + gap),
+                EuclideanPosition(local.x - labelWidth / 2, local.y - labelHeight - gap),
+                EuclideanPosition(local.x - labelWidth / 2, local.y + gap),
+                EuclideanPosition(local.x + gap, local.y - labelHeight / 2),
+                EuclideanPosition(local.x - labelWidth - gap, local.y - labelHeight / 2)
+            ) } + if (ownCircle == null && ownArc == null) emptyList() else listOf(
                 EuclideanPosition(edge, edge),
                 EuclideanPosition(width - labelWidth - edge, edge),
                 EuclideanPosition(edge, height - labelHeight - edge),
@@ -371,13 +386,34 @@ object EuclideanDiagramLayout {
                 val y = position.y.coerceIn(edge, max(edge, height - labelHeight - edge))
                 return EuclideanRect(x, y, x + labelWidth, y + labelHeight)
             }
-            val selected = candidates.map(::rect).minBy { candidate ->
+            fun collisionScore(candidate: EuclideanRect): Int {
                 val labelHits = labels.count { candidate.overlaps(it.bounds) }
                 val pointHits = points.count { candidate.contains(it.center) }
                 val pathHits = paths.count { crosses(it.start, it.end, candidate) }
                 val circleHits = circles.count { circumferenceCrosses(it.center, it.radius, candidate) }
                 val arcHits = arcs.count { arcCrosses(it, candidate) }
-                labelHits * 10000 + pointHits * 1000 + (pathHits + circleHits + arcHits) * 100
+                return labelHits * 10000 + pointHits * 1000 + (pathHits + circleHits + arcHits) * 100
+            }
+            val rectangles = candidates.map(::rect).distinct()
+            val selected = if (ownCircle == null && ownArc == null) {
+                // Keep the established eight candidates and scoring for point/line names.
+                rectangles.minBy(::collisionScore)
+            } else {
+                rectangles.minBy { candidate ->
+                    val ownDistance = ownCircle?.let { circumferenceDistance(it.center, it.radius, candidate) }
+                        ?: arcDistance(ownArc!!, candidate)
+                    // A free space nearer a different circle/arc is not an unambiguous
+                    // place for this name, even if no text or stroke overlaps it.
+                    val unrelatedCircle = circles.any { other ->
+                        other.id != ownCircle?.id && other.id != ownArc?.circleId &&
+                            circumferenceDistance(other.center, other.radius, candidate) + unit < ownDistance
+                    }
+                    val unrelatedArc = arcs.any { other ->
+                        other.id != ownArc?.id && other.circleId != ownCircle?.id &&
+                            arcDistance(other, candidate) + unit < ownDistance
+                    }
+                    collisionScore(candidate) + (if (unrelatedCircle || unrelatedArc) 1000 else 0) + ownDistance / gap
+                }
             }
             labels.add(EuclideanDrawnLabel(ownerId, text, metrics.lines, selected, metrics.lineHeight, metrics.ascent))
         }
@@ -392,14 +428,14 @@ object EuclideanDiagramLayout {
         diagram.circles.forEach { circle ->
             if (circle.label != null) {
                 val drawn = circles.single { it.id == circle.id }
-                addLabel(circle.id, circle.label, drawn.center + EuclideanPosition(drawn.radius * .7071067811865476, -drawn.radius * .7071067811865476), allowEdgeCandidates = true)
+                addLabel(circle.id, circle.label, drawn.center + EuclideanPosition(drawn.radius * .7071067811865476, -drawn.radius * .7071067811865476))
             }
         }
         diagram.arcs.forEach { arc ->
             if (arc.label != null) {
                 val drawn = arcs.single { it.id == arc.id }
                 val middle = Math.toRadians(drawn.startDegrees + drawn.sweepDegrees * .5)
-                addLabel(arc.id, arc.label, drawn.center + EuclideanPosition(cos(middle) * drawn.radius, sin(middle) * drawn.radius), allowEdgeCandidates = true)
+                addLabel(arc.id, arc.label, drawn.center + EuclideanPosition(cos(middle) * drawn.radius, sin(middle) * drawn.radius))
             }
         }
         return EuclideanDrawingSnapshot(viewport, plot, points, paths, arrows, labels, circles, arcs)
@@ -425,12 +461,27 @@ object EuclideanDiagramLayout {
     }
 
     private fun crosses(start: EuclideanPosition, end: EuclideanPosition, box: EuclideanRect) = clip(start, end - start, box, EuclideanObjectKind.SEGMENT) != null
-    private fun circumferenceCrosses(center: EuclideanPosition, radius: Double, box: EuclideanRect): Boolean {
+    private fun circumferenceDistance(center: EuclideanPosition, radius: Double, box: EuclideanRect): Double {
         val nearest = EuclideanPosition(center.x.coerceIn(box.left, box.right), center.y.coerceIn(box.top, box.bottom))
         val minimum = hypot(nearest.x - center.x, nearest.y - center.y)
         val maximum = max(max(hypot(box.left - center.x, box.top - center.y), hypot(box.right - center.x, box.top - center.y)),
             max(hypot(box.left - center.x, box.bottom - center.y), hypot(box.right - center.x, box.bottom - center.y)))
-        return minimum <= radius && maximum >= radius
+        return max(0.0, max(minimum - radius, radius - maximum))
+    }
+    private fun circumferenceCrosses(center: EuclideanPosition, radius: Double, box: EuclideanRect): Boolean =
+        circumferenceDistance(center, radius, box) == 0.0
+
+    private fun arcDistance(arc: EuclideanDrawnArc, box: EuclideanRect): Double {
+        if (arcCrosses(arc, box)) return 0.0
+        // Only label ranking uses these samples; drawing and incidence retain their
+        // exact shared geometry. Endpoints are included for short and major arcs.
+        val divisions = max(1, (abs(arc.sweepDegrees) / 2.0).toInt())
+        return (0..divisions).minOf { index ->
+            val angle = Math.toRadians(arc.startDegrees + arc.sweepDegrees * index / divisions)
+            val point = arc.center + EuclideanPosition(cos(angle), sin(angle)) * arc.radius
+            hypot(max(0.0, max(box.left - point.x, point.x - box.right)),
+                max(0.0, max(box.top - point.y, point.y - box.bottom)))
+        }
     }
     private fun arcCrosses(arc: EuclideanDrawnArc, box: EuclideanRect): Boolean {
         if (!circumferenceCrosses(arc.center, arc.radius, box)) return false

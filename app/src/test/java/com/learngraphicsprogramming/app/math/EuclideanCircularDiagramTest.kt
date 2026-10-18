@@ -4,6 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.File
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -312,6 +313,73 @@ class EuclideanCircularDiagramTest {
                     hypot(dx, dy) <= sqrt(2.0) * gap + 1e-8)
             }
         }
+    }
+
+    @Test fun thePublishedConcentricSceneKeepsEachNameBesideItsOwnCircumference() {
+        val relative = "src/main/assets/content/es/math_physics/math_geometria_plana/fundamentos_geometricos/lesson_circunferencia_circulo_y_radios.json"
+        val lesson = JSONObject(sequenceOf(File(relative), File("app/$relative")).first { it.isFile }.readText(Charsets.UTF_8))
+        val puzzle = lesson.getJSONArray("pages").getJSONObject(5).getJSONArray("blocks").getJSONObject(2)
+        assertEquals("recuperar_la_posicion_al_cambiar_el_radio", puzzle.getString("id"))
+        val model = EuclideanDiagram.parse(puzzle.getJSONArray("representations").getJSONObject(0))
+        assertEquals(listOf(12.0, 9.0), model.circles.map { it.radius })
+        for ((width, height) in listOf(280.0 to 210.0, 320.0 to 250.0, 420.0 to 720.0, 600.0 to 360.0, 780.0 to 420.0)) {
+            for (textSize in listOf(15.0, 22.5)) {
+                val drawing = EuclideanDiagramLayout.layout(model, width, height, 1.0, textSize)
+                assertAllLabelsReadable(drawing)
+                for (circle in drawing.circles) {
+                    val label = drawing.labels.single { it.ownerId == circle.id }
+                    val ownDistance = distanceToCircumference(label.bounds, circle)
+                    val other = drawing.circles.single { it.id != circle.id }
+                    assertEquals(circle.id, label.text)
+                    assertTrue("${circle.id} lost its local curve at $width x $height, text $textSize: ${label.bounds}",
+                        ownDistance <= 2 * maxOf(10.0, textSize * .55))
+                    assertTrue("${circle.id} is closer to ${other.id} than to its own curve at $width x $height, text $textSize",
+                        ownDistance <= distanceToCircumference(label.bounds, other) + 1e-8)
+                    assertTrue("${circle.id} obscures its own circumference", ownDistance > 0.0)
+                }
+            }
+        }
+    }
+
+    @Test fun complementaryArcNamesRemainBesideTheirOwnHalfWithoutOverlappingLabels() {
+        val model = EuclideanDiagram.parse(semicircles())
+        for ((width, height) in listOf(420.0 to 720.0, 600.0 to 360.0)) {
+            for (textSize in listOf(15.0, 22.5)) {
+                val drawing = EuclideanDiagramLayout.layout(model, width, height, 1.0, textSize)
+                assertAllLabelsReadable(drawing)
+                for (arc in drawing.arcs) {
+                    val label = drawing.labels.single { it.ownerId == arc.id }
+                    val centerY = (label.bounds.top + label.bounds.bottom) / 2
+                    assertEquals(arc.id, label.text)
+                    assertTrue("${arc.id} moved to the opposite semicircle", if (arc.id == "upper") centerY < arc.center.y else centerY > arc.center.y)
+                    val ownDistance = (0..180).minOf { index -> distanceToRectangle(label.bounds, pointOn(arc, index / 180.0)) }
+                    assertTrue("${arc.id} lost its local curve", ownDistance <= 2 * maxOf(10.0, textSize * .55))
+                }
+            }
+        }
+    }
+
+    private fun assertAllLabelsReadable(drawing: EuclideanDrawingSnapshot) {
+        drawing.labels.forEachIndexed { index, label ->
+            assertEquals(label.text, label.lines.joinToString(""))
+            assertTrue(drawing.viewport.contains(EuclideanPosition(label.bounds.left, label.bounds.top)))
+            assertTrue(drawing.viewport.contains(EuclideanPosition(label.bounds.right, label.bounds.bottom)))
+            assertFalse("${label.text} covers a point", drawing.points.any { label.bounds.contains(it.center) })
+            drawing.labels.drop(index + 1).forEach { other ->
+                assertFalse("${label.text} overlaps ${other.text}", label.bounds.overlaps(other.bounds))
+            }
+        }
+    }
+
+    private fun distanceToRectangle(rect: EuclideanRect, point: EuclideanPosition) = hypot(
+        maxOf(rect.left - point.x, point.x - rect.right, 0.0),
+        maxOf(rect.top - point.y, point.y - rect.bottom, 0.0))
+
+    private fun distanceToCircumference(rect: EuclideanRect, circle: EuclideanDrawnCircle): Double {
+        val nearest = distanceToRectangle(rect, circle.center)
+        val farthest = listOf(rect.left to rect.top, rect.right to rect.top, rect.left to rect.bottom, rect.right to rect.bottom)
+            .maxOf { (x, y) -> hypot(x - circle.center.x, y - circle.center.y) }
+        return maxOf(0.0, nearest - circle.radius, circle.radius - farthest)
     }
 
     private fun relations() = JSONObject("""{"points":[{"id":"O","x":0,"y":0,"labels":["O"]},{"id":"A","x":2,"y":0,"labels":["A"]},{"id":"B","x":0,"y":2,"labels":["B"]},{"id":"C","x":-2,"y":0,"labels":["C"]},{"id":"D","x":0,"y":-2,"labels":["D"]},{"id":"I","x":0.5,"y":0,"labels":["I"]},{"id":"E","x":3,"y":0,"labels":["E"]}],"objects":[{"id":"radius","kind":"segment","through":["O","A"],"contains":["O","I","A"]},{"id":"diameter","kind":"segment","through":["A","C"],"contains":["A","I","O","C"]},{"id":"chord","kind":"segment","through":["A","B"],"contains":["A","B"]},{"id":"secant","kind":"line","through":["A","C"],"contains":["A","I","O","C","E"]}],"circles":[{"id":"k","center":"O","radius":2,"contains":["A","B","C","D"]}]}""")

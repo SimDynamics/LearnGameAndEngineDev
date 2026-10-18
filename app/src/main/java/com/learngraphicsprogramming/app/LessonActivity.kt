@@ -413,6 +413,7 @@ class LessonActivity : AppCompatActivity() {
 
     private var narrationController: LessonNarrationController? = null
     private var narrationControls: LessonNarrationControls? = null
+    private var narrationOverlayClearance: LessonOverlayClearance? = null
     private val narrationUiPreferences by lazy {
         applicationContext.getSharedPreferences("lesson_narration_settings", MODE_PRIVATE)
     }
@@ -795,6 +796,8 @@ class LessonActivity : AppCompatActivity() {
         disposeCppEditorViewports()
         narrationController?.close()
         narrationControls?.close()
+        narrationOverlayClearance?.close()
+        narrationOverlayClearance = null
 
         attemptDetailsPopup?.dismiss()
 
@@ -909,6 +912,10 @@ class LessonActivity : AppCompatActivity() {
 
         lessonScroll =
             findViewById(R.id.lessonScroll)
+
+        narrationOverlayClearance = LessonOverlayClearance(lessonScroll) {
+            findViewById<View>(R.id.lessonNarrationControls)
+        }
 
         programmingKeyboardBar =
             findViewById(
