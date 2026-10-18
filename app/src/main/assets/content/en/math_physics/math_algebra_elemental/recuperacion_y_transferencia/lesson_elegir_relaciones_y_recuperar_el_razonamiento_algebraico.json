@@ -1,0 +1,1289 @@
+{
+  "id": "math_algebra_elemental__recuperacion_y_transferencia__elegir_relaciones_y_recuperar_el_razonamiento_algebraico",
+  "title": "Choosing Relations and Recovering Algebraic Reasoning",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understanding What an Answer Must Provide"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following problems combine knowledge from throughout the course. Before calculating, decide what is requested: a quantity depending on a given value, a value meeting a target, all permitted values, or several quantities that must meet conditions simultaneously. Define the letters when needed, preserve their units, and review which data restrict the answer. Reading the goal, data, and condition in this way prepares you to make your own plan (Pólya, 1957, pp. 5–7)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_cuatro_objetivos_al_leer",
+          "prompt": "Choose the type of work that directly answers each objective. No calculations are needed: distinguish what information the answer must provide.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_cuatro_objetivos_al_leer__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "importe_variable",
+                  "type": "dropdown",
+                  "label": "Calculate a charge based on a duration that may change, without setting a target charge.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "An expression for calculating a quantity.",
+                      "reviewFeedback": "Consider what an expression can provide as the duration changes. Compare that function with the precise objective in this field without introducing an unrequested condition."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "An equation requiring an exact value.",
+                      "reviewFeedback": "Review which exact value your selected equation would require in this objective. Distinguish calculating a varying quantity from requiring it to equal a particular value."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Inequalities describing permitted values.",
+                      "reviewFeedback": "Check which permitted values the proposed inequalities would describe. Relate that purpose to the information this field requests without introducing unrelated limits."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Simultaneous conditions on two unknown quantities.",
+                      "reviewFeedback": "Consider what the two unknown quantities and their conditions would be in your selected model. Check whether this information matches the objective described in this field."
+                    }
+                  ]
+                },
+                {
+                  "id": "importe_exacto",
+                  "type": "dropdown",
+                  "label": "Find a duration that produces exactly the stated charge.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "An expression for calculating a quantity.",
+                      "reviewFeedback": "Review what information your selected expression would produce as the duration changes. Check whether it can satisfy, rather than merely calculate, the requested charge."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "An equation requiring an exact value.",
+                      "reviewFeedback": "Relate the equality proposed by your choice to the field's target charge. Justify which unknown must be found and what condition it must satisfy."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Inequalities describing permitted values.",
+                      "reviewFeedback": "Examine the range imposed by the inequalities you selected. Compare it with the precision of the requested charge without replacing the objective with a different one."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Simultaneous conditions on two unknown quantities.",
+                      "reviewFeedback": "Identify the unknowns and simultaneous conditions assumed by your choice. Review whether this objective really requires that structure."
+                    }
+                  ]
+                },
+                {
+                  "id": "duraciones_permitidas",
+                  "type": "dropdown",
+                  "label": "Describe every duration whose charge is at least one limit and below another.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "An expression for calculating a quantity.",
+                      "reviewFeedback": "Check what information an expression alone would produce. Compare it with the request to describe all permitted values under the field's limits."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "An equation requiring an exact value.",
+                      "reviewFeedback": "Review which exact equality your chosen equation would impose. Check whether that restriction describes the requested limits."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Inequalities describing permitted values.",
+                      "reviewFeedback": "Relate your model's conditions to each charge limit. Verify that they describe permitted durations while respecting the endpoint inclusion specified by the objective."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Simultaneous conditions on two unknown quantities.",
+                      "reviewFeedback": "Examine which unknown quantities and exact data your choice would require. Compare that structure with the description of permitted values requested in the field."
+                    }
+                  ]
+                },
+                {
+                  "id": "dos_cantidades",
+                  "type": "dropdown",
+                  "label": "Find two unknown quantities satisfying two exact pieces of data about the same pair.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "An expression for calculating a quantity.",
+                      "reviewFeedback": "Consider which quantity your selected expression would calculate and which data it would need. Check whether it answers the objective of finding two unknowns subject to conditions."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "An equation requiring an exact value.",
+                      "reviewFeedback": "Review how much information your selected equation provides about the two quantities. Compare that with the requirement to meet the objective's exact data."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Inequalities describing permitted values.",
+                      "reviewFeedback": "Check whether the limits described by your inequalities match the requested data. Do not substitute a range for exact conditions without justification."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Simultaneous conditions on two unknown quantities.",
+                      "reviewFeedback": "Relate each condition of the chosen model to the same pair of unknowns. Justify how it preserves the exact data required by this objective."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "importe_variable": {
+                    "type": "exact_text",
+                    "expected": "expresion"
+                  },
+                  "importe_exacto": {
+                    "type": "exact_text",
+                    "expected": "ecuacion"
+                  },
+                  "duraciones_permitidas": {
+                    "type": "exact_text",
+                    "expected": "rango"
+                  },
+                  "dos_cantidades": {
+                    "type": "exact_text",
+                    "expected": "simultaneas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A calculation depending on a duration is described by an expression. Requiring an exact charge leads to an equation. Two charge limits require preserving comparisons and describing the range meeting both. Two quantities related by two data are checked as the same pair under simultaneous conditions. Choose the form based on the objective, not by counting numbers in the story.",
+            "incorrect": "Return to what the answer must tell you: calculating a quantity does not yet require a particular result; a boundary is not a complete set; two data about a pair must not be handled by changing the pair."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calcular_lo_disponible_sin_fijar_un_resultado",
+          "prompt": "A folder has fourteen MB of capacity. Its fixed contents occupy two MB, and each complete photograph uses 3/2 MB. n counts photographs and can be any integer from zero through eight. Write an expression in n calculating the available MB for any value in this domain. Also calculate the available amount when n = 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calcular_lo_disponible_sin_fijar_un_resultado__relacion",
+              "type": "math_expression_input",
+              "label": "Expression in n calculating available MB",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-3n/2"
+              }
+            },
+            {
+              "id": "calcular_lo_disponible_sin_fijar_un_resultado__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "disponible",
+                  "type": "numeric",
+                  "label": "Available MB when n = 2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "disponible": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The space used is 2 + (3/2)n MB, so the remaining space is 14 − (2 + (3/2)n) = 12 − (3/2)n MB. With two photographs, 12 − 3 = 9 MB remain. No final amount of available MB was imposed: the expression must calculate it from n, without fixing n through an equality here.",
+            "incorrect": "Separate total capacity, fixed contents, and photograph storage. Subtract all the occupied space from the capacity; every term must represent MB. A calculated quantity does not need an additional target to be meaningful."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Considering Every Piece of Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "The situation now changes, and so may the type of answer. The letters are specified in the model fields so each expression keeps the quantity it represents. Each relation must preserve coherent quantities and units (Lang, 1971, pp. 47–48). Translating the statements into mathematics requires understanding their full meaning; the same word may appear in different relations (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "saldos_despues_de_un_cambio",
+          "prompt": "Two counters in a game initially have x and y points, adding up to fourteen. Their scores may be rational. Three points are transferred from the first to the second, and after the transfer the second must have twice as many as the first. The initial domains are x ≥ 3 and y ≥ 0. Write separately the relation expressing only the initial total and the one expressing only the comparison after the transfer. Each field must describe its own piece of data. Then find x and y by a valid method and check the data and domains.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "saldos_despues_de_un_cambio__total",
+              "type": "math_expression_input",
+              "label": "Relation for the initial total",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=14"
+              }
+            },
+            {
+              "id": "saldos_despues_de_un_cambio__comparacion",
+              "type": "math_expression_input",
+              "label": "Relation for the points after transfer",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y+3=2(x-3)"
+              }
+            },
+            {
+              "id": "saldos_despues_de_un_cambio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "Initial points of the first counter, x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "Initial points of the second counter, y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "23/3"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "19/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The initial total requires x + y = 14. After the transfer, the scores are x − 3 and y + 3, so y + 3 = 2(x − 3). One method substitutes y = 14 − x: 17 − x = 2x − 6 leads to 3x = 23. Thus x = 23/3 and y = 19/3. The later balances are 14/3 and 28/3; the second is twice the first. The initial scores sum to fourteen and respect x ≥ 3 and y ≥ 0.",
+            "incorrect": "Twice as many is required after the transfer, using the changed quantities, not the initial balances. Remember that points leaving the first enter the second. Do not replace one of the stated facts with an isolated final value of a letter."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_todos_los_ajustes_permitidos",
+          "prompt": "Another game's rule gives a score S = 5 − 2t, where t is a nonnegative rational adjustment and S is measured in points. An allowed score is at least 1/2 and less than 7/2. Describe all permitted adjustments using their bounds in increasing order and whether each endpoint is included. Choose your own steps without a prescribed sequence.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "elegir_todos_los_ajustes_permitidos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of adjustment t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound of adjustment t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower adjustment bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the calculated lower adjustment bound, substitute it into the scoring rule. Check whether it is allowed while respecting the original limits literally."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the proposed lower adjustment bound, check what happens at equality with the limit. Distinguish the strict condition from domain restrictions."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper adjustment bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Review whether the upper adjustment is included by substituting it into the original score. Changing variables must preserve the direction and allowed equality."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Justify excluding the upper adjustment by examining the score it would produce. Check whether the corresponding limit requires a strict inequality."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "9/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Both 1/2 ≤ 5 − 2t and 5 − 2t < 7/2 must hold. The first gives t ≤ 9/4 and the second t > 3/4, reversing direction upon division by −2. The full range is 3/4 < t ≤ 9/4, within the nonnegative domain. At the lower boundary S = 7/2 and it is excluded; at the upper S = 1/2 and it is included.",
+            "incorrect": "Relate both limits to the same score. Check the direction when dividing by a negative number and test each endpoint in the corresponding original condition. One interior value does not describe every allowed adjustment."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Returning to a Changed Objective"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "exigir_una_disponibilidad_precisa",
+          "prompt": "Return to the folder with fourteen MB of capacity, two fixed MB, and photographs using 3/2 MB each. Now exactly 9/2 MB must remain available. n keeps its meaning and its integer domain from zero through eight. Write a relation in n that requires this target and determine how many photographs satisfy it. Equivalent forms of the relation and any valid way of finding the number are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exigir_una_disponibilidad_precisa__relacion",
+              "type": "math_expression_input",
+              "label": "Relation imposing the specified available space",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-3n/2=9/2"
+              }
+            },
+            {
+              "id": "exigir_una_disponibilidad_precisa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fotografias",
+                  "type": "numeric",
+                  "label": "Number of photographs meeting the target",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fotografias": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The goal requires 12 − (3/2)n = 9/2, equivalent to 3n = 15 or n = 5. With five photographs, 2 + 15/2 = 19/2 MB are occupied and 14 − 19/2 = 9/2 MB remain. The count is an integer between zero and eight. Unlike calculating available space for any n, this problem includes a condition selecting the count.",
+            "incorrect": "Remember that 9/2 represents available MB, not occupied MB or a number of photographs. The relation must express that target; then check the value against the original quantities."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_decision_tras_un_signo",
+          "prompt": "In the scoring game S = 5 − 2t, with nonnegative rational t, a new request requires S > 1. A note changes this to −2t > −4 and then claims t > 2. Identify the first error and recover all genuinely permitted adjustments: bounds, endpoint inclusion, and the original score when t = 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_decision_tras_un_signo__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The error was subtracting five from both sides before dividing.",
+                  "reviewFeedback": "Repeat that subtraction on both sides and check whether it preserves the order."
+                },
+                {
+                  "id": "b",
+                  "label": "The direction should have been reversed when dividing both sides by −2.",
+                  "reviewFeedback": "Examine the divisor's sign in the indicated step and compare the direction with a test value."
+                },
+                {
+                  "id": "c",
+                  "label": "The error was allowing a rational adjustment in a domain that must always be integers.",
+                  "reviewFeedback": "Consult the stated domain before replacing it with the integers."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "recuperar_una_decision_tras_un_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of adjustment t in its domain",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Remaining upper bound",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower adjustment bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Check whether the lower adjustment bound belongs to the domain and meets the score condition. Justify including it by evaluating the proposed endpoint without changing the rule."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Review what would justify excluding the lower bound of your range. Compare that endpoint both with the domain and the original score condition."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper adjustment bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Examine the score produced by the upper bound of your range. To justify including it, you must respect the strict comparison required by the original request."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Check why the upper bound is excluded by using its original score. Analyze equality at the limit and preserve the comparison's direction."
+                    }
+                  ]
+                },
+                {
+                  "id": "prueba",
+                  "type": "numeric",
+                  "label": "Score S when t = 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "prueba": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting five was correct. Division by −2 must reverse direction: t < 2. Together with t ≥ 0, the solution set is 0 ≤ t < 2. The boundary t = 2 produces S = 1 and fails the strict requirement. At t = 3, which the note would allow, S = 5 − 6 = −1 and also fails. Testing that proposal helps locate the error, but the range follows from the transformations and domain.",
+            "incorrect": "Review which operation was applied and the divisor's sign. Preserve both the target condition and nonnegativity of t; do not accept a direction merely because it appears in the note."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparisons must preserve or reverse their direction according to the sign of the operation, and the endpoints must satisfy the original condition. Checking a value accepted by a note can reveal a contradiction, but describing every solution requires reconstructing the full reasoning (Lang, 1971, pp. 75–76, 78; Pólya, 1957, pp. 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguishing a Calculation from a Proposed Answer"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "describir_todas_las_propuestas_de_la_carpeta",
+          "prompt": "The folder still has fourteen MB of capacity, two fixed MB, and 3/2 MB per photograph. Now more than five MB must remain available. n counts complete photographs from zero through eight. To organize the calculation, first consider 0 ≤ n ≤ 8 over the rational numbers and describe the range satisfying the new objective: bounds and endpoint inclusion. Then return to the domain of complete photographs and report the greatest permitted count.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "describir_todas_las_propuestas_de_la_carpeta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of the preliminary rational range",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound of the preliminary rational range",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Check the lower endpoint you obtained within the stated rational domain. Calculate its available capacity and justify whether the condition includes it."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Review why you would exclude the lower endpoint. Compare that decision with the domain and the available capacity at exactly that value."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Check the available capacity corresponding to the upper endpoint you chose. Justify its inclusion using the problem's strict condition before returning to integer counts."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Review the exclusion of the upper endpoint using the exact amount of available capacity it produces. Preserve the difference between the rational domain and complete photographs."
+                    }
+                  ]
+                },
+                {
+                  "id": "maximo_entero",
+                  "type": "numeric",
+                  "label": "Greatest permitted number of complete photographs",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "14/3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "maximo_entero": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The requirement is 12 − (3/2)n > 5, equivalent to n < 14/3. With 0 ≤ n ≤ 8, the rational range is 0 ≤ n < 14/3. Its upper endpoint is excluded because it would leave exactly five MB. Returning to integers, the allowed counts are 0, 1, 2, 3, and 4. Four photographs leave six MB; five leave 9/2 MB and fail this new objective. The rational range obtained in the calculation does not authorize fractional photographs.",
+            "incorrect": "The objective has changed: “more than five” does not mean exactly five or the count from the previous request. Solve the comparison first, retain the domain bound, and then select the integers that really belong to the range."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_cambio_de_objetivo_deja_una_familia",
+          "prompt": "Return to the two counters: initially x + y = 14, with x ≥ 3 and y ≥ 0, and three points are transferred from the first to the second. Now the second balance after transfer must be at least the first and less than twice the first. Points are rational. Describe every permitted pair by giving bounds for x and whether they are included; y must preserve the total relation. Also select every proposed pair satisfying all the data.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_cambio_de_objetivo_deja_una_familia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of initial balance x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound of initial balance x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower balance",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "At the proposed lower balance, evaluate the conditions involving the balances after transfer. Include it only if it literally satisfies every original restriction."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Justify excluding the lower balance by checking its corresponding pair and transferred balances. Identify which original restriction governs equality at this endpoint."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper balance",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Check the pair corresponding to the upper balance and the balances after transfer. Review whether all the problem's restrictions permit including it."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Review your choice to exclude the upper balance. Substitute that value while preserving the total and check the comparisons between balances after transfer."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "23/3"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_cambio_de_objetivo_deja_una_familia__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(9, 5)",
+                  "reviewFeedback": "Check the initial total and calculate the two balances after transfer; evaluate both comparisons."
+                },
+                {
+                  "id": "b",
+                  "label": "(21/2, 7/2)",
+                  "reviewFeedback": "Examine the transfer's effect and how the strict condition treats possible equality at a boundary."
+                },
+                {
+                  "id": "c",
+                  "label": "(15/2, 13/2)",
+                  "reviewFeedback": "Preserve the fractions when calculating the balances after transfer and check every requirement."
+                },
+                {
+                  "id": "d",
+                  "label": "(8, 6)",
+                  "reviewFeedback": "Verify every condition using the same pair without swapping components between calculations."
+                },
+                {
+                  "id": "e",
+                  "label": "(9, 6)",
+                  "reviewFeedback": "First check the marked pair's total, then the required transfers and comparisons."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total preserves y = 14 − x. After transfer we require y + 3 ≥ x − 3 and y + 3 < 2(x − 3). Replacing y gives 17 − x ≥ x − 3, or x ≤ 10, and 17 − x < 2x − 6, or x > 23/3. All permitted pairs are (x, 14 − x) with 23/3 < x ≤ 10; these also meet the initial domains. There is a family of pairs, not a unique pair. From the list, (9, 5) and (8, 6) satisfy all conditions. (21/2, 7/2) fails the lower comparison; (15/2, 13/2) fails the strict upper comparison; (9, 6) does not sum to fourteen.",
+            "incorrect": "Relate y to the same x through the total before solving both comparisons. Preserve the transfer of three points and test each endpoint. A proposed pair satisfying the comparisons but not the total does not belong to the family."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Justifying the Entire Solution Set"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_propuesta_no_determina_todo_el_conjunto",
+          "prompt": "Two calculations involving rational q are A = 3(q − 2) + 5 and B = 3q − 1. Their results must be equal. A note checks q = 0 and claims it is the only solution. Review the original forms and select the conclusion that can be justified for all rational numbers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_propuesta_no_determina_todo_el_conjunto__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "All rational numbers satisfy the condition: distributing in A produces exactly the same expression as B.",
+                  "reviewFeedback": "Distribute in the original expression and justify whether the comparison imposes a restriction on the unknown."
+                },
+                {
+                  "id": "b",
+                  "label": "Only q = 0 satisfies it, because it was the only value tested.",
+                  "reviewFeedback": "Distinguish the only tested value from the set of values that may satisfy an equality."
+                },
+                {
+                  "id": "c",
+                  "label": "There is no solution, because one expression contains parentheses and the other does not.",
+                  "reviewFeedback": "Parentheses indicate grouping; examine their expansion before concluding that two expressions are incompatible."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing gives A = 3q − 6 + 5 = 3q − 1 = B for every rational q. Checking zero confirms that particular proposal, but alone proves neither uniqueness nor universality. The general transformation proves that all rational numbers in the domain satisfy the condition.",
+            "incorrect": "One particular check does not examine other values. Compare the expressions using properties that hold over the entire domain before deciding which set satisfies the condition."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_exigencias_y_dos_dominios",
+          "prompt": "A choice r must simultaneously satisfy 3r − 2 ≥ 5/2 and 5 − 2r ≥ 2. First, r may be any nonnegative rational number; then the requirements stay exactly the same, but r is restricted to nonnegative integers. Classify the choices in each domain and enter the value satisfying the conditions in the rational domain. Choose your method and preserve both requirements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_exigencias_y_dos_dominios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racionales",
+                  "type": "dropdown",
+                  "label": "Choices satisfying the conditions among nonnegative rational numbers",
+                  "options": [
+                    {
+                      "id": "un_valor",
+                      "label": "Exactly one value.",
+                      "reviewFeedback": "Check that your rational value satisfies both conditions and the domain. Then justify why the intersection permits no different value."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No values.",
+                      "reviewFeedback": "Review the proposed absence of solutions in the nonnegative rational domain. Find the intersection of both conditions without excluding equality cases."
+                    },
+                    {
+                      "id": "varios",
+                      "label": "More than one value.",
+                      "reviewFeedback": "Examine whether the intersection permits two different rational numbers in the specified domain. Justify the proposed multiplicity by checking both restrictions together."
+                    }
+                  ]
+                },
+                {
+                  "id": "enteros",
+                  "type": "dropdown",
+                  "label": "Choices satisfying the conditions among nonnegative integers",
+                  "options": [
+                    {
+                      "id": "un_valor",
+                      "label": "Exactly one value.",
+                      "reviewFeedback": "Check that your single proposed choice is a nonnegative integer satisfying both conditions. Justify its uniqueness within that domain rather than transferring a conclusion from another domain."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No values.",
+                      "reviewFeedback": "Check your proposed absence of solutions by restricting the intersection to nonnegative integers. Preserve exactly both conditions and their equality cases."
+                    },
+                    {
+                      "id": "varios",
+                      "label": "More than one value.",
+                      "reviewFeedback": "Justify the existence of several permitted nonnegative integers using the intersection of both conditions. Do not confuse numbers between the bounds with values belonging to the domain."
+                    }
+                  ]
+                },
+                {
+                  "id": "valor_racional",
+                  "type": "numeric",
+                  "label": "Permitted value in the rational domain",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racionales": {
+                    "type": "exact_text",
+                    "expected": "un_valor"
+                  },
+                  "enteros": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "valor_racional": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first requirement gives r ≥ 3/2. The second gives r ≤ 3/2 after division by −2. Among nonnegative rational numbers only r = 3/2 remains, giving 5/2 and 2 in the originals. That value is not an integer, so no choice remains in the second domain. Do not round: one fails the first condition and two fails the second.",
+            "incorrect": "Solve each comparison without dropping the other, then retain what satisfies both. Check whether the resulting set belongs to the requested domain; changing the domain does not alter the original requirements."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "The chosen type of relation does not by itself determine how many solutions exist. An equality can leave a family of pairs or hold throughout a domain; two comparisons can leave one value. Solving requires describing every value that works, or proving that none remain, while preserving the meaning of the unknowns (Gelfand & Shen, 1993, pp. 94–95). Returning to the data and any step that may have failed helps recover the reasoning and transfer it to another request (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing Which Quantity Is Sought"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to two rational adjustments x and y satisfying ax + by = u and cx + dy = v. a, b, c, d, u, and v are six known data values; only x and y are unknowns. Now we want S = x + y, the sum of the adjustments, without requesting them separately. Recall the previously justified result for a system with given data and decide how to use it to answer this new question."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_el_permiso_de_division_con_datos",
+          "prompt": "Define D = ad − bc. Which statement describes exactly the division condition of the criterion studied, without excluding choices of data that the criterion accepts?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_el_permiso_de_division_con_datos__criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Require D to be positive: a negative difference prevents division.",
+                  "reviewFeedback": "Check whether the sign of a nonzero divisor really prevents division over the rational numbers."
+                },
+                {
+                  "id": "b",
+                  "label": "Require D to be nonzero, allowing individual coefficients to be zero when that condition holds.",
+                  "reviewFeedback": "Identify exactly which quantity is the divisor and what the criterion's condition guarantees."
+                },
+                {
+                  "id": "c",
+                  "label": "Require every coefficient to be nonzero, in addition to D being nonzero.",
+                  "reviewFeedback": "Examine whether requiring each coefficient to be nonzero introduces restrictions not imposed by the difference of products."
+                },
+                {
+                  "id": "d",
+                  "label": "Require u and v to be nonzero without checking the difference of products.",
+                  "reviewFeedback": "Distinguish numerator terms from the quantity used as the divisor in the criterion."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The criterion allows division when D ≠ 0. The difference may be negative and individual coefficients may be zero. Requiring them all to be nonzero would exclude data the formula allows. The values of u and v do not determine whether D is zero (Lang, 1971, p. 57).",
+            "incorrect": "Recall which quantity appeared as a divisor. D ≠ 0 does not guarantee every individual coefficient is nonzero, nor does it require D to be positive."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producir_la_suma_en_terminos_de_datos",
+          "prompt": "The six rational data values a, b, c, d, u, and v satisfy D = ad − bc ≠ 0. The conditions are ax + by = u and cx + dy = v. Write an expression for S = x + y valid for all those choices of data. Neither an equation nor the two separate unknowns is requested. You may use D with the given definition; equivalent forms that do not add domain restrictions are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producir_la_suma_en_terminos_de_datos__S",
+              "type": "math_expression_input",
+              "label": "Expression for the sum S in terms of the data",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "((d-c)*u+(a-b)*v)/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Adding the two previously justified expressions for the pair gives S = [du − bv + av − cu]/D, equivalent to [(d − c)u + (a − b)v]/D. Another approach combines (d − c) times the first equation with (a − b) times the second: the coefficients of both x and y become D, so it gives DS = (d − c)u + (a − b)v. Nonzero D yields the same sum. That combination determines S, but does not by itself replace both conditions if the entire pair is required (Lang, 1971, p. 57).",
+            "incorrect": "Preserve the goal S = x + y and all six data values with their signs. You can recall the expressions for the pair or form a combination giving the same coefficient to x and y. Do not merely add u and v as though every original coefficient were one."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Changing the target quantity lets you use an earlier result without automatically repeating its entire derivation. The new expression must answer the question and retain its conditions of use. Revisiting a result and transferring it to another task helps you understand its connections and check the argument (Pólya, 1957, pp. 14–18, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Checking Which Data a Proposal Actually Allows"
+        },
+        {
+          "type": "paragraph",
+          "text": "A note retains D = ad − bc ≠ 0, uses x = (du − bv)/D, and then proposes y = [u − a(du − bv)/D]/b. It claims this last expression works for every choice of data allowed by D ≠ 0. Before accepting that claim, examine each divisor and return to the original conditions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_un_divisor_individual_no_garantizado",
+          "prompt": "Take a = −2, b = 0, c = 3, d = 4, u = 3, and v = 1. The originals are −2x = 3 and 3x + 4y = 1. Calculate D and find the same pair satisfying both conditions by any defined method. Also enter S = x + y and decide whether the note's expression for y can be evaluated with these data.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_un_divisor_individual_no_garantizado__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D for the test data",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x satisfying the originals",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y satisfying the originals",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "S",
+                  "type": "numeric",
+                  "label": "Sum S = x + y of the pair",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "propuesta",
+                  "type": "dropdown",
+                  "label": "Status of the proposed expression for y with these data",
+                  "options": [
+                    {
+                      "id": "definida",
+                      "label": "It is defined and produces the value of y.",
+                      "reviewFeedback": "Examine every divisor in your chosen expression using the given data. A result found by another method does not guarantee that this expression can be evaluated."
+                    },
+                    {
+                      "id": "cero",
+                      "label": "The quotient 0/0 has value zero.",
+                      "reviewFeedback": "Check whether the quotient in your choice determines a unique value. Relate the division to the underlying multiplication condition before assigning an answer."
+                    },
+                    {
+                      "id": "no_definida",
+                      "label": "It is undefined: a zero divisor appears.",
+                      "reviewFeedback": "Review the domain claim in your choice by calculating the divisors in the expression. Distinguish whether that method is valid from whether the original equations are valid."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "11/8"
+                  },
+                  "S": {
+                    "type": "numeric",
+                    "expected": "-1/8"
+                  },
+                  "propuesta": {
+                    "type": "exact_text",
+                    "expected": "no_definida"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (−2)·4 − 0·3 = −8. The first original gives x = −3/2; the second gives 4y = 1 − 3(−3/2) = 11/2, hence y = 11/8. The sum is −12/8 + 11/8 = −1/8. The original left-hand sides give three and one. In the note, the final numerator is 3 − (−2)(−3/2) = 0, but the divisor b is also zero: 0/0 is undefined. A valid pair exists even though this expression cannot calculate it.",
+            "incorrect": "Keep the signs of the data and use both originals for the same pair. Zero b does not force D to be zero or y to be zero. Check the division proposed in the note before assigning a value to its quotient."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_la_expresion_sin_excluir_datos",
+          "prompt": "Return to all rational data a, b, c, d, u, and v with D = ad − bc ≠ 0. Repair the proposal by writing an expression for y that works over that entire domain without adding the condition b ≠ 0. An expression in terms of data is requested, not an equation or only the test value. You may use D with its definition and any equivalent form preserving the domain.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_la_expresion_sin_excluir_datos__y",
+              "type": "math_expression_input",
+              "label": "Repaired expression for y over all allowed data",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*v-c*u)/D"
+              }
+            },
+            {
+              "id": "reparar_la_expresion_sin_excluir_datos__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "All data with b = 0 must be excluded from the problem, even if they satisfy D ≠ 0.",
+                  "reviewFeedback": "Compare this exclusion against the original domain and determine what fact would justify restricting it."
+                },
+                {
+                  "id": "b",
+                  "label": "The test case proves D = 0 whenever b = 0, so no solution pair exists.",
+                  "reviewFeedback": "Calculate the difference of products for the test case before claiming it depends on the indicated coefficient."
+                },
+                {
+                  "id": "c",
+                  "label": "Dividing by b requires a condition that D ≠ 0 does not guarantee; this method needs repair.",
+                  "reviewFeedback": "Identify the divisor in that method and check which conditions guarantee that it is defined."
+                },
+                {
+                  "id": "d",
+                  "label": "If the numerator and b are zero, we can cancel both to define the value of y.",
+                  "reviewFeedback": "Before canceling, check whether the division exists; writing two zeros does not justify a quotient."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The expression y = (av − cu)/D is defined under the original assumption, without dividing by b. It follows from the previously justified cancellation and its check in both equations; with the test data it gives (−2 − 9)/(−8) = 11/8. The correct diagnosis preserves the admitted data: the route that divides by b needs another assumption and does not work as a formula over the full domain (Lang, 1971, p. 57).",
+            "incorrect": "Recover an expression using only divisions permitted for every specified choice of data. Do not rescue the note by removing a case the problem allows or by assigning a value to 0/0. The example refutes the universal claim; the repaired expression needs the general justification already studied."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volver_a_las_originales_segun_la_cantidad_buscada",
+          "prompt": "Consider A: x + y = 8 and 3x + 3y = 24; B: x − y = 2 and 4x − 4y = 8. The unknowns admit all rational numbers. Both systems have D = 0, so the quotient formula is undefined. Return to their originals. Calculate S = x + y for the proposed pairs (2, 0) and (3, 1) in B; then select every justified statement about the target S.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "volver_a_las_originales_segun_la_cantidad_buscada__sumas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "S for (x, y) = (2, 0)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "S for (x, y) = (3, 1)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "volver_a_las_originales_segun_la_cantidad_buscada__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A determines the same sum S for all its pairs, even though it does not determine a unique pair.",
+                  "reviewFeedback": "Relate the requested derived quantity to the condition shared by every pair in that system."
+                },
+                {
+                  "id": "b",
+                  "label": "D = 0 proves neither system has a solution pair.",
+                  "reviewFeedback": "An undefined formula does not classify solutions; examine the original equations."
+                },
+                {
+                  "id": "c",
+                  "label": "Both proposed pairs satisfy B and give different sums; B does not fix a unique S.",
+                  "reviewFeedback": "Check each pair in the originals and calculate the derived quantity while preserving its meaning."
+                },
+                {
+                  "id": "d",
+                  "label": "Because the second equation repeats the first, every rational pair satisfies each system.",
+                  "reviewFeedback": "Repeating a condition does not remove the restriction it places on pairs."
+                },
+                {
+                  "id": "e",
+                  "label": "When D = 0, the original conditions cannot tell us anything about a derived quantity.",
+                  "reviewFeedback": "Distinguish failing to determine a unique pair from failing to determine any quantity related to its components."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A retains x + y = 8: all its pairs have S = 8, although (0, 8) and (1, 7), for example, are different pairs. In B, (2, 0) and (3, 1) each produce a difference of two and, in the second equation, eight; both satisfy it. Their sums are two and four, so S is not fixed. Repeating a condition does not admit every pair: the first must still hold. Zero D prevents using that formula, but the target and the originals determine what can be justified. Solving and checking require preserving the same assignments and the solution set, without confusing a consequence with all the conditions (Gelfand & Shen, 1993, pp. 94–95).",
+            "incorrect": "Check each proposed pair in B against both original equations before comparing their sums. In A, notice which quantity the first equation fixes. Do not extend the lack of permission to divide by D into a ban on reasoning with the remaining conditions."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "A complete review examines what is sought, which earlier result can be used, which divisions remain valid, and what the originals really claim. A counterexample can show that a proposal excludes admitted data; a general justification supports the correction. Changing the target can also change what information is sufficient to answer it (Pólya, 1957, pp. 14–18, 60–61)."
+        }
+      ]
+    }
+  ]
+}
