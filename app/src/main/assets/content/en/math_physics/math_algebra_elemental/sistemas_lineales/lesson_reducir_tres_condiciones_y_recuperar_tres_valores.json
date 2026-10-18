@@ -1,0 +1,647 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__reducir_tres_condiciones_y_recuperar_tres_valores",
+  "title": "Reducing Three Conditions and Recovering Three Values",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Three Values Keep Three Distinct Roles"
+        },
+        {
+          "type": "paragraph",
+          "text": "A situation may require three unknown quantities. We will call their values x, y, and z and write an ordered triple as (x, y, z). The triple (1, −2, 3) assigns one to x, negative two to y, and three to z. Changing the order changes the assignments, even when the same numbers appear. This notation does not require interpreting coordinates or drawing a figure."
+        },
+        {
+          "type": "paragraph",
+          "text": "In an abstract system in this lesson, all three unknowns may take any rational value. A simultaneous solution uses the same triple in every condition. In a real context, each component must also belong to the domain of the quantity it represents. Having three letters does not, by itself, require different, positive, or integer values."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_el_orden_de_tres_valores",
+          "prompt": "Calculate 2x − y + z for the triples (1, −2, 3) and (3, −2, 1), written in (x, y, z) order.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_el_orden_de_tres_valores__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value for (1, −2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiada",
+                  "type": "numeric",
+                  "label": "Value for (3, −2, 1)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "intercambiada": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For (1, −2, 3), 2x − y + z = 2 − (−2) + 3 = 7. For (3, −2, 1), it equals 6 − (−2) + 1 = 9. The second value is still assigned to y, but x and z have swapped roles.",
+            "incorrect": "First identify which component belongs to each letter. Subtracting the negative value of y means adding its opposite; do not change the order just to make a calculation easier."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_acredita_una_solucion_de_tres_condiciones",
+          "prompt": "Which check establishes that a proposed triple is a simultaneous solution of three equations within the specified domains?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_acredita_una_solucion_de_tres_condiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Each equation works with some triple, even if the values change between equations.",
+                  "reviewFeedback": "Check whether switching triples between equations gives a single solution or only separate verifications."
+                },
+                {
+                  "id": "b",
+                  "label": "The first equation works, because the proposal already contains three numbers.",
+                  "reviewFeedback": "Having three components does not demonstrate that a proposal satisfies all three conditions."
+                },
+                {
+                  "id": "c",
+                  "label": "The same triple belongs to the domains and makes all three equations true.",
+                  "reviewFeedback": "Relate membership in the domains to checking each equation using that same triple."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Each unknown retains its value when all three conditions are checked. The number of written values does not establish a solution or justify skipping an equation. The domains remain part of the problem.",
+            "incorrect": "Recall the rule learned for two unknowns: one assignment must satisfy every condition. Adding a third quantity extends the checks."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducing to Two Unknowns Without Forgetting the First Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know how to solve systems with two unknowns. For three unknowns, we will choose two combinations that eliminate the same unknown; this gives a two-unknown system that can be handled using those methods. Then we will recover the third quantity and check all three original conditions. Successive reduction and recovery are the goals of the reference's section on three unknowns (Lang, 1971, pp. 57–59)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Work over the rational numbers with A: x + y + z = 9; B: x − y + 2z = 7; C: 2x + y − z = 3. Retain A and replace B with B − A to obtain −2y + z = −2. Retain A and replace C with C − 2A to obtain −y − 3z = −15. In both replacements, the complete left-hand sides and right-hand sides are subtracted; in 2A, all terms and the nine are multiplied by two."
+        },
+        {
+          "type": "paragraph",
+          "text": "The transformed system retains A together with the two new relations. Every original solution satisfies them. Conversely, adding A to the new second relation recovers B; adding 2A to the new third relation recovers C. Thus no triples were lost or added. The two relations without x do not by themselves retain all the information: A will be needed to recover x. Checking whether each reduction preserves the conditions prevents unjustifiably enlarging the solution set (Pólya, 1957, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "We solve −2y + z = −2 and −y − 3z = −15 using what we have learned. The first gives z = 2y − 2. Substituting into the other yields −y − 3(2y − 2) = −15, that is, −7y + 6 = −15. Hence y = 3 and z = 4. A lets us recover x = 9 − y − z = 2. The triple is (2, 3, 4)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Checking the originals gives 2 + 3 + 4 = 9; 2 − 3 + 2 × 4 = 7; 2 × 2 + 3 − 4 = 3. These calculations verify that the triple works. Reversibility of the replacements and solving the two reduced relations establish that no other triple is missing. We do not reach that conclusion simply by counting three equations."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_una_condicion_al_reducir_tres",
+          "prompt": "After obtaining B − A and C − 2A in this example, what information must be retained to describe a system equivalent to the original?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_una_condicion_al_reducir_tres__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Only the two new relations without x; then x can be chosen freely.",
+                  "reviewFeedback": "Examine which restriction on the eliminated unknown remains if you drop the retained condition."
+                },
+                {
+                  "id": "b",
+                  "label": "Condition A and the two new relations, which allow us to recover B and C.",
+                  "reviewFeedback": "Reconstruct the original equations from the relations retained by this description."
+                },
+                {
+                  "id": "c",
+                  "label": "Condition A and just one new relation, because all three letters already appear.",
+                  "reviewFeedback": "The presence of the letters does not guarantee that all their relations are preserved; try to recover each original equation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A connects x with y and z. The other two relations retain the remaining information and allow B and C to be recovered through inverse operations. Dropping a condition without proving it follows from those retained may admit triples that did not satisfy the original system.",
+            "incorrect": "Identify which relation you will use to recover x and which information allows you to reconstruct every original equation. Counting letters cannot replace keeping conditions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Forming Two New Relations and Recovering the Triple"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the following system, let A be x + y + z = 11, B be 2x − y + z = 5, and C be x + 2y − z = 5. All three unknowns are rational. Keeping A lets us replace B with B − 2A and C with C − A. Both replacements eliminate x and leave relations between y and z. You can express those relations in equivalent forms; the field name specifies which operation you are representing."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_reducciones_con_una_condicion_conservada",
+          "prompt": "Write the equation resulting from B − 2A and the one from C − A. Each subtraction applies to the entire left-hand and right-hand sides. Retain A, solve the system, and recover the triple; to find the final values you may continue along any valid path.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__b_menos_dos_a",
+              "type": "math_expression_input",
+              "label": "Relation equivalent to B − 2A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-3y-z=-17"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__c_menos_a",
+              "type": "math_expression_input",
+              "label": "Relation equivalent to C − A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2z=-6"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Value of z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B − 2A gives −3y − z = −17, equivalent to 3y + z = 17. C − A gives y − 2z = −6. One approach uses z = 17 − 3y: y − 2(17 − 3y) = −6 leads to 7y = 28 and y = 4. Then z = 5 and A gives x = 2. The original equations evaluate to eleven, five, and five for (2, 4, 5). You can also solve the reduced relations by elimination.",
+            "incorrect": "Multiply all three terms and the eleven when forming 2A. Preserve the signs while subtracting B − 2A and C − A. The new relations determine only y and z; use A to recover x and check the originals."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otras_rutas_conservan_las_tres_condiciones",
+          "prompt": "For this same system, select all plans that eliminate x from two relations and retain enough information to recover all three originals.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otras_rutas_conservan_las_tres_condiciones__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Keep C, replace A with A − C, and B with B − 2C.",
+                  "reviewFeedback": "Calculate the specified combinations and check how you could recover the replaced conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "Keep A, replace B with B − 2A, and C with C − A.",
+                  "reviewFeedback": "Examine elimination and reversibility of this plan while retaining the specified original condition."
+                },
+                {
+                  "id": "c",
+                  "label": "Keep only B − 2A; then choose the other values without further conditions.",
+                  "reviewFeedback": "Identify what restrictions would be lost if only that relation were retained."
+                },
+                {
+                  "id": "d",
+                  "label": "Use a different value of x in each equation to make the calculations easier.",
+                  "reviewFeedback": "A simultaneous solution fixes one triple; check what changing a component between equations means."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first two plans retain one condition containing x and two differences that eliminate it. Keeping C lets you recover A by adding C to A − C, and B by adding 2C to B − 2C. Keeping A allows the previously justified recovery steps. There is no single original condition that must be selected as the retained one.",
+            "incorrect": "Check which letter is eliminated and how each original can be recovered. Just one replacement without the other conditions loses information; changing the assignment between equations no longer treats a simultaneous solution."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rational Numbers and a Path of Your Own Choosing"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extending to three unknowns does not change the rules for fractions or signs. A known nonzero constant denominator can be cleared by multiplying the entire equation. You can then substitute or eliminate using the relations you obtain. Choose which letter to eliminate first and which conditions to retain, without losing any original requirement. The three-unknown exercises in the reference also include rational coefficients and clearing denominators (Lang, 1971, p. 59)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_terna_racional_sin_cadena",
+          "prompt": "Solve x/2 + y − z = 0, x − 2y + z = −9/2, and 2x + y + 2z = −3/2. All three unknowns can take any rational value. Enter exact values of x, y, and z; choose a justifiable method and check all three original conditions with your triple.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_terna_racional_sin_cadena__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Value of z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One path multiplies the first by two: x + 2y − 2z = 0. Subtracting it from the second gives −4y + 3z = −9/2; subtracting twice that transformed first equation from the third gives −3y + 6z = −3/2. Doubling the first reduced relation and subtracting the other yields −5y = −15/2, so y = 3/2. Then z = 1/2 and x = −2. The originals give −1 + 3/2 − 1/2 = 0; −2 − 3 + 1/2 = −9/2; −4 + 3/2 + 1 = −3/2.",
+            "incorrect": "You may start by clearing the two in the first equation, but multiply every term and its right-hand side. If you choose another path, keep the relations you used. Do not change the sign of x or replace fractions with rounded values."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "A negative result is normal in this abstract domain. Checking the triple complements the justification of the steps; it does not replace it. If a calculation fails to match, first review a distribution, an entire subtraction, or a condition you may have omitted, rather than repeating every calculation unchanged (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Detecting When a Condition Was Lost"
+        },
+        {
+          "type": "paragraph",
+          "text": "A useful reduction is not simply keeping fewer facts for convenience. The new relations must retain enough information to recover the original conditions. Writing a triple after a correct calculation does not prove that the triple solves the complete system. Asking whether you have used every piece of data can expose a weak point in the reasoning (Pólya, 1957, pp. 55–56, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_una_condicion_que_no_se_uso",
+          "prompt": "The system is x + y + z = 6, x − y + z = 2, and 2x + y − z = 3. A note subtracts the second from the first, obtains 2y = 4 and y = 2; uses the first to get x + z = 4; chooses x = 1, sets z = 3, and announces a unique solution. Calculate the three original left-hand sides for (1, 2, 3) and identify the first step that failed to justify the complete solution.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of x + y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of x − y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "tercera",
+                  "type": "numeric",
+                  "label": "Value of 2x + y − z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "tercera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Subtracting the first two equations is invalid even if both entire sides are subtracted.",
+                  "reviewFeedback": "Reconstruct the subtraction on both sides and distinguish that step from the later decisions."
+                },
+                {
+                  "id": "b",
+                  "label": "Choosing x without using the third condition leaves one restriction unapplied; the triple does not satisfy the whole system.",
+                  "reviewFeedback": "Identify which equations were used before that choice and check the originals with the triple."
+                },
+                {
+                  "id": "c",
+                  "label": "The triple must be rejected solely because its components are different.",
+                  "reviewFeedback": "Different letters do not require equal or unequal components; examine the restrictions actually stated."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first two reductions are correct: y = 2 and x + z = 4. But choosing x = 1 still does not use the third condition. The proposal gives six and two in the first two equations, but one in the third, which requires three. The choice had not been proven unique either. Writing three values does not replace using the missing fact.",
+            "incorrect": "Check each original equation with the same triple before accepting the announcement. Locate the step that turned a relation with several possible values into an unjustified choice; an earlier correct subtraction does not guarantee that everything afterward is correct."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_terna_tras_el_diagnostico",
+          "prompt": "Now solve the three original conditions from the diagnosis, without accepting the note's arbitrary choice. Enter the full rational triple using a valid path and check it in all three equations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_terna_tras_el_diagnostico__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Value of z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "5/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The relation y = 2 reduces the other two to x + z = 4 and 2x − z = 1. Adding them gives 3x = 5, so x = 5/3 and z = 7/3. The triple (5/3, 2, 7/3) gives 6, 2, and 3 in the originals. The third condition was used to determine what the first two left unresolved.",
+            "incorrect": "Recover a valid relation from the note, but include the missing condition. After finding x and z, return to all the originals; do not check only the two that the previous proposal already satisfied."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Interpreting Three Quantities and Returning to the Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "A batch uses whole beads of three colors. x counts red beads, y green beads, and z blue beads. Each red bead weighs one gram, each green bead two grams, and each blue bead four grams. Thirteen beads and twenty-nine grams are required in total; in addition, there must be one more red bead than blue beads. Only four blue beads are available. The model assumes the individual masses add."
+        },
+        {
+          "type": "paragraph",
+          "text": "Here the algebraic conditions are given: x + y + z = 13 counts objects; x + 2y + 4z = 29 expresses the total mass in grams; x − z = 1 expresses the difference in counts. All three unknowns are nonnegative integers, and the available stock requires z ≤ 4. The mass coefficients convert bead counts into grams before addition. We will interpret and solve this given model, keeping the object count, total mass, and comparison distinct."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_un_modelo_dado_de_tres_conteos",
+          "prompt": "Solve the three given equations for the batch. Enter the numbers of red, green, and blue beads using a valid method. Check all three equalities, the integer counts, and the limit of four blue beads.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_un_modelo_dado_de_tres_conteos__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "rojas",
+                  "type": "numeric",
+                  "label": "Number of red beads, x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "verdes",
+                  "type": "numeric",
+                  "label": "Number of green beads, y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "azules",
+                  "type": "numeric",
+                  "label": "Number of blue beads, z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "rojas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "verdes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "azules": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One approach retains x = z + 1. The object count gives y = 12 − 2z. Substituting both into the mass condition gives z + 1 + 2(12 − 2z) + 4z = 29, hence z = 4. Then x = 5 and y = 4. The results are 5 + 4 + 4 = 13 beads, 5 + 8 + 16 = 29 grams, and 5 − 4 = 1. All three counts are nonnegative integers, and z = 4 meets the inclusive limit.",
+            "incorrect": "You may use the red-versus-blue comparison first, or reduce the system another way. Keep all three goals and the color associated with each letter. The candidate must also satisfy the inventory limit: a numerical equality does not cancel that restriction."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_terna_correcta_puede_rebasar_un_inventario",
+          "prompt": "In a new request, only the total mass is changed to thirty-one grams. Thirteen beads, one more red than blue, and at most four blue beads are still required. The proposed triple is (x, y, z) = (7, 0, 6). Check the new equations and decide whether the proposal is admissible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_terna_correcta_puede_rebasar_un_inventario__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: satisfying all three equations allows using more blue beads than are available.",
+                  "reviewFeedback": "Check the inventory as well as the equations; satisfying equalities does not remove an availability restriction."
+                },
+                {
+                  "id": "b",
+                  "label": "No: a count of zero green beads is always outside the nonnegative domain.",
+                  "reviewFeedback": "Check the nonnegative domain and what a zero count means before rejecting that component."
+                },
+                {
+                  "id": "c",
+                  "label": "No: although the triple satisfies all three equations with nonnegative integer counts, it uses six blue beads and only four are available.",
+                  "reviewFeedback": "Compare the proposed bead count with the inventory limit while retaining the equations."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For (7, 0, 6), the total is thirteen beads, the mass is 7 + 0 + 24 = 31 grams, and the difference is 7 − 6 = 1. Zero green beads are allowed; the proposal fails because z = 6 > 4. This check rejects the triple because of a contextual fact, without changing the requirements of each equation.",
+            "incorrect": "Review the equalities and domains separately. Zero can represent the absence of a color; exceeding available stock violates a condition even if the algebraic calculations are correct."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Reducing to two unknowns, recovering the third, and returning to the originals organizes this extension without requiring a completely different method. Another valid path may eliminate a different letter first if it preserves the conditions and allows reversal. Checking a triple, justifying that no other solutions remain, and reviewing the context are related tasks with different purposes (Lang, 1971, pp. 57–59; Pólya, 1957, pp. 14–15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

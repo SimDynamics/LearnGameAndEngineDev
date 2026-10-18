@@ -1,0 +1,647 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__reducir_tres_condiciones_y_recuperar_tres_valores",
+  "title": "Réduire trois conditions et retrouver trois valeurs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Trois valeurs conservent trois rôles distincts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une situation peut nécessiter trois quantités inconnues. Nous appellerons leurs valeurs x, y et z, et écrirons le triplet dans l'ordre (x, y, z). Le triplet (1, −2, 3) attribue un à x, moins deux à y et trois à z. Changer l'ordre modifie les attributions, même si les mêmes nombres apparaissent. Cette notation n'oblige pas à interpréter des coordonnées ni à dessiner une figure."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un système abstrait de cette leçon, les trois inconnues peuvent prendre toutes les valeurs rationnelles. Une solution simultanée conserve le même triplet dans chaque condition. Dans un contexte concret, chaque composante doit également appartenir au domaine de la quantité qu'elle représente. Trois lettres n'imposent pas, à elles seules, des valeurs différentes, positives ou entières."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_el_orden_de_tres_valores",
+          "prompt": "Calcule 2x − y + z avec les triplets (1, −2, 3) et (3, −2, 1), écrits dans l'ordre (x, y, z).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_el_orden_de_tres_valores__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur pour (1, −2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiada",
+                  "type": "numeric",
+                  "label": "Valeur pour (3, −2, 1)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "intercambiada": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec (1, −2, 3), 2x − y + z = 2 − (−2) + 3 = 7. Avec (3, −2, 1), on obtient 6 − (−2) + 1 = 9. La deuxième valeur reste attribuée à y, mais x et z ont échangé leurs rôles.",
+            "incorrect": "Identifie d'abord la composante de chaque lettre. Soustraire la valeur négative de y revient à ajouter son opposé ; ne change pas l'ordre pour faciliter un calcul."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_acredita_una_solucion_de_tres_condiciones",
+          "prompt": "Quelle vérification prouve qu'un triplet proposé est une solution simultanée de trois équations dans les domaines indiqués ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_acredita_una_solucion_de_tres_condiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Chaque équation fonctionne avec un triplet quelconque, même si les valeurs changent entre elles.",
+                  "reviewFeedback": "Vérifie si changer de triplet entre les équations produit une même solution ou seulement des vérifications indépendantes."
+                },
+                {
+                  "id": "b",
+                  "label": "La première équation fonctionne, parce que la proposition contient déjà trois nombres.",
+                  "reviewFeedback": "Le fait qu'une proposition ait trois composantes ne démontre pas qu'elle satisfait les trois conditions."
+                },
+                {
+                  "id": "c",
+                  "label": "Le même triplet appartient aux domaines et rend vraies les trois équations.",
+                  "reviewFeedback": "Relie l'appartenance aux domaines à la vérification de chaque équation avec ce même triplet."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque inconnue conserve sa valeur lors de la vérification des trois conditions. Le nombre de valeurs écrites ne prouve pas une solution et ne permet pas d'omettre une équation. Les domaines font toujours partie du problème.",
+            "incorrect": "Retrouve le critère appris pour deux inconnues : une seule attribution doit satisfaire toutes les conditions. Ajouter une troisième quantité élargit la vérification."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réduire à deux inconnues sans oublier la première condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà réduire des systèmes à deux inconnues. Pour trois inconnues, nous choisirons deux combinaisons qui éliminent la même inconnue ; nous obtiendrons ainsi un système à deux inconnues que nous pourrons traiter avec ces méthodes. Nous retrouverons ensuite la troisième quantité et vérifierons les trois conditions initiales. La réduction successive et la récupération sont les objectifs de la partie consacrée aux trois inconnues dans la référence (Lang, 1971, pp. 57–59)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Travaillons dans les rationnels avec A : x + y + z = 9 ; B : x − y + 2z = 7 ; C : 2x + y − z = 3. Conservons A et remplaçons B par B − A : on obtient −2y + z = −2. Conservons A et remplaçons C par C − 2A : on obtient −y − 3z = −15. Dans les deux remplacements, on soustrait les membres de gauche et les membres de droite entiers ; dans 2A, tous les termes ainsi que le neuf sont multipliés par deux."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le système transformé conserve A et les deux nouvelles relations. Toute solution initiale les satisfait. Réciproquement, ajouter A à la nouvelle deuxième relation redonne B ; ajouter 2A à la nouvelle troisième redonne C. Aucun triplet n'a donc été perdu ou ajouté. Les deux relations sans x ne conservent pas, à elles seules, toute l'information : A sera nécessaire pour retrouver x. Vérifier que chaque réduction préserve les conditions évite d'élargir injustement l'ensemble des solutions (Pólya, 1957, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous résolvons −2y + z = −2 et −y − 3z = −15 avec les méthodes déjà apprises. La première donne z = 2y − 2. Substituer dans l'autre produit −y − 3(2y − 2) = −15, soit −7y + 6 = −15. Ainsi y = 3 et z = 4. A permet de retrouver x = 9 − y − z = 2. Le triplet est (2, 3, 4)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La vérification dans les équations initiales donne 2 + 3 + 4 = 9 ; 2 − 3 + 2 × 4 = 7 ; 2 × 2 + 3 − 4 = 3. Ces calculs prouvent que le triplet convient. La réversibilité des remplacements et la résolution des deux relations réduites justifient qu'aucun autre triplet ne manque. Nous ne déduisons pas cette conclusion du seul nombre de trois équations."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_una_condicion_al_reducir_tres",
+          "prompt": "Après avoir obtenu B − A et C − 2A dans cet exemple, quelles informations faut-il conserver pour décrire un système équivalent à l'initial ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_una_condicion_al_reducir_tres__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Seulement les deux nouvelles relations sans x ; on pourra alors choisir x librement.",
+                  "reviewFeedback": "Examine quelle restriction sur l'inconnue éliminée subsiste si tu supprimes la condition conservée."
+                },
+                {
+                  "id": "b",
+                  "label": "La condition A et les deux nouvelles relations, qui permettent de retrouver B et C.",
+                  "reviewFeedback": "Reconstitue les équations initiales à partir des relations conservées dans cette description."
+                },
+                {
+                  "id": "c",
+                  "label": "La condition A et une seule nouvelle relation, puisque les trois lettres apparaissent déjà.",
+                  "reviewFeedback": "La présence des lettres ne garantit pas que toutes leurs relations sont conservées ; essaie de retrouver chaque équation initiale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A relie x à y et z. Les deux autres relations préservent le reste de l'information et permettent de retrouver B et C par les opérations inverses. Supprimer une condition sans prouver qu'elle découle des autres peut admettre des triplets qui ne convenaient pas auparavant.",
+            "incorrect": "Identifie la relation qui servira à retrouver x et les informations permettant de reconstituer chaque équation initiale. Compter les lettres ne remplace pas la conservation des conditions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Former deux nouvelles relations et retrouver le triplet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le système suivant, appelons A : x + y + z = 11, B : 2x − y + z = 5 et C : x + 2y − z = 5. Les trois inconnues sont rationnelles. Conserver A permet de remplacer B par B − 2A et C par C − A. Ces deux remplacements éliminent x et laissent des relations entre y et z. Tu peux écrire ces relations sous des formes équivalentes ; le nom du champ précise l'opération à représenter."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_reducciones_con_una_condicion_conservada",
+          "prompt": "Écris l'équation issue de B − 2A et celle issue de C − A. Chaque soustraction porte sur les deux membres entiers. Conserve A, résous le système et retrouve le triplet ; pour obtenir les valeurs finales, tu peux poursuivre par la méthode valide de ton choix.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__b_menos_dos_a",
+              "type": "math_expression_input",
+              "label": "Relation équivalente à B − 2A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-3y-z=-17"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__c_menos_a",
+              "type": "math_expression_input",
+              "label": "Relation équivalente à C − A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2z=-6"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valeur de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B − 2A donne −3y − z = −17, équivalent à 3y + z = 17. C − A donne y − 2z = −6. Une méthode utilise z = 17 − 3y : y − 2(17 − 3y) = −6 conduit à 7y = 28 et y = 4. Puis z = 5 et A donne x = 2. Les équations initiales valent onze, cinq et cinq pour (2, 4, 5). Tu peux également résoudre les relations réduites par élimination.",
+            "incorrect": "Multiplie les trois termes ainsi que le onze pour former 2A. Conserve les signes dans les soustractions B − 2A et C − A. Les nouvelles relations ne déterminent que y et z ; utilise A pour retrouver x et vérifie les équations initiales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otras_rutas_conservan_las_tres_condiciones",
+          "prompt": "Pour ce même système, sélectionne toutes les méthodes qui éliminent x de deux relations et conservent assez d'informations pour retrouver les trois équations initiales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otras_rutas_conservan_las_tres_condiciones__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Conserver C, remplacer A par A − C et B par B − 2C.",
+                  "reviewFeedback": "Calcule les combinaisons indiquées et vérifie comment tu pourrais retrouver les conditions remplacées."
+                },
+                {
+                  "id": "b",
+                  "label": "Conserver A, remplacer B par B − 2A et C par C − A.",
+                  "reviewFeedback": "Examine l'élimination et la réversibilité de cette méthode en conservant la condition initiale indiquée."
+                },
+                {
+                  "id": "c",
+                  "label": "Conserver seulement B − 2A, puis choisir les autres valeurs sans autre condition.",
+                  "reviewFeedback": "Identifie les restrictions qui seraient perdues en ne conservant que cette relation."
+                },
+                {
+                  "id": "d",
+                  "label": "Utiliser une valeur différente de x dans chaque équation pour faciliter les calculs.",
+                  "reviewFeedback": "Une solution simultanée fixe un même triplet ; vérifie ce que signifie changer une composante d'une équation à l'autre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux premières méthodes conservent une condition contenant x et deux différences qui l'éliminent. Conserver C permet de retrouver A en ajoutant C à A − C, et B en ajoutant 2C à B − 2C. Conserver A permet les reconstructions déjà justifiées. Il n'existe pas de condition unique à choisir obligatoirement comme appui.",
+            "incorrect": "Vérifie quelle lettre est éliminée et comment retrouver chaque équation initiale. Un seul remplacement sans les autres conditions perd de l'information ; modifier l'attribution entre les équations ne traite plus une solution simultanée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les rationnels et une méthode choisie par toi"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'extension à trois inconnues ne change pas les règles sur les fractions ni sur les signes. On peut éliminer un dénominateur constant connu non nul en multipliant l'équation entière. Tu peux ensuite substituer ou éliminer dans les relations obtenues. Choisis quelle lettre éliminer en premier et quelles conditions conserver, sans perdre aucune exigence initiale. Les exercices à trois inconnues de la référence utilisent aussi des coefficients rationnels et l'élimination des dénominateurs (Lang, 1971, p. 59)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_terna_racional_sin_cadena",
+          "prompt": "Résous x/2 + y − z = 0, x − 2y + z = −9/2 et 2x + y + 2z = −3/2. Les trois inconnues peuvent prendre toutes les valeurs rationnelles. Écris les valeurs exactes de x, y et z ; choisis une méthode justifiable et vérifie les trois conditions initiales avec ton triplet.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_terna_racional_sin_cadena__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valeur de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une méthode multiplie la première par deux : x + 2y − 2z = 0. La soustraire de la deuxième donne −4y + 3z = −9/2 ; soustraire deux fois cette première transformée de la troisième donne −3y + 6z = −3/2. Doubler la première relation réduite et soustraire l'autre conduit à −5y = −15/2, donc y = 3/2. Puis z = 1/2 et x = −2. Les équations initiales donnent −1 + 3/2 − 1/2 = 0 ; −2 − 3 + 1/2 = −9/2 ; −4 + 3/2 + 1 = −3/2.",
+            "incorrect": "Tu peux commencer par éliminer le dénominateur deux de la première équation, mais multiplie tous ses termes et son membre de droite. Si tu choisis une autre méthode, conserve les relations utilisées. Ne change pas le signe de x et ne remplace pas les fractions par des valeurs arrondies."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un résultat négatif est normal dans ce domaine abstrait. Vérifier le triplet complète la justification des étapes ; cela ne la remplace pas. Si un calcul ne concorde pas, revois d'abord un développement, une soustraction entière ou une condition que tu aurais oubliée, au lieu de répéter tous les calculs sans rien modifier (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Détecter la perte d'une condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une réduction utile ne consiste pas à garder moins de données par commodité. Les nouvelles relations doivent préserver assez d'informations pour retrouver les conditions initiales. Écrire un triplet après un calcul correct ne prouve pas qu'il résout le système entier. Se demander si toutes les données ont été utilisées permet de repérer un point faible du raisonnement (Pólya, 1957, pp. 55–56, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_una_condicion_que_no_se_uso",
+          "prompt": "Le système est x + y + z = 6, x − y + z = 2 et 2x + y − z = 3. Une note soustrait la deuxième équation de la première, obtient 2y = 4 et y = 2 ; utilise la première pour obtenir x + z = 4 ; choisit x = 1, pose z = 3 et annonce une solution unique. Calcule les trois membres de gauche initiaux pour (1, 2, 3) et identifie la première étape qui ne justifie plus la solution complète.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x + y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x − y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "tercera",
+                  "type": "numeric",
+                  "label": "Valeur de 2x + y − z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "tercera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Soustraire les deux premières équations est invalide même si la soustraction porte sur les deux membres entiers.",
+                  "reviewFeedback": "Reconstitue la soustraction appliquée aux deux membres et distingue cette étape des décisions ultérieures."
+                },
+                {
+                  "id": "b",
+                  "label": "Choisir x sans utiliser la troisième condition laisse une restriction inappliquée ; le triplet ne satisfait pas le système complet.",
+                  "reviewFeedback": "Identifie les équations utilisées jusqu'au choix indiqué et vérifie les équations initiales avec le triplet."
+                },
+                {
+                  "id": "c",
+                  "label": "Il faut rejeter le triplet uniquement parce que ses composantes sont différentes.",
+                  "reviewFeedback": "Des lettres différentes n'imposent pas des composantes égales ou différentes ; examine les restrictions réellement indiquées."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux premières réductions sont correctes : y = 2 et x + z = 4. Mais choisir x = 1 ne tient toujours pas compte de la troisième condition. La proposition donne six et deux dans les deux premières, mais un dans la troisième, qui exige trois. L'unicité de ce choix n'avait pas non plus été justifiée. Écrire trois valeurs ne remplace pas l'utilisation de la donnée manquante.",
+            "incorrect": "Vérifie chaque équation initiale avec le même triplet avant d'accepter la conclusion. Repère l'étape qui a transformé une relation admettant encore plusieurs valeurs en un choix non justifié ; une soustraction correcte avant cette étape ne garantit pas tout ce qui suit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_terna_tras_el_diagnostico",
+          "prompt": "Résous maintenant les trois conditions initiales du diagnostic, sans accepter le choix arbitraire de la note. Écris le triplet rationnel complet par une méthode valable et vérifie-le dans les trois équations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_terna_tras_el_diagnostico__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valeur de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "5/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La relation y = 2 réduit les deux autres à x + z = 4 et 2x − z = 1. Leur somme donne 3x = 5, donc x = 5/3 et z = 7/3. Le triplet (5/3, 2, 7/3) donne 6, 2 et 3 dans les équations initiales. La troisième condition a permis de déterminer ce que les deux premières laissaient indéterminé.",
+            "incorrect": "Conserve une relation valide de la note, mais ajoute la condition manquante. Après avoir trouvé x et z, reviens à toutes les équations initiales ; ne vérifie pas seulement les deux que la proposition précédente satisfaisait déjà."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Interpréter trois quantités et revenir au contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un lot contient des perles entières de trois couleurs. x compte les rouges, y les vertes et z les bleues. Chaque perle rouge pèse un gramme, chaque verte deux grammes et chaque bleue quatre grammes. Il faut treize perles et vingt-neuf grammes au total ; il doit aussi y avoir une perle rouge de plus que de bleues. Seules quatre perles bleues sont disponibles. Le modèle suppose que les masses individuelles s'additionnent."
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici les conditions algébriques : x + y + z = 13 compte les objets ; x + 2y + 4z = 29 exprime la masse totale en grammes ; x − z = 1 exprime la différence des quantités. Les trois inconnues sont des entiers non négatifs et le stock impose z ≤ 4. Les coefficients de masse convertissent les nombres de perles en grammes avant leur addition. Nous interpréterons et résoudrons ce modèle donné, en distinguant le nombre d'objets, la masse totale et la comparaison."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_un_modelo_dado_de_tres_conteos",
+          "prompt": "Résous les trois équations du lot. Écris les nombres de perles rouges, vertes et bleues par une méthode valable. Vérifie les trois égalités, le caractère entier des quantités et la limite de quatre perles bleues.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_un_modelo_dado_de_tres_conteos__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "rojas",
+                  "type": "numeric",
+                  "label": "Nombre de perles rouges, x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "verdes",
+                  "type": "numeric",
+                  "label": "Nombre de perles vertes, y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "azules",
+                  "type": "numeric",
+                  "label": "Nombre de perles bleues, z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "rojas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "verdes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "azules": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une méthode conserve x = z + 1. Le nombre d'objets donne y = 12 − 2z. Substituer les deux dans la masse produit z + 1 + 2(12 − 2z) + 4z = 29, d'où z = 4. Puis x = 5 et y = 4. On obtient 5 + 4 + 4 = 13 perles, 5 + 8 + 16 = 29 grammes et 5 − 4 = 1. Les trois quantités sont des entiers non négatifs et z = 4 respecte la limite inclusive.",
+            "incorrect": "Tu peux commencer par comparer les rouges et les bleues, ou réduire le système autrement. Conserve les trois objectifs et la couleur associée à chaque lettre. Le candidat doit aussi respecter le stock : une égalité numérique ne supprime pas cette restriction."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_terna_correcta_puede_rebasar_un_inventario",
+          "prompt": "Dans une nouvelle commande, seule la masse totale passe à trente et un grammes. Il faut toujours treize perles, une rouge de plus que de bleues et au maximum quatre perles bleues. On propose (x, y, z) = (7, 0, 6). Vérifie les nouvelles équations et décide si cette proposition est admissible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_terna_correcta_puede_rebasar_un_inventario__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : satisfaire les trois équations permet d'utiliser plus de perles bleues que celles disponibles.",
+                  "reviewFeedback": "Vérifie le stock en plus des équations ; satisfaire les égalités ne supprime pas une limite de disponibilité."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : une quantité nulle de perles vertes est toujours exclue du domaine non négatif.",
+                  "reviewFeedback": "Consulte le domaine non négatif et le sens d'une quantité nulle avant de rejeter cette composante."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : même si le triplet satisfait les trois équations avec des quantités entières non négatives, il utilise six perles bleues alors que seules quatre sont disponibles.",
+                  "reviewFeedback": "Compare la quantité proposée de perles à la limite du stock, en conservant les égalités."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec (7, 0, 6), on compte treize perles, la masse vaut 7 + 0 + 24 = 31 grammes et la différence vaut 7 − 6 = 1. Zéro perle verte est autorisé ; la proposition échoue parce que z = 6 > 4. Cette vérification rejette le triplet à cause d'une donnée contextuelle, sans modifier ce qu'exige chaque équation.",
+            "incorrect": "Vérifie séparément les égalités et les domaines. Zéro peut exprimer l'absence d'une couleur ; dépasser le stock disponible viole une condition même si les calculs algébriques sont corrects."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Réduire à deux inconnues, retrouver la troisième et revenir aux équations initiales organise cette extension sans ajouter de méthode entièrement différente. Une autre approche peut éliminer d'abord une autre lettre si elle conserve les conditions et permet de revenir en arrière. Vérifier un triplet, justifier qu'il n'y en a pas d'autres et examiner le contexte sont des tâches liées, mais aux objectifs distincts (Lang, 1971, pp. 57–59 ; Pólya, 1957, pp. 14–15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

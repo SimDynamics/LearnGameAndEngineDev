@@ -1,0 +1,1044 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__formulas_con_datos_y_una_condicion_no_nula",
+  "title": "Formules avec données connues et condition non nulle",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Six données connues et deux inconnues"
+        },
+        {
+          "type": "paragraph",
+          "text": "La méthode d'élimination précédente permet de résoudre des systèmes avec des nombres concrets. Nous allons maintenant exprimer le même raisonnement à l'aide de lettres représentant des données connues. Dans ax + by = u et cx + dy = v, a, b, c, d, u et v sont six nombres rationnels déjà fixés ; seuls x et y sont inconnus. Par exemple, b peut valoir zéro sans que cela impose que y soit nul. Le rôle d'une lettre dépend de sa définition dans le problème."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une formule exprimée avec ces données décrit la procédure pour chaque choix autorisé. Les produits ad et bc signifient a·d et b·c. Définissons D = ad − bc : c'est la différence entre deux produits de nombres connus. La majuscule D désigne cette différence ; la minuscule d reste le coefficient de y dans la deuxième équation. Ce ne sont pas les mêmes quantités."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous utiliserons la condition D ≠ 0. Avant de diviser par D, il faut la justifier à partir des données ou la posséder comme hypothèse. Nous ne supposons pas que chacun de a, b, c et d soit non nul. Exprimer les solutions selon les données et vérifier la condition ad − bc ≠ 0 permet d'étendre l'élimination sans nécessairement diviser par un coefficient individuel (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_y_calcular_la_condicion_con_datos",
+          "prompt": "Dans 3x − 2y = 7 et x + 4y = −5, les données sont a = 3, b = −2, c = 1, d = 4, u = 7 et v = −5. Calcule ad, bc et leur différence D = ad − bc. Conserve le signe de b lors du calcul du deuxième produit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_y_calcular_la_condicion_con_datos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ad",
+                  "type": "numeric",
+                  "label": "Produit ad",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "bc",
+                  "type": "numeric",
+                  "label": "Produit bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D = ad − bc",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ad": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "bc": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "D": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "ad = 3·4 = 12 et bc = (−2)·1 = −2. Donc D = 12 − (−2) = 14. La différence est non nulle, ce qui autorise la division par D. Ne remplace pas −2 par sa valeur absolue.",
+            "incorrect": "Identifie les deux produits avant de les soustraire. La différence soustrait bc tout entier, avec son signe. D s'obtient à partir des coefficients connus et ne dépend d'aucune valeur proposée pour x ou y."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux éliminations donnent un candidat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Appelons E1 l'équation ax + by = u et E2 l'équation cx + dy = v. Multiplie E1 par d et E2 par b, puis soustrais la deuxième équation multipliée de la première. Les termes en y sont dby et bdy : ils s'annulent parce que la multiplication des rationnels est commutative. Il reste (ad − bc)x = du − bv, soit Dx = du − bv."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour obtenir l'autre coordonnée, multiplie E2 par a et E1 par c, puis soustrais cette dernière de la première : (acx + ady) − (acx + bcy) = av − cu. Les termes en x s'annulent et il reste (ad − bc)y = av − cu, ou Dy = av − cu."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_el_criterio_con_datos",
+          "prompt": "Dans ax + by = u et cx + dy = v, a, b, c, d, u et v sont des données rationnelles fixes. Utilise d fois la première moins b fois la deuxième pour éliminer y ; utilise a fois la deuxième moins c fois la première pour éliminer x. Écris D, les deux membres de droite obtenus et les formules de x et y lorsque D est non nul. Utilise uniquement les données et la définition de D ; n'ajoute pas d'hypothèse exigeant que b ou d soit non nul.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_el_criterio_con_datos__D",
+              "type": "math_expression_input",
+              "label": "Expression de la différence D",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*d-b*c"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__nx",
+              "type": "math_expression_input",
+              "label": "Membre de droite après élimination de y",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "d*u-b*v"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__ny",
+              "type": "math_expression_input",
+              "label": "Membre de droite après élimination de x",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*v-c*u"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__x",
+              "type": "math_expression_input",
+              "label": "Expression du candidat x en fonction des données",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*u-b*v)/D"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__y",
+              "type": "math_expression_input",
+              "label": "Expression du candidat y en fonction des données",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*v-c*u)/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ce sont deux conséquences des équations initiales : tout couple solution doit les satisfaire. Si D ≠ 0, tu peux diviser par D et le couple est nécessairement x = (du − bv)/D et y = (av − cu)/D. Les dénominateurs dépendent des données fixes, pas des inconnues x et y. Il faut encore vérifier que le candidat satisfait les équations initiales ; il ne suffit pas qu'il découle de leurs conséquences (Lang, 1971, pp. 53–55, 57).",
+            "incorrect": "Revois l'ordre de chaque soustraction lors de l'élimination d'une inconnue et conserve toutes les données. La division autorisée utilise D non nul ; ne suppose pas que b ou d soit non nul."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Les multiplications utilisées pour obtenir les conséquences peuvent comporter un facteur nul. Nous n'affirmons donc pas que conserver E2 avec dE1 − bE2 permet toujours de retrouver E1 : si d = 0, nous ne pourrions pas diviser par d pour revenir en arrière. Le raisonnement valable utilise ici les deux conséquences pour imposer un candidat, puis vérifie celui-ci dans les deux équations initiales."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aplicar_las_dos_cancelaciones_a_datos_fijos",
+          "prompt": "Utilise a = 2, b = −1, c = 3, d = 2, u = 1 et v = 8. Les équations initiales sont 2x − y = 1 et 3x + 2y = 8. Calcule D, les deux numérateurs du − bv et av − cu et le candidat (x, y). Évalue ensuite les deux membres de gauche initiaux avec le même couple.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "aplicar_las_dos_cancelaciones_a_datos_fijos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "nx",
+                  "type": "numeric",
+                  "label": "Numérateur du − bv",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ny",
+                  "type": "numeric",
+                  "label": "Numérateur av − cu",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur candidate de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur candidate de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 2x − y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 2y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "nx": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "ny": {
+                    "type": "numeric",
+                    "expected": "13"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "10/7"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "13/7"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 2·2 − (−1)·3 = 7. Les numérateurs sont 2·1 − (−1)·8 = 10 et 2·8 − 3·1 = 13. Le candidat est (10/7, 13/7). La vérification donne (20 − 13)/7 = 1 et (30 + 26)/7 = 8. Les deux conséquences imposent ce couple, et la vérification confirme qu'il convient : c'est l'unique solution rationnelle du système.",
+            "incorrect": "Substitue toutes les données, y compris les signes de b, u et v. Divise les deux numérateurs par le même D non nul. Une vérification doit retrouver les membres de droite initiaux, avec le même couple dans les deux équations."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la formule pour toutes les données admises"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifier quelques systèmes numériques aide à contrôler les calculs, mais ne prouve pas que la formule fonctionne pour tout choix de données. Pour le justifier en général, substitue les deux expressions candidates dans chaque équation initiale et utilise les propriétés des rationnels."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la première équation, ax + by = [a(du − bv) + b(av − cu)]/D. En développant, le numérateur est adu − abv + abv − bcu. Les termes −abv et +abv s'annulent ; il reste (ad − bc)u = Du. Puisque D ≠ 0, le quotient Du/D vaut u. La première condition est satisfaite pour toutes les données autorisées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la deuxième équation, cx + dy = [c(du − bv) + d(av − cu)]/D. Son numérateur est cdu − cbv + dav − dcu. Les termes cdu et −dcu s'annulent par commutativité ; les autres donnent (ad − bc)v = Dv. Diviser par D non nul donne v, le membre de droite de la deuxième condition."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous avons ainsi établi les deux sens : toute solution doit être le candidat obtenu et ce candidat satisfait les deux équations initiales. Cela prouve l'existence et l'unicité sous la condition D ≠ 0. La vérification générale utilise des identités valides pour les données rationnelles et la condition qui autorise la division par D (Lang, 1971, p. 57). Revoir la conclusion et le raisonnement apporte davantage que simplement répéter les calculs d'un exemple (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_la_prueba_general_de_las_comprobaciones",
+          "prompt": "Sélectionne tous les arguments valables pour justifier la formule lorsque les six données sont rationnelles et D ≠ 0. Il s'agit de tout choix de données satisfaisant cette condition, et pas seulement d'un exemple numérique.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_la_prueba_general_de_las_comprobaciones__razones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Tester la formule sur plusieurs systèmes numériques prouve à lui seul qu'elle fonctionne pour tous les choix rationnels.",
+                  "reviewFeedback": "Distingue la vérification de plusieurs choix numériques d'une justification valable pour tous les choix autorisés."
+                },
+                {
+                  "id": "b",
+                  "label": "Les deux conséquences imposent les coordonnées du candidat en divisant par D non nul.",
+                  "reviewFeedback": "Identifie le diviseur utilisé dans les conséquences et ce que l'hypothèse garantit à son sujet."
+                },
+                {
+                  "id": "c",
+                  "label": "Les identités des deux numérateurs de vérification donnent Du et Dv, donc le candidat satisfait les deux équations initiales.",
+                  "reviewFeedback": "Vérifie les identités des numérateurs et explique leur lien avec les deux conditions initiales."
+                },
+                {
+                  "id": "d",
+                  "label": "Conserver E2 avec dE1 − bE2 permet toujours de retrouver E1 en divisant par d, puisque D ≠ 0 impose d ≠ 0.",
+                  "reviewFeedback": "Examine si une différence de produits non nulle oblige ce coefficient particulier à être non nul lui aussi."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La proposition b justifie qu'aucune solution ne puisse avoir d'autres coordonnées ; c démontre que le candidat satisfait les deux conditions pour toutes les données autorisées. La proposition a ne fournit que des cas particuliers. La proposition d introduit une hypothèse absente : D peut être non nul même si d vaut zéro.",
+            "incorrect": "Distingue ce qui impose le candidat de ce qui prouve qu'il convient. Une liste finie de cas ne remplace pas une identité générale. L'hypothèse permet de diviser par D ; elle n'autorise pas automatiquement à diviser par chaque coefficient."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un coefficient individuel peut être nul"
+        },
+        {
+          "type": "paragraph",
+          "text": "La condition D ≠ 0 ne signifie pas que tous les coefficients sont non nuls. Par exemple, avec a = 0, b = 2, c = −3, d = 0, u = 5 et v = −4, les équations initiales se réduisent à 2y = 5 et −3x = −4. D = 0·0 − 2·(−3) = 6. Le couple est (4/3, 5/2), et les formules le donnent également sans diviser par a ni par d."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cet exemple explique pourquoi une méthode qui isole une inconnue en divisant par un coefficient individuel doit vérifier que celui-ci est non nul. Cette méthode peut convenir à certaines données, mais ne justifierait pas tous les choix pour lesquels D ≠ 0. Dans la formule obtenue, le seul diviseur exigé non nul est D (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_la_receta_cuando_d_es_cero",
+          "prompt": "Prends maintenant a = 3, b = −2, c = 4, d = 0, u = −1 et v = 6. Les équations initiales sont 3x − 2y = −1 et 4x = 6. Calcule D, du − bv, av − cu et le couple. Vérifie les deux membres de gauche initiaux ; l'absence de y dans la deuxième équation n'impose pas y = 0.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_la_receta_cuando_d_es_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "nx",
+                  "type": "numeric",
+                  "label": "Numérateur du − bv",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ny",
+                  "type": "numeric",
+                  "label": "Numérateur av − cu",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 3x − 2y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 4x",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "nx": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "ny": {
+                    "type": "numeric",
+                    "expected": "22"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "11/4"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 3·0 − (−2)·4 = 8. Les numérateurs sont 0·(−1) − (−2)·6 = 12 et 3·6 − 4·(−1) = 22. Donc x = 3/2 et y = 11/4. Les équations initiales donnent 9/2 − 11/2 = −1 et 4·(3/2) = 6. d vaut zéro, mais D est non nul ; la division de la formule reste permise.",
+            "incorrect": "N'essaie pas de diviser par d. Calcule la différence des produits et vérifie qu'elle n'est pas nulle. L'absence de y dans une équation ne force pas y à valoir zéro : l'autre condition continue de le relier à x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_la_receta_cuando_b_es_cero",
+          "prompt": "Utilise a = −2, b = 0, c = 3, d = 5, u = 1 et v = −4. Les équations initiales sont −2x = 1 et 3x + 5y = −4. Calcule D, le couple et les deux membres de gauche initiaux. Tu peux appliquer la formule ou utiliser une autre méthode valide en vérifiant ton résultat.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_la_receta_cuando_b_es_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de −2x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 5y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-10"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (−2)·5 − 0·3 = −10. La formule donne x = 5/(−10) = −1/2 et y = [8 − 3]/(−10) = −1/2. Dans les équations initiales, −2·(−1/2) = 1 et 3·(−1/2) + 5·(−1/2) = −4. Nous n'avons pas divisé par b. Les deux inconnues peuvent avoir la même valeur sans perdre leur sens distinct.",
+            "incorrect": "Un coefficient nul annule son terme, pas l'inconnue dans toutes les conditions. D peut être négatif tout en restant un diviseur permis. Conserve les signes et utilise le même couple dans les vérifications."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Données négatives et fractionnaires"
+        },
+        {
+          "type": "paragraph",
+          "text": "D peut être positif, négatif ou fractionnaire. Pour une égalité, diviser par un nombre négatif ne modifie pas le signe égal ; inverser le sens concerne les inégalités. Ici, nous vérifions seulement que le diviseur est non nul. Lorsque les données sont rationnelles, conserve leurs produits et quotients exacts pour pouvoir vérifier les équations initiales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux exercices suivants n'imposent pas une suite de calculs. Tu peux appliquer la formule, éliminer ou substituer, tant que tu conserves les conditions et justifies le couple. Vérifier le critère et comparer les méthodes aide à distinguer une erreur de signe d'un choix de méthode valide (Lang, 1971, pp. 37–38, 53–57 ; Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_una_diferencia_negativa",
+          "prompt": "Résous x + 3y = 4 et 2x − y = 5 dans les rationnels. Identifie a, b, c et d dans cet ordre et calcule D. Écris le couple et les deux membres de gauche initiaux. Choisis ta méthode sans arrondir.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_una_diferencia_negativa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x + 3y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 2x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "19/7"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/7"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 1·(−1) − 3·2 = −7. Les numérateurs de la formule sont −4 − 15 = −19 et 5 − 8 = −3, donnant le couple (19/7, 3/7). Les vérifications donnent (19 + 9)/7 = 4 et (38 − 3)/7 = 5. Diviser par D négatif produit un couple rationnel valide.",
+            "incorrect": "Le coefficient d vaut −1, même s'il n'est pas écrit explicitement −1y. Conserve la soustraction dans chaque numérateur et dans D. Tu peux aussi vérifier par élimination ou substitution : les méthodes valides mènent au même couple."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_datos_fraccionarios",
+          "prompt": "Résous x/2 + 2y/3 = 1 et −3x/4 + y/5 = 21/10. Calcule D avec les coefficients rationnels des équations initiales et donne le couple, ainsi que les deux membres de gauche initiaux. Tu peux éliminer les dénominateurs constants avant de résoudre, mais D est demandé pour les données initiales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_datos_fraccionarios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D pour les coefficients initiaux",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x/2 + 2y/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de −3x/4 + y/5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "3/5"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "21/10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (1/2)·(1/5) − (2/3)·(−3/4) = 1/10 + 1/2 = 3/5. Les numérateurs sont 1/5 − 7/5 = −6/5 et 21/20 + 3/4 = 9/5 ; diviser par D donne x = −2 et y = 3. Les équations initiales donnent −1 + 2 = 1 et 3/2 + 3/5 = 21/10. Transformer d'abord les équations convient aussi ; leurs nouveaux coefficients modifieraient la différence calculée pour ces formes transformées.",
+            "incorrect": "Attribue à chaque lettre son coefficient complet : a = 1/2, b = 2/3, c = −3/4 et d = 1/5. N'utilise pas les coefficients d'une version multipliée lorsqu'on demande le D initial. Vérifie les fractions dans les équations initiales."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lorsque les deux membres de droite sont nuls"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un système avec u = 0 et v = 0 est dit homogène : ses deux membres de droite sont nuls. Le couple (0, 0) satisfait toujours ax + by = 0 et cx + dy = 0, quels que soient les coefficients rationnels. Cela vérifie une solution, sans encore dire s'il en existe d'autres."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si, de plus, D ≠ 0, les deux conséquences sont Dx = 0 et Dy = 0. Diviser par D impose x = 0 et y = 0. Le couple satisfait les équations initiales et il est le seul possible. Des membres de droite nuls n'effacent pas les restrictions des équations ; leurs coefficients et leurs deux conditions simultanées restent importants (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "justificar_el_homogeneo_sin_borrar_condiciones",
+          "prompt": "Considère 3x + 2y = 0 et x − 2y = 0. Calcule D et sélectionne toutes les affirmations valides sur ce système rationnel. Distingue la vérification d'un couple du raisonnement qui exclut tous les autres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "justificar_el_homogeneo_sin_borrar_condiciones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Différence D de ce système homogène",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "justificar_el_homogeneo_sin_borrar_condiciones__razones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "D non nul fait que Dx = 0 et Dy = 0 imposent la nullité des deux coordonnées.",
+                  "reviewFeedback": "Relie la condition sur la différence de produits aux divisions employées dans cette affirmation."
+                },
+                {
+                  "id": "b",
+                  "label": "Puisque les membres de droite sont nuls, tous les couples rationnels satisfont les deux équations.",
+                  "reviewFeedback": "Des membres de droite nuls ne suppriment pas les restrictions des membres de gauche ; vérifie un couple concret."
+                },
+                {
+                  "id": "c",
+                  "label": "Le couple (0, 0) satisfait les deux équations initiales lorsqu'on l'y substitue.",
+                  "reviewFeedback": "Substitue le couple entier dans les deux équations initiales et précise ce que cette vérification prouve."
+                },
+                {
+                  "id": "d",
+                  "label": "La substitution du couple (0, 0), à elle seule, prouve qu'aucun autre couple ne peut convenir.",
+                  "reviewFeedback": "Distingue vérifier un couple et disposer d'un raisonnement qui exclut tous les autres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 3·(−2) − 2·1 = −8. La proposition a exclut en général les autres coordonnées grâce à D non nul ; c vérifie l'existence du couple. La proposition b confond membres de droite nuls et absence de conditions. La proposition d déduit l'unicité d'une vérification particulière, alors que cela exige un autre argument.",
+            "incorrect": "Calcule D en conservant son signe. Vérifier (0, 0) démontre que le couple convient ; pour prouver qu'il est unique, nous utilisons les conséquences et la division par D non nul."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Transposer les données sans changer la condition de division"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trasladar_datos_sin_perder_la_condicion_no_nula",
+          "prompt": "Les données rationnelles a, b, c, d, u et v satisfont ad − bc ≠ 0. Les conditions sont maintenant ax + by = u + v et cx + dy = u − v. Construis une formule pour x et une pour y, valides pour toutes ces données autorisées. Conserve chaque membre de droite entier lors de la combinaison des équations. Tu peux utiliser D uniquement avec la définition D = ad − bc et toute forme équivalente qui préserve le même domaine.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__x",
+              "type": "math_expression_input",
+              "label": "Formule de x pour les nouveaux membres de droite",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*(u+v)-b*(u-v))/D"
+              }
+            },
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__y",
+              "type": "math_expression_input",
+              "label": "Formule de y pour les nouveaux membres de droite",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*(u-v)-c*(u+v))/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Tu as conservé u + v et u − v en entier. Avec D = ad − bc ≠ 0, le candidat est x = [d(u + v) − b(u − v)]/D et y = [a(u − v) − c(u + v)]/D. En le substituant dans la première équation initiale, le numérateur se réduit à D(u + v) ; dans la seconde, à D(u − v). Diviser par D retrouve les deux membres de droite et confirme que le couple convient. Les deux conséquences imposent ce même couple. Il n'a pas fallu supposer b ≠ 0 ni d ≠ 0.",
+            "incorrect": "Conserve chaque membre de droite entier lors des multiplications et soustractions. Revois les signes et la formule correspondant à chaque inconnue ; une annulation formelle n'autorise pas à ajouter des diviseurs qui pourraient être nuls pour les données permises."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si D est nul, revenir aux équations initiales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque D = 0, les formules avec quotient ne sont pas définies. Un numérateur lui aussi nul ne transforme pas 0/0 en un nombre. Voir D = 0 ne suffit pas non plus pour décider que le système n'a aucune solution. Il faut revenir aux conditions initiales et les examiner à l'aide d'opérations valides, comme dans la méthode d'élimination précédente (Lang, 1971, pp. 54–55, 57)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si une combinaison réversible, avec une équation conservée, laisse 0 = 0, il faut encore satisfaire cette équation. Si elle rend 0 égal à un nombre non nul, il existe une contradiction. Et si les deux équations initiales sont des identités, tous les couples du domaine conviennent. Ce sont des cas concrets : nous ne remplaçons pas l'analyse des équations initiales par une nouvelle règle universelle pour D = 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_originales_cuando_la_receta_no_se_define",
+          "prompt": "Classe ces trois systèmes dans les rationnels. A : 3x − 2y = 4 et 6x − 4y = 8. B : 3x − 2y = 4 et 6x − 4y = 9. C : 0x + 0y = 0 et 0x + 0y = 0. Pour A et B, soustrais deux fois la première équation de la deuxième et conserve la première. Pour C, examine directement les deux identités. N'attribue aucune valeur à un quotient avec D = 0.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_originales_cuando_la_receta_no_se_define__categorias",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Couples satisfaisant les deux équations initiales de A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un seul couple rationnel",
+                      "reviewFeedback": "Vérifie si les deux équations de A distinguent un couple rationnel unique. L'unicité exige d'examiner la réduction et la relation conservée."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Examine ton affirmation d'absence de solutions pour A à l'aide de la réduction indiquée. Vérifie si un couple pourrait satisfaire la condition finale et la première relation."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples, mais pas tous les couples rationnels",
+                      "reviewFeedback": "Justifie la multiplicité proposée pour A sans la confondre avec une admission universelle. Examine les restrictions encore imposées par les deux équations initiales."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "Tous les couples rationnels",
+                      "reviewFeedback": "Vérifie ton affirmation universelle pour A avec les équations initiales. La réduction n'autorise pas à supprimer une relation qui doit toujours être satisfaite."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Couples satisfaisant les deux équations initiales de B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un seul couple rationnel",
+                      "reviewFeedback": "Vérifie si B admet un couple et s'il pourrait être déterminé de façon unique. Conserve la première relation pour interpréter la condition obtenue après élimination."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Justifie l'absence que tu affirmes pour B en examinant l'égalité réduite. Vérifie que le raisonnement conserve les solutions des deux équations initiales."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples, mais pas tous les couples rationnels",
+                      "reviewFeedback": "Vérifie si B permet une famille de couples satisfaisant les deux équations initiales. La disparition des termes pendant l'élimination doit être interprétée, et non prise automatiquement pour une liberté."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "Tous les couples rationnels",
+                      "reviewFeedback": "Examine l'exigence selon laquelle tout couple rationnel satisferait B. Vérifie les deux égalités initiales sans remplacer leurs conditions par une classification supposée."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Couples satisfaisant les deux équations initiales de C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un seul couple rationnel",
+                      "reviewFeedback": "Examine quelles informations des deux conditions de C pourraient distinguer un couple unique. Justifie cette unicité par les équations, pas avec un candidat isolé."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Réexamine l'absence de solutions proposée pour C en évaluant ses deux conditions. Vérifie leurs résultats avant d'exclure tous les couples du domaine."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples, mais pas tous les couples rationnels",
+                      "reviewFeedback": "Justifie la restriction partielle affirmée par ton choix pour C. Examine quels couples seraient exclus par ses équations initiales et pourquoi."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "Tous les couples rationnels",
+                      "reviewFeedback": "Vérifie l'affirmation universelle pour C en examinant comment les deux membres dépendent des inconnues. Le raisonnement doit couvrir tous les couples rationnels."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "todos_pares"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans A et B, D = 3·(−4) − (−2)·6 = 0. A laisse 0 = 0 avec 3x − 2y = 4 : chaque y rationnel détermine x = (4 + 2y)/3, mais (0, 0) ne convient pas ; il existe une infinité de couples, mais pas tous. B laisse 0 = 1 : aucun couple ne satisfait les deux équations. Dans C, D vaut aussi zéro et les deux équations initiales sont des identités : tous les couples rationnels conviennent. Le même D nul ne détermine pas, à lui seul, lequel de ces ensembles apparaît.",
+            "incorrect": "Ne divise pas par D. Dans A et B, conserve la première équation lorsque tu combines ; une identité n'efface pas sa restriction. Dans C, il ne reste aucune relation non triviale entre les lettres. Classe les couples admis par les deux équations initiales, et non le résultat d'une formule indéfinie."
+          }
+        }
+      ]
+    }
+  ]
+}

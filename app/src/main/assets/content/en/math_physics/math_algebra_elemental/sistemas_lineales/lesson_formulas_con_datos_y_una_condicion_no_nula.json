@@ -1,0 +1,1044 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__formulas_con_datos_y_una_condicion_no_nula",
+  "title": "Formulas with Known Data and a Nonzero Condition",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Six Known Values and Two Unknowns"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous elimination method solves systems with specific numbers. Now we will express the same reasoning with letters representing known data. In ax + by = u and cx + dy = v, a, b, c, d, u, and v are six fixed rational numbers; only x and y are unknowns. For example, b may be zero without implying that y is zero. A letter's role depends on how it was defined in the problem."
+        },
+        {
+          "type": "paragraph",
+          "text": "A formula written in terms of these data describes what to do for every permitted choice of them. The products ad and bc mean a·d and b·c. Define D = ad − bc: it is the difference between two products of known numbers. Uppercase D names that difference; lowercase d remains the coefficient of y in the second equation. They are not the same quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "The condition we will use is D ≠ 0. Before dividing by D, it must be justified from the data or supplied as an assumption. We are not assuming that each of a, b, c, and d is nonzero. Expressing solutions in terms of data and checking the condition ad − bc ≠ 0 extends elimination without necessarily dividing by an individual coefficient (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_y_calcular_la_condicion_con_datos",
+          "prompt": "In 3x − 2y = 7 and x + 4y = −5, the data are a = 3, b = −2, c = 1, d = 4, u = 7, and v = −5. Calculate ad, bc, and their difference D = ad − bc. Preserve the sign of b when calculating the second product.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_y_calcular_la_condicion_con_datos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ad",
+                  "type": "numeric",
+                  "label": "Product ad",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "bc",
+                  "type": "numeric",
+                  "label": "Product bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D = ad − bc",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ad": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "bc": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "D": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "ad = 3·4 = 12 and bc = (−2)·1 = −2. Thus D = 12 − (−2) = 14. The difference is nonzero, so division by D will be allowed. Do not replace −2 with its absolute value.",
+            "incorrect": "Identify both products before subtracting them. The difference subtracts all of bc, including its sign. D is obtained from the known coefficients and does not depend on any proposed values of x or y."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Eliminations Yield a Candidate"
+        },
+        {
+          "type": "paragraph",
+          "text": "Call E1 the equation ax + by = u and E2 the equation cx + dy = v. Multiply E1 by d and E2 by b, then subtract the second scaled equation from the first. The terms containing y are dby and bdy: they cancel because multiplication of rational numbers is commutative. This leaves (ad − bc)x = du − bv, that is, Dx = du − bv."
+        },
+        {
+          "type": "paragraph",
+          "text": "To obtain the other coordinate, multiply E2 by a and E1 by c, then subtract the latter from the former: (acx + ady) − (acx + bcy) = av − cu. The terms containing x cancel, leaving (ad − bc)y = av − cu, or Dy = av − cu."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_el_criterio_con_datos",
+          "prompt": "In ax + by = u and cx + dy = v, a, b, c, d, u, and v are fixed rational data. Use d times the first equation minus b times the second to eliminate y; use a times the second minus c times the first to eliminate x. Enter D, the two resulting right-hand sides, and the formulas for x and y when D is nonzero. Use only the data and the definition of D; do not add an assumption that b or d is nonzero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_el_criterio_con_datos__D",
+              "type": "math_expression_input",
+              "label": "Expression for the difference D",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*d-b*c"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__nx",
+              "type": "math_expression_input",
+              "label": "Right-hand side after eliminating y",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "d*u-b*v"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__ny",
+              "type": "math_expression_input",
+              "label": "Right-hand side after eliminating x",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*v-c*u"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__x",
+              "type": "math_expression_input",
+              "label": "Expression for the candidate x in terms of the data",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*u-b*v)/D"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__y",
+              "type": "math_expression_input",
+              "label": "Expression for the candidate y in terms of the data",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*v-c*u)/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "These are two consequences of the originals: every solution pair must satisfy them. If D ≠ 0, you can divide by D, forcing the pair to have x = (du − bv)/D and y = (av − cu)/D. The denominators depend on fixed data, not on the unknowns x and y. We must still check that this candidate satisfies the original equations; being derived from their consequences is not enough (Lang, 1971, pp. 53–55, 57).",
+            "incorrect": "Review the order of each subtraction when eliminating an unknown and retain all the data. The authorized division uses nonzero D; do not assume b or d is nonzero."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "The multiplications used to obtain consequences may include a zero factor. For that reason, we do not claim that retaining E2 together with dE1 − bE2 always allows us to recover E1: if d = 0, we could not divide by d to reverse the step. The valid reasoning here uses both consequences to force a candidate and then checks it in both originals."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aplicar_las_dos_cancelaciones_a_datos_fijos",
+          "prompt": "Use a = 2, b = −1, c = 3, d = 2, u = 1, and v = 8. The original equations are 2x − y = 1 and 3x + 2y = 8. Calculate D, both numerators du − bv and av − cu, and the candidate (x, y). Then evaluate both original left-hand sides using the same pair.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "aplicar_las_dos_cancelaciones_a_datos_fijos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "nx",
+                  "type": "numeric",
+                  "label": "Numerator du − bv",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ny",
+                  "type": "numeric",
+                  "label": "Numerator av − cu",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Candidate value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Candidate value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of 2x − y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of 3x + 2y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "nx": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "ny": {
+                    "type": "numeric",
+                    "expected": "13"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "10/7"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "13/7"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 2·2 − (−1)·3 = 7. The numerators are 2·1 − (−1)·8 = 10 and 2·8 − 3·1 = 13. The candidate is (10/7, 13/7). Checking gives (20 − 13)/7 = 1 and (30 + 26)/7 = 8. Both consequences force that pair, and checking confirms that it works: it is the system's unique rational solution.",
+            "incorrect": "Substitute the complete data, including the signs of b, u, and v. Divide both numerators by the same nonzero D. A check must reproduce the original right-hand sides, using the same pair in both equations."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Checking the Formula for Every Permitted Set of Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "Testing a few numerical systems helps us review the arithmetic, but does not prove that the formula works for every choice of data. To justify it in general, substitute both candidate expressions into each original equation and use properties of rational numbers."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the first equation, ax + by = [a(du − bv) + b(av − cu)]/D. Distributing gives the numerator adu − abv + abv − bcu. The terms −abv and +abv cancel, leaving (ad − bc)u = Du. Since D ≠ 0, the quotient Du/D equals u. The first condition holds for every permitted choice of data."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the second equation, cx + dy = [c(du − bv) + d(av − cu)]/D. Its numerator is cdu − cbv + dav − dcu. The terms cdu and −dcu cancel by commutativity; the remaining terms give (ad − bc)v = Dv. Dividing by nonzero D yields v, the right-hand side required by the second condition."
+        },
+        {
+          "type": "paragraph",
+          "text": "This completes both directions: any solution must be the derived candidate, and that candidate satisfies both original equations. This proves existence and uniqueness under D ≠ 0. The general verification uses identities valid for rational data, together with the condition that permits division by D (Lang, 1971, p. 57). Reviewing the conclusion and reasoning accomplishes more than merely repeating one example's calculations (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_la_prueba_general_de_las_comprobaciones",
+          "prompt": "Select all arguments valid for justifying the formula when all six data values are rational and D ≠ 0. This concerns every choice of data satisfying that condition, not just a numerical example.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_la_prueba_general_de_las_comprobaciones__razones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Testing the formula on several numerical systems proves by itself that it works for every rational choice.",
+                  "reviewFeedback": "Distinguish testing several numerical choices from justifying a formula for all permitted choices."
+                },
+                {
+                  "id": "b",
+                  "label": "Both consequences force the candidate's coordinates when divided by nonzero D.",
+                  "reviewFeedback": "Identify the divisor used in the consequences and what the hypothesis guarantees about it."
+                },
+                {
+                  "id": "c",
+                  "label": "The identities for both verification numerators produce Du and Dv, so the candidate satisfies both original equations.",
+                  "reviewFeedback": "Check the numerator identities and explain how they relate to both original conditions."
+                },
+                {
+                  "id": "d",
+                  "label": "Retaining E2 together with dE1 − bE2 always allows recovery of E1 by dividing by d, because D ≠ 0 forces d ≠ 0.",
+                  "reviewFeedback": "Examine whether a nonzero difference of products requires this particular coefficient to be nonzero too."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Option b establishes that no solution can have other coordinates; c shows that the candidate satisfies both conditions for every permitted choice of data. Option a provides only particular examples. Option d introduces an assumption we do not have: D may be nonzero even when d is zero.",
+            "incorrect": "Separate what forces the candidate from what proves that it works. A finite list of cases does not replace a general identity. The hypothesis permits dividing by D; it does not automatically authorize division by every coefficient."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Individual Coefficient May Be Zero"
+        },
+        {
+          "type": "paragraph",
+          "text": "The condition D ≠ 0 does not mean that every coefficient is nonzero. For example, with a = 0, b = 2, c = −3, d = 0, u = 5, and v = −4, the original equations reduce to 2y = 5 and −3x = −4. Here D = 0·0 − 2·(−3) = 6. The pair is (4/3, 5/2), and the formulas also produce it without dividing by a or d."
+        },
+        {
+          "type": "paragraph",
+          "text": "This example explains why a method that isolates an unknown by dividing by an individual coefficient must verify that the coefficient is nonzero. Such a method may be valid for some data, but it would not justify every choice with D ≠ 0. In the derived formula, D is the only divisor we require to be nonzero (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_la_receta_cuando_d_es_cero",
+          "prompt": "Now take a = 3, b = −2, c = 4, d = 0, u = −1, and v = 6. The original equations are 3x − 2y = −1 and 4x = 6. Calculate D, du − bv, av − cu, and the pair. Check both original left-hand sides; the absence of y in the second equation does not force y = 0.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_la_receta_cuando_d_es_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "nx",
+                  "type": "numeric",
+                  "label": "Numerator du − bv",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ny",
+                  "type": "numeric",
+                  "label": "Numerator av − cu",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of 3x − 2y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of 4x",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "nx": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "ny": {
+                    "type": "numeric",
+                    "expected": "22"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "11/4"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 3·0 − (−2)·4 = 8. The numerators are 0·(−1) − (−2)·6 = 12 and 3·6 − 4·(−1) = 22. Therefore x = 3/2 and y = 11/4. The originals give 9/2 − 11/2 = −1 and 4·(3/2) = 6. Although d is zero, D is not, so the formula's division remains valid.",
+            "incorrect": "Do not try dividing by d. Calculate the difference of products and verify it is nonzero. An equation without y does not force y to be zero: the other condition still relates it to x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_la_receta_cuando_b_es_cero",
+          "prompt": "Use a = −2, b = 0, c = 3, d = 5, u = 1, and v = −4. The original equations are −2x = 1 and 3x + 5y = −4. Calculate D, the pair, and both original left-hand sides. You may apply the formula or use another valid method that you verify.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_la_receta_cuando_b_es_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of −2x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of 3x + 5y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-10"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (−2)·5 − 0·3 = −10. The formula gives x = 5/(−10) = −1/2 and y = [8 − 3]/(−10) = −1/2. In the originals, −2·(−1/2) = 1 and 3·(−1/2) + 5·(−1/2) = −4. We did not divide by b. Both unknowns may take the same value while retaining their distinct meanings.",
+            "incorrect": "A zero coefficient removes its term, not the unknown from every condition. D may be negative and still be an allowed divisor. Keep the signs and use the same pair when checking."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negative and Fractional Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "D can be positive, negative, or fractional. For an equation, dividing by a negative number does not change the equals sign; reversing an inequality is a different matter. Here we need only verify that the divisor is nonzero. When the data are rational numbers, preserve their exact products and quotients so you can check the originals."
+        },
+        {
+          "type": "paragraph",
+          "text": "The next two exercises do not prescribe a sequence of calculations. You may apply the formula, eliminate, or substitute, provided you preserve the conditions and justify the pair. Checking the criterion and comparing methods helps distinguish a sign error from a valid choice of method (Lang, 1971, pp. 37–38, 53–57; Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_una_diferencia_negativa",
+          "prompt": "Solve x + 3y = 4 and 2x − y = 5 over the rational numbers. Identify a, b, c, and d in that order and calculate D. Enter the pair and both original left-hand sides. Choose your method without rounding.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_una_diferencia_negativa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D = ad − bc",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of x + 3y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of 2x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "19/7"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/7"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 1·(−1) − 3·2 = −7. The numerators in the formula are −4 − 15 = −19 and 5 − 8 = −3, giving the pair (19/7, 3/7). Checking yields (19 + 9)/7 = 4 and (38 − 3)/7 = 5. Dividing by negative D gives a valid rational pair.",
+            "incorrect": "The coefficient d is −1, even though it is not explicitly written as −1y. Preserve the subtraction in each numerator and in D. You can also check by elimination or substitution: valid methods lead to the same pair."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_datos_fraccionarios",
+          "prompt": "Solve x/2 + 2y/3 = 1 and −3x/4 + y/5 = 21/10. Calculate D using the rational coefficients of the original equations and give the pair and both original left-hand sides. You may clear constant denominators before solving, but D is requested for the original data.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_datos_fraccionarios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D for the original coefficients",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of x/2 + 2y/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of −3x/4 + y/5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "3/5"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "21/10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (1/2)·(1/5) − (2/3)·(−3/4) = 1/10 + 1/2 = 3/5. The numerators are 1/5 − 7/5 = −6/5 and 21/20 + 3/4 = 9/5; dividing by D gives x = −2 and y = 3. The originals yield −1 + 2 = 1 and 3/2 + 3/5 = 21/10. Transforming the equations beforehand is also valid; the new coefficients would change the difference calculated for those transformed equations.",
+            "incorrect": "Assign the complete coefficient to each letter: a = 1/2, b = 2/3, c = −3/4, and d = 1/5. Do not use the coefficients of a scaled version when the original D is requested. Check the fractions in the original equations."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "When Both Right-Hand Sides Are Zero"
+        },
+        {
+          "type": "paragraph",
+          "text": "A system with u = 0 and v = 0 is called homogeneous: both right-hand sides are zero. The pair (0, 0) always satisfies ax + by = 0 and cx + dy = 0, regardless of the rational coefficients. This verifies one solution; it does not yet tell us whether others exist."
+        },
+        {
+          "type": "paragraph",
+          "text": "If D ≠ 0 as well, both consequences become Dx = 0 and Dy = 0. Dividing by D forces x = 0 and y = 0. The pair satisfies the original equations and is the only one that can. Zero right-hand sides do not erase the restrictions of the equations; their coefficients and both simultaneous conditions still matter (Lang, 1971, p. 57)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "justificar_el_homogeneo_sin_borrar_condiciones",
+          "prompt": "Consider 3x + 2y = 0 and x − 2y = 0. Calculate D and select every valid statement about this rational system. Distinguish checking one pair from the reasoning that excludes all other pairs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "justificar_el_homogeneo_sin_borrar_condiciones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Difference D of this homogeneous system",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "justificar_el_homogeneo_sin_borrar_condiciones__razones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Nonzero D makes Dx = 0 and Dy = 0 force both coordinates to be zero.",
+                  "reviewFeedback": "Relate the condition on the difference of products to the divisions used in this statement."
+                },
+                {
+                  "id": "b",
+                  "label": "Because the right-hand sides are zero, all rational pairs satisfy both equations.",
+                  "reviewFeedback": "Zero right-hand sides do not remove restrictions on the left-hand sides; check a specific pair."
+                },
+                {
+                  "id": "c",
+                  "label": "The pair (0, 0) satisfies both originals when substituted into them.",
+                  "reviewFeedback": "Substitute the entire pair into both originals and state what that check establishes."
+                },
+                {
+                  "id": "d",
+                  "label": "Substituting the pair (0, 0) alone proves that no other pair can work.",
+                  "reviewFeedback": "Distinguish checking a pair from having a proof that excludes all others."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = 3·(−2) − 2·1 = −8. Option a excludes other coordinates in general using nonzero D; c verifies that the pair exists. Option b confuses zero right-hand sides with absent conditions. Option d attributes a uniqueness claim to a single check, but that claim requires another argument.",
+            "incorrect": "Calculate D with its sign. Checking (0, 0) proves that pair works; to prove it is the only one, use the consequences and division by nonzero D."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Transferring the Data Without Changing the Division Requirement"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trasladar_datos_sin_perder_la_condicion_no_nula",
+          "prompt": "The rational data a, b, c, d, u, and v satisfy ad − bc ≠ 0. Now the conditions are ax + by = u + v and cx + dy = u − v. Construct a formula for x and one for y, valid for all those permitted data. Preserve each entire right-hand side when combining equations. You may use D only with the definition D = ad − bc, and any equivalent form that maintains the same domain.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__x",
+              "type": "math_expression_input",
+              "label": "Formula for x with the new right-hand sides",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*(u+v)-b*(u-v))/D"
+              }
+            },
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__y",
+              "type": "math_expression_input",
+              "label": "Formula for y with the new right-hand sides",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*(u-v)-c*(u+v))/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "You kept u + v and u − v intact. With D = ad − bc ≠ 0, the candidate is x = [d(u + v) − b(u − v)]/D and y = [a(u − v) − c(u + v)]/D. Substituting it into the first original equation reduces the numerator to D(u + v); in the second, to D(u − v). Dividing by D recovers both right-hand sides and confirms the pair works. The two consequences force the same pair. There was no need to assume b ≠ 0 or d ≠ 0.",
+            "incorrect": "Preserve each entire right-hand side when multiplying and subtracting. Review the signs and which formula corresponds to each unknown; a formal cancellation does not justify adding divisors that might be zero for permitted data."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "If D Is Zero, Return to the Original Equations"
+        },
+        {
+          "type": "paragraph",
+          "text": "When D = 0, the quotient formulas are undefined. A numerator that is also zero does not turn 0/0 into a number. Nor is D = 0 alone enough to decide that the system has no solutions. You must return to the original conditions and examine them through valid operations, as in the previous elimination method (Lang, 1971, pp. 54–55, 57)."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a reversible combination together with a retained equation leaves 0 = 0, that equation must still be satisfied. If it leaves 0 equal to a nonzero number, there is a contradiction. And if both original equations are identities, every pair in the domain works. These are specific cases: we are not replacing the analysis of the originals with a new universal rule for D = 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_originales_cuando_la_receta_no_se_define",
+          "prompt": "Classify these three systems over the rational numbers. A: 3x − 2y = 4 and 6x − 4y = 8. B: 3x − 2y = 4 and 6x − 4y = 9. C: 0x + 0y = 0 and 0x + 0y = 0. For A and B, subtract twice the first equation from the second and retain the first. For C, examine both identities directly. Do not assign a value to a quotient with D = 0.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_originales_cuando_la_receta_no_se_define__categorias",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Pairs satisfying both original equations of A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Exactly one rational pair",
+                      "reviewFeedback": "Check whether A's two equations distinguish a single rational pair. Uniqueness requires examining the reduction and the retained relation."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Examine your claim of no solution for A using the specified reduction. Check whether any pair could satisfy both the final condition and the first relation."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many pairs, but not all rational pairs",
+                      "reviewFeedback": "Justify the proposed multiplicity in A without confusing it with universal acceptance. Examine which restrictions both originals still impose."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "All rational pairs",
+                      "reviewFeedback": "Test your universal claim for A with the original equations. Reduction does not permit removing a relation that must still be satisfied."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Pairs satisfying both original equations of B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Exactly one rational pair",
+                      "reviewFeedback": "Check whether B admits a pair and whether it could be uniquely determined. Retain the first relation while interpreting the eliminated condition."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Justify the claimed absence for B by examining the reduced equality. Check that the reasoning preserves the solutions of both originals."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many pairs, but not all rational pairs",
+                      "reviewFeedback": "Review whether B permits a family of pairs satisfying both originals. Disappearing terms during elimination must be interpreted rather than assumed to mean freedom."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "All rational pairs",
+                      "reviewFeedback": "Examine the requirement that every rational pair satisfy B. Check both original equalities without replacing them with an assumed classification."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Pairs satisfying both original equations of C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Exactly one rational pair",
+                      "reviewFeedback": "Examine what information in both conditions of C could identify a unique pair. Justify uniqueness using the equations, not an isolated candidate."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Review the proposed absence for C by evaluating both its conditions. Check their results before excluding all pairs from the domain."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many pairs, but not all rational pairs",
+                      "reviewFeedback": "Justify the partial restriction claimed by your choice for C. Examine which pairs its original equations would exclude and why."
+                    },
+                    {
+                      "id": "todos_pares",
+                      "label": "All rational pairs",
+                      "reviewFeedback": "Verify the universal claim for C by examining how both sides depend on the unknowns. The reasoning must cover any rational pair."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "todos_pares"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For A and B, D = 3·(−4) − (−2)·6 = 0. A leaves 0 = 0 together with 3x − 2y = 4: every rational y determines x = (4 + 2y)/3, but (0, 0) does not work; there are infinitely many pairs, but not all. B leaves 0 = 1: no pair satisfies both. In C, D is also zero and both original equations are identities: all rational pairs work. The same zero D alone does not determine which of these solution sets occurs.",
+            "incorrect": "Do not divide by D. For A and B, retain the first equation when combining; an identity does not erase its restriction. In C, no nontrivial relation between the letters remains. Classify pairs allowed by both originals, not the result of an undefined formula."
+          }
+        }
+      ]
+    }
+  ]
+}
