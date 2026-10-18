@@ -1,0 +1,577 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__objetivos_dependencias_y_enlace",
+  "title": "Cibles, dépendances et édition de liens",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un programme a besoin de ses définitions et d'un résultat attendu"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le premier cours, tu as construit des programmes clients utilisant un en-tête et une implémentation dans un autre fichier. Dans l'exercice CMake précédent, tu as décrit une cible avec un seul fichier source. Nous allons maintenant réunir ces acquis : conserver l'interface et le client, construire une bibliothèque locale et relier son produit à l'exécutable. Nous n'ajouterons ni classes ni pointeurs pour résoudre un besoin de construction."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction faltan_unidades calcule le nombre d'unités manquantes pour atteindre la quantité nécessaire. Si la quantité disponible suffit, elle renvoie zéro ; sinon, elle renvoie la différence positive. Son domaine admet disponibles et necesarias entre 0 et 30 inclus. Le résultat est lui aussi compris entre 0 et 30. Elle ne modifie aucune donnée extérieure et n'affiche rien. Le client décide des appels et de la sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcule d'abord un oracle indépendant. Ce listing réunit temporairement la fonction et le client dans un même fichier source pour étudier le comportement. Nous répartirons ensuite la même fonction entre en-tête et implémentation ; cette séparation ne modifie pas son contrat. Écris toute la sortie avec deux séparateurs deux-points, sans saut de ligne final."
+        },
+        {
+          "type": "output_prediction",
+          "id": "multi_oraculo_antes_del_proyecto",
+          "language": "cpp",
+          "question": "Quelle sortie ce programme produit-il ?",
+          "code": "#include <iostream>\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n",
+          "answers": [
+            "3:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Il manque trois unités au premier appel. À l'égalité et lorsque le stock suffit, il en manque zéro. Le programme affiche les trois résultats dans cet ordre ; il faudra également confronter une construction réussie à ce contrat.",
+          "reviewFeedback": "Distingue les appels qui se terminent dans la branche conditionnelle de ceux qui atteignent la soustraction. Calcule chaque valeur renvoyée avant de placer les caractères insérés par cout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'en-tête décrit les appels ; l'implémentation fournit le corps"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous conserverons les trois fichiers C++ dans le même répertoire de sources. faltantes.h contient la déclaration commune ; faltantes.cpp l'inclut et définit la fonction ; main.cpp inclut l'en-tête et utilise la fonction. La garde d'inclusion et la concordance entre déclaration et définition reprennent le premier cours. Séparer l'interface du corps permet au client de dépendre des appels convenus (Kernighan & Pike, 1999, pp. 103–106)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Fichier faltantes.h :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef PRACTICA_FALTANTES_H\n#define PRACTICA_FALTANTES_H\n\n// Domaine : 0 <= disponibles <= 30 et 0 <= necesarias <= 30.\nint faltan_unidades(int disponibles, int necesarias);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fichier faltantes.cpp :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"faltantes.h\"\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fichier main.cpp :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"faltantes.h\"\n#include <iostream>\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors de la compilation de main.cpp, #include incorpore la déclaration nécessaire à la vérification des appels. Il n'incorpore pas automatiquement faltantes.cpp ni son code objet. Compiler le client et fournir la définition à l'édition de liens sont deux besoins différents. Séparer les fichiers ne masque pas physiquement l'implémentation et ne protège pas les données à lui seul."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_declaracion_no_aporta_el_cuerpo",
+          "question": "main.cpp inclut faltantes.h, qui ne contient que la déclaration présentée. Que fournit cette inclusion lors de la compilation du client ?",
+          "options": [
+            "La signature de la fonction pour vérifier les appels ; sa définition doit encore participer à la construction.",
+            "La signature et la sélection automatique de faltantes.cpp comme source de toute cible utilisant l'en-tête.",
+            "La signature et le code objet de faltantes.cpp, même si cette source n'a pas été compilée."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'en-tête déclare l'interface. Le corps se trouve dans une autre source et son code doit être produit et intégré lors de la construction. Inclure une déclaration ne sélectionne pas l'implémentation et ne génère pas son produit.",
+          "reviewFeedback": [
+            "Identifie les informations sur l'appel dont dispose le compilateur après lecture de l'en-tête. Distingue-les des artefacts à réunir lors de la construction.",
+            "Distingue l'inclusion textuelle de l'en-tête du choix des entrées d'une cible. Explique où serait enregistrée la sélection automatique des sources que tu supposes.",
+            "Examine le contenu de l'en-tête et les étapes nécessaires pour obtenir le code objet d'une implémentation. Vérifie la provenance du produit que tu attribues au texte inclus."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Donner une cible propre à l'implémentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "add_library(faltantes STATIC faltantes.cpp) définit une cible de bibliothèque statique nommée faltantes. Sa construction compile la source d'implémentation et rassemble le code objet dans un fichier de bibliothèque. Ce fichier sert d'entrée à l'édition de liens : ce n'est pas un programme exécutable comme revisar. add_executable(revisar main.cpp) définit la cible du client (Scott, 2025, pp. 18–21)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous choisissons ici STATIC pour étudier un produit statique et une dépendance locale contrôlée. Cela ne signifie pas que toutes les bibliothèques doivent être statiques : CMake prend en charge d'autres types de bibliothèques et d'autres choix selon le projet (Scott, 2025, pp. 18–19, 23). Le nom du fichier de bibliothèque varie selon la plateforme ; nous utiliserons le nom de la cible pour décrire la relation, sans deviner une extension ni un chemin."
+        },
+        {
+          "type": "paragraph",
+          "text": "faltantes.cpp et main.cpp sont des unités de traduction distinctes. L'en-tête est lu dans chacune. Tu peux répertorier un en-tête parmi les fichiers d'une cible pour organiser le projet ; cela ne transforme pas un en-tête contenant des déclarations en unité de traduction compilable et ne remplace pas la source qui contient la définition (Scott, 2025, p. 179). Ici, nous ne répertorions que les fichiers .cpp dans add_library et add_executable."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_producto_de_la_biblioteca",
+          "question": "Seule la cible faltantes a été construite. Qu'a-t-on obtenu et que reste-t-il à établir ?",
+          "options": [
+            "Un exécutable nommé faltantes ; il reste à relancer les cas de main pour vérifier revisar.",
+            "Une bibliothèque contenant du code objet ; il reste à construire et exécuter revisar pour vérifier ses cas.",
+            "Un en-tête généré ; il reste à exécuter revisar pour incorporer la définition."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une bibliothèque statique rassemble du code objet. Sa construction n'exécute pas main et ne prouve ni l'édition de liens du client ni le respect de son contrat. L'en-tête maintenu n'est pas le produit généré par add_library.",
+          "reviewFeedback": [
+            "Repère main dans les fichiers du projet et vérifie quelles entrées appartiennent à la cible construite. Explique quel artefact tu attribues à cette demande.",
+            "Relie le produit à la cible demandée et à ce que son journal indique réellement. Examine quelle observation justifierait une affirmation sur la sortie du client.",
+            "Distingue les fichiers maintenus des produits générés par la compilation de l'implémentation. Situe l'en-tête de ta réponse dans ce parcours."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_archivo_presente_no_basta",
+          "question": "faltantes.cpp se trouve à côté de main.cpp, mais la cible revisar ne répertorie que main.cpp et n'utilise aucune bibliothèque. Pourquoi la simple présence de l'implémentation ne suffit-elle pas pour construire le client complet ?",
+          "options": [
+            "Parce que le client doit inclure faltantes.cpp avant que sa définition puisse être compilée.",
+            "Parce que CMake ne peut sélectionner les sources de revisar qu'après avoir retiré toutes les autres sources du répertoire.",
+            "Parce que la description de revisar doit encore sélectionner une source ou une dépendance fournissant la définition."
+          ],
+          "correctIndex": 2,
+          "explanation": "La description identifie les produits à construire et leurs entrées. Dans notre organisation, faltantes.cpp appartient à sa bibliothèque ; le client doit utiliser ce produit. Nous ne copions pas l'implémentation dans main pour remplacer une dépendance absente.",
+          "reviewFeedback": [
+            "Distingue l'inclusion textuelle par #include de la demande de compilation d'un fichier source. Vérifie l'exigence que tu imposes à la compilation dans cette explication.",
+            "Distingue les fichiers présents dans le répertoire de ceux que la description sélectionne. Retirer une source physique crée-t-il la relation nécessaire au client ?",
+            "Lis les entrées et les relations conservées pour le client. Justifie comment la définition requise par ses appels pourra participer."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relier les produits sans ordonner manuellement toutes les compilations"
+        },
+        {
+          "type": "paragraph",
+          "text": "target_link_libraries(revisar PRIVATE faltantes) relie la cible du client à la bibliothèque locale. Lors de la construction de revisar, les règles prévoient de construire faltantes si nécessaire et fournissent son produit pour l'édition de liens de l'exécutable. Il s'agit d'une dépendance entre cibles, et non d'un nom de fonction ni d'une instruction #include (Scott, 2025, pp. 20–21)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Preparacion LANGUAGES CXX)\nadd_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\ntarget_compile_features(faltantes PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(faltantes revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE faltantes)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque cible déclare séparément cxx_std_20 et CXX_EXTENSIONS OFF, comme dans l'exercice précédent. Ici, set_target_properties accepte les deux noms avant PROPERTIES : la propriété s'applique aux deux. PRIVATE précise la portée de la relation que nous établissons pour revisar. Ce n'est pas le spécificateur d'accès private d'une classe C++ ; il ne promet pas que d'autres fichiers disparaissent ou qu'une bibliothèque statique ne puisse jamais influencer une chaîne d'édition de liens. Les exigences d'utilisation et leurs autres portées seront étudiées lorsque nous travaillerons avec des chaînes de cibles (Scott, 2025, pp. 180–181)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Demander la construction de revisar suffit pour construire les dépendances déclarées dont il a besoin. Il n'est pas nécessaire de compiler manuellement chaque .cpp auparavant. Cela ne promet pas un ordre fixe entre compilations indépendantes : l'outil peut les coordonner en parallèle. L'édition de liens de l'exécutable exige néanmoins les produits utilisés."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_private_en_la_relacion",
+          "question": "Que signifie PRIVATE dans la relation présentée pour cet exercice ?",
+          "options": [
+            "La relation empêche revisar d'appeler la fonction déclarée dans l'en-tête.",
+            "La relation fournit l'en-tête à revisar et exclut le fichier de bibliothèque de l'édition de liens.",
+            "La relation d'édition de liens s'applique à revisar ; elle ne réglemente pas l'accès aux fonctions C++."
+          ],
+          "correctIndex": 2,
+          "explanation": "PRIVATE appartient au langage de construction et à la portée d'une relation entre cibles. Le client continue d'utiliser la déclaration de la fonction et la bibliothèque statique fournit toujours son produit. Nous ne déduisons pas de règles avancées de propagation à partir de ces deux cibles.",
+          "reviewFeedback": [
+            "Détermine si PRIVATE apparaît dans une déclaration C++ ou dans une commande de construction. Revois quel mécanisme établit l'accessibilité d'un appel dans chaque langage.",
+            "Vérifie quelle opération de construction ce mot affecte. Relie-le au type de produit demandé pour la bibliothèque, sans le confondre avec les fichiers sources conservés.",
+            "Explique la portée que tu attribues à cette relation entre cibles dans ce cas précis. Évite de déduire des règles d'accès ou de propagation non encore étudiées."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_dependencia_al_pedir_cliente",
+          "question": "Tu pars d'une nouvelle construction avec la description complète et demandes la cible revisar. Que doit prévoir l'outil ?",
+          "options": [
+            "Construire les produits requis par revisar ; les compilations indépendantes peuvent être coordonnées en parallèle.",
+            "Compiler main.cpp ; target_link_libraries réserve l'édition de liens mais ne demande pas de construire la cible faltantes.",
+            "Exécuter faltantes pour produire la définition, puis compiler main.cpp et effectuer l'édition de liens de revisar avec celle-ci."
+          ],
+          "correctIndex": 0,
+          "explanation": "La relation relie les produits nécessaires à la construction du client. Créer une bibliothèque statique ne l'exécute pas. La dépendance exige que son produit soit disponible lors de l'édition de liens, sans transformer les commandes en ordre fixe de toutes les compilations.",
+          "reviewFeedback": [
+            "Identifie les produits nécessaires à l'édition de liens et leur relation à la cible demandée. Distingue les tâches qui dépendent les unes des autres de celles qui peuvent rester indépendantes.",
+            "Suis la relation déclarée par target_link_libraries depuis la cible demandée. Vérifie que ton interprétation permet d'obtenir les produits nécessaires à sa construction.",
+            "Examine quel produit statique tu proposes d'exécuter et où se trouve main dans ce projet. Distingue la production de ce résultat du lancement d'un programme."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnostiquer une dépendance manquante dans le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le laboratoire conserve les trois fichiers sources C++ valides, mais sa description CMake omet la relation entre revisar et faltantes. La déclaration de la fonction ne manque pas. Prédis d'abord quelle phase peut révéler cette omission ; ensuite configure, construis et lis les diagnostics avant de modifier un fichier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_fase_sin_dependencia",
+          "question": "Avec ces fichiers et le CMakeLists.txt du laboratoire, quel résultat peut-on attendre lorsqu'on demande la construction de revisar ?",
+          "options": [
+            "La configuration doit rejeter #include, car seul target_link_libraries permet d'utiliser un en-tête.",
+            "Le client peut être compilé grâce à la déclaration ; l'édition de liens échoue faute de définition nécessaire.",
+            "L'édition de liens crée revisar sans cette définition, puis l'exécution complète la bibliothèque lorsque la fonction est appelée."
+          ],
+          "correctIndex": 1,
+          "explanation": "La déclaration permet de compiler les appels. L'édition de liens de l'exécutable exige la définition. Dans cette description, les fichiers et les cibles sont valides pour la configuration ; il manque encore l'association du produit de bibliothèque au client.",
+          "reviewFeedback": [
+            "Examine comment la déclaration de l'en-tête est incorporée lors du traitement d'une source C++. Vérifie pourquoi tu attribues cette opération à une relation entre produits de construction.",
+            "Suis séparément la vérification des appels et la réunion des produits de l'exécutable. Compare les besoins de chacune à ce que fournit cette description.",
+            "Repère à quel moment une définition appelée doit être disponible pour obtenir l'exécutable de ce projet. Explique avec quel produit pourrait démarrer l'exécution que tu supposes."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le profil du laboratoire, CMake prépare les règles pour Ninja et le compilateur C++ choisi. Conserve le diagnostic réel : son libellé peut varier. Recherche la phase de construction et la référence à faltan_unidades ; ne mémorise pas un numéro de ligne ou une phrase exacte du compilateur."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Preparacion LANGUAGES CXX)\nadd_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\ntarget_compile_features(faltantes PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(faltantes revisar PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "faltantes.h",
+              "initialCode": "#ifndef PRACTICA_FALTANTES_H\n#define PRACTICA_FALTANTES_H\n\n// Domaine : 0 <= disponibles <= 30 et 0 <= necesarias <= 30.\nint faltan_unidades(int disponibles, int necesarias);\n\n#endif\n"
+            },
+            {
+              "path": "faltantes.cpp",
+              "initialCode": "#include \"faltantes.h\"\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"faltantes.h\"\n#include <iostream>\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige uniquement la relation de construction, en conservant l'en-tête, l'implémentation, les appels et le profil C++20. Reconfigure puisque CMakeLists.txt a changé, puis construis revisar et exécute-le. Compare sa sortie entière à l'oracle de la première page. Une solution valable fournit faltantes à l'édition de liens par la dépendance de la cible ; inclure le .cpp dans main ou y copier la fonction ne répond pas à cet exercice."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'échec d'une construction ne transforme pas un exécutable d'une autre révision en preuve de la tentative actuelle. Enregistre séparément la configuration, la construction et les exécutions réellement effectuées, en reprenant la méthode de l'unité précédente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Corriger la liaison ne prouve pas la validité du comportement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour comparer ta correction du laboratoire précédent, la description de référence à la page 4 comprend target_link_libraries(revisar PRIVATE faltantes). D'autres ordres de commandes sont valables, à condition de créer chaque cible avant de lui attribuer des exigences. La solution doit préserver les rôles convenus : implémentation dans faltantes et client dans revisar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Examine maintenant une autre modification. Conserve les déclarations, les appels et la relation de construction. Modifie uniquement la dernière expression de faltantes.cpp : renvoie necesarias - disponibles + 1 lorsque la branche renvoyant zéro n'a pas été prise. Avant de reconstruire, prédis le comportement de cette révision. Le listing suivant réunit de nouveau fonction et client uniquement pour raisonner sur cette version."
+        },
+        {
+          "type": "output_prediction",
+          "id": "multi_revision_de_la_biblioteca",
+          "language": "cpp",
+          "question": "Quelle sortie produit cette révision ? Conserve les deux-points et n'ajoute pas de saut final.",
+          "code": "#include <iostream>\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles + 1;\n}\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n",
+          "answers": [
+            "4:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Seul l'appel nécessitant des unités supplémentaires atteint l'expression modifiée : il renvoie quatre au lieu de trois. L'égalité et l'excédent continuent de renvoyer zéro. Le programme peut compiler et passer l'édition de liens, mais cette révision ne respecte plus le contrat initial concernant les quantités manquantes.",
+          "reviewFeedback": "Suis l'instruction return atteinte par chaque appel. Vérifie quand le terme ajouté intervient, et sépare le comportement de cette révision du résultat exigé par le contrat initial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens au laboratoire de la page 5 après avoir corrigé sa dépendance. Applique la modification à faltantes.cpp sans toucher main.cpp. Reconstruis revisar puis exécute-le. Le processus doit intégrer l'implémentation mise à jour et effectuer l'édition de liens du client qui l'utilise. Changer le corps n'impose pas de modifier la description CMake ; construire uniquement faltantes ne permet pas non plus d'attribuer la nouvelle révision à l'ancien client."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_pasar_el_enlace_no_prueba_la_regla",
+          "question": "La révision modifiée construit revisar sans erreur et son exécution correspond à ta prédiction. Quelle conclusion en tirer ?",
+          "options": [
+            "La prédiction correspond à cette révision, mais il reste à vérifier si elle respecte le contrat initial.",
+            "L'édition de liens confirme le contrat de la fonction ; son calcul est déjà correct sur tout le domaine.",
+            "Cette concordance permet d'adopter la révision comme contrat ; cette sortie deviendra la référence des cas."
+          ],
+          "correctIndex": 0,
+          "explanation": "Prédire ce que fait un programme et définir ce qu'il doit faire sont deux tâches différentes. Cette révision ajoute une unité dans sa branche positive. Une prédiction exacte n'en fait pas une correction du contrat.",
+          "reviewFeedback": [
+            "Distingue ce que tu attendais de cette révision de ce qu'exige le problème initial. Justifie la source de chacun de ces critères.",
+            "Identifie ce que vérifie l'édition de liens sur les produits disponibles. Demande-toi comment elle pourrait établir le sens du calcul pour toutes les entrées.",
+            "Avant de modifier une exigence, retrouve sa provenance et la raison de son adoption. Examine si l'observation du comportement d'une révision suffit à justifier ce changement."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Rétablis l'implémentation initiale, construis revisar et exécute-le à nouveau. Conserve les preuves des deux révisions et du rétablissement. L'outil peut actualiser uniquement les produits concernés ; il n'a pas besoin de recompiler systématiquement tous les fichiers ni d'afficher toujours la même liste de tâches pour attester la révision exécutée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconnaître une erreur dans la source de la bibliothèque"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le laboratoire suivant possède déjà la bonne dépendance. Cette fois, faltantes.cpp comporte une erreur syntaxique volontaire. Configure et construis revisar sans modifier d'abord les fichiers. Identifie le fichier et la phase responsables de l'échec, puis compare-le avec la dépendance absente de la page 5."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Preparacion LANGUAGES CXX)\nadd_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\ntarget_compile_features(faltantes PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(faltantes revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE faltantes)\n"
+            },
+            {
+              "path": "faltantes.h",
+              "initialCode": "#ifndef PRACTICA_FALTANTES_H\n#define PRACTICA_FALTANTES_H\n\n// Domaine : 0 <= disponibles <= 30 et 0 <= necesarias <= 30.\nint faltan_unidades(int disponibles, int necesarias);\n\n#endif\n"
+            },
+            {
+              "path": "faltantes.cpp",
+              "initialCode": "#include \"faltantes.h\"\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"faltantes.h\"\n#include <iostream>\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_compilacion_de_la_implementacion",
+          "question": "La configuration s'est terminée et le compilateur signale l'instruction return de faltantes.cpp. Quelle décision correspond à cette preuve ?",
+          "options": [
+            "Supprimer le lien avec faltantes pour que revisar n'intègre plus la source provoquant le diagnostic.",
+            "Corriger main.cpp : la cible demandée est revisar et la bibliothèque a déjà réussi la configuration.",
+            "Corriger la syntaxe de faltantes.cpp puis reconstruire revisar, en conservant sa dépendance."
+          ],
+          "correctIndex": 2,
+          "explanation": "La construction doit compiler la source de la bibliothèque avant d'utiliser son produit. Une erreur dans cette source n'est pas corrigée en supprimant la relation de liaison ni en attribuant le diagnostic au client. Une même construction peut comporter plusieurs tâches : identifie le fichier et l'étape réellement échoués.",
+          "reviewFeedback": [
+            "Relie le diagnostic au fichier et à l'instruction C++ qui l'ont produit. Vérifie ce que changerait la suppression d'une relation entre cibles et si cela résoudrait la cause signalée.",
+            "Repère la source contenant l'instruction indiquée et la phase où son corps est traduit. Examine ce que la configuration prouve ou non au sujet de la syntaxe vérifiée plus tard.",
+            "Identifie l'emplacement correspondant au diagnostic et la révision produite après ton intervention. Conserve la relation entre les fichiers construits et le client que tu veux tester."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige uniquement la syntaxe, en conservant la fonction, les appels et les quantités. Construis revisar, exécute-le, puis compare avec le premier oracle. Après ton essai, l'implémentation de référence à la page 2 permet de contrôler la correction. Configurer une description valide ne garantit pas que chaque source C++ compile ; l'édition de liens ne prouve pas non plus, à elle seule, la validité du comportement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconnaître les cibles lorsque les noms de fichiers changent"
+        },
+        {
+          "type": "paragraph",
+          "text": "La relation utilise des noms de cibles. Les fichiers décrivent les entrées ; le nom du projet regroupe la description. On ne peut pas substituer ces noms les uns aux autres sous prétexte que des exercices précédents utilisaient des noms ressemblants. Conserve cette distinction en lisant un autre projet."
+        },
+        {
+          "type": "fill_code",
+          "id": "multi_nombre_del_objetivo_dependiente",
+          "language": "cmake",
+          "question": "Complète uniquement le nom de la cible de bibliothèque devant fournir l'implémentation lors de l'édition de liens de mirar. Les fichiers indiqués existent ; n'écris ni nom de fichier, ni chemin, ni nom de projet.",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Inspeccion LANGUAGES CXX)\nadd_library(soporte STATIC calculo.cpp)\nadd_executable(mirar lectura.cpp)\ntarget_compile_features(soporte PRIVATE cxx_std_20)\ntarget_compile_features(mirar PRIVATE cxx_std_20)\nset_target_properties(soporte mirar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(mirar PRIVATE ___)\n",
+          "answers": [
+            "soporte"
+          ],
+          "explanation": "soporte est la cible de bibliothèque définie par add_library. calculo.cpp est une entrée de cette cible, Inspeccion nomme le projet et mirar est le client. La relation utilise la cible qui fournit le produit sans deviner le nom physique du fichier.",
+          "reviewFeedback": "Classe les noms du fragment selon leur rôle : projet, cible ou source. Vérifie ensuite le produit dont le client a besoin dans la relation d'édition de liens que tu complètes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce fragment sert à lire une description ; il ne s'exécute pas isolément puisqu'il ne contient pas les sources d'Inspeccion. Dans l'activité suivante, tu disposeras de toutes les sources et créeras une description complète."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une autre description à partir des rôles et des exigences"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet Pases contient une fonction admitir : elle accepte lorsque puntos est supérieur ou égal à minimo. Les deux arguments admettent des entiers de 0 à 20 inclus. regla.h déclare la fonction, regla.cpp la définit et acceso.cpp contient main. Tous les fichiers se trouvent dans le même répertoire. Le client affiche les cas (12,8), (8,8) et (5,8), dans cet ordre, séparés par deux-points sans saut final ; calcule la sortie avant de construire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris CMakeLists.txt à partir du fichier vide. Définis une cible de bibliothèque statique regla avec regla.cpp et un exécutable portero avec acceso.cpp, relie portero à regla et conserve le profil C++20 sans extensions pour les deux cibles. Déclare CMake 3.20 comme version minimale et active C++ avec CXX. Le laboratoire demande la cible portero ; le projet Pases et le fichier acceso.cpp ont d'autres rôles."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef PRACTICA_REGLA_H\n#define PRACTICA_REGLA_H\n\n// Domaine : 0 <= puntos <= 20 et 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "regla.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "acceso.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(12, 8) << ':'\n              << admitir(8, 8) << ':'\n              << admitir(5, 8);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "portero",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Configure, construis portero et exécute-le. Une solution valable décrit et utilise la bibliothèque demandée, conserve les sources et leurs interfaces, et produit le comportement convenu. Elle n'impose pas de recopier un ordre de commandes superficiel. Si cela échoue, identifie d'abord la phase, le fichier ou la cible signalés ; ne modifie que le nécessaire et conserve la révision de l'essai. La référence figure à la page suivante, après ton travail."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer le transfert et faire varier une borne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette description de référence correspond au projet Pases. Elle utilise des noms de cibles pour la relation et des noms de fichiers pour leurs sources. L'ordre présenté est une solution valable ; d'autres descriptions peuvent respecter les mêmes cibles, exigences et dépendances."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Pases LANGUAGES CXX)\nadd_library(regla STATIC regla.cpp)\nadd_executable(portero acceso.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(portero PRIVATE cxx_std_20)\nset_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(portero PRIVATE regla)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'implémentation initiale, les valeurs de puntos supérieures ou égales à minimo sont acceptées ; les valeurs inférieures sont refusées. Sans boolalpha, le client affiche 1 pour true et 0 pour false. Ces trois cas mettent le contrat à l'épreuve ; ils ne signifient pas que toute fonction produisant cette sortie est correcte pour tout le domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Remplace uniquement >= par > dans regla.cpp. Le projet et la déclaration gardent leurs noms et types. Prédis cette révision avant de la construire, en utilisant surtout le cas d'égalité pour distinguer les règles."
+        },
+        {
+          "type": "output_prediction",
+          "id": "multi_frontera_en_otra_biblioteca",
+          "language": "cpp",
+          "question": "Si cette révision est construite et exécutée, quelle sortie produit-elle ?",
+          "code": "#include <iostream>\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n\nint main() {\n    std::cout << admitir(12, 8) << ':'\n              << admitir(8, 8) << ':'\n              << admitir(5, 8);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La valeur 12 dépasse 8, mais 8 ne dépasse pas 8, et 5 ne dépasse pas 8 non plus. La variante change uniquement la borne d'égalité. Conserver noms et signature ne garantit pas de préserver le contrat attendu par le client.",
+          "reviewFeedback": "Applique la comparaison écrite à chaque couple, sans lui substituer la règle d'une autre révision. Vérifie l'égalité et l'ordre de l'affichage."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens au laboratoire Pases, applique cette seule modification et demande la construction de portero avant l'exécution. Rétablis ensuite >=, reconstruis et compare le comportement initial. Conserve séparément les observations de la variante et de la restauration. La fonction de calcul des unités manquantes de l'autre laboratoire n'intervient pas dans ce projet : ne mélange ni leurs contrats ni leurs produits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver la procédure et ses limites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens à la règle initiale des unités manquantes après avoir travaillé avec Pases. Ce listing complet conserve l'implémentation initiale et remplace les appels par des cas extrêmes de son domaine. Calcule le résultat sans copier les observations de l'autre projet."
+        },
+        {
+          "type": "output_prediction",
+          "id": "multi_recuperar_cantidades_y_dominio",
+          "language": "cpp",
+          "question": "Quelle sortie ce programme produit-il pour les trois cas extrêmes présentés ?",
+          "code": "#include <iostream>\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nint main() {\n    std::cout << faltan_unidades(0, 0) << ':'\n              << faltan_unidades(0, 30) << ':'\n              << faltan_unidades(30, 0);\n    return 0;\n}\n",
+          "answers": [
+            "0:30:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Si aucune unité n'est nécessaire, il n'en manque aucune. Avec zéro unité disponible et trente nécessaires, il en manque trente. Avec trente disponibles et zéro nécessaire, il n'en manque aucune. Tous les arguments appartiennent au domaine ; comparer ces cas rappelle le contrat propre à cette fonction.",
+          "reviewFeedback": "Vérifie ce que représentent les deux arguments de chaque appel : stock disponible et besoin. Suis le chemin parcouru par chaque couple extrême et contrôle le format sans reprendre les résultats du projet d'admission."
+        },
+        {
+          "type": "order_code",
+          "id": "multi_orden_evidencia_de_la_revision",
+          "question": "Une description CMake vient de changer et l'oracle est déjà calculé. Remets ces quatre actions dans l'ordre : l'exécution doit utiliser le produit nouvellement construit et la comparaison doit utiliser la sortie de cette exécution. Conserve les sources, les outils et les options convenus.",
+          "fragments": [
+            "Exécuter le produit de cette construction avec les cas convenus.",
+            "Configurer et générer les règles à partir de la description actuelle.",
+            "Comparer la sortie de cette exécution à l'oracle précédemment calculé.",
+            "Construire la cible exécutable et les dépendances déclarées dont elle a besoin."
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "La description actuelle détermine les règles ; sa construction produit l'exécutable utilisé. Nous obtenons ensuite la sortie et la comparons à l'oracle déjà calculé. Nous ne déduisons pas le comportement de cette révision d'une ancienne exécution.",
+          "reviewFeedback": "Pour chaque action de ton ordre, note l'entrée dont elle a besoin et la preuve qu'elle produit. Vérifie qu'aucune action n'utilise un produit ou un résultat encore indisponible."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "multi_delimitar_lo_que_acredita_el_proyecto",
+          "question": "Tu as construit le client avec sa bibliothèque et les cas convenus ont réussi. Quelle affirmation respecte la portée de cette preuve ?",
+          "options": [
+            "La réussite de revisar permet aussi d'exécuter faltantes pour reproduire avec lui les cas observés.",
+            "Les cas observés mettent cette révision à l'épreuve ; d'autres cas ou relations exigent encore une justification.",
+            "Les mêmes résultats seront conservés après modification de l'implémentation, car son édition de liens a déjà été vérifiée."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les résultats concernent les fichiers, outils, options et cas utilisés. Une bibliothèque statique ne devient pas un exécutable et les changements futurs demandent leurs propres preuves. Ce travail introduit les dépendances locales ; il ne valide pas l'installation, les paquets, l'exportation ni les chaînes générales d'exigences.",
+          "reviewFeedback": [
+            "Situe l'exécution observée : quel programme contenait main et quels appels ont été faits ? Examine les preuves nécessaires pour présenter l'usage d'une bibliothèque comme une autre exécution.",
+            "Relie chaque conclusion à la révision et aux appels à l'origine des preuves. Indique ce qu'il faudrait pour soutenir des affirmations plus larges.",
+            "Distingue le produit actuellement construit de ceux obtenus après d'autres modifications. Explique les preuves disponibles sur l'effet de changements qui n'ont pas encore été réalisés."
+          ]
+        }
+      ]
+    }
+  ]
+}
