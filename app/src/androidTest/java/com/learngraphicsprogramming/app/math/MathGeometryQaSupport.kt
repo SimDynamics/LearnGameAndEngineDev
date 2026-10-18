@@ -38,7 +38,9 @@ import java.util.UUID
 
 /** Only in-memory lessons with fresh QA identities are interacted with. All preferences are
  * restored, including drafts incidentally created when initializing the ordinary lesson route. */
-abstract class MathGeometryQaSupport {
+abstract class MathGeometryQaSupport(private val qaPackage: String = BuildConfig.APPLICATION_ID.takeIf {
+    it in setOf(QA_PACKAGE, "com.learngraphicsprogramming.app.realdownloadsqa")
+} ?: QA_PACKAGE) {
     protected val instrumentation = InstrumentationRegistry.getInstrumentation()
     protected val context = instrumentation.targetContext
     private val snapshots = linkedMapOf<String, Map<String, *>>()
@@ -48,7 +50,7 @@ abstract class MathGeometryQaSupport {
     private var screenWakeLock: PowerManager.WakeLock? = null
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
-            if (activity is LessonActivity && activity.packageName == QA_PACKAGE)
+            if (activity is LessonActivity && activity.packageName == qaPackage)
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         override fun onActivityStarted(activity: Activity) = Unit
@@ -60,8 +62,10 @@ abstract class MathGeometryQaSupport {
     }
 
     @Before fun requireQaAndPreserveEveryPreference() {
-        assertEquals("Never run this fixture against the normal app", QA_PACKAGE, context.packageName)
-        assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
+        assertTrue("Only isolated QA application IDs are allowed", qaPackage in setOf(QA_PACKAGE,
+            "com.learngraphicsprogramming.app.realdownloadsqa"))
+        assertEquals("Never run this fixture against the normal app", qaPackage, context.packageName)
+        assertEquals(qaPackage, BuildConfig.APPLICATION_ID)
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         assertFalse("Unlock the device before visual verification", keyguard.isDeviceLocked)
         assertFalse("Dismiss Keyguard before visual verification", keyguard.isKeyguardLocked)
@@ -78,7 +82,7 @@ abstract class MathGeometryQaSupport {
         val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         @Suppress("DEPRECATION")
         val lock = power.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
-            "$QA_PACKAGE:GeometryQa")
+            "$qaPackage:GeometryQa")
         screenWakeLock = lock
         lock.acquire(600_000)
         (context.applicationContext as Application).registerActivityLifecycleCallbacks(screenGuard)
@@ -91,7 +95,7 @@ abstract class MathGeometryQaSupport {
     }
 
     @After fun restoreEveryQaPreference() {
-        if (context.packageName != QA_PACKAGE || BuildConfig.APPLICATION_ID != QA_PACKAGE || !captured) return
+        if (context.packageName != qaPackage || BuildConfig.APPLICATION_ID != qaPackage || !captured) return
         try {
             instrumentation.waitForIdleSync()
             (preferenceFiles() + snapshots.keys).forEach { name ->
@@ -162,7 +166,7 @@ abstract class MathGeometryQaSupport {
     }
 
     protected fun inject(activity: LessonActivity, fixture: Fixture) {
-        assertEquals(QA_PACKAGE, activity.packageName)
+        assertEquals(qaPackage, activity.packageName)
         setField(activity, "currentLessonId", fixture.id)
         setField(activity, "lessonJson", JSONObject(fixture.lesson.toString()))
         setField(activity, "totalPages", fixture.lesson.getJSONArray("pages").length())

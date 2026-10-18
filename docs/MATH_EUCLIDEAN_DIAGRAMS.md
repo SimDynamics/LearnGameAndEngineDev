@@ -136,3 +136,62 @@ Las etiquetas usan métricas del Paint real, se distribuyen mediante ocho posici
 `drawingSnapshot()` expone `viewport`, `plotBounds`, marcas de punto, trazos recortados, flechas y etiquetas con texto íntegro, líneas y límites. El Canvas consume esas mismas primitivas. Así se pueden contrastar posiciones, extremos, prolongaciones y píxeles dibujados; recuperar únicamente una cadena no demuestra la legibilidad del diagrama.
 
 Fuentes: `EuclideanDiagram.kt`, `MathEuclideanDiagramView.kt` y el nuevo caso de `MathRepresentationRenderer.kt`. Las regresiones del modelo y el layout están en `EuclideanDiagramTest.kt`; las pruebas Android y sus evidencias se registran en la ficha de `PENDIENTES_RECURSOS_CURRICULARES.md`. Las condiciones de aceptación de una futura integración curricular se verifican sobre sus bloques concretos y sus controles existentes, conservando IDs, posiciones y progreso. Este contrato no incluye arrastre, construcción con regla y compás, medición automática ni geometría espacial.
+
+## Extensión opcional: circunferencias, discos y arcos
+
+La misma representación `euclidean_diagram` admite ahora dos arrays opcionales. Omitirlos, o dejarlos vacíos, conserva el contrato y el dibujo anteriores. No se cambia `schemaVersion`, no se añade un evaluador y no se convierte el borrador de circunferencias en una lección terminada. Work integrará las representaciones curriculares después de su revisión.
+
+| Propiedad | Contrato |
+| --- | --- |
+| `circles` | De 0 a 8 circunferencias en la misma escena. |
+| `circles[].id` | ID estable, distinto de puntos, objetos, otras circunferencias y arcos. |
+| `circles[].center` | ID de un punto existente: es el mismo centro que usan los segmentos. |
+| `circles[].radius` | Radio interno finito entre `1e-9` y `1000000`, ambos incluidos. No se imprime como medida curricular. |
+| `circles[].contains` | Todos los IDs de puntos de la escena que pertenecen a la **frontera**; puede estar vacío. No incluye el centro de una circunferencia de radio positivo. |
+| `circles[].filled` | Booleano opcional, `false` por defecto. `true` dibuja el disco con fondo tenue y conserva su frontera. |
+| `circles[].label` | Rótulo visible opcional, con los mismos límites de las etiquetas anteriores. |
+| `arcs` | De 0 a 16 arcos anclados a circunferencias de esta escena. |
+| `arcs[].id`, `arcs[].circle` | ID estable del arco e ID de su circunferencia existente. |
+| `arcs[].through` | Tres IDs distintos: **extremo inicial, punto intermedio, extremo final**. Los tres pertenecen a esa circunferencia. |
+| `arcs[].contains` | Todos los puntos de la escena pertenecientes al arco elegido, incluidos sus tres puntos definidores. |
+| `arcs[].label` | Rótulo visible opcional. No se generan nombres ni valores angulares. |
+
+`contains` sigue siendo una declaración de pertenencia por ID. Para una circunferencia designa su frontera, también cuando `filled` es `true`: colorear el disco no convierte su centro en un punto de la circunferencia. Las preguntas de interior, frontera y exterior utilizan los datos y validadores curriculares existentes; el renderer no fabrica respuestas a partir de píxeles.
+
+El parser comprueba la coherencia numérica entre posiciones internas, centro, radio y pertenencias. Rechaza radios nulos, negativos o no finitos, referencias desconocidas, IDs repetidos, circunferencias coincidentes bajo IDs distintos y arcos degenerados o incompatibles con sus puntos. Esta comprobación conserva el carácter aproximado del control de disposición: no sustituye la justificación matemática ni el cálculo racional exacto del ejercicio.
+
+Un radio se dibuja con un `segment` entre el centro y un punto de la frontera. Un diámetro utiliza dos puntos opuestos e incluye el centro en su `contains`; una cuerda no diametral conserva otros extremos y no declara el centro. Una secante es una `line` por dos puntos de la circunferencia: sus dos flechas y su recorte se prolongan más allá de las intersecciones. Todos estos objetos y las figuras circulares usan **una sola transformación uniforme**, por lo que cambiar el panel no convierte circunferencias en elipses ni altera sus incidencias.
+
+### Ejemplo técnico de escena compartida
+
+Este fixture ilustra las relaciones, no entrega un puzzle ni una nueva respuesta curricular. Cambiar únicamente `filled` alterna frontera y disco. Las longitudes internas disponen el dibujo; las unidades y medidas del enunciado siguen perteneciendo al contenido original.
+
+```json
+{
+  "type": "euclidean_diagram",
+  "points": [
+    { "id": "O", "x": 0, "y": 0, "labels": ["O"] },
+    { "id": "A", "x": -5, "y": 0, "labels": ["A"] },
+    { "id": "B", "x": 5, "y": 0, "labels": ["B"] },
+    { "id": "P", "x": 0, "y": 5, "labels": ["P"] },
+    { "id": "Q", "x": 0, "y": -5, "labels": ["Q"] }
+  ],
+  "objects": [
+    { "id": "diameter", "kind": "segment", "through": ["A", "B"], "contains": ["A", "O", "B"] },
+    { "id": "radius", "kind": "segment", "through": ["O", "P"], "contains": ["O", "P"] }
+  ],
+  "circles": [
+    { "id": "c", "center": "O", "radius": 5, "contains": ["A", "B", "P", "Q"], "filled": true }
+  ],
+  "arcs": [
+    { "id": "upper", "circle": "c", "through": ["A", "P", "B"], "contains": ["A", "P", "B"], "label": "APB" },
+    { "id": "lower", "circle": "c", "through": ["A", "Q", "B"], "contains": ["A", "Q", "B"], "label": "AQB" }
+  ]
+}
+```
+
+El punto intermedio selecciona uno de los dos arcos entre los extremos, incluso cuando estos definen un diámetro. No se solicitan ni muestran ángulos, grados o radianes. El Canvas dibuja sólo el arco, sin radios de cierre ni relleno de un sector. Sus parámetros angulares de dibujo son detalles internos del snapshot, no nuevas magnitudes curriculares.
+
+Las circunferencias completas intervienen en el ajuste de límites, aunque únicamente esté marcado su centro; también se incluyen los puntos exteriores y otras circunferencias desplazadas. El disco se rellena antes de trazar líneas, marcas y etiquetas. Los arcos se distinguen por un trazo algo más grueso sobre la frontera. Se reutilizan la ampliación de panel, la escala de texto y la descripción de accesibilidad existentes. Si no se proporciona `description`, la alternativa accesible contiene únicamente las etiquetas declaradas, sin añadir clasificaciones ni conclusiones.
+
+Los nombres de puntos y trazos conservan sus ocho posiciones locales de anclaje. Sólo las etiquetas de circunferencias y arcos pueden ocupar también espacios libres en los bordes, para acomodar rótulos largos sin alejar los nombres de sus puntos. La distribución de rótulos continúa siendo una heurística: cada escena curricular debe verificarse en los tamaños y escalas pertinentes. No se garantiza la legibilidad de configuraciones arbitrariamente densas por el solo hecho de respetar los límites de datos.

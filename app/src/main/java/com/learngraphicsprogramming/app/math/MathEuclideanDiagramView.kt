@@ -28,7 +28,8 @@ class MathEuclideanDiagramView(context: Context, config: JSONObject, private val
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 260))
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         contentDescription = config.optString("description").takeIf { it.isNotBlank() }
-            ?: (diagram.points.flatMap { it.labels } + diagram.objects.mapNotNull { it.label }).joinToString(", ")
+            ?: (diagram.points.flatMap { it.labels } + diagram.objects.mapNotNull { it.label } +
+                diagram.circles.mapNotNull { it.label } + diagram.arcs.mapNotNull { it.label }).joinToString(", ")
     }
 
     override fun scaleMathText(factor: Float) {
@@ -47,14 +48,30 @@ class MathEuclideanDiagramView(context: Context, config: JSONObject, private val
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val drawing = drawingSnapshot()
+        // A disk is the same boundary and transform, with a subdued interior fill.
+        // Neither the fill nor the arc drawing creates a new coordinate surface.
+        paint.style = Paint.Style.FILL
+        paint.color = Color.argb(42, Color.red(accent), Color.green(accent), Color.blue(accent))
+        drawing.circles.filter { it.filled }.forEach { circle ->
+            canvas.drawCircle(circle.center.x.toFloat(), circle.center.y.toFloat(), circle.radius.toFloat(), paint)
+        }
         paint.color = accent
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = (2.2 * density).toFloat()
         paint.strokeCap = Paint.Cap.ROUND
+        drawing.circles.forEach { circle ->
+            canvas.drawCircle(circle.center.x.toFloat(), circle.center.y.toFloat(), circle.radius.toFloat(), paint)
+        }
         drawing.paths.forEach { path -> line(canvas, path.start, path.end) }
         drawing.arrows.forEach { arrow ->
             line(canvas, arrow.tip, arrow.wingA)
             line(canvas, arrow.tip, arrow.wingB)
+        }
+        paint.strokeWidth = (3.6 * density).toFloat()
+        drawing.arcs.forEach { arc ->
+            canvas.drawArc(RectF((arc.center.x - arc.radius).toFloat(), (arc.center.y - arc.radius).toFloat(),
+                (arc.center.x + arc.radius).toFloat(), (arc.center.y + arc.radius).toFloat()),
+                arc.startDegrees.toFloat(), arc.sweepDegrees.toFloat(), false, paint)
         }
         paint.style = Paint.Style.FILL
         drawing.points.forEach { point ->

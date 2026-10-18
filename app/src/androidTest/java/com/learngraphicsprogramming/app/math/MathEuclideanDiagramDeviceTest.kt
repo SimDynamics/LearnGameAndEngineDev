@@ -11,6 +11,7 @@ import android.widget.ImageButton
 import android.widget.RadioButton
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.learngraphicsprogramming.app.ProgressRepository
+import com.learngraphicsprogramming.app.R
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -26,6 +27,7 @@ import kotlin.math.min
  * screenshots then verify reading in the actual mathematical activity and expanded panel. */
 @RunWith(AndroidJUnit4::class)
 class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
+    private val background: Int get() = context.getColor(R.color.lesson_canvas)
     @Test fun threeRequiredScenesDrawNativeLabelsAndLimitsWithoutCoordinatesInBothOrientations() {
         for ((sceneName, representations) in scenes()) {
             val fixture = fixture(block(sceneName, representations))
@@ -291,7 +293,7 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
             val tolerance = 7 * context.resources.displayMetrics.density
             for (y in 0 until image.height step 5) for (x in 0 until image.width step 5) {
                 val color = image.getPixel(x, y)
-                if (color == BACKGROUND) continue
+                if (color == background) continue
                 val pixel = EuclideanPosition(x.toDouble(), y.toDouble())
                 // Canvas rasterizes subpixel label boxes into integer pixel squares and
                 // antialiases their boundary. Attribute that one-pixel fringe to its exact
@@ -306,7 +308,7 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
                     val diagnosticName = "euclidean-unexpected-${image.width}x${image.height}-$x-$y"
                     saveBitmap(image, "$diagnosticName.png")
                     saveMetadata(diagnosticName, JSONObject().put("unexpectedX", x).put("unexpectedY", y)
-                        .put("actualColorArgb", color).put("expectedBackgroundArgb", BACKGROUND)
+                        .put("actualColorArgb", color).put("expectedBackgroundArgb", background)
                         .put("labels", labels).put("paths", paths).put("width", image.width).put("height", image.height))
                 }
                 assertTrue("No non-authored axes, grid, coordinates or scale paint at $x,$y", inAuthoredGeometry)
@@ -375,6 +377,5 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
 
     companion object {
         private val ACCENT = Color.rgb(255, 166, 70)
-        private val BACKGROUND = Color.rgb(16, 17, 20)
     }
 }
