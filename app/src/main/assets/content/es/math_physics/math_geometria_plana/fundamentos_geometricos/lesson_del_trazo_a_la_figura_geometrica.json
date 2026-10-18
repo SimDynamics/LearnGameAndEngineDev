@@ -1,6 +1,6 @@
 {
   "id": "math_geometria_plana__fundamentos_geometricos__del_trazo_a_la_figura_geometrica",
-  "title": "Del trazo a la figura geométrica (en desarrollo)",
+  "title": "Del trazo a la figura geométrica",
   "pages": [
     {
       "blocks": [
@@ -259,13 +259,524 @@
             }
           ],
           "feedback": {
-            "correct": "Dos puntos distintos comunes obligan a r y s a ser la única recta que pasa por ambos: a se justifica. Afirmar además que son distintas contradice esa conclusión: c también se justifica. Un solo punto común no las obliga a coincidir. Un campo visible finito puede dejar fuera una intersección y no basta para negar que exista en las rectas completas.",
+            "correct": "Dos puntos distintos comunes obligan a r y s a ser la única recta que pasa por ambos. Afirmar además que son distintas contradice esa conclusión. Un solo punto común no las obliga a coincidir. Un campo visible finito puede dejar fuera una intersección y no basta para negar que exista en las rectas completas.",
             "incorrect": "Revisa cuántas posiciones distintas comparte cada par de rectas y qué exige la propiedad fundamental. Después distingue lo que se sabe de las rectas completas de lo que sólo aparece en una porción del dibujo. No extiendas una observación parcial sin una condición que la justifique."
           }
         },
         {
           "type": "paragraph",
           "text": "Estas ideas preparan una lectura geométrica: reconocer el objeto que se representa, conservar los nombres y las pertenencias, identificar cuándo dos rectas coinciden y distinguir una relación dada de una apariencia. La comprobación en figuras y en distintas representaciones debe acompañar ese razonamiento; recordar las palabras por sí solo no completa el trabajo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer pertenencias sin convertir letras en posiciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un esquema geométrico comunica relaciones mediante las marcas identificadas y las condiciones del enunciado. Seguiremos cada trazo hasta la marca del punto que queremos localizar; después expresaremos la pertenencia con sus nombres. Que una letra quede a un lado del trazo facilita leerla y no desplaza el punto. Las relaciones exactas son datos del modelo: medir unos píxeles de esta representación no las demuestra ni las refuta (Kiselev, 2006, p. 2)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_pertenencia_en_el_plano",
+          "prompt": "Lee las marcas y sus nombres en este esquema de dos rectas distintas r y s. Las pertenencias dibujadas son datos del modelo. Marca todas las afirmaciones que respetan esos datos y la propiedad de unicidad; no atribuyas al punto el lugar donde está impresa su letra.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "A pertenece a r y a s. B pertenece sólo a r; C pertenece sólo a s. r y s son rectas distintas.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 2,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 0,
+                  "y": 1,
+                  "labels": [
+                    "C"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "r",
+                  "kind": "line",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "B"
+                  ],
+                  "label": "r"
+                },
+                {
+                  "id": "s",
+                  "kind": "line",
+                  "through": [
+                    "A",
+                    "C"
+                  ],
+                  "contains": [
+                    "A",
+                    "C"
+                  ],
+                  "label": "s"
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_pertenencia_en_el_plano__afirmaciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A es un punto común de r y s.",
+                  "reviewFeedback": "Localiza la marca designada por el nombre que elegiste y contrasta sus pertenencias en las dos rectas."
+                },
+                {
+                  "id": "b",
+                  "label": "B pertenece a s porque su nombre aparece cerca de la figura.",
+                  "reviewFeedback": "Revisa qué marca designa ese nombre y qué relación indica el esquema; la proximidad del texto necesita distinguirse de la pertenencia."
+                },
+                {
+                  "id": "c",
+                  "label": "C pertenece a s y no pertenece a r.",
+                  "reviewFeedback": "Comprueba por separado las dos relaciones que afirma tu selección, conservando el significado de la marca y de cada nombre."
+                },
+                {
+                  "id": "d",
+                  "label": "Otro punto común distinto de A sería incompatible con que r y s fueran distintas.",
+                  "reviewFeedback": "Recupera la condición de unicidad y compárala con la cantidad de posiciones distintas que supondría tu afirmación."
+                },
+                {
+                  "id": "e",
+                  "label": "r y s tienen que ser la misma recta porque comparten A.",
+                  "reviewFeedback": "Examina si el dato que usaste aporta todos los puntos distintos que exige la propiedad de unicidad."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A está en las dos rectas; B está sólo en r y C sólo en s. Si hubiera otro punto común distinto de A, las dos rectas serían la única recta por esos dos puntos: no podrían seguir siendo distintas. El punto A compartido por sí solo no obliga a que r y s coincidan, y el lugar de una letra no crea una pertenencia.",
+            "incorrect": "Revisa las marcas, las pertenencias declaradas y cuántos puntos distintos exige la unicidad. Justifica cada afirmación elegida sin convertir cercanía visual en un dato geométrico."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comprobar tu lectura, describe con tus propias palabras el papel de cada uno de los tres puntos y explica por qué compartir uno no equivale a compartir dos posiciones distintas. Si giraras la hoja o cambiaras el tamaño de las letras conservando las mismas relaciones, la justificación tendría que seguir siendo válida. Cambiar la presentación no crea una nueva pertenencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos nombres y dos posiciones exigen razonamientos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición de dos puntos distintos se refiere a posiciones, no al número de letras que vemos. Podemos representar esta diferencia con dos esquemas: uno conserva varios nombres de una sola marca; otro muestra dos marcas que designan posiciones diferentes. La existencia de dos rectas diferentes por una misma posición sirve como contraprueba a la idea de que basta un único punto para fijar la recta (Kiselev, 2006, p. 2; Lang, 1971, p. 108)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_nombres_y_posiciones",
+          "prompt": "Compara los dos paneles. En el primero, A y B nombran la misma posición P y r y s son rectas diferentes por ella. En el segundo, C y D son posiciones distintas de t. Marca todas las conclusiones justificadas por esas condiciones.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Primer panel: los nombres A y B designan un único punto P. Dos rectas diferentes r y s pasan por esa posición.",
+              "points": [
+                {
+                  "id": "P",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A",
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "r",
+                  "kind": "line",
+                  "origin": "P",
+                  "direction": {
+                    "x": 1,
+                    "y": 0
+                  },
+                  "contains": [
+                    "P"
+                  ],
+                  "label": "r"
+                },
+                {
+                  "id": "s",
+                  "kind": "line",
+                  "origin": "P",
+                  "direction": {
+                    "x": 0.5,
+                    "y": 1
+                  },
+                  "contains": [
+                    "P"
+                  ],
+                  "label": "s"
+                }
+              ]
+            },
+            {
+              "type": "euclidean_diagram",
+              "description": "Segundo panel: C y D son dos puntos distintos de la recta t.",
+              "points": [
+                {
+                  "id": "C",
+                  "x": -1,
+                  "y": -0.5,
+                  "labels": [
+                    "C"
+                  ]
+                },
+                {
+                  "id": "D",
+                  "x": 1,
+                  "y": 0.5,
+                  "labels": [
+                    "D"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "t",
+                  "kind": "line",
+                  "through": [
+                    "C",
+                    "D"
+                  ],
+                  "contains": [
+                    "C",
+                    "D"
+                  ],
+                  "label": "t"
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_nombres_y_posiciones__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El primer panel muestra que una sola posición puede pertenecer a rectas diferentes.",
+                  "reviewFeedback": "Relaciona la cantidad de posiciones del panel elegido con las rectas representadas; justifica tu selección mediante los datos."
+                },
+                {
+                  "id": "b",
+                  "label": "En el primer panel, escribir A y B basta para fijar una única recta.",
+                  "reviewFeedback": "Comprueba si contar los dos nombres aporta la condición sobre posiciones que requiere la unicidad."
+                },
+                {
+                  "id": "c",
+                  "label": "En el segundo panel, cambiar el nombre CD por DC permite elegir otra recta.",
+                  "reviewFeedback": "Revisa si cambiar el orden de los nombres cambia los puntos que debe contener el objeto geométrico elegido."
+                },
+                {
+                  "id": "d",
+                  "label": "Toda recta que contenga C y D en el segundo panel tiene que coincidir con t.",
+                  "reviewFeedback": "Identifica qué condición sobre los puntos utiliza esta conclusión y explica cómo se relaciona con la unicidad."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En el primer panel sólo hay una posición: A y B son dos nombres de P. Las dos rectas diferentes por ella muestran por qué dos nombres no reemplazan dos puntos distintos. En el segundo panel sí hay dos posiciones distintas; toda recta que contenga ambas es la única recta por C y D, de modo que coincide con t. Los nombres CD y DC designan esa misma recta completa.",
+            "incorrect": "Conserva la identidad o distinción de posiciones que establece cada panel. Después contrasta las conclusiones elegidas con la condición exacta de unicidad."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora explica sin apoyar la respuesta en la inclinación del dibujo: ¿qué dato perderías si en el segundo panel C y D pasaran a nombrar una misma posición? Una justificación completa identifica la condición que deja de cumplirse y por qué ya no puede aplicarse la misma conclusión. Puedes dibujar en papel dos rectas diferentes por una sola marca como contraprueba; un dibujo compatible ilustra la posibilidad, y la explicación dice qué condición faltaba."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Extremos y prolongaciones cambian el objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una recta se prolonga indefinidamente en sus dos sentidos. Dos puntos distintos A y B la determinan, pero no son sus extremos. Escribir recta AB o recta BA designa el mismo objeto completo. Un segmento AB es la parte limitada por A y B, incluidos sus extremos. No contiene las continuaciones de la recta más allá de ellos (Kiselev, 2006, pp. 2–3; Lang, 1971, p. 108)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una semirrecta tiene un origen y continúa indefinidamente en un sentido. La semirrecta de origen A que pasa por B incluye A, los puntos hasta B y la continuación más allá de B. Si intercambiamos esos puntos, la semirrecta de origen B que pasa por A empieza en otra posición y continúa en el sentido contrario: no es la misma. Nombrar primero el origen conserva una información que el nombre de una recta o un segmento no necesita conservar en ese orden (Kiselev, 2006, p. 3)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En nuestros esquemas, una flecha indica que el objeto continúa indefinidamente en ese sentido; no es un extremo lejano. Las marcas A y B permiten reconocer posiciones, y el tipo de objeto determina si actúan como límites. Un encuadre finito siempre corta lo que podemos mostrar: no transforma una recta en un segmento ni convierte B en el extremo de una semirrecta que sigue más allá."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer_recta_semirrecta_y_segmento",
+          "prompt": "Cada panel tiene sus propios puntos distintos A y B. Las flechas indican continuación indefinida y las marcas de extremo indican un límite del objeto; el borde del panel sólo recorta la imagen. Identifica el objeto completo de cada panel, aunque las partes entre A y B se parezcan.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Primer panel: el trazo por A y B continúa indefinidamente en ambos sentidos; hay dos flechas de prolongación.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 2,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "objeto",
+                  "kind": "line",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "B"
+                  ],
+                  "label": "r"
+                }
+              ]
+            },
+            {
+              "type": "euclidean_diagram",
+              "description": "Segundo panel: A es el origen; el trazo pasa por B y continúa más allá de B con una flecha de prolongación.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 2,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "objeto",
+                  "kind": "ray",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "B"
+                  ],
+                  "label": "u"
+                }
+              ]
+            },
+            {
+              "type": "euclidean_diagram",
+              "description": "Tercer panel: el trazo queda limitado por los extremos A y B, sin flechas de prolongación.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 2,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "objeto",
+                  "kind": "segment",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "B"
+                  ],
+                  "label": "v"
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconocer_recta_semirrecta_y_segmento__objetos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "panel_uno",
+                  "type": "dropdown",
+                  "label": "Objeto representado en el primer panel",
+                  "options": [
+                    {
+                      "id": "recta",
+                      "label": "Recta: continúa indefinidamente en ambos sentidos.",
+                      "reviewFeedback": "Contrasta los dos sentidos de prolongación que afirma esta elección con las marcas de límite del panel que estás revisando."
+                    },
+                    {
+                      "id": "semirrecta",
+                      "label": "Semirrecta de origen A que continúa más allá de B.",
+                      "reviewFeedback": "Localiza el origen y la prolongación que supone tu elección y comprueba que conservan su papel en este panel."
+                    },
+                    {
+                      "id": "segmento",
+                      "label": "Segmento AB: está limitado por A y por B.",
+                      "reviewFeedback": "Comprueba si los dos puntos que menciona tu elección funcionan como límites del objeto o si el dibujo indica continuidad más allá de alguno."
+                    }
+                  ]
+                },
+                {
+                  "id": "panel_dos",
+                  "type": "dropdown",
+                  "label": "Objeto representado en el segundo panel",
+                  "options": [
+                    {
+                      "id": "recta",
+                      "label": "Recta: continúa indefinidamente en ambos sentidos.",
+                      "reviewFeedback": "Contrasta los dos sentidos de prolongación que afirma esta elección con las marcas de límite del panel que estás revisando."
+                    },
+                    {
+                      "id": "semirrecta",
+                      "label": "Semirrecta de origen A que continúa más allá de B.",
+                      "reviewFeedback": "Localiza el origen y la prolongación que supone tu elección y comprueba que conservan su papel en este panel."
+                    },
+                    {
+                      "id": "segmento",
+                      "label": "Segmento AB: está limitado por A y por B.",
+                      "reviewFeedback": "Comprueba si los dos puntos que menciona tu elección funcionan como límites del objeto o si el dibujo indica continuidad más allá de alguno."
+                    }
+                  ]
+                },
+                {
+                  "id": "panel_tres",
+                  "type": "dropdown",
+                  "label": "Objeto representado en el tercer panel",
+                  "options": [
+                    {
+                      "id": "recta",
+                      "label": "Recta: continúa indefinidamente en ambos sentidos.",
+                      "reviewFeedback": "Contrasta los dos sentidos de prolongación que afirma esta elección con las marcas de límite del panel que estás revisando."
+                    },
+                    {
+                      "id": "semirrecta",
+                      "label": "Semirrecta de origen A que continúa más allá de B.",
+                      "reviewFeedback": "Localiza el origen y la prolongación que supone tu elección y comprueba que conservan su papel en este panel."
+                    },
+                    {
+                      "id": "segmento",
+                      "label": "Segmento AB: está limitado por A y por B.",
+                      "reviewFeedback": "Comprueba si los dos puntos que menciona tu elección funcionan como límites del objeto o si el dibujo indica continuidad más allá de alguno."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "panel_uno": {
+                    "type": "exact_text",
+                    "expected": "recta"
+                  },
+                  "panel_dos": {
+                    "type": "exact_text",
+                    "expected": "semirrecta"
+                  },
+                  "panel_tres": {
+                    "type": "exact_text",
+                    "expected": "segmento"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer objeto es la recta r: A y B pertenecen a ella, pero no la limitan; las dos flechas indican sus continuaciones. El segundo es una semirrecta de origen A: B indica el sentido y no es su extremo final. El tercero es el segmento AB, limitado por esos dos extremos. Cambiar el encuadre no cambia ninguno de los tres objetos.",
+            "incorrect": "Revisa el papel de los puntos y las prolongaciones en cada panel elegido. Distingue un límite geométrico del borde que sólo recorta la representación."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Cierra la comparación con una explicación propia: si una persona tapa las dos flechas del primer panel, ¿ha cambiado la recta o sólo la información visible de su dibujo? Después contrasta qué cambia al intercambiar A y B en una recta, en un segmento y en una semirrecta. Usa origen, extremos y prolongaciones para justificarlo; reconocer sólo la inclinación o memorizar el número de flechas no bastará cuando varíe el esquema."
         }
       ]
     }

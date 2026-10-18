@@ -1,0 +1,697 @@
+{
+  "id": "math_geometria_plana__fundamentos_geometricos__comparar_segmentos_y_elegir_una_unidad",
+  "title": "Comparar segmentos y elegir una unidad",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar la longitud al mover una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior distinguimos el segmento de la recta y de la semirrecta. Ahora compararemos segmentos. Tener extremos distintos no impide que dos segmentos tengan la misma longitud: el lugar donde están y la longitud que tienen son cuestiones diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina una copia transparente del segmento AB. Puedes trasladarla y girarla, pero no estirarla ni encogerla. Si logras que sus dos extremos coincidan con los de CD, los segmentos son congruentes. Al hacer coincidir un extremo, todavía debes comprobar el otro. La congruencia describe la coincidencia completa que es posible mediante ese movimiento, no una semejanza aproximada de los trazos (Kiselev, 2006, p. 3)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_sin_confundir_lugares",
+          "prompt": "El dato de este esquema es que una copia de AB coincide completamente con CD al moverla sin deformación. Marca todas las conclusiones justificadas por ese dato.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "AB y CD son segmentos situados en lugares diferentes. Una copia de AB puede hacerse coincidir exactamente con CD mediante un movimiento sin deformación.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": -2,
+                  "y": 2,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 1,
+                  "y": 2,
+                  "labels": [
+                    "B"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 3,
+                  "y": -2,
+                  "labels": [
+                    "C"
+                  ]
+                },
+                {
+                  "id": "D",
+                  "x": 3,
+                  "y": 1,
+                  "labels": [
+                    "D"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segAB",
+                  "kind": "segment",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "B"
+                  ]
+                },
+                {
+                  "id": "segCD",
+                  "kind": "segment",
+                  "through": [
+                    "C",
+                    "D"
+                  ],
+                  "contains": [
+                    "C",
+                    "D"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_sin_confundir_lugares__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "AB y CD son congruentes aunque ocupen lugares distintos.",
+                  "reviewFeedback": "Relaciona la congruencia que afirma tu elección con lo que puede conservar un movimiento sin deformación."
+                },
+                {
+                  "id": "b",
+                  "label": "A y C son el mismo punto porque una copia puede llevar un extremo al lugar del otro.",
+                  "reviewFeedback": "Distingue la posición original de un punto de la posición a la que puede llegar una copia."
+                },
+                {
+                  "id": "c",
+                  "label": "Girar la copia no exige cambiar su longitud.",
+                  "reviewFeedback": "Comprueba qué propiedad se conserva en el movimiento permitido y cuál depende de la orientación del dibujo."
+                },
+                {
+                  "id": "d",
+                  "label": "Si sus direcciones son diferentes, los segmentos no pueden ser congruentes.",
+                  "reviewFeedback": "Examina si tu afirmación permite todos los movimientos sin deformación que autoriza el enunciado."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La copia puede trasladarse y girarse conservando su longitud. Por eso AB y CD son congruentes aunque sus lugares y direcciones originales sean diferentes. La posibilidad de mover una copia no identifica los puntos originales A y C.",
+            "incorrect": "Revisa por separado la longitud conservada y las posiciones originales. Justifica las conclusiones que marcaste utilizando el movimiento permitido."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un segmento es un conjunto de puntos situado en un lugar. Su longitud es la magnitud que comparamos o medimos. Dos segmentos pueden ser congruentes sin ser el mismo segmento. En cambio, AB y BA nombran el mismo segmento, pues invertir sus extremos no cambia sus puntos; invertir los nombres de una semirrecta sí cambia su origen. Recupera esta distinción de la lección anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un extremo coincidente todavía no basta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comparar dos segmentos puedes llevar una copia de cada uno a una misma semirrecta y hacer coincidir sus extremos iniciales. Si los otros extremos coinciden, hay congruencia. Si uno queda estrictamente entre el origen y el otro extremo, el segmento correspondiente es más corto. La condición «entre» importa: no basta que tres marcas aparezcan cerca unas de otras (Kiselev, 2006, p. 3)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_despues_de_alinear",
+          "prompt": "Una copia de AB tiene extremos M y N; una copia de CD tiene extremos M y P. Se hicieron coincidir los extremos iniciales y se alinearon en el mismo sentido, sin deformación. N está estrictamente entre M y P. ¿Qué comparación queda justificada?",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "M, N y P son distintos y están alineados en el orden M, N, P. El segmento MP contiene a N en su interior.",
+              "points": [
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "N",
+                  "x": 3,
+                  "y": 0,
+                  "labels": [
+                    "N"
+                  ]
+                },
+                {
+                  "id": "P",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "P"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segMP",
+                  "kind": "segment",
+                  "through": [
+                    "M",
+                    "P"
+                  ],
+                  "contains": [
+                    "M",
+                    "N",
+                    "P"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_despues_de_alinear__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "AB es más corto que CD.",
+                  "reviewFeedback": "Utiliza la posición del segundo extremo de la copia dentro del segmento mayor y conserva la longitud al copiar."
+                },
+                {
+                  "id": "b",
+                  "label": "AB y CD son congruentes porque comparten el extremo M en sus copias.",
+                  "reviewFeedback": "Comprueba si has contrastado los dos extremos o sólo el extremo que se hizo coincidir al comenzar."
+                },
+                {
+                  "id": "c",
+                  "label": "AB es más largo que CD porque su segundo extremo aparece antes.",
+                  "reviewFeedback": "Explica qué significa que un segundo extremo quede estrictamente entre el origen y el otro segundo extremo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "MN es una parte propia de MP: comienza en M y termina antes de P. Por tanto la copia de AB es más corta que la de CD, y copiar sin deformar conserva esa comparación. Coincidir sólo en M no prueba congruencia.",
+            "incorrect": "Recupera el orden M, N, P y justifica la comparación a partir de los segundos extremos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_congruencia_a_traves_de_una_copia",
+          "prompt": "AB es congruente con CD, y CD es congruente con EF. No conocemos los lugares ni las direcciones de estos tres segmentos. ¿Qué puede afirmarse sin medirlos?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_congruencia_a_traves_de_una_copia__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "AB y EF son congruentes: las dos coincidencias pueden enlazarse.",
+                  "reviewFeedback": "Explica qué conservan los dos movimientos y si se pueden realizar consecutivamente sobre una copia."
+                },
+                {
+                  "id": "b",
+                  "label": "A, C y E tienen que ser el mismo punto del plano.",
+                  "reviewFeedback": "Distingue una cadena de comparaciones de longitud de una identificación de posiciones originales."
+                },
+                {
+                  "id": "c",
+                  "label": "No es posible comparar AB con EF sin conocer sus medidas numéricas.",
+                  "reviewFeedback": "Examina qué información geométrica aportan las coincidencias completas aunque no haya una unidad numérica."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Primero puedes hacer coincidir una copia de AB con CD y después llevar esa copia, mediante el segundo movimiento, a EF. La composición no estira ni encoge: AB y EF son congruentes. No hace falta una medida numérica ni identificar sus posiciones originales.",
+            "incorrect": "Razona con los dos movimientos permitidos y con la propiedad que ambos conservan."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una unidad antes de escribir un número"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para expresar una longitud mediante un número elegimos una unidad de longitud positiva. Puede ser la longitud de un segmento de referencia, que llamaremos u. Decir que AB mide 3 unidades u significa que tres copias consecutivas de esa unidad, sin huecos ni solapamientos, cubren su longitud. Un punto, que no tiene longitud, no sirve como unidad positiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las fracciones permiten expresar partes de una unidad: una unidad y media son 3/2 unidades, no dos unidades porque veamos dos trozos. La unidad se mantiene fija mientras contamos. La longitud del segmento sigue siendo una magnitud; el número que la expresa depende de la unidad elegida (Kiselev, 2006, pp. 3–4; Lang, 1971, p. 109)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escribir_medidas_con_partes_de_unidad",
+          "prompt": "Se ha fijado la misma unidad u para ambos registros. PQ ocupa dos unidades completas y un tercio de otra; RS ocupa tres cuartos de una unidad. Escribe sólo el valor numérico de cada medida en unidades u. Puedes escribir fracciones exactas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escribir_medidas_con_partes_de_unidad__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pq",
+                  "type": "numeric",
+                  "label": "Medida de PQ en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "rs",
+                  "type": "numeric",
+                  "label": "Medida de RS en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pq": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  },
+                  "rs": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos unidades completas y un tercio suman 2 + 1/3 = 7/3. Tres cuartos de una unidad son 3/4. Contar piezas dibujadas no sustituye sumar sus tamaños respecto de la misma unidad.",
+            "incorrect": "Comprueba qué parte de una misma unidad representa cada trozo. Reconstruye con tu número la longitud descrita y distingue unidades completas de fracciones de unidad."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "No suponemos que una longitud tenga siempre una medida entera. En estos ejercicios se han elegido datos racionales que ya sabes operar. Tampoco asignamos centímetros a un dibujo por contar píxeles: cuando la unidad sea el centímetro, debe declararse en los datos. La elección de una unidad precede al número con el que medimos (Lang, 1971, pp. 108–109)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mismo número no siempre expresa la misma longitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si medimos segmentos con la misma unidad, la igualdad de sus medidas numéricas expresa que sus longitudes son iguales y los segmentos son congruentes. La condición «misma unidad» no puede desaparecer. Decir solamente «ambos miden cuatro» deja sin fijar qué se ha contado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, una cinta de 4 cm y otra de 4 m comparten el número 4, pero no la longitud. En cambio, 4 cm y 40 mm expresan la misma longitud porque 1 cm equivale a 10 mm. Lo que se conserva al cambiar de unidad es la longitud de la cinta, no necesariamente el número. La unidad fija el significado de la medida (Lang, 1971, p. 109)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_la_condicion_de_unidad_comun",
+          "prompt": "Selecciona todas las afirmaciones justificadas. u y v nombran unidades de longitud positivas; no se conoce ninguna relación entre ellas. Los datos de cada afirmación son independientes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_la_condicion_de_unidad_comun__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Si AB mide 4 unidades u y CD mide 4 unidades u, AB y CD son congruentes.",
+                  "reviewFeedback": "Identifica qué unidad utiliza cada medida de tu afirmación y qué expresa la igualdad cuando esa referencia es común."
+                },
+                {
+                  "id": "b",
+                  "label": "Si AB mide 4 unidades u y CD mide 4 unidades v, el número repetido basta para asegurar congruencia.",
+                  "reviewFeedback": "Examina si los datos de tu afirmación relacionan las referencias con las que se han contado esas unidades."
+                },
+                {
+                  "id": "c",
+                  "label": "Dos medidas numéricas diferentes pueden expresar una misma longitud si usan unidades diferentes.",
+                  "reviewFeedback": "Comprueba qué parte de una medida puede variar cuando se conserva una longitud pero se cambia la unidad."
+                },
+                {
+                  "id": "d",
+                  "label": "Cambiar de centímetros a milímetros estira el segmento que estamos midiendo.",
+                  "reviewFeedback": "Distingue una modificación física del segmento de un cambio de referencia para expresar su longitud."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una unidad común permite comparar directamente los números: 4 unidades u y 4 unidades u expresan la misma longitud. Con unidades diferentes hay que conocer su relación; 4 cm y 40 mm, por ejemplo, describen una misma longitud sin modificarla. Igualar sólo los números o confundir un cambio de unidad con un estiramiento pierde una condición del problema.",
+            "incorrect": "Justifica las afirmaciones que elegiste distinguiendo número, unidad y longitud. No añadas una relación entre u y v que los datos no proporcionan."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "detectar_una_comparacion_indeterminada",
+          "prompt": "El único registro dice que EF mide 7 unidades u y GH mide 5 unidades v. Ambas unidades son positivas, pero no sabemos su relación. ¿Qué se puede concluir sobre cuál segmento es más largo?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "detectar_una_comparacion_indeterminada__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "EF es más largo porque 7 es mayor que 5.",
+                  "reviewFeedback": "Revisa si los números que comparaste cuentan unidades de la misma longitud."
+                },
+                {
+                  "id": "b",
+                  "label": "GH es más largo porque su medida usa menos unidades.",
+                  "reviewFeedback": "Examina qué necesitarías saber sobre el tamaño de cada unidad para interpretar la cantidad contada."
+                },
+                {
+                  "id": "c",
+                  "label": "No está determinado: falta relacionar las unidades u y v.",
+                  "reviewFeedback": "Comprueba si los datos permiten expresar ambas longitudes respecto de una referencia común."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Falta relacionar las unidades. Si u y v tienen igual longitud, EF sería mayor; si v equivale a 2 unidades u, GH mediría 10 unidades u y sería mayor. Los dos casos respetan el registro inicial, por lo que éste no determina la comparación. El contraejemplo muestra qué información falta.",
+            "incorrect": "Busca la información necesaria para comparar longitudes expresadas con referencias diferentes; no confundas contar unidades con conocer su tamaño."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la unidad conservando el segmento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que una longitud mide 3 unidades u y que cada unidad u equivale a 4 cm. Cada una de las tres copias aporta 4 cm, así que la longitud es 3 × 4 = 12 cm. Para medirla con una nueva unidad v de 2 cm, contamos cuántas copias de 2 cm forman 12 cm: son 12 ÷ 2 = 6 unidades v. La misma longitud tiene los valores numéricos 3, 12 y 6 con referencias distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes comprobar cada conversión reconstruyendo la longitud: número de unidades × longitud de la unidad. Si cambias a una unidad mayor para medir el mismo segmento, necesitas menos unidades; si la unidad es menor, necesitas más. La comprobación exige fijar qué longitud se mantiene y qué unidad cambia; no es una regla para comparar segmentos arbitrarios."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "convertir_y_reconstruir_una_longitud",
+          "prompt": "u equivale a 2 cm y v equivale a 3 cm. El segmento JK mide 5 unidades u. Sin cambiar JK, escribe su medida en centímetros y su medida en unidades v. Introduce sólo los valores numéricos; una medida no tiene por qué ser entera.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "convertir_y_reconstruir_una_longitud__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "centimetros",
+                  "type": "numeric",
+                  "label": "Medida de JK en centímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "unidades_v",
+                  "type": "numeric",
+                  "label": "Medida del mismo JK en unidades v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "centimetros": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "unidades_v": {
+                    "type": "numeric",
+                    "expected": "10/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco copias de una unidad de 2 cm forman 10 cm. Cada nueva unidad v aporta 3 cm, de modo que hacen falta 10/3 unidades v. La comprobación (10/3) × 3 cm = 10 cm recupera la longitud original; no se redondea a tres unidades.",
+            "incorrect": "Reconstruye la longitud a partir de la medida y la longitud de su unidad. Después comprueba cuántas unidades nuevas producen esa misma longitud; conserva exactamente las partes fraccionarias."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_el_tamano_de_la_unidad",
+          "prompt": "Un segmento LM tiene longitud 7/2 cm y mide exactamente 5 unidades de una referencia w. ¿Cuántos centímetros mide una unidad w? Escribe sólo ese valor numérico.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_el_tamano_de_la_unidad__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "unidad_w",
+                  "type": "numeric",
+                  "label": "Longitud de una unidad w, en centímetros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "unidad_w": {
+                    "type": "numeric",
+                    "expected": "7/10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco copias de w forman 7/2 cm. Por tanto una copia mide (7/2) ÷ 5 = 7/10 cm. Multiplicar de nuevo por cinco recupera 7/2 cm. Aquí se buscaba la longitud de cada unidad, no la cantidad de unidades ya dada.",
+            "incorrect": "Identifica qué cantidad pide el campo y cuál ya está dada. Reparte la longitud total entre las copias iguales y comprueba tu propuesta reuniéndolas otra vez."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar mediante los datos, no mediante los píxeles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un esquema ayuda a reconocer extremos, pertenencias y orden, pero su apariencia no reemplaza los datos. Dos paneles pueden ampliarse de forma independiente para aprovechar la pantalla: sus trazos no quedan necesariamente a una misma escala. Tampoco una foto tomada desde otro lugar conserva por sí sola las longitudes del objeto fotografiado. Comparar con una regla la imagen de la pantalla no es medir el segmento del problema."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_evidencia_suficiente_de_congruencia",
+          "prompt": "Necesitas justificar que dos segmentos de un problema son congruentes. Selecciona todas las evidencias que bastan por sí mismas, sin añadir que los dibujos usan una escala común.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "elegir_evidencia_suficiente_de_congruencia__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sus longitudes están dadas como 15 mm y 1,5 cm, y 1 cm equivale a 10 mm.",
+                  "reviewFeedback": "Expresa las dos medidas con una referencia común y justifica qué relación resulta entre las longitudes."
+                },
+                {
+                  "id": "b",
+                  "label": "En dos imágenes ampliadas por separado, los trazos ocupan el mismo número de píxeles.",
+                  "reviewFeedback": "Examina si el tamaño de esas dos imágenes conserva una misma relación con las longitudes representadas."
+                },
+                {
+                  "id": "c",
+                  "label": "Una copia de uno coincide completamente con el otro al moverla sin deformación.",
+                  "reviewFeedback": "Comprueba qué condición geométrica ofrece esa coincidencia completa, con independencia del lugar original."
+                },
+                {
+                  "id": "d",
+                  "label": "Los dos tienen extremos con letras diferentes y cada uno aparece horizontal en su imagen.",
+                  "reviewFeedback": "Distingue los nombres y la dirección aparente de la información que hace falta para comparar longitudes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "15 mm y 1,5 cm expresan la misma longitud después de convertir a una unidad común. La coincidencia completa mediante un movimiento sin deformación también prueba congruencia. Los píxeles de imágenes ampliadas independientemente, las letras y la horizontalidad no proporcionan por sí solos esa comparación.",
+            "incorrect": "Justifica qué propiedad conserva la evidencia que seleccionaste. Distingue una medida de longitud del tamaño de una representación y de sus rótulos."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para consolidar la idea, dibuja dos segmentos en posiciones diferentes sobre una hoja. Con una tira de papel marca los dos extremos de uno y mueve la tira sin estirarla para compararlo con el otro. Explica por qué comprobar sólo un extremo no basta. Es una práctica manual de observación: la aplicación no evalúa ese traslado ni certifica la precisión del dibujo. Más adelante construiremos copias con regla y compás."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar todo en una comparación nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora combina lo aprendido sin copiar el ejemplo de conversión. Mantén la longitud de cada segmento, identifica sus unidades y lleva las dos medidas a una referencia común antes de compararlas. Explica también por qué tu conclusión se conserva si giramos una copia sin deformación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_longitudes_con_dos_referencias",
+          "prompt": "AB mide 5/2 unidades u. CD mide 3 unidades v y cada unidad v equivale a 3/4 de una unidad u. Escribe ambas medidas en unidades u y elige la comparación entre los segmentos. No se permite estirar las copias. Introduce sólo números en los dos primeros campos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_longitudes_con_dos_referencias__conclusion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ab",
+                  "type": "numeric",
+                  "label": "Medida de AB en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cd",
+                  "type": "numeric",
+                  "label": "Medida de CD en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "comparacion",
+                  "type": "dropdown",
+                  "label": "Comparación justificada",
+                  "options": [
+                    {
+                      "id": "ab_mayor",
+                      "label": "AB es más largo que CD.",
+                      "reviewFeedback": "Comprueba la desigualdad que afirmas después de expresar ambas medidas con la misma unidad."
+                    },
+                    {
+                      "id": "congruentes",
+                      "label": "AB y CD son congruentes.",
+                      "reviewFeedback": "Comprueba la igualdad de longitudes que requiere tu elección usando una referencia común."
+                    },
+                    {
+                      "id": "cd_mayor",
+                      "label": "CD es más largo que AB.",
+                      "reviewFeedback": "Reconstruye la longitud asociada a cada medida antes de justificar el sentido de esta comparación."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ab": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "cd": {
+                    "type": "numeric",
+                    "expected": "9/4"
+                  },
+                  "comparacion": {
+                    "type": "exact_text",
+                    "expected": "ab_mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "AB ya estaba expresado en unidades u: mide 5/2 = 10/4. CD mide \\(3 × 3/4 = 9/4\\) unidades u. Con una unidad común, 10/4 es mayor que 9/4: AB es más largo. La diferencia es 1/4 de unidad u. Girar o trasladar copias no cambia esas longitudes ni la comparación.",
+            "incorrect": "Comprueba que cada valor numérico expresa la longitud pedida en unidades u. Reconstruye especialmente la longitud que estaba dada con la otra referencia y justifica la comparación elegida."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Cierra sin mirar los ejemplos: explica la diferencia entre «el mismo segmento», «segmentos congruentes» y «medidas con el mismo número». Para la última afirmación, indica la condición adicional necesaria o construye un contraejemplo con dos unidades positivas distintas. Esta justificación abierta complementa los campos y no se califica automáticamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente tramo utilizaremos estas comparaciones para componer segmentos, recuperar partes y justificar cuándo una suma de longitudes describe el segmento completo. Conservar la unidad y las condiciones geométricas será tan importante como operar correctamente con sus números."
+        }
+      ]
+    }
+  ]
+}
