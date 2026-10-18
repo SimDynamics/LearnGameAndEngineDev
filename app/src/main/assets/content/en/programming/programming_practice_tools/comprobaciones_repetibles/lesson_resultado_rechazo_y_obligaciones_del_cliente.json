@@ -1,0 +1,423 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__resultado_rechazo_y_obligaciones_del_cliente",
+  "title": "Results, Rejection, and Client Responsibilities",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From a Precondition to an Interface That Can Also Reject"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already built cajas_para for piece counts between 0 and 20 and preserved its test suite. That agreement did not say what it should do outside its domain. Here we will reuse its body without extending it: a new function will receive any int and decide whether it may call the original. You are revisiting bool and int& from C++ 1; the new work is to agree on what the interface communicates and what its client must do."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool intentar_cajas(int piezas, int& resultado);\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contract for this practice: when 0 <= piezas <= 20, it returns true and writes the minimum number of four-slot boxes into resultado. Zero pieces is a valid request and produces zero boxes. Outside this range, it returns false and leaves the previous value of resultado exactly unchanged. It neither prints nor terminates the program. The bool and the reference output have distinct roles. Preserving the output on rejection is an explicit choice in this contract, not a universal rule for functions (Kernighan & Pike, 1999, pp. 105, 111–112)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_dominio_anterior",
+          "question": "The previous cajas_para agreement covered only 0..20. What does that agreement alone establish about calling cajas_para(-1)?",
+          "options": [
+            "It must reject the call by returning false and leave every client variable unchanged.",
+            "It must terminate the process because the request is out of range.",
+            "It specifies no required result for that call."
+          ],
+          "correctIndex": 2,
+          "explanation": "A precondition limits the calls covered by an agreement. It does not by itself specify a rejection mechanism. intentar_cajas now adds that behavior for any int, without retroactively attributing it to cajas_para.",
+          "reviewFeedback": [
+            "Distinguish what the new wrapper promises from what the previous interface stated.",
+            "Check whether the original agreement required any particular action for values outside its domain.",
+            "Separate the domain of supported calls from the behavior added by a different function."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Call's Status Is Not Its Numeric Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "int& binds resultado to a mutable int belonging to the client. The bool return value indicates whether THIS request was accepted. If true, the integer holds the new result; if false, here it retains a previous value. Reading that integer to verify that it did not change is legitimate; recording it as a new result for the rejected request violates the agreement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_cero_aceptado",
+          "question": "resultado was 37. The call intentar_cajas(0, resultado) satisfies its contract. Which return/output pair is correct?",
+          "options": [
+            "true / 0: the request was accepted, and its numeric result is zero.",
+            "false / 0: every zero result means the request was rejected.",
+            "true / 37: a zero-piece request preserves the prior result."
+          ],
+          "correctIndex": 0,
+          "explanation": "Zero is within the domain and requires zero boxes. Acceptance is not inferred by converting that zero to bool: it comes from the function's return value.",
+          "reviewFeedback": [
+            "Check acceptance and the required result separately.",
+            "Compare the permitted domain with the meaning of zero as a numeric result.",
+            "Apply the postcondition of an accepted request to the output that previously held 37."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Another possible interface could return one int and reserve a particular number for rejection, as long as it falls outside all normal results and is documented. It would not be the same signature or agreement used here. Choosing a sentinel requires knowing the set of possible results (Kernighan & Pike, 1999, pp. 111–112)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_centinela_delimitado",
+          "question": "In that alternative box interface, normal results would be integers 0..5. Which proposal can distinguish rejection from a result without changing that set?",
+          "options": [
+            "Reserve 0 for rejection while keeping 0 as the result for zero pieces.",
+            "Reserve -1 for rejection and require the client to interpret that value.",
+            "Reserve 5 for rejection while keeping 5 as the result for twenty pieces."
+          ],
+          "correctIndex": 1,
+          "explanation": "In that alternative design, -1 falls outside 0..5. Reserving a valid result would conflate two situations. This does not change the bool + int& contract chosen for the labs.",
+          "reviewFeedback": [
+            "Check whether the reserved value matches any permitted request's result.",
+            "Compare the reserved signal with the entire set of results and the client's obligation.",
+            "Relate the upper boundary case to the value being reserved."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Testing an Expected Rejection Can Also Yield OK"
+        },
+        {
+          "type": "paragraph",
+          "text": "A test compares the observed pair with the required pair. For -1 pieces with an initial output of 37, we expect false and 37. That false is a correct component result; the test fails only if either the status or the output differs from the agreement. Use different initial values so an accidental hard-coded assignment does not go unnoticed."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int destino{37};\nconst bool aceptado{intentar_cajas(-1, destino)};\nconst bool coincide{!aceptado && destino == 37};\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_rechazo_y_veredicto",
+          "question": "A test for -1 receives false and preserves 37, as required. How should it classify this observation?",
+          "options": [
+            "As a failure, because a function returning false did not pass its test.",
+            "As an accepted request, because the output still holds an integer.",
+            "As a successful test of rejection, because both the status and the output match."
+          ],
+          "correctIndex": 2,
+          "explanation": "Request status and test verdict answer different questions. The test passes when the observed rejection fully satisfies the contract.",
+          "reviewFeedback": [
+            "Distinguish the component's return value from the outcome of comparing it with the expectation.",
+            "Consider what an earlier value in the output of a rejected request means.",
+            "Keep both parts of the agreement in the comparison, not only the return value."
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "interfaz_orden_de_la_observacion",
+          "question": "Put these three statements in order to test rejection of -1 starting from a known output. Declarations must precede their use; make exactly one call.",
+          "fragments": [
+            "const bool coincide{!aceptado && destino == 37};",
+            "int destino{37};",
+            "const bool aceptado{intentar_cajas(-1, destino)};"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            0
+          ],
+          "explanation": "First establish the previous state, then execute one call, and finally compare its return value and resulting output. Checking the output beforehand does not observe the effect of the call.",
+          "reviewFeedback": "Track when each variable exists and when its value is observed. Make sure the comparison refers to the one call that has already finished."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Honor the Rejection Output as Well"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial program's intentar_cajas compiles and distinguishes statuses, but writes before validating. Repair it so it satisfies the first page's contract. Preserve cajas_para, comprobar_cajas, bateria_componente, all seven test cases, and their expected results. Do not change the contract to accommodate a failing test."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict which cases detect the defect before executing. The program prints pieces:status:output followed by each test's verdict. An expected rejection must end with OK; a component defect produces FAIL and exit code 1 from this test program. After the repair, all seven cases should pass, including zero and both out-of-range boundaries. The reference follows your attempt."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Component: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Component: OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Validate Before Producing the Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "This repair preserves the known calculation and does not write to resultado until the request is known to be accepted. The -1 and 21 tests expect rejection, not a failure of the test program. Different initial values make an improper write visible; checking only bool would miss that defect."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Component: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Component: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "id": "interfaz_rechazar_cualquiera_de_los_extremos",
+          "question": "Fill in only the binary logical operator that rejects either out-of-range boundary. Enter its symbol or a valid C++ alternative token; do not add another comparison.",
+          "code": "if (piezas < 0 ____ piezas > 20) {\n    return false;\n}\n",
+          "answers": [
+            "||",
+            "or"
+          ],
+          "explanation": "Logical OR rejects when either comparison is true. No int can simultaneously be less than zero and greater than twenty; requiring both would let both out-of-range ends pass.",
+          "reviewFeedback": "Evaluate a request below zero and another above twenty separately. Check when the rejection branch must run even if only one comparison is true."
+        },
+        {
+          "type": "output_prediction",
+          "id": "interfaz_destino_a_traves_de_las_llamadas",
+          "question": "Predict the exact output, with no trailing newline. Each call finishes before printing its status and resulting output; do not reset the output between calls.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nint main() {\n    int destino{37};\n    const bool a{intentar_cajas(0, destino)};\n    std::cout << a << \":\" << destino << \"|\";\n    const bool b{intentar_cajas(-1, destino)};\n    std::cout << b << \":\" << destino << \"|\";\n    const bool c{intentar_cajas(5, destino)};\n    std::cout << c << \":\" << destino << \"|\";\n    const bool d{intentar_cajas(21, destino)};\n    std::cout << d << \":\" << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:0|0:0|1:2|0:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Zero is accepted and writes zero. -1 is rejected, preserving that zero; five writes two; twenty-one is rejected, preserving two. The bool describes each request, while the output may retain an earlier result.",
+          "reviewFeedback": "Keep a single trace of the output variable. Distinguish each rejection branch from a new assignment and link each print to the call that just finished."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Preserved Output Does Not Belong to a New Request"
+        },
+        {
+          "type": "paragraph",
+          "text": "The component decides whether it can produce the promised result. The client decides what to do on rejection: for example, count the request and continue, ask for another input, or end its task. Our library makes no such decision and does not print anything on its own. This separation allows different clients to react differently (Kernighan & Pike, 1999, p. 111)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cajas{2};\nconst bool aceptado{intentar_cajas(21, cajas)};\n// The return value and cajas describe different things.\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_historia_no_es_resultado",
+          "question": "The client wants to sum only results from accepted requests. In this snippet, the function satisfies its contract. Which use matches that intention?",
+          "options": [
+            "Count the rejection without adding cajas as the result of this request.",
+            "Add cajas because the value was preserved and remains a valid integer.",
+            "Add zero and count an acceptance because no new boxes are needed."
+          ],
+          "correctIndex": 0,
+          "explanation": "The output still equals two because of the preservation requirement, but the request was rejected. That two can be inspected as history; it is not a new result to add to the total.",
+          "reviewFeedback": [
+            "Relate the client's record to acceptance of this particular call.",
+            "Distinguish preserving a previous value from producing a result for the current request.",
+            "Check whether the request was accepted before interpreting what it means to add no boxes."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Test the Consumer Too"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial program's library already satisfies its contract and its test suite passes. The client receives 0, -1, 5, 21, and 4 pieces in that order. It must count three accepted and two rejected requests, summing only the new results: 0 + 2 + 1 = 3. The initial program produces a different total. Repair how the loop uses the interface; preserve the library, component tests, inputs, and final comparison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Trace each status and output before running. After the repair, change only the request order to {21, 4, -1, 0, 5}: they remain the same five requests, and the three final expectations stay the same. The initial rejection preserves 77, but that value does not belong to any accepted request. Do not fix the library by clearing results, or change the test to accept the incorrect total."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Component: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Component: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Accepted=\" << aceptados << \" Rejected=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Client: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Client: OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Decide Using the Status of That Call"
+        },
+        {
+          "type": "paragraph",
+          "text": "The addition belongs inside the accepted branch, alongside its counter. The rejected branch only counts the request. Keeping the same library lets you attribute the repair to the consumer. Passing the component's test suite was real evidence, but it did not yet test this client loop."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Component: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Component: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        if (aceptado) {\n            ++aceptados;\n            total += salida;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Accepted=\" << aceptados << \" Rejected=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Client: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Client: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_dos_capas_de_evidencia",
+          "question": "The component test suite passes, but the initial client program sums five instead of three. Which revision addresses the observed failure?",
+          "options": [
+            "Make the component clear the output upon rejection, changing its current agreement.",
+            "Review when the client adds the output, preserving the component tests.",
+            "Update the expected total to five while preserving the requests and their contracts."
+          ],
+          "correctIndex": 1,
+          "explanation": "The component satisfied its contract; the client added an output belonging to an earlier call. Changing the component or the test oracle to accommodate that use would hide the consumer's contract violation.",
+          "reviewFeedback": [
+            "Compare the proposed write with the postcondition that the library must preserve.",
+            "Distinguish what the component test suite checks from what the accumulator requires.",
+            "Derive the total from accepted requests before adjusting a comparison."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: A Negative Result Can Also Be Valid"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build another interface and its client. calcular_saldo receives any pair of int values; it accepts exactly when cobros and devoluciones are each between 0 and 9 inclusive. On acceptance it writes cobros - devoluciones to saldo and returns true. On rejection it returns false and preserves saldo. It does not print. Normal results range from -9..9; the sign does not determine acceptance."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool calcular_saldo(int cobros, int devoluciones, int& saldo);\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados);\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "registrar must call the component exactly once. If accepted, it adds that balance to total and increments aceptados; if rejected, it only increments rechazados. All three reference parameters belong to the client. In this practice they refer to distinct objects, start at zero, and are used in these four calls, in order: (5,5), (2,3), (10,0), (0,9). The required totals are three accepted, one rejected, and total -10. Implement both lab functions; preserve the test program and its six cases. The skeleton compiles but does not yet meet the task."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_centinela_en_otro_dominio",
+          "question": "For an alternative interface returning only the balance, what happens if -1 is reserved to signal rejection while retaining cobros - devoluciones for every valid pair?",
+          "options": [
+            "A negative sign identifies rejection because cobros and devoluciones are nonnegative.",
+            "The valid pair (2,3) produces the same signal, so those two meanings become ambiguous.",
+            "The reservation works because a value chosen as a signal ceases to be a numeric result."
+          ],
+          "correctIndex": 1,
+          "explanation": "Two nonnegative inputs can produce a negative difference. Both -1 and 0 are in -9..9; reserving them without changing the agreement is ambiguous. Other signals outside that range could be designed, but these labs preserve the separate-status contract.",
+          "reviewFeedback": [
+            "Trace the possible range of a difference, not only the signs of its inputs.",
+            "Compare the permitted pair's result with the value reserved by the alternative interface.",
+            "Check whether naming a signal changes the operation promised for valid pairs."
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Accepted=\" << aceptados << \" Rejected=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transfer: FAIL\\n\"; return 1; }\n    std::cout << \"Transfer: OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference and Checking the Consumer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Validating both operands before subtraction also keeps the operation within the stated bounds. The client decides using the bool, so it correctly sums positive, zero, and negative balances. The test program has its own separate task: inspecting the output of a rejected request to verify that it remained unchanged."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Accepted=\" << aceptados << \" Rejected=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transfer: FAIL\\n\"; return 1; }\n    std::cout << \"Transfer: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "interfaz_cliente_que_rechaza_por_signo",
+          "question": "This variant adds saldo >= 0 to the client's criterion. Predict exactly aceptados:rechazados:total, without a trailing newline. The calcular_saldo function does satisfy its contract.",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo) && saldo >= 0) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nint main() {\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "1:3:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "The client counts (5,5), whose balance is zero. It incorrectly classifies balances -1 and -9 as rejections; it also counts the actual rejection of (10,0). It therefore prints 1:3:0, although the client contract required 3:1:-10.",
+          "reviewFeedback": "Track the component's return value and the client's additional comparison separately. Apply both to each pair before updating the three accumulators."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_rechazo_con_destino_negativo",
+          "question": "In comprobar_saldo(0, -1, -8, false, -8), the function satisfies its contract. What does finding -8 in the output establish?",
+          "options": [
+            "That -8 was the new balance of an accepted request, since it is in -9..9.",
+            "That the client must add -8 to the total because the output retains a usable value.",
+            "That the output was preserved on rejection, not that a new balance was calculated."
+          ],
+          "correctIndex": 2,
+          "explanation": "The false bool indicates rejection, and equality with the initial value establishes preservation. Falling within the possible balance range does not turn a historical output into the result of this request.",
+          "reviewFeedback": [
+            "Determine whether the integer comes from the initial state or from a new assignment using this call's outcome.",
+            "Connect the accumulator's obligation to acceptance, not merely to an integer being in range.",
+            "Distinguish what the test verifies here from what the consumer may record."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall Responsibilities When a Policy Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine another, explicitly different version: on rejection it writes zero into the output and returns false; accepted requests remain unchanged. Do not adopt this behavior to repair previous labs. Changing a postcondition requires reviewing dependent tests and clients; an interface is not defined by its types alone."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_revision_del_acuerdo",
+          "question": "Under that new policy, which revision preserves the distinction between status, output, and test verdict?",
+          "options": [
+            "Change the expected rejection output to zero and continue deciding acceptance using bool.",
+            "Keep the old output as the expected value and count every zero output as an accepted request.",
+            "Change the valid-zero case's expectation to false and omit bool when recording results."
+          ],
+          "correctIndex": 0,
+          "explanation": "The rejection postcondition changed. Its expected output must reflect that, without confusing it with valid zero or eliminating the client's duty to inspect the return status. The labs, however, retain their original unchanged-output contract.",
+          "reviewFeedback": [
+            "Relate each comparison and client decision to the particular clause of the agreement that changed.",
+            "Check whether the proposed text retains the old postcondition and whether zero alone distinguishes the two statuses.",
+            "Distinguish changing the effect of rejection from changing which requests are accepted."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Restoring the ORIGINAL agreement from the labs:\n// (0, 37)    -> true,  0\n// (-1, 37)   -> false, 37\n// (5, 37)    -> true,  2\n// (21, -8)   -> false, -8\n"
+        },
+        {
+          "type": "note",
+          "text": "When reusing an interface, recall its domain, what its return value means, the output it promises in each status, and the decision assigned to the client. Test both levels against their own expectations; do not change one to conceal a defect in the other."
+        }
+      ]
+    }
+  ]
+}

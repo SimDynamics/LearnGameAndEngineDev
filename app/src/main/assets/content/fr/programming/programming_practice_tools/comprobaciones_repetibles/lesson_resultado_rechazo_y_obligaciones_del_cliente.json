@@ -1,0 +1,423 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__resultado_rechazo_y_obligaciones_del_cliente",
+  "title": "Résultats, rejets et responsabilités du client",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "D'une précondition à une interface qui peut aussi refuser"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as déjà construit cajas_para pour des quantités de pièces entre 0 et 20 et conservé sa batterie de tests. Cet accord ne précisait pas le comportement hors du domaine. Ici, nous réutiliserons son corps sans l'étendre : une nouvelle fonction recevra n'importe quel int et décidera si elle peut appeler la première. Tu retrouves bool et int& du cours C++ 1 ; la nouveauté consiste à convenir de ce que communique l'interface et de ce que son client doit faire."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool intentar_cajas(int piezas, int& resultado);\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrat de cet exercice : pour 0 <= piezas <= 20, la fonction renvoie true et écrit dans resultado le nombre minimal de boîtes de quatre places. Zéro pièce est une demande valide et produit zéro boîte. Hors de cet intervalle, elle renvoie false et conserve exactement la valeur précédente de resultado. Elle n'affiche rien et ne termine pas le programme. Le bool et la sortie par référence ont des rôles distincts. La conservation de la valeur lors d'un rejet est un choix explicite de ce contrat, et non une règle universelle des fonctions (Kernighan & Pike, 1999, pp. 105, 111–112)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_dominio_anterior",
+          "question": "L'accord précédent de cajas_para couvrait seulement 0..20. Que permet-il d'affirmer, à lui seul, sur l'appel cajas_para(-1) ?",
+          "options": [
+            "Il doit le refuser en renvoyant false et conserver toutes les variables du client.",
+            "Il doit terminer le processus puisque la demande est hors de l'intervalle.",
+            "Cet accord ne définit aucun résultat obligatoire pour cet appel."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une précondition délimite les appels couverts par un contrat. Elle ne spécifie pas à elle seule un mécanisme de rejet. intentar_cajas ajoute maintenant ce comportement pour tout int sans l'attribuer rétroactivement à cajas_para.",
+          "reviewFeedback": [
+            "Distingue la promesse du nouvel adaptateur de ce qu'énonçait l'ancienne interface.",
+            "Vérifie si l'accord initial imposait une action précise pour les valeurs hors du domaine.",
+            "Sépare le domaine des appels couverts du comportement ajouté par une autre fonction."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'état d'un appel n'est pas son résultat numérique"
+        },
+        {
+          "type": "paragraph",
+          "text": "int& lie resultado à un int modifiable du client. La valeur de retour bool indique si CETTE demande a été acceptée. Si elle vaut true, l'entier contient le nouveau résultat ; si elle vaut false, il conserve ici une valeur précédente. Lire cet entier pour vérifier qu'il n'a pas changé est légitime ; l'enregistrer comme résultat nouveau d'une demande rejetée ne respecte pas le contrat."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_cero_aceptado",
+          "question": "resultado valait 37. L'appel intentar_cajas(0, resultado) respecte son contrat. Quelle paire retour/sortie correspond ?",
+          "options": [
+            "true / 0 : la demande a été acceptée et son résultat numérique vaut zéro.",
+            "false / 0 : tout résultat zéro signifie que la demande a été rejetée.",
+            "true / 37 : une demande portant sur zéro pièce conserve le résultat précédent."
+          ],
+          "correctIndex": 0,
+          "explanation": "Zéro appartient au domaine et demande zéro boîte. L'acceptation ne se déduit pas de la conversion de ce zéro en bool : elle est donnée par la valeur de retour de la fonction.",
+          "reviewFeedback": [
+            "Vérifie séparément l'acceptation de la demande et la valeur qu'elle doit produire.",
+            "Compare le domaine autorisé avec la signification de zéro comme résultat numérique.",
+            "Applique la postcondition d'une demande acceptée à la sortie qui valait auparavant 37."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre interface pourrait aussi renvoyer un unique int et réserver une valeur au rejet, à condition qu'elle soit hors de l'ensemble des résultats normaux et que cela soit documenté. Elle n'aurait ni la même signature ni le même contrat que ceux utilisés ici. Choisir un signal exige de connaître l'ensemble des résultats possibles (Kernighan & Pike, 1999, pp. 111–112)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_centinela_delimitado",
+          "question": "Dans cette interface alternative de boîtes, les résultats normaux seraient les entiers 0..5. Quelle solution permet de distinguer rejet et résultat sans modifier cet ensemble ?",
+          "options": [
+            "Réserver 0 au rejet tout en gardant 0 comme résultat pour zéro pièce.",
+            "Réserver -1 au rejet et imposer au client d'interpréter cette valeur.",
+            "Réserver 5 au rejet tout en gardant 5 comme résultat pour vingt pièces."
+          ],
+          "correctIndex": 1,
+          "explanation": "Dans cette conception alternative, -1 se trouve hors de 0..5. Réserver un résultat valide confondrait deux situations. Cela ne modifie pas le contrat bool + int& retenu pour les laboratoires.",
+          "reviewFeedback": [
+            "Vérifie si la valeur réservée correspond au résultat d'une demande autorisée.",
+            "Compare le signal réservé avec tout l'ensemble des résultats et l'obligation du client.",
+            "Relie le cas de la limite supérieure à la valeur que l'on souhaite réserver."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier un rejet attendu peut aussi donner OK"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test compare la paire observée à la paire exigée. Pour -1 pièce et une sortie initiale de 37, nous attendons false et 37. Ce false est un résultat correct du composant ; le test échoue uniquement si l'état ou la sortie diffère du contrat. Utilise plusieurs valeurs initiales pour ne pas masquer une affectation constante accidentelle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int destino{37};\nconst bool aceptado{intentar_cajas(-1, destino)};\nconst bool coincide{!aceptado && destino == 37};\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_rechazo_y_veredicto",
+          "question": "Un test pour -1 reçoit false et conserve 37, conformément au contrat. Comment classer cette observation ?",
+          "options": [
+            "Comme un échec, puisqu'une fonction renvoyant false n'a pas réussi son test.",
+            "Comme une demande acceptée, puisque la sortie contient encore un entier.",
+            "Comme un test réussi du rejet, puisque l'état et la sortie correspondent."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'état de la demande et le verdict du test répondent à des questions différentes. Le test réussit lorsque le rejet observé respecte entièrement le contrat.",
+          "reviewFeedback": [
+            "Distingue le retour du composant du résultat de sa comparaison à la valeur attendue.",
+            "Vérifie ce que signifie la présence d'une valeur antérieure dans la sortie d'une demande rejetée.",
+            "Conserve les deux aspects du contrat dans la comparaison, pas seulement la valeur de retour."
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "interfaz_orden_de_la_observacion",
+          "question": "Remets ces trois instructions dans l'ordre pour vérifier le rejet de -1 à partir d'une sortie connue. Les déclarations doivent précéder leurs utilisations ; effectue un seul appel.",
+          "fragments": [
+            "const bool coincide{!aceptado && destino == 37};",
+            "int destino{37};",
+            "const bool aceptado{intentar_cajas(-1, destino)};"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            0
+          ],
+          "explanation": "On définit d'abord l'état précédent, puis on exécute un appel et enfin on compare le retour et la sortie obtenue. Vérifier la sortie avant l'appel n'observe pas son effet.",
+          "reviewFeedback": "Suis le moment où chaque variable existe et celui auquel appartient la valeur observée. Vérifie que la comparaison concerne le seul appel déjà terminé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : respecter aussi la sortie lors du rejet"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction intentar_cajas du programme initial compile et distingue les états, mais écrit avant de valider. Corrige-la pour respecter le contrat de la première page. Conserve cajas_para, comprobar_cajas, bateria_componente, les sept cas et leurs résultats attendus. Ne change pas le contrat pour faire réussir un test défaillant."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis les cas qui détecteront le défaut avant l'exécution. Le programme affiche pièces:état:sortie, puis le verdict de chaque test. Un rejet attendu doit se terminer par OK ; un défaut du composant produit ÉCHEC et le code de sortie 1 du vérificateur. Après correction, les sept cas doivent réussir, y compris zéro et les deux limites extérieures. La référence suit l'exercice."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Composant : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Composant : OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : valider puis produire le résultat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette correction conserve le calcul connu et n'écrit dans resultado qu'après avoir confirmé l'acceptation de la demande. Les tests de -1 et 21 attendent un rejet, pas un échec du vérificateur. Les valeurs initiales variées rendent visible une écriture indue ; vérifier seulement le bool aurait laissé passer ce défaut."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Composant : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Composant : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "id": "interfaz_rechazar_cualquiera_de_los_extremos",
+          "question": "Complète uniquement l'opérateur logique binaire qui permet de rejeter chacune des limites extérieures. Saisis son symbole ou son mot-clé alternatif valide en C++ ; n'ajoute aucune autre comparaison.",
+          "code": "if (piezas < 0 ____ piezas > 20) {\n    return false;\n}\n",
+          "answers": [
+            "||",
+            "or"
+          ],
+          "explanation": "Le OU logique rejette la demande dès qu'une des deux comparaisons est vraie. Aucun int ne peut être à la fois inférieur à zéro et supérieur à vingt ; exiger les deux laisserait passer les extrêmes.",
+          "reviewFeedback": "Évalue séparément une demande inférieure à zéro et une autre supérieure à vingt. Vérifie quand la branche de rejet doit être exécutée, même si une seule comparaison est vraie."
+        },
+        {
+          "type": "output_prediction",
+          "id": "interfaz_destino_a_traves_de_las_llamadas",
+          "question": "Prédis la sortie exacte, sans saut de ligne final. Chaque appel se termine avant d'afficher son état et la sortie laissée ; ne réinitialise pas la sortie entre les appels.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nint main() {\n    int destino{37};\n    const bool a{intentar_cajas(0, destino)};\n    std::cout << a << \":\" << destino << \"|\";\n    const bool b{intentar_cajas(-1, destino)};\n    std::cout << b << \":\" << destino << \"|\";\n    const bool c{intentar_cajas(5, destino)};\n    std::cout << c << \":\" << destino << \"|\";\n    const bool d{intentar_cajas(21, destino)};\n    std::cout << d << \":\" << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:0|0:0|1:2|0:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Zéro est accepté et écrit zéro. -1 est rejeté et conserve ce zéro ; cinq écrit deux ; vingt et un est rejeté et conserve deux. Le bool décrit chaque demande, tandis que la sortie peut conserver un résultat précédent.",
+          "reviewFeedback": "Garde une seule trace de la variable de sortie. Distingue chaque branche de rejet d'une nouvelle affectation et relie chaque affichage à l'appel qui vient de se terminer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une sortie conservée n'appartient pas à une nouvelle demande"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le composant décide s'il peut produire le résultat promis. Le client décide comment réagir au rejet : par exemple, compter la demande et continuer, demander une nouvelle donnée ou arrêter sa tâche. Notre bibliothèque ne prend pas cette décision et n'affiche rien de sa propre initiative. Cette séparation permet à différents clients de réagir différemment (Kernighan & Pike, 1999, p. 111)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cajas{2};\nconst bool aceptado{intentar_cajas(21, cajas)};\n// La valeur de retour et cajas décrivent des choses différentes.\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_historia_no_es_resultado",
+          "question": "Le client souhaite additionner uniquement les résultats des demandes acceptées. Dans cet extrait, la fonction respecte son contrat. Quelle utilisation répond à cet objectif ?",
+          "options": [
+            "Compter le rejet sans ajouter cajas comme résultat de cette demande.",
+            "Ajouter cajas car la valeur a été conservée et reste un entier valide.",
+            "Ajouter zéro et compter une acceptation puisqu'aucune nouvelle boîte n'est nécessaire."
+          ],
+          "correctIndex": 0,
+          "explanation": "La sortie vaut toujours deux en vertu de l'obligation de conservation, mais la demande a été rejetée. On peut examiner ce deux comme une valeur historique ; ce n'est pas un nouveau résultat à ajouter.",
+          "reviewFeedback": [
+            "Relie le relevé du client à l'acceptation de cet appel précis.",
+            "Distingue la conservation d'une valeur précédente de la production d'un résultat pour la demande actuelle.",
+            "Vérifie si la demande a été acceptée avant d'interpréter ce que signifie n'ajouter aucune boîte."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : vérifier aussi le consommateur"
+        },
+        {
+          "type": "paragraph",
+          "text": "La bibliothèque du programme initial respecte déjà son contrat et sa batterie réussit. Le client reçoit, dans l'ordre, 0, -1, 5, 21 et 4 pièces. Il doit compter trois demandes acceptées et deux rejetées, en additionnant uniquement les nouveaux résultats : 0 + 2 + 1 = 3. Le programme initial produit un total différent. Corrige l'utilisation de l'interface dans la boucle ; conserve la bibliothèque, les tests du composant, les données et la comparaison finale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Suis chaque état et sortie avant l'exécution. Après correction, modifie seulement l'ordre des demandes en {21, 4, -1, 0, 5} : les cinq demandes restent les mêmes et les trois attentes finales aussi. Le rejet initial conserve 77, mais cette valeur n'appartient à aucune demande acceptée. Ne corrige pas la bibliothèque en effaçant les résultats et ne modifie pas le test pour accepter le total erroné."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Composant : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Composant : OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Acceptés=\" << aceptados << \" Rejetés=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Client : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Client : OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : décider selon l'état de cet appel"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'addition doit se trouver dans la branche acceptée, avec son compteur. La branche de rejet compte seulement la demande. Conserver la même bibliothèque permet d'attribuer la correction au consommateur. La réussite de la batterie du composant était une preuve réelle, mais ne vérifiait pas encore cette boucle du client."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Composant : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Composant : OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        if (aceptado) {\n            ++aceptados;\n            total += salida;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Acceptés=\" << aceptados << \" Rejetés=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Client : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Client : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_dos_capas_de_evidencia",
+          "question": "La batterie du composant réussit, mais le programme initial du client additionne cinq au lieu de trois. Quelle modification répond à l'échec observé ?",
+          "options": [
+            "Faire effacer la sortie par le composant lors du rejet, en changeant son contrat actuel.",
+            "Examiner le moment où le client ajoute la sortie, en conservant les tests du composant.",
+            "Changer le total attendu à cinq, sans changer les demandes ni leurs contrats."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le composant respectait son contrat ; le client a ajouté une sortie provenant d'un appel antérieur. Modifier le composant ou l'oracle de test pour s'adapter à cette utilisation masquerait le non-respect du contrat par le consommateur.",
+          "reviewFeedback": [
+            "Compare l'écriture proposée avec la postcondition que la bibliothèque doit déjà respecter.",
+            "Attribue séparément ce que vérifie la batterie et ce qu'exige l'accumulateur.",
+            "Déduis le total des demandes acceptées avant de modifier une comparaison."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : un résultat négatif peut aussi être valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une autre interface et son client. calcular_saldo reçoit n'importe quelle paire d'int ; elle accepte exactement lorsque cobros et devoluciones sont chacun compris entre 0 et 9 inclus. Lorsqu'elle accepte, elle écrit cobros - devoluciones dans saldo et renvoie true. Lorsqu'elle refuse, elle renvoie false et conserve saldo. Elle n'affiche rien. Les résultats normaux sont compris entre -9..9 ; le signe ne détermine pas l'acceptation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool calcular_saldo(int cobros, int devoluciones, int& saldo);\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados);\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "registrar doit appeler le composant une seule fois. Si l'appel est accepté, il ajoute ce solde à total et augmente aceptados ; sinon, il augmente uniquement rechazados. Les trois destinations reçues par référence appartiennent au client. Dans cet exercice, ce sont des objets distincts, initialisés à zéro et utilisés avec ces quatre appels, dans l'ordre : (5,5), (2,3), (10,0), (0,9). On exige trois acceptations, un rejet et un total de -10. Implémente les deux fonctions du laboratoire ; conserve le vérificateur et ses six cas. Le squelette compile, mais ne satisfait pas encore l'exercice."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_centinela_en_otro_dominio",
+          "question": "Dans une interface alternative ne renvoyant que le solde, que se passe-t-il si l'on réserve -1 pour signaler le rejet tout en conservant cobros - devoluciones pour chaque paire valide ?",
+          "options": [
+            "Le signe négatif distingue les rejets, car cobros et devoluciones ne sont pas négatifs.",
+            "La paire valide (2,3) produit aussi ce signal, ce qui rend les deux significations ambiguës.",
+            "La réservation fonctionne parce qu'une valeur choisie comme signal cesse d'être un résultat numérique."
+          ],
+          "correctIndex": 1,
+          "explanation": "Deux entrées non négatives peuvent produire une différence négative. -1 et 0 appartiennent à -9..9 ; les réserver sans changer le contrat crée une ambiguïté. On pourrait concevoir d'autres signaux hors de cet intervalle, mais les laboratoires conservent un contrat avec état séparé.",
+          "reviewFeedback": [
+            "Étudie l'intervalle possible d'une différence, pas seulement les signes des opérandes.",
+            "Compare le résultat de la paire autorisée avec la valeur réservée par l'interface alternative.",
+            "Vérifie si donner un nom à un signal modifie l'opération promise pour les paires valides."
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Acceptés=\" << aceptados << \" Rejetés=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transfert : ÉCHEC\\n\"; return 1; }\n    std::cout << \"Transfert : OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert et contrôle du consommateur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Valider les deux opérandes avant la soustraction maintient également l'opération dans les limites indiquées. Le client décide selon le bool et additionne donc correctement les soldes positifs, nuls et négatifs. Le vérificateur conserve un rôle distinct : examiner la sortie d'une demande rejetée pour vérifier qu'elle est restée intacte."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Acceptés=\" << aceptados << \" Rejetés=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transfert : ÉCHEC\\n\"; return 1; }\n    std::cout << \"Transfert : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "interfaz_cliente_que_rechaza_por_signo",
+          "question": "Cette variante ajoute saldo >= 0 au critère du client. Prédis exactement aceptados:rechazados:total, sans saut de ligne final. La fonction calcular_saldo respecte bien son contrat.",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo) && saldo >= 0) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nint main() {\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "1:3:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Le client compte (5,5), dont le solde est zéro. Il classe à tort les soldes -1 et -9 comme des rejets ; il compte aussi le véritable rejet de (10,0). Il affiche donc 1:3:0, bien que le contrat du client exige 3:1:-10.",
+          "reviewFeedback": "Suis séparément la valeur de retour du composant et la comparaison supplémentaire du client. Applique les deux à chaque paire avant de mettre à jour les trois accumulateurs."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_rechazo_con_destino_negativo",
+          "question": "Dans comprobar_saldo(0, -1, -8, false, -8), la fonction respecte son contrat. Que prouve la présence de -8 dans la sortie ?",
+          "options": [
+            "Que -8 est le nouveau solde d'une demande acceptée, puisqu'il appartient à -9..9.",
+            "Que le client doit ajouter -8 au total, car la sortie conserve une valeur utilisable.",
+            "Que la destination a été préservée lors du rejet, et non qu'un nouveau solde a été calculé."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le bool false indique un rejet, et l'égalité avec la valeur initiale prouve la conservation. Être dans l'intervalle des soldes possibles ne transforme pas une sortie historique en résultat de cette demande.",
+          "reviewFeedback": [
+            "Détermine si cet entier vient de l'état initial ou d'une nouvelle affectation selon l'issue de l'appel.",
+            "Relie l'obligation de l'accumulateur à l'acceptation, pas seulement à l'appartenance d'un entier à un intervalle.",
+            "Distingue ce que le test vérifie ici de la valeur que le consommateur pourrait enregistrer."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les obligations lorsqu'une politique change"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine une autre version, explicitement différente : lors d'un rejet, elle écrit zéro dans la destination et renvoie false ; les demandes acceptées ne changent pas. N'adopte pas ce comportement pour corriger les laboratoires précédents. Changer une postcondition exige de revoir les tests et les clients qui en dépendent ; une interface ne se comprend pas seulement à partir de ses types."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interfaz_revision_del_acuerdo",
+          "question": "Avec cette nouvelle politique, quelle modification préserve la distinction entre état, sortie et verdict ?",
+          "options": [
+            "Changer à zéro la sortie attendue du rejet et continuer à décider de l'acceptation avec le bool.",
+            "Conserver l'ancienne sortie comme valeur attendue et compter toute sortie zéro comme une demande acceptée.",
+            "Changer à false le résultat attendu du zéro valide et omettre le bool lorsqu'on enregistre les résultats."
+          ],
+          "correctIndex": 0,
+          "explanation": "La postcondition du rejet a changé. Elle doit se refléter dans l'attente, sans être confondue avec le zéro valide ni supprimer l'obligation du client de vérifier la valeur de retour. Les laboratoires conservent toutefois leur contrat initial qui préserve la sortie.",
+          "reviewFeedback": [
+            "Relie chaque comparaison et chaque décision du client à la partie précise du contrat qui a changé.",
+            "Vérifie si le nouveau texte conserve l'ancienne postcondition et si zéro suffit à distinguer les deux états.",
+            "Distingue la modification de l'effet d'un rejet de celle des demandes qui sont acceptées."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Rétablissement du contrat ORIGINAL des laboratoires :\n// (0, 37)    -> true,  0\n// (-1, 37)   -> false, 37\n// (5, 37)    -> true,  2\n// (21, -8)   -> false, -8\n"
+        },
+        {
+          "type": "note",
+          "text": "Lorsque tu réutilises une interface, rappelle-toi son domaine, la signification de sa valeur de retour, la sortie promise pour chaque état et la décision qui appartient au client. Vérifie les deux niveaux avec leurs attentes propres ; ne modifie pas l'un pour masquer le défaut de l'autre."
+        }
+      ]
+    }
+  ]
+}

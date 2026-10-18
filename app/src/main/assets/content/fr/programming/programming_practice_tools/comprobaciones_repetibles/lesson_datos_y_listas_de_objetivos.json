@@ -1,0 +1,472 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__datos_y_listas_de_objetivos",
+  "title": "Données et listes de cibles",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nommer les données de la description sans créer une autre cible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà conserver une bibliothèque, deux consommateurs et leur batterie de tests, et distinguer une révision du code d'un changement de contrat. Tu vas maintenant préserver tous ces programmes : le travail porte sur la description CMake. Une variable ordinaire permet de donner un nom à une donnée que les commandes utiliseront pendant la configuration."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "set(cliente_principal consultar_cajas)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, cliente_principal est le nom d'une variable et consultar_cajas sa valeur. Cette affectation ne crée pas d'exécutable, ne renomme aucune cible existante et n'exécute pas le client. Les cibles restent créées par les commandes que tu connais déjà. CMake traite ces valeurs comme du texte ; ${cliente_principal} récupère la valeur lors du traitement de la commande contenant cette expansion. Les majuscules font partie du nom d'une variable. L'expansion d'un nom sans valeur définie dans ce contexte fournit une chaîne vide ; ce n'est pas comme utiliser une variable C++ non déclarée (Scott, 2025, pp. 34–35)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_nombre_valor_objetivo",
+          "question": "Après set(cliente_principal consultar_cajas), que rajoute cette instruction à une description ayant déjà créé consultar_cajas ?",
+          "options": [
+            "Une nouvelle cible exécutable appelée cliente_principal, dépendante de consultar_cajas.",
+            "Une variable appelée cliente_principal dont la valeur actuelle est consultar_cajas.",
+            "Un nouveau nom pour la cible consultar_cajas, qui perd son nom précédent."
+          ],
+          "correctIndex": 1,
+          "explanation": "La variable conserve une valeur textuelle. Créer une variable ne crée pas de cible et ne change pas son identité ; une commande suivante peut utiliser cette valeur là où elle a besoin du nom de la cible.",
+          "reviewFeedback": [
+            "Relie l'opération set à la commande qui crée une cible exécutable ; vérifie les données reçues par chacune.",
+            "Distingue le nom utilisé pour accéder à la variable de la valeur qu'elle contient à cet instant.",
+            "Vérifie quelle instruction changerait l'identité d'une cible et ce que fait réellement cette affectation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le paramètre détermine s'il attend un nom ou une valeur"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "set(clientes consultar_cajas comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans set, clientes désigne la variable qui reçoit la donnée. Avec deux valeurs, son contenu représente la liste consultar_cajas;comprobar_cajas, dont les éléments sont séparés par un point-virgule. Dans l'appel montré à set_target_properties, ${clientes} sans guillemets fournit les noms des deux cibles déjà créées avant PROPERTIES. La propriété CXX_EXTENSIONS est réglée sur OFF pour les deux."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il n'existe aucune règle transformant chaque nom écrit en consultation de variable. Chaque commande définit le rôle de ses arguments : set attend le nom auquel affecter une valeur ; set_target_properties attend les noms des cibles qu'elle modifie. Les listes sont représentées par du texte séparé par des points-virgules, et les commandes de liste travaillent sur le nom de la variable (Scott, 2025, pp. 34, 48)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_literal_en_propiedades",
+          "question": "Suppose que seules les cibles consultar_cajas et comprobar_cajas existent. Quel problème introduit set_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF) ?",
+          "options": [
+            "La commande cherche une cible appelée littéralement clientes, bien que clientes soit aussi un nom de variable.",
+            "Elle applique la propriété seulement au premier élément, car une variable contient un seul texte.",
+            "Elle crée un lien entre les cibles écrites lors de la définition de clientes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Ce paramètre attend des noms de cibles. Le texte littéral clientes ne récupère pas la valeur de la variable, et aucune cible ne porte ce nom. Le problème survient lors du traitement de la description, avant la construction des sources de l'application.",
+          "reviewFeedback": [
+            "Vérifie quel nom reçoit le paramètre et quelles cibles existent réellement.",
+            "Distingue la représentation textuelle d'une liste de la transmission de ses éléments à cette commande.",
+            "Identifie la commande qui établit les liens et la propriété demandée ici."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une liste d'arguments et un argument unique"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "set(clientes consultar_cajas comprobar_cajas)\nmessage(STATUS \"clientes=${clientes}\")\nset_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le message affiche clientes=consultar_cajas;comprobar_cajas. Les guillemets conservent tout ce texte dans un seul argument lors de l'appel suivant. Dans cette commande, CMake cherche donc une seule cible dont le nom contient le point-virgule, au lieu de recevoir deux noms distincts. Cette cible n'existe pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette différence dépend du point-virgule et du paramètre destinataire. Elle ne prouve pas qu'il faut toujours supprimer les guillemets, ni que toute expansion sans guillemets sépare les espaces : les espaces internes d'une expansion simple ne sont pas à nouveau découpés de cette manière. Ici, la commande attend une liste de noms de cibles distincts (Scott, 2025, p. 99)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_lista_entre_comillas",
+          "question": "Lorsque les deux cibles existent et que cette variable est définie, quelle différence y a-t-il entre ${clientes} et \"${clientes}\" dans le paramètre montré de set_target_properties ?",
+          "options": [
+            "Sans guillemets, on utilise le nom clientes ; avec guillemets, on consulte sa valeur.",
+            "Les deux formes consultent la valeur et transmettent deux noms de cibles distincts.",
+            "Les deux formes consultent la valeur ; les guillemets gardent les deux éléments dans un seul argument."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les deux écritures contiennent une expansion. Sans guillemets, le point-virgule sépare ici les noms des cibles ; avec guillemets, le texte complet reste un argument unique, que la commande interprète comme un nom de cible.",
+          "reviewFeedback": [
+            "Repère la partie de chaque écriture qui effectue l'expansion et celle qui regroupe l'argument.",
+            "Vérifie l'effet des guillemets sur le point-virgule lors de la formation des arguments.",
+            "Distingue récupérer le contenu d'une variable et fournir ses éléments au paramètre qui en a besoin."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : rétablir les noms attendus par la commande"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce projet conserve la bibliothèque avec une capacité de quatre places nommée et sa batterie de sept cas. Seul le CMakeLists.txt racine change. Tente une configuration et examine le diagnostic : tu ne peux pas encore attribuer à cette description une nouvelle construction ou exécution."
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige l'utilisation de clientes pour appliquer CXX_EXTENSIONS OFF aux deux consommateurs existants. Ne renomme aucune cible et ne modifie ni le C++, ni les en-têtes, ni les tests, ni la description du composant. Le projet comporte deux requêtes get_target_property : chacune place la valeur d'une propriété de cible dans une variable. message affiche ensuite ces valeurs pour observer la configuration, et non la sortie de l'application. La requête prend une variable de sortie, une cible et une propriété. Si la propriété n'est pas définie, la variable de sortie reçoit son nom suivi de -NOTFOUND, pas un OFF implicite (Scott, 2025, p. 116)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères après correction : la configuration réussit et les messages ext_consulta et ext_comprobador affichent OFF. Construis et exécute comprobar_cajas : il conserve ses sept cas et Batterie : OK avec le code de sortie 0. Construis et exécute consultar_cajas : sa sortie reste 1:2, sans saut de ligne final. Comme contre-épreuve, mets l'expansion de la liste entre guillemets dans cet appel, observe le rejet de configuration, puis rétablis la correction. La référence apparaît à la page suivante."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places suffisant pour toutes les pièces.\n// Zéro pièce nécessite zéro boîte.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : transmettre la valeur au bon endroit"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La liste réunit les noms des consommateurs ; elle ne comprend pas envios, dont la propriété a déjà été définie dans la description du composant. Ici ${clientes} transmet les deux éléments à set_target_properties. get_target_property utilise un nom de variable de sortie, une cible et une propriété ; les deux requêtes y placent OFF, et message permet de le lire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le diagnostic de la variante littérale mentionne clientes ; celui de la variante entre guillemets mentionne le texte contenant le point-virgule. Ce sont des problèmes de configuration, pas des erreurs de cajas_para. CMake peut continuer à traiter d'autres instructions et afficher des messages après avoir rencontré ces erreurs ; un message ultérieur ne signifie pas que la configuration a réussi."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_mensaje_no_es_configuracion_correcta",
+          "question": "Tu vois le message clientes=consultar_cajas;comprobar_cajas, mais la configuration s'est achevée avec un diagnostic concernant une cible inexistante. Quelle preuve manque-t-il pour valider la correction ?",
+          "options": [
+            "Une configuration réussie appliquant la propriété aux cibles demandées.",
+            "Un second affichage de la même liste, même si le résultat de la configuration ne change pas.",
+            "Une exécution antérieure du vérificateur construit avec une autre description."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le message ne montre qu'une valeur textuelle. Le résultat de la configuration et les propriétés consultées permettent de vérifier si la description applique ce qui est demandé. La sortie d'un programme construit auparavant ne valide pas cette révision.",
+          "reviewFeedback": [
+            "Relie le résultat de cette phase et les propriétés observées à l'exigence de la correction.",
+            "Réfléchis à l'information nouvelle qu'apporterait la répétition du même message si la commande qui l'utilise échoue encore.",
+            "Attribue chaque observation à la description et à la construction qui l'ont réellement produite."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier une liste ne réexécute pas les commandes précédentes"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "set(clientes consultar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nlist(APPEND clientes comprobar_cajas)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Quand set_target_properties a été traité, clientes contenait seulement consultar_cajas. list(APPEND clientes comprobar_cajas) ajoute ensuite un élément à cette variable. La commande list attend le nom clientes, pas ses éléments développés. Modifier la liste ne réexécute pas la commande précédente et ne règle pas automatiquement la propriété du second consommateur (Scott, 2025, pp. 48–49)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tu examines cette description, le message clientes contient déjà les deux noms. Pourtant, la consultation de la propriété du vérificateur indique ext_comprobador-NOTFOUND : elle n'a pas été définie pour cette cible. Cela ne signifie ni que la cible n'existe pas, ni que C++ a échoué. Le projet ne définit pas autrement cette propriété pour les consommateurs."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_valor_actual_y_efecto_anterior",
+          "question": "Après les trois commandes affichées, sans aucune autre affectation de cette propriété aux consommateurs, quel état obtient-on ?",
+          "options": [
+            "La liste ne contient que comprobar_cajas ; la propriété reste définie sur consultar_cajas.",
+            "La liste contient les deux noms ; cette application a réglé OFF seulement sur consultar_cajas.",
+            "La liste contient les deux noms ; APPEND étend la propriété déjà appliquée aux deux cibles."
+          ],
+          "correctIndex": 1,
+          "explanation": "APPEND modifie bien la variable. La propriété a déjà été appliquée avec la valeur développée auparavant ; obtenir ensuite une autre valeur ne répète pas cette application.",
+          "reviewFeedback": [
+            "Distingue l'extension d'une liste du remplacement de son contenu par l'élément ajouté.",
+            "Reconstitue les noms présents dans la liste au moment où la commande de propriété a été traitée.",
+            "Vérifie si modifier le contenu d'une variable réexécute les commandes précédentes."
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "dato_lista_antes_de_consumir",
+          "question": "Les deux cibles existent déjà et clientes n'est pas encore définie. Remets ces trois instructions dans l'ordre afin que les deux reçoivent OFF ; utilise chaque fragment une fois.",
+          "fragments": [
+            "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+            "set(clientes consultar_cajas)",
+            "list(APPEND clientes comprobar_cajas)"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            0
+          ],
+          "explanation": "Il faut d'abord créer la liste, puis l'étendre et enfin développer sa valeur complète pour appliquer la propriété. L'appliquer avant l'ajout omet le second consommateur ; réaffecter après l'ajout remplacerait la valeur accumulée.",
+          "reviewFeedback": "Suis le contenu de clientes après chaque instruction. Vérifie quels éléments reçoit la commande qui applique la propriété et si une affectation ultérieure remplace la valeur accumulée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : compléter la liste avant de l'utiliser"
+        },
+        {
+          "type": "paragraph",
+          "text": "Configure cette description sans la modifier. Les messages clientes affichent les deux consommateurs, mais ext_comprobador finit par -NOTFOUND ; seul ext_consulta indique OFF. Une configuration peut réussir même lorsqu'une décision inscrite dans la description ne respecte pas l'exigence souhaitée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis et exécute comprobar_cajas avec cette description. Sa batterie devrait toujours réussir : elle évalue le comportement de la bibliothèque, pas la réception d'une propriété CMake par les deux consommateurs. Dans ce laboratoire, il faut conserver ces deux types de preuves, chacun à son niveau."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie uniquement la racine pour que la liste contienne les deux consommateurs au moment d'appliquer CXX_EXTENSIONS OFF. Tu peux compléter la liste avant d'appliquer la propriété ou effectuer ensuite une autre application avec la liste entière. Conserve APPEND comme opération d'ajout pour pratiquer son paramètre de nom ; ne contourne pas la liste avec deux affectations littérales distinctes. Reconfigure, consulte les deux valeurs, puis construis et exécute le vérificateur et le client. Critères : les deux valeurs OFF, sept cas conservés, Batterie : OK avec le code 0 et sortie client 1:2. Les références suivent l'exercice."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nlist(APPEND clientes comprobar_cajas)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places suffisant pour toutes les pièces.\n// Zéro pièce nécessite zéro boîte.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : réunir avant d'appliquer"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas)\nlist(APPEND clientes comprobar_cajas)\nset_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence crée la liste, ajoute le second consommateur, puis développe les deux noms pour appliquer la propriété. Les messages montrent la même liste finale qu'auparavant ; cette fois, les deux valeurs consultées sont OFF. Le vérificateur et le client conservent leurs sorties, car ni leurs contrats ni leurs sources n'ont changé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_nombre_para_ampliar",
+          "question": "Si clientes est défini comme consultar_cajas, quelle instruction ajoute comprobar_cajas à la même variable tout en conservant le premier élément ?",
+          "options": [
+            "list(APPEND ${clientes} comprobar_cajas)",
+            "list(APPEND clientes comprobar_cajas)",
+            "set(clientes comprobar_cajas)"
+          ],
+          "correctIndex": 1,
+          "explanation": "APPEND reçoit le nom de la liste à modifier : clientes. Développer son contenu fournirait à ce paramètre un autre nom de variable ; affecter seulement comprobar_cajas avec set remplacerait le contenu précédent.",
+          "reviewFeedback": [
+            "Détermine le nom de variable reçu par APPEND après l'expansion écrite.",
+            "Vérifie que l'argument identifiant la liste est bien son nom et que le nouvel élément s'ajoute à son contenu.",
+            "Examine ce qu'une nouvelle affectation conserve et la différence avec l'extension d'une liste."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : réunir d'autres consommateurs sans changer le composant"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends le projet de lots avec consultar_lotes et verificar_lotes, qui utilisent la bibliothèque lotes. Leurs sources et quatre cas sont déjà conservés. La description du composant est complète ; le travail consiste à réunir les deux consommateurs dans une variable ordinaire à la racine pour appliquer CXX_EXTENSIONS OFF aux deux."
+        },
+        {
+          "type": "paragraph",
+          "text": "Configure d'abord le projet initial et constate que les deux consultations de cette propriété pour les consommateurs se terminent par -NOTFOUND. Complète la racine avec une variable au nom explicite : tu peux définir les deux éléments ensemble ou créer puis étendre la liste avant son utilisation. Les requêtes d'exemple affichent programas_del_lote ; si tu choisis un autre nom, garde aussi la cohérence du message. N'inclus pas lotes dans la liste des consommateurs et ne modifie ni le C++, ni l'en-tête, ni les cas, ni les liaisons, ni la description enfant."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : la liste contient exactement les deux noms des consommateurs, les deux consultations affichent OFF et la configuration réussit. Construis ensuite verificar_lotes et exécute-le : il conserve 0→0, 6→1, 7→2, 18→3, Batterie : OK et le code 0. Construis et exécute consultar_lotes : sa sortie reste 1:2, sans saut de ligne final. Explique pourquoi observer seulement le contenu de la variable ou seulement Batterie : OK ne remplace pas la vérification de la propriété. La référence suit l'exercice."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\n# Reune aqui los consumidores en una variable y aplica la propiedad.\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+            },
+            {
+              "path": "codigo/lotes/CMakeLists.txt",
+              "initialCode": "add_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\nset_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "codigo/lotes/publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Domaine : 0 <= piezas <= 18.\n// Nombre minimal de lots de 6 places suffisant pour toutes les pièces.\n// Zéro pièce nécessite zéro lot.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "codigo/lotes/motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert et rappel sur les noms"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset(programas_del_lote consultar_lotes)\nlist(APPEND programas_del_lote verificar_lotes)\nset_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_lotes CXX_EXTENSIONS)\nget_target_property(ext_verificador verificar_lotes CXX_EXTENSIONS)\nmessage(STATUS \"programas_del_lote=${programas_del_lote}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_verificador=${ext_verificador}\")\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La description réunit les consommateurs avant d'appliquer la propriété et conserve la bibliothèque hors de cette liste. Une autre variable au nom clair ou un seul set avec les deux éléments convient aussi. Les consultations de propriétés et les exécutions conservées répondent à des questions différentes ; réussir l'une ne rend pas l'autre facultative."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "set(Clientes consultar_cajas comprobar_cajas)\nmessage(STATUS \"guardados=${clientes}\")\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_mayusculas_en_el_nombre",
+          "question": "Dans ce fragment isolé, clientes n'a aucune autre valeur définie. Quelle ligne message affiche-t-il en plus des messages habituels de configuration ?",
+          "options": [
+            "-- guardados=consultar_cajas;comprobar_cajas",
+            "-- guardados=clientes",
+            "-- guardados="
+          ],
+          "correctIndex": 2,
+          "explanation": "Clientes et clientes sont deux noms différents. Développer le second, sans autre valeur définie dans ce contexte, fournit un texte vide ; la commande ne recherche pas automatiquement le nom avec une majuscule. Ce n'est pas la même chose qu'une variable C++ non déclarée.",
+          "reviewFeedback": [
+            "Compare précisément le nom auquel la donnée a été affectée et le nom consulté ensuite.",
+            "Distingue le texte du nom écrit entre accolades de la valeur obtenue lors de l'expansion.",
+            "Vérifie les noms en respectant les majuscules et l'existence d'une valeur pour le nom consulté."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_separar_las_dos_evidencias",
+          "question": "La batterie réussit après une modification de CMake, mais ext_verificador se termine encore par -NOTFOUND. L'exigence était de régler OFF sur les deux consommateurs. Que prouve cette observation ?",
+          "options": [
+            "La batterie prouve ses propres cas ; la propriété demandée du vérificateur reste à corriger.",
+            "La réussite des cas prouve aussi OFF, même si la consultation de propriété montre autre chose.",
+            "L'absence de propriété définie invalide à elle seule toutes les comparaisons effectivement exécutées par la batterie."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'exécution conserve les preuves des appels effectués. La consultation montre que la propriété explicite demandée manque ; aucune de ces observations ne remplace l'autre et ne permet de lui attribuer un résultat différent.",
+          "reviewFeedback": [
+            "Relie chaque critère à l'observation précise qui le vérifie et conserve les deux preuves.",
+            "Vérifie si la batterie observe des propriétés de construction ou les résultats d'appels à la bibliothèque.",
+            "Distingue le non-respect de l'exigence de la description des comparaisons de comportement réellement réalisées."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces variables ordinaires et listes ont été utilisées uniquement à la racine de chaque projet. Nous n'avons pas établi de règles générales de propagation entre répertoires, caches, fonctions ou générateurs. Pour de futures révisions, reviens au critère : quel paramètre attend un nom, quelle valeur est obtenue en la développant et à quel moment elle est utilisée."
+        }
+      ]
+    }
+  ]
+}
