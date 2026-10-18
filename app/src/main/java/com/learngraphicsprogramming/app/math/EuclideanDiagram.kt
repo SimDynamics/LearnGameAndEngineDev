@@ -346,7 +346,14 @@ object EuclideanDiagramLayout {
             require(metrics.lines.isNotEmpty() && metrics.width.isFinite() && metrics.width >= 0 && metrics.lineHeight.isFinite() && metrics.lineHeight > 0)
             val labelWidth = metrics.width + 4 * unit
             val labelHeight = metrics.lines.size * metrics.lineHeight + 2 * unit
-            val gap = max(10 * unit, textSize * .55)
+            val ownPoint = points.singleOrNull { it.id == ownerId }.takeIf { circles.isNotEmpty() }
+            val pointNeighbors = if (ownPoint == null) emptyList() else points.filter { it.id != ownPoint.id }
+            val defaultGap = max(10 * unit, textSize * .55)
+            // Keep a name close to its marker when adjacent marks are dense. Seven
+            // units leave visible space beyond the marker's 5.6-unit background.
+            val nearestPoint = ownPoint?.let { point -> pointNeighbors
+                .minOfOrNull { hypot(it.center.x - point.center.x, it.center.y - point.center.y) } }
+            val gap = if (nearestPoint == null) defaultGap else min(defaultGap, max(7 * unit, nearestPoint * .12))
             val ownCircle = circles.singleOrNull { it.id == ownerId }
             val ownArc = arcs.singleOrNull { it.id == ownerId }
             // A curve offers many local anchors. Looking only near its upper-right
@@ -395,7 +402,47 @@ object EuclideanDiagramLayout {
                 return labelHits * 10000 + pointHits * 1000 + (pathHits + circleHits + arcHits) * 100
             }
             val rectangles = candidates.map(::rect).distinct()
-            val selected = if (ownCircle == null && ownArc == null) {
+            val selected = if (ownPoint != null) {
+                fun center(candidate: EuclideanRect) = EuclideanPosition(
+                    (candidate.left + candidate.right) / 2, (candidate.top + candidate.bottom) / 2)
+                fun distance(candidate: EuclideanRect, point: EuclideanDrawnPoint): Double {
+                    val middle = center(candidate)
+                    return hypot(middle.x - point.center.x, middle.y - point.center.y)
+                }
+                fun associationDeficit(candidate: EuclideanRect): Double {
+                    val ownDistance = distance(candidate, ownPoint)
+                    val otherDistance = pointNeighbors.minOfOrNull { distance(candidate, it) }
+                        ?: return 0.0
+                    return max(0.0, ownDistance + 2 * unit - otherDistance)
+                }
+                fun boxAssociationDeficit(candidate: EuclideanRect): Double {
+                    // Squared-distance differences are affine. Checking the four
+                    // corners therefore checks the whole protected name rectangle,
+                    // rather than accepting a wide letter that straddles two marks.
+                    val corners = listOf(candidate.left to candidate.top, candidate.right to candidate.top,
+                        candidate.left to candidate.bottom, candidate.right to candidate.bottom)
+                    return pointNeighbors.maxOfOrNull { other ->
+                        val separation = hypot(other.center.x - ownPoint.center.x, other.center.y - ownPoint.center.y)
+                        corners.maxOf { (x, y) ->
+                            val ownSquared = (x - ownPoint.center.x) * (x - ownPoint.center.x) +
+                                (y - ownPoint.center.y) * (y - ownPoint.center.y)
+                            val otherSquared = (x - other.center.x) * (x - other.center.x) +
+                                (y - other.center.y) * (y - other.center.y)
+                            max(0.0, (ownSquared - otherSquared) / (2 * separation) + unit)
+                        }
+                    } ?: 0.0
+                }
+                rectangles.minWith(compareBy<EuclideanRect> { candidate -> labels.count { candidate.overlaps(it.bounds) } }
+                    .thenBy { candidate -> points.count { point ->
+                        val dx = max(0.0, max(candidate.left - point.center.x, point.center.x - candidate.right))
+                        val dy = max(0.0, max(candidate.top - point.center.y, point.center.y - candidate.bottom))
+                        hypot(dx, dy) < 6.6 * unit
+                    } }
+                    .thenBy(::associationDeficit)
+                    .thenBy(::collisionScore)
+                    .thenBy(::boxAssociationDeficit)
+                    .thenBy { distance(it, ownPoint) })
+            } else if (ownCircle == null && ownArc == null) {
                 // Keep the established eight candidates and scoring for point/line names.
                 rectangles.minBy(::collisionScore)
             } else {
