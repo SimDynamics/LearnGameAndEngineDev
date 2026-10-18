@@ -1,0 +1,659 @@
+{
+  "id": "math_geometria_plana__fundamentos_geometricos__componer_y_recuperar_longitudes",
+  "title": "Componer y recuperar longitudes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Unir copias en el mismo sentido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes comparar segmentos sin deformarlos y distinguir una longitud de su medida. Ahora formaremos un total y recuperaremos una parte. Mantén una unidad positiva y común cuando aparezcan números; las letras de los extremos siguen nombrando puntos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera una copia de AB situada desde M hasta N. A partir de N coloca una copia de CD sobre la misma recta y en el mismo sentido, hasta P. El segmento MP es un segmento suma de AB y CD: sus dos partes se encuentran en N y recorren el total sin dejar un hueco ni retroceder. Cambiar el lugar de esa construcción puede cambiar sus puntos, pero conserva la longitud del total (Kiselev, 2006, pp. 3–4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer_la_composicion_consecutiva",
+          "prompt": "MN es congruente con AB y NP es congruente con CD. M, N y P son distintos, están alineados y N queda entre M y P. Marca todas las afirmaciones justificadas.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "M, N y P son distintos y están alineados en el orden M, N, P. N está en el interior del segmento MP.",
+              "points": [
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "N",
+                  "x": 2,
+                  "y": 0,
+                  "labels": [
+                    "N"
+                  ]
+                },
+                {
+                  "id": "P",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "P"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segmentoMP",
+                  "kind": "segment",
+                  "through": [
+                    "M",
+                    "P"
+                  ],
+                  "contains": [
+                    "M",
+                    "N",
+                    "P"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconocer_la_composicion_consecutiva__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "MP representa un segmento suma de las dos copias consecutivas.",
+                  "reviewFeedback": "Examina si las copias recorren el total en un mismo sentido y se unen por el extremo indicado."
+                },
+                {
+                  "id": "b",
+                  "label": "Basta unir copias por un extremo, aunque la segunda vuelva sobre la primera.",
+                  "reviewFeedback": "Comprueba si unir un extremo impide por sí solo que las copias se solapen al retroceder."
+                },
+                {
+                  "id": "c",
+                  "label": "Otra construcción con copias congruentes y el mismo procedimiento puede tener otros extremos, conservando la longitud total.",
+                  "reviewFeedback": "Distingue el lugar de la construcción de las longitudes que conserva el procedimiento."
+                },
+                {
+                  "id": "d",
+                  "label": "Si giramos toda la construcción sin deformarla, cambia la suma de sus longitudes.",
+                  "reviewFeedback": "Reconsidera qué magnitud puede cambiar al girar una figura sin estirarla."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "N divide el segmento MP en las dos copias consecutivas, recorridas en un mismo sentido. Por eso MP es un segmento suma. Otro origen o un giro sin deformación producen un total congruente, aunque los puntos originales sean otros. Si una copia retrocede sobre la otra, el segmento entre los extremos inicial y final ya no representa la suma de ambas longitudes.",
+            "incorrect": "Revisa el sentido en que se recorren las copias, su unión y la diferencia entre una longitud y el lugar de sus extremos."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "No confundas sumar longitudes con reunir sin más dos conjuntos de puntos. Si superpones dos copias iguales, el trazo visible puede seguir ocupando un único segmento; eso no duplica su longitud. Para obtener un segmento suma debes disponer las copias consecutivamente con la condición geométrica indicada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La condición «entre» decide la suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si B está estrictamente entre A y C, recorrer AB y después BC en el mismo sentido recorre exactamente AC. Con una unidad común, la medida de AC es la suma de las de AB y BC. La posición de B es parte del dato: la alineación de tres puntos, por sí sola, no autoriza esa suma (Lang, 1971, p. 108)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_partes_con_una_unidad_comun",
+          "prompt": "A, B y C son distintos y B está entre A y C. AB mide 7/4 unidades u y BC mide 5/6 unidades u. Escribe la medida de AC en unidades u. Después expresa esa misma longitud en unidades v, sabiendo que una unidad v equivale a 1/12 de una unidad u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_partes_con_una_unidad_comun__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ac_u",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ac_v",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ac_u": {
+                    "type": "numeric",
+                    "expected": "31/12"
+                  },
+                  "ac_v": {
+                    "type": "numeric",
+                    "expected": "31"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B está entre los otros extremos, de modo que las dos partes componen AC. En unidades u, \\(7/4+5/6=31/12\\). Cada unidad u contiene doce unidades v; por eso ese mismo segmento mide 31 unidades v. Cambió la unidad y el número de copias contadas, no la longitud de AC.",
+            "incorrect": "Comprueba primero qué segmento forman las partes. Opera las fracciones con una referencia común y reconstruye después cuántas unidades pequeñas contiene esa longitud."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_el_orden_de_los_puntos",
+          "prompt": "En este caso los puntos están en el orden A, C, B. AB mide 8 unidades u y BC mide 3 unidades u. Un estudiante propone calcular AC sumando esas dos medidas porque los tres puntos están alineados. ¿Qué revisión de su argumento es pertinente?",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "A, C y B son distintos y están alineados en ese orden. C está en el interior de AB; B está fuera del segmento AC.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "C"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 8,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segmentoAB",
+                  "kind": "segment",
+                  "through": [
+                    "A",
+                    "B"
+                  ],
+                  "contains": [
+                    "A",
+                    "C",
+                    "B"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_el_orden_de_los_puntos__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Identificar qué punto está entre los otros y qué parte falta para recomponer el segmento total.",
+                  "reviewFeedback": "Usa la posición del punto intermedio para justificar qué tramos componen el total."
+                },
+                {
+                  "id": "b",
+                  "label": "Aceptar siempre la suma de dos medidas cuando sus segmentos comparten un extremo.",
+                  "reviewFeedback": "Comprueba si compartir un extremo fija el sentido de los dos tramos dentro del total."
+                },
+                {
+                  "id": "c",
+                  "label": "Cambiar de unidad para que B pase al interior de AC.",
+                  "reviewFeedback": "Separa la posición de los puntos del número usado para medir sus distancias."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "C está entre A y B, así que AC y CB componen AB. La parte buscada mide \\(8-3=5\\) unidades u, y \\(5+3=8\\) reconstruye el total. Sumar 8 y 3 contaría AB y después un tramo que vuelve hacia C: no calcula la longitud entre A y C. Cambiar de unidad no altera ese orden.",
+            "incorrect": "Relee el orden de los tres puntos y señala el segmento total antes de elegir una operación."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La figura ayuda a seguir los nombres y la condición «entre». Sus píxeles no son una nueva unidad de medida. Las cantidades declaradas y la posición establecida son las que justifican el cálculo. Girar el papel conserva tanto esas longitudes como el punto que está entre los otros dos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reordenar las partes conserva una longitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al construir un total con copias consecutivas de varias piezas, el orden de las piezas o la forma de agrupar sus sumas no cambia la longitud final. Cada pieza aporta su longitud una vez. Es la interpretación geométrica de la conmutatividad y la asociatividad de la suma. Se conservan las longitudes de las piezas y el procedimiento de composición; no se identifica por ello cualquier segmento situado con otro (Kiselev, 2006, pp. 3–4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_el_total_al_reordenar_copias",
+          "prompt": "Se construye un total usando, una vez cada una, copias de tres segmentos de longitudes positivas. Todas las copias se colocan consecutivamente en un mismo sentido. Se repite el procedimiento en otro lugar, cambiando el orden de las tres piezas. Marca todas las conclusiones justificadas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_el_total_al_reordenar_copias__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "b",
+                  "label": "El primer punto de una construcción debe ser el mismo punto que el primero de la otra.",
+                  "reviewFeedback": "Distingue la igualdad de una longitud de la identidad de un punto situado."
+                },
+                {
+                  "id": "a",
+                  "label": "Los dos segmentos totales son congruentes.",
+                  "reviewFeedback": "Comprueba si cada pieza aporta la misma longitud una vez en las dos construcciones."
+                },
+                {
+                  "id": "c",
+                  "label": "Agrupar primero dos de las piezas y añadir después la tercera conserva la longitud total.",
+                  "reviewFeedback": "Examina si la agrupación que elegiste mantiene todas las piezas, sin añadirlas ni omitirlas."
+                },
+                {
+                  "id": "d",
+                  "label": "Al cambiar el orden también podemos omitir una pieza sin cambiar el total.",
+                  "reviewFeedback": "Reconsidera la contribución de una pieza de longitud positiva al total."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los totales conservan una copia de cada longitud, por eso son congruentes. Agrupar primero dos piezas sólo forma un subtotal que luego se suma a la tercera: no elimina ninguna. Los segmentos totales pueden ocupar lugares distintos y tener otros extremos. Omitir una pieza de longitud positiva sí reduce la longitud total.",
+            "incorrect": "Verifica qué piezas se conservan en la construcción que elegiste y separa la longitud total de la identidad de los puntos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "combinar_tres_partes_consecutivas",
+          "prompt": "A, B, C y D son distintos y están alineados en ese orden. AB mide 3/5 unidades u, BC mide 7/10 unidades u y CD mide 9/5 unidades u. Calcula las medidas de AC y AD en unidades u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "combinar_tres_partes_consecutivas__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ac",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ad",
+                  "type": "numeric",
+                  "label": "Medida de AD en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ac": {
+                    "type": "numeric",
+                    "expected": "13/10"
+                  },
+                  "ad": {
+                    "type": "numeric",
+                    "expected": "31/10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El orden dado permite formar primero AC: \\(3/5+7/10=13/10\\). Después se añade CD al subtotal: \\(13/10+9/5=31/10\\). El primer subtotal contiene dos partes y AD contiene las tres. Agrupar de otra manera conserva ese total si ninguna pieza desaparece o se cuenta dos veces.",
+            "incorrect": "Escribe qué partes contiene cada segmento pedido. Conserva la unidad y comprueba que cada pieza aparece exactamente una vez en su total."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un resultado aritmético igual no prueba que dos segmentos sean el mismo conjunto de puntos. Con una unidad positiva común, sí prueba que sus longitudes coinciden. Recupera esa diferencia al comparar dos construcciones realizadas en lugares distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Restar es recuperar una parte del total"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para obtener la diferencia entre dos longitudes positivas, con la primera mayor que la segunda, buscamos la longitud que, sumada a la segunda, recompone la primera. Es una relación inversa a la composición: primero identificamos total y parte; después calculamos lo que falta. Comprobar la suma permite detectar si se confundieron sus papeles (Kiselev, 2006, p. 4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_parte_que_recompone_el_total",
+          "prompt": "P, M y Q son distintos y están alineados en ese orden. PQ mide 4 unidades u y PM mide 11/6 unidades u. Escribe la medida de MQ en unidades u. La respuesta debe permitir recomponer PQ junto con PM. Introduce sólo un número.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_parte_que_recompone_el_total__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "mq",
+                  "type": "numeric",
+                  "label": "Medida de MQ en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "mq": {
+                    "type": "numeric",
+                    "expected": "13/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "M está entre P y Q: PM y MQ componen PQ. Por tanto, MQ mide \\(4 − 11/6=13/6\\) unidades u. Al comprobar \\(11/6+13/6=4\\), recuperamos el total dado. El resultado es positivo, como corresponde a los dos extremos distintos M y Q.",
+            "incorrect": "Identifica el total y la parte conocida. La longitud que escribas debe recomponer exactamente el total al sumarla a esa parte, con la misma unidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_si_existe_una_diferencia_positiva",
+          "prompt": "AB mide 3 unidades u y CD mide 5 unidades u. Se busca un segmento de extremos distintos que, sumado a CD, produzca un segmento congruente con AB. ¿Qué conclusión se justifica?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_si_existe_una_diferencia_positiva__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El segmento buscado mide 2 unidades u.",
+                  "reviewFeedback": "Recompón el total usando el papel que el enunciado asigna al segmento dado y al que se busca."
+                },
+                {
+                  "id": "b",
+                  "label": "El segmento buscado tiene una longitud de −2 unidades u.",
+                  "reviewFeedback": "Reconsidera si ese valor puede representar la longitud de un segmento de extremos distintos."
+                },
+                {
+                  "id": "c",
+                  "label": "No existe un segmento de longitud positiva que cumpla esa composición.",
+                  "reviewFeedback": "Comprueba si añadir una longitud positiva a la parte dada puede producir el total solicitado."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una copia de CD ya mide 5 unidades u. Añadirle un segmento de longitud positiva produce un total mayor que 5, mientras AB mide 3. No existe el segmento pedido. La diferencia positiva entre 5 y 3 resolvería otra pregunta: qué añadir a AB para obtener la longitud de CD. Una longitud negativa no resuelve esta construcción.",
+            "incorrect": "Lee qué segmento debe ser el total y cuál es la parte que ya está dada. Comprueba si la longitud elegida puede satisfacer exactamente esa composición."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas tareas los segmentos tienen extremos distintos y longitudes positivas. Si el total y la parte conocida fueran congruentes, la diferencia de sus medidas sería cero: al retirar toda la longitud, no quedaría un segmento con dos extremos distintos. Esa coincidencia de extremos debe distinguirse de pedir una longitud negativa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Alineación y medidas todavía pueden ser insuficientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "A veces conocemos dos distancias y sabemos que tres puntos están alineados, pero no sabemos cuál está entre los otros. No añadas una posición porque te resulte cómoda para calcular. Primero decide si los datos determinan una única longitud. Para mostrar que no la determinan, basta construir dos situaciones que cumplan todos los datos y den resultados distintos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer_que_falta_el_orden_de_los_puntos",
+          "prompt": "A, B y C son puntos distintos y alineados. AB mide 8 unidades u y AC mide 5 unidades u. No se indica el orden de los puntos ni se aporta un dibujo con información adicional. ¿Qué se puede concluir sobre BC?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconocer_que_falta_el_orden_de_los_puntos__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "BC debe medir 3 unidades u.",
+                  "reviewFeedback": "Comprueba qué posición del punto C presupone tu cálculo y si esa posición forma parte de los datos."
+                },
+                {
+                  "id": "b",
+                  "label": "Los datos no determinan una única medida de BC.",
+                  "reviewFeedback": "Para examinar la unicidad, conserva todos los datos y considera las posiciones que éstos permiten."
+                },
+                {
+                  "id": "c",
+                  "label": "BC debe medir 13 unidades u.",
+                  "reviewFeedback": "Comprueba qué punto intermedio requiere tu suma y si el enunciado fija ese punto."
+                },
+                {
+                  "id": "d",
+                  "label": "BC debe medir 8 unidades u porque AB y BC comparten B.",
+                  "reviewFeedback": "Distingue compartir un extremo de conservar la longitud completa de un segmento."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si C queda entre A y B, BC mide \\(8-5=3\\) unidades u. Si A queda entre B y C, BC mide \\(8+5=13\\) unidades u. Ambos casos conservan tres puntos distintos, alineación y las dos medidas dadas. Como sus resultados son diferentes, falta información para afirmar una única medida de BC.",
+            "incorrect": "Conserva las distancias dadas y distingue una posición posible de una posición obligatoria. Justifica si tu conclusión requiere un dato que no se proporcionó."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "No se trata de escoger una operación preferida. La misma relación de recomposición permite sumar en un orden de puntos y restar en otro. Indicar el punto intermedio, o una pertenencia equivalente suficientemente precisa, elimina la ambigüedad; decir únicamente «alineados» no la elimina."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta precaución recupera el trabajo anterior con nombres y datos: una figura ideal no queda determinada por lo que solemos imaginar al oír tres letras. Un dibujo tampoco autoriza medidas por píxeles. Distingue siempre las condiciones declaradas de las que tú añadirías."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una unidad antes de recuperar la parte"
+        },
+        {
+          "type": "paragraph",
+          "text": "La relación geométrica entre total y partes no depende de la unidad elegida. Su cálculo numérico sí exige una referencia común: convertir las medidas conserva las longitudes que entran en la composición. No restes números expresados con unidades diferentes como si fueran copias de una misma unidad (Kiselev, 2006, p. 4; Lang, 1971, pp. 108–109)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_parte_despues_de_convertir",
+          "prompt": "B está estrictamente entre A y C. AB mide 7/4 unidades u. AC mide 2 unidades v, y cada unidad v equivale a 3/2 unidades u. Expresa primero AC en unidades u y después calcula BC en unidades u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_parte_despues_de_convertir__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ac_u",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "bc_u",
+                  "type": "numeric",
+                  "label": "Medida de BC en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ac_u": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "bc_u": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "AC contiene dos unidades v, así que mide \\(2 × 3/2=3\\) unidades u. Como B está entre A y C, la parte BC mide \\(3 − 7/4=5/4\\) unidades u. La comprobación \\(7/4+5/4=3\\) conserva el total, la unidad y el orden de los puntos.",
+            "incorrect": "Reconstruye el total con la unidad solicitada antes de recuperar la parte. Verifica después que las dos partes, expresadas con esa misma unidad, recomponen ese total."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes elegir otra unidad para comprobar el mismo razonamiento, pero debes convertir todas las medidas implicadas y declarar la referencia. Un número menor no indica por sí solo un segmento más corto si cambió la unidad con la que se contó."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Integrar el orden, la unidad y dos operaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resuelve ahora un caso que exige organizar los datos. Identifica qué punto permite componer cada total, lleva las medidas a una unidad común y distingue lo ya conocido de lo que aún falta. No cambies una condición de posición para acomodarla al resultado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "integrar_composicion_y_diferencia_con_dos_unidades",
+          "prompt": "A, B, C y D son distintos y están alineados. B está entre A y C, y C está entre A y D. AB mide 3/4 unidades u y BC mide 2 unidades u. AD mide 4 unidades v, donde cada unidad v equivale a 5/4 unidades u. Calcula AC y CD en unidades u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "integrar_composicion_y_diferencia_con_dos_unidades__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ac_u",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cd_u",
+                  "type": "numeric",
+                  "label": "Medida de CD en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ac_u": {
+                    "type": "numeric",
+                    "expected": "11/4"
+                  },
+                  "cd_u": {
+                    "type": "numeric",
+                    "expected": "9/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B está entre A y C, de modo que AC mide \\(3/4+2=11/4\\) unidades u. AD mide \\(4 × 5/4=5\\) unidades u. Como C está entre A y D, la parte CD mide \\(5 − 11/4=9/4\\) unidades u. Se comprueba \\(11/4+9/4=5\\): AC y CD recomponen AD sin contar ni omitir ninguna parte.",
+            "incorrect": "Organiza por separado los datos que forman el primer total y los que permiten recuperar la parte final. Conserva la unidad común y comprueba que las partes recomponen el total indicado."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para revisar tu solución, señala dónde usaste cada condición «entre». Comprueba también que cada parte positiva es menor que su total y que sumar las partes recupera ese total. Estos controles justifican el resultado; obtener un número plausible no sustituye esas relaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Girar o trasladar toda la configuración sin deformarla conserva las longitudes y las condiciones de posición que utilizaste. A continuación estudiaremos qué ocurre al repetir una misma longitud y cómo recuperar una parte cuando se divide el total en partes iguales. Son nuevas aplicaciones de la composición, con condiciones que también deberán justificarse."
+        }
+      ]
+    }
+  ]
+}
