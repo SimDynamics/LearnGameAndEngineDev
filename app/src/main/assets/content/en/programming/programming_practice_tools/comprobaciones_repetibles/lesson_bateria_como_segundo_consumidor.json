@@ -1,0 +1,632 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__bateria_como_segundo_consumidor",
+  "title": "A Test Suite as a Second Consumer",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From Checking a Function to Keeping Its Test Program"
+        },
+        {
+          "type": "paragraph",
+          "text": "You have already written checks with independent expected results, kept previous cases, and used a nonzero exit code when one failed. You also know that two executables can consume one library. Now you will bring these practices together in a project: the application and the test program will have their own main functions and targets, but will call the same implementation."
+        },
+        {
+          "type": "paragraph",
+          "text": "The new task is to save the test suite as a project source file, build its target, and run it again after each relevant change. Remembering an output or modifying a separate copy of the function inside the test program is not enough. Automated comparisons make repetition easier; keeping an older expected result still requires proving it comes from a correct requirement (Kernighan & Pike, 1999, pp. 149–150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_resultado_del_cliente",
+          "question": "The application displays two plausible results. You want repeatable evidence about the component for future revisions. Which organization meets that purpose?",
+          "options": [
+            "Copy the function into another main and always test that copy, even when the library changes.",
+            "Use another executable with saved cases and expected results, linked against the same library.",
+            "Save only the application's output and treat it as the expected result of every revision."
+          ],
+          "correctIndex": 1,
+          "explanation": "The second executable preserves cases and expectations while using the real library. Its results belong to that build; a copied function could become disconnected from the implementation used by the application.",
+          "reviewFeedback": [
+            "Check which implementation receives the changes and which one your test would execute. Using the same function name does not make two bodies the same source.",
+            "Verify that your comparisons concern the component actually shared and a target that you can rebuild and run.",
+            "Connect the saved output to the input that produced it and to the requirement. An earlier observation needs justification before becoming an expectation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Requirement Determines What Counts as Correct"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas_para receives an integer from 0 to 20. One box holds up to four pieces. It must return the smallest number of boxes needed to store all pieces; zero pieces require zero boxes. A partially filled box still counts. We are not defining behavior for inputs outside that domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, six pieces need two boxes: one cannot hold them, while two can. This calculation comes from the agreement, before looking at the function body. Keep separate what a revision produces from what it should produce."
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_salida_no_es_acuerdo",
+          "question": "Predict this revision's exact output for 0,5,17, with no trailing newline. Do not answer with the output the contract requires.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    std::cout << cajas_para(0) << \":\" << cajas_para(5)\n              << \":\" << cajas_para(17);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Integer division discards the remainder: 0/4=0, 5/4=1, and 17/4=4. This is the revision's output, but one and four boxes are not enough for five and seventeen pieces. Predicting the output correctly does not make the implementation correct.",
+          "reviewFeedback": "Trace the expression this body actually evaluates using integers. Then separate that output from the number of boxes required by their capacity."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_no_depende_del_cuerpo",
+          "question": "An execution produced one box for six pieces. Where should the expected result for checking that execution come from?",
+          "options": [
+            "Copy that one as the new expectation because it was observed during execution.",
+            "Run the same body again and use its second output as the reference.",
+            "Use the agreed capacity and whether the boxes can contain all six pieces."
+          ],
+          "correctIndex": 2,
+          "explanation": "The agreement lets you check whether total capacity is sufficient and whether unnecessary boxes were used. Repeating or copying the body's result does not provide an independent expectation.",
+          "reviewFeedback": [
+            "Reconsider what you are treating as authority: an observation shows what the revision did, but cannot by itself justify what it should have done.",
+            "Distinguish repeatability from compliance. A second run can repeat exactly the same defect.",
+            "Make sure your acceptance criterion remains independent of the function body under test."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Consumers, One Implementation"
+        },
+        {
+          "type": "paragraph",
+          "text": "The project will preserve publico/envio/cajas.h, src/cajas.cpp, app/consulta.cpp, and pruebas/cajas_casos.cpp. Library envios contains the definition. consultar_cajas uses app/consulta.cpp; comprobar_cajas uses pruebas/cajas_casos.cpp. Each executable has a separate main; the library has neither."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Both consumers receive envios's PUBLIC path when declaring their PRIVATE link to it. The second link does not publish anything globally or execute the tests. Building a target produces that program and its dependencies; to check the cases, you still have to run comprobar_cajas. This separation keeps testing code out of the application executable without maintaining another implementation of the component."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_un_main_por_ejecutable",
+          "question": "Which source files should be used for comprobar_cajas to call the library without mixing the two entry points?",
+          "options": [
+            "pruebas/cajas_casos.cpp as the executable's source, with a link to envios.",
+            "app/consulta.cpp and pruebas/cajas_casos.cpp as sources of one executable.",
+            "Only pruebas/cajas_casos.cpp with a second definition of cajas_para pasted into it."
+          ],
+          "correctIndex": 0,
+          "explanation": "The test program has its own main and links envios to receive the definition. The client has another main in another target; neither needs to copy the body of cajas_para.",
+          "reviewFeedback": [
+            "Check which file supplies the test program's main and which relationship supplies the shared definition.",
+            "Find how many main definitions that source list would introduce. Having two project programs does not mean combining their entry points.",
+            "Consider which implementation would change when src/cajas.cpp is fixed, and which one the test program would preserve if it kept its own body."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "bat_esperado_para_dato_nuevo",
+          "question": "Fill in only the expected result of this call for seventeen pieces under the four-place box contract. Write one decimal integer or real literal representing exactly that quantity, with no operations or names.",
+          "code": "// comprobar takes pieces and the expected number of boxes.\nif (!comprobar(17, ____)) { correcto = false; }",
+          "answers": [
+            "5",
+            "5.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "Four boxes have room for only sixteen pieces; five suffice and are the minimum. The expected result is five, even if a defective function returns four. Both accepted spellings represent the same quantity.",
+          "reviewFeedback": "Calculate the total capacity using the proposed number of boxes and check whether it stores every piece. Also make sure you are not copying the value returned by the revision under test."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep the Test Program Without Hiding Cases"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "comprobar calls the function once and returns whether the result matches. main maintains a bool that becomes false when any comparison fails. The calls use separate if statements, as in the previous exercise, so a failure does not prevent observing subsequent cases. Each line identifies input, expected result, and actual result; the summary and return 0/1 communicate the combined outcome."
+        },
+        {
+          "type": "paragraph",
+          "text": "This initial suite preserves four inputs: 0,4,8,20. Their expected results follow from box capacity. Passing all four only shows that this revision agrees for those calls. Printing OK does not establish that you chose cases able to distinguish the defect you are investigating."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_construir_no_es_veredicto",
+          "question": "CMake has built comprobar_cajas, but it has not yet been run. What evidence do you have at this point?",
+          "options": [
+            "The test program could be built with those sources; its comparisons still need to be observed.",
+            "All cases in main have already passed because the target was built without errors.",
+            "The library meets its contract for the entire domain because the test target has a test-related name."
+          ],
+          "correctIndex": 0,
+          "explanation": "Building establishes that the target and its dependencies were produced. Running it performs the comparisons; neither the name nor the build proves the entire contract.",
+          "reviewFeedback": [
+            "Identify which phase provided the evidence and which phase must execute the calls.",
+            "Distinguish producing an executable from executing its instructions. A build does not observe comprobar's return values by itself.",
+            "Review what the name tells you and what observations would be needed to support a behavioral claim."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_continuar_despues_del_fallo",
+          "question": "What change would preserve observation of all cases even when the first fails?",
+          "options": [
+            "Combine every call with && inside a single condition.",
+            "Return 1 immediately after the first failed check.",
+            "Keep each call in its own if and accumulate the overall result."
+          ],
+          "correctIndex": 2,
+          "explanation": "Independent if statements run every case and preserve failure in correcto. This revisits the previous exercise: now it must be preserved when moving the suite into the second executable.",
+          "reviewFeedback": [
+            "Review how && evaluates when an earlier operand is false. A combined result does not prove all calls took place.",
+            "Trace which main statements are skipped when returning before reaching the remaining cases.",
+            "Verify that control flow preserves both execution of later cases and the failure already observed."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Build the Consumer That Actually Checks"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep the four initial checks. First configure, build, and run consultar_cajas; record which data its main uses. Then switch targets to comprobar_cajas, build that target, and run it. Do not use one target's output as evidence for the other."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before editing, calculate the expected results for 1,5,17 from the requirement. Add those three calls without removing the previous four. Rebuild comprobar_cajas and check each line and the final exit code. Then fix only src/cajas.cpp to meet the capacity rule, keeping all seven cases unchanged. Rebuild and run the same test target again. A valid solution calculates the minimum number of boxes throughout the domain; adjusting returns for just seven inputs is not enough."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domain: 0 <= piezas <= 20.\n// Minimum number of boxes with 4 places each to hold every piece.\n// Zero pieces require zero boxes.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_registro_de_objetivo",
+          "question": "When switching from consultar_cajas to comprobar_cajas, what must you keep in your record to attribute each observation correctly?",
+          "options": [
+            "Only the name envios, because both executions depend on that library.",
+            "The target built and executed, its source, and the calls or data examined in that run.",
+            "Only the most recent visible output, regardless of which target was selected."
+          ],
+          "correctIndex": 1,
+          "explanation": "The common library does not make the two main functions interchangeable. The record must identify which target ran and which cases it observed, alongside the shared revision.",
+          "reviewFeedback": [
+            "A shared dependency does not identify which main ran. Reconsider what information distinguishes the two consumers.",
+            "Check that you can distinguish the executions even though they share the same library.",
+            "Connect the output with the executable and revision that produced it. An isolated observation may belong to the previous consumer."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Extend and Repair Separately"
+        },
+        {
+          "type": "note",
+          "text": "Consult this reference after attempting the lab. You need not copy messages, internal names, or organization, but you must preserve the criteria and earlier cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "The piezas/4 revision agrees with the four initial inputs because they are multiples of four, including zero. The new inputs leave remainders and require another box. Keeping them in the second executable makes the defect observable after rebuilding the library and the test program."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "One reference implementation is (piezas + 3) / 4. For a multiple 4k, the quotient remains k; for 4k+1, 4k+2, or 4k+3 it becomes k+1. It also returns zero for zero. The largest numerator in the domain is 23, so the addition is nowhere near the limit of int. This reasoning explains the rule; the seven checks provide repeatable evidence for those inputs, not proof about every possible program."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_misma_fuente_compartida",
+          "question": "Which repair lets both the client and test program receive the same behavioral change?",
+          "options": [
+            "Fix only a copy of the function added to pruebas/cajas_casos.cpp.",
+            "Change only the FAIL messages to OK, preserving comparisons and the library.",
+            "Change the definition in src/cajas.cpp and rebuild the target that will run."
+          ],
+          "correctIndex": 2,
+          "explanation": "The shared definition must be repaired at its source, and the requested target rebuilt. Fixing a copy or message does not repair the component the client uses.",
+          "reviewFeedback": [
+            "Check whether the application would still call the unrepaired definition. A test suite using a copy may observe something else.",
+            "Distinguish what a message prints from what the comparison means. Renaming the result does not change the mismatch.",
+            "Connect the repaired body to the library and to the consumer that will receive its new build."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Discrepancy May Also Be in the Expected Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "A test is another program and can contain errors too. If the library returns five boxes for seventeen pieces but the test expected=4, the mismatch does not require changing the library. Return to the agreement: four boxes can hold only sixteen pieces. An expected result must remain reviewable, even if it was saved from a previous execution (Kernighan & Pike, 1999, p. 150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_revisar_esperado",
+          "question": "The library returns 5 for 17, but the saved case expects 4. The contract still specifies four-place boxes. What action is justified?",
+          "options": [
+            "Correct the expectation using the capacity requirement and record why it was changed.",
+            "Change the library to return 4 because any previously saved expectation takes priority.",
+            "Remove case 17 because its mismatch prevents a zero exit code."
+          ],
+          "correctIndex": 0,
+          "explanation": "The requirement justifies five boxes and permits correcting the erroneous expectation. Preserving tests does not mean perpetuating incorrect data: expectation changes need a verifiable reason.",
+          "reviewFeedback": [
+            "Make sure the test change is justified by the requirement rather than only by the desire to make it pass.",
+            "Compare the total capacity of the saved number of boxes with the pieces in this case. An expectation's age does not demonstrate its validity.",
+            "Consider what information you would lose by removing the very case requiring the agreement and test to be reviewed."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not obtain the expected result by calling the same body you are testing. If you write esperado=cajas_para(piezas) and then compare with another identical call, both can repeat the defect. Sharing the library prevents divergent copies of the implementation; keeping expected results independent prevents the test from automatically copying its answer."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_independiente",
+          "question": "What preserves the necessary independence between the library and the test program's expectations?",
+          "options": [
+            "Calculate each expected result by calling cajas_para twice and accepting when they match.",
+            "Derive all expectations from consultar_cajas output without consulting the contract.",
+            "Call the real library for actual results and keep expectations justified independently by the agreement."
+          ],
+          "correctIndex": 2,
+          "explanation": "Both consumers must share the definition, but the expectation needs independent justification. Repeating the same calculation under test does not create an external criterion.",
+          "reviewFeedback": [
+            "Consider what happens when the body returns the same incorrect value in both calls.",
+            "Review which inputs the client observes and where its results originate. Another library consumer can also display its defect.",
+            "Distinguish sharing the component executed from copying the criterion used to judge it."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Manufactured Match Does Not Check the Contract"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_comparar_dos_llamadas_iguales",
+          "question": "Predict the exact output with no trailing newline. The program compares two calls, not the capacity required by the contract.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    const int esperado{cajas_para(17)};\n    const int obtenido{cajas_para(17)};\n    std::cout << (obtenido == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Both calls produce four in this revision; equality is true and cout prints 1. The contract needs five boxes for seventeen pieces. The result only shows that both calls agree with one another.",
+          "reviewFeedback": "Distinguish the values calculated by the two expressions from the meaning of printing a bool. Do not substitute the judgment you would make about the contract for their comparison."
+        },
+        {
+          "type": "paragraph",
+          "text": "The test program must be able to report a known mismatch. You can keep a deliberately defective revision in the lab, run the suite against it, and then restore the correct revision. This does not approve the defective revision: it checks whether the tests can reject that particular defect. Testing your tests and preserving a case that reveals a failure makes them more useful (Thomas & Hunt, 2020, pp. 277–278)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_control_del_comprobador",
+          "question": "A test suite passes with the correct revision. What additional observation checks that it detects the known piezas/4 defect?",
+          "options": [
+            "Run the correct revision repeatedly until you have several passing reports.",
+            "Run the same expanded suite against the deliberately defective revision and check for mismatches and a nonzero exit code.",
+            "Change the expectations to the values returned by piezas/4 before repeating the run."
+          ],
+          "correctIndex": 1,
+          "explanation": "This negative control preserves the suite and checks whether it rejects a revision known to be wrong. Its cases and comparisons must still come from the contract; rerunning only the correct revision does not test that detection ability.",
+          "reviewFeedback": [
+            "Repeating a correct case checks stability, but consider whether it tests the ability to report the known discrepancy.",
+            "Check that the control changes the implementation observed while preserving justified expectations.",
+            "Connect a change of the criterion to the defect you want to detect. Adapting expectations to the body may erase the very discrepancy you hoped to observe."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Review the Saved Test Too"
+        },
+        {
+          "type": "paragraph",
+          "text": "This lab starts with a library implementing the reference rule and a saved test suite. Configure, build, and run comprobar_cajas. Using the contract and data on each line, determine whether the first mismatch comes from the function or the expected result. Fix only what violates the contract, preserving all seven cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "Then perform a controlled negative test: retain the justified expectations, temporarily change only src/cajas.cpp to piezas/4, rebuild, and require the test program to report mismatches and exit with code 1. Restore the correct implementation and build and run again with the same suite. Identify each revision in the record; do not leave the deliberately defective revision as a fix."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domain: 0 <= piezas <= 20.\n// Minimum number of boxes with 4 places each to hold every piece.\n// Zero pieces require zero boxes.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 4)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_retorno_y_fase",
+          "question": "The target builds, and running it displays one FAIL comparison and exits with code 1. What does that mean here?",
+          "options": [
+            "The test program ran and found at least one mismatch; its cause must be reviewed.",
+            "CMake could not build the target because every exit code 1 indicates a build failure.",
+            "The library must be wrong, so checking the expected result is unnecessary."
+          ],
+          "correctIndex": 0,
+          "explanation": "Exit code 1 belongs to the test program's execution, not to CMake. It indicates at least one mismatch; checking the requirement determines whether the problem is in the component or the test.",
+          "reviewFeedback": [
+            "Connect the exit code to the purpose of this main and retain the information from each case's line.",
+            "Identify which operation produced the code. A successfully built program may use a nonzero exit code to report its own evaluation.",
+            "Check which two values were compared and the basis for each. A mismatch alone does not establish which one violates the agreement."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve the Test Suite After the Negative Test"
+        },
+        {
+          "type": "note",
+          "text": "Reference after your attempt: the case for 17 pieces must expect 5. The four initial cases and three additional cases remain in pruebas/cajas_casos.cpp; they are not replaced by a single failing input."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With the piezas/4 library, cases 1,5,17 fail while the others are still observed. With (piezas+3)/4, all seven match. In this lab the target is rebuilt after every edit. The suite remains saved in the project and can be rerun without rewriting each comparison manually. Repeatability requires preserving inputs, expectations, description, and relevant sources (Thomas & Hunt, 2020, pp. 274–275)."
+        },
+        {
+          "type": "order_code",
+          "id": "bat_orden_del_control",
+          "question": "Arrange the actions for this negative test, starting with a justified suite and an already verified correct revision. Each action describes a complete step in the procedure.",
+          "fragments": [
+            "Restore the correct revision, rebuild, and check the same suite again.",
+            "Record the identity of the correct revision and the suite to preserve.",
+            "Change only the library to the known defective version, without touching expectations.",
+            "Rebuild and run the test program and confirm it rejects the defect."
+          ],
+          "correctOrder": [
+            1,
+            2,
+            3,
+            0
+          ],
+          "explanation": "First identify what must be preserved, then introduce the controlled defect and observe it with the same rebuilt suite. Finally restore and check the correct revision. Keeping expectations unchanged helps attribute the outcome difference to the library revision.",
+          "reviewFeedback": "For each step in your order, identify which revision and suite are available. Check whether the observed result belongs to the change you intended to test and whether the final procedure restores the intended revision."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_todo_verde_y_alcance",
+          "question": "All seven cases pass after restoring the correct revision. Which claim reflects the scope of that evidence?",
+          "options": [
+            "All inputs and every future project change are now certified.",
+            "This build matches the seven saved expectations; other inputs require reasoning or relevant checks.",
+            "The test program should no longer keep the initial four cases because they all passed."
+          ],
+          "correctIndex": 1,
+          "explanation": "The suite provides repeatable evidence for its cases and that build. Keeping it helps detect regressions, but a passing result does not certify data or revisions that were not tested.",
+          "reviewFeedback": [
+            "Distinguish observations from this execution from claims about data or revisions that were not run.",
+            "Connect the claim with the cases executed and the component's domain.",
+            "Consider which behaviors will continue to be observed when the component changes again."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: Another Component and a Test Program to Build"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now lotes_para accepts between 0 and 18 pieces and returns the minimum number of six-place batches needed to store them; zero pieces require zero batches. The project already has library lotes and client consultar_lotes. verificar_lotes is another executable linked to the same library, but its initial main does not check anything yet."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, derive the expected results for 0,6,7,18 from the new capacity. Write four comparisons in pruebas/lotes_casos.cpp, with a diagnostic for each case and final return 0 if all match or 1 if any mismatch occurs. Do not copy the formula into the test program to manufacture expectations. Keep all four calls during the deliberate negative test with piezas/6 and then restore the correct reference. You can organize the solution using familiar constructs; there is no single valid text."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset_target_properties(lotes consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Domain: 0 <= piezas <= 18.\n// Minimum number of batches with 6 places to hold every piece.\n// Zero pieces require zero batches.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    // Write your checks here before consulting the reference.\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_main_vacio",
+          "question": "The initial main of verificar_lotes exits with code 0 without comparing or printing anything. What can you conclude?",
+          "options": [
+            "All four cases passed, because a test program always uses zero to indicate that everything matched.",
+            "That program ended without reporting a failure, but it has not checked the four required cases.",
+            "The library was already tested because the executable links with lotes."
+          ],
+          "correctIndex": 1,
+          "explanation": "An empty main can return zero without observing anything. To attribute its return to the four cases, the code must actually execute them and combine their comparisons as required.",
+          "reviewFeedback": [
+            "Connect the meaning of a return value with the instructions calculating it. A name or convention does not add missing function calls.",
+            "Check which comparison instructions main actually executed before interpreting its return.",
+            "Distinguish having an available definition at link time from calling it during execution. Check whether this main made any calls."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference and Later Review"
+        },
+        {
+          "type": "note",
+          "text": "Consult this after writing and checking your test program. The reference organizes the four calls using the familiar mechanism; the new contract determines their expected quantities."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference library uses (piezas+5)/6. It returns zero for zero, keeps the quotient for a multiple of six, and needs one additional batch for a remainder. The maximum numerator is also 23. The negative test with piezas/6 must fail for seven pieces, and restoring the correct revision must preserve all four cases. As the project grows, rerun relevant cases after changes to sources, requirements, or description; do not confuse a client displaying two quantities with the full test suite."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_otra_revision_otros_datos",
+          "question": "Predict the exact output of this deliberately defective revision for 1,12,13, with no trailing newline. This is another run: do not copy the report from the suite's four cases.",
+          "code": "#include <iostream>\n\nint lotes_para(int piezas) { return piezas / 6; }\n\nint main() {\n    std::cout << lotes_para(1) << \":\" << lotes_para(12)\n              << \":\" << lotes_para(13);\n    return 0;\n}\n",
+          "answers": [
+            "0:2:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "The revision uses integer division by six, producing 0,2,2. Matching for twelve does not remedy insufficient capacity for one or thirteen pieces. Changing the data changes the observed results.",
+          "reviewFeedback": "Trace the three calls using the body shown, in output order. Distinguish the data of this run from those of the suite you built."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_cambio_de_acuerdo",
+          "question": "The project legitimately changes to batches with five places. What work preserves a meaningful test?",
+          "options": [
+            "Review the contract, recalculate its expectations, and adapt/check the implementation, recording why changes were made.",
+            "Keep all earlier expectations without review so as not to alter the regression suite.",
+            "Change expectations by copying the new output without checking the agreed capacity."
+          ],
+          "correctIndex": 0,
+          "explanation": "An actual change to the requirement may justify new expectations; their source must be the revised agreement. Keeping the previous record helps distinguish that change from concealing a defect. This lesson does not replace later validation techniques.",
+          "reviewFeedback": [
+            "Ensure expectations and the revision are evaluated against the new explicit agreement.",
+            "Preserving evidence means knowing which contract it belongs to. Check whether results for one capacity remain valid for the new capacity.",
+            "Distinguish a justified update of the agreement from adjusting the test to whatever the function returns."
+          ]
+        }
+      ]
+    }
+  ]
+}

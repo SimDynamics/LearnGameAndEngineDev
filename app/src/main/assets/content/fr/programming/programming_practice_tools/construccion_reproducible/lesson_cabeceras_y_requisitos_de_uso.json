@@ -1,0 +1,725 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__cabeceras_y_requisitos_de_uso",
+  "title": "En-têtes et exigences d'utilisation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver l'interface lorsque les fichiers ne sont plus réunis"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'exercice précédent, l'en-tête, l'implémentation et le client se trouvaient dans le même dossier. Nous allons maintenant séparer ces rôles. Nous voulons qu'un client puisse utiliser une bibliothèque sans connaître l'emplacement de son implémentation ni ajouter des chemins au hasard. Nous conserverons les signatures, les gardes et la relation d'édition de liens que tu connais déjà."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "proyecto/\n  CMakeLists.txt\n  include/\n    paquetes/\n      entrega.h\n  src/\n    entrega.cpp\n  app/\n    main.cpp\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "include contient l'interface destinée au client ; src contient l'implémentation ; app contient le programme qui l'utilise. Ce sont des noms choisis pour ce projet, et non des dossiers aux pouvoirs automatiques. CMake ne déduit pas un chemin de recherche parce qu'un dossier s'appelle include. Il ne compile pas non plus un en-tête comme une deuxième définition de fonction."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_papel_de_la_cabecera",
+          "question": "entrega.h déclare minutos_preparacion ; entrega.cpp fournit son corps. De quoi le client a-t-il besoin pour compiler l'appel ?",
+          "options": [
+            "Du corps de entrega.cpp copié dans main.cpp.",
+            "Du fichier de bibliothèque statique ouvert comme s'il s'agissait d'un en-tête.",
+            "De la déclaration accessible grâce à l'en-tête correspondant."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le compilateur a besoin de la déclaration de la fonction pour traduire l'appel. Sa définition appartient à l'implémentation et sera nécessaire lors de l'édition de liens ; copier le corps dans le client mélange ces rôles.",
+          "reviewFeedback": [
+            "Revois les informations dont le compilateur a besoin pour vérifier un appel et les opérations relevant de l'édition de liens. Copier une implémentation modifie la séparation recherchée dans ce projet.",
+            "Distingue le texte traité par le compilateur du produit utilisé par l'éditeur de liens. Une bibliothèque statique n'est pas un en-tête C++.",
+            "Associe chaque fichier aux informations qu'il fournit pour traduire un appel."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_nombre_no_configura_busqueda",
+          "question": "Nous avons seulement créé l'arborescence présentée ; aucun chemin de recherche n'a encore été déclaré. Que permet de conclure le nom include ?",
+          "options": [
+            "Que le dossier représente notre organisation ; il reste à déclarer quelles cibles en ont besoin.",
+            "Que toutes les sources du projet recherchent automatiquement leurs en-têtes dans ce dossier.",
+            "Que l'éditeur de liens inclura toute définition décrite par ces en-têtes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le nom aide à comprendre l'organisation, mais la description doit exprimer les exigences de chaque cible. Les chemins de recherche des en-têtes et la fourniture des définitions à l'édition de liens sont deux décisions distinctes.",
+          "reviewFeedback": [
+            "Identifie ce que l'arborescence indique et ce qui doit être déclaré dans la description de construction.",
+            "Vérifie où la recherche automatique supposée a été déclarée. Le nom d'un dossier n'est pas une instruction de construction.",
+            "Examine ce que contient un en-tête et le produit dont l'éditeur de liens a besoin pour résoudre une définition."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une racine de recherche doit compléter le nom demandé"
+        },
+        {
+          "type": "paragraph",
+          "text": "entrega.cpp et main.cpp écriront tous deux #include \"paquetes/entrega.h\". Dans ce projet, aucun de ces fichiers sources ne possède cet en-tête à côté de lui. Nous voulons fournir au compilateur une racine de recherche qui, suivie de paquetes/entrega.h, permette de retrouver le fichier réel."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Racine de recherche : include/\nNom demandé :         paquetes/entrega.h\nFichier correspondant : include/paquetes/entrega.h\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "target_include_directories ajoute des répertoires de recherche pour une cible déjà définie. Dans les exemples de cette leçon, il existe un seul CMakeLists.txt, situé dans proyecto/. Un chemin relatif comme include est interprété depuis ce répertoire de sources, et non depuis l'emplacement du .cpp ni depuis le répertoire de construction distinct (Scott, 2025, pp. 182–183)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_include_directories(preparacion PUBLIC include)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier argument désigne la cible. La portée PUBLIC indique qui reçoit l'exigence ; nous l'étudierons ensuite. Le dernier argument est un répertoire, pas un en-tête ni un fichier .cpp. Ce cours conserve une version minimale de CMake 3.20 et utilise cette commande compatible. Nous ne la présentons pas comme l'unique méthode moderne pour organiser les en-têtes : des outils plus récents offrent d'autres mécanismes (Scott, 2025, p. 182)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_raiz_para_nombre_compuesto",
+          "question": "Avec #include \"paquetes/entrega.h\" et l'arborescence précédente, quel répertoire de recherche correspond au nom demandé ?",
+          "options": [
+            "include/paquetes/entrega.h",
+            "include/paquetes",
+            "include"
+          ],
+          "correctIndex": 2,
+          "explanation": "On ajoute le répertoire include. Rechercher paquetes/entrega.h à partir de cette racine donne include/paquetes/entrega.h. Fournir un en-tête comme répertoire ou répéter le composant paquetes ne décrit pas cette recherche.",
+          "reviewFeedback": [
+            "Vérifie si ton argument désigne un répertoire depuis lequel on peut trouver le nom demandé ou s'il indique déjà un fichier.",
+            "Ajoute à ton répertoire le nom, qui commence déjà par paquetes/. Vérifie si un composant du chemin se répète.",
+            "Assemble la racine proposée et le nom complet écrit dans #include, puis compare le chemin obtenu à l'arborescence."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "cab_raiz_en_otro_arbol",
+          "question": "Une cible existante, motor, inclut \"servicios/cupo.h\". Le fichier se trouve dans publico/servicios/cupo.h, par rapport au seul CMakeLists.txt. Complète uniquement le répertoire de recherche ; ne change pas le include.",
+          "language": "cmake",
+          "code": "target_include_directories(motor PUBLIC ___)\n",
+          "answers": [
+            "publico",
+            "\"publico\"",
+            "./publico",
+            "\"./publico\"",
+            "publico/",
+            "\"publico/\"",
+            "./publico/",
+            "\"./publico/\""
+          ],
+          "explanation": "La racine publico complète servicios/cupo.h en publico/servicios/cupo.h. Ce choix découle de la relation entre l'arborescence et le nom demandé, et non d'une obligation d'appeler le dossier include.",
+          "reviewFeedback": "Écris le nom demandé sous le répertoire proposé. Vérifie si cette combinaison atteint le fichier indiqué sans répéter de composants ni transformer un fichier en répertoire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une exigence peut appartenir au producteur et à son client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparacion doit compiler entrega.cpp, qui inclut son interface. Medir doit compiler main.cpp, qui inclut la même interface. Ce sont des compilations de cibles différentes. Donner un chemin seulement à preparacion n'en fait pas une option générale pour toutes les cibles du projet."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec target_include_directories, PRIVATE applique le chemin à la cible elle-même ; PUBLIC l'applique à cette cible et le publie comme exigence pour ses consommateurs. Le client reçoit les exigences d'utilisation publiques de la bibliothèque lorsque sa relation avec celle-ci est déclarée au moyen des cibles. Il n'a pas besoin de répéter un chemin faisant partie de l'interface d'utilisation (Scott, 2025, pp. 175–176, 182–183)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le PRIVATE de target_link_libraries concerne la relation déclarée par medir. Il n'empêche pas medir de recevoir les exigences publiques de preparacion. Il ne fournit pas non plus ce chemin à une cible sans dépendance déclarée. PUBLIC et PRIVATE ont ici leurs rôles respectifs ; ce ne sont ni des spécificateurs d'accès d'une classe C++ ni des permissions d'ouvrir des fichiers."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_recibir_aunque_enlace_private",
+          "question": "Dans le fragment présenté, main.cpp inclut l'interface publique. Quel effet PRIVATE a-t-il dans la relation d'édition de liens de medir ?",
+          "options": [
+            "Il fait recevoir le produit de bibliothèque à medir tout en refusant ses exigences publiques de compilation.",
+            "Il permet à medir d'utiliser preparacion et ses exigences publiques sans publier cette relation comme relation publique de medir.",
+            "Il transforme les chemins publics de preparacion en chemins généraux pour toutes les cibles du projet."
+          ],
+          "correctIndex": 1,
+          "explanation": "Medir utilise la dépendance et reçoit ses exigences d'utilisation. Le PRIVATE de cet appel ne supprime pas les exigences publiques nécessaires au client et ne rend pas les options globales pour les cibles sans relation.",
+          "reviewFeedback": [
+            "Distingue recevoir les exigences nécessaires à la compilation de ce client de les publier à travers ce client vers d'autres consommateurs. De quoi main.cpp a-t-il besoin ?",
+            "Relie la portée indiquée à la cible sur laquelle agit la commande et à son utilisation de la bibliothèque.",
+            "Recherche une relation déclarée entre la cible extérieure et la bibliothèque. La présence d'un chemin public ne crée pas cette relation."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_ruta_que_solo_usa_la_implementacion",
+          "question": "Un autre dossier, interno/, contient un en-tête inclus seulement par src/entrega.cpp. Aucun en-tête public ni client n'en a besoin. Quelle exigence faut-il déclarer pour preparacion ?",
+          "options": [
+            "PRIVATE interno, pour l'appliquer à la compilation de preparacion sans le publier comme exigence pour ses clients.",
+            "PUBLIC interno, pour que tous les clients héritent aussi de ce chemin sans en avoir besoin.",
+            "PRIVATE interno, parce que les mots du langage CMake empêchent physiquement un client d'ouvrir ce dossier."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'implémentation a besoin de ce chemin ; son interface d'utilisation n'en a pas besoin. PRIVATE exprime cette exigence de compilation. Il ne crée pas de barrière de sécurité sur le système de fichiers.",
+          "reviewFeedback": [
+            "Sépare un besoin interne de compilation d'une condition qui doit être transmise au client.",
+            "Identifie qui inclut réellement cet en-tête. Publier une exigence la transmet aussi aux consommateurs ; vérifie si elle appartient à l'interface qu'ils utilisent.",
+            "Revois ce que modifie cette commande : les options de recherche lors de la compilation des cibles. Elle ne modifie pas les permissions et n'empêche pas d'autres moyens d'accéder à un fichier."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver un oracle avant de changer l'organisation"
+        },
+        {
+          "type": "paragraph",
+          "text": "minutos_preparacion reçoit un entier de 0 à 12. Avec zéro unité, elle doit renvoyer zéro minute ; pour une quantité positive, elle renvoie 3 + 2 * unidades. Le domaine est une précondition de cette fonction ; cette version ne vérifie ni ne promet de rejet pour des arguments extérieurs à ce domaine. Déplacer les fichiers ne modifie pas ce contrat."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domaine : 0 <= unidades <= 12.\n// Zéro unité : zéro minute. Sinon : 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme suivant réunit temporairement la définition et le client pour exercer la prédiction sans dépendre encore de la description CMake. Dans le laboratoire, la même définition sera dans src/entrega.cpp et le client dans app/main.cpp."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_oraculo_independiente_de_rutas",
+          "language": "cpp",
+          "question": "Quelle sortie produit ce programme ? Conserve les deux-points et n'ajoute pas de saut final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n",
+          "answers": [
+            "0:5:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Zéro unité renvoie le résultat du cas particulier. Une unité nécessite 3 + 2 minutes et cinq nécessitent 3 + 10. cout insère les trois résultats avec deux séparateurs et sans saut final. Ce résultat attendu découle du contrat, avant l'observation d'une construction.",
+          "reviewFeedback": "Distingue l'appel utilisant le cas zéro de ceux appliquant la formule. Calcule chaque valeur renvoyée, puis reconstitue les caractères ajoutés par cout."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_organizacion_no_cambia_contrato",
+          "question": "Après la réorganisation des fichiers, la construction réussit, mais la sortie diffère du résultat attendu. Que prouve cette réussite ?",
+          "options": [
+            "Que la nouvelle organisation a automatiquement modifié le contrat de minutos_preparacion.",
+            "Que le programme a pu être construit ; il reste à examiner l'écart avec le contrat.",
+            "Qu'un chemin PUBLIC garantit que tous les corps compilés renvoient les bonnes valeurs."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les chemins et les dépendances permettent la construction ; ils ne vérifient pas la règle des minutes. L'écart de comportement demande d'examiner les cas et d'identifier la révision exécutée.",
+          "reviewFeedback": [
+            "Repère où une modification du comportement a été convenue. Changer les dossiers n'exprime pas une nouvelle règle de gestion.",
+            "Relie la réussite à la phase qui l'a produite et conserve le résultat attendu calculé avant l'exécution.",
+            "Vérifie les informations apportées au compilateur par un chemin de recherche et celles nécessaires pour démontrer le résultat d'une fonction."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnostiquer un chemin qui n'atteint pas le client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ce laboratoire, le chemin include est appliqué seulement à preparacion. main.cpp inclut \"paquetes/entrega.h\" et ne reçoit aucun autre chemin de recherche du projet. Avant l'exécution, prédis quelle source a besoin de cette information. Conserve les fichiers et la cible medir, puis configure et construis pour vérifier ton explication."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PRIVATE include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domaine : 0 <= unidades <= 12.\n// Zéro unité : zéro minute. Sinon : 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La configuration peut réussir même si un chemin manque lors de la compilation de main.cpp. Examine le diagnostic de construction : il doit concerner la recherche de l'en-tête. Ne confonds pas ce cas avec une définition manquante lors de l'édition de liens. Change seulement la portée du chemin qui doit atteindre le client, reconfigure et reconstruis, puis exécute et compare avec l'oracle précédent."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_fase_de_la_cabecera_ausente",
+          "question": "La construction indique que main.cpp ne trouve pas paquetes/entrega.h. Que faut-il examiner en premier ?",
+          "options": [
+            "La valeur que doit renvoyer la fonction avec cinq unités.",
+            "Le chemin de recherche des en-têtes disponible lors de la compilation de la cible de main.cpp.",
+            "La suppression de target_link_libraries pour que le client cesse d'utiliser la bibliothèque."
+          ],
+          "correctIndex": 1,
+          "explanation": "La compilation du client exige de trouver son en-tête. Ce diagnostic survient avant l'édition de liens et l'exécution ; supprimer une dépendance nécessaire ne fournit pas cette information.",
+          "reviewFeedback": [
+            "Vérifie si le programme s'est exécuté et a produit un retour. Utilise la phase et le fichier mentionnés dans le diagnostic pour situer la cause.",
+            "Compare les besoins de la source nommée dans le diagnostic aux exigences reçues par sa cible.",
+            "Explique comment la modification fournirait au compilateur le texte demandé par #include. Supprimer une relation n'ajoute pas de chemin de recherche."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réparer la propagation et vérifier de nouveau le comportement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici une description de référence pour le projet précédent. Elle conserve la relation d'édition de liens et publie le chemin nécessaire aux deux sources. Elle utilise les mêmes exigences C++20 sans extensions ; PRIVATE dans target_compile_features règle l'exigence de compilation de chaque cible, pas la recherche des en-têtes."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la correction, vérifie les appels initiaux. Modifie ensuite uniquement les appels vers les cas extrême et intérieur de la prédiction. Reconstruis le programme contenant ce nouveau client avant de lui attribuer une sortie ; le nom de l'en-tête peut rester identique alors que l'exécutable doit être actualisé."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_recuperar_cero_y_extremo",
+          "language": "cpp",
+          "question": "Quelle sortie produit ce programme ? Conserve les deux-points et n'ajoute pas de saut final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n",
+          "answers": [
+            "0:27:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Le cas zéro n'exige toujours aucune préparation ; douze unités demandent 3 + 24 minutes et deux demandent 3 + 4. Les trois arguments appartiennent au domaine. Cette nouvelle séquence permet de retrouver la borne supérieure sans remplacer l'oracle de la première exécution.",
+          "reviewFeedback": "Vérifie les arguments de cette révision et la branche atteinte par chaque appel. Ne réutilise pas une ancienne sortie simplement parce que la signature et l'en-tête sont restés identiques."
+        },
+        {
+          "type": "paragraph",
+          "text": "Essaie aussi une version volontairement défectueuse : supprime de src/entrega.cpp le cas particulier de zéro, pour ne conserver que return 3 + 2 * unidades;. Une recherche d'en-tête et une édition de liens correctes peuvent la construire. Le cas zéro doit révéler qu'elle ne respecte plus le contrat. Rétablis l'implémentation et reconstruis ; une configuration correcte ne prouve pas à elle seule que le comportement est réparé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_reparacion_de_rutas_no_de_calculo",
+          "question": "La version sans cas particulier de zéro est construite et exécutée. Quelle preuve permettrait de distinguer ce défaut d'une correction appropriée ?",
+          "options": [
+            "Vérifier seulement que CMake conserve le nom du projet.",
+            "Vérifier seulement que la bibliothèque déclare toujours la même signature.",
+            "Exécuter le cas zéro et le comparer au contrat calculé avant la modification."
+          ],
+          "correctIndex": 2,
+          "explanation": "La variante modifie précisément le cas zéro. Ni le nom du projet ni la signature ne décrivent la valeur à renvoyer. La version correcte doit retrouver le contrat en plus de pouvoir être construite.",
+          "reviewFeedback": [
+            "Relie le nom du projet à l'observation nécessaire pour détecter une valeur incorrecte.",
+            "Une signature conserve les types et le nom. Vérifie si elle détermine aussi le comportement du corps pour cet argument.",
+            "Choisis une observation liée à la différence introduite et compare-la à une attente indépendante."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Publier ce dont le client a besoin et conserver un détail interne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une interface utile évite à ses clients de devoir deviner les dépendances de l'implémentation. Un en-tête public doit pouvoir être utilisé avec les services dont il déclare avoir besoin. Masquer les détails superflus et expliciter les exigences d'utilisation réduit le couplage lors de la maintenance (Kernighan & Pike, 1999, pp. 104–105). Nous allons le pratiquer avec deux répertoires d'en-têtes et un client qui ne connaît que l'interface publique."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "include/paquetes/entrega.h  interface de bibliothèque et de client\ninterno/ajuste.h             constantes utilisées seulement par entrega.cpp\nsrc/entrega.cpp              inclut les deux en-têtes\napp/main.cpp                 inclut seulement paquetes/entrega.h\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'en-tête public déclare seulement minutos_preparacion et son contrat. Il n'inclut pas ajuste.h. L'implémentation inclut les deux en-têtes et utilise deux constantes internes : minutos_base vaut 3 et minutos_por_unidad vaut 2. Ces constantes se trouvent dans interno/, séparé de src/ ; rechercher ajuste.h à côté du .cpp ne suffit donc pas dans ce projet."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "PUBLIC désigne une exigence d'utilisation de la cible ; PRIVATE une exigence pour sa propre compilation. Si entrega.h incluait plus tard ajuste.h, le client devrait également trouver ce second en-tête. Nous ne pourrions pas conserver simultanément cette inclusion publique et l'affirmation que son chemin est strictement interne. La classification dépend de l'utilisation réelle, pas du nom du dossier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_quien_necesita_el_detalle",
+          "question": "Avec l'organisation présentée, quelle compilation doit recevoir interno comme répertoire de recherche ?",
+          "options": [
+            "La source src/entrega.cpp, qui inclut ajuste.h pour ses constantes.",
+            "Les sources de toutes les cibles, puisqu'il existe un répertoire d'en-têtes.",
+            "La source app/main.cpp, même si elle n'inclut pas ajuste.h et n'en a pas besoin."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'implémentation inclut directement l'en-tête auxiliaire. Le client n'a besoin que de l'interface publique déclarée. Lui transmettre des détails inutilisés affaiblirait la séparation des exigences sans répondre à un besoin de compilation.",
+          "reviewFeedback": [
+            "Relie chaque inclusion à la source qui doit la résoudre et à la cible qui compile cette source.",
+            "Repère le texte qui inclut réellement l'en-tête auxiliaire. La présence d'un fichier ne rend pas son répertoire nécessaire à chaque cible.",
+            "Suis les inclusions du client et de son en-tête public. Vérifie quelle déclaration ou constante aurait besoin de ce chemin supplémentaire."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_si_la_cabecera_publica_incluye_el_detalle",
+          "question": "entrega.h est maintenant modifié pour inclure ajuste.h, sans changer les chemins du fragment précédent. Que faut-il revoir ?",
+          "options": [
+            "Rien : PRIVATE empêche le compilateur de traiter une inclusion écrite dans un en-tête public.",
+            "Il faut également vérifier les chemins du client, qui traite cette inclusion lorsqu'il utilise entrega.h.",
+            "Il suffit de renommer la bibliothèque, car son nom décide des chemins."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le client traite les inclusions de l'en-tête qu'il utilise. Si cette interface nécessite un autre en-tête, sa dépendance doit être accessible pendant la compilation du client, ou l'interface doit être réorganisée pour supprimer ce détail. PRIVATE n'annule pas une directive C++.",
+          "reviewFeedback": [
+            "Distingue une option de recherche CMake d'une directive d'inclusion traitée par C++. Une portée de recherche ne supprime aucun texte de l'en-tête.",
+            "Suis ce que le compilateur du client traite lorsqu'il lit l'en-tête public révisé.",
+            "Relie le diagnostic de recherche aux inclusions et à leurs répertoires ; un changement de nom de cible ne modifie pas ces chemins à lui seul."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la séparation avec le véritable client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce laboratoire conserve le contrat et les appels initiaux, mais utilise ajuste.h. Configure, construis medir et exécute ; la séparation des dossiers doit préserver le même comportement. Ensuite, retire uniquement PRIVATE interno de target_include_directories, en conservant PUBLIC include et les fichiers. Reconfigure et reconstruis. L'implémentation doit signaler l'absence de ajuste.h ; rétablis son chemin pour retrouver une construction valide."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domaine : 0 <= unidades <= 12.\n// Zéro unité : zéro minute. Sinon : 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour vérifier ce que reçoit le client, ajoute temporairement #include \"ajuste.h\" à app/main.cpp. L'en-tête existe toujours et la bibliothèque garde son chemin interne, mais ce chemin n'a pas été publié à medir. Le diagnostic doit provenir de la compilation de ce client. Retire l'inclusion expérimentale et reconstruis. N'ajoute pas un chemin au client uniquement pour masquer le résultat : nous voulons vérifier la séparation convenue."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_private_no_borra_archivos",
+          "question": "Le client expérimental ne trouve pas ajuste.h, alors que preparacion peut l'utiliser. Qu'est-ce qui explique cette différence ?",
+          "options": [
+            "Le fichier est supprimé après la compilation de la bibliothèque parce qu'il se trouve sur un chemin PRIVATE.",
+            "PRIVATE transforme ajuste.h en section privée d'une classe C++.",
+            "Le répertoire interne s'applique à preparacion et n'est pas publié comme chemin de recherche pour medir."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les compilations reçoivent des exigences différentes. Le fichier n'est ni supprimé ni transformé en un autre langage : le chemin privé n'est pas transmis comme exigence d'utilisation. Ce n'est pas une interdiction physique d'accéder au fichier.",
+          "reviewFeedback": [
+            "Vérifie si la commande gère des options de compilation ou l'existence des fichiers. Explique comment deux cibles peuvent rechercher dans des répertoires différents sans rien supprimer.",
+            "Revois où figurent les sections d'accès d'une classe et quelle instruction configure ici le processus de construction.",
+            "Compare les répertoires dont chaque cible a besoin et ceux qu'elle reçoit pour résoudre ses inclusions."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Un autre changement volontaire du contrat permet une nouvelle vérification : pour des quantités positives, il faut maintenant 4 minutes initiales, en conservant 2 par unité et zéro minute pour zéro unité. Modifie le contrat de entrega.h et minutos_base dans interno/ajuste.h. Avant de reconstruire, recalcule les trois appels initiaux ; compare ensuite à 0:6:14 sans saut final. Ce changement de comportement est une nouvelle exigence, pas une conséquence automatique de la publication d'un chemin. Traiter l'ancien programme comme la nouvelle révision répéterait l'erreur de provenance déjà étudiée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un chemin d'en-tête et une définition liée répondent à des questions différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends la séparation des phases des leçons précédentes. Fournir un chemin d'en-tête permet de compiler un appel déclaré ; cela n'intègre pas le corps de la fonction à l'exécutable. La relation d'édition de liens avec la bibliothèque fournit son produit et peut transmettre des exigences publiques d'utilisation. La supprimer peut faire disparaître les deux."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_include_directories(medir PRIVATE include)\n# Dans cette expérience, la relation d'édition de liens manque.\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette expérience reprend l'implémentation initiale de entrega.cpp, sans ajuste.h. Un chemin de recherche direct a été donné à medir uniquement pour isoler les phases. Les profils C++20 antérieurs sont conservés. Les deux sources trouvent leur en-tête ; main.cpp utilise minutos_preparacion, dont l'unique définition se trouve dans entrega.cpp. Demander de construire medir n'intègre pas preparacion simplement parce que la bibliothèque existe dans la description. L'échec attendu concerne ici l'édition de liens : la définition n'est pas fournie. Après avoir ajouté la bonne relation, on peut retirer le chemin direct en double du client puisque la bibliothèque publie déjà cette exigence."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_busqueda_directa_no_aporta_definicion",
+          "question": "Dans cette expérience, sans autre définition disponible, main.cpp compile mais minutos_preparacion manque lors de l'édition de liens de medir. Quelle exigence reste à déclarer ?",
+          "options": [
+            "La dépendance à la cible qui fournit l'implémentation lors de l'édition de liens.",
+            "Une autre inclusion de entrega.h dans le même main.cpp.",
+            "Un chemin de recherche plus profond dans include/paquetes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le chemin direct a déjà permis de trouver la déclaration du client ; répéter l'inclusion ou approfondir le chemin n'apporte aucune définition. La relation à la bibliothèque s'exprime au moyen de sa cible.",
+          "reviewFeedback": [
+            "Distingue disposer d'une déclaration et disposer du produit qui contient sa définition.",
+            "Identifie s'il manque du texte pour traduire l'appel ou une définition pour le résoudre à l'édition de liens. Répéter une déclaration conserve le même type d'information.",
+            "L'énoncé précise déjà que l'en-tête a été trouvé. Vérifie de quel produit a besoin la phase signalant maintenant l'erreur."
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "cab_orden_tras_cambiar_requisitos",
+          "question": "Le contrat et les résultats attendus sont déjà calculés. Tu viens de modifier la description des exigences ; reconfigure dans le laboratoire. Remets les actions dans l'ordre pour attribuer la sortie à cette révision et la vérifier.",
+          "fragments": [
+            "Comparer la nouvelle sortie au résultat attendu calculé avant l'exécution.",
+            "Construire medir à partir des règles de la description révisée.",
+            "Configurer et générer à partir des exigences actuelles.",
+            "Exécuter le produit obtenu lors de cette construction."
+          ],
+          "correctOrder": [
+            2,
+            1,
+            3,
+            0
+          ],
+          "explanation": "On prépare d'abord les règles de la description révisée, puis on obtient le produit, on l'exécute et on compare cette exécution. Une ancienne sortie ne prouve pas que les nouvelles exigences ont été utilisées.",
+          "reviewFeedback": "Pour chaque action dans ton ordre, note les informations ou produits nécessaires. Vérifie s'ils proviennent de la nouvelle description et s'ils étaient disponibles quand tu as voulu les utiliser."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une autre description sans copier les noms de l'exemple"
+        },
+        {
+          "type": "paragraph",
+          "text": "Résous ce projet avant de consulter la page suivante. Conserve les fichiers et leur contenu. L'interface se trouve dans publico/sala/cupo.h et les deux .cpp écrivent #include \"sala/cupo.h\". Le domaine est 0 <= ocupadas <= capacidad <= 20 ; plazas_libres renvoie capacidad - ocupadas sans modifier l'état. Le laboratoire fournit les sources, mais laisse CMakeLists.txt vide afin que tu rédiges la description."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "SalaLocal : nom du projet\naforo : bibliothèque statique issue de motor/cupo.cpp\nconsultar_aforo : exécutable issu de programas/consulta.cpp\npublico/sala/cupo.h : interface partagée\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Déclare CMake 3.20 comme minimum, active C++, crée les deux cibles et fixe pour chacune cxx_std_20, extensions désactivées. Détermine la racine de recherche complétant sala/cupo.h. Exprime cette recherche comme exigence de la bibliothèque pour elle-même et pour ses clients ; relie l'exécutable à aforo sans changer les inclusions ni copier l'implémentation dans le client. Calcule les trois appels avant de configurer et de construire consultar_aforo."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "publico/sala/cupo.h",
+              "initialCode": "#ifndef PRACTICA_SALA_CUPO_H\n#define PRACTICA_SALA_CUPO_H\n\n// Domaine : 0 <= ocupadas <= capacidad <= 20.\n// Renvoie capacidad - ocupadas. Ne modifie aucun état.\nint plazas_libres(int capacidad, int ocupadas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cupo.cpp",
+              "initialCode": "#include \"sala/cupo.h\"\n\nint plazas_libres(int capacidad, int ocupadas) {\n    return capacidad - ocupadas;\n}\n"
+            },
+            {
+              "path": "programas/consulta.cpp",
+              "initialCode": "#include \"sala/cupo.h\"\n#include <iostream>\n\nint main() {\n    std::cout << plazas_libres(10, 3) << ':'\n              << plazas_libres(10, 10) << ':'\n              << plazas_libres(0, 0);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_aforo",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de construction : la description doit configurer et générer, construire la cible demandée, lier l'implémentation et exécuter les appels initiaux avec le comportement convenu. D'autres descriptions peuvent convenir ; la référence ultérieure n'impose pas un ordre textuel unique aux commandes indépendantes. Teste aussi la capacité nulle, l'occupation complète et un cas intérieur du domaine. N'utilise pas d'arguments hors précondition pour réclamer une validation que la fonction ne promet pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer le transfert et ses résultats"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après ton essai, compare les relations de ta description à cette référence. publico est la racine de recherche de sala/cupo.h ; il ne faut pas répéter sala dans le répertoire de recherche. La cible aforo regroupe la définition et publie cette exigence au client qui déclare l'utiliser."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(SalaLocal LANGUAGES CXX)\nadd_library(aforo STATIC motor/cupo.cpp)\nadd_executable(consultar_aforo programas/consulta.cpp)\ntarget_compile_features(aforo PRIVATE cxx_std_20)\ntarget_compile_features(consultar_aforo PRIVATE cxx_std_20)\nset_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(aforo PUBLIC publico)\ntarget_link_libraries(consultar_aforo PRIVATE aforo)\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_oraculo_de_la_transferencia",
+          "language": "cpp",
+          "question": "Quelle sortie produit ce programme ? Conserve les deux-points et n'ajoute pas de saut final.",
+          "code": "#include <iostream>\n\nint plazas_libres(int capacidad, int ocupadas) {\n    return capacidad - ocupadas;\n}\n\nint main() {\n    std::cout << plazas_libres(10, 3) << ':'\n              << plazas_libres(10, 10) << ':'\n              << plazas_libres(0, 0);\n    return 0;\n}\n",
+          "answers": [
+            "7:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Avec une capacité de dix places et trois occupées, il en reste sept ; lorsque toutes sont occupées, il en reste zéro ; une salle de capacité nulle et d'occupation nulle laisse également zéro place. Les trois couples respectent la précondition et ne modifient aucun état.",
+          "reviewFeedback": "Dans chaque appel, identifie l'argument de capacité et celui d'occupation. Vérifie le domaine avant de calculer la différence et conserve l'ordre exact de l'affichage."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_conservar_include_al_mover_la_raiz",
+          "question": "L'interface passe de publico/sala/cupo.h à api/sala/cupo.h, sans changer #include \"sala/cupo.h\" ni les .cpp. Quelle modification exprime la nouvelle recherche partagée ?",
+          "options": [
+            "Changer le répertoire de construction en dossier nommé api, sans modifier les exigences.",
+            "Ajouter sala au nom de la cible aforo pour que le compilateur trouve le dossier.",
+            "Remplacer par api la racine publiée par aforo et reconfigurer la description."
+          ],
+          "correctIndex": 2,
+          "explanation": "La recherche dépend de l'exigence de la cible et du nom demandé, et non du répertoire de construction ou du nom de la cible. Changer cette racine dans la description conserve l'interface d'inclusion du client.",
+          "reviewFeedback": [
+            "Distingue le répertoire recevant les produits générés de celui des sources où se trouve l'en-tête demandé.",
+            "Examine la commande qui configure les chemins d'en-têtes. Le nom d'une cible identifie un produit logique, pas une règle automatique de recherche.",
+            "Relie le nouvel emplacement du fichier au nom conservé dans la directive d'inclusion et garde la provenance de la description révisée."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver qui reçoit une exigence après le changement de client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine un deuxième exécutable, resumen, avec son propre main qui inclut l'interface publique de preparacion. La bibliothèque conserve PUBLIC include et PRIVATE interno. Fournir des exigences à medir ne transforme pas medir en intermédiaire obligatoire : resumen doit déclarer sa propre relation à la bibliothèque qu'il utilise."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_executable(resumen herramientas/resumen.cpp)\ntarget_compile_features(resumen PRIVATE cxx_std_20)\nset_target_properties(resumen PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(resumen PRIVATE preparacion)\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_public_no_es_global",
+          "question": "Avant l'ajout de la dernière ligne, resumen ne déclare aucune relation avec preparacion et ne reçoit aucun autre chemin. PUBLIC include suffit-il à lui seul pour son main distinct ?",
+          "options": [
+            "Non : la cible consommatrice doit déclarer sa relation à la bibliothèque pour recevoir cette exigence.",
+            "Oui : PUBLIC oblige toutes les futures cibles à utiliser ce chemin.",
+            "Oui : il suffit que medir ait déjà construit un exécutable dans le même projet."
+          ],
+          "correctIndex": 0,
+          "explanation": "PUBLIC conserve une exigence pour ses consommateurs ; il ne crée pas automatiquement de relations avec toutes les cibles présentes ou futures. Resumen doit déclarer qu'il utilise preparacion pour recevoir son interface d'utilisation et lier la définition.",
+          "reviewFeedback": [
+            "Distingue la publication d'une exigence de la déclaration de ses consommateurs.",
+            "Vérifie si cette portée ajoute un chemin global ou le publie comme exigence d'une cible précise. Repère la relation dont le nouveau client a besoin.",
+            "Sépare les produits de deux cibles différentes. La construction de l'une ne déclare pas les exigences de l'autre."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "cab_detalle_solo_de_un_objetivo",
+          "question": "Une bibliothèque déjà créée, calculo, compile une source qui inclut \"ajuste.h\" depuis privado/. Ni son interface publique ni ses clients n'incluent cet en-tête. Complète uniquement la portée appliquant le chemin à calculo sans le publier comme exigence d'utilisation.",
+          "language": "cmake",
+          "code": "target_include_directories(calculo ___ privado)\n",
+          "answers": [
+            "PRIVATE",
+            "\"PRIVATE\""
+          ],
+          "explanation": "PRIVATE applique ce répertoire à la compilation propre de calculo. La décision dépend des inclusions réelles ; elle ne modifie ni les permissions ni l'accès d'une classe C++.",
+          "reviewFeedback": "Détermine qui doit recevoir le répertoire pour compiler et qui n'en a pas besoin comme partie de l'interface. La portée exprime cette répartition, pas des permissions de fichier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve aussi la modification volontaire du contrat des minutes : pour les quantités positives, 4 minutes initiales et 2 par unité ont été convenues, avec zéro minute pour zéro unité. Le programme suivant utilise ce nouvel accord et change l'ordre des appels. Identifie les arguments actuels avant de réutiliser une ancienne observation."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_revision_y_datos_no_son_la_ruta",
+          "language": "cpp",
+          "question": "Quelle sortie produit ce programme ? Conserve les deux-points et n'ajoute pas de saut final.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 4 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(2) << ':'\n              << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12);\n    return 0;\n}\n",
+          "answers": [
+            "8:0:28"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Deux unités appliquent la nouvelle formule et donnent huit ; zéro renvoie zéro ; douze unités utilisent 4 + 24. La différence vient du contrat et des appels modifiés, pas du nom PUBLIC ou PRIVATE d'un chemin de recherche.",
+          "reviewFeedback": "Suis chaque appel jusqu'à son résultat avec la formule réellement utilisée dans cette révision. Sépare la modification du contrat, celle des arguments et les exigences de recherche."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_limite_de_private",
+          "question": "Un client connaît un chemin relatif permettant d'atteindre physiquement un en-tête interne. Le mot PRIVATE dans target_include_directories garantit-il que le système de fichiers lui refuse l'ouverture ?",
+          "options": [
+            "Oui : il change les permissions du fichier lors de la configuration.",
+            "Non : il décide des chemins de recherche publiés par la cible, sans créer de barrière de sécurité.",
+            "Oui : il transforme toutes les déclarations en membres privés d'une classe."
+          ],
+          "correctIndex": 1,
+          "explanation": "PRIVATE répartit des exigences de construction. Il ne supprime pas le fichier, ne change pas les permissions et n'introduit aucune classe. La séparation de l'interface reste une décision de conception et de maintenance, pas une protection physique.",
+          "reviewFeedback": [
+            "Identifie les options modifiées par la commande et l'endroit où les permissions du système de fichiers sont gérées. Ce ne sont pas les mêmes opérations.",
+            "Distingue les exigences de compilation des moyens d'accès physique à un fichier.",
+            "Vérifie si l'instruction écrit une définition de classe C++ ou configure la construction d'une cible."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve cette chaîne de raisonnement : quels en-têtes chaque source inclut, quelle cible la compile, de quels répertoires elle a besoin et quelle relation apporte la définition. Vérifie ensuite la phase en échec et le comportement du produit construit. Cette base prépare les projets plus grands ; installation, exportation, paquets et CTest seront étudiés dans la suite de CMake, sans être considérés ici comme acquis."
+        }
+      ]
+    }
+  ]
+}

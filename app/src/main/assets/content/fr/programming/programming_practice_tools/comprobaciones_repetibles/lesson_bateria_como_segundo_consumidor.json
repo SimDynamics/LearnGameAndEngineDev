@@ -1,0 +1,632 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__bateria_como_segundo_consumidor",
+  "title": "Une batterie de tests comme second consommateur",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De la vérification d'une fonction à la conservation de son programme de test"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as déjà construit des vérifications avec des résultats attendus indépendants, conservé des cas précédents et utilisé un code de retour non nul lorsqu'une vérification échouait. Tu sais aussi que deux exécutables peuvent utiliser une bibliothèque. Nous réunirons ces pratiques dans un projet : l'application et le programme de test auront chacun leur main et leur cible, mais appelleront la même implémentation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le nouveau travail consiste à enregistrer la batterie de tests comme fichier source du projet, construire la cible qui la contient et la relancer après chaque modification pertinente. Mémoriser une sortie ou modifier une copie séparée de la fonction dans le programme de test ne suffit pas. Automatiser les comparaisons facilite leur répétition ; conserver un résultat attendu ancien exige de vérifier qu'il découle d'une exigence correcte (Kernighan & Pike, 1999, pp. 149–150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_resultado_del_cliente",
+          "question": "L'application affiche deux résultats plausibles. Tu souhaites conserver des preuves reproductibles sur le composant pour les révisions futures. Quelle organisation répond à cet objectif ?",
+          "options": [
+            "Copier la fonction dans un autre main et toujours tester cette copie, même lorsque la bibliothèque change.",
+            "Utiliser un autre exécutable avec cas et résultats attendus enregistrés, lié à la même bibliothèque.",
+            "Enregistrer seulement la sortie de l'application et la considérer comme résultat attendu de toute révision."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le deuxième exécutable conserve cas et attentes et utilise la véritable bibliothèque. Ses résultats sont liés à cette construction ; une fonction copiée pourrait ne plus correspondre à celle utilisée par l'application.",
+          "reviewFeedback": [
+            "Vérifie quelle implémentation reçoit les modifications et laquelle est réellement exécutée. Un nom de fonction identique ne fait pas de deux corps une seule source.",
+            "Vérifie que tes comparaisons portent sur le composant réellement partagé et une cible que tu peux reconstruire et exécuter.",
+            "Relie la sortie enregistrée aux données et à l'exigence qui l'ont produite. Une ancienne observation nécessite une justification avant de servir d'attente."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'exigence détermine ce que signifie réussir"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas_para reçoit un entier compris entre 0 et 20. Une boîte peut contenir jusqu'à quatre pièces. Elle doit renvoyer le plus petit nombre de boîtes permettant de ranger toutes les pièces ; zéro pièce exige zéro boîte. Une boîte partiellement remplie compte aussi. Nous ne définissons pas le traitement des entrées hors du domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, six pièces nécessitent deux boîtes : une ne suffit pas, mais deux conviennent. Ce calcul découle de l'accord, avant l'examen du corps de la fonction. Distingue ce que produit une révision de ce qu'elle devrait produire."
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_salida_no_es_acuerdo",
+          "question": "Prédis la sortie exacte de cette révision pour 0,5,17, sans saut final. Ne réponds pas avec le résultat exigé par le contrat.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    std::cout << cajas_para(0) << \":\" << cajas_para(5)\n              << \":\" << cajas_para(17);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La division entière élimine le reste : 0/4=0, 5/4=1 et 17/4=4. C'est la sortie de cette révision, mais une et quatre boîtes ne suffisent pas pour cinq et dix-sept pièces. Prédire correctement une sortie ne rend pas l'implémentation correcte.",
+          "reviewFeedback": "Suis l'expression que ce corps exécute réellement avec des entiers. Sépare ensuite son résultat du nombre de boîtes exigé par la capacité."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_no_depende_del_cuerpo",
+          "question": "Une exécution a donné une boîte pour six pièces. D'où doit venir le résultat attendu auquel tu la confronteras ?",
+          "options": [
+            "Copier ce un comme nouvelle attente puisqu'il a été observé pendant l'exécution.",
+            "Exécuter de nouveau le même corps et utiliser sa deuxième sortie comme référence.",
+            "Utiliser la capacité convenue et vérifier si les boîtes suffisent à ranger les six pièces."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'accord permet de vérifier si la capacité totale suffit et si des boîtes superflues ont été utilisées. Répéter ou copier le résultat du corps ne fournit pas d'attente indépendante.",
+          "reviewFeedback": [
+            "Examine quelle autorité tu accordes à cette observation : elle montre ce qu'a fait la révision, mais ne justifie pas à elle seule ce qu'elle devait faire.",
+            "Distingue répétabilité et conformité. Une seconde exécution peut reproduire exactement le même défaut.",
+            "Vérifie que ton critère d'acceptation reste indépendant du corps de la fonction évaluée."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux consommateurs, une seule implémentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet conservera publico/envio/cajas.h, src/cajas.cpp, app/consulta.cpp et pruebas/cajas_casos.cpp. La bibliothèque envios contient la définition. consultar_cajas utilise app/consulta.cpp et comprobar_cajas utilise pruebas/cajas_casos.cpp. Chaque exécutable a son propre main ; la bibliothèque n'en contient aucun."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux consommateurs reçoivent le chemin PUBLIC de envios lorsqu'ils déclarent leur liaison PRIVATE avec celle-ci. La seconde liaison ne publie rien globalement et n'exécute pas les tests. Construire une cible produit ce programme et ses dépendances ; pour vérifier les cas, il faut encore exécuter comprobar_cajas. Cette séparation maintient le code de test hors de l'exécutable de l'application, sans conserver une autre implémentation du composant."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_un_main_por_ejecutable",
+          "question": "Quelles sources doivent appartenir à comprobar_cajas pour appeler la bibliothèque sans mélanger les deux points d'entrée ?",
+          "options": [
+            "pruebas/cajas_casos.cpp comme source de l'exécutable, avec une liaison à envios.",
+            "app/consulta.cpp et pruebas/cajas_casos.cpp comme sources d'un seul exécutable.",
+            "Seulement pruebas/cajas_casos.cpp avec une deuxième définition de cajas_para collée dedans."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le programme de test possède son propre main et se lie à envios pour recevoir la définition. Le client possède un autre main dans une autre cible ; aucun des deux n'a besoin de copier le corps de cajas_para.",
+          "reviewFeedback": [
+            "Repère le fichier fournissant le main du programme de test et la relation qui apporte la définition partagée.",
+            "Détermine combien de définitions de main cette liste introduirait. Avoir deux programmes dans le projet ne signifie pas réunir leurs points d'entrée.",
+            "Examine quelle implémentation serait modifiée en corrigeant src/cajas.cpp et laquelle serait conservée par le programme de test s'il possédait son propre corps."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "bat_esperado_para_dato_nuevo",
+          "question": "Complète uniquement le résultat attendu pour dix-sept pièces, selon le contrat de boîtes de quatre places. Écris un seul littéral numérique décimal entier ou réel représentant exactement cette quantité, sans opération ni nom.",
+          "code": "// comprobar reçoit le nombre de pièces et le nombre de boîtes attendu.\nif (!comprobar(17, ____)) { correcto = false; }",
+          "answers": [
+            "5",
+            "5.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "Quatre boîtes ne peuvent contenir que seize pièces ; cinq suffisent et constituent le minimum. Le résultat attendu est cinq, même si le corps défectueux renvoie quatre. Les écritures acceptées représentent la même quantité.",
+          "reviewFeedback": "Calcule la capacité totale correspondant au nombre de boîtes proposé et vérifie qu'elle suffit à tout ranger. Ne recopie pas non plus le résultat de la révision à évaluer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver le programme de test sans masquer des cas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "comprobar obtient une seule fois le résultat et renvoie s'il correspond à l'attente. main conserve un bool qui devient false en cas d'écart. Les appels sont dans des if séparés, comme dans l'exercice précédent, afin qu'un échec n'empêche pas d'observer les cas suivants. Chaque ligne identifie les données, l'attendu et l'obtenu ; le récapitulatif et return 0/1 communiquent le résultat global."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette batterie initiale conserve quatre entrées : 0,4,8,20. Leurs résultats attendus peuvent être justifiés par la capacité. La réussite des quatre cas signifie seulement que cette révision convient pour ces appels. Le texte OK ne prouve pas que les cas choisis permettent de distinguer le défaut étudié."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_construir_no_es_veredicto",
+          "question": "CMake a construit comprobar_cajas, mais celui-ci n'a pas encore été exécuté. De quelle preuve disposes-tu ?",
+          "options": [
+            "Le programme de test a pu être construit avec ces sources ; il reste à observer ses comparaisons.",
+            "Tous les cas de main ont déjà réussi parce que la cible a été construite sans erreur.",
+            "La bibliothèque respecte le contrat sur tout le domaine puisque la cible porte un nom de test."
+          ],
+          "correctIndex": 0,
+          "explanation": "Construire prouve que la cible et ses dépendances ont été produites. L'exécution effectue les comparaisons ; ni le nom ni la construction ne prouvent le contrat entier.",
+          "reviewFeedback": [
+            "Identifie la phase ayant fourni la preuve et celle qui doit exécuter les appels.",
+            "Distingue produire un exécutable de l'exécution de ses instructions. Une construction n'observe pas à elle seule les résultats de comprobar.",
+            "Vérifie les informations apportées par le nom et les observations nécessaires pour soutenir une affirmation sur le comportement."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_continuar_despues_del_fallo",
+          "question": "Quelle modification conserverait l'observation de tous les cas même si le premier échoue ?",
+          "options": [
+            "Réunir tous les appels avec && dans une seule condition.",
+            "Renvoyer immédiatement 1 à la première vérification en échec.",
+            "Conserver chaque appel dans son propre if et accumuler le résultat global."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les if indépendants exécutent tous les cas et conservent l'échec dans correcto. C'est une reprise de l'exercice précédent : il faut maintenant la préserver lorsque la batterie rejoint le deuxième exécutable.",
+          "reviewFeedback": [
+            "Revois les règles d'évaluation de && si l'opérande précédent vaut false. Le résultat global ne démontre pas que tous les appels ont été effectués.",
+            "Suis les instructions de main qui ne seraient plus exécutées en renvoyant avant les cas restants.",
+            "Vérifie que le flux conserve à la fois l'exécution des cas suivants et l'échec déjà observé."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : construire le consommateur qui effectue vraiment les comparaisons"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve les quatre vérifications initiales. Configure, construis et exécute d'abord consultar_cajas ; note les données utilisées par son main. Change ensuite de cible pour comprobar_cajas, construis-la et exécute-la. Ne prends pas la sortie d'une cible comme preuve pour l'autre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de modifier le code, déduis de l'exigence les résultats attendus pour 1,5,17. Ajoute ces trois appels sans supprimer les quatre précédents. Reconstruis comprobar_cajas, puis examine chaque ligne et le code de retour final. Corrige ensuite uniquement src/cajas.cpp pour respecter la capacité, en conservant les sept cas. Reconstruis et exécute de nouveau la même cible de test. Une solution valable calcule le minimum de boîtes sur tout le domaine ; adapter les résultats aux seules sept entrées ne suffit pas."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places pour toutes les pièces.\n// Zéro pièce exige zéro boîte.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_registro_de_objetivo",
+          "question": "Lorsque tu passes de consultar_cajas à comprobar_cajas, que dois-tu conserver dans ton relevé pour attribuer correctement chaque observation ?",
+          "options": [
+            "Seulement le nom envios, puisque les deux exécutions dépendent de cette bibliothèque.",
+            "La cible construite et exécutée, sa source et les appels ou données étudiés pendant l'exécution.",
+            "Seulement la dernière sortie visible, quelle que soit la cible choisie."
+          ],
+          "correctIndex": 1,
+          "explanation": "La bibliothèque partagée ne rend pas les deux main interchangeables. Le relevé doit identifier la cible exécutée et les cas observés, ainsi que la révision commune.",
+          "reviewFeedback": [
+            "La dépendance partagée n'identifie pas le main exécuté. Revois les informations permettant de distinguer les deux consommateurs.",
+            "Vérifie que tu puisses distinguer les deux exécutions même si elles utilisent la même bibliothèque.",
+            "Relie la sortie à l'exécutable et à la révision qui l'ont produite. Une observation isolée peut appartenir au consommateur précédent."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'essai : étendre et réparer séparément"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette référence après avoir essayé le laboratoire. Tu n'as pas à copier les messages, noms internes ou organisation, mais tu dois préserver les critères et les cas précédents."
+        },
+        {
+          "type": "paragraph",
+          "text": "La révision piezas/4 correspond aux quatre premières entrées parce qu'elles sont multiples de quatre, zéro compris. Les nouvelles entrées ont un reste et demandent une boîte supplémentaire. En les conservant dans le deuxième exécutable, le défaut reste observable après la reconstruction de la bibliothèque et du programme de test."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une implémentation de référence est (piezas + 3) / 4. Pour un multiple 4k, le quotient reste k ; pour 4k+1, 4k+2 ou 4k+3, il devient k+1. Elle renvoie aussi zéro pour zéro. Le plus grand numérateur du domaine est 23, donc la somme reste très éloignée de la limite de int. Ce raisonnement explique la règle ; les sept vérifications fournissent des preuves reproductibles sur ces données, pas une preuve de tous les programmes possibles."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_misma_fuente_compartida",
+          "question": "Quelle correction permet au client et au programme de test de recevoir la même modification de comportement ?",
+          "options": [
+            "Corriger seulement une copie de la fonction ajoutée à pruebas/cajas_casos.cpp.",
+            "Remplacer seulement les messages ÉCHEC par OK, en conservant les comparaisons et la bibliothèque.",
+            "Modifier la définition dans src/cajas.cpp et reconstruire la cible à exécuter."
+          ],
+          "correctIndex": 2,
+          "explanation": "La définition partagée doit être corrigée dans sa source, puis la cible demandée reconstruite. Corriger une copie ou un message ne répare pas le composant utilisé par le client.",
+          "reviewFeedback": [
+            "Vérifie si l'application continue d'appeler la définition non corrigée. Une batterie utilisant une copie pourrait observer autre chose.",
+            "Distingue le texte d'un message du résultat de la comparaison. Renommer ce résultat ne modifie pas la différence.",
+            "Relie le corps réparé à la bibliothèque et au consommateur qui recevra sa nouvelle construction."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une discordance peut aussi venir du résultat attendu"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test est un autre programme et peut lui aussi contenir des erreurs. Si la bibliothèque renvoie cinq boîtes pour dix-sept pièces alors que le programme de test avait esperado=4, cette différence n'oblige pas à modifier la bibliothèque. Reviens à l'accord : quatre boîtes ne peuvent contenir que seize pièces. L'origine de l'attente doit rester vérifiable, même si elle provient d'une exécution antérieure (Kernighan & Pike, 1999, p. 150)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_revisar_esperado",
+          "question": "La bibliothèque renvoie 5 pour 17, mais le cas enregistré attendait 4. Le contrat impose toujours des boîtes de quatre places. Quelle décision est justifiée ?",
+          "options": [
+            "Corriger l'attente à partir de la capacité et conserver la raison de la modification dans le relevé.",
+            "Modifier la bibliothèque pour qu'elle renvoie 4, parce qu'une attente enregistrée est toujours prioritaire.",
+            "Supprimer le cas 17 parce que sa discordance empêche une terminaison avec le code zéro."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'exigence justifie cinq boîtes et permet de corriger l'attente erronée. Conserver les tests ne signifie pas perpétuer des données fausses : modifier une attente nécessite une raison vérifiable.",
+          "reviewFeedback": [
+            "Vérifie que la modification du test est justifiée par l'exigence et non seulement par le désir de le faire réussir.",
+            "Compare la capacité totale du nombre de boîtes enregistré avec les pièces du cas. L'ancienneté d'un résultat attendu ne démontre pas sa validité.",
+            "Réfléchis aux informations perdues en supprimant précisément le cas qui exige de revoir le contrat et le test."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "N'obtiens pas non plus le résultat attendu en appelant le corps que tu veux évaluer. Si tu écris esperado=cajas_para(piezas), puis compares le résultat avec un autre appel identique, les deux peuvent reproduire le même défaut. Partager la bibliothèque évite les copies divergentes de l'implémentation ; conserver les attentes indépendantes empêche le test de recopier automatiquement sa réponse."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_esperado_independiente",
+          "question": "Qu'est-ce qui préserve l'indépendance nécessaire entre la bibliothèque et les attentes du programme de test ?",
+          "options": [
+            "Calculer chaque attente en appelant deux fois cajas_para, puis accepter lorsque les valeurs coïncident.",
+            "Déduire toutes les attentes de la sortie de consultar_cajas sans regarder le contrat.",
+            "Utiliser la véritable bibliothèque pour obtenir le résultat, mais conserver les attentes justifiées par l'accord."
+          ],
+          "correctIndex": 2,
+          "explanation": "La définition doit être partagée par les deux consommateurs, mais l'attente demande une justification indépendante. Répéter le même calcul soumis au test ne crée pas de critère extérieur.",
+          "reviewFeedback": [
+            "Examine ce qui se passerait si le corps répétait le même résultat erroné lors des deux appels.",
+            "Vérifie les entrées que ce client observe et l'origine de ses résultats. Un autre consommateur de la bibliothèque peut aussi afficher son défaut.",
+            "Distingue le partage du composant exécuté de la copie du critère utilisé pour le juger."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une concordance fabriquée ne vérifie pas le contrat"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_comparar_dos_llamadas_iguales",
+          "question": "Prédis la sortie exacte sans saut final. Le programme compare deux appels, et non la capacité exigée par le contrat.",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) { return piezas / 4; }\n\nint main() {\n    const int esperado{cajas_para(17)};\n    const int obtenido{cajas_para(17)};\n    std::cout << (obtenido == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Les deux appels produisent quatre dans cette révision ; l'égalité est vraie et cout affiche 1. Le contrat nécessite cinq boîtes pour dix-sept pièces. Ce résultat montre seulement que les deux appels coïncident.",
+          "reviewFeedback": "Distingue les valeurs calculées par les deux expressions du sens de l'affichage d'un bool. Ne remplace pas leur comparaison par ton jugement sur le contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme de test doit pouvoir signaler une discordance connue. Tu peux conserver une révision volontairement défectueuse dans le laboratoire, exécuter la batterie contre elle, puis rétablir la bonne version. Cela ne signifie pas que tu approuves la mauvaise révision : tu vérifies si le test sait rejeter ce défaut précis. Tester ses propres tests et conserver un cas révélant un échec améliore leur utilité (Thomas & Hunt, 2020, pp. 277–278)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_control_del_comprobador",
+          "question": "La batterie réussit avec la bonne révision. Quelle observation supplémentaire vérifie qu'elle détecte le défaut connu piezas/4 ?",
+          "options": [
+            "Exécuter de nouveau la bonne révision jusqu'à obtenir plusieurs rapports de réussite.",
+            "Exécuter la même batterie élargie avec la révision volontairement défectueuse et vérifier les discordances et le code de retour non nul.",
+            "Remplacer les résultats attendus par les valeurs renvoyées par piezas/4 avant de recommencer."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ce contrôle négatif conserve la batterie et observe si elle rejette la révision connue comme incorrecte. Ses cas et comparaisons doivent toujours découler du contrat ; répéter seulement la bonne révision ne met pas à l'épreuve cette capacité de détection.",
+          "reviewFeedback": [
+            "Répéter un cas correct observe sa stabilité ; demande-toi si cela vérifie la capacité de signaler la discordance connue.",
+            "Vérifie que le contrôle change l'implémentation observée tout en conservant les attentes justifiées.",
+            "Relie la modification du critère au défaut à détecter. Adapter l'attente au corps peut effacer précisément la discordance recherchée."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : vérifier aussi le test enregistré"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce laboratoire commence avec une bibliothèque utilisant la règle de référence et une batterie enregistrée. Configure, construis et exécute comprobar_cajas. À partir du contrat et des données de chaque ligne, décide si la première discordance vient du corps ou du résultat attendu. Corrige uniquement ce qui contredit le contrat, en conservant les sept cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Réalise ensuite un contrôle négatif : conserve les résultats attendus justifiés, change temporairement seulement src/cajas.cpp en piezas/4, reconstruis et exige que le programme de test signale les discordances et se termine avec le code 1. Rétablis la bonne implémentation et reconstruis/exécute avec la batterie intacte. Identifie chaque révision dans le relevé ; ne laisse pas la révision volontairement défectueuse comme correction."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places pour toutes les pièces.\n// Zéro pièce exige zéro boîte.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 4)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_retorno_y_fase",
+          "question": "La cible est construite et son exécution affiche une comparaison ÉCHEC avant de se terminer avec le code 1. Que signifie ce résultat ici ?",
+          "options": [
+            "Le programme de test a été exécuté et a trouvé au moins une discordance ; il faut en examiner l'origine.",
+            "CMake n'a pas pu construire la cible, car tout code 1 est un échec de construction.",
+            "La bibliothèque est nécessairement incorrecte et il est inutile d'examiner le résultat attendu."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le code 1 appartient à l'exécution du programme de test, pas à CMake. Il signale une discordance ; l'examen de l'exigence permet de décider si le défaut est dans le composant ou le test.",
+          "reviewFeedback": [
+            "Relie le code de retour au rôle de ce main et conserve les informations de chaque ligne de test.",
+            "Identifie l'opération ayant produit ce code. Un programme correctement construit peut utiliser un retour non nul pour signaler sa propre évaluation.",
+            "Vérifie les deux valeurs comparées et ce qui justifie chacune. Une discordance ne permet pas à elle seule de décider laquelle contredit l'accord."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver la batterie après le contrôle négatif"
+        },
+        {
+          "type": "note",
+          "text": "Référence après ton essai : pour 17 pièces, le cas doit attendre 5. Les quatre cas initiaux et les trois ajouts restent dans pruebas/cajas_casos.cpp ; ils ne sont pas remplacés par une seule entrée en échec."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec la bibliothèque piezas/4, les cas 1,5,17 échouent, tandis que les autres sont toujours observés. Avec (piezas+3)/4, les sept correspondent. Dans ce laboratoire, la cible est reconstruite après chaque modification. La batterie reste enregistrée dans le projet et peut être répétée sans réécrire manuellement toutes les comparaisons. La répétabilité exige de conserver entrées, attentes, description et sources pertinentes (Thomas & Hunt, 2020, pp. 274–275)."
+        },
+        {
+          "type": "order_code",
+          "id": "bat_orden_del_control",
+          "question": "Remets dans l'ordre les actions de ce contrôle négatif, en partant d'une batterie justifiée et d'une révision correcte déjà vérifiée. Chaque action représente une étape complète de la procédure.",
+          "fragments": [
+            "Rétablir la bonne révision, reconstruire et vérifier à nouveau la même batterie.",
+            "Enregistrer l'identité de la bonne révision et la batterie à conserver.",
+            "Remplacer uniquement la bibliothèque par la version défectueuse connue, sans modifier les attentes.",
+            "Reconstruire et exécuter le programme de test puis vérifier qu'il rejette ce défaut."
+          ],
+          "correctOrder": [
+            1,
+            2,
+            3,
+            0
+          ],
+          "explanation": "On identifie d'abord ce qui doit être conservé, puis on introduit le défaut contrôlé et on l'observe avec la même batterie reconstruite. Enfin, on rétablit et vérifie la bonne révision. Conserver les attentes permet d'attribuer la différence de résultat à la version de la bibliothèque.",
+          "reviewFeedback": "Pour chaque étape, repère la révision et la batterie disponibles. Vérifie si le résultat observé correspond au changement que tu voulais contrôler et si la procédure rétablit bien la révision voulue."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_todo_verde_y_alcance",
+          "question": "Les sept cas réussissent après le rétablissement de la bonne révision. Quelle affirmation respecte la portée de cette preuve ?",
+          "options": [
+            "Toutes les entrées et toutes les futures modifications du projet sont désormais certifiées.",
+            "Cette construction correspond aux sept attentes enregistrées ; d'autres entrées exigent un raisonnement ou des vérifications appropriées.",
+            "Le programme de test ne doit plus conserver les quatre premiers cas, puisqu'ils ont tous réussi."
+          ],
+          "correctIndex": 1,
+          "explanation": "La batterie fournit des preuves reproductibles pour ses cas et cette construction. La conserver aide à détecter les régressions, mais une réussite ne certifie pas les données ou révisions non étudiées.",
+          "reviewFeedback": [
+            "Distingue les observations de cette exécution des affirmations sur des données ou révisions non exécutées.",
+            "Relie l'affirmation aux cas exécutés et au domaine du composant.",
+            "Réfléchis aux comportements qui resteront observés lors d'une nouvelle modification du composant."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : un autre composant et un programme de test à construire"
+        },
+        {
+          "type": "paragraph",
+          "text": "lotes_para reçoit maintenant entre 0 et 18 pièces et renvoie le nombre minimal de lots de six places nécessaires pour les ranger ; zéro pièce exige zéro lot. Le projet possède déjà la bibliothèque lotes et le client consultar_lotes. verificar_lotes est un autre exécutable lié à la même bibliothèque, mais son main initial ne vérifie encore rien."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, déduis les résultats attendus pour 0,6,7,18 à partir de la nouvelle capacité. Écris les quatre comparaisons dans pruebas/lotes_casos.cpp, avec un diagnostic par cas et un retour final 0 si tout correspond ou 1 s'il existe une discordance. Ne copie pas la formule dans le programme de test pour fabriquer les attentes. Conserve les quatre appels lors du contrôle négatif volontaire avec piezas/6 puis rétablis la bonne référence. Tu peux organiser la solution avec les ressources déjà connues ; il n'existe pas un texte unique."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset_target_properties(lotes consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Domaine : 0 <= piezas <= 18.\n// Nombre minimal de lots de 6 places pour toutes les pièces.\n// Zéro pièce exige zéro lot.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    // Écris tes vérifications ici avant de consulter la référence.\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_main_vacio",
+          "question": "Le main initial de verificar_lotes se termine avec le code 0 sans comparaison ni sortie. Que peux-tu conclure ?",
+          "options": [
+            "Les quatre cas ont réussi, car un programme de test utilise toujours zéro pour signaler que tout correspond.",
+            "Ce programme s'est terminé sans signaler d'échec, mais il n'a pas encore examiné les quatre cas demandés.",
+            "La bibliothèque a déjà été vérifiée parce que l'exécutable est lié à lotes."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un main vide peut renvoyer zéro sans rien observer. Pour attribuer son retour aux quatre cas, le code doit réellement les exécuter et combiner leurs comparaisons, comme demandé.",
+          "reviewFeedback": [
+            "Relie le sens du code de retour aux instructions qui le calculent. Un nom ou une convention n'ajoute pas les appels manquants.",
+            "Vérifie quelles instructions de comparaison ont réellement été exécutées par main avant d'interpréter son retour.",
+            "Distingue la disponibilité d'une définition à l'édition de liens de son appel lors de l'exécution. Vérifie si ce main a effectué un appel."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence de transfert et reprise ultérieure"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette référence après avoir écrit et vérifié ton programme de test. Elle organise les quatre appels selon la méthode connue ; le nouveau contrat détermine leurs quantités attendues."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La bibliothèque de référence utilise (piezas+5)/6. Elle renvoie zéro pour zéro, conserve le quotient pour un multiple de six et demande un lot supplémentaire lorsqu'il reste des pièces. Le numérateur maximal vaut également 23. Le contrôle négatif avec piezas/6 doit échouer pour sept pièces ; rétablir la bonne révision doit conserver les quatre cas. À mesure que le projet s'agrandit, relance les cas pertinents après des modifications des sources, exigences ou description ; ne confonds pas un client affichant deux quantités avec la batterie complète."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "bat_otra_revision_otros_datos",
+          "question": "Prédis la sortie exacte de la version volontairement défectueuse pour 1,12,13, sans saut final. C'est une autre exécution : ne recopie pas le rapport des quatre cas de la batterie.",
+          "code": "#include <iostream>\n\nint lotes_para(int piezas) { return piezas / 6; }\n\nint main() {\n    std::cout << lotes_para(1) << \":\" << lotes_para(12)\n              << \":\" << lotes_para(13);\n    return 0;\n}\n",
+          "answers": [
+            "0:2:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La révision utilise la division entière par six et donne 0,2,2. La concordance pour douze ne corrige pas la capacité insuffisante pour une ou treize pièces. Modifier les données change les résultats observés.",
+          "reviewFeedback": "Suis les trois appels dans l'ordre de l'affichage avec le corps présenté ici. Distingue les données de cette exécution de celles de ta batterie."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "bat_cambio_de_acuerdo",
+          "question": "Le projet passe légitimement à des lots de cinq places. Quel travail permet de conserver un test pertinent ?",
+          "options": [
+            "Revoir le contrat, recalculer ses attentes et adapter/vérifier l'implémentation en conservant la raison des changements.",
+            "Conserver toutes les anciennes attentes sans les revoir afin de ne pas modifier la régression.",
+            "Changer les attentes en copiant la nouvelle sortie sans vérifier la capacité convenue."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une modification réelle de l'exigence peut justifier de nouvelles attentes ; leur origine doit être l'accord révisé. Conserver l'ancien relevé aide à distinguer ce changement d'un défaut masqué. Cette leçon ne remplace pas les techniques de validation étudiées plus tard.",
+          "reviewFeedback": [
+            "Vérifie que les attentes et la révision sont évaluées selon le nouvel accord explicite.",
+            "Conserver des preuves exige de savoir à quel contrat elles correspondent. Vérifie si les quantités d'une capacité restent valides pour la nouvelle.",
+            "Distingue une mise à jour justifiée de l'accord d'une adaptation du test à tout résultat renvoyé par le corps."
+          ]
+        }
+      ]
+    }
+  ]
+}

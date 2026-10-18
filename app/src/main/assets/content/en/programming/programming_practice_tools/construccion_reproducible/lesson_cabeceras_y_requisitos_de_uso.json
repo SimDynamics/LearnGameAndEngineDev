@@ -1,0 +1,725 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__cabeceras_y_requisitos_de_uso",
+  "title": "Headers and Usage Requirements",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserving the Interface When Files Are No Longer Together"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the previous exercise, the header, implementation, and client were in one folder. Now we will separate those roles. We want a client to use a library without knowing where its implementation lives or adding paths by accident. We will preserve the function signatures, guards, and linking relationship you already know."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "proyecto/\n  CMakeLists.txt\n  include/\n    paquetes/\n      entrega.h\n  src/\n    entrega.cpp\n  app/\n    main.cpp\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "include contains the interface intended for the client; src contains the implementation; app contains the program using it. These are names chosen for this project, not folders with automatic powers. CMake does not infer a search path because a folder is named include. Nor does it compile a header as a second definition of a function."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_papel_de_la_cabecera",
+          "question": "entrega.h declares minutos_preparacion; entrega.cpp provides its body. What must the client have available when compiling the call?",
+          "options": [
+            "The body from entrega.cpp copied into main.cpp.",
+            "The static library file opened as though it were a header.",
+            "The declaration accessible through the corresponding header."
+          ],
+          "correctIndex": 2,
+          "explanation": "The compiler needs the function declaration when translating the call. Its definition belongs to the implementation and is needed for linking; copying the body into the client mixes those roles.",
+          "reviewFeedback": [
+            "Review what information the compiler needs to check a call and which work belongs to linking. Copying an implementation changes the separation this project intends to preserve.",
+            "Distinguish text processed by the compiler from the artifact used by the linker. A static library is not a C++ header.",
+            "Connect each file to the information it provides when translating a call."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_nombre_no_configura_busqueda",
+          "question": "We have only created the tree shown; no search paths have been declared yet. What does the name include establish?",
+          "options": [
+            "That the directory represents our organization; we still need to declare which targets require it.",
+            "That every source in the project automatically searches inside that directory.",
+            "That the linker will include any definition described by its headers."
+          ],
+          "correctIndex": 0,
+          "explanation": "The name helps explain the organization, but the project description must express each target's requirements. Header search paths and supplying definitions at link time are separate decisions.",
+          "reviewFeedback": [
+            "Identify what the directory tree records and what must be declared in the build description.",
+            "Check where the automatic search you assume was declared. A directory's name is not a build instruction.",
+            "Examine what a header contains and which artifact the linker needs to resolve a definition."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Search Root Must Complete the Requested Name"
+        },
+        {
+          "type": "paragraph",
+          "text": "Both entrega.cpp and main.cpp will write #include \"paquetes/entrega.h\". In this project neither source has that header beside it. We want to give the compiler a search root which, followed by paquetes/entrega.h, locates the actual file."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Search root:          include/\nRequested name:       paquetes/entrega.h\nCorresponding file:   include/paquetes/entrega.h\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "target_include_directories adds search directories for a target that has already been defined. In these examples there is a single CMakeLists.txt in proyecto/. A relative path such as include is interpreted relative to that source directory, not relative to the .cpp file or the separate build directory (Scott, 2025, pp. 182–183)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_include_directories(preparacion PUBLIC include)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first argument names the target. The PUBLIC scope states who receives the requirement; we will study it next. The final argument is a directory, not a header or a .cpp file. This course retains a minimum CMake version of 3.20 and uses this compatible command. We do not present it as the only modern way to organize headers: newer tools offer additional mechanisms (Scott, 2025, p. 182)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_raiz_para_nombre_compuesto",
+          "question": "With #include \"paquetes/entrega.h\" and the previous directory tree, which search directory corresponds to the requested name?",
+          "options": [
+            "include/paquetes/entrega.h",
+            "include/paquetes",
+            "include"
+          ],
+          "correctIndex": 2,
+          "explanation": "The directory include is added. Searching for paquetes/entrega.h from that root gives include/paquetes/entrega.h. Supplying a header as a directory or repeating the paquetes component does not describe that search.",
+          "reviewFeedback": [
+            "Check whether your argument identifies a directory from which the requested name can be found, or already identifies a file.",
+            "Append the name, which already starts with paquetes/, to your proposed directory. Check for a repeated path component.",
+            "Combine the proposed root with the full name written in #include and compare the resulting path with the tree."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "cab_raiz_en_otro_arbol",
+          "question": "An existing target, motor, includes \"servicios/cupo.h\". The file is at publico/servicios/cupo.h, relative to the single CMakeLists.txt. Fill in only the search directory; do not alter the include.",
+          "language": "cmake",
+          "code": "target_include_directories(motor PUBLIC ___)\n",
+          "answers": [
+            "publico",
+            "\"publico\"",
+            "./publico",
+            "\"./publico\"",
+            "publico/",
+            "\"publico/\"",
+            "./publico/",
+            "\"./publico/\""
+          ],
+          "explanation": "The root publico completes servicios/cupo.h as publico/servicios/cupo.h. The choice comes from the relationship between the tree and the requested name, not from any rule that the directory must be called include.",
+          "reviewFeedback": "Write the requested name below your proposed directory. Check whether the combination reaches the file in the question without repeating components or treating a file as a directory."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Requirement Can Belong to the Producer and Its Client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparacion must compile entrega.cpp, which includes its interface. Medir must compile main.cpp, which includes the same interface. These compilations belong to different targets. Providing a path only to preparacion does not make it a general option for every target in the project."
+        },
+        {
+          "type": "paragraph",
+          "text": "With target_include_directories, PRIVATE applies the path to the target itself; PUBLIC applies it to that target and publishes it as a requirement for consumers. The client receives the library's public usage requirements when its relationship with the library is declared through targets. It does not need to repeat a path that belongs to the usage interface (Scott, 2025, pp. 175–176, 182–183)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The PRIVATE in target_link_libraries refers to the relationship declared by medir. It does not prevent medir from receiving preparacion's public requirements. Nor does it grant the path to an unrelated target without the declared dependency. Here we use PUBLIC and PRIVATE for their respective roles; they are neither C++ class access labels nor permissions to open files."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_recibir_aunque_enlace_private",
+          "question": "With the snippet shown, main.cpp includes the public interface. What effect does PRIVATE have in medir's link relationship?",
+          "options": [
+            "It makes medir receive the library artifact while rejecting the public compilation requirements.",
+            "It lets medir use preparacion and its public requirements, without publishing medir's relationship as public.",
+            "It makes preparacion's public paths general paths for any target in the project."
+          ],
+          "correctIndex": 1,
+          "explanation": "Medir uses the dependency and receives its usage requirements. PRIVATE in that call does not erase the public requirements the client needs; nor does it globalize options for unrelated targets.",
+          "reviewFeedback": [
+            "Distinguish receiving the requirements needed to compile this client from publishing them through the client to other consumers. What does main.cpp need?",
+            "Connect the stated scope with the target on which the command acts and with its consumption of the library.",
+            "Look for a declared relationship between the unrelated target and the library. Merely having a public path does not create that relationship."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_ruta_que_solo_usa_la_implementacion",
+          "question": "A second folder, interno/, holds a header included only by src/entrega.cpp. No public header or client needs it. Which requirement should be declared for preparacion?",
+          "options": [
+            "PRIVATE interno, applying it when compiling preparacion without publishing it as a requirement for its clients.",
+            "PUBLIC interno, so that every client also inherits this path even if it does not need it.",
+            "PRIVATE interno, because CMake's keywords physically prevent a client from opening that folder."
+          ],
+          "correctIndex": 0,
+          "explanation": "The implementation needs that path; its usage interface does not. PRIVATE expresses this compilation requirement. It does not impose a filesystem security barrier.",
+          "reviewFeedback": [
+            "Separate an internal compilation need from a condition that must be passed on to clients.",
+            "Identify who actually includes that header. Publishing a requirement also makes it visible to consumers; check whether it belongs to the interface they need.",
+            "Review what this command modifies: search options when compiling targets. It neither changes permissions nor prevents other ways to access a file."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve an Oracle Before Changing the Organization"
+        },
+        {
+          "type": "paragraph",
+          "text": "minutos_preparacion takes an integer between 0 and 12. With zero units it must return zero minutes; with a positive quantity it returns 3 + 2 * unidades. Its domain is a function precondition; this version neither checks nor promises rejection for arguments outside that domain. Moving files into different folders does not change the contract."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domain: 0 <= unidades <= 12.\n// Zero units: zero minutes. Otherwise: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following program temporarily combines the definition and the client to practice predicting its behavior without depending on the CMake description yet. In the lab the same definition will be in src/entrega.cpp and the client in app/main.cpp."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_oraculo_independiente_de_rutas",
+          "language": "cpp",
+          "question": "What does this program output? Preserve the colons and do not add a trailing newline.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n",
+          "answers": [
+            "0:5:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Zero units return from the special case. One unit requires 3 + 2 minutes and five units require 3 + 10. cout inserts all three results with two separators and no trailing newline. This expectation comes from the contract, before observing a build.",
+          "reviewFeedback": "Separate the call using the zero case from those applying the formula. Calculate each return separately and then reconstruct the characters cout adds."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_organizacion_no_cambia_contrato",
+          "question": "After reorganizing the files, the build succeeds but the output differs from what was expected. What does that build success establish?",
+          "options": [
+            "That the new organization automatically changed the contract of minutos_preparacion.",
+            "That the program could be built; the discrepancy with the contract still needs investigation.",
+            "That a PUBLIC path guarantees every compiled function body returns correct values."
+          ],
+          "correctIndex": 1,
+          "explanation": "Paths and dependencies allow a program to be built; they do not verify the minutes rule. Investigate the behavioral discrepancy using its cases and the identity of the revision executed.",
+          "reviewFeedback": [
+            "Identify where a change of behavior was agreed. Rearranging folders does not express a new business rule.",
+            "Connect success with the stage that produced it and preserve the expected result calculated before execution.",
+            "Check what information a search path provides to the compiler and what would be needed to demonstrate a function's result."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnose a Search Path That Does Not Reach the Client"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this lab, the include path applies only to preparacion. main.cpp includes \"paquetes/entrega.h\" and receives no other project search path. Before running, predict which source needs that information. Keep the files and target medir, then configure and build to test your explanation."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PRIVATE include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domain: 0 <= unidades <= 12.\n// Zero units: zero minutes. Otherwise: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Configuration may finish successfully even when a path is missing while compiling main.cpp. Examine the build diagnostic: it should concern finding the header. Do not confuse this situation with a missing definition at link time. Change only the scope of the path that needs to reach the client, configure and build again, and then run and compare with the previous oracle."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_fase_de_la_cabecera_ausente",
+          "question": "The build reports that main.cpp cannot find paquetes/entrega.h. What should be investigated first?",
+          "options": [
+            "The value the function should return when run with five units.",
+            "The header search path available while compiling main.cpp's target.",
+            "Removing target_link_libraries so the client no longer uses the library."
+          ],
+          "correctIndex": 1,
+          "explanation": "Compiling the client requires locating its header. This diagnostic arises before the program can be linked and run; removing a required dependency does not provide the missing information.",
+          "reviewFeedback": [
+            "Determine whether the program ran and produced a return value. Use the phase and file cited by the diagnostic to locate the cause.",
+            "Compare the requirements of the source cited by the diagnostic with those received by its target.",
+            "Explain how the proposed change would provide the compiler with the text named in #include. Removing a relationship does not add a search path."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repair Propagation and Check Behavior Again"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following is a reference description for the previous project. It preserves the link relationship and publishes the path needed by both sources. It uses the same C++20 requirements without extensions as before; PRIVATE in target_compile_features controls each target's compilation requirements, not header searching."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "After the repair, check the original calls. Then change only the calls to the boundary and interior cases shown in this prediction. Rebuild the program containing that updated client before attributing an output to it; the header name may remain the same while the executable needs updating."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_recuperar_cero_y_extremo",
+          "language": "cpp",
+          "question": "What does this program output? Preserve the colons and do not add a trailing newline.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n",
+          "answers": [
+            "0:27:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "The zero case still needs no preparation; twelve units require 3 + 24 minutes, and two require 3 + 4. All three arguments are in the domain. This new sequence revisits the upper boundary without replacing the oracle for the first run.",
+          "reviewFeedback": "Check the arguments in this revision and which branch each call reaches. Do not reuse output from earlier calls just because the signature and header were preserved."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also try a deliberately defective revision: remove the zero special case from src/entrega.cpp, leaving only return 3 + 2 * unidades;. Correct header searching and linking can still build it. The zero case should reveal that it no longer follows the contract. Restore the implementation and rebuild; keeping configuration correct does not by itself demonstrate repaired behavior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_reparacion_de_rutas_no_de_calculo",
+          "question": "The revision without the zero special case builds and runs. Which evidence would distinguish that defect from the proper repair?",
+          "options": [
+            "Checking only that CMake retains the same project name.",
+            "Checking only that the library still declares the same signature.",
+            "Running the zero case and comparing it with the contract calculated before the change."
+          ],
+          "correctIndex": 2,
+          "explanation": "The variation specifically changes the zero case. Neither project name nor signature specifies what this call should return. The repaired revision must restore the contract as well as build successfully.",
+          "reviewFeedback": [
+            "Connect the project name with the evidence you would need to detect an incorrect return value.",
+            "A signature retains names and types. Check whether it also determines the function body's behavior for that argument.",
+            "Choose an observation tied to the introduced difference and compare it with an independent expectation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Publish What the Client Needs and Keep an Internal Detail Private"
+        },
+        {
+          "type": "paragraph",
+          "text": "A useful interface prevents its clients from having to guess implementation dependencies. Public header text must work with the facilities it declares it needs. Hiding irrelevant details and making usage requirements explicit reduces maintenance coupling (Kernighan & Pike, 1999, pp. 104–105). We will practice this with two header directories and a client that knows only the public interface."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "include/paquetes/entrega.h  interface used by library and client\ninterno/ajuste.h             constants used only by entrega.cpp\nsrc/entrega.cpp              includes both headers\napp/main.cpp                 includes only paquetes/entrega.h\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The public header only declares minutos_preparacion and its contract. It does not include ajuste.h. The implementation includes both headers and uses two internal constants: minutos_base equals 3 and minutos_por_unidad equals 2. Those constants live in interno/, separate from src/; looking for ajuste.h beside the .cpp file is therefore insufficient in this project."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "PUBLIC refers to a target's usage requirement; PRIVATE to a requirement for its own compilation. If entrega.h were to include ajuste.h in the future, the client would also need to locate that second header. We could not maintain both that public inclusion and the claim that its search path is internal only. The classification depends on actual use, not the folder name."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_quien_necesita_el_detalle",
+          "question": "With the structure shown, which compilation needs interno as a search directory?",
+          "options": [
+            "The source src/entrega.cpp, which includes ajuste.h for its constants.",
+            "The sources of every target, simply because a header directory exists.",
+            "The source app/main.cpp, even though it neither includes nor needs ajuste.h."
+          ],
+          "correctIndex": 0,
+          "explanation": "The implementation directly includes the auxiliary header. The client needs only its declared public interface. Giving the client details it does not use would weaken the separation without fulfilling a compilation need.",
+          "reviewFeedback": [
+            "Connect each inclusion to the source that must resolve it and the target compiling that source.",
+            "Find which source actually includes the auxiliary header. A file's mere existence does not make its directory necessary for every target.",
+            "Trace the client's actual includes and those of its public header. Check which declaration or constant would need the additional path."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_si_la_cabecera_publica_incluye_el_detalle",
+          "question": "Now entrega.h is changed to include ajuste.h without changing the paths in the previous snippet. What must be reconsidered?",
+          "options": [
+            "Nothing: PRIVATE prevents the compiler from processing an include written in a public header.",
+            "Also check the client's search requirement, because it processes that inclusion when using entrega.h.",
+            "Only rename the library, because its name determines the paths."
+          ],
+          "correctIndex": 1,
+          "explanation": "The client processes includes found in the header it uses. If that interface requires another header, its dependency must be accessible during client compilation, or the interface must be reorganized to remove that detail. PRIVATE does not cancel a C++ directive.",
+          "reviewFeedback": [
+            "Distinguish a CMake search option from an include directive processed by C++. A search scope does not remove text from the header.",
+            "Trace what the client's compiler processes when reading the revised public header.",
+            "Connect the search diagnostic to the includes and their directories; changing a target name does not alter those paths by itself."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Test the Separation with the Real Client"
+        },
+        {
+          "type": "paragraph",
+          "text": "This lab preserves the contract and original calls but uses ajuste.h. Configure, build medir, and run it; separating the folders should preserve the same behavior. Then remove only PRIVATE interno from target_include_directories, keeping PUBLIC include and the files. Configure and build again. The implementation should report a missing ajuste.h header; restore its path to recover the build."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Domain: 0 <= unidades <= 12.\n// Zero units: zero minutes. Otherwise: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "To check what the client receives, temporarily add #include \"ajuste.h\" to app/main.cpp. The header still exists and the library retains its internal path, but that path was not published to medir. The diagnostic should arise during compilation of that client. Remove the experimental include and rebuild. Do not add a path to the client merely to hide the result: here we want to verify the agreed separation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_private_no_borra_archivos",
+          "question": "The experimental client cannot find ajuste.h, although preparacion can use it. What explains that difference in this project?",
+          "options": [
+            "The file is deleted after the library is compiled because it is on a PRIVATE path.",
+            "PRIVATE turns ajuste.h into a private section of a C++ class.",
+            "The internal directory applies to preparacion and is not published as a search path for medir."
+          ],
+          "correctIndex": 2,
+          "explanation": "The compilations receive different requirements. The file is neither deleted nor changed into another language: a private path is not passed on as a usage requirement. That is not a physical restriction on access to the file.",
+          "reviewFeedback": [
+            "Check whether the command manages compilation options or the existence of files. Explain how two targets might search different directories without deleting anything.",
+            "Review where a class's access sections appear and which instruction configures the build process here.",
+            "Compare the directories each target needs and receives to resolve its includes."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Another deliberate change of contract tests a different fact: positive quantities must now use 4 initial minutes while keeping 2 per unit and zero minutes for zero units. Update the contract in entrega.h and minutos_base in interno/ajuste.h. Before rebuilding, calculate the original three calls again; then check 0:6:14 without a trailing newline. This behavior change is a new requirement, not an automatic result of publishing a path. Treating the previous program as the new revision would repeat the provenance mistake studied earlier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Header Path and a Linked Definition Answer Different Questions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the separation of phases from earlier lessons. Providing a header path lets a declared call compile; it does not add the function body to the executable. Linking with the library provides its artifact and may also transmit public usage requirements. Removing that link can remove both at once."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_include_directories(medir PRIVATE include)\n# This experiment omits the link relationship.\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This experiment restores the original entrega.cpp implementation without ajuste.h. A direct search path has been explicitly given to medir solely to isolate the phases. The previous C++20 profiles are preserved. Both sources find their header; main.cpp uses minutos_preparacion, whose only definition lives in entrega.cpp. Requesting a build of medir does not incorporate preparacion merely because the library exists in the description. Here the expected failure is at link time because the definition is not provided. After adding the correct relationship, the duplicated direct search path for the client can be removed because the library already publishes that requirement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_busqueda_directa_no_aporta_definicion",
+          "question": "In this experiment, with no other definition available, main.cpp compiles but minutos_preparacion is missing when linking medir. What requirement remains undeclared?",
+          "options": [
+            "The dependency on the target supplying the implementation at link time.",
+            "Another inclusion of entrega.h inside the same main.cpp.",
+            "A search path deeper inside include/paquetes."
+          ],
+          "correctIndex": 0,
+          "explanation": "The direct search path has already resolved the client's declaration; repeating the include or making the path deeper cannot provide a definition. The relationship with the library is expressed through its target.",
+          "reviewFeedback": [
+            "Distinguish having a declaration from having the artifact containing its definition.",
+            "Identify whether text is missing for translating the call or a definition for resolving it at link time. Repeating a declaration preserves the same kind of information.",
+            "The question already establishes that the header was found. Check which artifact the phase now reporting failure needs."
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "cab_orden_tras_cambiar_requisitos",
+          "question": "The contract and expected results have already been calculated. You just changed the requirement description; reconfigure in the lab. Put the actions in order so the output belongs to that revision and can be checked.",
+          "fragments": [
+            "Compare the new output with the expectation calculated before running.",
+            "Build medir using the rules from the revised description.",
+            "Configure and generate using the current requirements.",
+            "Run the artifact produced by that build."
+          ],
+          "correctOrder": [
+            2,
+            1,
+            3,
+            0
+          ],
+          "explanation": "First prepare rules for the revised description; then produce its artifact, execute it, and compare that execution. Previous output does not prove the new requirements were used.",
+          "reviewFeedback": "For each action in your order, note what information or artifact it needs. Check whether it comes from the revised description and was available before you tried to use it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Another Description Without Copying Example Names"
+        },
+        {
+          "type": "paragraph",
+          "text": "Solve this project before consulting the next page. Keep all files and their contents. The interface is at publico/sala/cupo.h, and both .cpp files write #include \"sala/cupo.h\". The domain is 0 <= ocupadas <= capacidad <= 20; plazas_libres returns capacidad - ocupadas without modifying state. The lab supplies the sources but leaves CMakeLists.txt empty for you to write."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "SalaLocal: project name\naforo: static library from motor/cupo.cpp\nconsultar_aforo: executable from programas/consulta.cpp\npublico/sala/cupo.h: shared interface\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Declare minimum CMake 3.20, enable C++, create both targets, and assign cxx_std_20 with extensions disabled to each. Determine the search root completing sala/cupo.h. Express that search as a requirement of the library for itself and its clients; link the executable with aforo without changing the includes or copying the implementation into the client. Calculate the three calls before configuring and building consultar_aforo."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "publico/sala/cupo.h",
+              "initialCode": "#ifndef PRACTICA_SALA_CUPO_H\n#define PRACTICA_SALA_CUPO_H\n\n// Domain: 0 <= ocupadas <= capacidad <= 20.\n// Returns capacidad - ocupadas. Does not modify state.\nint plazas_libres(int capacidad, int ocupadas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cupo.cpp",
+              "initialCode": "#include \"sala/cupo.h\"\n\nint plazas_libres(int capacidad, int ocupadas) {\n    return capacidad - ocupadas;\n}\n"
+            },
+            {
+              "path": "programas/consulta.cpp",
+              "initialCode": "#include \"sala/cupo.h\"\n#include <iostream>\n\nint main() {\n    std::cout << plazas_libres(10, 3) << ':'\n              << plazas_libres(10, 10) << ':'\n              << plazas_libres(0, 0);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_aforo",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Build criteria: the description must configure and generate, build the requested target, link the implementation, and execute the original calls with the agreed behavior. Other descriptions may be valid; the later reference does not impose one textual ordering on independent commands. Also test zero capacity, full occupancy, and an interior case of the domain. Do not use arguments outside the precondition to demand validation that this function does not promise."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the Transfer and Its Results"
+        },
+        {
+          "type": "paragraph",
+          "text": "After your attempt, compare the relationships in your description with this reference. publico is the search root for sala/cupo.h; sala must not be repeated in the search directory. Target aforo gathers the definition and publishes the requirement to the client declaring that it uses the library."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(SalaLocal LANGUAGES CXX)\nadd_library(aforo STATIC motor/cupo.cpp)\nadd_executable(consultar_aforo programas/consulta.cpp)\ntarget_compile_features(aforo PRIVATE cxx_std_20)\ntarget_compile_features(consultar_aforo PRIVATE cxx_std_20)\nset_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(aforo PUBLIC publico)\ntarget_link_libraries(consultar_aforo PRIVATE aforo)\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_oraculo_de_la_transferencia",
+          "language": "cpp",
+          "question": "What does this program output? Preserve the colons and do not add a trailing newline.",
+          "code": "#include <iostream>\n\nint plazas_libres(int capacidad, int ocupadas) {\n    return capacidad - ocupadas;\n}\n\nint main() {\n    std::cout << plazas_libres(10, 3) << ':'\n              << plazas_libres(10, 10) << ':'\n              << plazas_libres(0, 0);\n    return 0;\n}\n",
+          "answers": [
+            "7:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "With a capacity of ten places and three occupied, seven remain; with all places occupied, zero remain; a room with zero capacity and zero occupancy also leaves zero. All three pairs meet the precondition and do not change any state.",
+          "reviewFeedback": "For each call, identify which argument represents capacity and which represents occupancy. Check the domain before calculating the difference, and preserve the literal output order."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_conservar_include_al_mover_la_raiz",
+          "question": "The interface moves from publico/sala/cupo.h to api/sala/cupo.h, without changing #include \"sala/cupo.h\" or the .cpp files. What adjustment expresses the new shared search path?",
+          "options": [
+            "Change the build directory to a folder called api without modifying requirements.",
+            "Add sala to the name of target aforo so the compiler finds the folder.",
+            "Change the search root published by aforo to api and reconfigure the description."
+          ],
+          "correctIndex": 2,
+          "explanation": "Searching depends on the target's requirement and requested header name, not the build directory or target name. Changing that root in the description preserves the client's include interface.",
+          "reviewFeedback": [
+            "Distinguish the directory holding generated artifacts from the source directory containing the requested header.",
+            "Check which command configures header paths. A target name identifies a logical artifact, not an automatic search rule.",
+            "Connect the new file location with the name preserved in the include directive, and record the provenance of the revised description."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall Who Receives a Requirement When the Client Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine a second executable, resumen, with its own main including preparacion's public interface. The library keeps PUBLIC include and PRIVATE interno. Giving requirements to medir does not make medir a mandatory intermediary: resumen must declare its own relationship with the library it uses."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_executable(resumen herramientas/resumen.cpp)\ntarget_compile_features(resumen PRIVATE cxx_std_20)\nset_target_properties(resumen PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(resumen PRIVATE preparacion)\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_public_no_es_global",
+          "question": "Before the final line is added, resumen declares no relationship with preparacion and receives no other search path. Does PUBLIC include alone suffice for its separate main?",
+          "options": [
+            "No: a consumer target must declare its relationship with the library to receive that requirement.",
+            "Yes: PUBLIC forces every future target to use that path.",
+            "Yes: it is enough that medir already built an executable in the same project."
+          ],
+          "correctIndex": 0,
+          "explanation": "PUBLIC preserves a requirement for consumers; it does not automatically create relationships with every existing or future target. Resumen must declare that it uses preparacion to receive the usage interface and link the definition.",
+          "reviewFeedback": [
+            "Distinguish publishing a requirement from declaring who consumes it.",
+            "Check whether this scope adds a global path or publishes it as a requirement of one target. Identify the relationship the new client needs.",
+            "Separate the artifacts of two different targets. One having been built does not declare the other's requirements."
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "cab_detalle_solo_de_un_objetivo",
+          "question": "An existing library, calculo, compiles a source including \"ajuste.h\" from privado/. Neither its public interface nor its clients include that header. Fill in only the scope that applies the path to calculo without publishing it as a usage requirement.",
+          "language": "cmake",
+          "code": "target_include_directories(calculo ___ privado)\n",
+          "answers": [
+            "PRIVATE",
+            "\"PRIVATE\""
+          ],
+          "explanation": "PRIVATE applies the directory when compiling calculo itself. The decision follows actual includes; it does not change permissions or C++ class access.",
+          "reviewFeedback": "Decide who must receive the directory to compile and who does not need it as part of the interface. The scope expresses that distribution, not file permissions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also recall the deliberate revision to the minutes contract: for positive quantities, 4 initial minutes and 2 per unit were agreed, while zero units still take zero minutes. The following program uses that new agreement and changes call order. Identify the current arguments before reusing an earlier observation."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cab_revision_y_datos_no_son_la_ruta",
+          "language": "cpp",
+          "question": "What does this program output? Preserve the colons and do not add a trailing newline.",
+          "code": "#include <iostream>\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 4 + 2 * unidades;\n}\n\nint main() {\n    std::cout << minutos_preparacion(2) << ':'\n              << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12);\n    return 0;\n}\n",
+          "answers": [
+            "8:0:28"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Two units use the new formula and return eight; zero returns zero; twelve units use 4 + 24. The different results come from the revised contract and calls, not from labeling a search path PUBLIC or PRIVATE.",
+          "reviewFeedback": "Trace each call to its return statement using the formula actually in this revision. Keep contract changes, argument changes, and search requirements separate."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cab_limite_de_private",
+          "question": "A client knows a relative path that physically reaches an internal header. Does PRIVATE in target_include_directories guarantee the filesystem prevents it from opening that file?",
+          "options": [
+            "Yes: it changes the file's permissions during configuration.",
+            "No: it determines which search paths the target publishes, not a security boundary.",
+            "Yes: it turns all its declarations into private members of a class."
+          ],
+          "correctIndex": 1,
+          "explanation": "PRIVATE distributes build requirements. It neither deletes files, changes permissions, nor introduces classes. Interface separation is a design and maintenance choice, not physical access control.",
+          "reviewFeedback": [
+            "Identify which options the command changes and where filesystem permissions are managed. These are different operations.",
+            "Keep compilation requirements separate from physical methods of accessing a file.",
+            "Check whether the command writes a C++ class definition or configures a target's build."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Preserve this chain of reasoning: which headers each source includes, which target compiles it, which directories it needs, and which relationship provides the definition. Then check which phase failed and the behavior of the resulting artifact. This foundation prepares larger projects; installation, exports, packages, and CTest will be studied in the continuation of CMake, not treated as already covered here."
+        }
+      ]
+    }
+  ]
+}
