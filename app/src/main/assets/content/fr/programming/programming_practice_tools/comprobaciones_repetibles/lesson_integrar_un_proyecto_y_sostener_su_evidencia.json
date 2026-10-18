@@ -1,0 +1,242 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__integrar_un_proyecto_y_sostener_su_evidencia",
+  "title": "Intégrer un projet et étayer ses preuves",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décider comment collaborent un composant, ses clients et ses tests"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cet exercice, tu vas réunir tes connaissances autour d'un cas inédit : calculer l'ajustement nécessaire pour ramener une valeur dans un intervalle autorisé. Tu devras préserver à la fois le contrat d'une bibliothèque, le traitement récupérable par ses clients, l'indépendance des tests et une construction identifiable. Aucune syntaxe ni infrastructure de test nouvelle n'est introduite. Ta première solution doit partir des exigences avant de consulter la référence."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'interface publique est bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). Elle accepte un appel lorsque les trois valeurs sont comprises entre -20 et 20 inclus et que inferior ne dépasse pas superior. Si valor se trouve dans l'intervalle, elle écrit zéro. Si valor est en dessous, elle écrit la quantité à ajouter pour atteindre inferior ; s'il est au-dessus, elle écrit la quantité à ajouter pour atteindre superior. Ce second ajustement est négatif. Elle obtient ainsi le changement de plus faible valeur absolue qui place valor dans l'intervalle. En cas d'acceptation, elle renvoie true ; en cas de rejet, elle renvoie false et conserve exactement la valeur précédente de la sortie. Elle n'affiche rien et ne termine pas le programme."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les types seuls ne suffisent pas à exprimer ces obligations. Le bool indique l'acceptation de cet appel, et l'entier ne constitue le résultat d'une nouvelle demande que si elle a été acceptée. La politique de rejet et la conservation de la sortie font partie du contrat partagé par la bibliothèque et ses consommateurs (Kernighan & Pike, 1999, pp. 105, 111–112). Garde cette distinction lorsque tu conçois le client et lorsque tu vérifies également les rejets."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Établir tes résultats attendus avant de voir une batterie de référence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prépare ton propre tableau dans les commentaires du brouillon : valeur, limite inférieure, limite supérieure, sortie initiale, acceptation attendue et sortie finale attendue. Justifie l'obligation que chaque ligne permet de distinguer. Prévois des valeurs de part et d'autre de l'intervalle, à l'intérieur et aux limites ; examine un intervalle réduit à une seule valeur, les bornes autorisées et les rejets selon les conditions du contrat. Choisis des sorties initiales qui permettent de détecter une modification lors d'un rejet. Ne déduis pas l'attente en appelant le calcul que tu veux vérifier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il ne faut ni un ordre textuel unique ni un nombre de lignes arbitraire : il faut des cas qui rendent observables les obligations pertinentes. Une batterie enregistrée doit conserver ses entrées et des attentes vérifiables indépendamment ; comparer à une ancienne version n'a de sens que si l'attente était correcte (Kernighan & Pike, 1999, pp. 149–150). Après ton essai, tu pourras confronter ta sélection à une référence sans remplacer ton raisonnement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conçois également le client pour huit demandes au maximum : chacune est un triplet complet de valeurs int représentables, suivi d'une fin normale de l'entrée. Dans ce domaine, le client doit traiter toutes les demandes, identifier chacune par sa position, afficher uniquement les ajustements acceptés et expliquer les rejets avec les trois valeurs et la règle permettant de les revoir. À la fin, il indique combien il a accepté et rejeté, ainsi que la somme des nouveaux ajustements. Il renvoie 1 s'il y a eu au moins un rejet, sinon 0. Un ajustement nul accepté compte comme une demande acceptée, tout comme un ajustement négatif."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cet exercice ne demande pas de nouvel analyseur pour un texte incomplet ou illisible. La précondition des triplets complets permet de se concentrer sur les contrats et leur intégration. Les différences entre deux valeurs autorisées sont comprises entre -40 et 40 ; avec huit demandes, les compteurs et la somme restent dans int. Avant de lancer l'entrée préparée, déduis ses résultats et détermine quelle observation appartient au client ou au vérificateur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : construire ta solution à partir des exigences"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve cette arborescence : publico/control/ajuste.h déclare l'interface ; src/ajuste.cpp l'implémente ; app/consulta.cpp contient le client ; pruebas/casos.cpp contient le vérificateur ; CMakeLists.txt décrit la construction. La bibliothèque se nommera ajustes et les exécutables consultar_ajustes et comprobar_ajustes. Tous deux devront utiliser la même bibliothèque, chacun avec son propre main. Chaque fichier utilisant l'interface inclut control/ajuste.h, sans copier le corps du composant."
+        },
+        {
+          "type": "paragraph",
+          "text": "CMakeLists.txt est volontairement vide : écris la description avec CMake 3.20 minimum, C++ activé, les trois cibles, leurs sources, le dossier public des en-têtes et les relations de liaison. Exige cxx_std_20 et désactive les extensions sur toutes les cibles construites. Les sources initiales sont des brouillons EN ATTENTE ; elles ne respectent pas le contrat, et leurs messages ne sont pas des résultats de test. Complète le composant, le client et un vérificateur qui examine chaque cas de ton tableau, compare le bool et la destination, et se termine avec 1 si une comparaison diffère. Ne fais pas dépendre d'assert les appels ou les comparaisons nécessaires."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // EN ATTENTE : lire les demandes et utiliser l'interface selon son contrat.\n    std::cerr << \"EN ATTENTE : client non implémenté\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Accepte valor, inferior et superior dans [-20,20], avec inferior <= superior.\n// Ajouter ajuste à valor le place dans l'intervalle avec le changement d'amplitude minimale :\n// zéro à l'intérieur, jusqu'à inferior en dessous et jusqu'à superior au-dessus.\n// Renvoie true et écrit cet ajustement si la demande est acceptée.\n// Renvoie false et conserve exactement ajuste si la demande est rejetée.\n// N'affiche rien et ne termine pas le programme.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    // EN ATTENTE : ce corps ne respecte pas encore le contrat.\n    // Remplace-le par ta solution ; tout rejeter n'est pas une implémentation valable.\n    return false;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // EN ATTENTE : lire les demandes et utiliser l'interface selon son contrat.\n    std::cerr << \"EN ATTENTE : client non implémenté\\n\";\n    return 1;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // EN ATTENTE : appeler la bibliothèque et comparer aux attentes indépendantes.\n    std::cerr << \"EN ATTENTE : vérificateur non implémenté\\n\";\n    return 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "consultar_ajustes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de continuer, conserve ton tableau, ton essai et tes justifications dans les fichiers du projet. Configure, construis et exécute séparément le client et le vérificateur en choisissant leurs cibles. Note les sources et cibles ayant produit chaque observation ; sépare sortie normale, diagnostic et code de fin. Tant que la description est vide, ces cibles n'existent pas : un échec à cette étape ne démontre ni ne réfute ton calcul. Une sortie EN ATTENTE ne constitue pas une batterie qui aurait réellement comparé des résultats."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : contrat préservé et relations explicites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulte cette référence après avoir enregistré ton tableau et ton essai. Elle n'impose pas une seule manière de programmer. Compare ce que tu valides, ce que tu écris lors d'une acceptation et ce que tu préserves lors d'un rejet. Conserve la déclaration publique dans publico/control/ajuste.h :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Accepte valor, inferior et superior dans [-20,20], avec inferior <= superior.\n// Ajouter ajuste à valor le place dans l'intervalle avec le changement d'amplitude minimale :\n// zéro à l'intérieur, jusqu'à inferior en dessous et jusqu'à superior au-dessus.\n// Renvoie true et écrit cet ajustement si la demande est acceptée.\n// Renvoie false et conserve exactement ajuste si la demande est rejetée.\n// N'affiche rien et ne termine pas le programme.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans src/ajuste.cpp, cette solution rejette la demande avant de modifier la sortie ou d'effectuer une soustraction. En cas d'acceptation, les branches expriment la position de valor. Chaque donnée et leur ordre sont validés ; des vérifications équivalentes sont possibles si elles respectent l'ensemble du contrat et gardent les opérations bien définies."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans CMakeLists.txt, src/ajuste.cpp appartient uniquement à ajustes ; chaque main possède son propre exécutable. Les deux consommateurs se lient à ajustes et reçoivent le dossier public d'inclusion qui permet de trouver control/ajuste.h. La description exprime des relations et des exigences, et non une liste manuelle de compilations (Scott, 2025, pp. 18–21, 182–183). Relis aussi les avertissements du compilateur sans les confondre avec le verdict de tes cas."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux réordonner des instructions indépendantes ou structurer autrement une implémentation correcte. L'arborescence et les cibles convenues doivent être conservées pour attribuer les observations ; les deux consommateurs doivent utiliser la même implémentation. Un en-tête trouvable ne remplace pas une définition liée, et une cible construite doit encore faire l'objet d'une vérification de comportement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du client : accepter, rejeter et poursuivre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans app/consulta.cpp, le bool de chaque appel détermine si l'ajustement appartient à une nouvelle demande. La sortie peut conserver une ancienne valeur après un rejet ; cette valeur historique ne doit pas entrer dans la somme. Le diagnostic identifie la demande et ses trois données et rappelle les conditions nécessaires à leur vérification. Ta présentation peut être différente si elle préserve ces informations et sépare résultats et diagnostics."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rejet : demande=\" << peticion << \" valeur=\" << valor\n            << \" inférieur=\" << inferior << \" supérieur=\" << superior\n            << \". Les valeurs de -20 à 20 sont autorisées avec inferior <= superior.\"\n            << \" Vérifiez les trois valeurs.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Demande=\" << peticion << \" Ajustement=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Acceptées=\" << aceptadas << \" Rejetées=\" << rechazadas\n              << \" Somme=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec l'entrée préparée, les demandes 1, 2, 3 et 5 sont acceptées : leurs ajustements sont 1, 0, -2 et 0. La quatrième est rejetée pour ses bornes inversées et la sixième parce que valor vaut 21. Le résumé indique donc quatre acceptations, deux rejets et une somme de -1. Le retour normal 1 signale ces rejets. Compare les trois valeurs de chaque diagnostic à la demande correspondante, sans supposer un ordre global entre stdout et stderr."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "integracion_interpretar_retorno_del_cliente",
+          "question": "Le client de référence produit ce résumé et renvoie 1. Quelle conclusion cette exécution permet-elle de tirer ?",
+          "options": [
+            "Le client a traité les six demandes et renvoyé 1 pour les deux rejets ; ce code résume le lot reçu, tandis que le vérificateur compare ses cas aux attentes.",
+            "Le client a trouvé un ajustement négatif et renvoyé 1 à cause de ce résultat ; pour respecter le contrat, il doit exclure cette demande des acceptations et la traiter comme un rejet.",
+            "Le client a terminé les six demandes et renvoyé 1 pour deux défauts de la bibliothèque ; chaque rejet du lot doit être considéré comme une comparaison ratée du contrat, même si ce rejet était prévu."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le retour du client résume le traitement du lot. Deux données ne respectent pas le domaine et reçoivent le traitement convenu ; cela ne correspond pas à deux écarts détectés par le vérificateur. Un ajustement négatif reste un résultat valide.",
+          "reviewFeedback": [
+            "Relie la valeur de retour à la décision prise par main à la fin et au sens de ses compteurs.",
+            "Retrouve le signe de l'ajustement à ajouter à une valeur située au-dessus de l'intervalle autorisé.",
+            "Distingue une demande que l'interface doit rejeter d'une comparaison révélant une violation de son contrat."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence de la batterie : vérifier l'état et la sortie sans omettre de cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans pruebas/casos.cpp, confronte ton tableau à ces cas et justifie les différences de sélection. Les trois premiers couvrent les valeurs au-dessous, à l'intérieur et au-dessus ; le quatrième vérifie un intervalle à valeur unique. Les deux suivants atteignent des ajustements d'amplitude quarante avec des valeurs autorisées. Les autres isolent l'ordre des bornes et les rejets aux limites, en utilisant des sorties initiales différentes. Onze n'est pas un quota imposé et ne certifie pas toute fonction possible : chaque cas observe une obligation précise."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Cas=\" << caso << \" Accepte=\" << aceptado << \" Ajustement=\" << obtenido\n              << \" AcceptationAttendue=\" << aceptacion_esperada\n              << \" AjustementAttendu=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Échecs=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque appel obtient d'abord son résultat ; deux valeurs observées sont ensuite comparées à des attentes littérales déduites de l'exigence. Un rejet correct peut aussi donner OK parce qu'il préserve la sortie attendue. Les appels requis se font dans des if indépendants : une différence n'empêche pas l'observation des cas suivants. Le résumé Échecs=0 et le code de sortie 0 appartiennent à cette batterie, et non à la signification du retour du client. Ne remplace pas ces comparaisons par assert : elles doivent rester actives lorsque les vérifications internes sont désactivées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la batterie et rétablir le projet sans changer ses attentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'accepter ton vérificateur, propose une modification localisée du composant que ton tableau devrait distinguer et explique le cas qui la détecterait. Conserve les attentes et les cas précédents. Comme contre-épreuve supplémentaire, tu peux remplacer uniquement la soustraction de la branche supérieure par cette altération volontaire dans src/ajuste.cpp ; elle ne change ni la signature ni la validation ni les autres fichiers :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis et exécute comprobar_ajustes avec la référence ; répète avec le contrôle altéré, puis après avoir rétabli la soustraction initiale. Selon les attentes de référence, neuf avec [3,7] exige -2 et vingt avec [-20,-20] exige -40 : le signe modifié doit provoquer des écarts pour ces deux cas, tandis que les suivants continuent d'être vérifiés. Conserve le diagnostic de chaque cas et le résumé final. Construis et exécute ensuite consultar_ajustes avec les six triplets préparés et attribue son retour à son propre contrat, sans le confondre avec celui de la batterie."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "integracion_alcance_del_control_y_recuperacion",
+          "question": "La batterie a détecté le changement de signe, conservé les cas suivants et de nouveau correspondu après restauration. Que démontre ce parcours ?",
+          "options": [
+            "Le contrôle a détecté le signe modifié et correspond de nouveau après restauration ; cette sensibilité dispense de justifier les attentes conservées, puisque la batterie a montré qu'elle réagit à une modification de l'implémentation.",
+            "Le contrôle a détecté le signe modifié ; adapter ses attentes à ces résultats préserverait la même vérification du contrat, puisque les entrées, les noms et le nombre de cas ne changeraient pas.",
+            "Le contrôle a détecté le signe modifié et correspond de nouveau après restauration ; ces cas apportent des preuves sur les révisions modifiée et rétablie, mais les attentes ont toujours besoin d'une justification indépendante."
+          ],
+          "correctIndex": 2,
+          "explanation": "La contre-épreuve volontaire permet d'évaluer la sensibilité de la batterie à une violation précise du contrat. Rétablir les correspondances conserve des preuves pour ces cas ; cela ne transforme pas une sélection finie ou une attente erronée en garantie universelle (Kernighan & Pike, 1999, pp. 149–150).",
+          "reviewFeedback": [
+            "Vérifie si détecter une modification de l'implémentation démontre l'origine de la réponse attendue pour chaque cas.",
+            "Compare l'obligation vérifiée avant et après l'adaptation d'une attente au résultat observé.",
+            "Relie chaque conclusion à la révision, à la cible et aux attentes utilisées pendant ce parcours."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Plus tard, retrouve ton tableau et tes commentaires sans ouvrir d'abord cette référence. Ajoute ton propre triplet et justifie l'obligation ou l'hypothèse qu'il permet de distinguer ; choisis une sortie initiale et déduis acceptation et sortie finale avant de consulter la batterie modèle. Explique également une décision d'interface, une relation de construction et une différence entre les preuves des deux consommateurs. Si l'on te propose de changer une attente ou une interprétation, reviens à la question, au contexte et à l'exigence visée ; lire avec discernement suppose d'examiner la portée des affirmations (Thomas & Hunt, 2020, pp. 17–18). Conserve les preuves que le parcours apporte réellement et indique ce qu'il faudrait examiner pour résoudre un doute restant."
+        }
+      ]
+    }
+  ]
+}

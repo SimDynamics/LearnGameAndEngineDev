@@ -1,0 +1,242 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__integrar_un_proyecto_y_sostener_su_evidencia",
+  "title": "Integrating a Project and Supporting Its Evidence",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide How a Component, Its Clients, and Its Tests Work Together"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this practice you will combine what you already know in an original case: calculating how much to adjust a value to bring it within an allowed interval. You must preserve the library contract, recoverable handling by its clients, independent tests, and an identifiable build at the same time. No new syntax or testing framework is introduced. Your first solution must come from the requirements, before you consult the reference."
+        },
+        {
+          "type": "paragraph",
+          "text": "The public interface is bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). It accepts a call when all three values are between -20 and 20 inclusive and inferior is no greater than superior. When valor lies within the interval, it writes zero. If valor is below it, the function writes the amount to add to reach inferior; if above, it writes the amount to add to reach superior. That second adjustment is negative. The function thus returns the adjustment of smallest magnitude that puts valor within the interval. On acceptance, it returns true; on rejection, it returns false and preserves the previous output value exactly. It does not print or terminate the program."
+        },
+        {
+          "type": "paragraph",
+          "text": "Types alone cannot express all these obligations. The bool indicates whether this particular call was accepted, and the integer belongs to a new request only when the request was accepted. Rejection policy and preservation of the output are part of the agreement shared by the library and its consumers (Kernighan & Pike, 1999, pp. 105, 111–112). Keep that distinction when designing the client and when testing rejection cases."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Establish Your Own Expected Results Before Seeing a Reference Test Suite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepare your own table in comments in the draft: value, lower bound, upper bound, initial output, expected acceptance, and expected final output. Justify which obligation each row distinguishes. Include situations below, inside, and above the interval and at its endpoints; consider a single-value interval, the permitted limits, and rejections caused by the contract's conditions. Choose initial outputs that reveal whether rejection modified them. Do not calculate an expected value by calling the same function you intend to test."
+        },
+        {
+          "type": "paragraph",
+          "text": "You do not need one mandatory text order or an arbitrary number of rows: you need cases that expose the relevant obligations. A saved test suite should preserve inputs and independently reviewable expected results; comparing against an earlier version is meaningful only if that expectation was correct (Kernighan & Pike, 1999, pp. 149–150). After your attempt, you can compare your selection with a reference without replacing your own reasoning."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also design the client for at most eight requests: each is a complete triple of representable int values, followed by normal end of input. Within that domain, it must process all requests, identify each by its position, display only accepted adjustments, and diagnose rejections using all three received values and the rule needed to review them. Finally, it reports how many requests were accepted and rejected, and the sum of new adjustments. It returns 1 if there was any rejection and 0 otherwise. An accepted zero counts as an accepted request; so does a negative adjustment."
+        },
+        {
+          "type": "paragraph",
+          "text": "This exercise does not require a new parser for incomplete or unreadable text. The precondition of complete triples lets you focus on the agreements and their integration. Differences between two allowed values range from -40 to 40; with eight requests, the counters and sum fit in int. Before running the prepared input, derive its results and decide which observation belongs to the client and which to the test program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Build Your Solution from the Requirements"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preserve this tree: publico/control/ajuste.h declares the interface; src/ajuste.cpp implements it; app/consulta.cpp contains the client; pruebas/casos.cpp contains the test program; and CMakeLists.txt describes the build. The library must be named ajustes and the executables consultar_ajustes and comprobar_ajustes. Both must use the same library, each with its own main. Every file that uses the interface includes control/ajuste.h without copying the component's implementation."
+        },
+        {
+          "type": "paragraph",
+          "text": "CMakeLists.txt is deliberately empty: write the build description with CMake 3.20 as the minimum, C++ enabled, all three targets, their sources, the public header include path, and the link relationships. Require cxx_std_20 and disable extensions on everything you build. Initial source files are PENDING drafts; they do not satisfy the contract, and their messages are not test results. Complete the component, client, and a test program that checks every case in your table, comparing both bool and the output and returning 1 if any comparison differs. Do not put required calls or comparisons inside assert."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // PENDING: read requests and use the interface according to its contract.\n    std::cerr << \"PENDING: client not implemented\\n\";\n    return 1;\n}\n",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "publico/control/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Accepts valor, inferior, and superior in [-20,20], with inferior <= superior.\n// Adding ajuste to valor brings it into the interval with the smallest-magnitude change:\n// zero inside, up to inferior when below, and down to superior when above.\n// Returns true and writes that adjustment upon acceptance.\n// Returns false and preserves ajuste exactly upon rejection.\n// Does not print or terminate the program.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+            },
+            {
+              "path": "src/ajuste.cpp",
+              "initialCode": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    // PENDING: this body does not implement the contract.\n    // Replace it with your solution; rejecting everything is not valid.\n    return false;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDING: read requests and use the interface according to its contract.\n    std::cerr << \"PENDING: client not implemented\\n\";\n    return 1;\n}\n"
+            },
+            {
+              "path": "pruebas/casos.cpp",
+              "initialCode": "#include <iostream>\n\nint main() {\n    // PENDING: call the library and compare against independent expected results.\n    std::cerr << \"PENDING: test program not implemented\\n\";\n    return 1;\n}\n"
+            }
+          ],
+          "initialStandardInput": "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n",
+          "cmake": {
+            "target": "consultar_ajustes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Before proceeding, keep your table, attempt, and reasoning in the project files. Configure, build, and run the client and test program separately by selecting the target. Record which source and target produced each observation; keep normal output, diagnostics, and exit code separate. While the build description is empty, these targets do not exist: failure at that stage does not yet prove or disprove your calculation. A PENDING output is not a test suite that actually compared anything."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Preserved Contract and Explicit Relationships"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consult this reference after saving your table and first attempt. It does not impose a single way of programming. Compare what you validate, what you write upon acceptance, and what you preserve upon rejection. Keep the public declaration in publico/control/ajuste.h:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef PRACTICA_CONTROL_AJUSTE_H\n#define PRACTICA_CONTROL_AJUSTE_H\n\n// Accepts valor, inferior, and superior in [-20,20], with inferior <= superior.\n// Adding ajuste to valor brings it into the interval with the smallest-magnitude change:\n// zero inside, up to inferior when below, and down to superior when above.\n// Returns true and writes that adjustment upon acceptance.\n// Returns false and preserves ajuste exactly upon rejection.\n// Does not print or terminate the program.\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In src/ajuste.cpp, this solution rejects before modifying the output or performing subtraction. On acceptance, the branches express where valor was located. Each input and the ordering are validated; equivalent checks are also valid if they satisfy the entire agreement and keep the operations well-defined."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n\nbool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = superior - valor;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In CMakeLists.txt, src/ajuste.cpp belongs only to ajustes; each main has its own executable. Both consumers link against ajustes and receive the public include path that resolves control/ajuste.h. The description expresses relationships and requirements, not a manual list of compilations (Scott, 2025, pp. 18–21, 182–183). Also review compiler warnings without confusing them with the verdict of your test cases."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AjustesConEvidencia LANGUAGES CXX)\n\nadd_library(ajustes STATIC src/ajuste.cpp)\ntarget_include_directories(ajustes PUBLIC publico)\nadd_executable(consultar_ajustes app/consulta.cpp)\nadd_executable(comprobar_ajustes pruebas/casos.cpp)\ntarget_link_libraries(consultar_ajustes PRIVATE ajustes)\ntarget_link_libraries(comprobar_ajustes PRIVATE ajustes)\ntarget_compile_features(ajustes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_ajustes PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_ajustes PRIVATE cxx_std_20)\nset_target_properties(ajustes consultar_ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(consultar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\ntarget_compile_options(comprobar_ajustes PRIVATE -Wall -Wextra -Wpedantic)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "You may reorder independent instructions or structure a correct implementation differently. The agreed file tree and targets must be preserved so observations can be attributed; both consumers must use the same implementation. A discoverable header does not replace a linked definition, and a built target still needs its behavior tested."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Client Reference: Accept, Reject, and Continue"
+        },
+        {
+          "type": "paragraph",
+          "text": "In app/consulta.cpp, the bool from each call determines whether the adjustment belongs to a new request. The output may retain a historical value after rejection; that history does not enter the sum. The diagnostic identifies the request and all three inputs, and recalls the conditions for reviewing them. Your presentation may differ if it preserves that information and separates results from diagnostics."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nvoid informar_rechazo(std::ostream& destino, int peticion,\n                     int valor, int inferior, int superior) {\n    destino << \"Rejection: request=\" << peticion << \" value=\" << valor\n            << \" lower=\" << inferior << \" upper=\" << superior\n            << \". Values from -20 to 20 are allowed with inferior <= superior.\"\n            << \" Review all three values.\\n\";\n}\n\nint main() {\n    int valor{0};\n    int inferior{0};\n    int superior{0};\n    int ajuste{77};\n    int peticion{0};\n    int aceptadas{0};\n    int rechazadas{0};\n    int suma{0};\n    while (std::cin >> valor >> inferior >> superior) {\n        ++peticion;\n        if (intentar_ajuste(valor, inferior, superior, ajuste)) {\n            ++aceptadas;\n            suma += ajuste;\n            std::cout << \"Request=\" << peticion << \" Adjustment=\" << ajuste << \"\\n\";\n        } else {\n            ++rechazadas;\n            informar_rechazo(std::cerr, peticion, valor, inferior, superior);\n        }\n    }\n    std::cout << \"Accepted=\" << aceptadas << \" Rejected=\" << rechazadas\n              << \" Sum=\" << suma << \"\\n\";\n    return rechazadas > 0 ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With the prepared input, requests 1, 2, 3, and 5 are accepted: their adjustments are 1, 0, -2, and 0. Request 4 is rejected because its endpoints are reversed, and request 6 because valor is 21. Therefore, the summary is four accepted, two rejected, and a sum of -1. The normal return value 1 reports those rejections. Compare all three diagnostic values with their corresponding request, without assuming a combined ordering of stdout and stderr."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "integracion_interpretar_retorno_del_cliente",
+          "question": "The reference client produces that summary and returns 1. What conclusion is supported by this execution?",
+          "options": [
+            "The client processed all six requests and returned 1 for its two rejections; that status summarizes the received batch, while the test program checks whether its cases match expectations.",
+            "The client found a negative adjustment and returned 1 because of that result; to satisfy the agreement, it must exclude that request from accepted ones and treat it as rejected data.",
+            "The client finished all six requests and returned 1 for two library failures; every rejected request in the batch must be recorded as a failed contract comparison, even when rejection was expected."
+          ],
+          "correctIndex": 0,
+          "explanation": "The client's return value summarizes its handling of the batch. Two inputs violate the domain and receive the agreed treatment; that is not the same as two discrepancies in the test program's comparisons. A negative adjustment remains a valid result.",
+          "reviewFeedback": [
+            "Connect the return value to the decision main makes at the end and to what its counters mean.",
+            "Recall the sign of the adjustment that must be added to a value above the allowed interval.",
+            "Distinguish a request that the interface must reject from a comparison that discovers a breach of its contract."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Test Suite Reference: Check Status and Output Without Skipping Cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "In pruebas/casos.cpp, compare your table with these cases and justify differences in selection. The first three cover below, within, and above; the fourth covers a single-value interval. The next two reach adjustments of magnitude forty using permitted values. The remaining ones isolate ordering and rejected boundaries, with different initial outputs. Eleven is not a required quota, nor does this establish every possible function: each case observes a specific obligation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"control/ajuste.h\"\n#include <iostream>\n\nbool comprobar(int caso, int valor, int inferior, int superior,\n               int inicial, bool aceptacion_esperada, int ajuste_esperado) {\n    int obtenido{inicial};\n    const bool aceptado = intentar_ajuste(valor, inferior, superior, obtenido);\n    const bool coincide = aceptado == aceptacion_esperada && obtenido == ajuste_esperado;\n    std::cout << \"Case=\" << caso << \" Accepts=\" << aceptado << \" Adjustment=\" << obtenido\n              << \" ExpectedAcceptance=\" << aceptacion_esperada\n              << \" ExpectedAdjustment=\" << ajuste_esperado;\n    if (coincide) { std::cout << \" OK\\n\"; }\n    else { std::cout << \" FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!comprobar(1, 2, 3, 7, 77, true, 1)) { ++fallos; }\n    if (!comprobar(2, 5, 3, 7, -8, true, 0)) { ++fallos; }\n    if (!comprobar(3, 9, 3, 7, 19, true, -2)) { ++fallos; }\n    if (!comprobar(4, 4, 4, 4, -4, true, 0)) { ++fallos; }\n    if (!comprobar(5, -20, 20, 20, 8, true, 40)) { ++fallos; }\n    if (!comprobar(6, 20, -20, -20, 17, true, -40)) { ++fallos; }\n    if (!comprobar(7, 0, 7, 3, 77, false, 77)) { ++fallos; }\n    if (!comprobar(8, 21, 3, 7, -8, false, -8)) { ++fallos; }\n    if (!comprobar(9, -21, 3, 7, 19, false, 19)) { ++fallos; }\n    if (!comprobar(10, 0, -21, 7, -4, false, -4)) { ++fallos; }\n    if (!comprobar(11, 0, 3, 21, 8, false, 8)) { ++fallos; }\n    std::cout << \"Failures=\" << fallos << \"\\n\";\n    return fallos == 0 ? 0 : 1;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each call first obtains its result; then two observed values are compared with literal expectations derived from the requirement. A correct rejection can also produce OK because it preserves the expected output. Required calls run in separate if statements: one discrepancy does not prevent later cases from being observed. The summary Failures=0 and exit code 0 belong to this test suite, not to the meaning of the client's return code. Do not replace those comparisons with assert: they must remain active when internal checks are disabled."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Test the Suite and Restore the Project Without Changing Expectations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before accepting your test program, propose a localized change to the component that your table should detect and explain which case would reveal it. Keep earlier expectations and cases. As a subsequent control, you can replace only the subtraction in the upper branch with the following deliberate defect in src/ajuste.cpp; it does not change the signature, validation, or other files:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {\n    if (valor < -20 || valor > 20 || inferior < -20 || inferior > 20\n            || superior < -20 || superior > 20 || inferior > superior) {\n        return false;\n    }\n    if (valor < inferior) {\n        ajuste = inferior - valor;\n    } else if (valor > superior) {\n        ajuste = valor - superior;\n    } else {\n        ajuste = 0;\n    }\n    return true;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build and run comprobar_ajustes against the reference; repeat with the modified control and again after restoring the original subtraction. Under the reference expectations, nine with [3,7] needs -2, and twenty with [-20,-20] needs -40: the altered sign must produce discrepancies in those two cases, while later cases still run. Preserve each case's diagnostic and the final summary. Then build and run consultar_ajustes with the six prepared triples and attribute its return to its own agreement, without confusing it with the test suite's."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "integracion_alcance_del_control_y_recuperacion",
+          "question": "The test suite detected the altered sign, continued through later cases, and matched again after restoration. What does that sequence establish?",
+          "options": [
+            "The control detected the altered sign and matched again after restoration; that sensitivity makes it unnecessary to justify preserved expectations because the suite has already shown it reacts to an implementation change.",
+            "The control detected the altered sign; adapting its expectations to those results would preserve the same contract check because the inputs, names, and number of cases would remain unchanged.",
+            "The control detected the altered sign and matched again after restoration; those cases provide evidence about the altered and restored revisions, while expectations still need independent justification."
+          ],
+          "correctIndex": 2,
+          "explanation": "The deliberate control tests the suite's sensitivity to a specific contract violation. Restoring matching results preserves evidence for those cases; it cannot turn a finite selection or a mistaken expectation into a universal guarantee (Kernighan & Pike, 1999, pp. 149–150).",
+          "reviewFeedback": [
+            "Consider whether detecting an implementation change proves where each case's expected answer came from.",
+            "Compare the requirement being checked before and after adapting an expectation to the observed result.",
+            "Connect each conclusion to the revision, target, and expectations used in the sequence."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Later, return to your table and comments without first opening this reference. Add a triple of your own and explain which requirement or assumption it distinguishes; choose an initial output and derive acceptance and final output before consulting the model test suite. Explain one interface decision, one build relationship, and one difference between the evidence from the two consumers. If someone proposes changing an expectation or interpretation, return to the question, context, and requirement it was intended to check; critical reading means examining the scope of a claim (Thomas & Hunt, 2020, pp. 17–18). Preserve what your sequence does establish and state what you would need to investigate any remaining uncertainty."
+        }
+      ]
+    }
+  ]
+}
