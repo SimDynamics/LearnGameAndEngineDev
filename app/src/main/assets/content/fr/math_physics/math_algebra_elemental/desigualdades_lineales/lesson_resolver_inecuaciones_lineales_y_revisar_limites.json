@@ -1,0 +1,1410 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__resolver_inecuaciones_lineales_y_revisar_limites",
+  "title": "Résoudre les inéquations linéaires et vérifier les bornes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Résoudre signifie décrire toutes les valeurs qui conviennent"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous connaissons déjà les règles d'ordre et les opérations réversibles. Nous allons maintenant les combiner pour résoudre des inéquations linéaires : l'inconnue est multipliée par des constantes et ajoutée à d'autres termes, sans puissances supérieures à un. Nous travaillerons dans les rationnels, sauf restriction explicite liée au contexte ; les dénominateurs seront des constantes non nulles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 5x − 4 ≤ 11, ajouter quatre aux deux membres donne 5x ≤ 15. Diviser par cinq, qui est positif, conserve le sens et donne x ≤ 3. Nous n'avons pas seulement obtenu le nombre trois : les solutions sont tous les nombres rationnels inférieurs ou égaux à trois. Les étapes équivalentes justifient cette description complète (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La borne est trois. En la remplaçant dans l'inéquation, on obtient 11 ≤ 11 : elle est donc incluse. Pour x = 2, le membre de gauche vaut six et la condition est satisfaite ; pour x = 4, il vaut seize et elle échoue. Ces vérifications portent sur des valeurs particulières. C'est la suite d'étapes réversibles, et non une liste finie d'essais, qui justifie l'ensemble complet des solutions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_operaciones_y_frontera_estricta",
+          "prompt": "Résous (3/2)u + 5/4 < 2 dans les rationnels. Écris la borne et sélectionne la description complète des solutions. Calcule aussi le membre de gauche initial lorsque u prend exactement cette valeur limite.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_operaciones_y_frontera_estricta__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne pour u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Description des solutions pour u",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Le sens choisi propose des valeurs de u strictement inférieures à la borne. Teste une valeur de ce côté dans l'inéquation initiale et tiens compte du signe de son coefficient."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Le sens choisi propose des valeurs de u strictement supérieures à la borne. Vérifie ce sens dans la condition initiale sans confondre le signe des données avec l'effet de l'isolement de l'inconnue."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour u le côté inférieur et la borne. Examine séparément le sens obtenu en isolant l'inconnue et le cas d'égalité dans la condition initiale."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour u le côté supérieur et la borne. Vérifie ces deux aspects à partir de l'inéquation initiale et de son symbole."
+                    }
+                  ]
+                },
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Membre de gauche initial à la borne",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire 5/4 donne (3/2)u < 3/4. Diviser par 3/2, qui est positif, donne u < 1/2. À la borne, (3/2)(1/2) + 5/4 = 2. La comparaison 2 < 2 est fausse : la borne est exclue. Les solutions sont exactement les rationnels inférieurs à 1/2.",
+            "incorrect": "Commence par éliminer la constante, ou choisis une autre méthode réversible qui porte sur le membre entier. Vérifie le signe du diviseur et conserve le caractère strict de la comparaison initiale ; rendre les membres égaux ne suffit pas pour satisfaire <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_ruta_con_coeficiente_positivo",
+          "prompt": "Résous r/4 − 2 ≥ −5/2 et x + 5/3 ≤ 2/3. Choisis tes étapes. Pour chaque inconnue, écris la borne et la description complète des solutions rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_ruta_con_coeficiente_positivo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_r",
+                  "type": "numeric",
+                  "label": "Borne pour r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_r",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation avec r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix strict vers les petites valeurs de r doit être vérifié à partir de sa condition initiale. Revois les opérations effectuées sur les deux membres."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix strict vers les grandes valeurs de r doit être testé dans la condition initiale. Vérifie aussi le traitement proposé pour la borne."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour r autorise des valeurs plus petites et l'égalité avec la borne. Vérifie le sens et le cas d'égalité à l'aide de la comparaison initiale."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour r autorise des valeurs plus grandes et l'égalité avec la borne. Compare ces deux propriétés aux opérations et au symbole de l'inéquation initiale."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Borne pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation avec x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix pour x est strict vers les petites valeurs. Reproduis la soustraction dans les deux membres de sa condition et examine la relation obtenue."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix pour x est strict vers les grandes valeurs. Vérifie avec une valeur de ce côté si la condition initiale l'autorise."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour x autorise le côté inférieur et la borne. Examine le sens conservé lors de la soustraction et ce qui se passe lorsqu'on remplace l'inconnue par la borne."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour x autorise le côté supérieur et la borne. Revois séparément le sens proposé et le cas d'égalité dans la condition initiale."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_r": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "sentido_r": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  },
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ajouter deux dans la première inéquation donne r/4 ≥ −1/2 ; multiplier par quatre donne r ≥ −2. Dans la seconde, soustraire 5/3 donne x ≤ −1. Les deux facteurs sont positifs et les deux symboles incluent l'égalité. La substitution des bornes donne des égalités vraies avec ≥ ou ≤.",
+            "incorrect": "Une borne négative n'oblige pas à inverser le sens. C'est le signe du facteur par lequel tu multiplies ou divises qui compte. Dans la seconde inéquation, le coefficient de x vaut un, et une soustraction ne modifie pas ≤."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le signe du coefficient détermine l'inversion du sens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour −(4/3)x + 1/2 ≥ 5/6, soustraire 1/2 donne −(4/3)x ≥ 1/3. Le diviseur −4/3 est négatif : nous divisons et transformons ≥ en ≤. On obtient x ≤ −1/4. L'égalité reste autorisée. C'est le signe du diviseur qui détermine l'inversion, même si la borne obtenue est négative (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_por_un_coeficiente_negativo",
+          "prompt": "Résous −(5/2)t − 3/4 ≤ 7/4. Commence par ajouter 3/4 aux deux membres. Écris la valeur de droite face au produit, la borne finale et la description des solutions pour t.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_por_un_coeficiente_negativo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite après l'ajout de 3/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions pour t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix place t strictement en dessous de la borne. Revois l'effet du diviseur négatif lorsque tu isoles l'inconnue et vérifie ce sens dans l'inéquation initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix place t strictement au-dessus de la borne. Vérifie le sens obtenu par la division et examine si le symbole initial est strict."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour t le côté inférieur et la borne. Examine le signe du diviseur et ce qui se passe lorsqu'on atteint exactement l'égalité."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour t le côté supérieur et la borne. Vérifie l'inversion de l'ordre pendant la division et le traitement de l'égalité dans la condition initiale."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'addition donne −(5/2)t ≤ 5/2. Diviser par −5/2 inverse le sens : t ≥ −1. À la borne, le membre de gauche initial vaut 5/2 − 3/4 = 7/4, et l'égalité est autorisée. L'ensemble des solutions contient tous les rationnels supérieurs ou égaux à −1.",
+            "incorrect": "Calcule 7/4 + 3/4, puis divise par le coefficient complet −5/2. Conserve le cas d'égalité pendant l'inversion : ≤ devient ≥."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tu soupçonnes une erreur dans une suite d'étapes, examine celle qui semble la plus fragile et teste une valeur qui distingue les deux conditions. Cela peut révéler une erreur ; il faut ensuite réparer la justification générale, et pas seulement refaire les calculs (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_division_que_no_invierte",
+          "prompt": "Une note transforme −3r + 2 < 8 en −3r < 6, puis en r < −2. Trouve la première erreur. Choisis le sens correct par rapport à la borne −2 et calcule le membre de gauche initial pour r = −3, valeur que la note accepterait.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_division_que_no_invierte__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Soustraire deux au début aurait dû inverser le symbole.",
+                  "reviewFeedback": "Reconstitue cette soustraction dans les deux membres et compare son effet à celui d'une multiplication par un facteur."
+                },
+                {
+                  "id": "b",
+                  "label": "Il a manqué l'inversion du symbole lors de la division par −3.",
+                  "reviewFeedback": "Examine le signe du diviseur à l'étape indiquée et vérifie la relation par substitution."
+                },
+                {
+                  "id": "c",
+                  "label": "Il n'y a pas d'erreur puisque la borne est négative.",
+                  "reviewFeedback": "Le signe de la borne et celui du diviseur jouent des rôles différents ; identifie celui qui affecte l'ordre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "una_division_que_no_invierte__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions correctes par rapport à la borne indiquée",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix conserve un sens strict vers les valeurs plus petites. Vérifie, dans la condition initiale, quelles valeurs de ce côté seraient admises par l'étape de la note."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix propose un sens strict vers les valeurs plus grandes. Revois le signe du diviseur utilisé dans la note et vérifie ce sens par substitution."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix ajoute la borne du côté inférieur. Examine à la fois le sens obtenu en divisant par le coefficient et le caractère strict de la comparaison initiale."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut la borne du côté supérieur. Vérifie le sens à l'aide du coefficient et examine ce qui se passe exactement à la borne."
+                    }
+                  ]
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Membre de gauche initial pour r = −3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La soustraction est correcte. La division par −3 exige r > −2. Pour r = −3, le membre de gauche initial vaut onze et 11 < 8 est faux, bien que −3 < −2 soit vrai. Ce contre-exemple réfute la note ; la règle de division par un nombre négatif justifie la correction pour tous les rationnels.",
+            "incorrect": "Distingue la soustraction d'une quantité de la division par cette quantité. L'addition et la soustraction conservent le sens ; la division par un nombre négatif l'inverse. Vérifie la valeur proposée dans l'inéquation initiale."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réunir les termes des deux membres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 2x + 5 > 5x − 1, soustraire 5x aux deux membres, puis soustraire cinq donne −3x > −6. Diviser par −3 donne x < 2. Une autre méthode consiste à soustraire 2x des deux membres et à ajouter un : 6 > 3x. Diviser par trois donne 2 > x, ce qui signifie également x < 2. Les deux méthodes valables décrivent le même ensemble de solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour chaque valeur envisagée, soustraire le même terme contenant l'inconnue enlève la même quantité aux deux membres et conserve l'ordre. Réunir les termes dans un membre utilise les identités déjà justifiées. Nous appliquons maintenant ces opérations à des conditions d'ordre, en conservant leur sens sauf lors d'une multiplication ou division par un nombre négatif (Lang, 1971, pp. 75–77, 81)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_y_resolver_con_dos_miembros",
+          "prompt": "Résous 7x − 3 ≥ 2x + 4 en soustrayant 2x aux deux membres, puis en ajoutant trois. Écris la borne et décris les solutions rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_y_resolver_con_dos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions pour x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ta description n'admet que le côté inférieur pour x. Réunis les termes contenant l'inconnue avec les opérations demandées et vérifie ce sens dans l'inéquation initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ta description n'admet que le côté supérieur pour x. Revois le coefficient restant après la réduction et vérifie si le symbole initial exclut la borne."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ta description admet le côté inférieur et la borne pour x. Examine quel sens la division conserve et vérifie le cas d'égalité à la borne."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ta description admet le côté supérieur et la borne pour x. Vérifie cette relation à l'aide d'étapes réversibles et d'un contrôle dans la condition initiale."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7/5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les étapes demandées donnent 5x ≥ 7. Diviser par cinq conserve ≥ et donne x ≥ 7/5. À la borne, les deux membres initiaux valent 34/5 : elle est donc incluse.",
+            "incorrect": "Soustrais aussi le terme entier 2x du membre de gauche et ajoute également trois à celui de droite. Le coefficient restant est cinq, qui est positif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "rutas_equivalentes_para_la_misma_inecuacion",
+          "prompt": "Sélectionne toutes les suites d'étapes valides pour −4u + 3 ≤ u − 2. Il n'est pas nécessaire de commencer par réunir u dans un membre particulier.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "rutas_equivalentes_para_la_misma_inecuacion__revision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ajouter 4u : 3 ≤ 5u − 2. Ajouter deux et diviser par cinq : 1 ≤ u.",
+                  "reviewFeedback": "Reproduis chaque opération de cette suite dans les deux membres, y compris les termes constants."
+                },
+                {
+                  "id": "b",
+                  "label": "Soustraire u : −5u + 3 ≤ −2. Soustraire trois et diviser par −5 : u ≥ 1.",
+                  "reviewFeedback": "Vérifie chaque égalité intermédiaire et ce qui arrive au sens lors de la division par le facteur indiqué."
+                },
+                {
+                  "id": "c",
+                  "label": "Soustraire u et soustraire trois : −5u ≤ −5. Diviser par −5 : u ≤ 1.",
+                  "reviewFeedback": "Examine le signe du diviseur à la dernière étape et vérifie la proposition dans l'inéquation initiale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux premières suites sont valides et décrivent u ≥ 1. Dans la première, on divise par un nombre positif ; dans la deuxième, on divise par un nombre négatif et on inverse le sens. La troisième omet cette inversion. Écrire 1 ≤ u ou u ≥ 1 exprime le même ordre.",
+            "incorrect": "Vérifie le signe du diviseur dans chaque méthode et lis quel nombre figure de chaque côté. Réunir l'inconnue dans un autre membre n'est pas une erreur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_fraccionarios_en_ambos_miembros",
+          "prompt": "Résous −(1/2)r + 3/4 > (1/4)r − 3/2 par la méthode de ton choix. Écris la borne et l'ensemble des solutions en indiquant leur sens par rapport à cette borne.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_fraccionarios_en_ambos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne pour r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions pour r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ta description place r strictement en dessous de la borne. Revois le signe du coefficient lorsque tu réunis les termes et vérifie le sens dans la condition initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ta description place r strictement au-dessus de la borne. Vérifie le sens proposé par substitution en conservant tous les termes initiaux."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ta description inclut pour r le côté inférieur et la borne. Vérifie à la fois le sens de l'isolement de l'inconnue et l'exigence exprimée par le symbole initial."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ta description inclut pour r le côté supérieur et la borne. Compare ce sens et le cas d'égalité avec la condition de départ sans en modifier les signes."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire (1/4)r et 3/4 donne −(3/4)r > −9/4. Diviser par −3/4 inverse > et donne r < 3. Pour r = 3, les membres initiaux valent tous les deux −3/4 ; la comparaison stricte exclut cette valeur. D'autres méthodes réversibles conduisent à la même description.",
+            "incorrect": "Réunis les coefficients −1/2 et −1/4 avec leurs signes. Une soustraction n'inverse pas le sens ; la division ultérieure par le coefficient négatif, si."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Développer et éliminer les dénominateurs constants"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les identités sur les expressions restent valables. Dans 4 − 2(x − 1) ≤ x + 9, développer donne 6 − 2x ≤ x + 9. Soustraire x, puis six donne −3x ≤ 3 ; diviser par −3 donne x ≥ −1. Le développement a remplacé une expression par une autre de même valeur ; la division par un nombre négatif a inversé le sens. Ce sont deux opérations différentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "On peut éliminer un dénominateur constant en multipliant les deux membres complets par un multiple commun non nul des dénominateurs. Si tu choisis un facteur positif, le sens est conservé ; s'il est négatif, le sens s'inverse. Respecte les limites de chaque numérateur et multiplie aussi les termes sans fraction. Les règles d'ordre dépendent du signe du facteur connu (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "grupos_con_denominadores_constantes",
+          "prompt": "Résous (2t − 1)/3 + 1/2 > (t + 2)/2. Multiplie d'abord les deux membres par six ; développe ensuite, réunis les termes et résous. Écris la borne et toutes les solutions selon leur sens par rapport à celle-ci.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "grupos_con_denominadores_constantes__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions pour t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix est strict vers les valeurs plus petites de t. Développe les numérateurs entiers et examine le coefficient qui détermine le sens de l'isolement de l'inconnue."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix est strict vers les valeurs plus grandes de t. Vérifie ce sens après avoir conservé tous les termes en éliminant les dénominateurs."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut les petites valeurs de t et la borne. Examine séparément le développement qui détermine le sens et le symbole qui décide du cas d'égalité."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut les grandes valeurs de t et la borne. Évalue la relation initiale à la borne et vérifie également une valeur du côté proposé."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplier par six conserve > et donne 2(2t − 1) + 3 > 3(t + 2). En développant, on obtient 4t + 1 > 3t + 6 ; soustraire 3t puis un donne t > 5. À la borne, les deux membres initiaux valent 7/2 : l'inéquation stricte l'exclut donc.",
+            "incorrect": "Multiplie aussi le terme 1/2 par six. Le groupe 2t − 1 reçoit le facteur deux et le groupe t + 2 reçoit trois. Conserve > lors des additions et soustractions."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_una_constante_al_eliminar_denominadores",
+          "prompt": "Pour (x + 1)/4 ≤ (x − 2)/3, une note affirme multiplier les deux membres par douze et écrit 3x + 1 ≤ 4x − 8. Trouve la première erreur, écris la bonne constante du membre de gauche après développement, puis résous l'inéquation initiale : borne et sens.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le facteur trois devait aussi multiplier le un du numérateur de gauche.",
+                  "reviewFeedback": "Distribue le facteur sur tout le numérateur indiqué, terme par terme, avant de comparer avec la note."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplier par douze aurait dû inverser ≤ parce qu'il y a une soustraction à droite.",
+                  "reviewFeedback": "Identifie le signe du facteur appliqué aux deux membres ; une soustraction à l'intérieur d'un membre est une autre question."
+                },
+                {
+                  "id": "c",
+                  "label": "La multiplication par douze est invalide même si elle s'applique aux deux membres.",
+                  "reviewFeedback": "Examine si le facteur utilisé est non nul et quel effet a une multiplication positive sur l'ordre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constante correcte du membre de gauche après développement",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne correcte pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation initiale",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix place x strictement sous la borne. Revois le développement de chaque numérateur avant de vérifier le sens proposé."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix place x strictement au-dessus de la borne. Reconstitue la multiplication des deux membres complets et revois le traitement initial de la borne."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour x le côté inférieur et la borne. Vérifie ces deux aspects après correction du développement, sans te fonder sur la ligne erronée."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix inclut pour x le côté supérieur et la borne. Vérifie le sens et le cas d'égalité à l'aide de l'inéquation initiale avec ses numérateurs complets."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'étape correcte est 3(x + 1) ≤ 4(x − 2), puis 3x + 3 ≤ 4x − 8. Soustraire 3x et ajouter huit donne 11 ≤ x, ce qui équivaut à x ≥ 11. À la borne, l'inéquation initiale compare 12/4 ≤ 9/3, soit 3 ≤ 3. Douze est positif ; la soustraction dans le numérateur ne change pas le signe de ce facteur.",
+            "incorrect": "Repère les termes qui reçoivent le facteur trois et ceux qui reçoivent quatre. Corrige la première étape avant de continuer. Le signe qui gouverne le sens est celui du multiplicateur douze, et non celui d'une constante du numérateur."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si la lettre disparaît, interpréter la condition restante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après le développement et le regroupement, le terme contenant la lettre peut disparaître. Dans 2x + 5 ≥ 2(x + 1) + 1, le membre de droite vaut 2x + 3. Soustraire 2x des deux membres donne 5 ≥ 3, ce qui est vrai. Cette soustraction est réversible pour tout nombre rationnel : tous satisfont la condition initiale. Nous n'avons ni multiplié par zéro ni divisé par un coefficient nul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'il reste une comparaison entre constantes, détermine si elle est vraie. Si elle est vraie, toutes les valeurs du domaine étudié conviennent ; si elle est fausse, aucune ne convient. La disparition de x n'impose pas x = 0. Dans ces cas, il n'y a pas de borne unique à renseigner par un nombre."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_tras_cancelar_la_letra",
+          "prompt": "Résous chaque condition dans les rationnels par développement et soustractions réversibles. Classe leurs solutions : 3(x − 2) > 3x − 6 ; −(1/2)(2x − 4) ≤ −x + 2 ; 4 − 2x < −2(x − 3) ; (3/4)x + 2 ≥ (3/4)x + 7/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_tras_cancelar_la_letra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "estricta_identica",
+                  "type": "dropdown",
+                  "label": "Solutions de 3(x − 2) > 3x − 6",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement exclut toute valeur pour cette comparaison stricte. Développe et réunis les termes par des étapes valides avant de justifier cette impossibilité."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tous les rationnels pour cette comparaison stricte. Vérifie la relation numérique restante après simplification et sa signification."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Seule une partie des nombres rationnels convient.",
+                      "reviewFeedback": "Ton classement n'accepte qu'une partie du domaine pour cette comparaison stricte. Examine si la simplification laisse une condition dépendant de l'inconnue."
+                    }
+                  ]
+                },
+                {
+                  "id": "no_estricta_identica",
+                  "type": "dropdown",
+                  "label": "Solutions de −(1/2)(2x − 4) ≤ −x + 2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement exclut toutes les valeurs pour cette condition non stricte. Revois le développement du facteur signé et vérifie la comparaison finale."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine pour cette condition non stricte. Justifie cette portée avec la relation simplifiée et la réversibilité des étapes."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Seule une partie des nombres rationnels convient.",
+                      "reviewFeedback": "Ton classement n'accepte que certains rationnels pour cette condition non stricte. Vérifie si la comparaison dépend encore de l'inconnue après regroupement des termes."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_ordenadas",
+                  "type": "dropdown",
+                  "label": "Solutions de 4 − 2x < −2(x − 3)",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme que cette condition comportant une soustraction et un facteur extérieur est impossible. Développe en respectant les signes et examine la relation restante."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement affirme que cette condition vaut pour tous les rationnels. Vérifie par simplification ce qui reste comme information sur l'inconnue."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Seule une partie des nombres rationnels convient.",
+                      "reviewFeedback": "Ton classement affirme que seule une partie du domaine convient. Vérifie si les transformations laissent une restriction variable ou une comparaison indépendante de l'inconnue."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_que_fallan",
+                  "type": "dropdown",
+                  "label": "Solutions de (3/4)x + 2 ≥ (3/4)x + 7/2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme qu'aucune valeur ne convient pour cette condition à coefficients égaux. Soustrais le même terme des deux membres et examine la comparaison constante obtenue."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine pour cette condition à coefficients égaux. Vérifie la relation restante après suppression réversible de ces termes."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Seule une partie des nombres rationnels convient.",
+                      "reviewFeedback": "Ton classement sélectionne une partie du domaine pour cette condition. Examine si faire varier l'inconnue peut modifier la comparaison après regroupement des termes."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "no_estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_ordenadas": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_que_fallan": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première se réduit à 0 > 0, ce qui est faux : aucune solution. La deuxième se réduit à 0 ≤ 0, ce qui est vrai : tous les rationnels. La troisième donne 4 < 6, ce qui est vrai : tous les rationnels. La dernière donne 2 ≥ 7/2, ce qui est faux : aucune solution. Dans chaque cas, des termes égaux ont été annulés en soustrayant la même expression des deux membres ; on n'a pas multiplié la condition par zéro.",
+            "incorrect": "Développe toutes les parties de chaque groupe, puis annule les termes égaux par soustraction dans les deux membres. Lis attentivement le symbole restant : une comparaison stricte d'un nombre avec lui-même est fausse ; une comparaison non stricte est vraie."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_no_es_multiplicar_por_cero",
+          "prompt": "Qu'est-ce qui justifie que 2x + 5 ≥ 2x + 3 admet tous les rationnels comme solutions ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_no_es_multiplicar_por_cero__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Soustraire 2x des deux membres donne 5 ≥ 3, ce qui est vrai, et ajouter 2x permet de revenir en arrière.",
+                  "reviewFeedback": "Reconstitue la soustraction dans les deux membres et vérifie que l'opération inverse permet de retrouver la condition."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplier les deux membres par zéro efface toute restriction de manière équivalente.",
+                  "reviewFeedback": "Compare l'information préservée par une soustraction à celle qui est perdue lorsqu'on multiplie tous les termes par zéro."
+                },
+                {
+                  "id": "c",
+                  "label": "Il suffit de vérifier une valeur proposée et de constater qu'elle convient.",
+                  "reviewFeedback": "Distingue la vérification d'une valeur particulière de la justification d'une affirmation sur toutes les valeurs du domaine."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La soustraction réversible conserve tout l'ensemble des solutions et laisse une comparaison vraie pour tout x. Multiplier par zéro serait une autre opération, irréversible, et une seule substitution ne prouve pas une affirmation sur tous les rationnels.",
+            "incorrect": "Distingue l'annulation de termes par soustraction de l'annulation des membres par multiplication par zéro. Revois l'opération concrète et son inverse ; interprète ensuite la comparaison restante."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la borne et s'exercer en autonomie"
+        },
+        {
+          "type": "paragraph",
+          "text": "La borne d'une inéquation linéaire dont le coefficient final est non nul est la valeur qui rend ses deux membres égaux. Si le symbole est strict, cette valeur ne convient pas ; s'il inclut l'égalité, elle convient. Teste aussi des valeurs des deux côtés lorsque tu vérifies un calcul. Cela aide à découvrir une inversion de sens, mais la justification de toutes les solutions repose toujours sur la suite de conditions équivalentes (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_frontera_distinta_inclusion",
+          "prompt": "Compare −(3/2)x + 1/2 < −1 et −(3/2)x + 1/2 ≤ −1. Leur résolution donne respectivement x > 1 et x ≥ 1. Calcule le membre de gauche initial pour x = 1, x = 0 et x = 2. Détermine si la borne est autorisée dans chacune des deux inéquations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_frontera_distinta_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Membre de gauche initial pour x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "debajo",
+                  "type": "numeric",
+                  "label": "Membre de gauche initial pour x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "encima",
+                  "type": "numeric",
+                  "label": "Membre de gauche initial pour x = 2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "estricta",
+                  "type": "dropdown",
+                  "label": "La borne est-elle autorisée dans l'inéquation avec < ?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Oui, elle est autorisée.",
+                      "reviewFeedback": "Ton choix inclut la borne dans la comparaison stricte. Remplace l'inconnue par cette valeur et vérifie précisément la signification du symbole."
+                    },
+                    {
+                      "id": "no",
+                      "label": "Non, elle est exclue.",
+                      "reviewFeedback": "Ton choix exclut la borne dans la comparaison stricte. Vérifie la relation entre les deux membres exactement à cette valeur."
+                    }
+                  ]
+                },
+                {
+                  "id": "inclusiva",
+                  "type": "dropdown",
+                  "label": "La borne est-elle autorisée dans l'inéquation avec ≤ ?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Oui, elle est autorisée.",
+                      "reviewFeedback": "Ton choix inclut la borne dans la comparaison large. Teste ce point dans la condition initiale et revois ce que permet son symbole."
+                    },
+                    {
+                      "id": "no",
+                      "label": "Non, elle est exclue.",
+                      "reviewFeedback": "Ton choix exclut la borne dans la comparaison large. Confronte cette exclusion au cas d'égalité de la même condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "debajo": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "encima": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  },
+                  "estricta": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "inclusiva": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Pour x = 1, le membre de gauche vaut −1 : −1 < −1 est faux et −1 ≤ −1 est vrai. Pour x = 0, il vaut 1/2 et les deux conditions échouent ; pour x = 2, il vaut −5/2 et les deux sont satisfaites. La borne est la même, mais son inclusion change les solutions. La division par −3/2 explique pourquoi les valeurs supérieures à un conviennent.",
+            "incorrect": "Calcule le produit négatif avant d'ajouter 1/2. Compare ensuite à −1, en distinguant < de ≤. Une valeur peut se trouver sur la borne sans appartenir à l'ensemble des solutions."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_tres_inecuaciones_por_cuenta_propia",
+          "prompt": "Résous dans les rationnels, sans suite d'étapes imposée : 2x − 5 ≥ 3(x − 4) ; (y − 2)/5 < (2y + 1)/3 ; −4 + (3/2)z > (5/2)z − 1. Pour chacune, écris la borne et les solutions par rapport à elle. Vérifie la borne dans chaque inéquation initiale.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_tres_inecuaciones_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Borne pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation avec x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix pour x est strict vers les valeurs plus petites. Revois le développement de la parenthèse et le traitement de la borne dans cette inéquation initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix pour x est strict vers les valeurs plus grandes. Examine le coefficient après regroupement et confronte le sens proposé à une substitution."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour x inclut le côté inférieur et la borne. Vérifie le sens de la résolution et le cas d'égalité avec la condition portant sur x."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour x inclut le côté supérieur et la borne. Vérifie les deux propriétés dans son inéquation initiale après développement de tout le groupe."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_y",
+                  "type": "numeric",
+                  "label": "Borne pour y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_y",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation avec y",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix pour y est strict vers les valeurs plus petites. Conserve les numérateurs entiers lors de l'élimination des dénominateurs et vérifie le sens dans son inéquation initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix pour y est strict vers les valeurs plus grandes. Justifie ce sens par le signe du coefficient restant et un essai dans la condition initiale."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour y inclut le côté inférieur et la borne. Revois l'effet de l'isolement de l'inconnue sur l'ordre et ce que permet le symbole initial en cas d'égalité."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour y inclut le côté supérieur et la borne. Vérifie séparément le sens et l'égalité dans son inéquation initiale."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_z",
+                  "type": "numeric",
+                  "label": "Borne pour z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_z",
+                  "type": "dropdown",
+                  "label": "Solutions de l'inéquation avec z",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Ton choix pour z est strict vers les valeurs plus petites. Réunis les termes en respectant leurs signes et vérifie ce sens à partir de la comparaison initiale."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Ton choix pour z est strict vers les valeurs plus grandes. Examine le coefficient obtenu après regroupement et teste une valeur du côté proposé."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour z inclut le côté inférieur et la borne. Vérifie le sens de la résolution et le traitement de la borne dans la condition initiale portant sur z."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Ton choix pour z inclut le côté supérieur et la borne. Revois séparément le sens et le cas d'égalité à l'aide des deux membres initiaux."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "limite_y": {
+                    "type": "numeric",
+                    "expected": "-11/7"
+                  },
+                  "sentido_y": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "limite_z": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "sentido_z": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans la première, le développement et le regroupement donnent −x ≥ −7, donc x ≤ 7. Dans la deuxième, multiplier par quinze donne 3(y − 2) < 5(2y + 1) ; le regroupement donne −7y < 11, d'où y > −11/7. Dans la troisième, il reste −z > 3, donc z < −3. Aux bornes, les deux membres initiaux sont égaux : neuf dans la première, −5/7 dans la deuxième et −17/2 dans la troisième. Seule la première autorise cette égalité.",
+            "incorrect": "Conserve les groupes lors du développement et de l'élimination des dénominateurs. Vérifie le signe du coefficient final, pas uniquement le symbole initial. Dans ces trois méthodes, ce coefficient est négatif : la division inverse donc le sens."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revenir au domaine et aux unités du problème"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un essai d'impression demande une demi-heure de préparation et trois quarts d'heure pour chaque lot complet. Il doit se terminer en moins de 23/4 heures ; atteindre exactement cette durée n'est pas autorisé. Appelons n le nombre de lots complets : c'est un entier non négatif. Construis d'abord la condition de durée, résous-la dans les rationnels, puis ne conserve que les valeurs appartenant au domaine du problème."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tiempo_disponible_y_lotes_completos",
+          "prompt": "À partir des données de l'essai, détermine la borne rationnelle et le sens de la condition portant sur n. Écris également le plus grand nombre autorisé de lots complets et la durée totale, en heures, pour ce nombre. Choisis ta méthode sans étapes imposées.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo_disponible_y_lotes_completos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne rationnelle pour n",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions rationnelles par rapport à la borne",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Le sens choisi propose des nombres rationnels de lots strictement inférieurs à la borne. Vérifie ce sens dans la condition de durée construite à partir de l'essai."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Le sens choisi propose des nombres rationnels de lots strictement supérieurs à la borne. Examine comment une augmentation du nombre changerait la durée et confronte cela à l'exigence."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Le sens choisi inclut le côté inférieur et la borne. Vérifie si l'essai d'impression peut durer exactement le temps limite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Le sens choisi inclut le côté supérieur et la borne. Vérifie le sens à l'aide de la règle de durée et examine le traitement du cas limite."
+                    }
+                  ]
+                },
+                {
+                  "id": "maximo",
+                  "type": "numeric",
+                  "label": "Plus grand nombre autorisé de lots complets",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "duracion",
+                  "type": "numeric",
+                  "label": "Durée en heures pour ce maximum",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "maximo": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "duracion": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condition est 1/2 + (3/4)n < 23/4. Soustraire 1/2 donne (3/4)n < 21/4 ; diviser par 3/4 donne n < 7. Dans le contexte, exactement les entiers non négatifs inférieurs à sept conviennent. Le maximum est de six lots, et leur durée est de 1/2 + (3/4) × 6 = 5 heures. Sept lots donneraient 23/4 heures et ne conviendraient pas, car la limite est stricte. Un nombre fractionnaire de lots n'appartient pas au domaine.",
+            "incorrect": "Compte une seule fois la préparation, puis le temps par lot multiplié par n. Ne confonds pas la borne rationnelle et l'entier maximal autorisé : le symbole strict exclut la borne. La durée finale s'exprime en heures, pas en lots."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Le domaine peut aussi exclure toutes les solutions d'une condition qui admet pourtant des solutions rationnelles. Un deuxième essai demande trois minutes de préparation et deux observations de t minutes chacune. Sa durée totale ne doit pas dépasser deux minutes. t représente une durée rationnelle non négative. Vérifie si les données rendent l'essai possible."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_condicion_imposible_en_su_contexto",
+          "prompt": "Construis et résous d'abord la condition du deuxième essai dans tous les rationnels. Écris sa borne et son sens. Classe ensuite les solutions qui restent lorsqu'on exige que t soit une durée non négative.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_condicion_imposible_en_su_contexto__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Borne lors de la résolution dans tous les rationnels",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions rationnelles par rapport à la borne",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "L'inconnue est inférieure à la borne.",
+                      "reviewFeedback": "Le sens choisi pour t est strictement vers les petites valeurs. Vérifie la direction proposée dans la règle du deuxième essai et la façon dont l'égalité avec la borne est exprimée."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "L'inconnue est supérieure à la borne.",
+                      "reviewFeedback": "Le sens choisi pour t est strictement vers les grandes valeurs. Revois l'effet de l'isolement de l'inconnue sur l'ordre et confronte ce sens à la condition temporelle initiale."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "L'inconnue est inférieure ou égale à la borne.",
+                      "reviewFeedback": "Le sens choisi pour t inclut le côté inférieur et la borne. Vérifie les deux propriétés de cette description dans la condition construite pour le deuxième essai."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "L'inconnue est supérieure ou égale à la borne.",
+                      "reviewFeedback": "Le sens choisi pour t inclut le côté supérieur et la borne. Vérifie séparément le sens et le cas d'égalité, sans encore ajouter de restriction de signe."
+                    }
+                  ]
+                },
+                {
+                  "id": "contexto",
+                  "type": "dropdown",
+                  "label": "Solutions autorisées dans le domaine des durées",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Aucune valeur du domaine ne convient.",
+                      "reviewFeedback": "Ton classement affirme qu'aucune durée admissible n'existe. Vérifie si une valeur non négative peut satisfaire simultanément le domaine et la condition temporelle."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Toutes les valeurs du domaine conviennent.",
+                      "reviewFeedback": "Ton classement accepte toute durée non négative. Teste cette affirmation dans la condition initiale de l'essai et justifie l'absence de restriction."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Seule une partie des valeurs du domaine convient.",
+                      "reviewFeedback": "Ton classement accepte seulement certaines durées non négatives. Examine quelle région est commune au domaine temporel et à la condition décrivant l'essai."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "contexto": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condition est 3 + 2t ≤ 2. Soustraire trois et diviser par deux donne t ≤ −1/2. Certains rationnels conviennent, mais aucun n'est non négatif : l'essai n'admet donc aucune durée autorisée. La préparation seule dépasse déjà les deux minutes disponibles. La lettre n'a pas disparu lors du regroupement : l'absence de solutions dans le contexte provient de son domaine.",
+            "incorrect": "Distingue l'ensemble des solutions rationnelles des durées ayant un sens dans le problème. Une borne négative n'autorise pas une durée négative. N'écris pas zéro à la place de « aucune » : pour t = 0, la préparation dure déjà trois minutes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Une résolution complète combine des conditions équivalentes, l'interprétation d'une borne stricte ou inclusive et la vérification du domaine. Les unités redonnent un sens au calcul. Quand quelque chose échoue, examine le point faible ou trouve une autre méthode justifiée ; vérifier le résultat et revoir le raisonnement sont deux tâches complémentaires (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

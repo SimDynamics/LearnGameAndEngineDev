@@ -1,0 +1,863 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__orden_y_transformaciones_de_desigualdades",
+  "title": "Ordre et transformations des inégalités",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une inégalité exprime une condition d'ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as déjà travaillé avec les domaines et les équations équivalentes. Nous allons maintenant utiliser des conditions d'ordre : a < b signifie que a est inférieur à b, et a > b qu'il est supérieur. a ≤ b autorise aussi a = b ; a ≥ b autorise également cette égalité. Les symboles < et > expriment des inégalités strictes, tandis que ≤ et ≥ incluent le cas d'égalité. Comme pour les équations, chaque lettre conserve son domaine : ici, il s'agit de tous les nombres rationnels, sauf restriction explicite liée au contexte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Parmi les nombres négatifs, être plus proche de zéro peut signifier être plus grand. Par exemple, −3/4 > −5/4, car (−3/4) − (−5/4) = 1/2 est positif. En général, a < b équivaut à dire que b − a est positif. Tu peux aussi placer les nombres sur la droite graduée : le plus petit est à gauche du plus grand (Lang, 1971, p. 75)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une inéquation est une inégalité comportant une inconnue et dont nous voulons résoudre la condition. Résoudre x < 2 exige de décrire tous les nombres rationnels inférieurs à deux, et non d'en choisir un seul. Dans x ≤ 2, x = 2 est également autorisé. La borne est la même, mais l'inclure ou l'exclure modifie l'ensemble des solutions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_orden_en_el_valor_limite",
+          "prompt": "Avec r = −1/2, coche toutes les affirmations vraies.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_orden_en_el_valor_limite__verdaderas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "r < 0",
+                  "reviewFeedback": "Place la valeur donnée sur la droite graduée et compare sa position à zéro ; interprète ensuite le symbole strict."
+                },
+                {
+                  "id": "b",
+                  "label": "r ≤ −1/2",
+                  "reviewFeedback": "Remplace la lettre par la valeur donnée et vérifie si ce symbole autorise aussi l'égalité."
+                },
+                {
+                  "id": "c",
+                  "label": "r > −1/2",
+                  "reviewFeedback": "Compare la valeur donnée à la borne ; distingue le fait d'être sur cette borne et celui d'être à sa droite."
+                },
+                {
+                  "id": "d",
+                  "label": "r ≥ −1/2",
+                  "reviewFeedback": "Examine si cette comparaison admet le cas où les deux membres sont égaux."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 est inférieur à zéro. Il est également égal à −1/2 : les relations ≤ et ≥ sont donc toutes deux vérifiées par rapport à cette même valeur. La condition stricte r > −1/2 est fausse à la borne.",
+            "incorrect": "Remplace la lettre par la valeur indiquée sans la modifier. L'égalité satisfait ≤ et ≥, mais pas < ni >."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_diferencia_justifica_el_orden",
+          "prompt": "Soient a = −7/4 et b = −1/4. Calcule b − a et choisis la relation vraie entre a et b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_diferencia_justifica_el_orden__dato",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Valeur de b − a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "la_diferencia_justifica_el_orden__comparacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation dans a [symbole] b",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Pour le symbole strict « inférieur à » que tu as choisi, relie l'ordre des positions au signe de la différence demandée. Vérifie ce lien sans confondre valeur et distance."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "Pour le symbole strict « supérieur à » que tu as choisi, place les deux quantités sur la droite graduée. Vérifie comment leur ordre se reflète dans le signe de la différence."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "Ton choix affirme que les quantités sont égales. Vérifie quelle valeur leur différence devrait avoir pour justifier cette égalité."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "b − a = −1/4 − (−7/4) = 3/2, qui est positif ; donc a < b. Sur la droite graduée, −7/4 se trouve à gauche de −1/4. La grandeur du numérateur, si l'on ignore son signe, ne détermine pas l'ordre.",
+            "incorrect": "Soustraire a = −7/4 revient à ajouter 7/4. Utilise la différence b − a pour décider : une différence positive signifie que b est supérieur à a."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ajouter ou soustraire une même quantité conserve le sens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a < b, alors b − a > 0. Lorsqu'on ajoute la même quantité c, la différence entre les nouveaux membres est (b + c) − (a + c) = b − a. Elle reste positive, donc a + c < b + c. Pour revenir en arrière, il suffit de soustraire c. Les deux conditions sont donc équivalentes. Soustraire une même quantité conserve aussi le sens, même si cette quantité est négative (Lang, 1971, pp. 75–76, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce raisonnement vaut également pour ≤ : lorsque les membres sont égaux, ajouter la même quantité préserve l'égalité ; lorsque l'un est inférieur, cela préserve leur ordre. Une addition ou une soustraction n'intervertit ni < et > ni ≤ et ≥. Le signe de la quantité ajoutée ne modifie pas cette règle."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_una_cantidad_negativa",
+          "prompt": "La comparaison −2 < −1 est vraie. Ajoute −5 aux deux membres, écris les nouvelles valeurs et choisis leur relation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_una_cantidad_negativa__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Nouveau membre de gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Nouveau membre de droite",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sumar_una_cantidad_negativa__relacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation entre les nouveaux membres",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Vérifie le sens strict choisi après avoir effectué la même addition dans les deux membres. Conserve la signification de chaque signe pendant le calcul."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "Pour justifier le sens choisi, calcule les deux membres après translation et compare leurs positions. Le signe de la quantité ajoutée ne remplace pas cette vérification."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "La relation choisie affirme que les membres coïncident après l'addition. Vérifie si une même translation peut supprimer une différence qui existait entre eux."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "On obtient −7 < −6. L'addition de −5 a déplacé les deux nombres de la même quantité ; leur différence est restée égale à un. Ajouter un nombre négatif conserve le sens tout comme ajouter un nombre positif.",
+            "incorrect": "Calcule −2 + (−5) et −1 + (−5). Ne confonds pas l'addition d'un nombre négatif avec la multiplication par un nombre négatif : ce sont deux opérations différentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_para_aislar_en_una_inecuacion",
+          "prompt": "Dans x + 5 < −1, soustrais cinq aux deux membres. La forme finale est x < une borne. Écris cette borne et détermine si sa valeur est autorisée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Borne à droite de x <",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__frontera",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La borne est autorisée parce que la soustraction transforme < en ≤.",
+                  "reviewFeedback": "Reconstitue la soustraction dans les deux membres et examine quelle relation existait avant cette étape."
+                },
+                {
+                  "id": "b",
+                  "label": "La borne reste exclue parce que la condition demeure stricte.",
+                  "reviewFeedback": "Vérifie la condition initiale avec la valeur de la borne et distingue l'égalité d'une inégalité stricte."
+                },
+                {
+                  "id": "c",
+                  "label": "Seule la borne est autorisée ; toutes les autres valeurs sont exclues.",
+                  "reviewFeedback": "Teste également une valeur située d'un côté de la borne ; examine si le symbole exige l'égalité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire cinq donne x < −6. Le sens et le caractère strict sont conservés. À la borne, le membre de gauche initial serait égal à −1, et non inférieur à −1 ; la borne est donc exclue.",
+            "incorrect": "Applique aussi la soustraction au membre de droite : −1 − 5. Soustraire la même quantité aux deux membres n'ajoute pas le cas d'égalité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un facteur positif conserve l'ordre et permet de revenir en arrière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supposons a < b et un nombre rationnel donné k > 0. La différence b − a est positive ; son produit par k est également positif. En développant, k(b − a) = kb − ka, donc ka < kb. Multiplier les deux membres par un même facteur positif conserve le sens. Comme 1/k est lui aussi positif, multiplier par celui-ci permet de revenir en arrière tout en conservant toutes les solutions (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Diviser par un nombre positif revient à multiplier par son inverse positif : la même règle s'applique. Le cas d'égalité est également conservé : a ≤ b donne ka ≤ kb si k > 0. Ici, le facteur est une donnée de signe connu, et non une expression dont le signe est incertain."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_con_un_factor_positivo",
+          "prompt": "Pars de −9/2 < −3/2. Multiplie les deux membres par 2/3, écris les produits et choisis la relation qu'ils conservent.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escalar_con_un_factor_positivo__productos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Produit du membre de gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Produit du membre de droite",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "escalar_con_un_factor_positivo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation entre les produits",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Vérifie l'ordre proposé par ton symbole en calculant les produits avec leurs signes. Examine l'effet d'un facteur positif sur les positions."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "Examine si le sens choisi correspond aux produits obtenus. Distingue le signe du facteur des signes des membres initiaux."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "Ton symbole affirme que les produits sont égaux. Vérifie si le facteur appliqué peut annuler une différence non nulle sans être lui-même nul."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les produits sont −3 et −1, avec −3 < −1. Le facteur 2/3 est positif bien que les membres soient négatifs ; il conserve l'ordre. Multiplier par 3/2 retrouverait la comparaison initiale.",
+            "incorrect": "C'est le signe du facteur appliqué qui détermine la règle. Le fait que les membres soient négatifs ne rend pas 2/3 négatif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_un_coeficiente_positivo",
+          "prompt": "Dans (3/2)x ≥ −9, divise les deux membres par 3/2. Écris la borne obtenue et choisis la condition portant sur x, sans exclure l'égalité.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_un_coeficiente_positivo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Borne obtenue par division",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "dividir_un_coeficiente_positivo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x est supérieur ou égal à la borne.",
+                  "reviewFeedback": "En divisant les deux membres, identifie le signe du diviseur et vérifie la relation avec une valeur d'essai."
+                },
+                {
+                  "id": "b",
+                  "label": "x est inférieur ou égal à la borne.",
+                  "reviewFeedback": "Examine si ce sens correspond à la division effectuée ; reviens à l'inéquation initiale pour le vérifier."
+                },
+                {
+                  "id": "c",
+                  "label": "x est strictement supérieur à la borne.",
+                  "reviewFeedback": "Vérifie séparément le cas de la borne et ce qu'exige le symbole initial."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Diviser −9 par 3/2 donne −6. Comme le diviseur est positif, on obtient x ≥ −6. Pour x = −6, le membre de gauche initial vaut −9 et l'égalité est autorisée.",
+            "incorrect": "Diviser par 3/2 revient à multiplier par 2/3. Conserve ≥ : n'inverse pas le sens et n'exclus pas la borne."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un facteur négatif inverse le sens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a < b, la différence b − a est positive. Avec une donnée k < 0, le produit k(b − a) est négatif. En développant, kb − ka < 0, ce qui signifie kb < ka : le produit qui se trouvait à gauche devient supérieur à celui de droite. Donc ka > kb. Le sens s'inverse lorsqu'on multiplie par un nombre négatif ; ce n'est pas une règle fondée uniquement sur quelques essais numériques (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'inverse d'un nombre négatif est également négatif. Pour revenir en arrière, nous multiplions par 1/k et inversons de nouveau le sens. Toutes les solutions sont ainsi conservées. La division par un nombre négatif suit la même règle. L'égalité reste autorisée si elle l'était auparavant : a ≤ b devient ka ≥ kb lorsque k < 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "productos_por_un_factor_negativo",
+          "prompt": "Pars de −4/3 < 2/3. Multiplie les deux membres par −3/2. Écris les produits et choisis leur relation vraie.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "productos_por_un_factor_negativo__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Produit du membre de gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Produit du membre de droite",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "productos_por_un_factor_negativo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation entre les produits",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Vérifie le sens choisi en calculant entièrement les deux produits. Examine l'effet d'une multiplication par un facteur négatif."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "Pour justifier le sens choisi, compare les positions avant et après la multiplication. Conserve le signe du facteur dans les deux calculs."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "La relation choisie exige des produits égaux. Vérifie si multiplier des quantités différentes par ce facteur non nul peut les rendre égales."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les produits sont deux et moins un, et vérifient 2 > −1. Le facteur −3/2 est négatif : il inverse donc le sens. Son inverse −2/3 est lui aussi négatif ; en l'appliquant, on retrouve l'ordre initial.",
+            "incorrect": "Calcule les produits avec les signes appropriés. Un produit positif à gauche et négatif à droite ne peut pas conserver le symbole <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "despejar_dividiendo_por_un_negativo",
+          "prompt": "Dans −(2/3)u < 4, divise les deux membres par −2/3. Écris la borne et choisis la condition obtenue sur u.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "despejar_dividiendo_por_un_negativo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Borne obtenue par division",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "despejar_dividiendo_por_un_negativo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u est strictement inférieur à la borne.",
+                  "reviewFeedback": "Compare les positions de deux nombres avant et après leur division par un nombre négatif."
+                },
+                {
+                  "id": "b",
+                  "label": "u est strictement supérieur à la borne.",
+                  "reviewFeedback": "Vérifie ce sens en remplaçant l'inconnue par une valeur d'essai dans la condition initiale, sans te limiter à la transformation algébrique."
+                },
+                {
+                  "id": "c",
+                  "label": "u est supérieur ou égal à la borne.",
+                  "reviewFeedback": "Examine si cette affirmation conserve le caractère strict de la comparaison initiale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quatre divisé par −2/3 donne −6. Lorsqu'on divise par un nombre négatif, < devient > : on obtient u > −6. La borne reste exclue ; pour u = −6, le membre de gauche initial vaudrait quatre, et quatre n'est pas inférieur à quatre.",
+            "incorrect": "Diviser par −2/3 revient à multiplier par −3/2. Inverse le sens et conserve le caractère strict de la comparaison."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro ne permet pas une transformation réversible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le facteur zéro n'a pas d'inverse. De plus, il modifie l'information de différentes façons selon le symbole. Dans x ≤ 4, multiplier les deux membres par zéro tout en conservant ≤ donne 0 ≤ 0, vrai pour tout x : la borne initiale n'est plus imposée. Dans x < 4, la même opération en conservant < donnerait 0 < 0, faux pour tout x : on perd même des valeurs qui satisfaisaient la condition. Ce n'est pas une règle valable pour obtenir une condition équivalente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour multiplier ou diviser une inéquation selon les règles précédentes, connais le signe du nombre donné et exige qu'il soit non nul. S'il est positif, conserve le sens ; s'il est négatif, inverse-le. Ne divise pas par zéro et ne déduis pas le signe en regardant uniquement les membres. Pour examiner une étape douteuse, cherche une valeur qui teste précisément cette transformation (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_borra_un_limite_no_estricto",
+          "prompt": "Une note remplace x ≤ 4 par 0 ≤ 0 après multiplication des deux membres par zéro. Teste x = 5. Quelle comparaison montre que les solutions n'ont pas été conservées ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_borra_un_limite_no_estricto__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux conditions sont fausses lorsque x = 5.",
+                  "reviewFeedback": "Remplace l'inconnue par la valeur indiquée dans chaque condition séparément ; n'attribue pas le même résultat aux deux sans calculer."
+                },
+                {
+                  "id": "b",
+                  "label": "La condition initiale est fausse, mais 0 ≤ 0 est vrai ; l'étape a ajouté une valeur qui ne satisfaisait pas la condition initiale.",
+                  "reviewFeedback": "Vérifie les deux comparaisons avec la valeur indiquée et relie leurs résultats à l'ensemble des solutions."
+                },
+                {
+                  "id": "c",
+                  "label": "Les deux conditions sont vraies parce que x peut être n'importe quel nombre rationnel.",
+                  "reviewFeedback": "Distingue le domaine autorisé de la condition que doit satisfaire une valeur ; appartenir au domaine ne prouve pas l'inégalité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinq ne satisfait pas x ≤ 4. Pourtant, 0 ≤ 0 est vrai même si la lettre représente cinq. L'étape a effacé la borne et ajouté des valeurs interdites par la condition initiale.",
+            "incorrect": "Évalue séparément la condition initiale et celle obtenue. Le symbole ≤ autorise l'égalité entre les deux zéros, mais cela ne rend pas cinq inférieur ou égal à quatre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_pierde_soluciones_estrictas",
+          "prompt": "Une autre note remplace x < 4 par 0 < 0 après multiplication des deux membres par zéro. Teste maintenant x = 0. Que se passe-t-il ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_pierde_soluciones_estrictas__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux conditions sont vraies parce que tous les nombres deviennent zéro lorsqu'on les multiplie par zéro.",
+                  "reviewFeedback": "Distingue l'égalité de deux produits de la véracité d'une comparaison stricte entre eux."
+                },
+                {
+                  "id": "b",
+                  "label": "Les deux conditions sont fausses parce que x vaut zéro.",
+                  "reviewFeedback": "Évalue la condition avec la valeur donnée à l'inconnue ; cette valeur ne détermine pas à elle seule la véracité d'une inégalité."
+                },
+                {
+                  "id": "c",
+                  "label": "La condition initiale est vraie et 0 < 0 est faux ; une solution de la condition initiale a été perdue.",
+                  "reviewFeedback": "Évalue chaque comparaison indépendamment et détermine ce que signifie qu'une valeur cesse de la satisfaire."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zéro est inférieur à quatre : x = 0 satisfait donc la condition initiale. Mais zéro n'est pas inférieur à lui-même. Conserver < en multipliant par zéro n'a même pas préservé ce cas vrai.",
+            "incorrect": "Ne confonds pas x = 0 avec les membres réduits. Compare zéro à quatre dans la condition initiale et zéro à zéro dans la seconde."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir l'étape, conserver la borne et tenir compte du contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux maintenant justifier les étapes d'une inéquation sans appliquer de mémoire une règle consistant à « passer de l'autre côté ». Détermine quelle addition, soustraction, multiplication ou division tu effectues dans les deux membres ; s'il y a un facteur, vérifie son signe. Conserve la distinction entre comparaison stricte et non stricte. Décris ensuite toutes les solutions autorisées par le domaine et vérifie la borne dans la condition initiale."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_condiciones_equivalentes",
+          "prompt": "Coche toutes les paires qui possèdent exactement les mêmes solutions rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_condiciones_equivalentes__pares",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 3 < 2 et x < 5.",
+                  "reviewFeedback": "Identifie l'opération qui transforme une condition en l'autre et vérifie qu'elle est réversible."
+                },
+                {
+                  "id": "b",
+                  "label": "−4x ≤ 8 et x ≥ −2.",
+                  "reviewFeedback": "Examine le signe du facteur et vérifie avec une valeur d'essai que les deux conditions concordent."
+                },
+                {
+                  "id": "c",
+                  "label": "−4x ≤ 8 et x ≤ −2.",
+                  "reviewFeedback": "Reconstitue la division et compare le sens proposé à la condition initiale."
+                },
+                {
+                  "id": "d",
+                  "label": "x + 4 ≥ 4 et x > 0.",
+                  "reviewFeedback": "Vérifie le cas de la borne dans chacune des deux conditions."
+                },
+                {
+                  "id": "e",
+                  "label": "3x > 6 et x > 2.",
+                  "reviewFeedback": "Effectue l'opération dans les deux membres et vérifie les conditions nécessaires à sa réversibilité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans a, on ajoute trois aux deux membres. Dans b, on divise par −4 et on inverse ≤ en ≥. Dans e, on divise par trois, qui est positif. Dans c, le sens est conservé à tort lors de la division par un nombre négatif ; d exclut la borne x = 0, qui satisfaisait pourtant la condition initiale.",
+            "incorrect": "Vérifie séparément l'opération et la borne. Diviser par −4 exige d'inverser le sens ; soustraire quatre conserve le symbole ≥ et le cas d'égalité."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "carga_con_limite_incluido_y_dominio",
+          "prompt": "Un colis pèse déjà 3/4 kg. On peut ajouter une charge m, rationnelle et non négative. Le poids total ne doit pas dépasser 5/4 kg, cette limite étant autorisée. La condition est 3/4 + m ≤ 5/4. Écris la charge supplémentaire maximale, en kilogrammes, et coche toutes les propositions autorisées parmi celles indiquées.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "carga_con_limite_incluido_y_dominio__maximo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "carga",
+                  "type": "numeric",
+                  "label": "Charge supplémentaire maximale, en kilogrammes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "carga": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "carga_con_limite_incluido_y_dominio__propuestas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "m = −1/4 kg.",
+                  "reviewFeedback": "Interprète le signe de cette charge ajoutée par rapport au domaine et calcule le poids total correspondant."
+                },
+                {
+                  "id": "b",
+                  "label": "m = 0 kg.",
+                  "reviewFeedback": "Vérifie à la fois le domaine de la charge sélectionnée et la comparaison portant sur le poids total."
+                },
+                {
+                  "id": "c",
+                  "label": "m = 1/4 kg.",
+                  "reviewFeedback": "Ajoute cette charge proposée au poids initial avant de la comparer à la limite autorisée."
+                },
+                {
+                  "id": "d",
+                  "label": "m = 1/2 kg.",
+                  "reviewFeedback": "Calcule le poids total et examine séparément si le symbole inclut la borne."
+                },
+                {
+                  "id": "e",
+                  "label": "m = 3/4 kg.",
+                  "reviewFeedback": "Calcule le poids obtenu avec cette charge ; ne confonds pas la charge ajoutée et le poids total autorisé."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire 3/4 aux deux membres donne m ≤ 1/2. Le domaine impose aussi m ≥ 0. Parmi les propositions, zéro, un quart et un demi-kilogramme conviennent ; un demi est inclus car le poids total atteint exactement 5/4 kg. −1/4 satisfait l'inéquation algébrique, mais ne représente pas l'ajout d'une charge non négative. D'autres nombres rationnels entre zéro et un demi conviennent aussi : les propositions n'épuisent pas l'ensemble des solutions.",
+            "incorrect": "La limite s'applique au poids total, et pas seulement à la charge ajoutée. Soustrais le poids initial, conserve l'autorisation de l'égalité et vérifie séparément la condition m ≥ 0."
+          }
+        }
+      ]
+    }
+  ]
+}

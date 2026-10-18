@@ -1,0 +1,863 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__orden_y_transformaciones_de_desigualdades",
+  "title": "Order and Transformations of Inequalities",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Inequality Expresses an Order Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "You have already worked with domains and equivalent equations. Now we will use order conditions: a < b means that a is less than b, and a > b means that a is greater. a ≤ b also allows a = b; a ≥ b also allows equality. The symbols < and > express strict inequalities, whereas ≤ and ≥ include equality. As with equations, each letter retains its domain: here the domain is all rational numbers unless the context explicitly restricts it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Among negative numbers, being closer to zero can mean being greater. For example, −3/4 > −5/4 because (−3/4) − (−5/4) = 1/2 is positive. In general, a < b is equivalent to b − a being positive. You can also locate numbers on the number line: the smaller number lies to the left of the larger one (Lang, 1971, p. 75)."
+        },
+        {
+          "type": "paragraph",
+          "text": "An inequality with an unknown is a condition whose solutions we want to find. Solving x < 2 requires describing all rational numbers less than two, not merely choosing one of them. In x ≤ 2, x = 2 is also allowed. The boundary is the same, but including or excluding it changes the solution set."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_orden_en_el_valor_limite",
+          "prompt": "With r = −1/2, select all the true statements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_orden_en_el_valor_limite__verdaderas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "r < 0",
+                  "reviewFeedback": "Place the given value on the number line and compare its position with zero; then interpret the strict symbol."
+                },
+                {
+                  "id": "b",
+                  "label": "r ≤ −1/2",
+                  "reviewFeedback": "Substitute the given value and examine whether this symbol also allows equality."
+                },
+                {
+                  "id": "c",
+                  "label": "r > −1/2",
+                  "reviewFeedback": "Compare the given value with the boundary; distinguish being at the boundary from being to its right."
+                },
+                {
+                  "id": "d",
+                  "label": "r ≥ −1/2",
+                  "reviewFeedback": "Examine whether this comparison allows the two sides to be equal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 is less than zero. It is also equal to −1/2, so both ≤ and ≥ hold relative to that same value. The strict condition r > −1/2 fails at the boundary.",
+            "incorrect": "Substitute the specified value without changing it. Equality satisfies ≤ and ≥, but not < or >."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_diferencia_justifica_el_orden",
+          "prompt": "Let a = −7/4 and b = −1/4. Calculate b − a and choose the true relation between a and b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_diferencia_justifica_el_orden__dato",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Value of b − a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "la_diferencia_justifica_el_orden__comparacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation in a [symbol] b",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "For the strict less-than symbol you selected, relate the order of the positions to the sign of the requested difference. Check that relationship without confusing value and distance."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "For the strict greater-than symbol you selected, place both quantities on the number line. Check how their order is reflected in the sign of the difference."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "Your choice states that the quantities are equal. Check what their difference would have to be to support that equality."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "b − a = −1/4 − (−7/4) = 3/2, which is positive; therefore a < b. On the number line, −7/4 lies to the left of −1/4. The magnitude of the numerator without its sign does not determine the order.",
+            "incorrect": "Subtracting a = −7/4 means adding 7/4. Use the difference b − a to decide: a positive difference means that b is greater than a."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Adding or Subtracting the Same Amount Preserves the Direction"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a < b, then b − a > 0. When we add the same amount c, the difference between the new sides is (b + c) − (a + c) = b − a. It remains positive, so a + c < b + c. To reverse the step, simply subtract c. Thus both conditions are equivalent. Subtracting the same amount also preserves the direction, even if that amount is negative (Lang, 1971, pp. 75–76, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The reasoning also works for ≤: when the sides are equal, adding the same amount preserves equality; when one is smaller, it preserves that order. Adding or subtracting does not swap < and > or ≤ and ≥. The sign of the added amount does not change this rule."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_una_cantidad_negativa",
+          "prompt": "The comparison −2 < −1 is true. Add −5 to both sides, write the new values, and choose the relation between them.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_una_cantidad_negativa__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "New left-hand side",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "New right-hand side",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sumar_una_cantidad_negativa__relacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation between the new sides",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Check the selected strict direction after performing the same addition on both sides. Preserve the meaning of each sign as you calculate."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "To justify the direction you selected, calculate both shifted sides and compare their positions. The sign of the amount added does not replace that check."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "The selected relation claims the sides become equal after addition. Check whether the same shift can remove a difference that previously existed between them."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The result is −7 < −6. Adding −5 shifted both numbers equally; their difference remained one. Adding a negative number preserves the direction just as adding a positive one does.",
+            "incorrect": "Calculate −2 + (−5) and −1 + (−5). Do not confuse adding a negative number with multiplying by a negative number: these are different operations."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_para_aislar_en_una_inecuacion",
+          "prompt": "In x + 5 < −1, subtract five from both sides. The final form is x < a boundary value. Enter that value and decide whether the boundary is allowed.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Boundary value to the right of x <",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__frontera",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The boundary is allowed because subtraction turns < into ≤.",
+                  "reviewFeedback": "Reconstruct the subtraction on both sides and examine what relation held before the step."
+                },
+                {
+                  "id": "b",
+                  "label": "The boundary remains excluded because the condition is still strict.",
+                  "reviewFeedback": "Check the original condition at the boundary and distinguish equality from a strict inequality."
+                },
+                {
+                  "id": "c",
+                  "label": "Only the boundary is allowed; all other values are excluded.",
+                  "reviewFeedback": "Also test a value on one side of the boundary; check whether the symbol requires equality."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting five gives x < −6. The direction and strictness are preserved. At the boundary, the original left-hand side would equal −1 rather than be less than −1, so it is excluded.",
+            "incorrect": "Apply the subtraction to the right-hand side as well: −1 − 5. Subtracting the same amount from both sides does not introduce equality."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Positive Factor Preserves the Order and Allows You to Reverse the Step"
+        },
+        {
+          "type": "paragraph",
+          "text": "Suppose a < b and a given rational number k > 0. The difference b − a is positive; multiplying it by k also gives a positive result. By distributing, k(b − a) = kb − ka, so ka < kb. Multiplying by the same positive factor preserves the direction. Since 1/k is also positive, multiplying by it reverses the operation and preserves every solution (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividing by a positive number means multiplying by its positive reciprocal, so the same rule applies. Equality is preserved as well: a ≤ b leads to ka ≤ kb when k > 0. Here the factor is a given number with a known sign, not an expression whose sign is uncertain."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_con_un_factor_positivo",
+          "prompt": "Start with −9/2 < −3/2. Multiply both sides by 2/3, write the products, and choose the relation they preserve.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escalar_con_un_factor_positivo__productos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Product on the left-hand side",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Product on the right-hand side",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "escalar_con_un_factor_positivo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation between the products",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Check the order expressed by your symbol by calculating both signed products. Review how a positive factor affects the positions."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "Examine whether the direction you chose agrees with the products obtained. Distinguish the sign of the factor from the signs of the original sides."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "Your symbol claims the products are equal. Check whether the applied factor can eliminate a nonzero difference without being zero itself."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The products are −3 and −1, with −3 < −1. The factor 2/3 is positive even though both sides are negative; it preserves the order. Multiplying by 3/2 would recover the original comparison.",
+            "incorrect": "The sign of the factor you apply determines the rule. Negative original sides do not make 2/3 a negative factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_un_coeficiente_positivo",
+          "prompt": "In (3/2)x ≥ −9, divide both sides by 3/2. Enter the resulting boundary and choose the condition on x, without omitting equality.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_un_coeficiente_positivo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Boundary obtained by division",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "dividir_un_coeficiente_positivo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x is greater than or equal to the boundary.",
+                  "reviewFeedback": "When dividing both sides, identify the sign of the divisor and check the relation with a test value."
+                },
+                {
+                  "id": "b",
+                  "label": "x is less than or equal to the boundary.",
+                  "reviewFeedback": "Examine whether this direction agrees with the division performed; return to the original inequality to check."
+                },
+                {
+                  "id": "c",
+                  "label": "x is strictly greater than the boundary.",
+                  "reviewFeedback": "Check the boundary case separately and consider what the original symbol requires."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividing −9 by 3/2 gives −6. Since the divisor is positive, the result is x ≥ −6. At x = −6, the original left-hand side equals −9, and equality is allowed.",
+            "incorrect": "Dividing by 3/2 is equivalent to multiplying by 2/3. Keep ≥: do not reverse the direction or exclude the boundary."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Negative Factor Reverses the Direction"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a < b, the difference b − a is positive. With a given k < 0, the product k(b − a) is negative. Distributing gives kb − ka < 0, which means kb < ka: the product that was on the left is now greater than the one on the right. Therefore ka > kb. The direction reverses when multiplying by a negative number; this is not merely a rule inferred from testing a few numbers (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The reciprocal of a negative number is also negative. To reverse the step, we multiply by 1/k and reverse the direction again. This preserves all solutions. Dividing by a negative number follows the same rule. Equality remains allowed if it was allowed originally: a ≤ b becomes ka ≥ kb when k < 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "productos_por_un_factor_negativo",
+          "prompt": "Start with −4/3 < 2/3. Multiply both sides by −3/2. Enter the products and choose the true relation between them.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "productos_por_un_factor_negativo__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Product on the left-hand side",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Product on the right-hand side",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "productos_por_un_factor_negativo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relation between the products",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<",
+                      "reviewFeedback": "Check the selected direction by calculating both products in full. Examine the effect of multiplying by a negative factor."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">",
+                      "reviewFeedback": "To justify your chosen direction, compare the positions before and after multiplication. Keep the factor's sign in both calculations."
+                    },
+                    {
+                      "id": "igual",
+                      "label": "=",
+                      "reviewFeedback": "The selected relation requires equal products. Check whether multiplying different quantities by this nonzero factor could make them equal."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The products are two and negative one, and they satisfy 2 > −1. The factor −3/2 is negative, so it reverses the direction. Its reciprocal −2/3 is also negative; applying it recovers the original order.",
+            "incorrect": "Calculate the products with the appropriate signs. A positive product on the left and a negative product on the right cannot retain the symbol <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "despejar_dividiendo_por_un_negativo",
+          "prompt": "In −(2/3)u < 4, divide both sides by −2/3. Enter the boundary and choose the resulting condition on u.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "despejar_dividiendo_por_un_negativo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Boundary obtained by division",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "despejar_dividiendo_por_un_negativo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u is strictly less than the boundary.",
+                  "reviewFeedback": "Compare the positions of two numbers before and after dividing them by a negative number."
+                },
+                {
+                  "id": "b",
+                  "label": "u is strictly greater than the boundary.",
+                  "reviewFeedback": "Check this direction by substituting a test value into the original condition rather than relying only on rearranging it."
+                },
+                {
+                  "id": "c",
+                  "label": "u is greater than or equal to the boundary.",
+                  "reviewFeedback": "Examine whether this statement preserves the strict character of the original comparison."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Four divided by −2/3 equals −6. When dividing by a negative number, < becomes >, so u > −6. The boundary remains excluded; at u = −6, the original left-hand side would equal four, and four is not less than four.",
+            "incorrect": "Dividing by −2/3 is equivalent to multiplying by −3/2. Reverse the direction but keep the comparison strict."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero Does Not Allow a Reversible Transformation"
+        },
+        {
+          "type": "paragraph",
+          "text": "A zero factor has no reciprocal. It also changes the information in different ways depending on the symbol. In x ≤ 4, multiplying both sides by zero and keeping ≤ gives 0 ≤ 0, which is true for every x: the original boundary is no longer imposed. In x < 4, the same operation while keeping < would give 0 < 0, which is false for every x: even values that did satisfy the condition are lost. This is not a valid rule for obtaining an equivalent condition."
+        },
+        {
+          "type": "paragraph",
+          "text": "To multiply or divide an inequality using the previous rules, you must know the sign of the number and require that it be nonzero. If positive, preserve the direction; if negative, reverse it. Do not divide by zero or decide the sign merely by looking at the two sides. When reviewing a questionable step, look for a value that specifically tests that transformation (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_borra_un_limite_no_estricto",
+          "prompt": "A note replaces x ≤ 4 with 0 ≤ 0 after multiplying both sides by zero. Test x = 5. Which comparison shows that the solutions were not preserved?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_borra_un_limite_no_estricto__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Both conditions are false when x = 5.",
+                  "reviewFeedback": "Substitute the specified value into each condition separately; do not assume both have the same truth value without calculating."
+                },
+                {
+                  "id": "b",
+                  "label": "The original condition is false, but 0 ≤ 0 is true; the step added a value that did not satisfy the original condition.",
+                  "reviewFeedback": "Check both comparisons using the specified value and relate their truth values to the solution set."
+                },
+                {
+                  "id": "c",
+                  "label": "Both conditions are true because x can be any rational number.",
+                  "reviewFeedback": "Distinguish the permitted domain from the condition a value must satisfy; belonging to the domain does not establish the inequality."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Five does not satisfy x ≤ 4. However, 0 ≤ 0 is true even when the letter represents five. The step erased the boundary and added values forbidden by the original condition.",
+            "incorrect": "Evaluate the original condition and the resulting condition separately. The symbol ≤ allows equality between the zeros, but that does not make five less than or equal to four."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_pierde_soluciones_estrictas",
+          "prompt": "Another note replaces x < 4 with 0 < 0 after multiplying both sides by zero. Now test x = 0. What happens?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_pierde_soluciones_estrictas__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Both conditions are true because multiplying any numbers by zero makes them zero.",
+                  "reviewFeedback": "Distinguish the equality of two products from the truth of a strict inequality between them."
+                },
+                {
+                  "id": "b",
+                  "label": "Both conditions are false because x is zero.",
+                  "reviewFeedback": "Evaluate the condition with the specified unknown value; its value alone does not determine whether an inequality is true."
+                },
+                {
+                  "id": "c",
+                  "label": "The original is true and 0 < 0 is false; a solution of the original condition was lost.",
+                  "reviewFeedback": "Evaluate each comparison independently and decide what it means for a value to stop satisfying it."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zero is less than four, so x = 0 satisfies the original condition. But zero is not less than itself. Keeping < when multiplying by zero did not preserve even this valid case.",
+            "incorrect": "Do not confuse x = 0 with the reduced sides. Compare zero with four in the original condition and zero with zero in the second."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Step, Preserve the Boundary, and Consider the Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can now justify steps in an inequality without mechanically applying a rule about “moving terms to the other side.” Decide what addition, subtraction, multiplication, or division you perform on both sides; if there is a factor, check its sign. Preserve the distinction between strict and non-strict comparisons. Then describe all solutions allowed by the domain and check the boundary in the original condition."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_condiciones_equivalentes",
+          "prompt": "Select all pairs that have exactly the same rational solutions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_condiciones_equivalentes__pares",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 3 < 2 and x < 5.",
+                  "reviewFeedback": "Identify which operation transforms one condition into the other and verify that it can be reversed."
+                },
+                {
+                  "id": "b",
+                  "label": "−4x ≤ 8 and x ≥ −2.",
+                  "reviewFeedback": "Examine the sign of the factor and use a test value to verify that both conditions agree."
+                },
+                {
+                  "id": "c",
+                  "label": "−4x ≤ 8 and x ≤ −2.",
+                  "reviewFeedback": "Reconstruct the division and compare the proposed direction with the original condition."
+                },
+                {
+                  "id": "d",
+                  "label": "x + 4 ≥ 4 and x > 0.",
+                  "reviewFeedback": "Check the boundary case in both conditions."
+                },
+                {
+                  "id": "e",
+                  "label": "3x > 6 and x > 2.",
+                  "reviewFeedback": "Perform the operation on both sides and verify what conditions make it reversible."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In a, add three to both sides. In b, divide by −4 and reverse ≤ to ≥. In e, divide by positive three. In c, the direction is incorrectly preserved after division by a negative number; d excludes the boundary x = 0, which did satisfy the original condition.",
+            "incorrect": "Check the operation and the boundary separately. Dividing by −4 requires reversing the direction; subtracting four preserves the symbol ≥ and allows equality."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "carga_con_limite_incluido_y_dominio",
+          "prompt": "A package already weighs 3/4 kg. An additional load m is allowed, where m is rational and nonnegative. The total weight must not exceed 5/4 kg, and the limit itself is allowed. The condition is 3/4 + m ≤ 5/4. Enter the maximum additional load in kilograms and select all the permitted proposals from the options.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "carga_con_limite_incluido_y_dominio__maximo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "carga",
+                  "type": "numeric",
+                  "label": "Maximum added load, in kilograms",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "carga": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "carga_con_limite_incluido_y_dominio__propuestas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "m = −1/4 kg.",
+                  "reviewFeedback": "Interpret the sign of this added load in the domain and calculate the resulting total weight."
+                },
+                {
+                  "id": "b",
+                  "label": "m = 0 kg.",
+                  "reviewFeedback": "Check both the domain of the chosen load and the comparison involving the total weight."
+                },
+                {
+                  "id": "c",
+                  "label": "m = 1/4 kg.",
+                  "reviewFeedback": "Add this proposal to the initial weight before comparing it with the permitted limit."
+                },
+                {
+                  "id": "d",
+                  "label": "m = 1/2 kg.",
+                  "reviewFeedback": "Evaluate the total weight and separately examine whether the symbol includes the boundary."
+                },
+                {
+                  "id": "e",
+                  "label": "m = 3/4 kg.",
+                  "reviewFeedback": "Calculate the weight produced by this load; do not confuse the added load with the permitted total weight."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting 3/4 from both sides gives m ≤ 1/2. The domain also imposes m ≥ 0. Among the proposals, zero, one quarter, and one half of a kilogram satisfy both conditions; one half is included because it makes the total weight exactly 5/4 kg. −1/4 satisfies the algebraic inequality but cannot represent adding a nonnegative load. Other rational values between zero and one half also work: the proposals do not exhaust the solution set.",
+            "incorrect": "The limit applies to the total weight, not just the added load. Subtract the previous weight, preserve the allowance for equality, and check the separate condition m ≥ 0."
+          }
+        }
+      ]
+    }
+  ]
+}

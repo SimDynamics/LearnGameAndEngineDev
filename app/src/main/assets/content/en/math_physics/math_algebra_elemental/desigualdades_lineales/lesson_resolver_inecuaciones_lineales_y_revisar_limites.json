@@ -1,0 +1,1410 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__resolver_inecuaciones_lineales_y_revisar_limites",
+  "title": "Solving Linear Inequalities and Checking Boundaries",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solving Means Describing Every Value That Satisfies the Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "We already know the rules of order and reversible operations. Now we will combine them to solve linear inequalities: the unknown is multiplied by constants and added to other terms, with no powers higher than one. We will work over the rational numbers unless the context explicitly restricts them; denominators will be nonzero constants."
+        },
+        {
+          "type": "paragraph",
+          "text": "In 5x − 4 ≤ 11, adding four to both sides gives 5x ≤ 15. Dividing by five, which is positive, preserves the direction and gives x ≤ 3. We have not obtained just the number three: the solutions are all rational numbers less than or equal to three. The equivalent steps justify this complete description (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The boundary is three. Substituting it gives 11 ≤ 11, so it is included. At x = 2 the left side equals six and satisfies the condition; at x = 4 it equals sixteen and fails. These checks test particular values. The reversible sequence of steps, not a finite list of tests, justifies which values make up the entire solution set."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_operaciones_y_frontera_estricta",
+          "prompt": "Solve (3/2)u + 5/4 < 2 over the rational numbers. Enter the boundary and select the complete description of the solutions. Also calculate the original left-hand side when u equals exactly that boundary.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_operaciones_y_frontera_estricta__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary for u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Description of the solutions for u",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your direction proposes values strictly below the boundary for u. Test a value on that side in the original inequality and keep track of the sign of its coefficient."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your direction proposes values strictly above the boundary for u. Check that direction in the original condition without confusing the signs of the given numbers with the effect of solving."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes the lower side and the boundary for u. Examine separately the direction obtained while solving and the equality case in the original condition."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes the upper side and the boundary for u. Check both parts of that statement against the original inequality and its symbol."
+                    }
+                  ]
+                },
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Original left-hand side at the boundary",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting 5/4 gives (3/2)u < 3/4. Dividing by positive 3/2 yields u < 1/2. At the boundary, (3/2)(1/2) + 5/4 = 2. The comparison 2 < 2 is false: the boundary is excluded. Exactly the rational numbers less than 1/2 satisfy the condition.",
+            "incorrect": "First remove the constant, or choose another reversible path that applies to the whole side. Check the sign of the divisor and preserve the strict nature of the original comparison; equality of both sides does not satisfy <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_ruta_con_coeficiente_positivo",
+          "prompt": "Solve r/4 − 2 ≥ −5/2 and x + 5/3 ≤ 2/3. Choose your steps. For each unknown, enter the boundary and a complete description of its rational solutions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_ruta_con_coeficiente_positivo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_r",
+                  "type": "numeric",
+                  "label": "Boundary for r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_r",
+                  "type": "dropdown",
+                  "label": "Solutions of the inequality involving r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your strict direction toward smaller values of r must be checked against the starting condition. Review the operations applied to both sides."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your strict direction toward greater values of r needs to be tested against the starting condition. Also check how it treats the boundary."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for r includes lower values and equality at the boundary. Verify both the direction and the equality case using the original comparison."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for r includes greater values and equality at the boundary. Compare both properties with the operations and symbol in the starting inequality."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Boundary for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Solutions of the inequality involving x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice for x is strict toward smaller values. Repeat the subtraction on both sides of its condition and inspect the resulting relation."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice for x is strict toward greater values. Use a value on that side to check whether the starting condition allows it."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for x includes the lower side and the boundary. Examine the direction preserved during subtraction and what happens when the boundary is substituted."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for x includes the upper side and the boundary. Review the proposed direction and the equality case separately in the original condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_r": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "sentido_r": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  },
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Adding two in the first inequality gives r/4 ≥ −1/2; multiplying by four yields r ≥ −2. In the second, subtracting 5/3 gives x ≤ −1. Both factors are positive and both symbols include equality. Substituting the boundary values produces true equalities with ≥ or ≤.",
+            "incorrect": "A negative boundary does not require reversing the direction. What matters is the sign of the factor you multiply or divide by. In the second inequality the coefficient of x is one, and subtraction does not change ≤."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Sign of the Coefficient Determines Whether to Reverse the Direction"
+        },
+        {
+          "type": "paragraph",
+          "text": "For −(4/3)x + 1/2 ≥ 5/6, subtracting 1/2 gives −(4/3)x ≥ 1/3. The divisor −4/3 is negative: we divide and reverse ≥ to ≤. The result is x ≤ −1/4. Equality remains allowed. The sign that determines whether to reverse the direction is the divisor's sign, even if the resulting boundary is negative (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_por_un_coeficiente_negativo",
+          "prompt": "Solve −(5/2)t − 3/4 ≤ 7/4. First add 3/4 to both sides. Enter the value on the right of the product, the final boundary, and the description of the solutions for t.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_por_un_coeficiente_negativo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Right-hand side after adding 3/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions for t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice places t strictly below the boundary. Review the effect of the negative divisor when solving and check that direction in the original inequality."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice places t strictly above the boundary. Verify the direction obtained by division and check whether the original symbol is strict."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes values of t below the boundary and the boundary itself. Examine the sign of the divisor and evaluate what happens at equality."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes values of t above the boundary and the boundary itself. Check the reversal of order during division and how equality is handled in the original condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Adding gives −(5/2)t ≤ 5/2. Dividing by −5/2 reverses the direction: t ≥ −1. At the boundary, the original left-hand side is 5/2 − 3/4 = 7/4, and equality is allowed. The solution set contains every rational number greater than or equal to −1.",
+            "incorrect": "Calculate 7/4 + 3/4 and then divide by the full coefficient −5/2. Preserve the equality case when reversing the direction: ≤ becomes ≥."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "When you suspect an error in a sequence of steps, review the weakest-looking step and test a value that distinguishes the two conditions. This can reveal an error; you must then repair the general justification, not merely repeat the calculations (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_division_que_no_invierte",
+          "prompt": "A note changes −3r + 2 < 8 to −3r < 6 and then to r < −2. Identify the first error. Select the correct direction relative to the boundary −2 and calculate the original left-hand side at r = −3, a value that the note would accept.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_division_que_no_invierte__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Subtracting two at the beginning should have reversed the symbol.",
+                  "reviewFeedback": "Reconstruct this subtraction on both sides and compare its effect with multiplication by a factor."
+                },
+                {
+                  "id": "b",
+                  "label": "The symbol was not reversed when dividing by −3.",
+                  "reviewFeedback": "Examine the sign of the divisor in the step you identified and verify the relation with a substitution."
+                },
+                {
+                  "id": "c",
+                  "label": "There is no error because the boundary is negative.",
+                  "reviewFeedback": "The sign of the boundary and that of the divisor play different roles; identify which one affects the order."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "una_division_que_no_invierte__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Correct solutions relative to the specified boundary",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice preserves a strict direction toward smaller values. Check which values on that side the original condition would allow, and compare this with the note's step."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice proposes a strict direction toward greater values. Review the sign of the divisor used in the note and check the direction by substitution."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes the boundary on the smaller side. Examine both the direction produced by division by the coefficient and the original comparison's strict nature."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes the boundary on the greater side. Check the direction using the coefficient and verify what happens exactly at the boundary."
+                    }
+                  ]
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Original left-hand side at r = −3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The subtraction is correct. Division by −3 requires r > −2. At r = −3, the original left-hand side equals eleven and 11 < 8 is false, although −3 < −2 was true. This counterexample disproves the note; the rule for division by a negative number justifies the correction for all rationals.",
+            "incorrect": "Distinguish subtracting an amount from dividing by it. Addition and subtraction preserve the direction; division by a negative number reverses it. Check the proposed value in the original inequality."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combining Terms on Both Sides"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 2x + 5 > 5x − 1, subtracting 5x from both sides and then subtracting five gives −3x > −6. Dividing by −3 gives x < 2. Another approach subtracts 2x from both sides and adds one: 6 > 3x. Dividing by three yields 2 > x, which also means x < 2. Both valid approaches describe the same solution set."
+        },
+        {
+          "type": "paragraph",
+          "text": "For each proposed value, subtracting the same term containing the unknown removes an equal amount from both sides and preserves order. Combining terms on one side uses the identities already justified. We now apply these operations to order conditions, keeping their direction unless we multiply or divide by a negative number (Lang, 1971, pp. 75–77, 81)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_y_resolver_con_dos_miembros",
+          "prompt": "Solve 7x − 3 ≥ 2x + 4 by subtracting 2x from both sides and then adding three. Enter the boundary and describe the rational solutions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_y_resolver_con_dos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions for x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your description includes only the lower side for x. Combine the terms containing the unknown using the specified operations and test that direction in the original inequality."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your description includes only the upper side for x. Review the coefficient remaining after combining terms and check whether the original symbol excludes the boundary."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your description includes the lower side and the boundary for x. Examine which direction division preserves and check the equality case at the boundary."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your description includes the upper side and the boundary for x. Verify that relation using reversible steps and a check in the original condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7/5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The requested steps give 5x ≥ 7. Dividing by five preserves ≥ and yields x ≥ 7/5. At the boundary, both original sides equal 34/5, so it is included.",
+            "incorrect": "Subtract the entire term 2x from the left-hand side as well, and add three to the right-hand side as well. The remaining coefficient is positive five."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "rutas_equivalentes_para_la_misma_inecuacion",
+          "prompt": "Select all valid sequences of steps for −4u + 3 ≤ u − 2. You do not have to begin by collecting u on a particular side.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "rutas_equivalentes_para_la_misma_inecuacion__revision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Add 4u: 3 ≤ 5u − 2. Add two and divide by five: 1 ≤ u.",
+                  "reviewFeedback": "Reproduce each operation in this sequence on both sides, including the constant terms."
+                },
+                {
+                  "id": "b",
+                  "label": "Subtract u: −5u + 3 ≤ −2. Subtract three and divide by −5: u ≥ 1.",
+                  "reviewFeedback": "Check each intermediate equality and what happens to the direction when dividing by the given factor."
+                },
+                {
+                  "id": "c",
+                  "label": "Subtract u and subtract three: −5u ≤ −5. Divide by −5: u ≤ 1.",
+                  "reviewFeedback": "Examine the sign of the divisor in the last step and test the proposal in the original inequality."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first two sequences are valid and both describe u ≥ 1. The first divides by a positive number; the second divides by a negative number and reverses the direction. The third omits that reversal. Writing 1 ≤ u or u ≥ 1 expresses the same order.",
+            "incorrect": "Check the divisor's sign in each path and read which number remains on each side. Collecting the unknown on a different side is not an error."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_fraccionarios_en_ambos_miembros",
+          "prompt": "Solve −(1/2)r + 3/4 > (1/4)r − 3/2 using your own approach. Enter the boundary and describe the solution set by indicating its direction relative to that boundary.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_fraccionarios_en_ambos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary for r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions for r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your description places r strictly below the boundary. Review the sign of the coefficient when combining terms and check the direction in the original condition."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your description places r strictly above the boundary. Check the proposed direction by substituting a value while retaining all the original terms."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your description includes lower values of r and the boundary. Verify both the direction of the rearrangement and the requirement expressed by the initial symbol."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your description includes higher values of r and the boundary. Compare that direction and the equality case with the starting condition without changing its signs."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting (1/4)r and 3/4 gives −(3/4)r > −9/4. Dividing by −3/4 reverses > and gives r < 3. At r = 3, the original sides both equal −3/4; the strict comparison excludes that value. Other reversible approaches produce the same description.",
+            "incorrect": "Combine the coefficients −1/2 and −1/4 with their signs. Subtraction does not reverse the direction; the later division by the negative coefficient does."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distributing and Clearing Constant Denominators"
+        },
+        {
+          "type": "paragraph",
+          "text": "The identities for expressions are still available. In 4 − 2(x − 1) ≤ x + 9, distributing gives 6 − 2x ≤ x + 9. Subtracting x and then six gives −3x ≤ 3; dividing by −3 yields x ≥ −1. Distribution replaced one expression with another of equal value; division by a negative number reversed the direction. These are different operations."
+        },
+        {
+          "type": "paragraph",
+          "text": "A constant denominator can be cleared by multiplying both complete sides by a nonzero common multiple of the denominators. If you choose a positive one, the direction is preserved; if you choose a negative one, it reverses. Respect the scope of each numerator and multiply terms without fractions as well. The order rules depend on the sign of the known factor (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "grupos_con_denominadores_constantes",
+          "prompt": "Solve (2t − 1)/3 + 1/2 > (t + 2)/2. First multiply both sides by six; then distribute, combine terms, and solve. Enter the boundary and the complete solution set by its direction relative to that boundary.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "grupos_con_denominadores_constantes__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions for t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice is strict toward smaller values of t. Distribute across the complete numerators and examine the coefficient that determines the direction when solving."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice is strict toward greater values of t. Check this direction after preserving every term while clearing the denominators."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes lower values of t and the boundary. Review separately the distribution that determines the direction and the symbol that determines whether equality is allowed."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes greater values of t and the boundary. Evaluate the original relation at the boundary and test a value on the side you propose."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplying by six preserves > and gives 2(2t − 1) + 3 > 3(t + 2). Distributing gives 4t + 1 > 3t + 6; subtracting 3t and then one yields t > 5. At the boundary, both original sides equal 7/2, so the strict inequality excludes it.",
+            "incorrect": "Also multiply the term 1/2 by six. The group 2t − 1 receives the factor two, and the group t + 2 receives three. Preserve > during addition and subtraction."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_una_constante_al_eliminar_denominadores",
+          "prompt": "For (x + 1)/4 ≤ (x − 2)/3, a note claims to multiply both sides by twelve and writes 3x + 1 ≤ 4x − 8. Identify the first error, enter the correct left-hand constant after distribution, and solve the original inequality: boundary and direction.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The factor three should also multiply the one in the left-hand numerator.",
+                  "reviewFeedback": "Distribute the factor over the entire specified numerator, term by term, before comparing with the note."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplication by twelve should have reversed ≤ because there is a subtraction on the right.",
+                  "reviewFeedback": "Identify the sign of the factor applied to both sides; subtraction within a side is a separate issue."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplying by twelve is invalid even when it is applied to both sides.",
+                  "reviewFeedback": "Examine whether the factor is nonzero and what effect positive multiplication has on order."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Correct constant on the left-hand side after distribution",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Correct boundary for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Solutions of the original inequality",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice places x strictly below the boundary. Review the distribution over both numerators before checking the proposed direction."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice places x strictly above the boundary. Reconstruct multiplication of both complete sides and review the original treatment of the boundary."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes lower values of x and the boundary. Check both aspects after correcting the distribution, without relying on the faulty line."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice includes higher values of x and the boundary. Verify the direction and the equality case using the original inequality with both complete numerators."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The correct step is 3(x + 1) ≤ 4(x − 2), followed by 3x + 3 ≤ 4x − 8. Subtracting 3x and adding eight gives 11 ≤ x, equivalent to x ≥ 11. At the boundary, the original inequality compares 12/4 ≤ 9/3, that is, 3 ≤ 3. Twelve is positive; subtraction inside the numerator does not change the sign of that factor.",
+            "incorrect": "Identify which terms receive the factor three and which receive four. Repair the first step before continuing. The sign governing the direction is that of the multiplier twelve, not a constant in the numerator."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "If the Unknown Cancels Out, Interpret the Remaining Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "After distributing and combining terms, the term containing the unknown may disappear. In 2x + 5 ≥ 2(x + 1) + 1, the right-hand side is 2x + 3. Subtracting 2x from both sides gives 5 ≥ 3, which is true. This subtraction is reversible for every rational number: they all satisfy the original condition. We did not multiply by zero or divide by a zero coefficient."
+        },
+        {
+          "type": "paragraph",
+          "text": "When a comparison between constants remains, determine whether it is true. If true, every value in the domain under consideration satisfies it; if false, none does. The disappearance of x does not impose x = 0. In these cases there is no single boundary that we need to fill in with a number."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_tras_cancelar_la_letra",
+          "prompt": "Solve each condition over the rational numbers using distribution and reversible subtraction. Classify the solutions: 3(x − 2) > 3x − 6; −(1/2)(2x − 4) ≤ −x + 2; 4 − 2x < −2(x − 3); (3/4)x + 2 ≥ (3/4)x + 7/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_tras_cancelar_la_letra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "estricta_identica",
+                  "type": "dropdown",
+                  "label": "Solutions of 3(x − 2) > 3x − 6",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification excludes every value for this strict comparison. Distribute and combine terms using valid steps before justifying that impossibility."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification accepts every rational number in this strict comparison. Check the numerical relation left after simplification and what it means."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Only some rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes only part of the domain in this strict comparison. Examine whether simplification leaves a condition that depends on the unknown."
+                    }
+                  ]
+                },
+                {
+                  "id": "no_estricta_identica",
+                  "type": "dropdown",
+                  "label": "Solutions of −(1/2)(2x − 4) ≤ −x + 2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification excludes every value for this non-strict condition. Review the distribution of the signed factor and check the final comparison."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification accepts the entire domain for this non-strict condition. Justify that scope using the simplified relation and the reversibility of the steps."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Only some rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification accepts only some rational numbers for this non-strict condition. Check whether the comparison still depends on the unknown after combining terms."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_ordenadas",
+                  "type": "dropdown",
+                  "label": "Solutions of 4 − 2x < −2(x − 3)",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims that this condition, which includes subtraction and an outside factor, is impossible. Distribute while keeping track of signs and examine the resulting relation."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification claims this condition holds for all rational numbers. Use simplification to check what information about the unknown remains."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Only some rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification claims only part of the domain works. Check whether the transformations leave a variable restriction or a comparison independent of the unknown."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_que_fallan",
+                  "type": "dropdown",
+                  "label": "Solutions of (3/4)x + 2 ≥ (3/4)x + 7/2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims that no value satisfies this condition with equal coefficients. Subtract the same term on both sides and inspect the resulting constant comparison."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification accepts the entire domain for this condition with equal coefficients. Check the relation remaining after removing those terms reversibly."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Only some rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification selects part of the domain for this condition. Examine whether varying the unknown can change the comparison after its terms are combined."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "no_estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_ordenadas": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_que_fallan": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first reduces to 0 > 0, which is false: no solutions. The second reduces to 0 ≤ 0, which is true: all rational numbers. The third becomes 4 < 6, which is true: all rational numbers. The last becomes 2 ≥ 7/2, which is false: no solutions. In every case, equal terms were canceled by subtracting the same expression from both sides; the condition was not multiplied by zero.",
+            "incorrect": "Distribute across every part of each group, then cancel equal terms by subtracting on both sides. Read the remaining symbol carefully: a strict comparison of a number with itself is false; a non-strict one is true."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_no_es_multiplicar_por_cero",
+          "prompt": "What justifies that 2x + 5 ≥ 2x + 3 has all rational numbers as solutions?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_no_es_multiplicar_por_cero__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Subtracting 2x from both sides gives 5 ≥ 3, which is true, and adding 2x reverses that step.",
+                  "reviewFeedback": "Reconstruct the subtraction on both sides and check that the inverse operation can recover the condition."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplying both sides by zero removes any restriction equivalently.",
+                  "reviewFeedback": "Compare the information preserved by subtraction with what is lost when all terms are multiplied by zero."
+                },
+                {
+                  "id": "c",
+                  "label": "It is enough to test one proposed value and see that it works.",
+                  "reviewFeedback": "Distinguish checking a specific value from proving a statement about every value in the domain."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The reversible subtraction preserves the entire solution set and leaves a comparison that is true for every x. Multiplying by zero would be another operation with no inverse, and one substitution does not prove a claim about all rational numbers.",
+            "incorrect": "Distinguish canceling terms by subtraction from zeroing the sides by multiplication. Review the actual operation and its inverse; then interpret the remaining comparison."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Checking the Boundary and Practicing Independently"
+        },
+        {
+          "type": "paragraph",
+          "text": "The boundary of a linear inequality with a nonzero final coefficient is the value that makes its two sides equal. If the symbol is strict, that value fails; if the symbol allows equality, it satisfies the condition. Also test values on either side when reviewing a calculation. This helps uncover a reversed direction, but the justification for every solution still comes from the sequence of equivalent conditions (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_frontera_distinta_inclusion",
+          "prompt": "Compare −(3/2)x + 1/2 < −1 with −(3/2)x + 1/2 ≤ −1. Solving gives x > 1 and x ≥ 1, respectively. Calculate the original left-hand side for x = 1, x = 0, and x = 2. Decide whether the boundary is allowed in each inequality.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_frontera_distinta_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Original left-hand side at x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "debajo",
+                  "type": "numeric",
+                  "label": "Original left-hand side at x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "encima",
+                  "type": "numeric",
+                  "label": "Original left-hand side at x = 2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "estricta",
+                  "type": "dropdown",
+                  "label": "Is the boundary allowed in the inequality with <?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Yes, it is allowed.",
+                      "reviewFeedback": "Your choice includes the boundary in the strict comparison. Substitute that value and check the literal meaning of the symbol."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No, it is excluded.",
+                      "reviewFeedback": "Your choice excludes the boundary in the strict comparison. Check the relationship between the two sides exactly at that point."
+                    }
+                  ]
+                },
+                {
+                  "id": "inclusiva",
+                  "type": "dropdown",
+                  "label": "Is the boundary allowed in the inequality with ≤?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Yes, it is allowed.",
+                      "reviewFeedback": "Your choice includes the boundary in the inclusive comparison. Test that value in the original condition and review what its symbol allows."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No, it is excluded.",
+                      "reviewFeedback": "Your choice excludes the boundary in the inclusive comparison. Compare the proposed exclusion with the equality case of that same condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "debajo": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "encima": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  },
+                  "estricta": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "inclusiva": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "At x = 1, the left-hand side equals −1: −1 < −1 is false and −1 ≤ −1 is true. At x = 0, it equals 1/2 and fails both; at x = 2, it equals −5/2 and satisfies both. The boundary is identical, but whether it is included changes the solutions. Division by −3/2 explains why values greater than one satisfy the inequalities.",
+            "incorrect": "Calculate the negative product before adding 1/2. Then compare with −1, distinguishing < from ≤. A value may lie on the boundary without belonging to the solution set."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_tres_inecuaciones_por_cuenta_propia",
+          "prompt": "Solve over the rational numbers without prescribed steps: 2x − 5 ≥ 3(x − 4); (y − 2)/5 < (2y + 1)/3; −4 + (3/2)z > (5/2)z − 1. For each inequality, enter the boundary and describe its solutions relative to it. Check the boundary in each original inequality.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_tres_inecuaciones_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Boundary for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Solutions of the inequality involving x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice for x is strict toward smaller values. Review the distribution over the parentheses and how the boundary is handled in the original inequality."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice for x is strict toward larger values. Examine the coefficient after combining terms and compare the proposed direction with a substitution."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for x includes the lower side and the boundary. Check the direction obtained while solving and the equality case using the condition involving x."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for x includes the upper side and the boundary. Verify both properties in the original inequality after distributing across the entire group."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_y",
+                  "type": "numeric",
+                  "label": "Boundary for y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_y",
+                  "type": "dropdown",
+                  "label": "Solutions of the inequality involving y",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice for y is strict toward smaller values. Keep both numerators intact when clearing denominators and check the direction in the original inequality."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice for y is strict toward larger values. Justify that direction using the remaining coefficient's sign and a test in the starting condition."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for y includes the lower side and the boundary. Review the effect of solving on the order and what the original symbol allows at equality."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for y includes the upper side and the boundary. Check the direction and the equality case separately in the original inequality."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_z",
+                  "type": "numeric",
+                  "label": "Boundary for z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_z",
+                  "type": "dropdown",
+                  "label": "Solutions of the inequality involving z",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your choice for z is strict toward smaller values. Combine the signed terms and verify that direction using the original comparison."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your choice for z is strict toward larger values. Examine the coefficient obtained by combining terms and test a value on the side you propose."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for z includes the lower side and the boundary. Verify the direction when solving and the treatment of the boundary in the original condition involving z."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your choice for z includes the upper side and the boundary. Review the direction and the equality case separately using its original sides."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "limite_y": {
+                    "type": "numeric",
+                    "expected": "-11/7"
+                  },
+                  "sentido_y": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "limite_z": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "sentido_z": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In the first, distributing and combining terms gives −x ≥ −7, so x ≤ 7. In the second, multiplying by fifteen yields 3(y − 2) < 5(2y + 1); combining terms gives −7y < 11, hence y > −11/7. In the third, the result is −z > 3, so z < −3. At the boundaries, the original sides are equal: nine in the first, −5/7 in the second, and −17/2 in the third. Only the first allows equality.",
+            "incorrect": "Preserve the groups when distributing and clearing denominators. Check the sign of the final coefficient, not just the original symbol. In all three approaches this coefficient is negative, so division reverses the direction."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return to the Problem's Domain and Units"
+        },
+        {
+          "type": "paragraph",
+          "text": "A print test requires half an hour of preparation and three quarters of an hour for each complete batch. It must finish in less than 23/4 hours; taking exactly that long is not allowed. Let n be the number of complete batches: a nonnegative integer. First build the duration condition, solve it over the rational numbers, and then retain only values in the problem's domain."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tiempo_disponible_y_lotes_completos",
+          "prompt": "Using the data from the print test, determine the rational boundary and the direction of the condition on n. Also enter the greatest permitted number of complete batches and the total duration in hours for that number. Choose your own method without a prescribed sequence.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo_disponible_y_lotes_completos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Rational boundary for n",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Rational solutions relative to the boundary",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your direction proposes rational batch counts strictly below the boundary. Check that direction in the duration condition built from the test data."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your direction proposes rational batch counts strictly above the boundary. Consider how increasing the count would change the duration, and compare that with the requirement."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your direction includes the lower side and the boundary. Check whether the print test is allowed to take exactly the maximum duration."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your direction includes the upper side and the boundary. Check the direction using the duration rule and examine how the boundary case is treated."
+                    }
+                  ]
+                },
+                {
+                  "id": "maximo",
+                  "type": "numeric",
+                  "label": "Greatest permitted number of complete batches",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "duracion",
+                  "type": "numeric",
+                  "label": "Duration in hours at that maximum",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "maximo": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "duracion": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The condition is 1/2 + (3/4)n < 23/4. Subtracting 1/2 gives (3/4)n < 21/4; dividing by 3/4 yields n < 7. In context, exactly the nonnegative integers less than seven satisfy it. The maximum is six batches, taking 1/2 + (3/4) × 6 = 5 hours. Seven would take 23/4 hours and fail because the limit is strict. A fractional number of batches is not in the domain.",
+            "incorrect": "Include preparation time once, plus the time per batch multiplied by n. Do not confuse the rational boundary with the greatest permitted integer: the strict symbol excludes the boundary. Express the final duration in hours, not batches."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "The domain can also exclude every solution of a condition that does have rational solutions. A second test requires three minutes of preparation and two observations taking t minutes each. The total duration must not exceed two minutes. t is a nonnegative rational duration. Check whether the data make this test possible."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_condicion_imposible_en_su_contexto",
+          "prompt": "First build and solve the duration condition for the second test over all rational numbers. Enter its boundary and direction. Then classify the solutions remaining when t must be a nonnegative duration.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_condicion_imposible_en_su_contexto__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Boundary when solving over all rational numbers",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Rational solutions relative to the boundary",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "The unknown is less than the boundary.",
+                      "reviewFeedback": "Your direction for t is strictly toward smaller values. Check the proposed direction in the second test's rule and how equality at the boundary is expressed."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "The unknown is greater than the boundary.",
+                      "reviewFeedback": "Your direction for t is strictly toward greater values. Review how solving affects the order and compare that direction with the original time condition."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "The unknown is less than or equal to the boundary.",
+                      "reviewFeedback": "Your direction for t includes lower values and the boundary. Check both properties of that description against the condition built for the second test."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "The unknown is greater than or equal to the boundary.",
+                      "reviewFeedback": "Your direction for t includes upper values and the boundary. Check the direction and the equality case separately, without yet adding a sign restriction."
+                    }
+                  ]
+                },
+                {
+                  "id": "contexto",
+                  "type": "dropdown",
+                  "label": "Solutions allowed by the domain of durations",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "No value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification claims that no admissible duration exists. Check whether any nonnegative value can satisfy both the domain and the time condition."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Every value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification accepts every nonnegative duration. Test this scope against the original test condition and justify that no restriction remains."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Only some values in the domain satisfy it.",
+                      "reviewFeedback": "Your classification accepts only certain nonnegative durations. Review which region is shared by the duration domain and the condition describing the test."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "contexto": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The condition is 3 + 2t ≤ 2. Subtracting three and dividing by two gives t ≤ −1/2. Some rational numbers satisfy it, but none are nonnegative, so there is no permitted duration for the test. Also, preparation alone already exceeds the two minutes available. The unknown did not disappear when terms were combined: the absence of solutions in this context comes from the domain.",
+            "incorrect": "Separate the rational solution set from the durations that make sense in the problem. A negative boundary does not permit a negative time. Do not enter zero as a substitute for “none”: at t = 0, preparation already takes three minutes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "A complete solution combines equivalent conditions, interpreting a strict or inclusive boundary, and checking the domain. Units give meaning back to the calculation. When something fails, examine the weak point or find another justified approach; checking the result and reviewing the argument are complementary tasks (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}
