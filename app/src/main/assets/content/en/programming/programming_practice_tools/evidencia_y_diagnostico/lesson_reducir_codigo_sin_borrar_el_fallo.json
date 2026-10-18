@@ -1,0 +1,257 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__reducir_codigo_sin_borrar_el_fallo",
+  "title": "Reducing Code Without Erasing the Failure",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducing the Program While Preserving a Specific Contradiction"
+        },
+        {
+          "type": "paragraph",
+          "text": "In “Reducing a Case and Testing Hypotheses,” you removed data without losing the contar_altos failure. You also checked why the first call and the order could establish the state explaining the second. We return to that same defective component: we will not reinvestigate its cause or repair it. The new task is to decide what code a reproduction needs and remove unrelated parts without erasing the situation we want to demonstrate."
+        },
+        {
+          "type": "paragraph",
+          "text": "The contract still requires each call to count only its own data, with values between 0 and 9 and a minimum between 1 and 9. From a new process, contar_altos({2}, 2) must return 1, and then contar_altos({}, 2) must return 0. The implementation under investigation leaves acumulado at 1 and returns 1 on the second call too. We will preserve this contradiction: an earlier count appears as the empty call's answer."
+        },
+        {
+          "type": "paragraph",
+          "text": "A smaller reproduction lets us investigate and communicate the problem without dragging along the whole original program. The source distinguishes reducing input data from removing unrelated code regions, and recommends supplying a small, self-contained case (Kernighan & Pike, 1999, pp. 124, 136). We are not seeking the shortest possible program or a fixed number of lines: we are trying to preserve a verifiable explanation of the same violation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_propiedad_conservada",
+          "question": "A report contains presentation messages and the two calls described. What must a reduction preserve to demonstrate this particular failure?",
+          "options": [
+            "Every character of the report, even if some messages play no role in the contradiction.",
+            "The situation where the empty call returns an earlier count instead of the required zero.",
+            "Any program failure, even if it differs from the carried-over count being investigated."
+          ],
+          "correctIndex": 1,
+          "explanation": "The preserved property identifies the contract violation we want to reproduce. Unrelated presentation can disappear, but we must not replace the failure with another or remove the context that triggers it.",
+          "reviewFeedback": [
+            "Relate each piece of output text to the contradiction under investigation and distinguish incidental information.",
+            "Check whether your criterion identifies the same violated requirement and the conditions in which it appears.",
+            "Review whether the new observation still allows us to investigate the same cause or whether you have changed the problem we intended to demonstrate."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reproduction Also Needs Its Dependencies"
+        },
+        {
+          "type": "paragraph",
+          "text": "A trimmed program is not just a screenshot of a few interesting lines. It must retain the declarations, definitions, headers, and setup needed to build and demonstrate the problem. Recall the self-contained source files you have practiced: do not assume a name is available simply because someone else could guess which file was missing."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before removing a section, explain what it uses, which state it changes, and which other parts need it. Predict whether removing it will preserve both the build and the contradiction. After the change, verify both. Deleting code does not prove that it was irrelevant; no longer observing the failure does not prove it was fixed."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_construccion_y_comportamiento",
+          "question": "A candidate cannot be built after trimming. What does this mean for reproducing the incorrect result being investigated?",
+          "options": [
+            "We still lack a buildable reproduction; the necessary pieces must be restored before testing that behavior.",
+            "The original failure has been preserved because the candidate and the earlier report both have some kind of problem.",
+            "It is sufficient if it preserves the function's name, even if someone else must reconstruct what is missing."
+          ],
+          "correctIndex": 0,
+          "explanation": "A build failure prevents us from observing the execution we care about. A self-contained case must provide what is needed to build; a matching name does not replace its dependencies.",
+          "reviewFeedback": [
+            "Distinguish the evidence needed to produce a build from the evidence that requires executing the program.",
+            "Identify the stage and requirement associated with each failure before treating them as the same observation.",
+            "Consider what someone receiving the trimmed code would have to guess or supply before they could run it."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "The following exercises use the same small count and a known sequential execution. Throughout reduction, the defective contar_altos body and the initial process state with acumulado at zero remain unchanged."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Propose and Justify a Buildable Reduction"
+        },
+        {
+          "type": "paragraph",
+          "text": "This complete program includes the known counting behavior within a report. Your task is to propose a smaller reproduction of the same violation. Before editing, identify which code the empty call needs in order to return that earlier count and which parts belong only to the report. Justify each region you want to remove and the dependencies that must remain; no deletion checklist is provided."
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep the investigated contar_altos body, the initial state with acumulado at zero, and the causal setup of the original calls, including their data and order. The output must make it possible to identify the empty call's result and compare it with the required zero. You need not retain incidental messages or every local name. You may also keep the first call without saving or printing its result, as long as its effect still sets up the situation. The final source must include everything it uses."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nvoid mostrar_detalle(const std::vector<int>& datos) {\n    const std::string etiqueta{\"Report data\"};\n    std::cout << etiqueta << '=' << datos.size() << '\\n';\n}\n\nint main() {\n    const std::vector<int> recibo{4, 0, 8};\n    mostrar_detalle(recibo);\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"First=\" << primera << \";Second=\" << segunda << '\\n';\n    std::cout << \"Report finished\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "First derive and run the complete context. Then trim your program, build it again, and rerun it. Check that the empty call still returns 1 instead of 0. Both executions normally exit with code 0: that code does not compare the function against its contract. If the build changes or the discrepancy disappears, review which dependency or setup you removed before calling the result a valid reproduction."
+        },
+        {
+          "type": "paragraph",
+          "text": "Leave a brief explanation of the reduction in comments: which property you preserved, what you removed and why it was no longer needed, and which dependency you chose to retain. Do not replace the count with a fixed number or modify the function to fabricate the result. A valid reproduction must calculate the result that demonstrates the violation. Attempt and verify your version before consulting the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: One Possible Reduction and Its Dependencies"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference removes the incidental message, the function that only displayed it, its data, and the report's closing message. The empty call's result remains visible. There is no longer any use of std::string, so a direct #include <string> is no longer necessary. However, std::vector and std::cout are still used, and the source retains the headers that provide them."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"First=\" << primera << \";Second=\" << segunda << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference builds a complete program and prints First=1;Second=1 followed by a newline. stderr is empty and the exit code is 0. The second result preserves the same contract violation. Another reproduction may display only that result if it retains the call that sets it up and allows the observed 1 to be compared with the required 0. Matching the entire original report was never the goal."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void mostrar_detalle(const std::vector<int>& datos) {\n    const std::string etiqueta{\"Report data\"};\n    std::cout << etiqueta << '=' << datos.size() << '\\n';\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_dependencia_que_permanece",
+          "question": "Another candidate removes the call to mostrar_detalle and the recibo data, but leaves the definition shown above in the source. How should it justify its dependency on <string>?",
+          "options": [
+            "The header can be removed because no call will execute that function body during reproduction.",
+            "It must be kept because it was in the original program, even if all its uses have disappeared.",
+            "The remaining definition still uses std::string, and the source must directly provide that library facility."
+          ],
+          "correctIndex": 2,
+          "explanation": "An ordinary definition remaining in the source must be valid for analysis even if the function is never called. The reason to retain <string> is that remaining use, not the header's earlier presence. If the definition is also removed and all uses disappear, the dependency changes.",
+          "reviewFeedback": [
+            "Distinguish code that is no longer executed from definitions still present that must be analyzed.",
+            "Review which names remain after trimming; link the header to those uses rather than merely to its history.",
+            "Check which library facility the definition left in the candidate still uses."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "In a particular toolchain, one header may be brought in indirectly through another. This does not replace justifying the source's direct dependencies. Here we review which facilities remain in use; we do not require removing <string> to produce the same diagnostic in every toolchain."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Buildable Reduction Can Still Erase the Situation"
+        },
+        {
+          "type": "paragraph",
+          "text": "This candidate keeps the same defective body and starts with acumulado at zero, but removes the first call and its uses. Predict what happens before bringing it into the same lab. Then build and run it to compare your prediction; afterward, restore your reproduction that does preserve the contradiction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Second=\" << segunda << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_recorte_que_borra_contexto",
+          "question": "The candidate builds and prints Second=0. What does that mean for the failure we wanted to reproduce?",
+          "options": [
+            "It is a fix because the displayed answer now matches the required zero.",
+            "It no longer reproduces that failure: it removed the call that established the earlier count.",
+            "It is a sufficient reproduction because it is self-contained and can be built."
+          ],
+          "correctIndex": 1,
+          "explanation": "The component did not change; its context did. The empty call no longer occurs after another that left acumulado at 1. Calling it segunda does not by itself make it a second call. Being buildable was necessary, but not enough to preserve the contradiction.",
+          "reviewFeedback": [
+            "Relate the new result to the calls that remain and to what actually changed in the component under investigation.",
+            "Track the initial state and call history of this candidate before comparing them with the earlier reproduction.",
+            "Check which behavioral observation the reproduction had to preserve in addition to being buildable."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The trimmed program prints Second=0 followed by a newline, with empty stderr and exit code 0. That does not show the component's defect disappeared: its body still returns shared state. Restoring the two earlier calls recreates the situation we wanted to demonstrate. Record what you removed and which property is no longer observed, without treating that loss of context as a solution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguishing Reduction, Refactoring, and Repair"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reducing a reproduction preserves the violation being investigated and may remove incidental output. Refactoring a program preserves its observable behavior while changing its organization. Fixing the function must correct the contradiction. These are different goals, even though each may change the program's text. Recall, by reading only, the fix you already verified in the previous lesson:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "If this function replaces the defective one and both original calls remain, the counter is initialized per call: the first returns 1 and the second 0. That difference does change the defective behavior. It is not a reproduction of the earlier failure. You do not need to repeat the previous lab to distinguish these goals; compare what code changed and which property each task aims to preserve."
+        },
+        {
+          "type": "note",
+          "text": "After reducing, further investigation or repair may still be necessary. A small case helps with that work, but passing that case alone does not prove overall correctness. Retain the earlier criteria and comparisons when your goal returns to fixing the function."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reproduction Someone Else Can Repeat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Review your proposal as though the person receiving it had not seen the original report. They must be able to obtain the complete program, understand the requirement, start execution in the stated initial state, repeat the calls, and compare the required result with the observed one. Identify the source files and tools you actually used. If you did not check a specific version, do not invent one. The source recommends a self-contained case and the relevant context of the program and its environment (Kernighan & Pike, 1999, pp. 135–136)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_evidencia_para_repetir",
+          "question": "Someone investigating the case has not read your original report. Which set of materials lets them repeat and compare the contradiction without guessing what is missing?",
+          "options": [
+            "The function under investigation and its result, leaving the recipient to choose the data and order.",
+            "The complete project and its latest output, leaving the recipient to discover which requirement it violates.",
+            "Self-contained source, conditions, expected and observed results, and the build procedure used to repeat the case."
+          ],
+          "correctIndex": 2,
+          "explanation": "The reproduction makes the code, context, and comparison explicit. The recipient can build it, repeat the conditions, and verify the same violation without deducing an omitted requirement or choosing different setup steps.",
+          "reviewFeedback": [
+            "Review which conditions the recipient would have to choose and whether any choice would preserve the same situation.",
+            "Distinguish having many files from knowing which requirement was violated and how to observe it again.",
+            "Relate each included item to the build, reproduction, and comparison the investigator must perform."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, return to the reproduction you saved. Explain what could still be removed without losing the ability to build or the contradiction, or why you prefer to retain it to communicate the case more clearly. Justify the decision and test your prediction before accepting the new reduction. A slightly longer source file can make a clearer reproduction; there is no prize for reaching a certain number of lines."
+        },
+        {
+          "type": "note",
+          "text": "The explanation for the reproduction can remain in comments in the same editor: requirement, conditions, expected result, observed result, and justification for the reduction. What matters is that these facts correspond to the program actually built and run."
+        }
+      ]
+    }
+  ]
+}

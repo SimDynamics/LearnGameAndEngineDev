@@ -1,0 +1,257 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__reducir_codigo_sin_borrar_el_fallo",
+  "title": "Réduire le code sans effacer le défaut",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réduire le programme en conservant une contradiction précise"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans « Réduire un cas et confronter des hypothèses », tu as supprimé des données sans perdre le défaut de contar_altos. Tu as aussi vérifié pourquoi le premier appel et leur ordre pouvaient préparer l'état expliquant le deuxième. Nous retrouvons ce même composant défectueux : nous ne rechercherons pas à nouveau sa cause et ne le corrigerons pas. La nouvelle tâche consiste à déterminer quel code une reproduction nécessite et à retirer le reste sans effacer la situation que nous voulons montrer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le contrat exige toujours que chaque appel compte uniquement ses propres données, avec des valeurs entre 0 et 9 et un minimum entre 1 et 9. Dans un nouveau processus, contar_altos({2}, 2) doit renvoyer 1, puis contar_altos({}, 2) doit renvoyer 0. La version étudiée laisse acumulado à 1 et renvoie également 1 au deuxième appel. Nous conserverons cette contradiction : un compte antérieur apparaît comme réponse de l'appel vide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une reproduction plus petite permet d'examiner et de communiquer le problème sans conserver tout le programme initial. La source distingue la réduction des données de la suppression des régions de code sans rapport et recommande de fournir un petit cas autonome (Kernighan & Pike, 1999, pp. 124, 136). Nous ne cherchons pas le programme le plus court possible ni un nombre fixe de lignes : nous voulons préserver une explication vérifiable du même manquement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_propiedad_conservada",
+          "question": "Un rapport contient des messages de présentation et les deux appels décrits. Que doit préserver une réduction pour montrer ce défaut précis ?",
+          "options": [
+            "Tous les caractères du rapport, même si certains messages ne participent pas à la contradiction.",
+            "La situation où l'appel vide renvoie un compte antérieur au lieu du zéro exigé.",
+            "N'importe quel défaut du programme, même différent du compte conservé que nous étudions."
+          ],
+          "correctIndex": 1,
+          "explanation": "La propriété conservée identifie le manquement au contrat que nous voulons reproduire. La présentation sans rapport peut disparaître, mais le défaut ne doit pas être remplacé par un autre ni privé du contexte qui le déclenche.",
+          "reviewFeedback": [
+            "Relie chaque partie du texte de sortie à la contradiction étudiée et distingue les éléments accessoires.",
+            "Vérifie si ton critère identifie la même exigence violée et les conditions dans lesquelles on l'observe.",
+            "Examine si la nouvelle observation permet d'étudier la même cause ou si tu as modifié le problème que nous voulions montrer."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une reproduction a également besoin de ses dépendances"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un extrait n'est pas seulement une capture de quelques lignes intéressantes. Il doit conserver les déclarations, définitions, en-têtes et préparations nécessaires pour être construit et montrer le problème. Rappelle-toi l'autonomie des fichiers sources déjà pratiquée : ne considère pas un nom comme disponible parce qu'une autre personne pourrait deviner quel fichier manque."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de retirer une partie, explique ce qu'elle utilise, quel état elle modifie et quelles autres parties en ont besoin. Prédis si son absence préservera la construction et la contradiction. Après le changement, vérifie les deux. Avoir supprimé du code ne démontre pas qu'il était superflu ; ne plus observer le défaut ne démontre pas non plus qu'il a été corrigé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_construccion_y_comportamiento",
+          "question": "Une version candidate ne peut plus être construite après la réduction. Que signifie cela pour la reproduction du résultat incorrect étudié ?",
+          "options": [
+            "Il manque encore une reproduction compilable ; il faut rétablir les éléments nécessaires avant de comparer ce comportement.",
+            "Le défaut initial a été conservé, puisque la candidate et le rapport précédent présentent tous deux un problème quelconque.",
+            "Cela reste suffisant si le nom de la fonction est conservé, même si quelqu'un d'autre doit reconstruire ce qui manque."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un échec de construction empêche d'observer l'exécution recherchée. L'autonomie impose de fournir ce qui est nécessaire pour construire ; un nom identique ne remplace pas les dépendances.",
+          "reviewFeedback": [
+            "Distingue les preuves permettant d'obtenir une construction de celles exigeant l'exécution du programme.",
+            "Identifie l'étape et l'exigence associées à chaque échec avant de les considérer comme la même observation.",
+            "Examine ce que la personne recevant l'extrait devrait deviner ou ajouter pour pouvoir l'exécuter."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "Les exercices suivants utilisent le même petit comptage et une exécution séquentielle connue. Pendant la réduction, le corps défectueux de contar_altos et l'état initial du processus avec acumulado à zéro restent inchangés."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : proposer et justifier une réduction compilable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce programme complet intègre le comptage connu dans un rapport. Ta tâche est de proposer une reproduction plus petite du même manquement. Avant de modifier le code, identifie les éléments dont l'appel vide a besoin pour renvoyer le compte antérieur et ceux qui appartiennent uniquement au rapport. Justifie chaque région à supprimer et les dépendances à conserver ; aucune liste de suppressions n'est fournie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve le corps étudié de contar_altos, l'initialisation avec acumulado à zéro et la préparation causale des appels initiaux, avec leurs données et leur ordre. La sortie doit permettre d'identifier le résultat de l'appel vide et de le comparer au zéro attendu. Il n'est pas nécessaire de conserver les messages accessoires ni tous les noms locaux. Tu peux également garder le premier appel sans enregistrer ni afficher son résultat, tant que son effet prépare la situation. La source finale doit fournir elle-même tout ce qu'elle utilise."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nvoid mostrar_detalle(const std::vector<int>& datos) {\n    const std::string etiqueta{\"Données du rapport\"};\n    std::cout << etiqueta << '=' << datos.size() << '\\n';\n}\n\nint main() {\n    const std::vector<int> recibo{4, 0, 8};\n    mostrar_detalle(recibo);\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Première=\" << primera << \";Seconde=\" << segunda << '\\n';\n    std::cout << \"Rapport terminé\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Déduis et exécute d'abord le programme complet. Effectue ensuite ta réduction, reconstruis et relance le programme. Vérifie que l'appel vide renvoie toujours 1 au lieu de 0. Les exécutions se terminent normalement avec le code 0 : ce code ne compare pas la fonction à son contrat. Si la construction change ou si l'écart disparaît, vérifie quelle dépendance ou préparation tu as supprimée avant de considérer la réduction comme une reproduction valide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Laisse dans les commentaires une brève justification : quelle propriété tu as conservée, ce que tu as supprimé et pourquoi ce n'était plus nécessaire, ainsi que la dépendance que tu as choisi de garder. Ne remplace pas le comptage par une valeur fixe et ne modifie pas la fonction pour fabriquer le résultat. Une reproduction valide doit calculer le résultat révélant le manquement. Essaie et vérifie ta proposition avant de consulter la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'essai : une réduction possible et ses dépendances"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence retire le message accessoire, la fonction qui servait seulement à l'afficher, ses données et la clôture du rapport. Le résultat de l'appel vide reste visible. L'utilisation de std::string disparaît et l'inclusion directe de <string> n'est donc plus nécessaire. En revanche, std::vector et std::cout sont toujours utilisés et la source conserve les en-têtes qui les fournissent."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Première=\" << primera << \";Seconde=\" << segunda << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence construit un programme complet et affiche Première=1;Seconde=1 suivi d'un saut de ligne. stderr reste vide et le code de sortie vaut 0. La deuxième réponse conserve le même manquement au contrat. Une autre reproduction peut n'afficher que ce résultat si elle conserve l'appel qui le prépare et permet de comparer le 1 observé au 0 exigé. Reproduire tout le rapport initial n'était pas l'objectif."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void mostrar_detalle(const std::vector<int>& datos) {\n    const std::string etiqueta{\"Données du rapport\"};\n    std::cout << etiqueta << '=' << datos.size() << '\\n';\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_dependencia_que_permanece",
+          "question": "Une autre version candidate supprime l'appel à mostrar_detalle et les données recibo, mais laisse sa définition présentée plus haut dans la source. Comment justifier la dépendance à <string> ?",
+          "options": [
+            "L'en-tête peut être retiré, car aucun appel n'exécutera ce corps pendant la reproduction.",
+            "Il faut le conserver parce qu'il figurait dans le programme initial, même si toutes ses utilisations ont disparu.",
+            "La définition restante utilise toujours std::string, et la source doit fournir directement cette fonctionnalité de bibliothèque."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une définition ordinaire qui reste dans la source doit pouvoir être analysée même si la fonction n'est jamais appelée. Il faut conserver <string> à cause de cette utilisation restante, et non parce que l'en-tête était présent auparavant. Si la définition est également supprimée et que toutes les utilisations disparaissent, la dépendance change.",
+          "reviewFeedback": [
+            "Distingue le code qui n'est plus exécuté des définitions toujours présentes qui doivent pouvoir être analysées.",
+            "Vérifie quels noms restent après la réduction ; relie l'inclusion à ces utilisations, et non à son seul historique.",
+            "Vérifie quel service de bibliothèque la définition conservée utilise encore."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "Dans une chaîne d'outils donnée, un en-tête peut être inclus indirectement par un autre. Cela ne remplace pas la justification des dépendances directes de la source. Nous vérifions ici quels services restent utilisés ; nous n'exigeons pas que supprimer <string> provoque le même diagnostic dans toutes les chaînes d'outils."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une réduction compilable peut aussi effacer la situation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette version candidate conserve le même corps défectueux et commence avec acumulado à zéro, mais supprime le premier appel et ses utilisations. Prédis ce qui se passe avant de la transférer dans le même laboratoire. Construis-la et exécute-la ensuite pour vérifier ta prévision ; à la fin, retrouve ta reproduction qui conserve bien la contradiction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Seconde=\" << segunda << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_recorte_que_borra_contexto",
+          "question": "La candidate est compilable et affiche Seconde=0. Que signifie cela pour le défaut que nous voulions reproduire ?",
+          "options": [
+            "C'est une correction, car la réponse affichée correspond désormais au zéro exigé.",
+            "Elle ne reproduit plus ce défaut : elle a supprimé l'appel qui préparait le compte antérieur.",
+            "C'est une reproduction suffisante parce qu'elle est autonome et compilable."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le composant n'a pas changé ; son contexte a changé. L'appel vide ne vient plus après un appel ayant laissé acumulado à 1. Le nom segunda n'en fait pas, à lui seul, un deuxième appel. Pouvoir construire la candidate était nécessaire, mais ne suffisait pas à préserver la contradiction.",
+          "reviewFeedback": [
+            "Relie le nouveau résultat aux appels qui restent réellement et aux modifications du composant étudié.",
+            "Suis l'état initial et l'historique des appels de cette candidate avant de les comparer à la reproduction précédente.",
+            "Vérifie quelle observation comportementale la reproduction devait conserver en plus de pouvoir être construite."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La réduction affiche Seconde=0 suivi d'un saut de ligne, avec stderr vide et le code de sortie 0. Cela ne permet pas de conclure que le défaut du composant a disparu : son corps renvoie toujours l'état partagé. Restaurer les deux anciens appels recrée la situation que nous voulions montrer. Note ce que tu as retiré et quelle propriété n'est plus observée, sans prendre cette perte de contexte pour une solution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer réduction, refactorisation et correction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Réduire une reproduction préserve le manquement étudié et peut supprimer des sorties accessoires. Refactoriser un programme préserve son comportement observable tout en changeant son organisation. Corriger la fonction doit supprimer la contradiction. Ce sont des objectifs différents, même si chacun peut modifier le texte du programme. Retrouve, uniquement par la lecture, la correction que tu as déjà vérifiée dans la leçon précédente :"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si cette fonction remplace celle étudiée et que les deux appels initiaux sont conservés, le compteur est initialisé à chaque appel : le premier renvoie 1 et le deuxième 0. Cette différence modifie effectivement le comportement défectueux. Il ne s'agit pas d'une reproduction du défaut précédent. Tu n'as pas besoin de refaire l'ancien laboratoire pour les distinguer ; compare ce qui a changé dans le code et la propriété que chaque tâche veut préserver."
+        },
+        {
+          "type": "note",
+          "text": "Après une réduction, il peut encore être nécessaire d'examiner ou de corriger le défaut. Un petit cas facilite ce travail, mais la réussite de ce seul cas ne prouve pas une correction générale. Conserve les critères et les comparaisons précédentes quand l'objectif sera à nouveau de réparer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une reproduction qu'une autre personne peut répéter"
+        },
+        {
+          "type": "paragraph",
+          "text": "Examine ta proposition comme si la personne qui la reçoit ne connaissait pas le rapport initial. Elle doit pouvoir obtenir le programme complet, comprendre l'exigence, démarrer avec l'état indiqué, répéter les appels et comparer le résultat attendu à celui observé. Identifie les fichiers sources et les outils réellement utilisés. Si tu n'as pas vérifié une version précise, ne l'invente pas. La source recommande un cas autonome et le contexte pertinent du programme et de son environnement (Kernighan & Pike, 1999, pp. 135–136)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_evidencia_para_repetir",
+          "question": "La personne qui examine le cas ne connaît pas ton rapport initial. Quel ensemble lui permet de reproduire et de comparer la contradiction sans deviner ce qui manque ?",
+          "options": [
+            "La fonction étudiée et son résultat, en laissant la personne choisir les données et l'ordre.",
+            "Le projet complet et sa dernière sortie, en laissant la personne retrouver quelle exigence n'est pas respectée.",
+            "La source autonome, les conditions, le résultat attendu et observé, ainsi que la procédure de construction utilisée pour répéter le cas."
+          ],
+          "correctIndex": 2,
+          "explanation": "La reproduction présente explicitement le code, le contexte et la comparaison. La personne peut la construire, répéter ses conditions et vérifier le même manquement sans déduire une exigence absente ni choisir une autre préparation.",
+          "reviewFeedback": [
+            "Vérifie quelles conditions la personne devrait choisir et si n'importe quel choix conserverait la même situation.",
+            "Distingue le fait de disposer de nombreux fichiers de celui de connaître l'exigence violée et la façon d'observer à nouveau le problème.",
+            "Relie chaque élément fourni à la construction, à la reproduction et à la comparaison que la personne devra réaliser."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reviens à la reproduction conservée. Explique ce qui pourrait encore être supprimé sans perdre la construction ni la contradiction, ou pourquoi tu préfères le garder pour mieux communiquer le cas. Justifie la décision et vérifie ta prédiction avant d'accepter la nouvelle réduction. Un code source légèrement plus long peut constituer une reproduction plus claire ; atteindre un nombre de lignes n'est pas un objectif."
+        },
+        {
+          "type": "note",
+          "text": "L'explication de la reproduction peut rester dans les commentaires du même éditeur : exigence, conditions, attendu, observé et justification des suppressions. L'essentiel est que ces faits correspondent au programme réellement construit et exécuté."
+        }
+      ]
+    }
+  ]
+}
