@@ -1,0 +1,687 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__transformaciones_y_soluciones_equivalentes",
+  "title": "Transformations et solutions équivalentes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer l'équation en conservant ses solutions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà interpréter les lettres et les domaines, construire une condition, distribuer un facteur et regrouper des termes. Nous allons maintenant rechercher toutes les solutions par des étapes justifiées. Sauf restriction explicite du contexte, les inconnues de cette leçon peuvent prendre toutes les valeurs rationnelles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux équations sont équivalentes sur un domaine lorsqu'elles ont exactement les mêmes solutions dans ce domaine. Pour chaque valeur autorisée, elles doivent être toutes deux vraies ou toutes deux fausses. Elles n'ont pas besoin d'avoir la même écriture ni les mêmes valeurs numériques dans leurs membres respectifs. Avec x = 0, les équations x = 3 et 2x = 6 sont toutes deux fausses, même si elles comparent zéro à trois et zéro à six. Avec x = 3, elles sont toutes deux vraies. Nous expliquerons comment justifier leur équivalence pour tous les rationnels (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une identité décrit une égalité vraie pour toutes les valeurs de son domaine. Deux équations équivalentes peuvent, au contraire, n'être vérifiées que pour certaines valeurs. Leur équivalence est une affirmation concernant l'ensemble des solutions : changer d'équation doit conserver cet ensemble intégralement."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_de_equivalencia",
+          "prompt": "Qu'exige l'équivalence de deux équations sur le domaine de tous les rationnels ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_de_equivalencia__criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Qu'elles admettent exactement les mêmes valeurs comme solutions.",
+                  "reviewFeedback": "Vérifie ce que cette affirmation exige pour toutes les valeurs du domaine, et non pour un seul essai."
+                },
+                {
+                  "id": "b",
+                  "label": "Que leurs membres contiennent les mêmes nombres même lorsque les équations sont fausses.",
+                  "reviewFeedback": "Distingue l'égalité des nombres écrits de celle des ensembles de solutions."
+                },
+                {
+                  "id": "c",
+                  "label": "Qu'elles donnent le même résultat lorsqu'on essaie seulement deux valeurs.",
+                  "reviewFeedback": "Envisage ce qui pourrait arriver avec des valeurs non testées et quel raisonnement étendrait la conclusion à tout le domaine."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'équivalence signifie conserver toutes les solutions sans en ajouter ni en perdre. La vérité ou la fausseté doit coïncider pour chaque rationnel autorisé ; les membres n'ont pas besoin d'avoir la même écriture.",
+            "incorrect": "Distingue l'ensemble des valeurs qui vérifient une équation des nombres obtenus lorsqu'on évalue chaque membre. Une vérification limitée ne couvre pas tous les rationnels."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ajouter une même quantité permet de revenir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si deux membres ont la même valeur, leur ajouter une même quantité conserve leur égalité. L'opération a une inverse : soustraire des deux membres ce qui a été ajouté. L'équation obtenue n'ajoute donc aucune solution et n'en perd aucune. Le raisonnement exclut aussi qu'une valeur qui échouait auparavant devienne solution : si elle vérifiait la nouvelle équation, soustraire cette quantité la ferait vérifier l'ancienne (Lang, 1971, pp. 9, 12–14)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, x − 5 = 3 se transforme en ajoutant cinq aux deux membres : x − 5 + 5 = 3 + 5. En calculant, on obtient x = 8. À partir de x = 8, on peut soustraire cinq des deux membres et retrouver x − 5 = 3. Chaque étape est valable pour tous les rationnels. La forme finale x = 8 montre que huit est l'unique solution, et la substitution dans l'équation initiale 8 − 5 = 3 confirme qu'elle convient."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_para_cancelar",
+          "prompt": "Dans u − 7 = −2, nous voulons annuler la soustraction de sept en ajoutant une même quantité aux deux membres. Écris les deux quantités ajoutées et la valeur de u obtenue.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_para_cancelar__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Quantité ajoutée au membre gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Quantité ajoutée au membre droit",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Valeur de u dans l'équation finale",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "On ajoute sept à chaque membre : u − 7 + 7 = −2 + 7, d'où u = 5. Soustraire sept des deux membres permet de revenir. L'ensemble des solutions est ainsi conservé exactement ; 5 − 7 = −2 vérifie la solution.",
+            "incorrect": "Pour annuler −7, ajoute son opposé, +7. Applique la même addition au membre droit et conserve le signe de −2 pendant le calcul."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_suma_en_un_solo_miembro",
+          "prompt": "Une note transforme u − 7 = −2 en u = −2 en effaçant la soustraction de sept seulement à gauche. Quelle correction est juste ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_suma_en_un_solo_miembro__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle conserve les solutions parce que sept n'apparaît plus.",
+                  "reviewFeedback": "Vérifie avec une valeur précise si effacer le terme conserve la même condition dans les deux membres."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle change la condition : ajouter sept à gauche obligeait aussi à ajouter sept à droite.",
+                  "reviewFeedback": "Reconstitue l'opération dans les deux membres et vérifie qu'elle peut être annulée."
+                },
+                {
+                  "id": "c",
+                  "label": "La transformation échoue uniquement si u prend une valeur fractionnaire.",
+                  "reviewFeedback": "Teste une valeur entière dans les conditions avant et après ; distingue le type de nombre du changement effectué."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "u = −2 est une autre condition. L'ancienne est vérifiée avec u = 5, mais pas la nouvelle. L'étape correcte ajoute sept aux deux membres et donne u = 5.",
+            "incorrect": "Revois quelle opération a été effectuée dans chaque membre. Effacer une partie d'un seul membre modifie la comparaison ; cela ne dépend pas du caractère entier ou fractionnaire de la valeur proposée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La même expression dans les deux membres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons aussi ajouter ou soustraire une même expression, à condition qu'elle soit définie partout dans le domaine étudié. Pour chaque valeur de l'inconnue, cette expression représente la même quantité dans les deux membres. L'opération s'annule en ajoutant ou en soustrayant son opposé. Dans 4x + 1 = x + 10, nous pouvons soustraire x des deux membres et obtenir 3x + 1 = 10. Ajouter de nouveau x redonne l'équation précédente (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Regrouper des termes dans un membre utilise des identités déjà justifiées. Soustraire x des deux membres modifie les deux calculs tout en conservant leurs solutions. Avec x = 3, les deux membres de 4x + 1 = x + 10 valent treize ; ceux de 3x + 1 = 10 valent dix. L'équivalence conserve le fait que les deux égalités sont vraies avec cette valeur, même si les valeurs comparées changent."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_una_expresion",
+          "prompt": "Partons de 7r + 3 = 4r − 6. Soustrais 4r des deux membres et regroupe les termes. Écris le coefficient de r à gauche, son terme constant et le nombre du membre droit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_una_expresion__terminos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de r après soustraction de 4r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant du membre gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Nombre du membre droit",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7r + 3 − 4r = 4r − 6 − 4r se simplifie en 3r + 3 = −6. Ajouter 4r aux deux membres permet de retrouver l'équation initiale. La même expression, avec la même valeur de r, a été soustraite de chaque membre.",
+            "incorrect": "Conserve le trois à gauche et −6 à droite. Soustraire 4r annule le terme 4r du membre droit ; à gauche, on regroupe 7r et −4r."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_expresion_no_es_un_dato_nuevo",
+          "prompt": "Pourquoi soustraire 4r des deux membres de l'exercice précédent conserve-t-il les solutions pour tout rationnel r ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_expresion_no_es_un_dato_nuevo__razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Pour chaque r, on soustrait la même quantité définie et ajouter 4r aux deux membres permet de revenir.",
+                  "reviewFeedback": "Explique quelle quantité est soustraite pour chaque valeur fixée et comment retrouver les membres précédents."
+                },
+                {
+                  "id": "b",
+                  "label": "Parce que 4r est toujours positif, même quand r est négatif.",
+                  "reviewFeedback": "Calcule le signe de ce terme avec une valeur négative permise avant de l'utiliser comme justification."
+                },
+                {
+                  "id": "c",
+                  "label": "Parce que la lettre r apparaît dans tous les termes, on peut effacer n'importe quel terme.",
+                  "reviewFeedback": "Distingue soustraire un même terme des deux membres d'effacer librement les termes d'une expression."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4r est défini pour tout rationnel r et prend la même valeur dans les deux membres. La transformation inverse ajoute cette même quantité. La garantie ne dépend pas du signe positif de r et n'autorise pas à effacer les constantes.",
+            "incorrect": "Suis l'opération et son inverse pour la même valeur de r. Ne confonds pas le fait d'être définie avec celui d'être positive ni avec la possibilité d'omettre une partie d'un membre."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiplier ou diviser exige un facteur non nul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplier les deux membres par un rationnel c différent de zéro conserve les solutions, car nous pouvons revenir en divisant les deux membres par c. De même, diviser par c peut être annulé par une multiplication. La condition c différent de zéro est nécessaire pour utiliser son inverse : zéro n'a pas d'inverse multiplicatif (Lang, 1971, pp. 42, 44–45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si z/5 = −3/2, multiplier les deux membres par cinq donne z = −15/2. Diviser les deux membres par cinq redonne l'équation initiale. Les valeurs comparées ont changé, mais les propositions qui rendent l'égalité vraie sont conservées. La même raison permet d'utiliser un facteur négatif : s'il est non nul, une opération inverse est définie."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_el_inverso_del_factor",
+          "prompt": "Dans (−2/3)r = 5/4, écris le facteur rationnel par lequel multiplier les deux membres pour que le coefficient de r devienne un. Calcule ensuite la valeur de r dans l'équation finale.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_el_inverso_del_factor__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Facteur qui transforme le coefficient −2/3 en un",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Valeur de r après multiplication des deux membres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-15/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(−3/2) × (−2/3) = 1. Le membre droit devient (−3/2) × (5/4) = −15/8. Le facteur −3/2 est non nul, nous pouvons donc annuler la multiplication en divisant par lui. Remplacer r par −15/8 dans le produit initial donne 5/4.",
+            "incorrect": "Cherche l'inverse complet de −2/3 en conservant son signe. Applique-le aussi à 5/4. Multiplier seulement le coefficient de gauche changerait la condition."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "vuelta_del_factor_negativo",
+          "prompt": "On obtient une équation en multipliant les deux membres d'une autre par −3/2. Quelle opération permet de retrouver l'ancienne ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "vuelta_del_factor_negativo__operacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Diviser les deux membres par −3/2, ce qui équivaut à les multiplier par −2/3.",
+                  "reviewFeedback": "Compose l'opération choisie avec la multiplication initiale et vérifie le facteur total obtenu."
+                },
+                {
+                  "id": "b",
+                  "label": "Ajouter 3/2 aux deux membres.",
+                  "reviewFeedback": "Distingue l'annulation d'une multiplication de celle d'une addition ; essaie la composition proposée."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplier les deux membres par zéro pour annuler le facteur.",
+                  "reviewFeedback": "Examine quelles informations permettraient de retrouver les membres initiaux après leur multiplication par zéro."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'opération inverse divise par le même facteur non nul. Multiplier par −2/3 donne le même effet, car (−3/2)(−2/3) = 1. Ajouter une quantité n'annule pas en général une multiplication.",
+            "incorrect": "Vérifie quelle opération transforme le facteur en un. Pour conserver l'égalité, applique l'inverse aux deux membres et assure-toi qu'il est défini."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver les solutions dans un seul sens ne suffit pas"
+        },
+        {
+          "type": "paragraph",
+          "text": "À partir de t = 4, nous pouvons multiplier les deux membres par zéro et obtenir 0 = 0. Toute solution initiale vérifie encore cette égalité. Pourtant, la nouvelle est également vérifiée avec t = −1, qui ne satisfait pas t = 4. De nouvelles solutions ont été ajoutées ; les équations ne sont donc pas équivalentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zéro annule les deux membres et nous ne pouvons pas défaire cette opération en divisant par zéro. Multiplier par zéro n'est donc pas une règle générale conservant toutes les solutions. Une équation qui était déjà vraie pour toutes les valeurs pourrait conserver cet ensemble par hasard ; cette coïncidence ne fournit ni opération inverse ni garantie pour d'autres équations (Lang, 1971, pp. 14–15, 42–45)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_introduce_soluciones",
+          "prompt": "Dans le domaine des rationnels, que se passe-t-il lorsqu'on transforme t = 4 en 0 = 0 en multipliant les deux membres par zéro ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_introduce_soluciones__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "On conserve exactement l'unique solution t = 4.",
+                  "reviewFeedback": "Teste une autre valeur dans la nouvelle condition et compare les ensembles de solutions admis."
+                },
+                {
+                  "id": "b",
+                  "label": "La nouvelle égalité admet tous les rationnels, y compris des valeurs rejetées par l'ancienne.",
+                  "reviewFeedback": "Vérifie l'égalité numérique finale avec différentes valeurs du domaine et relie-la à la condition initiale."
+                },
+                {
+                  "id": "c",
+                  "label": "La nouvelle égalité n'admet aucune valeur parce qu'aucune lettre n'est visible.",
+                  "reviewFeedback": "L'absence de lettre ne détermine pas la vérité d'une égalité ; évalue ses deux membres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t = 4 n'admet que quatre. 0 = 0 est vraie pour tout rationnel proposé pour t. La disparition de la lettre ne restreint pas ces valeurs ; la condition initiale a été perdue.",
+            "incorrect": "Teste une valeur autre que quatre dans chaque équation. Distingue ensuite la conservation des solutions initiales de l'apparition éventuelle de nouvelles solutions."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "limite_de_la_regla",
+          "prompt": "Sélectionne toutes les affirmations correctes concernant la multiplication d'une équation par zéro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "limite_de_la_regla__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle ne garantit pas de conserver exactement les solutions de toute équation.",
+                  "reviewFeedback": "Examine ce qui arrive aux valeurs admises avant et après l'opération dans un exemple concret."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle modifie toujours l'ensemble des solutions, même si l'équation était déjà vraie pour toutes les valeurs.",
+                  "reviewFeedback": "Examine aussi une équation qui est déjà une identité avant d'affirmer que le changement se produit toujours."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucune division par zéro ne permet de retrouver valablement les membres précédents.",
+                  "reviewFeedback": "Vérifie si l'opération inverse mentionnée dans cette affirmation est définie."
+                },
+                {
+                  "id": "d",
+                  "label": "Conserver les solutions antérieures dans le sens direct suffit à prouver l'équivalence.",
+                  "reviewFeedback": "L'équivalence exige les deux sens ; vérifie si de nouvelles valeurs admises peuvent apparaître."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La garantie générale nécessite une opération inverse définie. Multiplier par zéro peut ajouter des solutions, mais une identité les admettait déjà toutes. La coïncidence accidentelle d'un cas ne rend pas l'opération réversible.",
+            "incorrect": "N'étends pas le contre-exemple au-delà de ce qui est démontré. L'absence d'opération inverse est générale ; le changement de l'ensemble des solutions dépend de l'équation de départ."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir un chemin et le justifier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour résoudre −3(y + 2) = 9, nous pouvons d'abord distribuer : −3y − 6 = 9. Ajoutons six aux deux membres pour obtenir −3y = 15. Les diviser par −3 donne y = −5. Nous pouvons aussi commencer par diviser les deux membres de l'équation initiale par −3 : y + 2 = −3. Soustraire deux des deux membres donne y = −5. Les deux chemins sont valables parce que chaque étape conserve toutes les solutions (Lang, 1971, pp. 37–38)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La forme finale y = −5 admet exactement une solution. Puisque chaque étape est équivalente dans les deux sens, cette solution correspond aussi à l'équation initiale et aucune autre n'est oubliée. La substitution indépendante confirme que −3(−5 + 2) = 9. Vérifier le raisonnement et le calcul aide à repérer une étape fragile plutôt que de la répéter sans examen (Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_comprobar_una_cadena",
+          "prompt": "Résous −2(t − 3) + 1 = t − 2 dans les rationnels avec des transformations réversibles. Écris la valeur de t et calcule les deux membres initiaux avec cette valeur. Tu peux choisir ton propre chemin.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_comprobar_una_cadena__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Valeur obtenue pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Membre gauche initial avec ce t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre droit initial avec ce t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Voici un chemin possible : la distributivité donne −2t + 7 = t − 2 ; soustraire t des deux membres donne −3t + 7 = −2 ; soustraire sept donne −3t = −9 ; diviser par −3 donne t = 3. Toutes ces étapes peuvent être inversées. Dans l'équation initiale, −2(3 − 3) + 1 = 1 et 3 − 2 = 1. D'autres chemins valables mènent à la même solution.",
+            "incorrect": "Conserve les signes lorsque tu distribues −2 sur t − 3. Applique chaque addition, soustraction ou division aux deux membres ; substitue ensuite le résultat dans l'équation initiale, pas seulement dans la dernière ligne."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_acredita_cada_revision",
+          "prompt": "Après avoir obtenu t = 3 dans l'exercice précédent, qu'est-ce qui distingue la vérification de la justification par étapes équivalentes ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_acredita_cada_revision__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La substitution confirme que trois convient ; la réversibilité de la chaîne jusqu'à t = 3 montre qu'aucune autre solution n'a été omise.",
+                  "reviewFeedback": "Distingue la vérification d'une proposition du raisonnement qui conserve l'ensemble des solutions."
+                },
+                {
+                  "id": "b",
+                  "label": "La substitution de trois prouve à elle seule qu'aucun autre rationnel ne peut convenir.",
+                  "reviewFeedback": "Examine quelle information apporte le test d'une valeur et ce qu'il reste à prouver concernant les autres."
+                },
+                {
+                  "id": "c",
+                  "label": "Obtenir une forme simple permet d'omettre la vérification des étapes précédentes.",
+                  "reviewFeedback": "Une forme finale simple ne valide pas les étapes intermédiaires ; vérifie leur réversibilité une à une."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La substitution confirme la valeur trouvée. La chaîne réversible démontre que l'ensemble des solutions initial coïncide avec celui de t = 3, qui ne contient que trois. Ces deux vérifications ont des rôles distincts.",
+            "incorrect": "Rappelle-toi la différence entre vérifier une proposition et déterminer toutes les solutions. Une dernière ligne ne justifie pas à elle seule comment elle a été obtenue ni la conservation de l'ensemble complet."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revenir au domaine du problème"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une équation peut être résolue dans les rationnels tout en provenant d'un contexte qui autorise moins de valeurs. Il faut conserver cette restriction. Pour une exposition, on prépare des rangées complètes de trois chaises, auxquelles s'ajoutent cinq chaises individuelles. On veut disposer d'exactement treize chaises. Nous définissons n comme le nombre de rangées complètes : un entier positif ou nul. La condition est 3n + 5 = 13."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "solucion_algebraica_y_contexto",
+          "prompt": "Résous d'abord 3n + 5 = 13 dans les rationnels par des opérations réversibles. Écris ce résultat. Puis détermine s'il permet d'organiser l'exposition avec des rangées complètes de trois chaises et cinq chaises individuelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "solucion_algebraica_y_contexto__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racional",
+                  "type": "numeric",
+                  "label": "Solution de l'équation dans les rationnels",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racional": {
+                    "type": "numeric",
+                    "expected": "8/3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "solucion_algebraica_y_contexto__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : on arrondit à trois rangées en conservant le nombre exact souhaité.",
+                  "reviewFeedback": "Calcule le total que produirait l'arrondi et compare-le à l'objectif exact."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui : une rangée complète peut être comptée comme toute fraction résolvant l'équation.",
+                  "reviewFeedback": "Relie le mot « complète » au domaine du nombre de rangées, ainsi qu'à l'équation résolue."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : l'unique solution rationnelle est 8/3, qui n'appartient pas au domaine des nombres entiers de rangées.",
+                  "reviewFeedback": "Compare le résultat algébrique au domaine des rangées et explique pourquoi les deux contrôles sont nécessaires."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire cinq donne 3n = 8 ; diviser par trois donne n = 8/3. Comme les étapes sont réversibles, c'est l'unique solution rationnelle. Ce n'est pas un entier, donc il n'y a aucune solution dans le domaine du problème. Arrondir à trois rangées donnerait quatorze chaises et non treize.",
+            "incorrect": "Distingue la résolution de l'équation dans un domaine large de l'acceptation d'une organisation pour l'événement. L'objectif est exact et n compte les rangées complètes ; les fractions et les arrondis modifiant le total ne sont pas admis."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve toujours trois vérifications : chaque étape doit conserver toutes les solutions dans le domaine algébrique, la proposition doit satisfaire l'équation initiale et elle doit représenter une quantité permise par le contexte. Cette leçon établit les fondements de la méthode ; les suivantes donneront davantage d'exercices pour choisir et appliquer des transformations sans dépendre d'une chaîne déjà écrite."
+        }
+      ]
+    }
+  ]
+}

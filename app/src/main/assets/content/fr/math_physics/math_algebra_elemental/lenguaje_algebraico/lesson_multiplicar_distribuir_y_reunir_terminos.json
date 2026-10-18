@@ -1,0 +1,1171 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__multiplicar_distribuir_y_reunir_terminos",
+  "title": "Multiplier, distribuer et regrouper les termes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire les termes et leurs coefficients"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette leçon prolonge les opposés, les soustractions et les parenthèses : nous combinerons ces idées avec la multiplication et la distributivité. Les lettres représentent des nombres rationnels, sauf si le contexte impose un domaine plus restreint. Nous travaillerons avec des produits d'un nombre par une lettre et avec des constantes, afin de justifier comment modifier une écriture sans changer sa valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour reconnaître les termes d'une somme, commence par lire les soustractions comme des additions d'opposés. Dans 6x − x + 4, on obtient 6x + (−x) + 4 : les termes entiers, avec leur signe, sont 6x, −x et quatre. Le facteur numérique d'un terme contenant une lettre s'appelle son coefficient. Dans 6x, c'est six ; dans −x, c'est −1, car −x = (−1)x. Quatre est un terme constant : il ne contient pas x. Cette lecture des facteurs et des termes préserve leurs signes (Gelfand & Shen, 1993, p. 45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'écriture x signifie 1x : son coefficient est un, même s'il n'est pas écrit. Dans 0x, le coefficient est zéro et le terme vaut zéro pour tout x. Cela n'exige pas que x soit nul ; c'est le facteur numérique qui annule le produit. Identifier le coefficient n'équivaut pas non plus à évaluer le terme pour une donnée."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_visibles_y_ocultos",
+          "prompt": "Écris le coefficient de t dans chaque terme. Inclus le signe et la fraction lorsqu'il y en a.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_visibles_y_ocultos__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "uno",
+                  "type": "numeric",
+                  "label": "Coefficient dans t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "menos_uno",
+                  "type": "numeric",
+                  "label": "Coefficient dans −t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "Coefficient dans 0t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Coefficient dans (−3/2)t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "uno": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "menos_uno": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t = 1t et −t = (−1)t. Dans 0t, le facteur est zéro ; dans (−3/2)t, c'est −3/2. On lit les coefficients dans l'écriture sans choisir t.",
+            "incorrect": "Ne confonds pas le facteur numérique avec la lettre et n'ignore pas le signe. Les facteurs un et moins un s'écrivent souvent sans le chiffre un."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_y_valor_del_termino",
+          "prompt": "Dans le terme −3x, identifie le coefficient de x et calcule la valeur du terme avec x = −2/3. Indique ensuite ce que montre ce résultat.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_y_valor_del_termino__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de x dans −3x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Valeur de −3x avec x = −2/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_y_valor_del_termino__lectura",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Un coefficient négatif impose une valeur négative au terme.",
+                  "reviewFeedback": "Calcule le produit en tenant compte des signes du coefficient et de la donnée ; ne juge pas le terme d'après un seul des deux."
+                },
+                {
+                  "id": "b",
+                  "label": "Le terme peut avoir une valeur positive même si son coefficient est négatif.",
+                  "reviewFeedback": "Distingue le signe du coefficient de celui qui résulte de sa multiplication par la donnée."
+                },
+                {
+                  "id": "c",
+                  "label": "Une substitution fractionnaire transforme le coefficient −3 en un autre nombre.",
+                  "reviewFeedback": "Sépare le coefficient écrit de la substitution servant à calculer la valeur du terme."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le coefficient vaut −3, mais avec x = −2/3, le terme vaut deux. Le signe du coefficient ne détermine pas à lui seul celui du produit : la valeur de x intervient également.",
+            "incorrect": "Distingue le facteur numérique écrit devant la lettre de la valeur de tout le produit lorsqu'on remplace x."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiplier le groupe entier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 3(2x + 5), le facteur trois multiplie toute la quantité 2x + 5. La distributivité permet d'écrire 3 × (2x) + 3 × 5. L'associativité regroupe les facteurs numériques du premier produit : 3 × (2 × x) = (3 × 2)x. Ainsi, 3(2x + 5) = 6x + 15 pour tout rationnel x."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces propriétés ne se limitent pas aux valeurs entières positives de la lettre. La multiplication des rationnels conserve l'associativité, la commutativité, la distributivité et les produits par un et par zéro (Lang, 1971, pp. 15–17, 37). Nous pouvons donc justifier une transformation à l'aide de propriétés, sans transformer une table d'exemples en démonstration pour tous les rationnels."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_y_multiplicar_factores",
+          "prompt": "Complète l'identité : le premier espace est le coefficient de t après multiplication ; le second est le terme constant. Le facteur quatre agit sur toute la parenthèse.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_y_multiplicar_factores__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de t après distribution du quatre",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant après distribution du quatre",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "4(3t + 2) = "
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": "t + "
+                },
+                {
+                  "field": "constante"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4 × 3t = 12t et 4 × 2 = 8. Le terme avec lettre et le terme constant sont tous deux multipliés : 4(3t + 2) = 12t + 8.",
+            "incorrect": "Regroupe les facteurs quatre et trois dans le terme contenant t. Deux se trouve aussi dans le groupe et reçoit donc le facteur quatre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_que_olvida_la_constante",
+          "prompt": "Une note affirme que 4(q + 7) = 4q + 7 pour tout rationnel q. Évalue les deux membres avec q = 0 et choisis la correction adaptée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_que_olvida_la_constante__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valeur de 4(q + 7) avec q = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valeur de 4q + 7 avec q = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "28"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            },
+            {
+              "id": "factor_que_olvida_la_constante__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le facteur extérieur doit aussi multiplier le terme constant.",
+                  "reviewFeedback": "Applique le facteur à chaque terme du groupe et vérifie l'écriture obtenue avec la donnée demandée."
+                },
+                {
+                  "id": "b",
+                  "label": "Il faut modifier le domaine pour empêcher q de valoir zéro.",
+                  "reviewFeedback": "Distingue la correction de la transformation du changement de domaine qui exclurait une vérification gênante."
+                },
+                {
+                  "id": "c",
+                  "label": "Le sept peut rester tel quel parce qu'il ne contient pas de lettre.",
+                  "reviewFeedback": "L'absence de lettre dans un terme ne le place pas hors du groupe sur lequel agit le facteur."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les membres valent vingt-huit et sept : cette donnée permise réfute l'identité proposée. Le facteur quatre doit aussi multiplier sept ; l'écriture correcte est 4q + 28.",
+            "incorrect": "Substitue la donnée sans corriger la note au préalable. Le terme sept fait partie du groupe recevant le facteur quatre."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribuer des facteurs négatifs et fractionnaires"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans −2(3x − 4), le facteur négatif agit lui aussi sur les deux termes. Lis d'abord le groupe comme 3x + (−4) : le résultat est (−2) × 3x + (−2) × (−4), soit −6x + 8. Le terme constant change de signe parce que le produit de deux facteurs négatifs est positif. Ce n'est pas une exception à la distributivité : c'est la même propriété appliquée à des nombres signés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un facteur fractionnaire agit de la même manière. (1/2)(6x + 3) = 3x + 3/2 : chaque terme est multiplié, sans arrondir ni écarter une fraction. Multiplier par −1 prend l'opposé du groupe entier ; multiplier par zéro annule tout le groupe. Ces règles restent valables pour les rationnels grâce aux propriétés de la multiplication (Lang, 1971, pp. 16–17, 37)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_negativo_fraccionario",
+          "prompt": "Complète l'identité pour tous les rationnels r. Le premier espace contient le coefficient de r et le second le terme constant. Indique leurs signes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_negativo_fraccionario__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de r après multiplication par −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant après multiplication par −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(−3/2)(4r − 2) = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")r + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(−3/2) × 4r = −6r et (−3/2) × (−2) = 3. L'identité est (−3/2)(4r − 2) = −6r + 3.",
+            "incorrect": "Multiplie le facteur entier par chaque terme du groupe. Le deuxième terme est moins deux, pas deux ; son signe fait partie du produit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "el_cero_actua_sobre_el_grupo",
+          "prompt": "Sélectionne toutes les expressions ayant la même valeur que 0(3x + 2) pour tout rationnel x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "el_cero_actua_sobre_el_grupo__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2",
+                  "reviewFeedback": "Calcule le produit entier avant de le comparer à l'expression constante choisie."
+                },
+                {
+                  "id": "b",
+                  "label": "0x",
+                  "reviewFeedback": "Évalue cette expression pour différentes valeurs et compare-la au produit de l'énoncé."
+                },
+                {
+                  "id": "c",
+                  "label": "0x + 2",
+                  "reviewFeedback": "Vérifie si le terme constant choisi subit également l'effet du facteur extérieur initial."
+                },
+                {
+                  "id": "d",
+                  "label": "0",
+                  "reviewFeedback": "Calcule l'effet du facteur extérieur sur tout le groupe et compare-le à cette expression."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zéro multiplie les deux termes : 0 × 3x + 0 × 2 = 0 + 0. Zéro et 0x valent tous deux zéro pour tout x.",
+            "incorrect": "Le terme constant est dans le groupe et reçoit également le facteur zéro. Il ne peut pas être conservé comme si seule la lettre était multipliée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regrouper les termes revient à lire la distributivité à l'envers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 7x − 3x, les deux termes partagent le facteur x. En lisant la distributivité à l'envers, on obtient 7x − 3x = (7 − 3)x = 4x. On additionne les coefficients avec leurs signes ; la lettre continue de représenter la même quantité. On n'additionne pas les noms des lettres et on ne remplace pas x par quatre."
+        },
+        {
+          "type": "paragraph",
+          "text": "La raison est générale : si c et d sont deux coefficients rationnels, cx + dx = (c + d)x. On appelle termes semblables ceux qui partagent la même partie littérale ; ici, cette partie est une lettre sans autre facteur variable. Les termes peuvent être semblables même si un coefficient est négatif ou si les coefficients sont des fractions. Regrouper les termes qui partagent leur partie littérale conserve la valeur (Gelfand & Shen, 1993, p. 45). x = 0 est aussi admis : la distributivité n'exige pas que le facteur commun soit non nul."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_coeficientes_racionales",
+          "prompt": "Regroupe les trois termes semblables. Complète le coefficient de x pour que l'identité soit valable pour tout rationnel x ; rappelle-toi que le dernier x a pour coefficient un.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_coeficientes_racionales__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de x après regroupement des trois termes",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(5/6)x − (1/3)x + x = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")x"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/6 − 1/3 + 1 = 5/6 − 2/6 + 6/6 = 9/6 = 3/2. La distributivité inverse regroupe le facteur x et laisse (3/2)x.",
+            "incorrect": "Additionne les facteurs numériques avec leurs signes. Utilise un dénominateur commun pour les coefficients ; le dernier x apporte un, pas zéro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_cero_al_reunir",
+          "prompt": "Regroupe les termes de x − x + 8. Écris le coefficient qui reste devant x et le terme constant. Indique ensuite ce qui est vrai pour le domaine de tous les rationnels x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_cero_al_reunir__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de x après regroupement de x − x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant restant",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_cero_al_reunir__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La transformation n'est valable que si x vaut zéro.",
+                  "reviewFeedback": "Examine pourquoi soustraire une quantité à elle-même dépend, ou non, d'une valeur particulière de l'inconnue."
+                },
+                {
+                  "id": "b",
+                  "label": "Le terme constant doit être supprimé avec les deux termes contenant x.",
+                  "reviewFeedback": "Regroupe les termes avec lettre sans les confondre avec le terme constant qui reste à part."
+                },
+                {
+                  "id": "c",
+                  "label": "La valeur est huit pour tout rationnel x, parce que son coefficient devient zéro.",
+                  "reviewFeedback": "Vérifie quelle dépendance à la lettre subsiste après regroupement de ses coefficients."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les coefficients un et moins un donnent zéro : x − x + 8 = 0x + 8 = 8. C'est vrai pour tout rationnel x ; il n'est pas nécessaire de fixer x à zéro.",
+            "incorrect": "x et −x ont des coefficients opposés. Le huit n'est pas multiplié par x et ne disparaît pas lorsque ces termes s'annulent."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer les termes avec lettre des constantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 2x + 7 − x − 3, conservons les signes en regroupant : (2x − x) + (7 − 3). Les termes avec x donnent x et les constantes donnent quatre. On obtient x + 4. Ce regroupement utilise l'addition et les opposés de la leçon précédente ; il ne transforme pas quatre en facteur de x."
+        },
+        {
+          "type": "paragraph",
+          "text": "On peut additionner les termes constants entre eux parce que ce sont des nombres. On peut regrouper les coefficients des termes contenant le même x. Mais on ne peut pas, pour tous les rationnels, remplacer une constante par un autre multiple de la lettre. 3x + 2 et 3x + 2x sont des expressions différentes : dans la seconde, deux multiplie aussi x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "agrupar_dos_clases_de_terminos",
+          "prompt": "Regroupe les termes de −2t + 7 + 5t − 9. Le premier espace est le coefficient de t et le second le terme constant, avec son signe.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "agrupar_dos_clases_de_terminos__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de t après regroupement de −2t et 5t",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant après addition de sept et moins neuf",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "−2t + 7 + 5t − 9 = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")t + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 + 5 = 3 permet de regrouper le facteur t. Sept moins neuf donne −2 comme constante. L'expression obtenue est 3t − 2, valable pour tout rationnel t.",
+            "incorrect": "Conserve le signe de chaque terme avant le regroupement. Calcule séparément la constante ; ne l'intègre pas au coefficient de t."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "constante_no_es_otro_coeficiente",
+          "prompt": "Une note affirme que 3x + 2 = 5x pour tout rationnel x. Évalue les deux membres avec x = 1 et x = 0 ; choisis la conclusion justifiée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "constante_no_es_otro_coeficiente__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_uno",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 2 avec x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_uno",
+                  "type": "numeric",
+                  "label": "Valeur de 5x avec x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_cero",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 2 avec x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_cero",
+                  "type": "numeric",
+                  "label": "Valeur de 5x avec x = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "der_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "izq_cero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "der_cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "constante_no_es_otro_coeficiente__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'égalité n'est pas une identité, même si elle est vérifiée avec x = 1.",
+                  "reviewFeedback": "Distingue une coïncidence particulière d'une identité et compare les vérifications demandées."
+                },
+                {
+                  "id": "b",
+                  "label": "L'égalité est une identité parce qu'une vérification a réussi.",
+                  "reviewFeedback": "Examine ce qui se produit avec une autre valeur avant d'étendre une vérification au domaine entier."
+                },
+                {
+                  "id": "c",
+                  "label": "Il faut interdire x = 0 pour que trois et deux puissent être additionnés comme coefficients.",
+                  "reviewFeedback": "Restreindre le domaine ne change pas quels termes peuvent être regroupés comme termes semblables."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec un, les deux membres valent cinq. Avec zéro, ils valent deux et zéro : cette donnée permise réfute l'identité. Deux est un terme constant, pas le coefficient d'un autre terme avec x.",
+            "incorrect": "Ne transforme pas le terme constant deux en 2x. Une coïncidence particulière pour x = 1 n'autorise pas le regroupement de termes de catégories différentes dans tout le domaine."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des lettres différentes exigent une relation supplémentaire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 2a + 3b, a et b étant rationnels sans autre relation indiquée, les termes ne partagent pas la même partie littérale. On ne peut pas écrire 5a pour toutes les paires. On ne peut pas non plus juxtaposer les lettres comme si elles formaient le nom d'un nombre. Des noms distincts permettent de distinguer des quantités ; ils n'imposent pas que leurs valeurs diffèrent ni qu'elles soient égales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un modèle établit b = a, nous pouvons remplacer b par a et regrouper 2a + 3a = 5a dans ce contexte. S'il établit b = 2a, la substitution donne 2a + 3(2a) = 8a. C'est la relation donnée qui autorise le regroupement, pas une coïncidence numérique observée pour une seule paire."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letras_distintas_y_un_dato",
+          "prompt": "Avec a = −1/2 et b = 3/2, calcule 2a + 3b et 5a. Détermine ensuite ce que cette paire de valeurs permises démontre sur l'affirmation 2a + 3b = 5a pour tous les rationnels a et b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letras_distintas_y_un_dato__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Valeur de 2a + 3b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "reunida",
+                  "type": "numeric",
+                  "label": "Valeur de 5a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "reunida": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "letras_distintas_y_un_dato__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'affirmation est une identité parce que la somme des coefficients vaut cinq.",
+                  "reviewFeedback": "Pour regrouper les termes, compare aussi les quantités que multiplient ces coefficients."
+                },
+                {
+                  "id": "b",
+                  "label": "La donnée réfute l'affirmation universelle, même si les expressions peuvent coïncider pour d'autres paires.",
+                  "reviewFeedback": "Compare la portée d'une donnée produisant une différence avec celle d'une affirmation universelle."
+                },
+                {
+                  "id": "c",
+                  "label": "La donnée est interdite, car des lettres différentes doivent avoir la même valeur.",
+                  "reviewFeedback": "Les lettres désignent des quantités différentes ; vérifie quelles restrictions le domaine impose réellement à leurs valeurs."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 × (−1/2) + 3 × (3/2) = −1 + 9/2 = 7/2, tandis que 5a = −5/2. Ces valeurs diffèrent : on ne peut pas toujours remplacer b par a sans relation l'autorisant.",
+            "incorrect": "Utilise chaque lettre avec sa propre valeur. On ne peut pas additionner les facteurs deux et trois en un coefficient unique de a tant que le deuxième terme contient b."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_con_una_relacion_dada",
+          "prompt": "Pour l'expression 4u + 2v, associe chaque ensemble de conditions à une expression équivalente pour toutes les paires rationnelles permises. Utilise chaque destination une fois et complète les trois associations. Il ne faut pas choisir de paire numérique particulière.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_con_una_relacion_dada__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "opuestos",
+                  "label": "On établit v = −u"
+                },
+                {
+                  "id": "sin_relacion",
+                  "label": "Aucune relation supplémentaire entre u et v n'est établie"
+                },
+                {
+                  "id": "iguales",
+                  "label": "On établit v = u"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "original",
+                  "label": "4u + 2v"
+                },
+                {
+                  "id": "seis",
+                  "label": "6u"
+                },
+                {
+                  "id": "dos",
+                  "label": "2u"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "opuestos": "dos",
+                  "sin_relacion": "original",
+                  "iguales": "seis"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec v = −u, on peut regrouper 4u + 2v sous la forme 2u. Avec v = u, on peut le regrouper sous la forme 6u. L'expression initiale conserve également sa valeur dans ces relations, mais dans cet exercice d'association, elle doit être réservée au cas sans relation supplémentaire : c'est la seule destination qui fonctionne pour toutes les paires de ce cas, et chacune n'est utilisée qu'une fois.",
+            "incorrect": "Commence par le cas sans relation supplémentaire : il ne permet pas de remplacer v par u ni par son opposé pour toutes les paires. Ce cas exige l'expression initiale. Utilise ensuite chacune des destinations restantes une seule fois et applique la relation fournie aux autres cas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combiner les produits avec des groupes soustraits"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 3(x − 2) − (x + 4), deux opérations agissent sur des groupes. Le facteur trois se distribue sur le premier : 3x − 6. Soustraire le deuxième groupe revient à prendre son opposé : −x − 4. Ensemble, ces opérations donnent 3x − 6 − x − 4 = 2x − 10. On conserve le signe de chaque terme avant de regrouper."
+        },
+        {
+          "type": "paragraph",
+          "text": "La même idée fonctionne avec des facteurs négatifs ou fractionnaires et des coefficients qui deviennent un, moins un ou zéro. Avant de simplifier, identifie le facteur agissant sur chaque groupe, les termes obtenus et les parties qui partagent la lettre. Une substitution peut vérifier la lecture, tandis que les propriétés justifient toutes les valeurs du domaine."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "combinar_distribuciones_y_constantes",
+          "prompt": "Pour −2(3t − 1) + 4(t + 2) − 5, écris une expression équivalente pour tout rationnel t. Indique aussi le coefficient de t et le terme constant après distribution et regroupement. Les formes équivalentes de l'expression sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "combinar_distribuciones_y_constantes__expresion",
+              "type": "math_expression_input",
+              "label": "Expression résultante équivalente",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-2t+5"
+              }
+            },
+            {
+              "id": "combinar_distribuciones_y_constantes__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de t après regroupement de tous les termes en t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant après regroupement",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le premier produit donne −6t + 2 et le deuxième 4t + 8. Avec moins cinq, le regroupement donne (−6 + 4)t + (2 + 8 − 5) = −2t + 5. L'identité est justifiée par la distributivité et le regroupement sans choisir t.",
+            "incorrect": "Chaque facteur extérieur agit sur tous les termes de son groupe. Regroupe ensuite les termes en t et calcule séparément la somme des constantes avec leurs signes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_factor_y_grupo_resta",
+          "prompt": "Une note remplace (1/2)(4x − 6) − (x − 5) par 2x − 6 − x + 5. Évalue les deux écritures avec x = −3/2 et choisis ce qui doit être corrigé.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_factor_y_grupo_resta__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Valeur de (1/2)(4x − 6) − (x − 5)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "apunte",
+                  "type": "numeric",
+                  "label": "Valeur de 2x − 6 − x + 5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "apunte": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "recuperar_factor_y_grupo_resta__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le facteur 1/2 doit aussi multiplier moins six.",
+                  "reviewFeedback": "Applique le facteur au groupe entier, y compris au terme constant avec son signe."
+                },
+                {
+                  "id": "b",
+                  "label": "Soustraire x − 5 doit donner moins x moins cinq.",
+                  "reviewFeedback": "Distribue la soustraction sur chaque terme des parenthèses et vérifie le signe de chacun."
+                },
+                {
+                  "id": "c",
+                  "label": "Le facteur 1/2 n'est valable que si x est un entier positif.",
+                  "reviewFeedback": "Consulte le domaine de l'expression et vérifie si multiplier par une fraction impose ce signe ou ce caractère entier."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'expression initiale vaut 1/2 et la note −5/2. Soustraire x − 5 donne bien −x + 5. L'erreur concerne le premier groupe : multiplier moins six par 1/2 donne moins trois. La simplification correcte est x + 2.",
+            "incorrect": "Conserve les deux expressions pendant la vérification. Le facteur 1/2 multiplie aussi le terme constant ; la soustraction extérieure agit sur les deux termes du second groupe."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer les propriétés à un déplacement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve le modèle de mouvements signés de la leçon précédente. Sur une droite orientée, l'est est positif. Un jeton effectue deux déplacements vers l'est de même longueur, puis un retour vers l'ouest. x mesure une longueur rationnelle positive ou nulle en mètres. Chaque avance mesure x/2 + 2 mètres et le retour x + 3 mètres ; ces quantités restent positives même pour x = 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le déplacement total additionne les avances et soustrait le retour vers l'ouest : il décrit le changement entre la position initiale et la position finale. La distance parcourue additionne les longueurs des trois mouvements. Distingue ces quantités pour construire le modèle et regrouper les termes. La même définition de x doit être conservée dans tous les groupes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelo_de_dos_avances_y_un_regreso",
+          "prompt": "Le jeton fait deux avances de x/2 + 2 mètres chacune, puis recule de x + 3 mètres. x est une longueur rationnelle positive ou nulle, mesurée en mètres. Écris une expression du déplacement total signé et indique son coefficient de x ainsi que son terme constant après regroupement. Les expressions équivalentes sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__expresion",
+              "type": "math_expression_input",
+              "label": "Déplacement total signé, en mètres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2*(x/2+2)-(x+3)"
+              }
+            },
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient de x dans le déplacement simplifié",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Terme constant du déplacement, en mètres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux avances donnent 2(x/2 + 2) = x + 4. Le retour soustrait le groupe x + 3, donc le déplacement vaut x + 4 − x − 3 = 1 mètre vers l'est. Le coefficient de x devient zéro et la constante un. L'identité respecte le modèle pour toutes les valeurs admises.",
+            "incorrect": "Compte les deux avances et soustrais le retour entier. Conserve le mètre comme unité et regroupe le coefficient de x séparément des constantes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_el_movimiento_con_fracciones",
+          "prompt": "Avec x = 1/2 mètre, calcule la longueur totale des deux avances, la longueur du retour, le déplacement total signé et la distance parcourue. Écris toutes les valeurs en mètres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_el_movimiento_con_fracciones__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "avances",
+                  "type": "numeric",
+                  "label": "Longueur totale des deux avances",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "retroceso",
+                  "type": "numeric",
+                  "label": "Longueur du retour",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "desplazamiento",
+                  "type": "numeric",
+                  "label": "Déplacement total signé",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "distancia",
+                  "type": "numeric",
+                  "label": "Distance parcourue en additionnant les trois longueurs",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "avances": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "retroceso": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "desplazamiento": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "distancia": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque avance mesure 1/4 + 2 = 9/4 mètres ; ensemble, elles valent 9/2. Le retour mesure 7/2. La différence est un mètre vers l'est et la distance totale vaut huit mètres. La simplification du modèle explique le déplacement ; cette substitution le vérifie avec une donnée permise.",
+            "incorrect": "Compte les deux avances avant de les comparer au retour. Pour le déplacement, soustrais les longueurs de sens opposés ; pour la distance parcourue, additionne les trois longueurs positives."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Le regroupement des termes permet de reconnaître la contribution de chaque coefficient et ce qui reste comme constante, tout en conservant les valeurs et les conditions du modèle. Justifie les transformations grâce aux facteurs et aux propriétés ; vérifie une donnée lorsque cela aide à déceler une erreur. Un calcul réussi ne remplace pas la raison générale qui conserve l'expression."
+        }
+      ]
+    }
+  ]
+}

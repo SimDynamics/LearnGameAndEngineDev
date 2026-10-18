@@ -1,0 +1,1171 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__multiplicar_distribuir_y_reunir_terminos",
+  "title": "Multiplying, Distributing, and Combining Terms",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read Terms and Their Coefficients"
+        },
+        {
+          "type": "paragraph",
+          "text": "This lesson builds on opposites, subtraction, and parentheses: we will combine those ideas with multiplication and distributivity. Letters represent rational numbers unless a context specifies a narrower domain. We will work with products of a number and a letter, and with constants, to justify changing an expression's notation without changing its value."
+        },
+        {
+          "type": "paragraph",
+          "text": "To recognize the terms of a sum, first read subtractions as additions of opposites. In 6x − x + 4 we obtain 6x + (−x) + 4: the complete signed terms are 6x, −x, and four. The numerical factor in a term containing a letter is called its coefficient. In 6x it is six; in −x it is −1, because −x = (−1)x. Four is a constant term: it does not contain x. This way of reading factors and terms preserves their signs (Gelfand & Shen, 1993, p. 45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The notation x means 1x: its coefficient is one even though it is not written. In 0x the coefficient is zero, and the term equals zero for every x. This does not require x to be zero; the numerical factor makes the product zero. Identifying the coefficient is not the same as evaluating the term for an input."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_visibles_y_ocultos",
+          "prompt": "Write the coefficient of t in each term. Include the sign and fraction where appropriate.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_visibles_y_ocultos__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "uno",
+                  "type": "numeric",
+                  "label": "Coefficient in t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "menos_uno",
+                  "type": "numeric",
+                  "label": "Coefficient in −t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "Coefficient in 0t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Coefficient in (−3/2)t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "uno": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "menos_uno": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t = 1t and −t = (−1)t. In 0t the factor is zero; in (−3/2)t it is −3/2. Coefficients are read from the notation without choosing t.",
+            "incorrect": "Do not confuse the numerical factor with the letter or ignore its sign. The factors one and negative one are often written without the digit one."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_y_valor_del_termino",
+          "prompt": "In the term −3x, identify the coefficient of x and calculate the term's value when x = −2/3. Then say what that result shows.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_y_valor_del_termino__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of x in −3x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Value of −3x with x = −2/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_y_valor_del_termino__lectura",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A negative coefficient forces the term to be negative.",
+                  "reviewFeedback": "Multiply using the signs of both the coefficient and the input; do not judge the term by just one of them."
+                },
+                {
+                  "id": "b",
+                  "label": "The term can have a positive value even if its coefficient is negative.",
+                  "reviewFeedback": "Distinguish the coefficient's sign from the sign resulting when it is multiplied by the input."
+                },
+                {
+                  "id": "c",
+                  "label": "A fractional substitution changes the coefficient from −3 to another number.",
+                  "reviewFeedback": "Separate the written coefficient from the substitution used to calculate the term's value."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The coefficient is −3, but with x = −2/3 the term equals two. The coefficient's sign alone does not determine the product's sign: the value of x matters too.",
+            "incorrect": "Distinguish the numerical factor written before the letter from the value of the entire product after substituting x."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiply the Entire Group"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 3(2x + 5), the factor three multiplies the whole quantity 2x + 5. The distributive property lets us write 3 × (2x) + 3 × 5. Associativity combines the numerical factors of the first product: 3 × (2 × x) = (3 × 2)x. Thus 3(2x + 5) = 6x + 15 for any rational x."
+        },
+        {
+          "type": "paragraph",
+          "text": "These properties are not limited to positive integer values of the letter. Multiplication of rational numbers obeys associativity, commutativity, distributivity, and the rules for multiplication by one and zero (Lang, 1971, pp. 15–17, 37). We can therefore justify a transformation using properties, without treating a table of examples as a proof for all rational numbers."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_y_multiplicar_factores",
+          "prompt": "Complete the identity: the first blank is the coefficient of t after multiplying; the second is the constant term. The factor four acts on everything inside the parentheses.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_y_multiplicar_factores__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of t after distributing four",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term after distributing four",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "4(3t + 2) = "
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": "t + "
+                },
+                {
+                  "field": "constante"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4 × 3t = 12t and 4 × 2 = 8. Both the letter term and the constant term are multiplied: 4(3t + 2) = 12t + 8.",
+            "incorrect": "Combine the factors four and three in the term containing t. Two is also inside the group, so it receives the factor four."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_que_olvida_la_constante",
+          "prompt": "A note claims that 4(q + 7) = 4q + 7 for every rational q. Evaluate both sides with q = 0 and choose the correct assessment.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_que_olvida_la_constante__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Value of 4(q + 7) with q = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Value of 4q + 7 with q = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "28"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            },
+            {
+              "id": "factor_que_olvida_la_constante__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The outside factor must also multiply the constant addend.",
+                  "reviewFeedback": "Apply the factor to every addend in the group and check the result using the requested input."
+                },
+                {
+                  "id": "b",
+                  "label": "The domain must be changed so q cannot equal zero.",
+                  "reviewFeedback": "Distinguish correcting the transformation from changing the domain to exclude an inconvenient test."
+                },
+                {
+                  "id": "c",
+                  "label": "Seven may stay unchanged because it does not contain a letter.",
+                  "reviewFeedback": "A term without a letter is still inside the group affected by the factor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sides equal twenty-eight and seven: the allowed input refutes the proposed identity. The factor four must also multiply seven; the correct expression is 4q + 28.",
+            "incorrect": "Substitute without correcting the note first. The addend seven is inside the group multiplied by four."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribute Negative and Fractional Factors"
+        },
+        {
+          "type": "paragraph",
+          "text": "In −2(3x − 4), the negative factor also affects both terms. First read the group as 3x + (−4): the result is (−2) × 3x + (−2) × (−4), that is, −6x + 8. The constant changes sign because multiplying two negative factors yields a positive product. This is not an exception to distributivity: it is the same property applied to signed numbers."
+        },
+        {
+          "type": "paragraph",
+          "text": "A fractional factor acts the same way. (1/2)(6x + 3) = 3x + 3/2: each term is multiplied without rounding or dropping a fraction. Multiplying by −1 takes the opposite of the entire group; multiplying by zero makes the whole group zero. These rules hold for rational numbers because of the properties of multiplication (Lang, 1971, pp. 16–17, 37)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_negativo_fraccionario",
+          "prompt": "Complete the identity for every rational r. The first blank contains the coefficient of r, and the second contains the constant term. Include their signs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_negativo_fraccionario__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of r after multiplying by −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term after multiplying by −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(−3/2)(4r − 2) = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")r + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(−3/2) × 4r = −6r and (−3/2) × (−2) = 3. The identity is (−3/2)(4r − 2) = −6r + 3.",
+            "incorrect": "Multiply the entire factor by each term in the group. The second term is negative two, not two; its sign belongs to the product."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "el_cero_actua_sobre_el_grupo",
+          "prompt": "Select all expressions that have the same value as 0(3x + 2) for every rational x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "el_cero_actua_sobre_el_grupo__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2",
+                  "reviewFeedback": "Calculate the entire product before comparing it with the constant expression you selected."
+                },
+                {
+                  "id": "b",
+                  "label": "0x",
+                  "reviewFeedback": "Evaluate this expression for different inputs and compare it with the grouped product in the question."
+                },
+                {
+                  "id": "c",
+                  "label": "0x + 2",
+                  "reviewFeedback": "Check whether the selected constant term is also affected by the original outside factor."
+                },
+                {
+                  "id": "d",
+                  "label": "0",
+                  "reviewFeedback": "Calculate the outside factor's effect on the entire group and compare it with this expression."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zero multiplies both terms: 0 × 3x + 0 × 2 = 0 + 0. Both zero and 0x equal zero for any x.",
+            "incorrect": "The constant term is inside the group and is also multiplied by zero. It cannot remain unchanged as though only the letter were multiplied."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combining Terms Means Reading Distributivity Backwards"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 7x − 3x, both terms share the factor x. Reading distributivity backwards gives 7x − 3x = (7 − 3)x = 4x. Add the coefficients with their signs; the letter still represents the same quantity. Do not add the names of the letters or substitute four for x."
+        },
+        {
+          "type": "paragraph",
+          "text": "The general reason is this: if c and d are two rational coefficients, cx + dx = (c + d)x. Terms that share the same letter part are called like terms; here that part is a letter with no other variable factors. They can be like terms even if one coefficient is negative or the coefficients are fractions. Combining terms with the same literal part preserves value (Gelfand & Shen, 1993, p. 45). x = 0 is also allowed: distributivity does not require a nonzero common factor."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_coeficientes_racionales",
+          "prompt": "Combine the three like terms. Complete the coefficient of x so that the identity holds for every rational x; remember that the final x has coefficient one.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_coeficientes_racionales__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of x after combining the three terms",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(5/6)x − (1/3)x + x = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")x"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/6 − 1/3 + 1 = 5/6 − 2/6 + 6/6 = 9/6 = 3/2. Reverse distributivity extracts the common factor x and leaves (3/2)x.",
+            "incorrect": "Add the numerical factors with their signs. Use a common denominator for the coefficients; the final x contributes one, not zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_cero_al_reunir",
+          "prompt": "Combine the terms in x − x + 8. Enter the remaining coefficient of x and the constant term. Then decide what is true over the domain of all rational x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_cero_al_reunir__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of x after combining x − x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Remaining constant term",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_cero_al_reunir__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The transformation is valid only when x equals zero.",
+                  "reviewFeedback": "Consider why subtracting the same quantity does or does not depend on the unknown having a particular value."
+                },
+                {
+                  "id": "b",
+                  "label": "The constant term must be removed along with the two terms containing x.",
+                  "reviewFeedback": "Combine the letter terms without confusing them with the remaining separate constant term."
+                },
+                {
+                  "id": "c",
+                  "label": "The value is eight for every rational x because its coefficient becomes zero.",
+                  "reviewFeedback": "Check what dependence on the letter remains after combining its coefficients."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The coefficients one and negative one add to zero: x − x + 8 = 0x + 8 = 8. This holds for every rational x; x need not equal zero.",
+            "incorrect": "x and −x are terms with opposite coefficients. Eight is not multiplied by x and does not disappear when those terms cancel."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate Letter Terms from Constants"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 2x + 7 − x − 3, keep the signs when grouping: (2x − x) + (7 − 3). The x terms give x and the constants give four. The result is x + 4. This grouping uses addition and opposites from the previous lesson; it does not turn four into a factor of x."
+        },
+        {
+          "type": "paragraph",
+          "text": "We may add the constant terms to each other because they are numbers. We may combine coefficients of terms sharing x. What we cannot do for every rational number is replace a constant by another multiple of the letter. 3x + 2 and 3x + 2x are different expressions: in the second, the two also multiplies x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "agrupar_dos_clases_de_terminos",
+          "prompt": "Combine the terms in −2t + 7 + 5t − 9. The first blank is the coefficient of t and the second is the constant term, including its sign.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "agrupar_dos_clases_de_terminos__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of t after combining −2t and 5t",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term after adding seven and negative nine",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "−2t + 7 + 5t − 9 = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")t + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 + 5 = 3 combines the factor t. Seven minus nine gives −2 as the constant. The resulting expression is 3t − 2, valid for every rational t.",
+            "incorrect": "Preserve the sign of each term before grouping. Calculate the constant separately; do not include it in the coefficient of t."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "constante_no_es_otro_coeficiente",
+          "prompt": "A note claims 3x + 2 = 5x for every rational x. Evaluate both sides with x = 1 and with x = 0; select the justified conclusion.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "constante_no_es_otro_coeficiente__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_uno",
+                  "type": "numeric",
+                  "label": "Value of 3x + 2 with x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_uno",
+                  "type": "numeric",
+                  "label": "Value of 5x with x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_cero",
+                  "type": "numeric",
+                  "label": "Value of 3x + 2 with x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_cero",
+                  "type": "numeric",
+                  "label": "Value of 5x with x = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "der_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "izq_cero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "der_cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "constante_no_es_otro_coeficiente__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The equality is not an identity, even though it holds when x = 1.",
+                  "reviewFeedback": "Distinguish a particular agreement from an identity and compare the requested checks."
+                },
+                {
+                  "id": "b",
+                  "label": "The equality is an identity because one check succeeded.",
+                  "reviewFeedback": "Check what happens with a different input before extending one check to the entire domain."
+                },
+                {
+                  "id": "c",
+                  "label": "We must forbid x = 0 so that three and two can be added as coefficients.",
+                  "reviewFeedback": "Restricting the domain does not change which terms can be combined as like terms."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With one, both sides equal five. With zero, they equal two and zero: this allowed value refutes the identity. Two is a constant term, not a coefficient of another x term.",
+            "incorrect": "Do not turn the constant two into 2x. A particular agreement at x = 1 does not allow combining different kinds of terms across the whole domain."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Different Letters Require an Additional Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 2a + 3b, with a and b rational and no other relationship specified, the terms do not share the same letter part. We cannot write 5a for all pairs. Nor can we join the letters as though they formed a new number name. Different names help distinguish quantities; they do not require their values to be different or equal."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a model states b = a, we may substitute a for b and combine 2a + 3a = 5a in that context. If it states b = 2a, substitution yields 2a + 3(2a) = 8a. The given relationship is what permits combination, not a numerical coincidence in one pair of values."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letras_distintas_y_un_dato",
+          "prompt": "With a = −1/2 and b = 3/2, calculate 2a + 3b and 5a. Then decide what this allowed pair shows about the claim 2a + 3b = 5a for every rational a and b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letras_distintas_y_un_dato__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Value of 2a + 3b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "reunida",
+                  "type": "numeric",
+                  "label": "Value of 5a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "reunida": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "letras_distintas_y_un_dato__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The claim is an identity because the coefficients add up to five.",
+                  "reviewFeedback": "To combine terms, also compare the quantities multiplied by those coefficients."
+                },
+                {
+                  "id": "b",
+                  "label": "The input refutes the universal claim, although the expressions may agree for other pairs.",
+                  "reviewFeedback": "Compare the scope of an input causing a disagreement with that of a universal claim."
+                },
+                {
+                  "id": "c",
+                  "label": "The input is not allowed because different letters must have the same value.",
+                  "reviewFeedback": "Letters name different quantities; check what restrictions the domain actually imposes on their values."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 × (−1/2) + 3 × (3/2) = −1 + 9/2 = 7/2, while 5a = −5/2. These differ: we cannot always replace b with a without a relationship permitting it.",
+            "incorrect": "Use each letter's own value. The factors two and three cannot be added into a single coefficient of a while the second term still contains b."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_con_una_relacion_dada",
+          "prompt": "For 4u + 2v, match each set of conditions with an equivalent expression for every allowed rational pair. Use each target exactly once and complete all three matches. You are not asked to choose a particular numerical pair.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_con_una_relacion_dada__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "opuestos",
+                  "label": "We are given v = −u"
+                },
+                {
+                  "id": "sin_relacion",
+                  "label": "No additional relationship is specified between u and v"
+                },
+                {
+                  "id": "iguales",
+                  "label": "We are given v = u"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "original",
+                  "label": "4u + 2v"
+                },
+                {
+                  "id": "seis",
+                  "label": "6u"
+                },
+                {
+                  "id": "dos",
+                  "label": "2u"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "opuestos": "dos",
+                  "sin_relacion": "original",
+                  "iguales": "seis"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With v = −u, 4u + 2v can be combined as 2u. With v = u, it can be combined as 6u. The original expression also remains valid under those relationships, but in this matching task it must be reserved for the case without an additional relationship: it is the only target that works for every pair in that case, and each target is used once.",
+            "incorrect": "Begin with the case without an additional relationship: it does not allow replacing v with u or its opposite for all pairs. That case needs the original expression. Then use each remaining target only once and apply the given relationship in the other cases."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine Products with Subtracted Groups"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 3(x − 2) − (x + 4), two operations act on groups. The factor three distributes over the first: 3x − 6. Subtracting the second group takes its opposite: −x − 4. Together, the operations give 3x − 6 − x − 4 = 2x − 10. Preserve the sign of each term before combining."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same idea works with negative or fractional factors and coefficients that become one, negative one, or zero. Before simplifying, identify the factor acting on each group, the resulting terms, and the parts sharing the letter. Substitution can check the reading, while properties justify it for every value in the domain."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "combinar_distribuciones_y_constantes",
+          "prompt": "For −2(3t − 1) + 4(t + 2) − 5, write an equivalent expression for every rational t. Also give the coefficient of t and the constant term after distributing and combining. Equivalent forms of the expression are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "combinar_distribuciones_y_constantes__expresion",
+              "type": "math_expression_input",
+              "label": "Equivalent resulting expression",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-2t+5"
+              }
+            },
+            {
+              "id": "combinar_distribuciones_y_constantes__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of t after combining all terms containing t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term after combining",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first product gives −6t + 2 and the second gives 4t + 8. Combining with negative five leaves (−6 + 4)t + (2 + 8 − 5) = −2t + 5. The identity is justified by distributing and combining terms without selecting t.",
+            "incorrect": "Every outside factor affects every term inside its group. Then combine the terms in t and calculate the sum of signed constants separately."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_factor_y_grupo_resta",
+          "prompt": "A note changes (1/2)(4x − 6) − (x − 5) into 2x − 6 − x + 5. Evaluate both expressions with x = −3/2 and choose what needs correcting.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_factor_y_grupo_resta__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Value of (1/2)(4x − 6) − (x − 5)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "apunte",
+                  "type": "numeric",
+                  "label": "Value of 2x − 6 − x + 5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "apunte": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "recuperar_factor_y_grupo_resta__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The factor 1/2 must also multiply negative six.",
+                  "reviewFeedback": "Apply the factor to the entire group, including the signed constant term."
+                },
+                {
+                  "id": "b",
+                  "label": "Subtracting x − 5 must become negative x minus five.",
+                  "reviewFeedback": "Distribute the subtraction over each term in the parentheses and check the sign belonging to each."
+                },
+                {
+                  "id": "c",
+                  "label": "The factor 1/2 is valid only when x is a positive integer.",
+                  "reviewFeedback": "Check the expression's domain and consider whether multiplying by a fraction requires that sign or integrality."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The original expression equals 1/2 and the note equals −5/2. Subtracting x − 5 correctly produces −x + 5. The error is in the first group: multiplying negative six by 1/2 gives negative three. The correct simplification is x + 2.",
+            "incorrect": "Keep both expressions unchanged while checking them. The factor 1/2 also multiplies the constant term; the outside subtraction affects both terms of the second group."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Properties to a Displacement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the signed-movement model from the previous lesson. On an oriented line, east is positive. A token makes two eastward moves of equal length, followed by a westward move. x measures a nonnegative rational length in meters. Each advance measures x/2 + 2 meters and the return movement x + 3 meters; these quantities are positive even when x = 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Total displacement adds the advances and subtracts the westward movement: it describes the change from starting position to final position. Distance traveled adds the lengths of all three movements. Distinguish these two quantities when building the model and combining its terms. Preserve the same definition of x in every group."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelo_de_dos_avances_y_un_regreso",
+          "prompt": "The token makes two advances, each x/2 + 2 meters, and then moves back x + 3 meters. x is a nonnegative rational length measured in meters. Write an expression for the signed total displacement and complete its coefficient of x and constant term after combining. Equivalent expressions are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__expresion",
+              "type": "math_expression_input",
+              "label": "Signed total displacement, in meters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2*(x/2+2)-(x+3)"
+              }
+            },
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of x in the simplified displacement",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term of the displacement, in meters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Two advances give 2(x/2 + 2) = x + 4. Moving back subtracts the group x + 3, so the displacement is x + 4 − x − 3 = 1 meter east. The coefficient of x becomes zero and the constant one. The identity preserves the model for every allowed value.",
+            "incorrect": "Count both advances and subtract the entire westward movement. Keep meters as the unit and combine the coefficient of x separately from the constants."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_el_movimiento_con_fracciones",
+          "prompt": "With x = 1/2 meter, calculate the combined length of the two advances, the westward movement, signed total displacement, and distance traveled. Write all values in meters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_el_movimiento_con_fracciones__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "avances",
+                  "type": "numeric",
+                  "label": "Combined length of the two advances",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "retroceso",
+                  "type": "numeric",
+                  "label": "Length of the westward movement",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "desplazamiento",
+                  "type": "numeric",
+                  "label": "Signed total displacement",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "distancia",
+                  "type": "numeric",
+                  "label": "Distance traveled by adding all three lengths",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "avances": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "retroceso": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "desplazamiento": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "distancia": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Each advance measures 1/4 + 2 = 9/4 meters; together they equal 9/2. The westward movement measures 7/2. The difference is one meter east, and the total distance is eight meters. Simplifying the model explains the displacement; this substitution checks it using an allowed input.",
+            "incorrect": "Count both advances before comparing them with the westward movement. Subtract opposite-direction lengths for displacement; add all three positive lengths for distance traveled."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Combining terms helps identify the contribution of each coefficient and what remains as a constant, preserving the values and conditions of the model. Justify transformations using factors and properties; check an input when useful for finding errors. One successful calculation cannot replace the general reasoning preserving the expression."
+        }
+      ]
+    }
+  ]
+}

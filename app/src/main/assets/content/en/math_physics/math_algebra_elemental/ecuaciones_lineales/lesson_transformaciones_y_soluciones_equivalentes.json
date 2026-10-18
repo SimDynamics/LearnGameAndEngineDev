@@ -1,0 +1,687 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__transformaciones_y_soluciones_equivalentes",
+  "title": "Transformations and Equivalent Solutions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Change an Equation While Preserving Its Solutions"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know how to interpret letters and domains, construct a condition, distribute a factor, and combine terms. Now we will find all solutions using justified steps. Unless the context explicitly states a restriction, the unknowns in this lesson may take any rational value."
+        },
+        {
+          "type": "paragraph",
+          "text": "Two equations are equivalent on a domain when they have exactly the same solutions there. For each allowed value, both must be true or both must be false. They need not have identical notation or equal numerical values on their respective sides. At x = 0, the equations x = 3 and 2x = 6 are both false, although they compare zero with three and zero with six. At x = 3, both are true. We will explain how to justify their equivalence for all rational values (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "An identity describes an equality valid for all values in its domain. Equivalent equations, by contrast, may hold only for some values. Equivalence is a claim about their sets of solutions: changing the equation must preserve that set entirely."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_de_equivalencia",
+          "prompt": "What does it mean for two equations to be equivalent over the rational numbers?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_de_equivalencia__criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "They admit exactly the same values as solutions.",
+                  "reviewFeedback": "Check what this claim requires for every value in the domain, not merely for a single test."
+                },
+                {
+                  "id": "b",
+                  "label": "Their sides contain the same numbers even when the equations are false.",
+                  "reviewFeedback": "Distinguish equality of the written numbers from equality of solution sets."
+                },
+                {
+                  "id": "c",
+                  "label": "They give the same result when only two values are tested.",
+                  "reviewFeedback": "Consider what could happen with untested values and which justification would extend the conclusion throughout the domain."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Equivalence means keeping every solution without adding or losing any. Truth or falsity must agree for each allowed rational; the sides need not use the same notation.",
+            "incorrect": "Distinguish the set of values satisfying an equation from the numbers obtained by evaluating its sides. A limited test cannot cover every rational number."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Adding the Same Quantity Can Be Undone"
+        },
+        {
+          "type": "paragraph",
+          "text": "When two sides have the same value, adding the same quantity to each preserves their equality. There is an inverse operation: subtract from both sides what was added. Thus the resulting equation neither adds nor loses solutions. This reasoning also rules out a previously invalid value becoming a solution: if it satisfied the new equation, subtracting that quantity would make it satisfy the original (Lang, 1971, pp. 9, 12–14)."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, x − 5 = 3 can be transformed by adding five to both sides: x − 5 + 5 = 3 + 5. Calculating gives x = 8. From x = 8, we can subtract five from both sides to recover x − 5 = 3. Every step holds for all rational numbers. The final form x = 8 shows that eight is the only solution, and substitution into the original 8 − 5 = 3 confirms that it works."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_para_cancelar",
+          "prompt": "In u − 7 = −2, we want to cancel the subtraction of seven by adding the same amount to both sides. Enter the two amounts added and the resulting value of u.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_para_cancelar__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Amount added to the left side",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Amount added to the right side",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Value of u in the final equation",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Add seven to each side: u − 7 + 7 = −2 + 7, giving u = 5. Subtracting seven from both sides lets us return. Thus the set of solutions is preserved exactly; 5 − 7 = −2 checks the solution.",
+            "incorrect": "To cancel −7, add its opposite, +7. Apply the same addition to the right side and keep the sign of −2 when calculating."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_suma_en_un_solo_miembro",
+          "prompt": "A note changes u − 7 = −2 into u = −2 by deleting the subtraction of seven only on the left. Which assessment is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_suma_en_un_solo_miembro__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It preserves the solutions because seven no longer appears.",
+                  "reviewFeedback": "Use a concrete candidate to check whether deleting a term preserves the condition on both sides."
+                },
+                {
+                  "id": "b",
+                  "label": "It changes the condition: adding seven on the left also required adding seven on the right.",
+                  "reviewFeedback": "Reconstruct the operation on both sides and check that it can be undone."
+                },
+                {
+                  "id": "c",
+                  "label": "The transformation fails only if u is fractional.",
+                  "reviewFeedback": "Test an integer value in the conditions before and after; distinguish the kind of number from the change made."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "u = −2 is a different condition. The original holds for u = 5, while the new one does not. The correct step adds seven to both sides and yields u = 5.",
+            "incorrect": "Check which operation was performed on each side. Deleting part of only one side changes the comparison; it does not depend on whether the candidate is an integer or a fraction."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Expression on Both Sides"
+        },
+        {
+          "type": "paragraph",
+          "text": "We may also add or subtract the same expression, provided it is defined throughout the domain being studied. For any value of the unknown, that expression represents the same quantity on both sides. The operation can be undone by adding or subtracting its opposite. In 4x + 1 = x + 10, we can subtract x from both sides to obtain 3x + 1 = 10. Adding x again restores the previous equation (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Combining terms within a side uses identities already justified. Subtracting x from both sides changes both calculations while preserving their solutions. At x = 3, the sides of 4x + 1 = x + 10 both equal thirteen; those of 3x + 1 = 10 equal ten. Equivalence preserves the fact that both equalities are true at that value, although it changes the values being compared."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_una_expresion",
+          "prompt": "Starting with 7r + 3 = 4r − 6, subtract 4r from both sides and combine terms. Give the coefficient of r on the left, its constant term, and the number on the right.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_una_expresion__terminos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coefficient of r after subtracting 4r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constant term on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Number on the right",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7r + 3 − 4r = 4r − 6 − 4r simplifies to 3r + 3 = −6. Adding 4r to both sides restores the original equation. The same expression with the same value of r was subtracted from each side.",
+            "incorrect": "Keep the three on the left and −6 on the right. Subtracting 4r cancels 4r on the right; on the left, combine 7r and −4r."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_expresion_no_es_un_dato_nuevo",
+          "prompt": "Why does subtracting 4r from both sides in the preceding exercise preserve the solutions for every rational r?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_expresion_no_es_un_dato_nuevo__razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "For each r, the same defined quantity is subtracted, and adding 4r to both sides undoes the operation.",
+                  "reviewFeedback": "Explain what quantity is subtracted for a fixed value and how you would recover the previous sides."
+                },
+                {
+                  "id": "b",
+                  "label": "Because 4r is always positive, even when r is negative.",
+                  "reviewFeedback": "Calculate this term's sign at an allowed negative value before using it as justification."
+                },
+                {
+                  "id": "c",
+                  "label": "Because the letter r appears in all terms, any addend can be deleted.",
+                  "reviewFeedback": "Distinguish subtracting the same term from both sides from freely deleting addends."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4r is defined for every rational r and has the same value on both sides. Adding that same quantity reverses the step. The guarantee does not depend on r being positive and does not authorize deleting constants.",
+            "incorrect": "Track the operation and its inverse for the same r. Do not confuse being defined with being positive or with omitting part of one side."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiplication or Division Requires a Nonzero Factor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplying both sides by a nonzero rational c preserves the solutions because we can undo it by dividing both sides by c. Dividing by c is similarly undone by multiplying by it. c must not equal zero if we are to use its reciprocal: zero has no multiplicative inverse (Lang, 1971, pp. 42, 44–45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "If z/5 = −3/2, multiplying both sides by five gives z = −15/2. Dividing both by five recovers the original equation. The compared values changed while the candidates satisfying the equality remained the same. The same reason permits a negative factor: if it is nonzero, a well-defined inverse operation exists."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "usar_el_inverso_del_factor",
+          "prompt": "In (−2/3)r = 5/4, give the rational factor by which we must multiply both sides to make the coefficient of r equal one. Then calculate the value of r in the resulting equation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usar_el_inverso_del_factor__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Factor that turns the coefficient −2/3 into one",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Value of r after multiplying both sides",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-15/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(−3/2) × (−2/3) = 1. The right-hand side becomes (−3/2) × (5/4) = −15/8. The factor −3/2 is nonzero, so dividing by it undoes the multiplication. Substituting −15/8 into the original product gives 5/4.",
+            "incorrect": "Find the full reciprocal of −2/3, keeping its sign. Also apply it to 5/4. Multiplying only the coefficient on the left would change the condition."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "vuelta_del_factor_negativo",
+          "prompt": "One equation is obtained from another by multiplying both sides by −3/2. Which operation restores the original?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "vuelta_del_factor_negativo__operacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Divide both sides by −3/2, equivalent to multiplying them by −2/3.",
+                  "reviewFeedback": "Compose the selected operation with the original multiplication and check the resulting net factor."
+                },
+                {
+                  "id": "b",
+                  "label": "Add 3/2 to both sides.",
+                  "reviewFeedback": "Distinguish undoing multiplication from undoing addition; test the sequence of operations you proposed."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiply both sides by zero to cancel the factor.",
+                  "reviewFeedback": "Consider what information would let us recover the original sides after multiplying them by zero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The inverse operation divides by the same nonzero factor. Multiplying by −2/3 has the same effect because (−3/2)(−2/3) = 1. Adding an amount does not generally undo multiplication.",
+            "incorrect": "Determine which operation turns the factor into one. To preserve equality, apply the inverse to both sides and ensure it is defined."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserving Solutions in One Direction Is Not Enough"
+        },
+        {
+          "type": "paragraph",
+          "text": "From t = 4, we can multiply both sides by zero and obtain 0 = 0. Every original solution still satisfies this equality. However, the new equality also holds when t = −1, which does not satisfy t = 4. Solutions have been added, so the equations are not equivalent."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zero makes both sides zero, and we cannot undo this effect by dividing by zero. Therefore, multiplying by zero is not a general rule for preserving all solutions. An equation that already holds for all values might happen to keep its solution set; that coincidence provides neither an inverse operation nor a guarantee for other equations (Lang, 1971, pp. 14–15, 42–45)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_introduce_soluciones",
+          "prompt": "Over the rational numbers, what happens when t = 4 is transformed into 0 = 0 by multiplying both sides by zero?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_introduce_soluciones__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The unique solution t = 4 is preserved exactly.",
+                  "reviewFeedback": "Test a different value in the new condition and compare the allowed solution sets."
+                },
+                {
+                  "id": "b",
+                  "label": "The new equality admits every rational number, including values rejected by the original.",
+                  "reviewFeedback": "Check the final numerical equality for different domain values and relate it to the initial condition."
+                },
+                {
+                  "id": "c",
+                  "label": "The new equality admits no values because no letter is visible.",
+                  "reviewFeedback": "The absence of letters does not decide whether an equality is true; evaluate both sides."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t = 4 admits only four. 0 = 0 is true for any rational value proposed for t. The disappearance of the letter does not restrict those values; the original condition has been lost.",
+            "incorrect": "Test a value other than four in each equation. Then distinguish original solutions continuing to work from the possibility of new solutions being introduced."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "limite_de_la_regla",
+          "prompt": "Select all correct statements about multiplying an equation by zero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "limite_de_la_regla__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It does not guarantee that every equation keeps exactly the same solutions.",
+                  "reviewFeedback": "Check what happens to the allowed values before and after the step in a concrete example."
+                },
+                {
+                  "id": "b",
+                  "label": "It always changes the solution set, even if the equation was already true for all values.",
+                  "reviewFeedback": "Also consider an equation that is already an identity before claiming that a change always occurs."
+                },
+                {
+                  "id": "c",
+                  "label": "No valid division by zero can recover the previous sides.",
+                  "reviewFeedback": "Check whether the inverse operation mentioned in this statement is defined."
+                },
+                {
+                  "id": "d",
+                  "label": "Keeping the earlier solutions in the forward direction is enough to prove equivalence.",
+                  "reviewFeedback": "Equivalence requires both directions; check whether new allowed values may appear."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A general guarantee requires a defined inverse. Multiplying by zero can introduce solutions, but an identity already admitted all values. An accidental agreement in one case does not make the operation reversible.",
+            "incorrect": "Do not extend the counterexample beyond what it proves. The absence of an inverse is general; whether the solution set changes depends on the starting equation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose a Path and Justify It"
+        },
+        {
+          "type": "paragraph",
+          "text": "To solve −3(y + 2) = 9, we can distribute first: −3y − 6 = 9. Add six to both sides to obtain −3y = 15. Dividing both by −3 gives y = −5. Alternatively, divide both sides of the original equation by −3 first: y + 2 = −3. Subtract two from both sides to get y = −5. Both paths are valid because each step preserves all solutions (Lang, 1971, pp. 37–38)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The final form y = −5 has exactly one solution. Because every step is equivalent in both directions, that solution also belongs to the original equation, with no others left out. Independent substitution confirms −3(−5 + 2) = 9. Reviewing both the reasoning and calculation helps identify a weak step rather than repeating it unexamined (Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_comprobar_una_cadena",
+          "prompt": "Solve −2(t − 3) + 1 = t − 2 over the rationals using transformations you can undo. Write the value of t and calculate both original sides with that value. You may choose your own path.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_comprobar_una_cadena__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Value of t obtained",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Original left-hand side with that t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Original right-hand side with that t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One possible path: distributing gives −2t + 7 = t − 2; subtract t from both sides to get −3t + 7 = −2; subtract seven to get −3t = −9; divide by −3 to get t = 3. Every step can be undone. In the original, −2(3 − 3) + 1 = 1 and 3 − 2 = 1. Other valid paths lead to the same solution.",
+            "incorrect": "Preserve signs when distributing −2 over t − 3. Apply each addition, subtraction, or division to both sides; then substitute the result in the original equation, not merely the last line."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_acredita_cada_revision",
+          "prompt": "After obtaining t = 3 in the previous exercise, what distinguishes checking the value from justifying the chain of equivalent steps?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_acredita_cada_revision__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Substitution confirms that three works; the reversibility of the chain ending at t = 3 shows that no other solutions were omitted.",
+                  "reviewFeedback": "Distinguish checking a candidate from reasoning that preserves the entire solution set."
+                },
+                {
+                  "id": "b",
+                  "label": "Substituting three alone proves that no other rational number can satisfy the equation.",
+                  "reviewFeedback": "Consider what one tested value establishes and what remains to be shown about the others."
+                },
+                {
+                  "id": "c",
+                  "label": "Reaching a simple form means we can skip checking the steps leading to it.",
+                  "reviewFeedback": "A simple final form does not validate intermediate steps; check their reversibility one by one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Substitution validates the value found. The reversible chain establishes that the original solution set equals that of t = 3, which contains only three. These two checks serve different purposes.",
+            "incorrect": "Recall the difference between checking a candidate and determining all solutions. A final line alone does not justify how it was obtained or that the entire set was preserved."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return to the Problem's Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "An equation may be solved over the rationals but arise from a context allowing fewer values. We must preserve that restriction. For an exhibition, rows of three complete chairs are arranged, along with five individual chairs. Exactly thirteen chairs are needed. Define n as the number of complete rows: a nonnegative integer. The condition is 3n + 5 = 13."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "solucion_algebraica_y_contexto",
+          "prompt": "First solve 3n + 5 = 13 over the rationals using reversible operations. Write that result. Then decide whether the exhibition can be arranged with complete rows of three chairs and five individual chairs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "solucion_algebraica_y_contexto__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racional",
+                  "type": "numeric",
+                  "label": "Solution of the equation over the rationals",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racional": {
+                    "type": "numeric",
+                    "expected": "8/3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "solucion_algebraica_y_contexto__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: round to three rows and preserve the exact goal.",
+                  "reviewFeedback": "Calculate the total produced by the rounded number and compare it with the exact goal."
+                },
+                {
+                  "id": "b",
+                  "label": "Yes: a complete row may be counted as any fraction solving the equation.",
+                  "reviewFeedback": "Relate the word \"complete\" to the domain of the number of rows, in addition to the solved equation."
+                },
+                {
+                  "id": "c",
+                  "label": "No: the only rational solution is 8/3, which is outside the domain of integer row counts.",
+                  "reviewFeedback": "Compare the algebraic result with the domain of rows and explain why both checks are necessary."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting five gives 3n = 8; dividing by three gives n = 8/3. Because the steps are reversible, it is the unique rational solution. It is not an integer, so the problem's domain contains no solution. Rounding to three rows would produce fourteen chairs, not thirteen.",
+            "incorrect": "Distinguish solving the equation in a broad domain from accepting an arrangement for the event. The goal is exact and n counts complete rows; fractions and rounding that changes the total are not permitted."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Always preserve three checks: every step must keep all solutions in the algebraic domain, the candidate must satisfy the original equation, and it must represent an allowed quantity in context. This lesson establishes the method; the following lessons will provide more practice choosing and performing transformations without relying on a prewritten chain."
+        }
+      ]
+    }
+  ]
+}
