@@ -1,0 +1,788 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__sumas_restas_y_parentesis_con_letras",
+  "title": "Addition, Subtraction, and Parentheses with Letters",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Minus Sign May Mean an Opposite"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the first course, you learned to add signed numbers and take opposites. Now we will use those properties to rewrite an expression without changing its value. The letters in this lesson represent rational numbers unless the context explicitly restricts them. You must distinguish a checked value from an identity valid throughout the domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "The notation −x means \"the opposite of the value of x.\" It does not imply that the result is negative. If x is −7/2, its opposite is 7/2; if x is 7/2, its opposite is −7/2. If x is zero, its opposite is zero too. The meaning is defined by the sum x + (−x) = 0, not by the appearance of the sign (Lang, 1971, pp. 8–10, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Taking the opposite twice restores the original value: −(−x) = x. In x − y, however, the minus sign indicates subtraction between two quantities. This subtraction can be rewritten as x + (−y): we add the complete opposite of y to x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuestos_de_una_letra",
+          "prompt": "Calculate the indicated opposites. Use the same value of x within each calculation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuestos_de_una_letra__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "opuesto",
+                  "type": "numeric",
+                  "label": "−x with x = −5/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "doble",
+                  "type": "numeric",
+                  "label": "−(−x) with x = −5/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "−x with x = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "opuesto": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "doble": {
+                    "type": "numeric",
+                    "expected": "-5/4"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With x = −5/4, its opposite is 5/4; the opposite of 5/4 is −5/4 again. The opposite of zero is zero. The letter need not be positive.",
+            "incorrect": "Find the number that adds to x to give zero. For −(−x), then take the opposite of the previous result; do not change the original input."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signo_y_opuesto",
+          "prompt": "A note claims: \"−x is always a negative number.\" Which assessment is correct over the rational numbers?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "signo_y_opuesto__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The note is correct: the written sign determines the sign of the result.",
+                  "reviewFeedback": "Distinguish the symbol for taking an opposite from the numerical sign obtained after substitution."
+                },
+                {
+                  "id": "b",
+                  "label": "The note fails for x = −1/2 and also for x = 0; the result depends on the value of x.",
+                  "reviewFeedback": "Calculate the opposites of the inputs mentioned in the statement and consider what each case proves."
+                },
+                {
+                  "id": "c",
+                  "label": "The note fails only because fractions are not allowed in −x.",
+                  "reviewFeedback": "Review the rational-number domain and whether taking an opposite imposes the restriction you selected."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With x = −1/2, −x equals 1/2, which is positive; with x = 0 it equals zero. Both inputs are allowed. The minus indicates taking an opposite.",
+            "incorrect": "Before deciding the result's sign, substitute a negative rational and zero. Do not confuse the written operation with a restriction on the domain."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reorder While Preserving the Sign of Each Addend"
+        },
+        {
+          "type": "paragraph",
+          "text": "The expression a − b + c can be read as a + (−b) + c. When regrouping or reordering a sum, we retain the complete addends a, −b, and c. This gives a + c − b. We do not obtain a − c + b, which would replace −b with b and c with −c. Commutativity and associativity apply to the rewritten addition; they do not make subtraction commutative (Lang, 1971, pp. 9–10, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, with a = 2, b = 5, and c = −1, both a − b + c and a + c − b equal −4. This check helps identify errors. The reason these two expressions agree for every rational number is that they retain exactly the same addends, not that one example worked."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumandos_con_su_signo",
+          "prompt": "Select all expressions that preserve the value of v − 4 + w for every pair of rational numbers v and w.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumandos_con_su_signo__escrituras",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "v + w − 4",
+                  "reviewFeedback": "Track each addend together with its sign when comparing this expression with the original."
+                },
+                {
+                  "id": "b",
+                  "label": "4 − v + w",
+                  "reviewFeedback": "Check whether the sign of each quantity is preserved when its position changes."
+                },
+                {
+                  "id": "c",
+                  "label": "w − 4 + v",
+                  "reviewFeedback": "Reorder the addends with their signs, checking that each contributes the same quantity."
+                },
+                {
+                  "id": "d",
+                  "label": "v − (4 + w)",
+                  "reviewFeedback": "Distribute the sign outside the parentheses and compare the contribution of each letter with the original."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The addends are v, −4, and w. v + w − 4 and w − 4 + v only change their order. 4 − v + w changes two signs; v − (4 + w) changes the sign of w.",
+            "incorrect": "Rewrite the expression as a sum of v, −4, and w. When moving a term, preserve the sign that belongs to the addend."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reordenacion_que_cambia_valor",
+          "prompt": "Someone changes u − v + w into u − w + v. Calculate both expressions with u = −3/2, v = 2, and w = −1/2. Then decide what this check demonstrates.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reordenacion_que_cambia_valor__cuentas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Value of u − v + w",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cambiada",
+                  "type": "numeric",
+                  "label": "Value of u − w + v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "cambiada": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "reordenacion_que_cambia_valor__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "They are equivalent for all rational numbers because they contain the same three letters.",
+                  "reviewFeedback": "Sharing the same letters is not enough: check the operations and the signs affecting each letter."
+                },
+                {
+                  "id": "b",
+                  "label": "This input refutes the equivalence: the new expression did not preserve the signs of v and w.",
+                  "reviewFeedback": "Calculate both expressions using the same input and explain what can be concluded from a difference."
+                },
+                {
+                  "id": "c",
+                  "label": "The input is invalid because a letter cannot have a negative value.",
+                  "reviewFeedback": "Check the stated domain and distinguish an input's admissibility from the truth of the transformation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The original equals −3/2 − 2 − 1/2 = −4. The changed expression equals −3/2 + 1/2 + 2 = 1. One allowed input with different results is enough to refute the identity; sharing letters does not guarantee the same operations.",
+            "incorrect": "Subtracting w = −1/2 adds 1/2. Evaluate each expression exactly as written; do not fix the second one before comparing it with the first."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Opposite of a Sum Affects Every Addend"
+        },
+        {
+          "type": "paragraph",
+          "text": "To take the opposite of a + b, we need a quantity that adds to a + b to give zero. The sum −a − b does this: (a + b) + (−a − b) = a + (−a) + b + (−b) = 0. Thus −(a + b) = −a − b. This reasoning uses complete addends and still holds when a or b is already negative (Lang, 1971, pp. 10–11, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Parentheses indicate which quantity receives the operation. In −(x + 6), we take the opposite of the entire sum. In −x + 6, we take only the opposite of x and then add six. These are different operations: removing the parentheses in the first case must yield −x − 6."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_de_dos_sumandos",
+          "prompt": "With p = 5/3 and q = −2/3, calculate the opposite of the sum and the expression that takes only the opposite of p. Check whether they agree in this case.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuesto_de_dos_sumandos__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "completa",
+                  "type": "numeric",
+                  "label": "Value of −(p + q)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solo_primero",
+                  "type": "numeric",
+                  "label": "Value of −p + q",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "completa": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "solo_primero": {
+                    "type": "numeric",
+                    "expected": "-7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "p + q equals one, so −(p + q) equals −1. In −p + q, we obtain −5/3 − 2/3 = −7/3. Taking only the first addend's opposite does not take the opposite of the full sum.",
+            "incorrect": "In the first expression, calculate p + q before taking its opposite. In the second, take the opposite of p and add the original value of q."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_y_cancelacion",
+          "prompt": "Fill in the single signed number that makes −(s + 9) + s equal that number for every rational s. Justify it by taking the opposite of the sum and canceling the opposite s terms.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuesto_y_cancelacion__numero",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Resulting signed number",
+                  "keyboard": "FRACTION",
+                  "hint": "?"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "text": "−(s + 9) + s = "
+                },
+                {
+                  "field": "constante"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−(s + 9) + s = −s − 9 + s = −9. The addends −s and s cancel. The opposite of nine remains, not nine.",
+            "incorrect": "The outside minus sign affects both s and nine. Rewrite before canceling; keeping +9 in this transformation would change the expression."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Subtracting a Difference Changes Both Contributions"
+        },
+        {
+          "type": "paragraph",
+          "text": "The difference a − b means a + (−b). When taking its opposite, the rule for a sum gives −a + (−(−b)), or −a + b. Therefore, −(a − b) = −a + b. The second addend changes sign twice: first because b was subtracted inside the parentheses, then because we take the opposite of the group."
+        },
+        {
+          "type": "paragraph",
+          "text": "If we subtract that difference from another quantity r, we obtain r − (a − b) = r − a + b. The sign of r does not change: it is outside the group being subtracted. Nor can we simply delete parentheses and preserve all subtractions. For example, 10 − (x − 4) = 10 − x + 4 = 14 − x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diferencia_completa",
+          "prompt": "With u = −1/2 and v = 3/4, evaluate these three expressions. Compare their values without correcting any of them first.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diferencia_completa__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupo",
+                  "type": "numeric",
+                  "label": "Value of 3 − (u − v)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sin_grupo",
+                  "type": "numeric",
+                  "label": "Value of 3 − u + v",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "dos_restas",
+                  "type": "numeric",
+                  "label": "Value of 3 − u − v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupo": {
+                    "type": "numeric",
+                    "expected": "17/4"
+                  },
+                  "sin_grupo": {
+                    "type": "numeric",
+                    "expected": "17/4"
+                  },
+                  "dos_restas": {
+                    "type": "numeric",
+                    "expected": "11/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "u − v equals −5/4. Subtracting it from three gives 17/4; 3 − u + v also gives 17/4. In 3 − u − v, the result is 11/4. The sign of v changes when subtracting the entire difference.",
+            "incorrect": "Inside the parentheses, subtract 3/4 from −1/2. Then take the opposite of that result before adding it to three. Also evaluate the expressions without parentheses as they appear."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "explicar_el_doble_opuesto",
+          "prompt": "What reasoning justifies r − (a − b) = r − a + b for every rational r, a, and b?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "explicar_el_doble_opuesto__razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Subtracting the group means adding its opposite: take the opposite of a and of −b; the opposite of −b is b.",
+                  "reviewFeedback": "Apply the operation of taking an opposite to the entire group and explain its effect on each addend."
+                },
+                {
+                  "id": "b",
+                  "label": "Two expressions containing the same letters must have the same value.",
+                  "reviewFeedback": "Sharing letters does not justify sharing a value: identify the relationship between the operations."
+                },
+                {
+                  "id": "c",
+                  "label": "All parentheses may be removed without changing the signs inside.",
+                  "reviewFeedback": "Check which operation appears outside the parentheses before removing the grouping."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "r remains unchanged. The opposite of a − b is −a + b because the inside subtraction already contains the addend −b. This is a general transformation justified by properties, not just one numerical case.",
+            "incorrect": "First identify which group is being subtracted. Its opposite affects both addends; letters alone do not indicate which operations were performed."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parentheses Inside Parentheses"
+        },
+        {
+          "type": "paragraph",
+          "text": "The notation 8 − (2 − (t + 1)) contains two groups. To evaluate it with an input, start with t + 1, then calculate 2 minus that result, and finally subtract it from eight. To transform it without choosing t, examine the outside group: 8 − (2 − (t + 1)) = 8 − 2 + (t + 1) = 7 + t. Taking the opposite of the outer difference turns subtraction of the group t + 1 into addition of the complete group."
+        },
+        {
+          "type": "paragraph",
+          "text": "Writing one step per line helps preserve which operation acts on which quantity. The equality 8 − (2 − (t + 1)) = 7 + t is an identity. Substituting a value can check our interpretation, but explaining the groups and their opposites justifies it for every rational number."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaluar_por_grupos",
+          "prompt": "Evaluate 8 − (2 − (t + 1)) with t = −3/2. Record each quantity before moving to the group containing it.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "evaluar_por_grupos__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "interior",
+                  "type": "numeric",
+                  "label": "Value of t + 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Value of 2 − (t + 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "exterior",
+                  "type": "numeric",
+                  "label": "Value of 8 − (2 − (t + 1))",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "interior": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "exterior": {
+                    "type": "numeric",
+                    "expected": "11/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t + 1 equals −1/2. Next, 2 − (−1/2) = 5/2. Finally, 8 − 5/2 = 11/2, the same as 7 − 3/2. Each group uses the complete result of the previous one.",
+            "incorrect": "Do not subtract only part of a group before finishing it. In the middle step, a negative result is subtracted; in the outside step, the positive result 5/2 is subtracted."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_transformacion",
+          "prompt": "Select all expressions that preserve the value of 9 − (3 − (t + 2)) for every rational t. Use the opposites of the groups to justify your selection.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_transformacion__escrituras",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9 − 3 + (t + 2)",
+                  "reviewFeedback": "Reconstruct the opposites of the groups from inside outward and check which signs this expression preserves."
+                },
+                {
+                  "id": "b",
+                  "label": "9 − 3 − (t + 2)",
+                  "reviewFeedback": "Examine the combined effect of the two subtractions on the innermost group."
+                },
+                {
+                  "id": "c",
+                  "label": "8 + t",
+                  "reviewFeedback": "Justify the constant term and the term containing the letter in this choice using the original groups."
+                },
+                {
+                  "id": "d",
+                  "label": "9 − (3 + t + 2)",
+                  "reviewFeedback": "Check which sign belongs to the inside group after taking the opposite of the group containing it."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting the difference 3 − (t + 2) means subtracting three and adding the group t + 2. This gives 9 − 3 + t + 2 = 8 + t. The other two expressions subtract that group and change its contribution.",
+            "incorrect": "Keep the inner group intact until you have taken the opposite of the outer difference. An example can help detect an error, but justify the accepted expressions using operations on groups."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Idea and Check Its Scope"
+        },
+        {
+          "type": "paragraph",
+          "text": "On an oriented number line, we choose east as positive and measure positions in meters from a zero mark. A token may be on either side of that mark. Signed displacements are added to its position. If it moves a meters east and then b meters west, with a and b nonnegative, the total displacement is a − b. Returning to the starting position in one movement requires the opposite of that total. This describes the change in position; it does not require retracing the path in reverse order."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "movimiento_y_regreso",
+          "prompt": "A token starts at position −2/3 meters, moves 7/4 meters east, and then 5/2 meters west. Calculate the total displacement, final position, and signed displacement of a single movement returning it to the start.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "movimiento_y_regreso__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Total displacement, in meters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Final position, in meters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "regreso",
+                  "type": "numeric",
+                  "label": "Return displacement, in meters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "-3/4"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "-17/12"
+                  },
+                  "regreso": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total change is 7/4 − 5/2 = −3/4. The final position is −2/3 − 3/4 = −17/12. To return, add 3/4: −17/12 + 3/4 = −2/3, the starting position. Position and displacement are different quantities, even though they use the same unit.",
+            "incorrect": "First calculate the total change using the chosen positive direction. Add that change to the starting position. The return movement must cancel the change, not cancel the final position relative to zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "regreso_sin_datos_particulares",
+          "prompt": "For any nonnegative rational distances a east and b west, select all expressions representing the single displacement that cancels the change a − b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "regreso_sin_datos_particulares__expresiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−a + b",
+                  "reviewFeedback": "Add this proposed displacement to the original change and check whether they cancel for every allowed pair."
+                },
+                {
+                  "id": "b",
+                  "label": "−a − b",
+                  "reviewFeedback": "Keep the signs when adding this choice to the original displacement, without confusing returning with traveling a greater distance."
+                },
+                {
+                  "id": "c",
+                  "label": "a − b",
+                  "reviewFeedback": "Distinguish repeating the initial change from making a change that cancels it."
+                },
+                {
+                  "id": "d",
+                  "label": "b − a",
+                  "reviewFeedback": "Add this displacement to the original and justify what happens to each quantity for any input."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The return is −(a − b) = −a + b = b − a. Adding it to the displacement a − b gives zero. It may point east, west, or equal zero: this depends on the distances, not the first written sign.",
+            "incorrect": "Find an expression that cancels the change for all allowed distances. Working only in the special case a = b or for one pair is not enough."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_del_grupo_resta",
+          "prompt": "Back in the domain of all rational numbers, a note claims r − (s − t) = r − s − t for all of them. Check both sides with r = 1/2, s = −3, and t = 2, then select all justified conclusions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnostico_del_grupo_resta__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Value of r − (s − t)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Value of r − s − t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "11/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnostico_del_grupo_resta__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The claim is confirmed because the same data were used.",
+                  "reviewFeedback": "Using the same data permits comparison, but does not ensure equal results; calculate both sides."
+                },
+                {
+                  "id": "b",
+                  "label": "This allowed substitution is a counterexample to the universal claim.",
+                  "reviewFeedback": "Check both that the input is allowed and that the disagreement needed for this conclusion exists."
+                },
+                {
+                  "id": "c",
+                  "label": "The input s = −3 is forbidden, so the note cannot be checked.",
+                  "reviewFeedback": "Review whether the stated domain actually excludes the input's sign."
+                },
+                {
+                  "id": "d",
+                  "label": "When subtracting s − t, the correct form changes the contribution of t to +t.",
+                  "reviewFeedback": "Reconstruct the opposite of the group and check the contribution of the term mentioned here."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The left side equals 1/2 − (−5) = 11/2; the right equals 1/2 + 3 − 2 = 3/2. They do not agree for allowed inputs. The error retains −t where the opposite of the group requires +t: r − (s − t) = r − s + t.",
+            "incorrect": "Here the letters again allow every rational number. Substitute the inputs into each side without fixing the expression before evaluating it. Then identify which addend of the group should have changed sign."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "When checking a transformation, preserve the meaning of each sign, the group it affects, and the domain. One disagreeing calculation can refute an identity; one agreeing calculation does not prove it. The properties of opposites and addition explain why valid transformations preserve value. The next work will combine these ideas with multiplication and distributivity."
+        }
+      ]
+    }
+  ]
+}

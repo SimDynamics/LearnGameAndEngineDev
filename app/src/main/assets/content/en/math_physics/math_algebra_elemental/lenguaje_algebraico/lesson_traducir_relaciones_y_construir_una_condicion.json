@@ -1,0 +1,804 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__traducir_relaciones_y_construir_una_condicion",
+  "title": "Translate Relationships and Build a Condition",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read the Entire Problem Before Choosing an Operation"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous two lessons introduced letters, domains, and the meaning of an equation. Now we will read a complete situation to define the quantity sought, relate it to the given information, and build a condition. We will then check candidate values within the model. General transformations for finding all solutions will be developed later."
+        },
+        {
+          "type": "paragraph",
+          "text": "A mural is being prepared using sixty cards. Eighteen have already been placed. We want to place some more and leave twelve unplaced at the end. The question is how many additional cards must be placed. Sixty is the total, eighteen is the number already placed, and twelve is the number that must remain: these are not three names for the same quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "Let x represent the number of additional cards to place. Its unit is a card, and its domain is the integers from zero to forty-two: cards cannot be split, nor can we place more than are available. Reading the letter as the quantity described helps preserve the meaning of relationships when we write them (Gelfand & Shen, 1993, pp. 15–17)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_cantidad_busca_x",
+          "prompt": "What quantity does x represent in the mural problem?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_cantidad_busca_x__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The cards that must remain unplaced at the end.",
+                  "reviewFeedback": "Reread whether the letter names a quantity being placed or left unplaced."
+                },
+                {
+                  "id": "b",
+                  "label": "The additional cards that will be placed after the initial eighteen.",
+                  "reviewFeedback": "Connect the letter to the phase of the work described and to the initial cards."
+                },
+                {
+                  "id": "c",
+                  "label": "All the placed cards, including the initial eighteen.",
+                  "reviewFeedback": "Distinguish an additional quantity from the total to which it will be added."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x counts only the additional cards. The cards placed at the end also include the eighteen already placed; twelve is the number that must remain unplaced.",
+            "incorrect": "Read the question together with the definition of the letter. A starting amount, an additional amount, and a final amount have different roles."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_no_es_solucion",
+          "prompt": "Select all values allowed for x before checking whether they satisfy the mural's objective.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_no_es_solucion__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0",
+                  "reviewFeedback": "Consider whether the domain allows placing no additional cards before checking the final goal."
+                },
+                {
+                  "id": "b",
+                  "label": "−5",
+                  "reviewFeedback": "Relate the sign of this candidate to the number of cards that can be added."
+                },
+                {
+                  "id": "c",
+                  "label": "7/2",
+                  "reviewFeedback": "Check what the context requires about whole cards, without confusing this with satisfying the equality."
+                },
+                {
+                  "id": "d",
+                  "label": "27",
+                  "reviewFeedback": "Check the domain of this quantity separately from the mural's objective."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zero and twenty-seven count whole numbers within the forty-two available cards. Being in the domain does not prove they meet the objective: that is a separate check.",
+            "incorrect": "First apply the constraints of counting complete and available cards. The domain does not automatically shrink to the value that solves the objective."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relate the Quantities and Add the Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the mural, eighteen plus x counts the cards placed at the end. If twelve must remain unplaced, placed and pending cards must add up to sixty: 18 + x + 12 = 60. We can also count pending cards first as 60 − (18 + x) and require that there be twelve: 60 − (18 + x) = 12. Both expressions preserve the same quantities and objective."
+        },
+        {
+          "type": "paragraph",
+          "text": "An equality must compare quantities of the same kind with consistent units. We do not equate placed cards with unplaced cards just because both appear in the problem. Each expression must name a quantity and each condition must arise from a relationship in the problem. Defining quantities and units before writing their relationships lets us interpret the model (Lang, 1971, p. 47)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "del_relato_a_la_condicion",
+          "prompt": "An organizer has forty drawers, fourteen already occupied. Another x drawers will be occupied, and eight should remain free. x counts the newly occupied drawers, as whole numbers from zero to twenty-six. First write an expression for the drawers that will remain free, then an equation requiring eight free drawers. Equivalent forms that preserve the definition of x are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "del_relato_a_la_condicion__libres",
+              "type": "math_expression_input",
+              "label": "Drawers remaining free",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "40-(14+x)"
+              }
+            },
+            {
+              "id": "del_relato_a_la_condicion__condicion",
+              "type": "math_expression_input",
+              "label": "Equation requiring eight free drawers",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "40-(14+x)=8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The drawers occupied at the end number 14 + x; the free drawers number 40 − (14 + x). The condition is 40 − (14 + x) = 8, equivalent to 14 + x + 8 = 40. The expression for free drawers and the equation serve different purposes.",
+            "incorrect": "Count all the occupied drawers before subtracting them from the total. Then compare the free drawers with eight. Keep x as an additional quantity, not the total occupied."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_cantidades_confundidas",
+          "prompt": "For the preceding organizer, a note proposes 14 + x = 8. What relationship does it express, and why does it fail to represent the objective?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_cantidades_confundidas__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It equates all occupied drawers to eight, which was the desired number of free drawers.",
+                  "reviewFeedback": "Interpret each term of the proposed equation and compare it with the quantity the objective intends to fix."
+                },
+                {
+                  "id": "b",
+                  "label": "It counts only the newly occupied drawers and forgets to add the original fourteen.",
+                  "reviewFeedback": "Examine what the written sum represents before claiming that it omits the initial amount."
+                },
+                {
+                  "id": "c",
+                  "label": "It counts all forty drawers but uses a different letter for each one.",
+                  "reviewFeedback": "Connect the terms of this notation to the described drawers and avoid assigning it a total that does not appear."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14 + x counts the drawers occupied at the end. Eight counts the desired free drawers. The objective does not require those two amounts to be equal, but for occupied and free drawers to add to forty.",
+            "incorrect": "Identify what each side counts. Adding fourteen and x does include the initially occupied drawers; the mistake is the chosen comparison."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read \"Less Than\" While Preserving the Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "A score five points lower than a score p is written p − 5. The reference amount is p, from which five is subtracted. 5 − p is a different difference: it subtracts p from five. Subtraction is not commutative. With p = −2, the expressions equal −7 and 7 respectively; only the first lowers the starting score by five points."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nor is \"five points less than p\" the same as \"r is less than five.\" The first statement fixes a difference of five points from p. The second only compares two values: r is smaller, and five is the reference. It does not say how far apart they are. This ordering comparison differs from fixing an exact difference (Lang, 1971, p. 75)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinco_menos_en_el_marcador",
+          "prompt": "A game permits negative whole-number scores. q is the starting score, and four points are deducted. Write the final score as an expression and evaluate it for q = −3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cinco_menos_en_el_marcador__expresion",
+              "type": "math_expression_input",
+              "label": "Final score as a function of q",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "q-4"
+              }
+            },
+            {
+              "id": "cinco_menos_en_el_marcador__valor",
+              "type": "math_numeric_input",
+              "label": "Final score with q = −3",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Deducting four points gives q − 4. If q = −3, the result is −3 − 4 = −7, four points below the original. 4 − q does not describe that penalty.",
+            "incorrect": "The starting amount is q. Subtract the penalty from it; do not swap the minuend and subtrahend or change the sign of the starting value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_no_fijar_diferencia",
+          "prompt": "r can be any rational number. Select all values satisfying \"r is less than four\"; no particular difference has been specified.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_no_fijar_diferencia__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4",
+                  "reviewFeedback": "Check whether the less-than symbol includes the boundary in the candidate you selected."
+                },
+                {
+                  "id": "b",
+                  "label": "−2",
+                  "reviewFeedback": "Place this candidate relative to the bound and retain the stated rational domain."
+                },
+                {
+                  "id": "c",
+                  "label": "5",
+                  "reviewFeedback": "Compare this candidate with the boundary without changing the comparison into a fixed difference."
+                },
+                {
+                  "id": "d",
+                  "label": "1",
+                  "reviewFeedback": "Check where this candidate lies relative to the stated limit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 and one are less than four. Four equals four, and five is greater. The condition allows different distances from four.",
+            "incorrect": "Compare each value with four. \"Less than\" excludes equality and does not impose a fixed subtraction of four."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide Which Entire Quantity Is Doubled"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a calculation with a rational x, \"double the difference between x and four\" means subtract four first and multiply the result by two: 2(x − 4). Parentheses preserve the calculation to be doubled. By contrast, \"subtract twice four from x\" means x − 2 × 4. Here four is doubled, not the entire difference. Grouping and distributivity explain this difference in meaning (Gelfand & Shen, 1993, pp. 13–14; Lang, 1971, p. 16)."
+        },
+        {
+          "type": "paragraph",
+          "text": "With x = 10, the first expression equals twelve and the second equals two. With x = 0, both equal negative eight. That particular agreement does not make the instructions equivalent: one input giving different results is enough to distinguish them. To translate, read which operation applies to which quantity; detecting the words \"twice\" and \"difference\" is not enough."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "traducir_dos_instrucciones",
+          "prompt": "t may be any rational number. Write an expression for each instruction: double the difference between t and five; subtract twice five from t.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "traducir_dos_instrucciones__diferencia",
+              "type": "math_expression_input",
+              "label": "Twice the difference between t and five",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2*(t-5)"
+              }
+            },
+            {
+              "id": "traducir_dos_instrucciones__resta",
+              "type": "math_expression_input",
+              "label": "t minus twice five",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-2*5"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first instruction is represented by 2(t − 5); the second by t − 2 × 5. Equivalent forms are accepted. The factor two acts on different quantities.",
+            "incorrect": "First identify what is doubled. Keep t − 5 as a complete quantity when asked to double that difference."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_con_una_fraccion",
+          "prompt": "Now compare two calculations with z = 5/2: twice the difference between z and three, and z minus twice three. Write both values.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_con_una_fraccion__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Value of 2(z − 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resta",
+                  "type": "numeric",
+                  "label": "Value of z − 2 × 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "resta": {
+                    "type": "numeric",
+                    "expected": "-7/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 × (5/2 − 3) = 2 × (−1/2) = −1. In the other calculation, 5/2 − 6 = −7/2. The chosen rational again shows that the instructions differ.",
+            "incorrect": "The fraction is one complete value of z. Group the difference in the first calculation and retain the outer subtraction in the second."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose an Equation for What It Represents"
+        },
+        {
+          "type": "paragraph",
+          "text": "To make a spacer, two strips of equal length d, measured in centimeters, are prepared. Three centimeters are cut from each strip, and the two remaining sections are joined without overlap. The completed spacer must measure ten centimeters. d is a rational number greater than three: each remaining section must have positive length."
+        },
+        {
+          "type": "paragraph",
+          "text": "The unknown d measures each strip before cutting, not the completed spacer. Each remaining section measures d − 3; joining two doubles that length. A suitable equation compares the joined length with ten centimeters. Starting with two strips does not justify forgetting that both strips are cut."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ecuacion_del_separador",
+          "prompt": "Which equation preserves the definition of d, the two cuts, and the length objective?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ecuacion_del_separador__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "d − 2 × 3 = 10",
+                  "reviewFeedback": "Identify how many pieces the letter represents and to how many pieces each cut applies."
+                },
+                {
+                  "id": "b",
+                  "label": "2(d − 3) = 10",
+                  "reviewFeedback": "Interpret the selected group as the length of one piece and justify the outside factor."
+                },
+                {
+                  "id": "c",
+                  "label": "2d − 3 = 10",
+                  "reviewFeedback": "Check whether this notation applies the cut length to every piece described by the model."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2(d − 3) counts the two cut sections. d − 2 × 3 starts from just one initial length, and 2d − 3 subtracts only one cut.",
+            "incorrect": "First translate one finished section, then count how many sections are joined. The same initial length d belongs to each strip."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_dos_longitudes",
+          "prompt": "For the spacer, evaluate 2(d − 3) with d = 7/2 cm and d = 8 cm. Select all candidates that meet the ten-centimeter objective.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_dos_longitudes__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Total length with d = 7/2 cm",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Total length with d = 8 cm",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_dos_longitudes__cumple",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "fraccion",
+                  "label": "d = 7/2 cm",
+                  "reviewFeedback": "Evaluate the group with this fraction and keep units consistent before comparing it with the goal."
+                },
+                {
+                  "id": "entero",
+                  "label": "d = 8 cm",
+                  "reviewFeedback": "Apply the cut, then the number-of-pieces factor, to this complete candidate."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "entero"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With 7/2 cm, each remaining section measures 1/2 cm, and together they measure one centimeter: the goal is not met. With eight centimeters, each section measures five, giving ten together: this candidate meets the goal. Both initial lengths exceed three centimeters.",
+            "incorrect": "First subtract three centimeters from each strip. Then count both remaining sections and compare their total length with ten."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Checking d = 8 verifies a candidate within the domain and with the stated units. Claiming that all solutions have been found would require further reasoning. Keep building the model, finding candidates, and checking their meanings as separate tasks."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Units Are Also Part of the Translation"
+        },
+        {
+          "type": "paragraph",
+          "text": "A package contains material and wrapping weighing eighty grams. We want its contents to weigh one thousand seven hundred grams. m represents the package's total mass measured in kilograms. We will use rational masses greater than 80/1000 kg: the wrapping is included, and the contents must have a positive mass. One kilogram equals one thousand grams."
+        },
+        {
+          "type": "paragraph",
+          "text": "m − 80 does not subtract quantities in the same unit: m is measured in kilograms, and eighty in grams. You can convert the total mass to grams or the wrapping to kilograms. The answer must give the mass requested by each field. Converting units preserves the quantity but requires changing its numerical expression."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelo_del_paquete",
+          "prompt": "With m defined as the total mass in kilograms, write an expression for the contents' mass in grams. Then write an equation requiring one thousand seven hundred grams of contents. Equivalent equations with consistent units and the same definition of m are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo_del_paquete__contenido",
+              "type": "math_expression_input",
+              "label": "Mass of the contents, in grams",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "1000m-80"
+              }
+            },
+            {
+              "id": "modelo_del_paquete__condicion",
+              "type": "math_expression_input",
+              "label": "Condition for obtaining one thousand seven hundred grams of contents",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "1000m-80=1700"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1000m gives the total mass in grams. The contents weigh 1000m − 80 grams and the condition is 1000m − 80 = 1700. You can also write m − 80/1000 = 1700/1000, comparing masses in kilograms; the requested expression for the contents must still be in grams.",
+            "incorrect": "The wrapping is included in the total mass. Convert to a common unit before subtracting it, and compare the contents, not the entire package, with the goal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_masas_y_unidades",
+          "prompt": "For the package, evaluate 1000m − 80 with m = 89/50 kg and with m = 9/5 kg. Write the masses of the contents in grams and select the candidates that meet the objective of one thousand seven hundred grams.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_masas_y_unidades__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Contents with m = 89/50 kg, in grams",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Contents with m = 9/5 kg, in grams",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1700"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "1720"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_masas_y_unidades__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "primera",
+                  "label": "m = 89/50 kg",
+                  "reviewFeedback": "Convert this mass to the goal's unit before subtracting the packaging and comparing."
+                },
+                {
+                  "id": "segunda",
+                  "label": "m = 9/5 kg",
+                  "reviewFeedback": "Calculate the contents from this total mass, keeping grams and kilograms distinct."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "primera"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "89/50 kg equals 1780 g; subtracting the wrapping leaves 1700 g. 9/5 kg equals 1800 g, leaving 1720 g. Both total masses are positive and exceed the wrapping, but only the first meets the objective.",
+            "incorrect": "Convert the total mass to grams before subtracting eighty grams. Then compare each result with one thousand seven hundred, not with the entire package mass."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Translate Another Plan with Less Guidance"
+        },
+        {
+          "type": "paragraph",
+          "text": "A theater rehearsal initially lasts t minutes. One third of that time is removed, then a seven-minute ending is added. The final duration must be twenty-seven minutes. Define t as the initial duration, a positive rational number, and keep minutes as the unit. The removed third is calculated from the initial rehearsal, before adding the ending."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build the relationship from these conditions. Determine which part of the initial time remains, how the seven minutes contribute, and which quantity must equal twenty-seven. In the following fields, you will write an expression for the final duration and an equation; you may choose the groups and operations as long as they preserve the model."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "traducir_el_plan_del_ensayo",
+          "prompt": "Write the final rehearsal duration as a function of t, measured in minutes. Then write an equation requiring a final duration of twenty-seven minutes. Equivalent expressions and equations preserving the definition of t are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "traducir_el_plan_del_ensayo__duracion",
+              "type": "math_expression_input",
+              "label": "Final duration, in minutes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-t/3+7"
+              }
+            },
+            {
+              "id": "traducir_el_plan_del_ensayo__condicion",
+              "type": "math_expression_input",
+              "label": "Condition for a final duration of twenty-seven minutes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-t/3+7=27"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Removing one third leaves t − t/3, equivalent to 2t/3. Then seven minutes are added: t − t/3 + 7. The condition is t − t/3 + 7 = 27, equivalent to 2t/3 + 7 = 27. The third is taken from t, not from t + 7.",
+            "incorrect": "Separate the initial duration, the removed part, and the subsequent addition. The goal of twenty-seven does not replace t before the relationship is built."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_plan_del_ensayo",
+          "prompt": "Evaluate the plan's final duration for t = 30 minutes and t = 27 minutes. Select which candidates meet the goal of twenty-seven minutes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_plan_del_ensayo__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "treinta",
+                  "type": "numeric",
+                  "label": "Final duration with t = 30 min",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "veintisiete",
+                  "type": "numeric",
+                  "label": "Final duration with t = 27 min",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "treinta": {
+                    "type": "numeric",
+                    "expected": "27"
+                  },
+                  "veintisiete": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_plan_del_ensayo__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "veintisiete",
+                  "label": "t = 27 minutes",
+                  "reviewFeedback": "Distinguish the initial duration proposed by this option from the final duration after the changes."
+                },
+                {
+                  "id": "treinta",
+                  "label": "t = 30 minutes",
+                  "reviewFeedback": "Reconstruct every stage of the plan for this candidate and compare the resulting duration with the goal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "treinta"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Starting with thirty minutes, remove ten to leave twenty; with the seven-minute ending, the final duration is twenty-seven. Starting with twenty-seven, remove nine to leave eighteen; adding seven gives twenty-five. t measured the initial duration, not the final one.",
+            "incorrect": "Removing one third leaves two thirds of the initial duration. The ending adds seven minutes after that reduction. Keep the definition of t when checking the goal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_resultado_con_otro_significado",
+          "prompt": "Someone writes t = 27 at the beginning because the finished rehearsal must last twenty-seven minutes. What should they reconsider?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_resultado_con_otro_significado__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "They must forbid all fractions of a minute so that t is an integer.",
+                  "reviewFeedback": "Check whether the definition and domain of time actually impose the proposed exclusion."
+                },
+                {
+                  "id": "b",
+                  "label": "They must remove the seven-minute ending because the final duration is already known.",
+                  "reviewFeedback": "Review which stage of the rehearsal each piece of information describes before removing it from the model."
+                },
+                {
+                  "id": "c",
+                  "label": "They must distinguish t, which measures the initial duration, from the desired final duration.",
+                  "reviewFeedback": "Identify which moment the letter measures and how it relates to the moment specified by the goal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The definition of t remains the initial duration. The final result depends on the cut and the addition; it is not obtained by changing the letter's meaning.",
+            "incorrect": "The allowed values and seven minutes are given. Sharing the word \"duration\" does not permit using one letter for two different quantities in the same relationship."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "To check a translation, return to the defined quantities: what each letter measures, which values it admits, which unit it uses, and what relationship each operation represents. Check a candidate against those definitions and the original goal. This review protects meaning when we later transform expressions and equations."
+        }
+      ]
+    }
+  ]
+}

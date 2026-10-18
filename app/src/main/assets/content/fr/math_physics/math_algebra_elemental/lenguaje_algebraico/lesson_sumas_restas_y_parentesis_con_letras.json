@@ -1,0 +1,788 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__sumas_restas_y_parentesis_con_letras",
+  "title": "Sommes, soustractions et parenthèses avec des lettres",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le signe moins peut désigner un opposé"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le premier cours, tu as appris à additionner des nombres signés et à prendre des opposés. Nous allons maintenant utiliser ces propriétés pour modifier l'écriture d'une expression sans changer sa valeur. Les lettres de cette leçon représentent des nombres rationnels, sauf restriction explicite du contexte. Tu dois distinguer une valeur vérifiée d'une identité valable sur tout le domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'écriture −x signifie « l'opposé de la valeur de x ». Elle ne permet pas de conclure que le résultat est négatif. Si x vaut −7/2, son opposé vaut 7/2 ; si x vaut 7/2, son opposé vaut −7/2. Si x est nul, son opposé l'est aussi. Le sens est défini par la somme x + (−x) = 0, et non par l'apparence du signe (Lang, 1971, pp. 8–10, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prendre deux fois l'opposé redonne la valeur initiale : −(−x) = x. Dans l'écriture x − y, en revanche, le moins indique une soustraction entre deux quantités. Cette soustraction peut s'écrire x + (−y) : nous ajoutons à x l'opposé entier de y."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuestos_de_una_letra",
+          "prompt": "Calcule les opposés indiqués. Utilise la même valeur de x dans chaque calcul.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuestos_de_una_letra__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "opuesto",
+                  "type": "numeric",
+                  "label": "−x avec x = −5/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "doble",
+                  "type": "numeric",
+                  "label": "−(−x) avec x = −5/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "−x avec x = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "opuesto": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "doble": {
+                    "type": "numeric",
+                    "expected": "-5/4"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec x = −5/4, son opposé est 5/4 ; l'opposé de 5/4 est de nouveau −5/4. L'opposé de zéro vaut zéro. La lettre n'a pas besoin d'être positive.",
+            "incorrect": "Cherche le nombre qui, ajouté à la valeur de x, donne zéro. Pour −(−x), prends ensuite l'opposé du résultat précédent ; ne modifie pas la donnée initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signo_y_opuesto",
+          "prompt": "Une note affirme : « −x est toujours un nombre négatif ». Quelle correction est juste pour le domaine des rationnels ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "signo_y_opuesto__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La note est correcte : le signe écrit détermine le signe du résultat.",
+                  "reviewFeedback": "Distingue le symbole d'opposé du signe numérique obtenu après substitution."
+                },
+                {
+                  "id": "b",
+                  "label": "La note est fausse pour x = −1/2 et également pour x = 0 ; le résultat dépend de la valeur de x.",
+                  "reviewFeedback": "Calcule l'opposé des données mentionnées dans cette affirmation et examine ce que démontre chaque cas."
+                },
+                {
+                  "id": "c",
+                  "label": "La note est fausse uniquement parce que les fractions ne sont pas autorisées dans −x.",
+                  "reviewFeedback": "Revois le domaine des rationnels et si l'opération consistant à prendre l'opposé impose la restriction choisie."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec x = −1/2, −x vaut 1/2, qui est positif ; avec x = 0, il vaut zéro. Les deux données sont permises. Le moins indique l'opération consistant à prendre un opposé.",
+            "incorrect": "Avant de déterminer le signe du résultat, substitue un rationnel négatif et zéro. Ne confonds pas l'opération écrite avec une restriction du domaine."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réordonner en conservant le signe de chaque terme"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'expression a − b + c peut se lire a + (−b) + c. Pour regrouper ou changer l'ordre d'une somme, nous conservons les termes entiers a, −b et c. Nous obtenons ainsi a + c − b. Nous n'obtenons pas a − c + b, car cela remplacerait −b par b et c par −c. La commutativité et l'associativité s'appliquent à l'addition réécrite ; elles ne rendent pas la soustraction commutative (Lang, 1971, pp. 9–10, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, avec a = 2, b = 5 et c = −1, a − b + c et a + c − b valent tous deux −4. Cette vérification aide à détecter les erreurs. Si les deux écritures coïncident pour tout rationnel, c'est parce qu'elles conservent exactement les mêmes termes, et non parce qu'un exemple a fonctionné."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumandos_con_su_signo",
+          "prompt": "Sélectionne toutes les écritures qui conservent la valeur de v − 4 + w pour toute paire de rationnels v et w.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumandos_con_su_signo__escrituras",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "v + w − 4",
+                  "reviewFeedback": "Suis chaque terme avec son signe lorsque tu compares cette écriture à l'expression initiale."
+                },
+                {
+                  "id": "b",
+                  "label": "4 − v + w",
+                  "reviewFeedback": "Examine si le signe de chaque quantité est conservé lorsqu'elle change de place dans cette écriture."
+                },
+                {
+                  "id": "c",
+                  "label": "w − 4 + v",
+                  "reviewFeedback": "Réordonne les termes avec leurs signes en vérifiant que chacun apporte la même quantité."
+                },
+                {
+                  "id": "d",
+                  "label": "v − (4 + w)",
+                  "reviewFeedback": "Distribue le signe extérieur des parenthèses et compare la contribution de chaque lettre à l'originale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les termes sont v, −4 et w. v + w − 4 et w − 4 + v changent seulement leur ordre. 4 − v + w change deux signes ; v − (4 + w) change le signe de w.",
+            "incorrect": "Réécris l'expression comme une somme de v, −4 et w. Lorsque tu déplaces un terme, conserve son signe."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reordenacion_que_cambia_valor",
+          "prompt": "Une personne transforme u − v + w en u − w + v. Calcule les deux expressions avec u = −3/2, v = 2 et w = −1/2. Décide ensuite ce que montre cette vérification.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reordenacion_que_cambia_valor__cuentas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Valeur de u − v + w",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cambiada",
+                  "type": "numeric",
+                  "label": "Valeur de u − w + v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "cambiada": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "reordenacion_que_cambia_valor__juicio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elles sont équivalentes pour tous les rationnels, car les mêmes trois lettres y figurent.",
+                  "reviewFeedback": "La présence des mêmes lettres ne suffit pas : vérifie les opérations et les signes qui affectent chacune."
+                },
+                {
+                  "id": "b",
+                  "label": "Cette donnée réfute l'équivalence : la nouvelle écriture n'a pas conservé les signes de v et w.",
+                  "reviewFeedback": "Calcule les deux écritures avec la même donnée et précise ce que démontre une différence."
+                },
+                {
+                  "id": "c",
+                  "label": "La donnée n'est pas valable, car une lettre ne peut pas prendre une valeur négative.",
+                  "reviewFeedback": "Consulte le domaine indiqué et distingue l'admissibilité d'une donnée de la vérité de la transformation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'originale vaut −3/2 − 2 − 1/2 = −4. La nouvelle vaut −3/2 + 1/2 + 2 = 1. Une donnée permise donnant deux résultats distincts suffit à réfuter l'identité ; les mêmes lettres ne garantissent pas les mêmes opérations.",
+            "incorrect": "Soustraire w = −1/2 revient à ajouter 1/2. Calcule chaque écriture telle qu'elle apparaît ; ne corrige pas la seconde avant de la comparer à la première."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'opposé d'une somme affecte tous ses termes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour prendre l'opposé de a + b, il nous faut une quantité qui, ajoutée à a + b, donne zéro. La somme −a − b y parvient : (a + b) + (−a − b) = a + (−a) + b + (−b) = 0. Ainsi, −(a + b) = −a − b. Cette justification utilise les termes entiers et reste valable lorsque a ou b est déjà négatif (Lang, 1971, pp. 10–11, 33)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les parenthèses indiquent quelle quantité reçoit l'opération. Dans −(x + 6), nous prenons l'opposé de toute la somme. Dans −x + 6, nous prenons seulement l'opposé de x, puis ajoutons six. Ce sont deux opérations différentes : enlever les parenthèses du premier cas doit donner −x − 6."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_de_dos_sumandos",
+          "prompt": "Avec p = 5/3 et q = −2/3, calcule l'opposé de la somme et l'expression qui prend uniquement l'opposé de p. Vérifie si elles coïncident dans ce cas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuesto_de_dos_sumandos__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "completa",
+                  "type": "numeric",
+                  "label": "Valeur de −(p + q)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solo_primero",
+                  "type": "numeric",
+                  "label": "Valeur de −p + q",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "completa": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "solo_primero": {
+                    "type": "numeric",
+                    "expected": "-7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "p + q vaut un, donc −(p + q) vaut −1. Dans −p + q, nous obtenons −5/3 − 2/3 = −7/3. Prendre l'opposé du premier terme seulement ne donne pas l'opposé de la somme entière.",
+            "incorrect": "Dans la première écriture, calcule d'abord p + q puis son opposé. Dans la seconde, prends l'opposé de p et ajoute la valeur initiale de q."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_y_cancelacion",
+          "prompt": "Complète l'unique nombre, avec son signe, pour que −(s + 9) + s conserve cette valeur pour tout rationnel s. Justifie-le en prenant l'opposé de la somme et en annulant les termes opposés en s.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuesto_y_cancelacion__numero",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Nombre obtenu, avec son signe",
+                  "keyboard": "FRACTION",
+                  "hint": "?"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "text": "−(s + 9) + s = "
+                },
+                {
+                  "field": "constante"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−(s + 9) + s = −s − 9 + s = −9. Les termes −s et s s'annulent. Il reste l'opposé de neuf, pas neuf.",
+            "incorrect": "Le signe extérieur affecte aussi bien s que neuf. Réécris avant d'annuler ; garder +9 dans cette transformation changerait l'expression."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Soustraire une différence change ses deux contributions"
+        },
+        {
+          "type": "paragraph",
+          "text": "La différence a − b signifie a + (−b). En prenant son opposé, la règle de la somme donne −a + (−(−b)), soit −a + b. Donc −(a − b) = −a + b. Le second terme change deux fois de signe : d'abord parce que b était soustrait dans les parenthèses, ensuite parce que nous prenons l'opposé du groupe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si nous soustrayons cette différence d'une autre quantité r, nous obtenons r − (a − b) = r − a + b. Le signe de r ne change pas : il est hors du groupe soustrait. Il ne suffit pas non plus d'effacer les parenthèses et de conserver toutes les soustractions. Par exemple, 10 − (x − 4) = 10 − x + 4 = 14 − x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diferencia_completa",
+          "prompt": "Avec u = −1/2 et v = 3/4, évalue ces trois écritures. Compare les résultats sans corriger préalablement aucune d'elles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diferencia_completa__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupo",
+                  "type": "numeric",
+                  "label": "Valeur de 3 − (u − v)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sin_grupo",
+                  "type": "numeric",
+                  "label": "Valeur de 3 − u + v",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "dos_restas",
+                  "type": "numeric",
+                  "label": "Valeur de 3 − u − v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupo": {
+                    "type": "numeric",
+                    "expected": "17/4"
+                  },
+                  "sin_grupo": {
+                    "type": "numeric",
+                    "expected": "17/4"
+                  },
+                  "dos_restas": {
+                    "type": "numeric",
+                    "expected": "11/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "u − v vaut −5/4. Le soustraire de trois donne 17/4 ; 3 − u + v donne également 17/4. Dans 3 − u − v, on obtient 11/4. Le signe de v change lorsqu'on soustrait la différence entière.",
+            "incorrect": "Dans les parenthèses, soustrais 3/4 de −1/2. Prends ensuite l'opposé de ce résultat avant de l'ajouter à trois. Évalue également les écritures sans parenthèses telles qu'elles sont présentées."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "explicar_el_doble_opuesto",
+          "prompt": "Quelle raison justifie r − (a − b) = r − a + b pour tous les rationnels r, a et b ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "explicar_el_doble_opuesto__razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Soustraire le groupe signifie ajouter son opposé : on prend l'opposé de a et de −b ; l'opposé de −b est b.",
+                  "reviewFeedback": "Applique l'opération d'opposé au groupe entier et explique son effet sur chaque terme."
+                },
+                {
+                  "id": "b",
+                  "label": "Deux expressions contenant les mêmes lettres doivent avoir la même valeur.",
+                  "reviewFeedback": "Avoir les mêmes lettres ne justifie pas la même valeur : identifie la relation entre les opérations."
+                },
+                {
+                  "id": "c",
+                  "label": "On peut enlever toutes les parenthèses en conservant les signes à l'intérieur.",
+                  "reviewFeedback": "Examine l'opération qui précède les parenthèses avant de supprimer le regroupement."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "r ne change pas. L'opposé de a − b est −a + b, car la soustraction intérieure contient déjà le terme −b. Cette transformation générale est justifiée par des propriétés, et non par un seul cas numérique.",
+            "incorrect": "Identifie d'abord le groupe soustrait. Son opposé affecte les deux termes ; les lettres seules ne précisent pas les opérations effectuées."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des parenthèses à l'intérieur d'autres parenthèses"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'écriture 8 − (2 − (t + 1)) contient deux groupes. Pour l'évaluer avec une donnée, tu peux commencer par t + 1, calculer ensuite 2 moins ce résultat et enfin le soustraire de huit. Pour la transformer sans choisir t, observe le groupe extérieur : 8 − (2 − (t + 1)) = 8 − 2 + (t + 1) = 7 + t. Prendre l'opposé de la différence extérieure transforme la soustraction du groupe t + 1 en addition du groupe entier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écrire une étape par ligne aide à conserver quelle opération agit sur quelle quantité. L'égalité 8 − (2 − (t + 1)) = 7 + t est une identité. Substituer une donnée permet de vérifier notre lecture, mais c'est l'explication des groupes et de leurs opposés qui justifie tous les rationnels."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "evaluar_por_grupos",
+          "prompt": "Évalue 8 − (2 − (t + 1)) avec t = −3/2. Note chaque quantité avant de passer au groupe qui la contient.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "evaluar_por_grupos__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "interior",
+                  "type": "numeric",
+                  "label": "Valeur de t + 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Valeur de 2 − (t + 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "exterior",
+                  "type": "numeric",
+                  "label": "Valeur de 8 − (2 − (t + 1))",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "interior": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "exterior": {
+                    "type": "numeric",
+                    "expected": "11/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t + 1 vaut −1/2. Ensuite, 2 − (−1/2) = 5/2. Enfin, 8 − 5/2 = 11/2, comme 7 − 3/2. Chaque groupe utilise le résultat complet du précédent.",
+            "incorrect": "Ne soustrais pas une partie du groupe avant de le terminer. À l'étape intermédiaire, on soustrait un résultat négatif ; à l'extérieur, on soustrait le résultat positif 5/2."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_transformacion",
+          "prompt": "Sélectionne toutes les écritures qui conservent la valeur de 9 − (3 − (t + 2)) pour tout rationnel t. Utilise les opposés des groupes pour justifier ton choix.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_transformacion__escrituras",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9 − 3 + (t + 2)",
+                  "reviewFeedback": "Retrouve les opposés des groupes de l'intérieur vers l'extérieur et vérifie les signes conservés dans cette écriture."
+                },
+                {
+                  "id": "b",
+                  "label": "9 − 3 − (t + 2)",
+                  "reviewFeedback": "Examine l'effet combiné des deux soustractions sur le groupe le plus intérieur."
+                },
+                {
+                  "id": "c",
+                  "label": "8 + t",
+                  "reviewFeedback": "Justifie le terme constant et le terme avec une lettre dans ce choix à partir des groupes initiaux."
+                },
+                {
+                  "id": "d",
+                  "label": "9 − (3 + t + 2)",
+                  "reviewFeedback": "Vérifie quel signe correspond au groupe intérieur après avoir pris l'opposé du groupe qui le contient."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire la différence 3 − (t + 2) revient à soustraire trois et à ajouter le groupe t + 2. On obtient 9 − 3 + t + 2 = 8 + t. Les deux autres écritures soustraient ce groupe et changent sa contribution.",
+            "incorrect": "Conserve le groupe intérieur jusqu'à avoir pris l'opposé de la différence extérieure. Tu peux utiliser une donnée pour détecter une erreur, mais justifie les écritures retenues par les opérations sur les groupes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer l'idée et en examiner la portée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur une droite orientée, nous choisissons l'est comme sens positif et mesurons les positions en mètres depuis un repère zéro. Un jeton peut se trouver de chaque côté de ce repère. Les déplacements signés s'ajoutent à la position. S'il avance de a mètres vers l'est, puis de b mètres vers l'ouest, avec a et b positifs ou nuls, le déplacement total vaut a − b. Pour retrouver sa position initiale en un seul mouvement, il lui faut l'opposé de ce total. Cela décrit le changement de position ; il n'est pas nécessaire de parcourir le trajet en sens inverse."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "movimiento_y_regreso",
+          "prompt": "Un jeton part de la position −2/3 mètres, avance de 7/4 mètres vers l'est, puis recule de 5/2 mètres vers l'ouest. Calcule le déplacement total, la position finale et le déplacement signé d'un mouvement unique qui le ramène au départ.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "movimiento_y_regreso__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Déplacement total, en mètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Position finale, en mètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "regreso",
+                  "type": "numeric",
+                  "label": "Déplacement de retour, en mètres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "-3/4"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "-17/12"
+                  },
+                  "regreso": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le changement total vaut 7/4 − 5/2 = −3/4. La position finale est −2/3 − 3/4 = −17/12. Pour revenir, on ajoute 3/4 : −17/12 + 3/4 = −2/3, la position initiale. Une position et un déplacement sont des quantités différentes même avec la même unité.",
+            "incorrect": "Calcule d'abord le changement total dans le sens positif choisi. Ajoute ce changement à la position initiale. Le retour doit annuler le changement, pas la position finale par rapport au repère zéro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "regreso_sin_datos_particulares",
+          "prompt": "Pour toutes distances rationnelles positives ou nulles a vers l'est et b vers l'ouest, sélectionne toutes les expressions du déplacement unique qui annule le changement a − b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "regreso_sin_datos_particulares__expresiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−a + b",
+                  "reviewFeedback": "Ajoute ce déplacement au changement initial et vérifie s'ils s'annulent pour toute paire autorisée."
+                },
+                {
+                  "id": "b",
+                  "label": "−a − b",
+                  "reviewFeedback": "Conserve les signes lorsque tu ajoutes cette proposition au déplacement initial, sans confondre le retour avec une distance parcourue plus grande."
+                },
+                {
+                  "id": "c",
+                  "label": "a − b",
+                  "reviewFeedback": "Distingue la répétition du changement initial d'un mouvement qui l'annule."
+                },
+                {
+                  "id": "d",
+                  "label": "b − a",
+                  "reviewFeedback": "Ajoute ce déplacement au changement initial et justifie l'effet sur chaque quantité pour toute donnée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le retour est −(a − b) = −a + b = b − a. Ajouté au déplacement a − b, il donne zéro. Il peut se diriger vers l'est, vers l'ouest ou être nul : cela dépend des distances, pas du premier signe écrit.",
+            "incorrect": "Cherche une expression qui annule le changement pour toutes les distances autorisées. Qu'elle fonctionne seulement lorsque a = b ou pour une seule paire ne suffit pas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_del_grupo_resta",
+          "prompt": "Revenons au domaine de tous les rationnels : une note affirme r − (s − t) = r − s − t pour tous. Vérifie les deux membres avec r = 1/2, s = −3 et t = 2, puis sélectionne toutes les conclusions justifiées.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnostico_del_grupo_resta__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valeur de r − (s − t)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valeur de r − s − t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "11/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnostico_del_grupo_resta__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'affirmation est confirmée parce que les mêmes données ont été utilisées.",
+                  "reviewFeedback": "Utiliser les mêmes données permet de comparer, mais ne garantit pas des résultats égaux ; calcule les deux membres."
+                },
+                {
+                  "id": "b",
+                  "label": "Cette substitution autorisée est un contre-exemple à l'affirmation universelle.",
+                  "reviewFeedback": "Vérifie à la fois que la donnée est autorisée et que la différence nécessaire à cette conclusion existe."
+                },
+                {
+                  "id": "c",
+                  "label": "La donnée s = −3 est interdite ; la note ne peut donc pas être vérifiée.",
+                  "reviewFeedback": "Vérifie si le domaine déclaré exclut réellement le signe de cette donnée."
+                },
+                {
+                  "id": "d",
+                  "label": "En soustrayant s − t, l'écriture correcte change la contribution de t en +t.",
+                  "reviewFeedback": "Retrouve l'opposé du groupe et examine la contribution du terme mentionné dans cette affirmation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le membre gauche vaut 1/2 − (−5) = 11/2 ; le droit vaut 1/2 + 3 − 2 = 3/2. Ils diffèrent avec des valeurs permises. L'erreur conserve −t alors que l'opposé du groupe exige +t : r − (s − t) = r − s + t.",
+            "incorrect": "Ici, toutes les valeurs rationnelles sont de nouveau admises. Substitue les données dans chaque membre sans le corriger avant de calculer. Identifie ensuite le terme dont le signe aurait dû changer."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour vérifier une transformation, conserve le sens de chaque signe, le groupe sur lequel il agit et le domaine. Un calcul donnant une différence peut réfuter une identité ; un calcul coïncident ne la prouve pas à lui seul. Les propriétés des opposés et de l'addition expliquent pourquoi les transformations correctes conservent la valeur. Le prochain travail réunira ces idées avec la multiplication et la distributivité."
+        }
+      ]
+    }
+  ]
+}

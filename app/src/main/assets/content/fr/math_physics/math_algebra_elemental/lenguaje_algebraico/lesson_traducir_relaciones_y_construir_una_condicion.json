@@ -1,0 +1,804 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__traducir_relaciones_y_construir_una_condicion",
+  "title": "Traduire des relations et construire une condition",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire tout le problème avant de choisir une opération"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux leçons précédentes ont présenté les lettres, les domaines et le sens d'une équation. Nous allons maintenant lire une situation complète pour définir la quantité recherchée, la relier aux données et construire une condition. Nous vérifierons ensuite des propositions à l'intérieur du modèle. Les transformations générales permettant de trouver toutes les solutions seront développées plus tard."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fresque est préparée avec soixante cartes. Dix-huit sont déjà placées. On souhaite en placer d'autres et en laisser douze non placées à la fin. La question est de savoir combien de cartes supplémentaires doivent être placées. Soixante est le total, dix-huit la quantité déjà placée et douze la quantité qui doit rester : ce ne sont pas trois noms pour la même quantité."
+        },
+        {
+          "type": "paragraph",
+          "text": "Définissons x comme le nombre de cartes supplémentaires à placer. Son unité est la carte et son domaine comprend les entiers de zéro à quarante-deux : on ne fractionne pas les cartes et on ne peut pas en placer plus que le nombre disponible. Lire la lettre comme la quantité décrite permet de conserver le sens des relations lorsque nous les écrivons (Gelfand & Shen, 1993, pp. 15–17)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_cantidad_busca_x",
+          "prompt": "Quelle quantité représente x dans le problème de la fresque ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_cantidad_busca_x__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les cartes qui doivent rester non placées à la fin.",
+                  "reviewFeedback": "Relis si la lettre désigne une quantité placée ou une quantité que l'on laisse de côté."
+                },
+                {
+                  "id": "b",
+                  "label": "Les cartes supplémentaires qui seront placées après les dix-huit premières.",
+                  "reviewFeedback": "Relie la lettre à l'étape du travail décrite et aux cartes initiales."
+                },
+                {
+                  "id": "c",
+                  "label": "Toutes les cartes placées, y compris les dix-huit premières.",
+                  "reviewFeedback": "Distingue une quantité supplémentaire du total auquel elle sera ajoutée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x compte uniquement les cartes supplémentaires. Les cartes placées à la fin comprennent également les dix-huit déjà en place ; douze est le nombre qui doit rester non placé.",
+            "incorrect": "Lis la question avec la définition de la lettre. Une quantité initiale, une quantité ajoutée et une quantité finale jouent des rôles distincts."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_no_es_solucion",
+          "prompt": "Sélectionne toutes les valeurs admises pour x avant de vérifier si elles satisfont l'objectif de la fresque.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_no_es_solucion__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0",
+                  "reviewFeedback": "Vérifie si le domaine permet de n'ajouter aucune carte avant de contrôler l'objectif final."
+                },
+                {
+                  "id": "b",
+                  "label": "−5",
+                  "reviewFeedback": "Relie le signe de cette proposition au nombre de cartes qu'on peut ajouter."
+                },
+                {
+                  "id": "c",
+                  "label": "7/2",
+                  "reviewFeedback": "Vérifie ce qu'impose le contexte sur les cartes entières, sans confondre cela avec le respect de l'égalité."
+                },
+                {
+                  "id": "d",
+                  "label": "27",
+                  "reviewFeedback": "Vérifie le domaine de cette quantité séparément de l'objectif de la fresque."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zéro et vingt-sept représentent des nombres entiers dans la limite des quarante-deux cartes disponibles. Appartenir au domaine ne prouve pas qu'ils satisfont l'objectif : cette vérification est une autre tâche.",
+            "incorrect": "Applique d'abord les conditions : compter des cartes entières et disponibles. Le domaine ne se réduit pas automatiquement à la valeur qui résout l'objectif."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relier les quantités et ajouter la condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la fresque, dix-huit plus x compte les cartes placées à la fin. Si douze doivent rester non placées, cartes placées et restantes doivent former les soixante cartes : 18 + x + 12 = 60. On peut aussi compter d'abord les cartes restantes avec 60 − (18 + x) et exiger qu'il en reste douze : 60 − (18 + x) = 12. Les deux écritures conservent les mêmes quantités et le même objectif."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une égalité doit comparer des quantités de même nature et avec des unités cohérentes. On ne pose pas le nombre de cartes placées égal à celui des cartes restantes uniquement parce que les deux figurent dans l'énoncé. Chaque expression doit désigner une quantité et chaque condition doit provenir d'une relation du problème. Définir les quantités et leurs unités avant d'écrire la relation permet d'interpréter le modèle (Lang, 1971, p. 47)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "del_relato_a_la_condicion",
+          "prompt": "Un meuble possède quarante tiroirs, dont quatorze sont déjà occupés. On en occupera x autres et on souhaite en laisser huit libres. x compte les nouveaux tiroirs occupés, en nombres entiers de zéro à vingt-six. Écris d'abord une expression pour les tiroirs qui resteront libres, puis une équation exigeant huit tiroirs libres. Les écritures équivalentes conservant la définition de x sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "del_relato_a_la_condicion__libres",
+              "type": "math_expression_input",
+              "label": "Tiroirs qui resteront libres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "40-(14+x)"
+              }
+            },
+            {
+              "id": "del_relato_a_la_condicion__condicion",
+              "type": "math_expression_input",
+              "label": "Équation exigeant huit tiroirs libres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "40-(14+x)=8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les tiroirs occupés à la fin sont au nombre de 14 + x ; les tiroirs libres sont 40 − (14 + x). La condition est 40 − (14 + x) = 8, équivalente à 14 + x + 8 = 40. L'expression des tiroirs libres et l'équation ont des fonctions distinctes.",
+            "incorrect": "Compte tous les tiroirs occupés avant de les soustraire du total. Compare ensuite les tiroirs libres à huit. Conserve x comme une quantité supplémentaire, sans la confondre avec le total occupé."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_cantidades_confundidas",
+          "prompt": "Pour le meuble précédent, une note propose 14 + x = 8. Quelle relation exprime-t-elle et pourquoi ne représente-t-elle pas l'objectif ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_cantidades_confundidas__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle pose que le nombre total de tiroirs occupés égale huit, alors que huit était le nombre voulu de tiroirs libres.",
+                  "reviewFeedback": "Interprète chaque terme de l'équation proposée et compare-le à la quantité que l'objectif veut fixer."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle compte uniquement les nouveaux tiroirs occupés et oublie d'ajouter les quatorze initiaux.",
+                  "reviewFeedback": "Examine ce que représente la somme écrite avant d'affirmer qu'elle omet la donnée initiale."
+                },
+                {
+                  "id": "c",
+                  "label": "Elle compte les quarante tiroirs, mais utilise une lettre différente pour chacun.",
+                  "reviewFeedback": "Relie les termes de cette écriture aux tiroirs décrits et évite de lui attribuer un total qui n'y figure pas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14 + x compte les tiroirs occupés à la fin. Huit compte les tiroirs que l'on veut laisser libres. L'objectif n'exige pas l'égalité de ces deux quantités, mais que les tiroirs occupés et libres totalisent quarante.",
+            "incorrect": "Identifie ce que compte chaque membre. Additionner quatorze et x inclut bien les tiroirs initialement occupés ; l'erreur porte sur la comparaison choisie."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire « inférieur de » en conservant l'ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un score inférieur de cinq points à un score p s'écrit p − 5. La quantité de référence est p, dont on retranche cinq. 5 − p est une autre différence : elle soustrait p de cinq. La soustraction n'est pas commutative. Avec p = −2, les expressions valent respectivement −7 et 7 ; seule la première baisse le score initial de cinq points."
+        },
+        {
+          "type": "paragraph",
+          "text": "« Cinq points de moins que p » n'est pas non plus identique à « r est inférieur à cinq ». La première phrase fixe une différence de cinq points par rapport à p. La deuxième compare seulement deux valeurs : r est plus petit et cinq est la référence. Elle ne précise pas leur écart. Cette comparaison d'ordre diffère de la fixation d'une différence exacte (Lang, 1971, p. 75)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinco_menos_en_el_marcador",
+          "prompt": "Dans un jeu, les scores entiers négatifs sont admis. q est le score initial et on retire quatre points. Écris l'expression du score final et évalue-la pour q = −3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cinco_menos_en_el_marcador__expresion",
+              "type": "math_expression_input",
+              "label": "Score final en fonction de q",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "q-4"
+              }
+            },
+            {
+              "id": "cinco_menos_en_el_marcador__valor",
+              "type": "math_numeric_input",
+              "label": "Score final avec q = −3",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Retirer quatre points donne q − 4. Si q = −3, le résultat est −3 − 4 = −7, quatre points au-dessous du score initial. 4 − q ne décrit pas cette pénalité.",
+            "incorrect": "La quantité de départ est q. Soustrais-lui la pénalité ; n'inverse pas l'ordre de la soustraction et ne change pas le signe de la donnée initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_no_fijar_diferencia",
+          "prompt": "r peut être tout rationnel. Sélectionne toutes les valeurs vérifiant « r est inférieur à quatre » ; l'écart exact n'est pas fixé.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_no_fijar_diferencia__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4",
+                  "reviewFeedback": "Examine si le symbole strictement inférieur inclut la borne dans la proposition choisie."
+                },
+                {
+                  "id": "b",
+                  "label": "−2",
+                  "reviewFeedback": "Place cette proposition par rapport à la borne et conserve le domaine rationnel indiqué."
+                },
+                {
+                  "id": "c",
+                  "label": "5",
+                  "reviewFeedback": "Compare cette proposition à la borne sans transformer la comparaison en différence fixée."
+                },
+                {
+                  "id": "d",
+                  "label": "1",
+                  "reviewFeedback": "Vérifie la position de cette proposition par rapport à la limite indiquée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 et un sont inférieurs à quatre. Quatre égale quatre et cinq est supérieur. La condition admet des écarts différents par rapport à quatre.",
+            "incorrect": "Compare chaque valeur à quatre. « Inférieur à » exclut l'égalité et n'impose pas une soustraction fixe de quatre."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décider quelle quantité entière est doublée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un calcul avec un rationnel x, « doubler la différence entre x et quatre » signifie soustraire quatre d'abord puis multiplier le résultat par deux : 2(x − 4). Les parenthèses conservent le calcul à doubler. En revanche, « soustraire de x le double de quatre » signifie x − 2 × 4. Ici, on double quatre et non la différence entière. Le regroupement et la distributivité expliquent cette différence de sens (Gelfand & Shen, 1993, pp. 13–14; Lang, 1971, p. 16)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec x = 10, la première expression vaut douze et la seconde deux. Avec x = 0, les deux valent moins huit. Cette coïncidence particulière ne rend pas les instructions équivalentes : une donnée donnant des résultats différents suffit à les distinguer. Pour traduire, lis quelle opération s'applique à quelle quantité ; repérer les mots « double » et « différence » ne suffit pas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "traducir_dos_instrucciones",
+          "prompt": "t peut être tout rationnel. Écris une expression pour chaque instruction : doubler la différence entre t et cinq ; soustraire de t le double de cinq.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "traducir_dos_instrucciones__diferencia",
+              "type": "math_expression_input",
+              "label": "Double de la différence entre t et cinq",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2*(t-5)"
+              }
+            },
+            {
+              "id": "traducir_dos_instrucciones__resta",
+              "type": "math_expression_input",
+              "label": "t moins le double de cinq",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-2*5"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première instruction est représentée par 2(t − 5) ; la seconde par t − 2 × 5. Leurs écritures équivalentes sont admises. Le facteur deux agit sur des quantités différentes.",
+            "incorrect": "Identifie d'abord ce qui est doublé. Conserve t − 5 comme quantité entière lorsque l'instruction demande de doubler cette différence."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_con_una_fraccion",
+          "prompt": "Compare maintenant deux calculs avec z = 5/2 : le double de la différence entre z et trois, et z moins le double de trois. Écris les deux valeurs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_con_una_fraccion__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Valeur de 2(z − 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resta",
+                  "type": "numeric",
+                  "label": "Valeur de z − 2 × 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "resta": {
+                    "type": "numeric",
+                    "expected": "-7/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 × (5/2 − 3) = 2 × (−1/2) = −1. Dans l'autre calcul, 5/2 − 6 = −7/2. Le rationnel choisi montre encore que les instructions diffèrent.",
+            "incorrect": "La fraction est une valeur unique de z. Regroupe la différence dans le premier calcul et conserve la soustraction extérieure dans le deuxième."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une équation selon ce qu'elle représente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour fabriquer une entretoise, on prépare deux bandes de même longueur d, mesurée en centimètres. On coupe trois centimètres de chacune, puis on assemble les deux tronçons restants sans chevauchement. L'entretoise finie doit mesurer dix centimètres. d est un rationnel supérieur à trois : chaque tronçon restant doit avoir une longueur positive."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'inconnue d mesure chaque bande avant la découpe, pas l'entretoise finie. Chaque tronçon restant mesure d − 3 ; en réunissant deux tronçons, on double leur longueur totale. Une équation adaptée compare cette longueur à dix centimètres. Partir de deux bandes ne permet pas d'oublier que la découpe affecte les deux."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ecuacion_del_separador",
+          "prompt": "Quelle équation conserve la définition de d, les deux découpes et l'objectif de longueur ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ecuacion_del_separador__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "d − 2 × 3 = 10",
+                  "reviewFeedback": "Identifie combien de pièces représente la lettre et à combien de pièces chaque découpe s'applique."
+                },
+                {
+                  "id": "b",
+                  "label": "2(d − 3) = 10",
+                  "reviewFeedback": "Interprète le groupe choisi comme la longueur d'une pièce et justifie le facteur extérieur."
+                },
+                {
+                  "id": "c",
+                  "label": "2d − 3 = 10",
+                  "reviewFeedback": "Vérifie si cette écriture applique le retrait de longueur à toutes les pièces du modèle."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2(d − 3) compte les deux tronçons raccourcis. d − 2 × 3 part d'une seule longueur initiale et 2d − 3 ne soustrait qu'une découpe.",
+            "incorrect": "Traduis d'abord un tronçon terminé, puis compte combien de tronçons sont assemblés. La même longueur initiale d correspond à chaque bande."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_dos_longitudes",
+          "prompt": "Pour l'entretoise, évalue 2(d − 3) avec d = 7/2 cm et d = 8 cm. Sélectionne toutes les propositions qui respectent l'objectif de dix centimètres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_dos_longitudes__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Longueur totale avec d = 7/2 cm",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Longueur totale avec d = 8 cm",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_dos_longitudes__cumple",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "fraccion",
+                  "label": "d = 7/2 cm",
+                  "reviewFeedback": "Évalue le groupe avec cette fraction et conserve les unités avant de le comparer à l'objectif."
+                },
+                {
+                  "id": "entero",
+                  "label": "d = 8 cm",
+                  "reviewFeedback": "Applique la découpe, puis le facteur correspondant au nombre de pièces, à cette proposition complète."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "entero"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec 7/2 cm, chaque tronçon restant mesure 1/2 cm et les deux donnent un centimètre : l'objectif n'est pas atteint. Avec huit centimètres, chaque tronçon mesure cinq et les deux donnent dix : la proposition convient. Les deux longueurs initiales dépassent trois centimètres.",
+            "incorrect": "Soustrais d'abord trois centimètres de chaque bande. Compte ensuite les deux tronçons restants et compare leur longueur totale à dix."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La vérification de d = 8 confirme une proposition à l'intérieur du domaine avec les unités indiquées. Pour affirmer que toutes les solutions ont été trouvées, il faudrait un raisonnement supplémentaire. Distingue la construction du modèle, la recherche de propositions et la vérification de leur sens."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'unité fait aussi partie de la traduction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un paquet contient du matériel et un emballage de quatre-vingts grammes. On souhaite que le contenu pèse mille sept cents grammes. m représente la masse totale du paquet en kilogrammes. Nous utiliserons des masses rationnelles supérieures à 80/1000 kg : l'emballage est inclus et le contenu doit avoir une masse positive. Un kilogramme correspond à mille grammes."
+        },
+        {
+          "type": "paragraph",
+          "text": "m − 80 ne soustrait pas des quantités dans une même unité : m est mesuré en kilogrammes et quatre-vingts en grammes. Tu peux convertir la masse totale en grammes ou l'emballage en kilogrammes. La réponse doit exprimer la masse demandée dans chaque champ. Changer d'unité conserve la quantité, mais exige d'adapter son écriture numérique."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelo_del_paquete",
+          "prompt": "m étant défini comme la masse totale en kilogrammes, écris une expression pour la masse du contenu en grammes. Écris ensuite une équation exigeant mille sept cents grammes de contenu. Des équations équivalentes avec des unités cohérentes et la même définition de m sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo_del_paquete__contenido",
+              "type": "math_expression_input",
+              "label": "Masse du contenu, exprimée en grammes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "1000m-80"
+              }
+            },
+            {
+              "id": "modelo_del_paquete__condicion",
+              "type": "math_expression_input",
+              "label": "Condition pour obtenir mille sept cents grammes de contenu",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "1000m-80=1700"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1000m compte la masse totale en grammes. Le contenu pèse 1000m − 80 grammes et la condition est 1000m − 80 = 1700. On peut aussi écrire m − 80/1000 = 1700/1000, en comparant des masses en kilogrammes ; l'expression demandée pour le contenu doit néanmoins rester en grammes.",
+            "incorrect": "L'emballage est compris dans la masse totale. Convertis dans une unité commune avant de le soustraire et compare le contenu, pas le paquet entier, à l'objectif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_masas_y_unidades",
+          "prompt": "Pour le paquet, évalue 1000m − 80 avec m = 89/50 kg et avec m = 9/5 kg. Écris les masses du contenu en grammes et sélectionne les propositions qui respectent l'objectif de mille sept cents grammes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_masas_y_unidades__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Contenu avec m = 89/50 kg, en grammes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Contenu avec m = 9/5 kg, en grammes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1700"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "1720"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_masas_y_unidades__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "primera",
+                  "label": "m = 89/50 kg",
+                  "reviewFeedback": "Convertis cette masse dans l'unité de l'objectif avant de soustraire l'emballage et de comparer."
+                },
+                {
+                  "id": "segunda",
+                  "label": "m = 9/5 kg",
+                  "reviewFeedback": "Calcule le contenu à partir de cette masse totale et distingue les grammes des kilogrammes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "primera"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "89/50 kg correspondent à 1780 g ; après soustraction de l'emballage, il reste 1700 g. 9/5 kg correspondent à 1800 g et laissent 1720 g. Les deux masses totales sont positives et dépassent celle de l'emballage, mais seule la première respecte l'objectif.",
+            "incorrect": "Convertis la masse totale en grammes avant de soustraire quatre-vingts grammes. Compare ensuite chaque résultat à mille sept cents, et non à la masse du paquet entier."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traduire un autre plan avec moins d'aide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une répétition théâtrale dure initialement t minutes. On retire un tiers de cette durée, puis on ajoute une fin de sept minutes. La durée finale doit être de vingt-sept minutes. Définis t comme durée initiale, un rationnel positif, et conserve la minute comme unité. Le tiers supprimé est calculé sur la répétition initiale, avant d'ajouter la fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis la relation à partir de ces conditions. Détermine quelle partie du temps initial reste, comment interviennent les sept minutes et quelle quantité doit égaler vingt-sept. Dans les champs suivants, tu écriras une expression de durée finale et une équation ; les regroupements et les opérations sont libres tant qu'ils respectent le modèle."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "traducir_el_plan_del_ensayo",
+          "prompt": "Écris la durée finale de la répétition en fonction de t, en minutes. Écris ensuite une équation exigeant une durée finale de vingt-sept minutes. Les expressions et équations équivalentes conservant la définition de t sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "traducir_el_plan_del_ensayo__duracion",
+              "type": "math_expression_input",
+              "label": "Durée finale, en minutes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-t/3+7"
+              }
+            },
+            {
+              "id": "traducir_el_plan_del_ensayo__condicion",
+              "type": "math_expression_input",
+              "label": "Condition pour une durée finale de vingt-sept minutes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "t-t/3+7=27"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Retirer un tiers laisse t − t/3, équivalent à 2t/3. On ajoute ensuite sept minutes : t − t/3 + 7. La condition est t − t/3 + 7 = 27, équivalente à 2t/3 + 7 = 27. Le tiers est calculé sur t, et non sur t + 7.",
+            "incorrect": "Distingue la durée initiale, la partie supprimée et l'ajout qui suit. L'objectif de vingt-sept ne remplace pas t avant de construire la relation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_plan_del_ensayo",
+          "prompt": "Évalue la durée finale du plan pour t = 30 minutes et t = 27 minutes. Sélectionne les propositions qui respectent l'objectif de vingt-sept minutes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_plan_del_ensayo__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "treinta",
+                  "type": "numeric",
+                  "label": "Durée finale avec t = 30 min",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "veintisiete",
+                  "type": "numeric",
+                  "label": "Durée finale avec t = 27 min",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "treinta": {
+                    "type": "numeric",
+                    "expected": "27"
+                  },
+                  "veintisiete": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_plan_del_ensayo__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "veintisiete",
+                  "label": "t = 27 minutes",
+                  "reviewFeedback": "Distingue la durée initiale proposée par cette option de la durée finale obtenue après les modifications."
+                },
+                {
+                  "id": "treinta",
+                  "label": "t = 30 minutes",
+                  "reviewFeedback": "Reconstitue toutes les étapes du plan avec cette proposition et compare la durée obtenue à l'objectif."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "treinta"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec trente minutes, on en retire dix et il reste vingt ; en ajoutant les sept minutes de fin, on obtient vingt-sept. Avec vingt-sept, on en retire neuf et il reste dix-huit ; en ajoutant sept, on obtient vingt-cinq. t mesurait la durée initiale et non la finale.",
+            "incorrect": "Retirer un tiers laisse deux tiers de la durée initiale. La fin ajoute sept minutes après cette réduction. Conserve la définition de t lorsque tu vérifies l'objectif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_resultado_con_otro_significado",
+          "prompt": "Quelqu'un écrit t = 27 dès le départ parce que la répétition terminée doit durer vingt-sept minutes. Que doit-il revoir ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_resultado_con_otro_significado__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il doit interdire toutes les fractions de minute pour que t soit entier.",
+                  "reviewFeedback": "Vérifie si la définition et le domaine du temps imposent réellement l'exclusion proposée."
+                },
+                {
+                  "id": "b",
+                  "label": "Il doit supprimer les sept minutes ajoutées, car la durée finale est déjà connue.",
+                  "reviewFeedback": "Revois quelle étape de la répétition chaque donnée décrit avant de l'enlever du modèle."
+                },
+                {
+                  "id": "c",
+                  "label": "Il doit distinguer t, qui mesure la durée initiale, de la durée finale souhaitée.",
+                  "reviewFeedback": "Identifie quel moment la lettre mesure et comment il se relie au moment fixé par l'objectif."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La définition de t reste celle de la durée initiale. Le résultat final dépend du retrait et de l'ajout ; on ne l'obtient pas en changeant le sens de la lettre.",
+            "incorrect": "Les valeurs permises et les sept minutes sont données. Le mot « durée » commun ne permet pas d'utiliser une lettre pour deux quantités différentes dans la même relation."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour vérifier une traduction, reviens aux quantités définies : ce que mesure chaque lettre, les valeurs qu'elle admet, son unité et la relation exprimée par chaque opération. Une proposition se vérifie avec ces définitions et avec l'objectif initial. Cette vérification préserve le sens lorsque nous transformerons plus tard des expressions et des équations."
+        }
+      ]
+    }
+  ]
+}
