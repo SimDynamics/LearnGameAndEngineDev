@@ -1,0 +1,763 @@
+{
+  "id": "math_geometria_plana__fundamentos_geometricos__repetir_longitudes_y_repartir_en_partes_iguales",
+  "title": "Repetir longitudes y repartir en partes iguales",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una misma longitud, varias veces"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior compusiste un total con partes que podían tener longitudes diferentes. Ahora todas las copias tendrán una misma longitud positiva. La pregunta cambia: ¿qué longitud resulta al repetirla y cómo recuperar una copia a partir del total? Conservaremos el orden de los puntos y una unidad común."
+        },
+        {
+          "type": "paragraph",
+          "text": "Formar un múltiplo entero positivo de una longitud significa concatenar una cantidad entera de copias congruentes: sin huecos, sin superponerlas y sin retroceder. Dos copias forman el doble; cinco, el quíntuple. El número cuenta copias completas, mientras la longitud de cada copia determina cuánto aporta cada una. El total puede ocupar otro lugar del plano y seguir siendo congruente con el primero (Kiselev, 2006, p. 4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_copias_consecutivas_de_retrazos",
+          "prompt": "Se quiere formar un segmento cuya longitud sea cuatro veces una longitud positiva dada. Marca todas las afirmaciones justificadas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_copias_consecutivas_de_retrazos__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "c",
+                  "label": "Trasladar y girar la construcción completa sin deformarla conserva la longitud total.",
+                  "reviewFeedback": "Distingue cambiar la posición de la construcción de cambiar las longitudes que aporta."
+                },
+                {
+                  "id": "a",
+                  "label": "Repasar cuatro veces la misma copia superpuesta forma el total buscado.",
+                  "reviewFeedback": "Examina si repetir un trazo superpuesto añade una parte nueva al segmento entre los extremos."
+                },
+                {
+                  "id": "d",
+                  "label": "Acortar una de las cuatro copias conserva cuatro veces la longitud inicial.",
+                  "reviewFeedback": "Revisa si todas las piezas conservan la longitud que debe repetirse."
+                },
+                {
+                  "id": "b",
+                  "label": "Concatenar cuatro copias congruentes en un mismo sentido forma el total buscado.",
+                  "reviewFeedback": "Comprueba qué aporta cada copia y cómo se unen sus extremos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada una de las cuatro copias aporta una vez la longitud dada. Al colocarlas consecutivamente en el mismo sentido, el total contiene esas cuatro aportaciones sin solapamientos. Trasladar o girar toda la construcción conserva sus longitudes. Repasar el mismo lugar o acortar una pieza cambia la relación que se quería construir.",
+            "incorrect": "Examina qué longitud aporta cada copia y si la disposición realmente incorpora todas las partes al total."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calcular_el_total_y_un_subtotal_de_copias",
+          "prompt": "Se colocan seis copias congruentes de una longitud de 7/8 unidades u, consecutivas y en el mismo sentido, desde A hasta B. C es el extremo al terminar la cuarta copia; queda entre A y B. Calcula las medidas de AB y AC en unidades u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calcular_el_total_y_un_subtotal_de_copias__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ab",
+                  "type": "numeric",
+                  "label": "Medida de AB en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "ac",
+                  "type": "numeric",
+                  "label": "Medida de AC en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ab": {
+                    "type": "numeric",
+                    "expected": "21/4"
+                  },
+                  "ac": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "AB reúne seis copias: \\(6 × 7/8=21/4\\) unidades u. AC reúne sólo las primeras cuatro: \\(4 × 7/8=7/2\\) unidades u. El número de copias cambia, pero la longitud que aporta cada una sigue siendo la misma. El subtotal AC es menor que AB, como exige la posición de C.",
+            "incorrect": "Separa el número de copias del tamaño de cada una. Decide cuántas copias contiene cada segmento solicitado y conserva la unidad."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un múltiplo no es un dibujo con más tinta. La condición decisiva es que el total contenga las copias completas con sus longitudes conservadas. No contamos pasadas del lápiz ni letras escritas sobre la figura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar intervalos y contar puntos son acciones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al colocar copias consecutivas, dos vecinas comparten un extremo. Por ejemplo, dos copias requieren tres puntos si contamos también los dos extremos del total: una separación interior divide esas dos partes. La longitud pertenece a cada intervalo entre puntos consecutivos; una marca por sí sola no añade longitud."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "contar_partes_y_puntos_sin_confundirlos",
+          "prompt": "A, B, C, D y E son distintos y están alineados en ese orden. AB, BC, CD y DE son congruentes y cada uno mide 3/5 unidades u. Calcula AE y BD en unidades u. Escribe también cuántos de los puntos nombrados quedan estrictamente en el interior de AE. Usa los datos, sin medir píxeles. Introduce sólo números.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Cinco puntos distintos en el orden A, B, C, D, E. Los cuatro segmentos consecutivos son congruentes; B, C y D son interiores a AE.",
+              "points": [
+                {
+                  "id": "A",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 1.5,
+                  "y": 0,
+                  "labels": [
+                    "B"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 3,
+                  "y": 0,
+                  "labels": [
+                    "C"
+                  ]
+                },
+                {
+                  "id": "D",
+                  "x": 4.5,
+                  "y": 0,
+                  "labels": [
+                    "D"
+                  ]
+                },
+                {
+                  "id": "E",
+                  "x": 6,
+                  "y": 0,
+                  "labels": [
+                    "E"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segmentoAE",
+                  "kind": "segment",
+                  "through": [
+                    "A",
+                    "E"
+                  ],
+                  "contains": [
+                    "A",
+                    "B",
+                    "C",
+                    "D",
+                    "E"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "contar_partes_y_puntos_sin_confundirlos__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ae",
+                  "type": "numeric",
+                  "label": "Medida de AE en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "bd",
+                  "type": "numeric",
+                  "label": "Medida de BD en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "interiores",
+                  "type": "numeric",
+                  "label": "Número de puntos nombrados interiores a AE",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ae": {
+                    "type": "numeric",
+                    "expected": "12/5"
+                  },
+                  "bd": {
+                    "type": "numeric",
+                    "expected": "6/5"
+                  },
+                  "interiores": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "AE contiene cuatro intervalos consecutivos: \\(4 × 3/5=12/5\\). BD contiene BC y CD, de modo que mide \\(2 × 3/5=6/5\\). B, C y D son los tres puntos nombrados interiores. Los cinco nombres no representan cinco copias: cada copia se extiende entre dos puntos consecutivos.",
+            "incorrect": "Recorre cada segmento solicitado por sus partes consecutivas. Distingue los intervalos recorridos de las marcas que los separan y excluye los extremos al contar puntos interiores."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Con n copias consecutivas de longitud positiva hay n intervalos, n − 1 separaciones interiores y n + 1 puntos si se incluyen los extremos del total. Aquí n es un entero positivo. Para una sola copia no hay separación interior; sus dos extremos siguen siendo distintos. Esta relación se explica porque cada copia nueva comparte el último extremo y añade sólo el siguiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar cuánto aporta una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si conocemos la longitud total y sabemos cuántas copias congruentes lo componen, dividir el total por ese número recupera la longitud de una copia. La comprobación es geométrica y numérica a la vez: repetir esa longitud la cantidad indicada debe reconstruir el total, sin cambiar de unidad. No se divide por el tamaño de una copia cuando lo que se conoce es su cantidad (Kiselev, 2006, p. 4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_longitud_que_se_repito",
+          "prompt": "Cinco copias congruentes, consecutivas y en el mismo sentido, forman un segmento de 45/8 unidades u. Calcula la longitud de una copia en unidades u. Expresa después esa misma longitud en unidades v, donde una unidad v equivale a 3/8 de una unidad u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_longitud_que_se_repito__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "copia_u",
+                  "type": "numeric",
+                  "label": "Medida de una copia en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "copia_v",
+                  "type": "numeric",
+                  "label": "Medida de una copia en unidades v",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "copia_u": {
+                    "type": "numeric",
+                    "expected": "9/8"
+                  },
+                  "copia_v": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La quinta parte de \\(45/8\\) es \\(9/8\\) unidades u; cinco copias de esa longitud recuperan el total. Como cada unidad v mide \\(3/8\\) unidades u, una copia contiene tres unidades v: \\(3 × 3/8=9/8\\). Cambió el número que expresa la medida, no la longitud recuperada.",
+            "incorrect": "Recupera primero una sola copia a partir de la cantidad conocida. Después averigua cuántas unidades nuevas caben en esa misma longitud y comprueba la reconstrucción."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso de cinco copias, el total y una copia tienen longitudes distintas; una copia expresada con dos unidades sigue siendo la misma longitud. Mantener separadas esas dos ideas evita confundir repartir el total con cambiar la forma de medirlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tener varias partes no significa repartir por igual"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividir una longitud por un entero positivo n busca la longitud de una de n partes congruentes que componen exactamente el total. No basta colocar n partes cualesquiera, ni obtener n marcas. Deben cubrir el segmento, ser consecutivas y tener la misma longitud; repetir una parte n veces permite comprobar el reparto (Kiselev, 2006, p. 4)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer_que_contar_partes_no_asegura_igualdad",
+          "prompt": "M, N, P y Q son distintos y están alineados en ese orden. MN mide 1 unidad u, NP mide 2 unidades u y PQ mide 1 unidad u. Se afirma que NP es un tercio de MQ porque hay tres partes consecutivas. ¿Qué conclusión se justifica?",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "M, N, P y Q son distintos y están alineados en ese orden. MN y PQ miden una unidad u; NP mide dos unidades u. Las tres partes consecutivas no son congruentes.",
+              "points": [
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "N",
+                  "x": 1,
+                  "y": 0,
+                  "labels": [
+                    "N"
+                  ]
+                },
+                {
+                  "id": "P",
+                  "x": 3,
+                  "y": 0,
+                  "labels": [
+                    "P"
+                  ]
+                },
+                {
+                  "id": "Q",
+                  "x": 4,
+                  "y": 0,
+                  "labels": [
+                    "Q"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "segmentoMQ",
+                  "kind": "segment",
+                  "through": [
+                    "M",
+                    "Q"
+                  ],
+                  "contains": [
+                    "M",
+                    "N",
+                    "P",
+                    "Q"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconocer_que_contar_partes_no_asegura_igualdad__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "NP es un tercio de MQ porque se nombran tres partes.",
+                  "reviewFeedback": "Comprueba qué condición sobre las longitudes necesita un reparto en partes iguales."
+                },
+                {
+                  "id": "b",
+                  "label": "NP ocupa dos de las cuatro unidades u del total MQ.",
+                  "reviewFeedback": "Compara las longitudes declaradas y comprueba qué parte del total ocupa el segmento indicado."
+                },
+                {
+                  "id": "c",
+                  "label": "NP es un cuarto de MQ porque se nombran cuatro puntos.",
+                  "reviewFeedback": "Distingue contar puntos de contar intervalos y de comparar sus longitudes."
+                },
+                {
+                  "id": "d",
+                  "label": "Las medidas dadas no permiten conocer la longitud de MQ.",
+                  "reviewFeedback": "Revisa si el orden de los puntos permite componer el total con las partes conocidas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "MQ mide cuatro unidades u: las partes aportan una, dos y una. NP mide dos, por lo que ocupa la mitad del total, no un tercio. El número de partes consecutivas no las hace congruentes. Para obtener tercios del mismo total habría que repartir su longitud en tres partes iguales.",
+            "incorrect": "Revisa qué se necesita además de contar partes para identificar una fracción del total."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En un reparto igualitario, «una quinta parte» relaciona una parte con un total concreto. Una pieza puede ser la quinta parte de un total y no de otro. Conserva siempre cuál es el segmento que se está repartiendo y no conviertas el número de marcas en una medida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una parte permite recuperar cualquier grupo de partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para repartir un segmento en partes congruentes, recupera primero el tamaño común de una parte. Después puedes reunir varias de ellas o calcular el complemento sin cambiar su tamaño. La condición de que sean consecutivas y cubran todo el segmento permite pasar de esa cuenta a las longitudes geométricas (Lang, 1971, p. 108)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "repartir_y_recomponer_partes_iguales",
+          "prompt": "Un segmento de 35/6 unidades u se reparte exactamente en cinco partes congruentes y consecutivas. Calcula la longitud de una parte, la longitud formada por tres de ellas y la longitud de las otras dos, siempre en unidades u. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "repartir_y_recomponer_partes_iguales__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "una",
+                  "type": "numeric",
+                  "label": "Longitud de una parte en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "tres",
+                  "type": "numeric",
+                  "label": "Longitud de tres partes en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "dos",
+                  "type": "numeric",
+                  "label": "Longitud de las otras dos partes en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "una": {
+                    "type": "numeric",
+                    "expected": "7/6"
+                  },
+                  "tres": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "dos": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una parte mide \\(7/6\\) unidades u, pues \\(5 × 7/6=35/6\\). Tres partes miden \\(3 × 7/6=7/2\\) y las otras dos \\(2 × 7/6=7/3\\). Ambas agrupaciones recomponen el total: \\(7/2+7/3=35/6\\). Cada parte se contó una vez y conservó su longitud.",
+            "incorrect": "Recupera primero el tamaño común de una parte. Distingue esa longitud de la cantidad de partes de cada grupo y comprueba que ambos grupos recuperan el total."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "El grupo de tres partes no es una nueva unidad obligatoria. Puedes usarlo como subtotal para comprobar el complemento, pero al recuperar otra parte debes volver a la longitud común de cada una. Las operaciones describen cómo se organiza el mismo total, no un cambio en las longitudes de las piezas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La mitad debe quedar dentro del segmento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamamos punto medio de un segmento AB, con A y B distintos, al punto M que pertenece a su interior y deja AM y MB congruentes. Son dos condiciones: posición y longitud. Que un punto esté a igual distancia de A y B no dice por sí solo que pertenezca a AB; podría estar fuera de la recta que pasa por esos extremos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caracterizar_el_punto_medio",
+          "prompt": "A y B son distintos. Marca todas las afirmaciones justificadas sobre el punto medio M de AB.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "caracterizar_el_punto_medio__razonamiento",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "c",
+                  "label": "Basta que MA y MB sean congruentes, aunque M no pertenezca a AB.",
+                  "reviewFeedback": "Comprueba si la condición de longitud elegida también garantiza la posición requerida."
+                },
+                {
+                  "id": "a",
+                  "label": "M pertenece al interior de AB y los segmentos AM y MB son congruentes.",
+                  "reviewFeedback": "Revisa conjuntamente la posición del punto y las longitudes de las dos partes."
+                },
+                {
+                  "id": "d",
+                  "label": "Con una unidad común, AM y MB miden cada uno la mitad de AB.",
+                  "reviewFeedback": "Relaciona las dos partes congruentes con el total que recomponen."
+                },
+                {
+                  "id": "b",
+                  "label": "Girar o trasladar AB sin deformarlo cambia la longitud de sus mitades.",
+                  "reviewFeedback": "Distingue un cambio de posición de un cambio en la longitud del segmento."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "M está entre A y B, por eso AM y MB componen AB. Como son congruentes, cada parte mide la mitad del total. La igualdad de dos distancias sin pertenencia a AB no basta para definir el punto medio. Trasladar o girar la figura completa conserva las longitudes y esa relación.",
+            "incorrect": "Revisa qué posición debe ocupar el punto y qué relación deben cumplir las dos longitudes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La mitad de una longitud positiva es positiva y menor que el total. En AB existe un único punto a esa distancia de A; al componer el total, la parte que falta tiene la misma longitud. Así se justifican existencia y unicidad del punto medio usando las propiedades de posición y distancia, sin suponer que el centro visual del dibujo sea una prueba (Lang, 1971, p. 108)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar qué dato falta y qué número se está contando"
+        },
+        {
+          "type": "paragraph",
+          "text": "La longitud del total no determina por sí sola el tamaño de una parte igual. También hace falta saber cuántas partes se piden. En el problema inverso podemos conocer total y copia: su cociente indica cuántas longitudes de esa copia equivalen al total. Ese cociente puede ser racional sin ser un número entero de copias completas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "decidir_si_el_numero_de_partes_esta_determinado",
+          "prompt": "Un segmento de 15/4 unidades u se reparte exactamente en varias partes congruentes y consecutivas. No se indica cuántas. ¿Qué se puede concluir sobre la longitud de una parte?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decidir_si_el_numero_de_partes_esta_determinado__razonamiento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Una parte debe medir 3/4 de una unidad u.",
+                  "reviewFeedback": "Comprueba qué cantidad de partes presupone la medida elegida y si ese dato se proporcionó."
+                },
+                {
+                  "id": "b",
+                  "label": "Una parte debe medir 5/4 unidades u.",
+                  "reviewFeedback": "Examina si la cantidad de partes que requiere tu resultado es la única permitida por el enunciado."
+                },
+                {
+                  "id": "d",
+                  "label": "No queda determinada una única longitud para una parte.",
+                  "reviewFeedback": "Conserva el total y examina qué cantidades de partes admite el enunciado."
+                },
+                {
+                  "id": "c",
+                  "label": "Una parte debe medir las mismas 15/4 unidades u que el total.",
+                  "reviewFeedback": "Reconsidera cómo se relaciona cada parte positiva con un total formado por varias de ellas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con tres partes congruentes, cada una mediría \\(5/4\\) unidades u; con cinco, mediría \\(3/4\\). Los dos repartos conservan el total \\(15/4\\) y cumplen las condiciones dadas. Como producen longitudes distintas, falta indicar el número de partes para determinar una longitud única.",
+            "incorrect": "Distingue un reparto que cumple los datos de un reparto que esos datos obliguen a elegir."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "decidir_si_un_total_contiene_copias_completas",
+          "prompt": "Un total mide 21/8 unidades u y una copia mide 3/4 de una unidad u. Escribe el factor numérico por el que hay que multiplicar la longitud de la copia para obtener el total. Después decide si ese total se forma con una cantidad entera positiva de copias completas, consecutivas y sin solapamientos. El factor no lleva unidad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decidir_si_un_total_contiene_copias_completas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Factor entre el total y la longitud de la copia",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "entero",
+                  "type": "dropdown",
+                  "label": "¿Se obtiene el total con copias completas?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí: la cantidad de copias es un entero positivo.",
+                      "reviewFeedback": "Comprueba si el factor calculado cuenta una cantidad entera de copias completas."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No: el factor no es un entero positivo.",
+                      "reviewFeedback": "Distingue un factor racional válido de una cantidad entera de copias completas."
+                    },
+                    {
+                      "id": "sin_datos",
+                      "label": "Las medidas no permiten decidirlo.",
+                      "reviewFeedback": "Revisa si las dos medidas usan una unidad común y qué relación se puede calcular con ellas."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "entero": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El factor es \\(7/2\\): \\(7/2 × 3/4=21/8\\). Es positivo, pero no entero: equivale a tres copias completas y media copia. Por tanto, esa longitud existe, aunque no se forme con una cantidad entera de copias completas del tamaño dado. No hay que redondear el factor ni confundir la longitud del total con el número de copias.",
+            "incorrect": "Calcula la relación entre las dos longitudes con una unidad común y distingue lo que mide el factor de lo que exige una cantidad entera de copias."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta lección «múltiplo entero positivo» exige copias completas en cantidad entera. Una fracción de una copia sigue teniendo una longitud válida, pero cambia esa clasificación. Ni cero ni un número negativo cuentan las copias positivas de un segmento con extremos distintos. El factor entre dos longitudes medidas con la misma unidad es un número sin unidad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar de unidad, retirar copias y repartir lo que queda"
+        },
+        {
+          "type": "paragraph",
+          "text": "Integra ahora los procedimientos. Antes de operar, identifica la longitud total, cuántas copias se retiran y cuántas partes iguales se forman con el resto. Todas las medidas que sumes o restes deben usar una referencia común; cambiar de unidad conserva la longitud, no su número de medida (Kiselev, 2006, p. 4; Lang, 1971, pp. 108–109)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_copia_despues_de_repartir_y_cambiar_unidad",
+          "prompt": "Un segmento mide 6 unidades v y cada unidad v equivale a 5/8 de una unidad u. Se retiran consecutivamente desde un extremo tres copias, cada una de 7/12 de una unidad u. El resto se reparte exactamente en cuatro partes congruentes y consecutivas. Calcula, en unidades u, el total inicial, el resto y una de las cuatro partes finales. Introduce sólo números.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_copia_despues_de_repartir_y_cambiar_unidad__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Longitud inicial en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Longitud restante en unidades u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "parte",
+                  "type": "numeric",
+                  "label": "Longitud de una parte final en unidades u",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "15/4"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "parte": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total inicial mide \\(6 × 5/8=15/4\\) unidades u. Las tres copias retiradas reúnen \\(3 × 7/12=7/4\\), así que queda \\(15/4 − 7/4=2\\) unidades u. Cada una de las cuatro partes finales mide \\(1/2\\) unidad u. La comprobación \\(7/4+4 × 1/2=15/4\\) recupera el total sin mezclar unidades ni contar una pieza dos veces.",
+            "incorrect": "Organiza las etapas y conserva una unidad común. Distingue la cantidad de copias retiradas de la cantidad de partes finales y comprueba que lo retirado más lo que queda recupera el total."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Al revisar, explica por qué el resto es positivo y por qué cada parte final es menor que él. Reúne después las cuatro partes para recuperar el resto y añade las tres copias retiradas para recuperar el total. Estas dos recomposiciones comprueban etapas diferentes: una sola operación correcta no certifica todas las demás."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes interpretar una repetición de longitudes, un reparto igualitario y un punto medio sin depender del tamaño del dibujo. Más adelante recuperaremos estas relaciones al estudiar radios y diámetros, construcciones y otras figuras. Antes de atribuir una fracción a una parte, seguiremos comprobando cuál es el total y qué condiciones justifican esa relación."
+        }
+      ]
+    }
+  ]
+}
