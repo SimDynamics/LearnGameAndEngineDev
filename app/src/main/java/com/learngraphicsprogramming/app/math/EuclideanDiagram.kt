@@ -341,12 +341,13 @@ object EuclideanDiagramLayout {
             EuclideanDrawnArc(arc.id, circle.id, project(circle.center), circle.radius * factor, angles.first, angles.second)
         }
         val labels = mutableListOf<EuclideanDrawnLabel>()
+        val associatePointNames = circles.isNotEmpty() || diagram.objects.any { it.kind == EuclideanObjectKind.RAY }
         fun addLabel(ownerId: String, text: String, anchor: EuclideanPosition) {
             val metrics = measure(text, min(width * .43, width - 2 * edge))
             require(metrics.lines.isNotEmpty() && metrics.width.isFinite() && metrics.width >= 0 && metrics.lineHeight.isFinite() && metrics.lineHeight > 0)
             val labelWidth = metrics.width + 4 * unit
             val labelHeight = metrics.lines.size * metrics.lineHeight + 2 * unit
-            val ownPoint = points.singleOrNull { it.id == ownerId }.takeIf { circles.isNotEmpty() }
+            val ownPoint = points.singleOrNull { it.id == ownerId }.takeIf { associatePointNames }
             val pointNeighbors = if (ownPoint == null) emptyList() else points.filter { it.id != ownPoint.id }
             val defaultGap = max(10 * unit, textSize * .55)
             // Keep a name close to its marker when adjacent marks are dense. Seven
