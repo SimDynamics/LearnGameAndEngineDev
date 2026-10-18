@@ -1,0 +1,1044 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__cantidades_letras_y_dominios",
+  "title": "Quantités, lettres et valeurs permises",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une écriture pour de nombreuses situations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce cours prolonge les opérations, les fractions, les signes et les propriétés du cours précédent. Tu apprendras à exprimer des relations avec des lettres, à transformer des expressions avec des raisonnements valides, à résoudre des équations et inéquations linéaires et à coordonner des conditions dans des systèmes simples. Avant d'isoler quoi que ce soit, nous devons savoir ce que chaque lettre représente et quelles valeurs elle admet. Si un calcul avec des fractions ou des signes te bloque, reprends cette opération : la lettre ne remplace pas sa compréhension."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un atelier, les commandes contiennent des sachets fermés de trois vis chacun, ainsi que sept vis séparées par commande. Avec deux sachets, on a 3 × 2 + 7 vis ; avec cinq, 3 × 5 + 7. Ce qui change est le nombre de sachets. Appelons n le nombre de sachets de la commande. Alors 3n + 7 représente le nombre total de vis. Dans cette écriture, 3n signifie 3 multiplié par n."
+        },
+        {
+          "type": "paragraph",
+          "text": "La lettre n représente un nombre, pas un sachet. Son sens complet est « nombre de sachets de la commande ». Une lettre permet de conserver une relation lorsque la valeur à laquelle elle s'applique change ; elle peut également désigner une quantité dont nous cherchons encore la valeur. Le passage des quantités exprimées avec des mots aux lettres s'appuie sur cette lecture de la notation, avec des exemples originaux (Gelfand & Shen, 1993, pp. 15–17)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_de_n",
+          "prompt": "Dans la relation de l'atelier, que représente n ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_de_n__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le nombre de vis dans un sachet.",
+                  "reviewFeedback": "Relis quelle quantité reste fixe dans chaque sachet et quelle quantité varie selon la commande."
+                },
+                {
+                  "id": "b",
+                  "label": "Le nombre de sachets dans la commande.",
+                  "reviewFeedback": "Relie la lettre à la quantité variable et conserve son unité pour interpréter la règle."
+                },
+                {
+                  "id": "c",
+                  "label": "Le nombre de vis dans la commande.",
+                  "reviewFeedback": "Distingue l'entrée de la règle du total obtenu lorsqu'on l'évalue."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n compte les sachets. Trois est le nombre de vis par sachet, et 3n + 7 compte toutes les vis de la commande.",
+            "incorrect": "Distingue la quantité variable de la quantité par sachet et du total. La définition de la lettre indique ce que compte n."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer la valeur en conservant la relation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Substituer signifie mettre une valeur à chaque endroit occupé par la lettre. Si n vaut quatre, 3n + 7 devient 3 × 4 + 7 et vaut dix-neuf. Le facteur trois et les sept vis séparées restent présents. On n'additionne pas trois et quatre : la multiplication est indiquée par l'écriture 3n."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une expression comme 3n + 7 décrit un calcul. Elle n'a pas une seule valeur numérique lorsque n peut changer. Ce tableau présente quelques commandes ; il ne prétend pas toutes les énumérer. Une commande de zéro sachet et de sept vis séparées est également autorisée."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otros_pedidos",
+          "prompt": "Complète les totaux pour des commandes d'un sachet et de six sachets, avec toujours sept vis séparées.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Sachets n",
+                "Vis 3n + 7"
+              ],
+              "rows": [
+                [
+                  0,
+                  7
+                ],
+                [
+                  2,
+                  13
+                ],
+                [
+                  5,
+                  22
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otros_pedidos__totales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "una",
+                  "type": "numeric",
+                  "label": "Vis avec un sachet",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "seis",
+                  "type": "numeric",
+                  "label": "Vis avec six sachets",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "una": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "seis": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Pour un sachet : 3 × 1 + 7 = 10. Pour six : 3 × 6 + 7 = 25. n change ; la relation et les quantités fixes sont conservées.",
+            "incorrect": "Compte d'abord les vis des sachets et ajoute une seule fois les sept vis séparées. N'ajoute pas sept pour chaque sachet."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_no_suma",
+          "prompt": "En remplaçant n par huit dans 3n + 7, une personne écrit 3 + 8 + 7. Que faut-il corriger ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_no_suma__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle doit remplacer 3 + 8 par 3 × 8.",
+                  "reviewFeedback": "Examine quelle opération exprime l'écriture d'un nombre à côté d'une lettre et applique-la à la valeur choisie."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle doit remplacer sept par huit.",
+                  "reviewFeedback": "Distingue le remplacement de la lettre de la modification d'un terme constant qui ne dépend pas d'elle."
+                },
+                {
+                  "id": "c",
+                  "label": "Elle doit multiplier la somme entière par trois.",
+                  "reviewFeedback": "Repère quelle partie de l'expression est multipliée par le coefficient avant de l'étendre à d'autres termes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'expression correcte est 3 × 8 + 7. L'erreur consiste à lire 3n comme une addition ; sept reste la quantité de vis séparées.",
+            "incorrect": "La lettre remplace le nombre de sachets. Elle ne modifie pas les sept vis données et ne place pas les vis séparées dans les sachets."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les valeurs permises font aussi partie du problème"
+        },
+        {
+          "type": "paragraph",
+          "text": "En arithmétique, nous pourrions calculer 3 × 1,5 + 7. Mais l'atelier fournit des sachets fermés et entiers : une commande ne peut pas contenir un sachet et demi. Elle ne peut pas non plus contenir un nombre négatif de sachets. Dans ce modèle, n peut valoir zéro, un, deux et les autres entiers positifs ou nuls. On appelle domaine l'ensemble des valeurs permises pour une lettre dans la situation étudiée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il faut distinguer deux questions : « Peut-on calculer l'expression avec ce nombre ? » et « Ce nombre est-il permis par le problème ? ». Un calcul peut être défini et donner un résultat correct tout en décrivant une commande exclue par les conditions. D'autres modèles admettent effectivement des fractions ou des valeurs négatives."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_bolsas",
+          "prompt": "Sélectionne toutes les valeurs que n peut représenter dans une commande de sachets entiers de l'atelier.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_bolsas__valores",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1,5",
+                  "reviewFeedback": "Interprète cette valeur comme un nombre de sachets et vérifie ce que signifie exiger des sachets entiers."
+                },
+                {
+                  "id": "b",
+                  "label": "0",
+                  "reviewFeedback": "Examine si une commande sans sachets appartient au domaine de l'atelier."
+                },
+                {
+                  "id": "c",
+                  "label": "−2",
+                  "reviewFeedback": "Relie le signe de cette proposition au nombre de sachets que peut contenir une commande."
+                },
+                {
+                  "id": "d",
+                  "label": "9",
+                  "reviewFeedback": "Vérifie si cette proposition représente un nombre de sachets entiers et si elle est admise dans le contexte."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zéro et neuf sont des nombres entiers positifs ou nuls de sachets. 1,5 exigerait un sachet fractionné et −2 ne peut pas représenter une commande de sachets.",
+            "incorrect": "Le calcul 3n + 7 ne détermine pas, à lui seul, quelles commandes existent. Applique les conditions : sachets entiers, aucune quantité négative et zéro autorisé."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calculo_y_modelo",
+          "prompt": "Avec n = −1, l'expression 3n + 7 vaut quatre. Quelle conclusion est valable pour l'atelier ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calculo_y_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le calcul est faux parce qu'il contient un nombre négatif.",
+                  "reviewFeedback": "Calcule avec les règles des signes et distingue la validité arithmétique de l'interprétation dans l'atelier."
+                },
+                {
+                  "id": "b",
+                  "label": "Le résultat positif permet de commander moins un sachet.",
+                  "reviewFeedback": "Vérifie le domaine du nombre de sachets ; le signe du résultat ne décide pas des valeurs d'entrée autorisées."
+                },
+                {
+                  "id": "c",
+                  "label": "Le calcul est correct, mais n = −1 ne décrit pas une commande autorisée.",
+                  "reviewFeedback": "Sépare la vérification du calcul de celle de la signification et du domaine de la lettre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 × (−1) + 7 = 4 est un calcul valide. L'interprétation comme nombre de sachets échoue parce que −1 est hors du domaine du modèle.",
+            "incorrect": "Le signe du résultat ne change pas les conditions sur l'entrée. Les opérations avec des nombres négatifs restent valides, même si ce contexte n'admet pas un nombre négatif de sachets."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une lettre n'impose pas toujours le même domaine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un ruban uniforme coûte douze pesos par mètre et peut être coupé en fractions de mètre. Si l représente sa longueur mesurée en mètres, 12l représente son prix en pesos. Ici l peut valoir zéro, un entier positif ou une fraction positive. L'unité et la possibilité de couper le ruban expliquent pourquoi 1,5 est permis."
+        },
+        {
+          "type": "paragraph",
+          "text": "En revanche, si T représente une température en degrés Celsius, une valeur négative ne signifie pas qu'il existe moins de zéro objets : elle indique une température au-dessous du zéro de cette échelle. Le nom de la lettre ne décide pas de ces différences. Sa définition et les conditions du modèle les déterminent."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_fraccionaria",
+          "prompt": "Le ruban coûte douze pesos par mètre. Pour l = 3/4 m, écris le prix, puis pour l = 5/2 m, écris le prix correspondant.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cinta_fraccionaria__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "corta",
+                  "type": "numeric",
+                  "label": "Prix de 3/4 m, en pesos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "larga",
+                  "type": "numeric",
+                  "label": "Prix de 5/2 m, en pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "corta": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "larga": {
+                    "type": "numeric",
+                    "expected": "30"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 × 3/4 = 9 et 12 × 5/2 = 30. Les deux longueurs appartiennent au domaine parce que les découpes fractionnaires sont permises.",
+            "incorrect": "Substitue la longueur entière, y compris sa fraction. Multiplier par une fraction ne revient ni à garder seulement son numérateur ni à la rejeter parce qu'elle n'est pas entière."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_y_unidad",
+          "prompt": "Associe chaque lettre définie à une valeur autorisée par son contexte. Utilise chaque valeur une seule fois et complète les trois associations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_y_unidad__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "bolsas",
+                  "label": "n : nombre de sachets entiers, sans quantités négatives"
+                },
+                {
+                  "id": "longitud",
+                  "label": "l : longueur en mètres, avec découpes fractionnaires"
+                },
+                {
+                  "id": "temperatura",
+                  "label": "T : température en degrés Celsius"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "negativo",
+                  "label": "−4"
+                },
+                {
+                  "id": "fraccion",
+                  "label": "1/2"
+                },
+                {
+                  "id": "cero",
+                  "label": "0"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "bolsas": "cero",
+                  "longitud": "fraccion",
+                  "temperatura": "negativo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Parmi les options, seul zéro représente un nombre de sachets entier et positif ou nul. En utilisant chaque valeur une seule fois, il reste 1/2 pour la longueur et −4 pour la température. Zéro pourrait aussi représenter une longueur ou une température, mais il est nécessaire ici pour compléter l'association avec les sachets.",
+            "incorrect": "Commence par le contexte le plus restrictif : parmi ces valeurs, seul zéro représente un nombre entier positif ou nul de sachets. Évite ensuite d'attribuer une longueur négative."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La même lettre conserve la même valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Au cours d'une même évaluation, toutes les occurrences de la même lettre représentent le même nombre. Dans x + x, si x vaut cinq, on doit écrire 5 + 5. On ne peut pas décider que le premier x vaut cinq et le second deux. Lors d'une autre évaluation, on peut choisir une autre valeur, mais il faut alors la substituer partout."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il est utile de mettre des parenthèses lorsqu'on remplace une lettre par une valeur négative ou fractionnaire. Avec x = −3, l'expression x × (x + 2) s'évalue comme (−3) × ((−3) + 2). Le deuxième facteur vaut d'abord −1, puis le produit vaut 3. Le signe négatif appartient à la valeur substituée, et les parenthèses d'origine regroupent toujours x + 2."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustitucion_consistente",
+          "prompt": "Évalue x + x pour x = −4 et x × (x + 2) pour x = −5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustitucion_consistente__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "x + x avec x = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "producto",
+                  "type": "numeric",
+                  "label": "x × (x + 2) avec x = −5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "producto": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans la première évaluation, −4 apparaît deux fois : leur somme vaut −8. Dans la deuxième, −5 apparaît deux fois : (−5) × (−3) = 15.",
+            "incorrect": "Remplace chaque occurrence par la valeur de sa propre évaluation. Conserve les parenthèses et calcule leur contenu avant le produit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letra_cambiada",
+          "prompt": "Pour évaluer t − (t + 4) avec t = 6, quelqu'un écrit 6 − (2 + 4). Où le sens de la lettre est-il perdu ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letra_cambiada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "En remplaçant le premier t par un nombre.",
+                  "reviewFeedback": "Revois la valeur attribuée à la lettre et ce que signifie la substituer à une occurrence."
+                },
+                {
+                  "id": "b",
+                  "label": "En conservant les parenthèses après la substitution.",
+                  "reviewFeedback": "Distingue la conservation du regroupement d'un changement de valeur utilisée pour l'évaluation."
+                },
+                {
+                  "id": "c",
+                  "label": "En utilisant deux valeurs différentes pour t dans la même évaluation.",
+                  "reviewFeedback": "Compare chaque occurrence de la même lettre avec la valeur fixée pour cette évaluation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le deuxième t doit aussi être remplacé par six. L'évaluation correcte est 6 − (6 + 4) = −4.",
+            "incorrect": "La première substitution et les parenthèses sont valides. Une lettre unique conserve une valeur stable dans cette évaluation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux lettres peuvent avoir la même valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a représente le nombre de jetons d'une boîte et b celui d'une autre, a + b représente le total. Des noms différents permettent de distinguer les boîtes, mais n'obligent pas leurs quantités à différer. a et b peuvent tous deux valoir quatre. Nous ne pouvons pas non plus juxtaposer leurs lettres comme si elles formaient un nouveau nombre : ab, dans l'écriture algébrique ordinaire, représente un produit."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour évaluer une expression avec deux lettres, il te faut les deux valeurs, sauf si tu peux justifier que l'une n'influe pas sur le résultat. Avec a = 5 et b = 2, a − b vaut trois. Avec a = 2 et b = 5, elle vaut moins trois. Intervertir les données peut changer le résultat : rappelle-toi la différence entre addition et soustraction."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_datos",
+          "prompt": "Dans un problème purement numérique, a = 5/2 et b = −1/2. Évalue a + b et a − b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_datos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "a + b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resta",
+                  "type": "numeric",
+                  "label": "a − b",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "resta": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La somme vaut 5/2 − 1/2 = 2. La différence vaut 5/2 − (−1/2) = 6/2 = 3 : soustraire un nombre négatif revient à ajouter son opposé.",
+            "incorrect": "Utilise les deux valeurs complètes. Dans la soustraction, le signe de b fait partie du nombre soustrait."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_iguales",
+          "prompt": "a + b peut-il valoir huit lorsque a et b représentent les nombres de jetons de deux boîtes ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_iguales__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : par exemple, a = 4 et b = 4.",
+                  "reviewFeedback": "Vérifie à la fois la somme des nombres proposés et leur appartenance au domaine des jetons."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : des lettres différentes doivent avoir des valeurs différentes.",
+                  "reviewFeedback": "Les lettres identifient des quantités ; elles n'imposent pas à elles seules que leurs valeurs soient différentes."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui, mais seulement si l'une des boîtes est vide.",
+                  "reviewFeedback": "Teste la restriction que tu as affirmée en vérifiant si ce total exige réellement une boîte vide."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quatre jetons dans chaque boîte donnent huit au total. Les lettres distinguent les quantités ; elles n'imposent aucune inégalité entre elles.",
+            "incorrect": "Essaie une paire de valeurs autorisées. Des noms différents n'interdisent pas l'égalité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La définition de la lettre détermine la traduction"
+        },
+        {
+          "type": "paragraph",
+          "text": "La réservation d'un équipement coûte cinq pesos de frais d'ouverture et deux pesos par heure d'utilisation. Les fractions d'heure sont facturées et le modèle ne prévoit aucune réduction. Si h représente le temps en heures, le prix en pesos s'exprime par 5 + 2h. Si m représente le temps en minutes, une heure correspond à soixante minutes : le prix est 5 + 2(m/60). On ne peut pas réutiliser le facteur deux sans conserver son unité."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une même situation permet différents noms pour une même quantité : on pourrait utiliser t plutôt que h si l'on définit t comme le temps en heures. Changer le nom de façon cohérente ne modifie pas le prix. Changer l'unité exige d'adapter la relation. Ne confonds pas renommer une lettre et changer la donnée qu'elle représente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "horas_y_minutos",
+          "prompt": "Évalue le tarif pour h = 3/2 heures et pour m = 90 minutes. Écris les deux prix en pesos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "horas_y_minutos__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "horas",
+                  "type": "numeric",
+                  "label": "Prix avec les heures",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "minutos",
+                  "type": "numeric",
+                  "label": "Prix avec les minutes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "horas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "minutos": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/2 heures correspondent à quatre-vingt-dix minutes. 5 + 2 × 3/2 = 8 et 5 + 2 × (90/60) = 8. Une traduction cohérente conserve le prix.",
+            "incorrect": "Avant de multiplier par le tarif horaire, convertis les minutes en heures. Les frais d'ouverture se paient une seule fois."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_situacion_otra_letra",
+          "prompt": "t représente le temps en heures et m le temps en minutes. Sélectionne toutes les expressions donnant le prix de cette réservation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_situacion_otra_letra__expresiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 + 2m",
+                  "reviewFeedback": "Relie le tarif horaire à l'unité de la lettre choisie avant de multiplier."
+                },
+                {
+                  "id": "b",
+                  "label": "5 + 2t",
+                  "reviewFeedback": "Vérifie l'unité de temps de cette expression et le rôle de ses frais fixes."
+                },
+                {
+                  "id": "c",
+                  "label": "(5 + 2)t",
+                  "reviewFeedback": "Examine quelle partie du prix est facturée une seule fois et laquelle dépend de la durée."
+                },
+                {
+                  "id": "d",
+                  "label": "5 + 2(m/60)",
+                  "reviewFeedback": "Explique l'unité du quotient choisi et comment il se combine au tarif."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2t utilise les heures ; 5 + 2(m/60) convertit les minutes en heures. (5 + 2)t facturerait les frais d'ouverture pour chaque heure.",
+            "incorrect": "L'unité de temps doit correspondre au tarif. De plus, les frais d'ouverture ne dépendent pas de la durée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une opération peut également restreindre le domaine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu'ici, certaines restrictions venaient du contexte, notamment le nombre entier de sachets. Il existe aussi des restrictions arithmétiques. L'expression 6/q ne peut être évaluée que si q n'est pas nul : diviser par zéro n'est pas défini. Si q ne compte pas des objets et que le problème autorise les rationnels non nuls, q = −2 et q = 3/2 sont tous deux permis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une expression ne garantit pas que toute substitution fonctionnera. Avant de calculer, vérifie les conditions du contexte et les opérations présentes. Une valeur peut réussir une vérification et échouer à l'autre. Par exemple, zéro est un nombre de sachets possible, mais ne peut pas servir de diviseur si un calcul exige de diviser par cette quantité."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_con_letra",
+          "prompt": "Dans 6/q, q peut être tout rationnel différent de zéro. Évalue l'expression pour q = −2 et q = 3/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_con_letra__cocientes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "6/q avec q = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionario",
+                  "type": "numeric",
+                  "label": "6/q avec q = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "fraccionario": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6 ÷ (−2) = −3 et 6 ÷ (3/2) = 6 × (2/3) = 4. Être négatif ou fractionnaire n'empêche pas d'être un diviseur non nul.",
+            "incorrect": "La restriction est que q soit différent de zéro. Rappelle-toi le signe du quotient et l'inverse d'un diviseur fractionnaire."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_en_dos_contextos",
+          "prompt": "Choisis l'explication correcte concernant zéro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_en_dos_contextos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il doit toujours être exclu, car une lettre représente seulement des nombres positifs.",
+                  "reviewFeedback": "Le domaine dépend du sens et des opérations : cherche ce qui justifierait cette exclusion universelle."
+                },
+                {
+                  "id": "b",
+                  "label": "Il peut compter des sachets, mais doit être exclu lorsque la lettre apparaît comme diviseur.",
+                  "reviewFeedback": "Compare les deux usages de la lettre et les opérations devant être définies pour chacun."
+                },
+                {
+                  "id": "c",
+                  "label": "Il doit toujours être admis, car zéro est un nombre.",
+                  "reviewFeedback": "Le fait qu'une valeur soit un nombre ne garantit pas que toutes les opérations d'une expression sont définies pour elle."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le domaine dépend des conditions et des opérations. Compter zéro sachet est valide dans le modèle de l'atelier ; diviser par zéro ne l'est pas.",
+            "incorrect": "Appartenir à l'ensemble des nombres ne suffit pas pour satisfaire toutes les conditions d'une expression ou d'un problème."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprendre la condition avant de calculer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une personne souhaite louer l'équipement pendant une durée encore inconnue et dépenser exactement onze pesos. Appelons h la durée en heures. On connaît les frais d'ouverture de cinq pesos et le tarif de deux pesos par heure. Nous cherchons une valeur de h qui rende 5 + 2h égal à onze. La lettre conserve son sens même si sa valeur reste inconnue."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence par identifier la quantité cherchée, les données connues et la condition à respecter. Choisis ensuite une relation, effectue le calcul et vérifie le résultat dans la situation initiale. Ces questions guident le travail ; elles ne constituent pas un algorithme qui résout automatiquement tous les problèmes (Pólya, 1957, pp. 5–7, 14–18)."
+        },
+        {
+          "type": "paragraph",
+          "text": "On peut réserver les cinq pesos de frais d'ouverture : il reste six pour payer la durée. À deux pesos par heure, cela correspond à trois heures. Remplacer h par trois vérifie la condition : 5 + 2 × 3 = 11. Plus tard, nous écrirons et transformerons des équations pour justifier cette recherche de manière générale. Pour l'instant, distingue la quantité cherchée de la valeur proposée et de la vérification."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_propuesta",
+          "prompt": "Pour le même tarif, le budget exact est maintenant de quatorze pesos. On propose h = 9/2 heures. Calcule le prix proposé et indique s'il respecte le budget.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_propuesta__precio",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "precio",
+                  "type": "numeric",
+                  "label": "Prix proposé, en pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "precio": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_propuesta__condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il ne respecte pas le budget exact.",
+                  "reviewFeedback": "Calcule le prix entier de la proposition et compare-le au budget exact avant de conclure."
+                },
+                {
+                  "id": "b",
+                  "label": "Il respecte le budget exact.",
+                  "reviewFeedback": "Vérifie les frais fixes et ceux d'utilisation de la proposition ; compare ensuite leur total à la condition exigée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2 × 9/2 = 5 + 9 = 14. La durée est positive ou nulle et les fractions d'heure sont autorisées : elle respecte le domaine et le budget.",
+            "incorrect": "Remplace 9/2 comme un nombre unique. Vérifie aussi que la durée est autorisée avant de comparer le prix à quatorze."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dato_faltante",
+          "prompt": "Une deuxième entreprise indique seulement qu'elle facture cinq pesos de frais d'ouverture. Elle ne précise pas son tarif horaire. Peut-on réutiliser 5 + 2h pour calculer son prix ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dato_faltante__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : toute location avec frais d'ouverture a le même tarif.",
+                  "reviewFeedback": "Distingue des frais initiaux identiques d'une même règle reliant durée et prix."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui : une lettre permet de choisir librement toutes les données manquantes.",
+                  "reviewFeedback": "Une lettre représente une quantité définie ; revois quelle donnée serait nécessaire pour justifier le tarif proposé."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : il manque la relation entre la durée et les frais d'utilisation.",
+                  "reviewFeedback": "Identifie quelle partie du prix peut être calculée avec les informations disponibles et quelle relation reste inconnue."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La lettre peut représenter la durée, mais elle ne transforme pas les deux pesos en une donnée connue. Il faut connaître le tarif et ses conditions pour calculer le prix.",
+            "incorrect": "Distingue le fait de nommer une quantité de celui de connaître une loi. Les frais d'ouverture ne déterminent pas comment le temps est facturé."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le sens dans un autre contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mets de côté les exemples précédents pour un moment. Pour lire une nouvelle expression, définis les quantités et leurs unités, précise les valeurs admises, reconnais les opérations et remplace les lettres de façon cohérente. Vérifie que le résultat répond à la question. Si tu ne te souviens que du calcul avec des sachets ou d'un tarif, change de contexte pour retrouver l'idée qui les relie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un relevé de température indique T degrés Celsius au départ. Pendant une étape, la température augmente de deux degrés et, pendant une autre, elle diminue de cinq. La température finale s'écrit T + 2 − 5. La valeur initiale peut être négative : nous ne comptons pas d'objets. L'expression permet d'évaluer différents relevés sans modifier le sens de T."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_transferencia",
+          "prompt": "Évalue T + 2 − 5 pour T = −4 et T = 1/2. Écris les températures finales en degrés Celsius.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "temperatura_transferencia__finales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fria",
+                  "type": "numeric",
+                  "label": "Avec T = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionaria",
+                  "type": "numeric",
+                  "label": "Avec T = 1/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fria": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "fraccionaria": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 2 − 5 = −7. Pour 1/2 : 1/2 + 2 − 5 = 1/2 − 3 = −5/2. Les deux évaluations conservent la variation totale de moins trois degrés.",
+            "incorrect": "Conserve le signe de la valeur initiale et ceux des variations. N'impose pas le domaine des sachets à une température."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "definicion_incompleta",
+          "prompt": "Une note montre 4z + 6 sans dire ce que mesure z ni quelles valeurs il peut prendre. Que peut-on affirmer ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "definicion_incompleta__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "On peut l'évaluer avec z = 2, mais il manque sa définition pour interpréter le résultat dans un contexte.",
+                  "reviewFeedback": "Sépare l'évaluation arithmétique avec une donnée de l'interprétation et du domaine dans un modèle."
+                },
+                {
+                  "id": "b",
+                  "label": "z doit compter des objets entiers parce qu'il est multiplié par quatre.",
+                  "reviewFeedback": "Un coefficient ne définit pas à lui seul ce que mesure une lettre ; revois d'où viendrait son sens."
+                },
+                {
+                  "id": "c",
+                  "label": "Le six impose que z ne puisse prendre que six valeurs différentes.",
+                  "reviewFeedback": "Distingue un terme constant d'une condition qui restreint les valeurs permises de la lettre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Comme calcul, 4 × 2 + 6 vaut quatorze. Pour savoir s'il représente un coût, une longueur ou une autre quantité, il faut la définition et les conditions.",
+            "incorrect": "Les nombres d'une expression ne fixent pas automatiquement des unités ni un domaine contextuel. Évaluer et interpréter sont deux tâches liées qui demandent des informations différentes."
+          }
+        }
+      ]
+    }
+  ]
+}

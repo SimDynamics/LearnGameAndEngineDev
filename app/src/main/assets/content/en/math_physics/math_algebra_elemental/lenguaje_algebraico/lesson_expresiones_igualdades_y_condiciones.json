@@ -1,0 +1,1288 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__expresiones_igualdades_y_condiciones",
+  "title": "Expressions, Equalities, and Conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Expression Describes a Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the previous lesson, we defined letters, domains, and substitutions. Now we will distinguish a written calculation from a statement comparing two calculations. We will work with rational numbers: numbers that can be expressed as a fraction of integers with a nonzero denominator, including integers themselves. Unless an activity states another condition, the letters in this lesson may represent any rational number."
+        },
+        {
+          "type": "paragraph",
+          "text": "4t − 3 is an expression: it means multiply t by four and subtract three. With t = 2, its value is five; with t = 0, it is negative three. The expression keeps its notation while its value changes. The expression is not just the letter t either: it includes all the indicated operations."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_y_valor",
+          "prompt": "Evaluate 4t − 3 for each value of t. Preserve the sign and fraction when substituting.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_y_valor__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "Value of 4t − 3 with t = −3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "positivo",
+                  "type": "numeric",
+                  "label": "Value of 4t − 3 with t = 5/4",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  },
+                  "positivo": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4 × (−3/2) − 3 = −6 − 3 = −9. With 5/4, the product is five and the result is two. The same expression allows these different evaluations.",
+            "incorrect": "The letter changes value between evaluations, but the factor four and subtraction of three remain unchanged. Multiply before subtracting."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escritura_frente_resultado",
+          "prompt": "A note says: \"With t = 2, 4t − 3 equals five.\" What correctly distinguishes the expression from its value?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escritura_frente_resultado__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4t − 3 is the expression; five is its value for that input.",
+                  "reviewFeedback": "Identify the notation containing operations and the number that results after fixing the input."
+                },
+                {
+                  "id": "b",
+                  "label": "Five is the expression; 4t − 3 is its value for that input.",
+                  "reviewFeedback": "Check which element changes when you change the input and which describes the operations performed."
+                },
+                {
+                  "id": "c",
+                  "label": "4t − 3 always equals five, even when t changes.",
+                  "reviewFeedback": "Evaluate the expression with another allowed input before assigning it a value independent of the letter."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The expression combines the operations. The value five belongs to the specific evaluation with t = 2.",
+            "incorrect": "Distinguish a notation that can be evaluated with different inputs from the number obtained with a particular input."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Equals Sign Compares Two Sides"
+        },
+        {
+          "type": "paragraph",
+          "text": "In x + 5 = 2x + 2, the left-hand side is x + 5 and the right-hand side is 2x + 2. The equals sign asserts that both represent the same value. To check the statement for an input, evaluate each side separately and compare the results. Do not add all the numbers from both sides as though they belonged to a single calculation."
+        },
+        {
+          "type": "paragraph",
+          "text": "With x = 3, the left-hand side equals eight and the right-hand side does too: the equality is true for that value. With x = 1, they equal six and four: the equality is false for that value. The equals sign does not force two different results to become equal. It expresses a statement that can be checked."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "miembros_con_fracciones",
+          "prompt": "In r − 1/3 = 2r + 1/3, calculate both sides separately for each input.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "miembros_con_fracciones__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_negativo",
+                  "type": "numeric",
+                  "label": "Left side with r = −2/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_negativo",
+                  "type": "numeric",
+                  "label": "Right side with r = −2/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_positivo",
+                  "type": "numeric",
+                  "label": "Left side with r = 1/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_positivo",
+                  "type": "numeric",
+                  "label": "Right side with r = 1/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_negativo": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "der_negativo": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "izq_positivo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "der_positivo": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With −2/3, both sides equal −1. With 1/3, the left side equals zero and the right side equals one. Each comparison uses the same value of r on both sides.",
+            "incorrect": "Substitute the same rational number on both sides. On the right, first multiply by two, then add 1/3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "lectura_de_igualdad",
+          "prompt": "What does the equals sign assert when we write two expressions on either side?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura_de_igualdad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "That you must calculate the right side first and then add the left side.",
+                  "reviewFeedback": "Distinguish the order of a calculation from the relationship expressed by the sign between the two sides."
+                },
+                {
+                  "id": "b",
+                  "label": "That both sides have the same value under the stated conditions.",
+                  "reviewFeedback": "Explain what must be checked on both sides to support that statement."
+                },
+                {
+                  "id": "c",
+                  "label": "That the left side is the question and the right side can be any answer.",
+                  "reviewFeedback": "Check whether an equals sign allows you to choose one side freely without relating it to the other."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Equality expresses a relationship between values. Its meaning does not depend on which side comes first.",
+            "incorrect": "The position of a side does not make it an additional operation or allow any result to be accepted."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Equation States a Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "If we seek values of u satisfying 3u + 2 = u + 5, we are setting up an equation. The letter whose value we seek is called the unknown. A solution is an allowed value that makes the equality true. Before checking it, any suggested value is a candidate: calling it a \"candidate\" does not guarantee it works."
+        },
+        {
+          "type": "paragraph",
+          "text": "Checking a candidate means substituting it everywhere in the equation and comparing both sides. Solving an equation requires finding all solutions or justifying that none exist. Checking a single value shows whether it works or fails; by itself, it does not establish that we have found all solutions (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuestas_para_ecuacion",
+          "prompt": "For 3u + 2 = u + 5, calculate both sides with u = −2 and with u = 3/2. Then select which of these two candidates satisfy the equality.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuestas_para_ecuacion__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_negativo",
+                  "type": "numeric",
+                  "label": "Left side with u = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_negativo",
+                  "type": "numeric",
+                  "label": "Right side with u = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_fraccion",
+                  "type": "numeric",
+                  "label": "Left side with u = 3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_fraccion",
+                  "type": "numeric",
+                  "label": "Right side with u = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_negativo": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "der_negativo": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "izq_fraccion": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  },
+                  "der_fraccion": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "propuestas_para_ecuacion__cumple",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "negativo",
+                  "label": "u = −2",
+                  "reviewFeedback": "Substitute this candidate on both sides, preserving signs before comparing them."
+                },
+                {
+                  "id": "fraccionario",
+                  "label": "u = 3/2",
+                  "reviewFeedback": "Calculate both sides with this fraction and check that they agree within the stated domain."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "fraccionario"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With −2, the sides equal −4 and three: this candidate is not a solution. With 3/2, both equal 13/2: this candidate is a solution. Finding it alone does not prove there are no others.",
+            "incorrect": "Evaluate each side using the same input. A candidate satisfies the equation only when both results agree; being positive or well-defined is not enough."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuesta_y_resolucion",
+          "prompt": "Someone checks one value and both sides agree. What has been proved so far?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuesta_y_resolucion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "That this value is a solution within the checked domain.",
+                  "reviewFeedback": "Specify which value was checked and what conclusion that check actually supports."
+                },
+                {
+                  "id": "b",
+                  "label": "That it must be the equation's only solution.",
+                  "reviewFeedback": "Distinguish showing that a candidate works from ruling out other candidates."
+                },
+                {
+                  "id": "c",
+                  "label": "That every value in the domain satisfies the equation.",
+                  "reviewFeedback": "One particular calculation does not cover the domain; identify what would justify extending it to every value."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The substitution establishes this value as a solution. Uniqueness or the existence of other solutions requires further reasoning.",
+            "incorrect": "Do not extend what one check proves: one working input does not automatically describe every other input."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Identity Holds Throughout the Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "The equality 3(v + 2) = 3v + 6 is true for every rational v. The distributive property explains why: multiplying the sum by three gives 3v + 3 × 2, which is 3v + 6. We have not chosen a particular value of v. An equality that is true for every value in the domain is called an identity (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "An expression can be written in different ways and retain the same value. The parentheses in 3(v + 2) and the two terms in 3v + 6 organize the calculation differently, but distributivity preserves the result. Recognizing an identity requires understanding meaning and properties, not merely how the expressions look."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_identidad",
+          "prompt": "Fill in the numbers to make this equality true for every rational y. Use the distributive property; you are not asked to select a particular value of y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_identidad__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Coefficient of y on the right side",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Added amount on the right side",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "5(y + 4) = "
+                },
+                {
+                  "field": "factor"
+                },
+                {
+                  "text": "y + "
+                },
+                {
+                  "field": "constante"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Five multiplies both y and four: 5(y + 4) = 5y + 5 × 4 = 5y + 20. This reasoning holds for every rational y without requiring a list of cases.",
+            "incorrect": "The outside factor multiplies both addends. Form both products before combining them; do not leave the four unchanged."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_de_identidad",
+          "prompt": "What justifies 3(v + 2) = 3v + 6 being true for every rational v?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "razon_de_identidad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Both sides contain the same digits, although their operations differ.",
+                  "reviewFeedback": "Sharing digits does not establish that the operations give equal results; analyze their relationship."
+                },
+                {
+                  "id": "b",
+                  "label": "The distributive property transforms the first side into the second without restricting v.",
+                  "reviewFeedback": "Reconstruct the transformation mentioned and identify any conditions on the letter."
+                },
+                {
+                  "id": "c",
+                  "label": "The equals sign guarantees that every substitution gives the same result.",
+                  "reviewFeedback": "The equals sign states something that requires justification; it does not by itself guarantee truth."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributivity holds for rational numbers and produces exactly the second side. Shared digits or the equals sign do not replace that justification.",
+            "incorrect": "Look for a property that preserves value. Sharing numbers is not enough: 3(v + 2) and 3v + 2 do not represent the same relationship."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Counterexample Changes the Conclusion"
+        },
+        {
+          "type": "paragraph",
+          "text": "Evaluating z × z = z with z = 0 gives 0 = 0. With z = 1, we get 1 = 1. These cases show that those two values satisfy the equality. They do not show it holds for every rational number: there are many values we have not checked."
+        },
+        {
+          "type": "paragraph",
+          "text": "A counterexample is a value in the domain that contradicts a general claim. One counterexample is enough to refute \"it holds for all,\" because that claim includes the counterexample. Conversely, checking several favorable cases in the domain of all rational numbers does not itself prove an identity: we need reasoning covering every value (Gelfand & Shen, 1993, p. 94)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_caso_que_refuta",
+          "prompt": "Someone claims z × z = z for every rational z. Calculate both sides with z = −2 and state what can be concluded.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_caso_que_refuta__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Value of z × z with z = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Value of z with z = −2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_caso_que_refuta__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "No rational number can satisfy z × z = z.",
+                  "reviewFeedback": "A failed value does not automatically rule out all values; review the scope of that conclusion."
+                },
+                {
+                  "id": "b",
+                  "label": "The equality is true for all rational numbers except negative ones.",
+                  "reviewFeedback": "One particular negative input does not classify every number with that sign; consider what was actually checked."
+                },
+                {
+                  "id": "c",
+                  "label": "The claim that it holds for all rational numbers has been refuted.",
+                  "reviewFeedback": "Relate the tested value to what a claim covering the entire domain requires."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product of −2 and −2 is four, while the other side is −2. This allowed rational produces different results: the universal claim is false, even though it works with zero and one.",
+            "incorrect": "Multiplying one negative by another gives a positive product. Compare both sides, remembering that equality was claimed for every rational number."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "buscar_otra_mirada",
+          "prompt": "After checking z × z = z with zero and one, which attempt introduces a variation that can test the general claim?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "buscar_otra_mirada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Repeat the calculation with one, only reversing the sides.",
+                  "reviewFeedback": "Consider what new information would result from repeating exactly the same input with the sides swapped."
+                },
+                {
+                  "id": "b",
+                  "label": "Accept the identity because two successful checks are sufficient.",
+                  "reviewFeedback": "Distinguish accumulating successful checks from justifying a claim for all rational numbers."
+                },
+                {
+                  "id": "c",
+                  "label": "Try a rational number other than zero and one and compare both sides.",
+                  "reviewFeedback": "Identify which variation would test the claim beyond the cases already observed."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A different value adds a case the previous checks did not cover. If the sides differ, it is a counterexample; if they match, general reasoning will still be needed.",
+            "incorrect": "Repeating a case does not expand the tested set. A claim about all rationals requires more than counting successful checks."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "General Reasoning Does Not List Every Case"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 7q + q, the second q equals 1q: multiplying a rational by one preserves that rational. By distributivity, 7q + q = 7q + 1q = (7 + 1)q = 8q. The chain uses properties that hold for every rational q. Therefore, it justifies an identity, even for values we will never enter in a table."
+        },
+        {
+          "type": "paragraph",
+          "text": "This revisits the difference between example and proof. A calculation with q = 2 can help explain the claim but covers only that input. The previous argument keeps q unfixed and explains why the claim holds throughout the domain. Merely replacing the word \"example\" with \"proof\" is not enough: we must give that reasoning."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "justificar_sumandos_comunes",
+          "prompt": "Complete the justification of 4r + 3r without selecting a particular value of r. Any rational r is allowed.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "justificar_sumandos_comunes__pasos",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "sumando",
+                  "type": "numeric",
+                  "label": "Second coefficient combined inside the parentheses",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Coefficient after adding",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "4r + 3r = (4 + "
+                },
+                {
+                  "field": "sumando"
+                },
+                {
+                  "text": ")r = "
+                },
+                {
+                  "field": "total"
+                },
+                {
+                  "text": "r"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sumando": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "total": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Using distributivity in reverse, we factor out r: 4r + 3r = (4 + 3)r = 7r. The reasoning works with negative, zero, or fractional r.",
+            "incorrect": "r is a common factor, not a number to add to four and three. Group those two coefficients and add their values."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cuentas_y_dominio",
+          "prompt": "Someone checks 2(t + 4) = 2t + 8 for t = 0, t = 2, and t = 5, and the results agree. The stated domain is all rational numbers. What is missing from an argument based only on these three calculations?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuentas_y_dominio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The domain must be changed so that one of the calculations becomes false.",
+                  "reviewFeedback": "Check whether changing the domain would answer the original claim or a different one."
+                },
+                {
+                  "id": "b",
+                  "label": "The same inputs must be repeated until there are more successful calculations.",
+                  "reviewFeedback": "Consider what you would learn about new values by only repeating those already calculated."
+                },
+                {
+                  "id": "c",
+                  "label": "A valid reason is needed for values not included in those calculations.",
+                  "reviewFeedback": "Connect the scope of the domain with the scope of the checks and the justification still needed."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The distributive property can provide the missing reason: 2(t + 4) = 2t + 2 × 4 = 2t + 8. The three calculations alone do not cover the declared domain.",
+            "incorrect": "The checks are correct, but their scope is limited. Repeating the same inputs cannot explain what happens with other rational numbers."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "If a problem allows only a few values and all are checked, those calculations do establish what happens throughout that finite domain. The conclusion does not thereby extend to all rational numbers. Always match your claim to the domain and to what your argument actually verifies."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Condition May Hold Always or Never"
+        },
+        {
+          "type": "paragraph",
+          "text": "Looking for solutions does not guarantee that there is exactly one number to find. In x + 4 = x + 4, every allowed rational number satisfies the condition: both sides are the same calculation. If presented as an equation, every rational number is a solution. It is also an identity. The intention to find solutions can coexist with the fact that the statement holds for all values."
+        },
+        {
+          "type": "paragraph",
+          "text": "In x + 4 = x + 6, something else happens: the right side is always two units greater than the left. Changing x changes both sides but preserves that difference. No rational number can make them equal. We have given a reason covering all values, not just a list of failed attempts. Proving that no solutions exist also solves an equation (Gelfand & Shen, 1993, p. 94)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "todos_ninguno_y_algunos",
+          "prompt": "Match each condition with its set of solutions in the domain of all rational numbers. \"At least one, but not all\" does not require listing every solution. Complete the three matches.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "todos_ninguno_y_algunos__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "diferencia",
+                  "label": "m + 6 = m + 7"
+                },
+                {
+                  "id": "fijo",
+                  "label": "m + 6 = 10"
+                },
+                {
+                  "id": "mismos",
+                  "label": "m + 6 = m + 6"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "todos",
+                  "label": "All rational numbers"
+                },
+                {
+                  "id": "algunos",
+                  "label": "At least one, but not all"
+                },
+                {
+                  "id": "ninguno",
+                  "label": "No rational numbers"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "diferencia": "ninguno",
+                  "fijo": "algunos",
+                  "mismos": "todos"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In the first condition, the right side is always one greater than the left: there is no solution. The second works with m = 4 and fails with m = 0: it has at least one solution but not all rational numbers. The third compares each quantity with itself: all values work.",
+            "incorrect": "Distinguish comparing a calculation with itself from comparing it with an amount that is always greater. For the condition involving ten, find one input that works and another that fails."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sin_soluciones_no_es_abandono",
+          "prompt": "After proving that x + 4 = x + 6 has no rational solutions, how should the result be presented?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sin_soluciones_no_es_abandono__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "As a completed search whose solution set is empty.",
+                  "reviewFeedback": "Distinguish failing to find a value from justifying that the solution set is empty."
+                },
+                {
+                  "id": "b",
+                  "label": "As an incomplete search until a working rational number is found.",
+                  "reviewFeedback": "Review what conclusion follows from a contradiction obtained through valid steps before continuing to search."
+                },
+                {
+                  "id": "c",
+                  "label": "As an identity because both expressions contain the same letter.",
+                  "reviewFeedback": "Having a letter on both sides does not make an identity; examine the remaining terms."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The fixed difference between the sides proves that no rational number satisfies the equation. There is no hidden solution that further attempts must uncover.",
+            "incorrect": "Solving includes proving the absence of solutions. Having the same letter on both sides does not make them equal."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Equality Also Preserves Restrictions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the difference between substituting a number and respecting the domain. To write q/q, we must exclude q = 0 because division by zero is undefined. For every nonzero rational number, q divided by itself is one. Thus q/q = 1 is an identity on the domain of nonzero rational numbers, not including zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "A simplified result does not allow us to forget how the expression was defined. The right side being one and containing no division does not make q = 0 a valid substitution on the left. Checking a candidate requires every calculation to be defined and its value to belong to the stated domain."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_del_cociente",
+          "prompt": "What is the largest domain of rational numbers on which q/q is defined and q/q = 1 is true for every allowed value?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_del_cociente__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "All rational numbers, including zero.",
+                  "reviewFeedback": "Check what happens to division when you use the value included by this statement."
+                },
+                {
+                  "id": "b",
+                  "label": "All nonzero rational numbers.",
+                  "reviewFeedback": "Relate the necessary condition on the divisor to the rational numbers you want to allow."
+                },
+                {
+                  "id": "c",
+                  "label": "Only positive rational numbers, excluding all negatives.",
+                  "reviewFeedback": "Consider whether division requires restricting the sign in addition to excluding forbidden divisors."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividing any nonzero number by itself gives one, whether it is positive or negative. Zero is excluded because of division; excluding all negative numbers would be unnecessary.",
+            "incorrect": "Identify the operation that restricts the domain. A negative sign does not prevent division by a nonzero number."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_no_es_una_comprobacion",
+          "prompt": "Someone substitutes q = 0 into q/q = 1 and writes 0/0 = 1. What must be corrected?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_no_es_una_comprobacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Evaluate 0/0 as zero and then declare the equality false.",
+                  "reviewFeedback": "Before assigning a result to the quotient, check whether division is defined for the chosen divisor."
+                },
+                {
+                  "id": "b",
+                  "label": "Evaluate 0/0 as one because the two zeros are equal.",
+                  "reviewFeedback": "Having two identical expressions does not define a division; first check its conditions."
+                },
+                {
+                  "id": "c",
+                  "label": "The substitution cannot be evaluated: it uses a zero divisor outside the domain.",
+                  "reviewFeedback": "Identify the condition on the divisor that must be satisfied before the quotient can be evaluated."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0/0 has no assigned value in these operations. This input is outside the domain; it is not a valid numerical check of the identity.",
+            "incorrect": "Before comparing values, ensure that the expressions have values. Dividing a number by itself requires that it be nonzero."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From a Model to a Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "A tank starts with twelve liters of water. During a cycle, a pump removes three liters per minute at a constant rate. The cycle lasts three minutes: we will study rational durations from zero to three minutes, including both endpoints. If t measures elapsed time in minutes, 12 − 3t expresses the remaining volume in liters."
+        },
+        {
+          "type": "paragraph",
+          "text": "The expression lets us calculate different states. A goal adds a condition: \"we want a certain amount to remain.\" To write it, we must compare the calculated volume with the required volume. Then we can propose a time, check the domain, and verify the equality. Do not confuse the rule describing states with the condition selecting the states sought."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "condicion_del_deposito",
+          "prompt": "The tank starts with twelve liters and loses three liters per minute. t measures the duration in minutes. Complete the equality requiring four and a half liters to remain: enter the extraction rate and the final amount.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion_del_deposito__cantidades",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "ritmo",
+                  "type": "numeric",
+                  "label": "Liters removed per minute",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Liters that must remain",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "12 − "
+                },
+                {
+                  "field": "ritmo"
+                },
+                {
+                  "text": "t = "
+                },
+                {
+                  "field": "final"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ritmo": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 − 3t gives the liters remaining. The condition is 12 − 3t = 9/2, because four and a half liters is 9/2 liters. t is measured in minutes so that 3t represents liters removed.",
+            "incorrect": "Subtract the amount removed from the starting amount. Distinguish the rate, which multiplies time, from the final amount fixed by the goal. Equivalent numerical forms of four and a half liters are allowed."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuestas_del_deposito",
+          "prompt": "For 12 − 3t = 9/2, evaluate the left side with t = 5/2 minutes and with t = 3 minutes. Select which of these candidates meet the goal during the allowed cycle.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuestas_del_deposito__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Liters remaining with t = 5/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Liters remaining with t = 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "propuestas_del_deposito__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "entero",
+                  "label": "t = 3 minutes",
+                  "reviewFeedback": "Evaluate the volume at this time and also check that it belongs to the allowed cycle."
+                },
+                {
+                  "id": "fraccion",
+                  "label": "t = 5/2 minutes",
+                  "reviewFeedback": "Preserve the fraction when calculating the volume and compare the result with the cycle's goal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "fraccion"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With 5/2 minutes, 12 − 15/2 = 9/2 liters remain: it meets the goal. With three minutes, three liters remain: it does not meet the goal of 9/2. Both times are in the cycle, but belonging to the domain is not enough to be a solution.",
+            "incorrect": "The domain allows both times. To decide which are solutions, compare their remaining volumes with the required volume."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuesta_fuera_del_ciclo",
+          "prompt": "The goal is changed to fifteen liters. Substituting t = −1 into 12 − 3t gives fifteen. Is −1 minute a solution to the tank problem during this cycle?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuesta_fuera_del_ciclo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "No: the calculation agrees, but that time is outside the cycle's domain.",
+                  "reviewFeedback": "Compare the selected time with the time domain of the cycle, in addition to the calculated volume."
+                },
+                {
+                  "id": "b",
+                  "label": "Yes: obtaining the stated volume is sufficient even if the time is negative.",
+                  "reviewFeedback": "Satisfying the volume equality does not replace the condition defining allowed times."
+                },
+                {
+                  "id": "c",
+                  "label": "No: operations with a negative time are always arithmetically invalid.",
+                  "reviewFeedback": "Distinguish a defined arithmetic operation from interpreting a time physically within the cycle."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 − 3 × (−1) = 15 is a valid calculation. The model studies only times between zero and three minutes: −1 is outside and does not describe an allowed state of the cycle.",
+            "incorrect": "Distinguish arithmetic validity from contextual admissibility. A numerical match does not remove the definition of the time being studied."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recover Judgment Without Copying a Method"
+        },
+        {
+          "type": "paragraph",
+          "text": "Leave the tank's numbers behind. When you encounter new notation, ask what task it presents: evaluating an expression, checking a candidate, or justifying what happens throughout the domain. Having a letter does not determine the task; nor does an equals sign automatically turn a condition into an identity."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_las_tres_lecturas",
+          "prompt": "Without using the tank context, match each notation to its meaning over the domain of all rational p. Use operation properties to justify equalities and a substitution to reject a universal claim when necessary.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_las_tres_lecturas__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "identidad",
+                  "label": "p + p + 2 = 2(p + 1)"
+                },
+                {
+                  "id": "expresion",
+                  "label": "p + p + 2"
+                },
+                {
+                  "id": "condicion",
+                  "label": "p + p + 2 = 10"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "condicion",
+                  "label": "Equality satisfied by some rational numbers, but not all"
+                },
+                {
+                  "id": "expresion",
+                  "label": "Expression that can be evaluated; it does not assert equality"
+                },
+                {
+                  "id": "identidad",
+                  "label": "Equality true for all rational numbers"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "identidad": "identidad",
+                  "expresion": "expresion",
+                  "condicion": "condicion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "p + p + 2 is an expression. The equality with ten works with p = 4 and fails with p = 0. The other is an identity: p + p = 2p and distributivity gives 2(p + 1) = 2p + 2. The same value is compared for every rational p.",
+            "incorrect": "First identify whether the notation asserts an equality. Then distinguish an agreement that depends on the chosen value from one guaranteed by properties for every value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_de_distributiva",
+          "prompt": "A note claims that 5(a + 1) = 5a + 1 for every rational a. Evaluate both sides with a = 3/2. Then select every conclusion justified by this check.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnostico_de_distributiva__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Left side with a = 3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Right side with a = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "25/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnostico_de_distributiva__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The equality is confirmed because both sides contain a factor of five.",
+                  "reviewFeedback": "Check the factor's effect on every term and calculate both sides before justifying their equality."
+                },
+                {
+                  "id": "b",
+                  "label": "The claim of equality for all rational numbers is false.",
+                  "reviewFeedback": "Consider the scope of an allowed counterexample against a universal claim."
+                },
+                {
+                  "id": "c",
+                  "label": "The different result is because 3/2 is outside the domain.",
+                  "reviewFeedback": "Reread the stated domain and check whether it really excludes this kind of number."
+                },
+                {
+                  "id": "d",
+                  "label": "3/2 is a counterexample because it is allowed and produces different sides.",
+                  "reviewFeedback": "Justify separately that the input is allowed and that the calculated sides disagree."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The left side equals 5 × 5/2 = 25/2 and the right side equals 15/2 + 1 = 17/2. They differ: 3/2 is a counterexample to the universal claim. Both calculations are defined for an allowed rational, so the difference cannot be attributed to an excluded input.",
+            "incorrect": "Distributing the five requires multiplying the one inside the parentheses too. Preserve the difference between 5(a + 1) and the written side 5a + 1; do not correct the note before checking it."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Preserve the scope of each argument. A working value establishes that solution; a counterexample in the domain refutes a universal claim; a property-based proof can cover values that we do not list. Later you will learn transformations to find and justify every solution of equations. Here you have prepared their meaning and the criteria for checking a candidate."
+        }
+      ]
+    }
+  ]
+}

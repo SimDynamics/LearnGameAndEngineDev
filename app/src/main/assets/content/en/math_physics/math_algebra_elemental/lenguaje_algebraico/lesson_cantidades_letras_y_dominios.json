@@ -1,0 +1,1044 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__cantidades_letras_y_dominios",
+  "title": "Quantities, Letters, and Allowed Values",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Notation for Many Situations"
+        },
+        {
+          "type": "paragraph",
+          "text": "This course continues the operations, fractions, signs, and properties studied in the previous course. You will learn to express relationships with letters, transform expressions using valid reasoning, solve linear equations and inequalities, and coordinate conditions in simple systems. Before solving for anything, we need to know what each letter represents and which values it allows. If an operation with fractions or signs gives you trouble, review that operation: a letter does not replace understanding it."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a workshop, orders contain sealed bags with three screws each, plus seven loose screws per order. With two bags, there are 3 × 2 + 7 screws; with five, 3 × 5 + 7. What changes is the number of bags. Let n denote the number of bags in an order. Then 3n + 7 represents the total number of screws. In this notation, 3n means 3 multiplied by n."
+        },
+        {
+          "type": "paragraph",
+          "text": "The letter n represents a number, not a bag. Its complete meaning is \"number of bags in the order.\" A letter lets us preserve a relationship as the value to which it applies changes; it may also name a quantity whose value we are still trying to find. Moving from quantities described in words to letters relies on this interpretation of notation, with original examples (Gelfand & Shen, 1993, pp. 15–17)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_de_n",
+          "prompt": "In the workshop relationship, what does n represent?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_de_n__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The number of screws inside one bag.",
+                  "reviewFeedback": "Reread which quantity remains fixed in each bag and which quantity varies from order to order."
+                },
+                {
+                  "id": "b",
+                  "label": "The number of bags in the order.",
+                  "reviewFeedback": "Connect the letter to the quantity that may vary, keeping its unit in mind when interpreting the rule."
+                },
+                {
+                  "id": "c",
+                  "label": "The number of screws in the order.",
+                  "reviewFeedback": "Distinguish the input to the rule from the total quantity obtained by evaluating it."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n counts the bags. Three is the number of screws per bag, and 3n + 7 counts all screws in the order.",
+            "incorrect": "Distinguish the varying quantity from the amount per bag and from the total. The letter's definition tells you what n counts."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Change the Value While Keeping the Relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "Substitution means putting a value everywhere the letter appears. If n is four, 3n + 7 becomes 3 × 4 + 7 and equals nineteen. The factor three and the seven loose screws remain. We do not add three to four: multiplication is expressed by the notation 3n."
+        },
+        {
+          "type": "paragraph",
+          "text": "An expression such as 3n + 7 describes a calculation. It does not have one fixed numerical value while n is allowed to change. This table shows a few orders; it does not claim to list all of them. An order with zero bags and seven loose screws is also allowed."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otros_pedidos",
+          "prompt": "Fill in the totals for orders with one bag and with six bags, each with seven loose screws.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Bags n",
+                "Screws 3n + 7"
+              ],
+              "rows": [
+                [
+                  0,
+                  7
+                ],
+                [
+                  2,
+                  13
+                ],
+                [
+                  5,
+                  22
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otros_pedidos__totales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "una",
+                  "type": "numeric",
+                  "label": "Screws with one bag",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "seis",
+                  "type": "numeric",
+                  "label": "Screws with six bags",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "una": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "seis": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For one bag: 3 × 1 + 7 = 10. For six: 3 × 6 + 7 = 25. n changes; the relationship and the fixed quantities stay the same.",
+            "incorrect": "First count the screws inside the bags, then add the seven loose screws only once. Do not add seven for every bag."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_no_suma",
+          "prompt": "When substituting eight for n in 3n + 7, someone writes 3 + 8 + 7. What must be corrected?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_no_suma__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Replace 3 + 8 with 3 × 8.",
+                  "reviewFeedback": "Examine which operation is represented by a number next to a letter, and apply it to the selected value."
+                },
+                {
+                  "id": "b",
+                  "label": "Replace the seven with eight.",
+                  "reviewFeedback": "Distinguish substituting for the letter from changing a constant term that does not depend on it."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiply the entire sum by three.",
+                  "reviewFeedback": "Identify which part of the expression is multiplied by the coefficient before extending it to other terms."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The correct expression is 3 × 8 + 7. The mistake is reading 3n as addition; seven is still the number of loose screws.",
+            "incorrect": "The letter stands for the number of bags. It does not change the given seven or put the loose screws inside the bags."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Allowed Values Are Also Part of the Problem"
+        },
+        {
+          "type": "paragraph",
+          "text": "In arithmetic, we could calculate 3 × 1.5 + 7. But the workshop supplies complete, sealed bags: an order cannot contain one and a half bags. Nor can it contain a negative number of bags. In this model, n may be zero, one, two, or any other nonnegative integer. We call the set of values allowed for a letter in the situation being studied its domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "We must distinguish two questions: \"Can the expression be calculated with this number?\" and \"Is this number allowed by the problem?\" A calculation may be defined and give a correct result but describe an order excluded by the conditions. Other models do allow fractions or negative values."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_bolsas",
+          "prompt": "Select all values that n may represent for an order of complete bags at the workshop.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_bolsas__valores",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1.5",
+                  "reviewFeedback": "Interpret this value as a number of bags and check what requiring whole bags means."
+                },
+                {
+                  "id": "b",
+                  "label": "0",
+                  "reviewFeedback": "Check whether an order containing no bags is included in the workshop's domain."
+                },
+                {
+                  "id": "c",
+                  "label": "−2",
+                  "reviewFeedback": "Connect the sign of this choice to the number of bags an order can contain."
+                },
+                {
+                  "id": "d",
+                  "label": "9",
+                  "reviewFeedback": "Check whether this choice represents a whole number of bags and is allowed in the context."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zero and nine are nonnegative whole numbers of bags. 1.5 would require a fractional bag, and −2 does not count a valid bag order.",
+            "incorrect": "The calculation 3n + 7 alone does not determine which orders exist. Apply the conditions: complete bags, no negative amounts, and zero allowed."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calculo_y_modelo",
+          "prompt": "For n = −1, the expression 3n + 7 equals four. Which conclusion is valid for the workshop?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calculo_y_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The calculation is wrong because it includes a negative number.",
+                  "reviewFeedback": "Calculate using the rules of signs and distinguish arithmetic validity from interpretation in the workshop."
+                },
+                {
+                  "id": "b",
+                  "label": "The positive result allows an order with minus one bag.",
+                  "reviewFeedback": "Check the domain of the number of bags; the sign of the result does not determine which input values are allowed."
+                },
+                {
+                  "id": "c",
+                  "label": "The calculation is correct, but n = −1 does not represent an allowed order.",
+                  "reviewFeedback": "Check the calculation separately from the letter's meaning and domain."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 × (−1) + 7 = 4 is a valid calculation. Interpreting it as a number of bags fails because −1 lies outside the model's domain.",
+            "incorrect": "The sign of the result does not change the conditions on the input. Operations with negative numbers remain valid even though this context excludes a negative number of bags."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Letter Does Not Always Have the Same Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "A uniform ribbon costs twelve pesos per meter and can be cut into fractions of a meter. If l is its length measured in meters, 12l gives its price in pesos. Here l can be zero, a positive integer, or a positive fraction. The unit and the possibility of cutting the ribbon explain why 1.5 is allowed."
+        },
+        {
+          "type": "paragraph",
+          "text": "By contrast, if T represents a temperature in degrees Celsius, a negative value does not mean fewer than zero objects: it indicates a temperature below zero on that scale. The letter's name does not determine these differences. Its definition and the model's conditions do."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_fraccionaria",
+          "prompt": "The ribbon costs twelve pesos per meter. For l = 3/4 m, write the price, and for l = 5/2 m, write the corresponding price.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cinta_fraccionaria__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "corta",
+                  "type": "numeric",
+                  "label": "Price for 3/4 m, in pesos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "larga",
+                  "type": "numeric",
+                  "label": "Price for 5/2 m, in pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "corta": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "larga": {
+                    "type": "numeric",
+                    "expected": "30"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 × 3/4 = 9 and 12 × 5/2 = 30. Both lengths belong to the domain because fractional cuts are allowed.",
+            "incorrect": "Substitute the full length, including its fractional part. Multiplying by a fraction does not mean keeping only its numerator or rejecting it because it is not an integer."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_y_unidad",
+          "prompt": "Match each defined letter with a value permitted by its context. Use each value exactly once and complete all three matches.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_y_unidad__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "bolsas",
+                  "label": "n: number of complete bags, with no negative amounts"
+                },
+                {
+                  "id": "longitud",
+                  "label": "l: length in meters, including fractional cuts"
+                },
+                {
+                  "id": "temperatura",
+                  "label": "T: temperature in degrees Celsius"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "negativo",
+                  "label": "−4"
+                },
+                {
+                  "id": "fraccion",
+                  "label": "1/2"
+                },
+                {
+                  "id": "cero",
+                  "label": "0"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "bolsas": "cero",
+                  "longitud": "fraccion",
+                  "temperatura": "negativo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Among the options, only zero counts a nonnegative whole number of bags. Using each value once leaves 1/2 for length and −4 for temperature. Zero could also represent a length or a temperature, but it is needed here to complete the bag match.",
+            "incorrect": "Start with the most restrictive context: among these values, only zero counts a nonnegative whole number of bags. Then avoid assigning a negative length."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Letter Keeps the Same Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Within one evaluation, every occurrence of the same letter represents the same number. In x + x, if x is five, we must write 5 + 5. We cannot decide that the first x is five and the second is two. In another evaluation we may choose a different value, but we must substitute it everywhere again."
+        },
+        {
+          "type": "paragraph",
+          "text": "It helps to use parentheses when substituting a negative or fractional value. With x = −3, the expression x × (x + 2) is evaluated as (−3) × ((−3) + 2). First the second factor equals −1; then the product equals 3. The minus sign belongs to the substituted value, and the original parentheses still group x + 2."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustitucion_consistente",
+          "prompt": "Evaluate x + x for x = −4 and x × (x + 2) for x = −5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustitucion_consistente__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "x + x with x = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "producto",
+                  "type": "numeric",
+                  "label": "x × (x + 2) with x = −5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "producto": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In the first evaluation, −4 appears twice: its sum is −8. In the second, −5 appears twice: (−5) × (−3) = 15.",
+            "incorrect": "Substitute each occurrence using the value for its own evaluation. Preserve the parentheses and calculate what is inside before multiplying."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letra_cambiada",
+          "prompt": "To evaluate t − (t + 4) with t = 6, someone writes 6 − (2 + 4). Where does the letter lose its meaning?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letra_cambiada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "When replacing the first t with a number.",
+                  "reviewFeedback": "Review the value assigned to the letter and what it means to substitute it at one occurrence."
+                },
+                {
+                  "id": "b",
+                  "label": "When keeping the parentheses after substitution.",
+                  "reviewFeedback": "Distinguish preserving the grouping from changing the value used to evaluate the expression."
+                },
+                {
+                  "id": "c",
+                  "label": "When using two different values for t in the same evaluation.",
+                  "reviewFeedback": "Compare every occurrence of the same letter with the value fixed for this evaluation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The second t must also be replaced with six. The correct evaluation is 6 − (6 + 4) = −4.",
+            "incorrect": "The first substitution and the parentheses are valid. A single letter has a stable value within this evaluation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Letters Can Have the Same Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a represents the number of counters in one box and b the number in another, a + b represents their total. Different names distinguish the boxes but do not require them to contain different amounts. Both a and b could equal four. We also cannot combine the letters as though they formed a new number: ab, in ordinary algebraic notation, represents a product."
+        },
+        {
+          "type": "paragraph",
+          "text": "To evaluate an expression with two letters, you need both values unless you can justify that one does not affect the result. With a = 5 and b = 2, a − b equals three. With a = 2 and b = 5, it equals negative three. Switching the inputs may change the result: recall the difference between addition and subtraction."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_datos",
+          "prompt": "In a purely numerical problem, a = 5/2 and b = −1/2. Evaluate a + b and a − b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_datos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "a + b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resta",
+                  "type": "numeric",
+                  "label": "a − b",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "resta": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sum is 5/2 − 1/2 = 2. The difference is 5/2 − (−1/2) = 6/2 = 3: subtracting a negative is equivalent to adding its opposite.",
+            "incorrect": "Use both complete values. In the subtraction, the sign of b is part of the number being subtracted."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_iguales",
+          "prompt": "Can a + b equal eight when a and b represent the numbers of counters in two boxes?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_iguales__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: for example, a = 4 and b = 4.",
+                  "reviewFeedback": "Check both that the proposed numbers add up correctly and that they belong to the allowed domain for counters."
+                },
+                {
+                  "id": "b",
+                  "label": "No: different letters must have different values.",
+                  "reviewFeedback": "Letters identify quantities; they do not in themselves require their values to differ."
+                },
+                {
+                  "id": "c",
+                  "label": "Yes, but only if one of the boxes is empty.",
+                  "reviewFeedback": "Test the stated restriction by checking whether this total really requires one box to be empty."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Four counters in each box make eight in total. The letters distinguish quantities; they do not require an inequality between them.",
+            "incorrect": "Try a pair of allowed values. Different names do not impose a condition forbidding equality."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Letter's Definition Determines the Translation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Equipment rental costs five pesos as an opening fee and two pesos for every hour of use. Fractions of an hour are charged, and the model does not include discounts. If h represents time in hours, the price in pesos is 5 + 2h. If instead m represents time in minutes, one hour is sixty minutes: the price is 5 + 2(m/60). We cannot reuse the factor two without preserving its unit."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same situation allows different names for the same quantity: we could use t instead of h if we define t as time in hours. Consistently changing the name does not change the price. Changing the unit requires adjusting the relationship. Do not confuse renaming a letter with changing what it represents."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "horas_y_minutos",
+          "prompt": "Evaluate the rate for h = 3/2 hours and m = 90 minutes. Write both prices in pesos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "horas_y_minutos__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "horas",
+                  "type": "numeric",
+                  "label": "Price using hours",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "minutos",
+                  "type": "numeric",
+                  "label": "Price using minutes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "horas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "minutos": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/2 hours equals ninety minutes. 5 + 2 × 3/2 = 8 and 5 + 2 × (90/60) = 8. A consistent translation preserves the price.",
+            "incorrect": "Before multiplying by the hourly rate, convert minutes into hours. The opening fee is charged only once."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_situacion_otra_letra",
+          "prompt": "t represents time in hours and m represents time in minutes. Select every expression that gives the price of this rental.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_situacion_otra_letra__expresiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 + 2m",
+                  "reviewFeedback": "Compare the hourly rate with the unit of the selected letter before multiplying."
+                },
+                {
+                  "id": "b",
+                  "label": "5 + 2t",
+                  "reviewFeedback": "Check the unit of time in this expression and the role of its fixed charge."
+                },
+                {
+                  "id": "c",
+                  "label": "(5 + 2)t",
+                  "reviewFeedback": "Examine which part of the price is charged only once and which depends on the duration."
+                },
+                {
+                  "id": "d",
+                  "label": "5 + 2(m/60)",
+                  "reviewFeedback": "Explain what unit the selected quotient represents and how it combines with the rate."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2t uses hours; 5 + 2(m/60) converts minutes into hours. (5 + 2)t would charge the opening fee for every hour.",
+            "incorrect": "The unit of time must agree with the rate. Moreover, the opening fee does not depend on duration."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Operation Can Also Restrict the Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far, some restrictions have come from the context, such as counting complete bags. There are also arithmetic restrictions. The expression 6/q can only be evaluated when q is not zero: division by zero is undefined. If q does not count objects and the problem allows nonzero rational numbers, both q = −2 and q = 3/2 are permitted."
+        },
+        {
+          "type": "paragraph",
+          "text": "An expression is not a promise that every substitution will work. Before calculating, check the conditions of the context and the operations involved. A value may pass one check but fail the other. For example, zero is an allowed number of bags, but it would not work as a divisor if a calculation required division by that number."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_con_letra",
+          "prompt": "In 6/q, q may be any nonzero rational number. Evaluate the expression for q = −2 and q = 3/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_con_letra__cocientes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "6/q with q = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionario",
+                  "type": "numeric",
+                  "label": "6/q with q = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "fraccionario": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6 ÷ (−2) = −3 and 6 ÷ (3/2) = 6 × (2/3) = 4. Being negative or fractional does not prevent a number from being a nonzero divisor.",
+            "incorrect": "The restriction is that q must not equal zero. Recall the sign of a quotient and the reciprocal of a fractional divisor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_en_dos_contextos",
+          "prompt": "Select the correct explanation about zero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_en_dos_contextos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It must always be excluded because a letter represents only positive numbers.",
+                  "reviewFeedback": "The domain depends on meaning and operations: look for a reason that would justify this universal exclusion."
+                },
+                {
+                  "id": "b",
+                  "label": "It can count bags but must be excluded when the letter is a divisor.",
+                  "reviewFeedback": "Compare both uses of the letter and which operations need to be defined in each."
+                },
+                {
+                  "id": "c",
+                  "label": "It must always be allowed because zero is a number.",
+                  "reviewFeedback": "Being a number does not guarantee that every operation in an expression is defined for that value."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The domain depends on conditions and operations. Counting no bags is valid in the workshop model; dividing by zero is not.",
+            "incorrect": "Belonging to the numbers is not enough to meet every condition of an expression or a problem."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Understand the Condition Before Calculating"
+        },
+        {
+          "type": "paragraph",
+          "text": "Someone wants to rent the equipment for an unknown duration and spend exactly eleven pesos. Let h denote the duration measured in hours. We know the opening fee is five pesos and the rate is two pesos per hour. We seek a value of h that makes 5 + 2h equal eleven. The letter retains its meaning even though its value is unknown."
+        },
+        {
+          "type": "paragraph",
+          "text": "First identify the quantity you seek, the information you know, and the condition to satisfy. Then choose a way to relate them, calculate, and check your result in the original situation. These questions guide the work; they are not an algorithm that automatically solves every problem (Pólya, 1957, pp. 5–7, 14–18)."
+        },
+        {
+          "type": "paragraph",
+          "text": "We can set aside the five-peso opening fee: six remain for time. At two pesos per hour, this corresponds to three hours. Substituting three for h checks the condition: 5 + 2 × 3 = 11. Later we will write and transform equations to justify this search generally. For now, distinguish the quantity sought from a proposed value and from verification."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_propuesta",
+          "prompt": "For the same rate, the exact budget is now fourteen pesos. Someone proposes h = 9/2 hours. Calculate the price of the proposal and state whether it meets the budget.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_propuesta__precio",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "precio",
+                  "type": "numeric",
+                  "label": "Proposed price, in pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "precio": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_propuesta__condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It does not meet the exact budget.",
+                  "reviewFeedback": "Calculate the complete proposed price and compare it with the exact budget before concluding."
+                },
+                {
+                  "id": "b",
+                  "label": "It does meet the exact budget.",
+                  "reviewFeedback": "Check the fixed fee and usage charge for the proposal; then compare the total with the required condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2 × 9/2 = 5 + 9 = 14. The duration is nonnegative and fractions of an hour are allowed: it satisfies both the domain and the budget.",
+            "incorrect": "Substitute 9/2 as one number. Also check that the duration is allowed before comparing the price with fourteen."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dato_faltante",
+          "prompt": "A second business only states that it charges a five-peso opening fee. It does not give an hourly rate. Can 5 + 2h be reused to calculate its price?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dato_faltante__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: every rental with an opening fee has the same rate.",
+                  "reviewFeedback": "Distinguish sharing an opening fee from sharing the rule relating duration to price."
+                },
+                {
+                  "id": "b",
+                  "label": "Yes: a letter allows you to choose any missing information freely.",
+                  "reviewFeedback": "A letter represents a defined quantity; review which information would be needed to justify the proposed rate."
+                },
+                {
+                  "id": "c",
+                  "label": "No: the relationship between duration and the usage charge is unknown.",
+                  "reviewFeedback": "Identify which part of the price can be calculated with the available information and which relationship is still missing."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The letter can represent duration, but it does not turn the two into known information. We must know the rate and its conditions to calculate the price.",
+            "incorrect": "Distinguish naming a quantity from knowing a rule. An opening fee does not determine how time is charged."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recover the Meaning in a Different Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "Set the previous examples aside for a moment. To read a new expression, define the quantities and their units, establish which values are allowed, recognize the operations, and substitute consistently. Check that the result answers the question. If you only remember an example about bags or a rate, change the context to recover the idea connecting them."
+        },
+        {
+          "type": "paragraph",
+          "text": "A temperature record starts at T degrees Celsius. During one stage, temperature rises two degrees, and during another, it drops five. The final temperature is T + 2 − 5. The initial value may be negative: we are not counting objects here. The expression lets us evaluate different records without changing the meaning of T."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_transferencia",
+          "prompt": "Evaluate T + 2 − 5 for T = −4 and T = 1/2. Write the final temperatures in degrees Celsius.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "temperatura_transferencia__finales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fria",
+                  "type": "numeric",
+                  "label": "With T = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionaria",
+                  "type": "numeric",
+                  "label": "With T = 1/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fria": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "fraccionaria": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 2 − 5 = −7. For 1/2: 1/2 + 2 − 5 = 1/2 − 3 = −5/2. Both evaluations preserve the total change of minus three degrees.",
+            "incorrect": "Keep the sign of the initial value and the signs of the changes. Do not impose the domain for counting bags on a temperature."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "definicion_incompleta",
+          "prompt": "A note shows 4z + 6 without stating what z measures or which values it can take. What can we conclude?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "definicion_incompleta__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It can be evaluated with z = 2, but its definition is missing, so the result cannot yet be interpreted in context.",
+                  "reviewFeedback": "Separate numerical evaluation with a value from interpretation and the domain of a model."
+                },
+                {
+                  "id": "b",
+                  "label": "z must count complete objects because it is multiplied by four.",
+                  "reviewFeedback": "A coefficient alone does not define what a letter measures; review where its meaning would come from."
+                },
+                {
+                  "id": "c",
+                  "label": "The six means z may take only six different values.",
+                  "reviewFeedback": "Distinguish a constant term from a condition restricting the letter's allowed values."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "As a calculation, 4 × 2 + 6 equals fourteen. To know whether it represents a cost, a length, or another quantity, we need its definition and conditions.",
+            "incorrect": "The numbers in an expression do not automatically determine units or a contextual domain. Evaluation and interpretation are related tasks requiring different information."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1288 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__expresiones_igualdades_y_condiciones",
+  "title": "Expressions, égalités et conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une expression décrit un calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la leçon précédente, nous avons défini les lettres, les domaines et les substitutions. Nous allons maintenant distinguer le calcul écrit de l'affirmation comparant deux calculs. Nous travaillerons avec les nombres rationnels : ceux qui peuvent s'écrire sous forme de fraction de nombres entiers avec un dénominateur non nul, y compris les entiers eux-mêmes. Sauf si une activité impose une autre condition, les lettres de cette leçon peuvent représenter tout nombre rationnel."
+        },
+        {
+          "type": "paragraph",
+          "text": "4t − 3 est une expression : elle indique qu'il faut multiplier t par quatre et soustraire trois. Avec t = 2, elle vaut cinq ; avec t = 0, elle vaut moins trois. L'expression conserve son écriture tandis que sa valeur change. L'expression n'est pas non plus seulement la lettre t : elle comprend toutes les opérations indiquées."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_y_valor",
+          "prompt": "Évalue 4t − 3 pour chaque valeur de t. Conserve le signe et la fraction lors de la substitution.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_y_valor__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "Valeur de 4t − 3 avec t = −3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "positivo",
+                  "type": "numeric",
+                  "label": "Valeur de 4t − 3 avec t = 5/4",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  },
+                  "positivo": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4 × (−3/2) − 3 = −6 − 3 = −9. Avec 5/4, le produit vaut cinq et le résultat vaut deux. La même expression permet ces évaluations différentes.",
+            "incorrect": "La lettre change de valeur entre les évaluations, mais le facteur quatre et la soustraction de trois restent les mêmes. Effectue le produit avant de soustraire."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escritura_frente_resultado",
+          "prompt": "Une note indique : « Avec t = 2, 4t − 3 vaut cinq ». Qu'est-ce qui distingue correctement l'expression de sa valeur ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escritura_frente_resultado__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4t − 3 est l'expression ; cinq est sa valeur pour cette donnée.",
+                  "reviewFeedback": "Identifie l'écriture contenant les opérations et le nombre qui résulte après avoir fixé la donnée."
+                },
+                {
+                  "id": "b",
+                  "label": "Cinq est l'expression ; 4t − 3 est sa valeur pour cette donnée.",
+                  "reviewFeedback": "Vérifie quel élément change lorsque la donnée change et lequel décrit les opérations effectuées."
+                },
+                {
+                  "id": "c",
+                  "label": "4t − 3 vaut toujours cinq, même si t change.",
+                  "reviewFeedback": "Évalue l'expression avec une autre donnée permise avant de lui attribuer une valeur indépendante de la lettre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'expression réunit les opérations. La valeur cinq appartient à l'évaluation précise avec t = 2.",
+            "incorrect": "Distingue une écriture qui peut s'évaluer avec plusieurs données du nombre obtenu avec une donnée particulière."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le signe égal compare deux membres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans x + 5 = 2x + 2, le membre de gauche est x + 5 et celui de droite est 2x + 2. Le signe égal affirme que les deux représentent la même valeur. Pour vérifier l'affirmation avec une donnée, évalue chaque membre séparément, puis compare les résultats. N'additionne pas tous les nombres des deux membres comme s'ils appartenaient à un seul calcul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec x = 3, le membre de gauche vaut huit et celui de droite aussi : l'égalité est vraie pour cette valeur. Avec x = 1, ils valent six et quatre : l'égalité est fausse pour cette valeur. Le signe égal n'oblige pas deux résultats différents à devenir égaux. C'est une affirmation que l'on peut vérifier."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "miembros_con_fracciones",
+          "prompt": "Dans r − 1/3 = 2r + 1/3, calcule séparément les deux membres pour chaque donnée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "miembros_con_fracciones__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_negativo",
+                  "type": "numeric",
+                  "label": "Membre de gauche avec r = −2/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_negativo",
+                  "type": "numeric",
+                  "label": "Membre de droite avec r = −2/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_positivo",
+                  "type": "numeric",
+                  "label": "Membre de gauche avec r = 1/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_positivo",
+                  "type": "numeric",
+                  "label": "Membre de droite avec r = 1/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_negativo": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "der_negativo": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "izq_positivo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "der_positivo": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec −2/3, les deux membres valent −1. Avec 1/3, celui de gauche vaut zéro et celui de droite un. Chaque comparaison utilise la même valeur de r dans les deux membres.",
+            "incorrect": "Remplace la lettre par le même nombre rationnel des deux côtés. Dans le membre droit, multiplie d'abord par deux, puis ajoute 1/3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "lectura_de_igualdad",
+          "prompt": "Qu'affirme le signe égal lorsque nous écrivons deux expressions de part et d'autre ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura_de_igualdad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Qu'il faut calculer le membre de droite d'abord, puis ajouter celui de gauche.",
+                  "reviewFeedback": "Distingue l'ordre d'un calcul de la relation affirmée par le signe entre les deux membres."
+                },
+                {
+                  "id": "b",
+                  "label": "Que les deux membres ont la même valeur dans les conditions indiquées.",
+                  "reviewFeedback": "Explique ce qui doit être vérifié dans les deux membres pour soutenir cette affirmation."
+                },
+                {
+                  "id": "c",
+                  "label": "Que le membre gauche est la question et que celui de droite peut être n'importe quelle réponse.",
+                  "reviewFeedback": "Vérifie si une écriture avec un signe égal permet de choisir librement un membre sans le relier à l'autre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'égalité exprime une relation entre des valeurs. Son sens ne dépend pas de l'ordre des membres.",
+            "incorrect": "La position d'un membre n'en fait pas une opération supplémentaire et ne permet pas d'accepter n'importe quel résultat."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une équation pose une condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si nous cherchons les valeurs de u vérifiant 3u + 2 = u + 5, nous posons une équation. La lettre dont nous cherchons la valeur s'appelle l'inconnue. Une solution est une valeur permise qui rend l'égalité vraie. Avant vérification, toute valeur suggérée est une proposition : le mot « proposition » ne garantit pas qu'elle fonctionne."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifier une proposition consiste à la substituer partout dans l'équation et à comparer ses deux membres. Résoudre l'équation exige de déterminer toutes les solutions ou de justifier qu'il n'en existe aucune. Vérifier une seule valeur montre si elle convient ou non ; cela ne prouve pas à soi seul que toutes les solutions ont été trouvées (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuestas_para_ecuacion",
+          "prompt": "Pour 3u + 2 = u + 5, calcule les deux membres avec u = −2 puis u = 3/2. Sélectionne ensuite celles de ces deux propositions qui vérifient l'égalité.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuestas_para_ecuacion__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_negativo",
+                  "type": "numeric",
+                  "label": "Membre gauche avec u = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_negativo",
+                  "type": "numeric",
+                  "label": "Membre droit avec u = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_fraccion",
+                  "type": "numeric",
+                  "label": "Membre gauche avec u = 3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_fraccion",
+                  "type": "numeric",
+                  "label": "Membre droit avec u = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_negativo": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "der_negativo": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "izq_fraccion": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  },
+                  "der_fraccion": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "propuestas_para_ecuacion__cumple",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "negativo",
+                  "label": "u = −2",
+                  "reviewFeedback": "Substitue cette proposition dans les deux membres et conserve ses signes avant de comparer."
+                },
+                {
+                  "id": "fraccionario",
+                  "label": "u = 3/2",
+                  "reviewFeedback": "Calcule les deux membres avec cette fraction et vérifie qu'ils sont égaux dans le domaine indiqué."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "fraccionario"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec −2, les membres valent −4 et trois : la proposition n'est pas une solution. Avec 3/2, les deux valent 13/2 : cette proposition est une solution. La trouver ne prouve pas à soi seul qu'il n'y en a pas d'autres.",
+            "incorrect": "Calcule chaque membre avec la même donnée. Une proposition ne convient que si les deux résultats coïncident ; il ne suffit pas qu'un résultat soit positif ou que le calcul soit défini."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuesta_y_resolucion",
+          "prompt": "Une personne vérifie une valeur et les deux membres coïncident. Qu'a-t-elle démontré jusqu'ici ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuesta_y_resolucion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Que cette valeur est une solution dans le domaine vérifié.",
+                  "reviewFeedback": "Précise quelle valeur a été vérifiée et quelle conclusion cette vérification permet réellement."
+                },
+                {
+                  "id": "b",
+                  "label": "Que cette valeur est nécessairement la seule solution de l'équation.",
+                  "reviewFeedback": "Distingue prouver qu'une proposition fonctionne et exclure que d'autres puissent fonctionner."
+                },
+                {
+                  "id": "c",
+                  "label": "Que toutes les valeurs du domaine vérifieront l'équation.",
+                  "reviewFeedback": "Un calcul particulier ne couvre pas tout le domaine ; détermine ce qui justifierait de l'étendre à toutes ses valeurs."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La substitution confirme cette valeur. L'unicité ou l'existence d'autres solutions exige un raisonnement supplémentaire.",
+            "incorrect": "N'élargis pas la portée d'une vérification : une donnée qui convient ne décrit pas automatiquement le comportement de toutes les autres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une identité est vraie sur tout le domaine"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'égalité 3(v + 2) = 3v + 6 est vraie pour tout rationnel v. La distributivité explique pourquoi : multiplier la somme par trois donne 3v + 3 × 2, soit 3v + 6. Nous n'avons pas choisi de valeur particulière pour v. Une égalité vraie pour toutes les valeurs du domaine s'appelle une identité (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une expression peut s'écrire de différentes façons tout en conservant sa valeur. Les parenthèses de 3(v + 2) et les deux termes de 3v + 6 organisent le calcul autrement, mais la distributivité conserve le résultat. Reconnaître une identité exige de considérer le sens et les propriétés, pas seulement l'apparence des écritures."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_identidad",
+          "prompt": "Complète les nombres pour que cette égalité soit vraie pour tout rationnel y. Utilise la distributivité ; il ne s'agit pas de choisir une valeur particulière de y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_identidad__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Coefficient de y dans le membre droit",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Quantité ajoutée dans le membre droit",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "5(y + 4) = "
+                },
+                {
+                  "field": "factor"
+                },
+                {
+                  "text": "y + "
+                },
+                {
+                  "field": "constante"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinq multiplie à la fois y et quatre : 5(y + 4) = 5y + 5 × 4 = 5y + 20. Le raisonnement fonctionne pour tout rationnel y, sans liste de cas.",
+            "incorrect": "Le facteur extérieur s'applique aux deux termes. Forme les deux produits avant de les réunir ; ne conserve pas le quatre sans le multiplier."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_de_identidad",
+          "prompt": "Qu'est-ce qui justifie que 3(v + 2) = 3v + 6 soit vraie pour tout rationnel v ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "razon_de_identidad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux membres contiennent les mêmes chiffres, même si leurs opérations diffèrent.",
+                  "reviewFeedback": "La présence des mêmes chiffres n'établit pas que les opérations donnent le même résultat ; analyse leur relation."
+                },
+                {
+                  "id": "b",
+                  "label": "La distributivité transforme le premier membre en second sans restreindre v.",
+                  "reviewFeedback": "Reconstitue la transformation évoquée et identifie les conditions imposées à la lettre."
+                },
+                {
+                  "id": "c",
+                  "label": "Le signe égal garantit que toute substitution donne le même résultat.",
+                  "reviewFeedback": "Le signe égal exprime une affirmation qui exige une justification ; il ne garantit pas à lui seul sa vérité."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributivité est valable pour les rationnels et produit exactement le deuxième membre. Les chiffres communs ou le signe égal ne remplacent pas cette justification.",
+            "incorrect": "Cherche une propriété qui conserve la valeur. Partager des nombres ne suffit pas : 3(v + 2) et 3v + 2 ne représentent pas la même relation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un contre-exemple modifie la conclusion"
+        },
+        {
+          "type": "paragraph",
+          "text": "En évaluant z × z = z avec z = 0, on obtient 0 = 0. Avec z = 1, on obtient 1 = 1. Ces cas montrent que ces deux valeurs vérifient l'égalité. Ils ne montrent pas qu'elle est vraie pour tous les rationnels : de nombreuses valeurs n'ont pas encore été testées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contre-exemple est une valeur du domaine qui contredit l'affirmation générale. Un seul suffit à réfuter « vrai pour tous », car cette affirmation inclut aussi cette valeur. En revanche, vérifier quelques cas favorables parmi tous les rationnels ne suffit pas à prouver une identité : il faut un raisonnement couvrant toutes les valeurs (Gelfand & Shen, 1993, p. 94)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_caso_que_refuta",
+          "prompt": "Quelqu'un affirme que z × z = z pour tout rationnel z. Calcule les deux membres avec z = −2 et indique ce que l'on peut conclure.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_caso_que_refuta__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valeur de z × z avec z = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valeur de z avec z = −2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_caso_que_refuta__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Aucun rationnel ne peut vérifier z × z = z.",
+                  "reviewFeedback": "Une valeur qui échoue n'exclut pas automatiquement toutes les autres ; revois la portée de ta conclusion."
+                },
+                {
+                  "id": "b",
+                  "label": "L'égalité est vraie pour tous les rationnels sauf les négatifs.",
+                  "reviewFeedback": "Une vérification précise sur un nombre négatif ne classe pas tous les nombres de ce signe ; examine ce qui a réellement été prouvé."
+                },
+                {
+                  "id": "c",
+                  "label": "L'affirmation selon laquelle elle est vraie pour tous les rationnels est réfutée.",
+                  "reviewFeedback": "Relie la valeur testée à ce qu'exige une affirmation portant sur tout le domaine."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le produit de −2 par −2 vaut quatre, tandis que l'autre membre vaut −2. Ce rationnel autorisé donne des résultats différents : la proposition universelle est fausse, même si elle fonctionne pour zéro et un.",
+            "incorrect": "Un nombre négatif multiplié par un autre nombre négatif donne un produit positif. Compare ensuite les deux membres, sans oublier que l'égalité était affirmée pour tous les rationnels."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "buscar_otra_mirada",
+          "prompt": "Après avoir vérifié z × z = z avec zéro et un, quel essai introduit une variation permettant de tester la proposition générale ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "buscar_otra_mirada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Répéter le calcul avec un en inversant seulement les membres.",
+                  "reviewFeedback": "Examine quelle information nouvelle apporterait la répétition exacte de la même donnée avec les membres inversés."
+                },
+                {
+                  "id": "b",
+                  "label": "Accepter l'identité parce que deux vérifications favorables suffisent.",
+                  "reviewFeedback": "Distingue l'accumulation de vérifications favorables de la justification d'une affirmation sur tous les rationnels."
+                },
+                {
+                  "id": "c",
+                  "label": "Essayer un rationnel autre que zéro et un, puis comparer les membres.",
+                  "reviewFeedback": "Identifie quelle variation permettrait d'éprouver l'affirmation en dehors des cas déjà observés."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une autre valeur ajoute un cas non couvert par les vérifications précédentes. Si les membres diffèrent, c'est un contre-exemple ; s'ils coïncident, il faudra encore une raison générale.",
+            "incorrect": "Répéter un cas n'élargit pas l'ensemble testé. Une proposition concernant tous les rationnels exige plus qu'un décompte de réponses correctes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un raisonnement général n'énumère pas tous les cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 7q + q, le deuxième q équivaut à 1q : multiplier un rationnel par un conserve ce rationnel. Par distributivité, 7q + q = 7q + 1q = (7 + 1)q = 8q. Cette chaîne utilise des propriétés valables pour tout rationnel q. Elle justifie donc une identité, même pour les valeurs que nous n'inscrirons jamais dans un tableau."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cela rappelle la différence entre exemple et démonstration. Un calcul avec q = 2 peut aider à comprendre l'affirmation, mais il ne traite que cette donnée. Le raisonnement précédent conserve q sans lui attribuer une valeur et explique pourquoi l'affirmation est vraie sur tout le domaine. Remplacer simplement « exemple » par « démonstration » ne suffit pas : nous devons donner cette raison."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "justificar_sumandos_comunes",
+          "prompt": "Complète la justification de 4r + 3r sans choisir de valeur particulière pour r. Tout rationnel r est permis.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "justificar_sumandos_comunes__pasos",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "sumando",
+                  "type": "numeric",
+                  "label": "Deuxième coefficient regroupé dans les parenthèses",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Coefficient après l'addition",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "4r + 3r = (4 + "
+                },
+                {
+                  "field": "sumando"
+                },
+                {
+                  "text": ")r = "
+                },
+                {
+                  "field": "total"
+                },
+                {
+                  "text": "r"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sumando": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "total": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributivité en sens inverse met le facteur r en évidence : 4r + 3r = (4 + 3)r = 7r. Le même raisonnement est valable pour r négatif, nul ou fractionnaire.",
+            "incorrect": "r est un facteur commun, pas un nombre à ajouter à quatre et à trois. Regroupe ces deux coefficients et additionne leurs valeurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cuentas_y_dominio",
+          "prompt": "On vérifie 2(t + 4) = 2t + 8 avec t = 0, t = 2 et t = 5, et les résultats coïncident. Le domaine déclaré comprend tous les rationnels. Que manque-t-il à un raisonnement fondé uniquement sur ces trois calculs ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuentas_y_dominio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il faut changer le domaine pour qu'un des calculs devienne faux.",
+                  "reviewFeedback": "Vérifie si changer le domaine répondrait à la proposition d'origine ou à une autre."
+                },
+                {
+                  "id": "b",
+                  "label": "Il faut répéter les mêmes données jusqu'à obtenir davantage de calculs favorables.",
+                  "reviewFeedback": "Examine ce que tu apprendrais sur de nouvelles valeurs en répétant seulement celles déjà calculées."
+                },
+                {
+                  "id": "c",
+                  "label": "Il manque une raison valable pour les valeurs absentes de ces calculs.",
+                  "reviewFeedback": "Relie la portée du domaine à celle des vérifications effectuées et à la justification qui manque."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributivité peut apporter la raison manquante : 2(t + 4) = 2t + 2 × 4 = 2t + 8. Les trois calculs ne couvrent pas à eux seuls le domaine déclaré.",
+            "incorrect": "Les vérifications sont correctes, mais leur portée est limitée. Répéter les mêmes données n'explique pas ce qui se passe pour les autres rationnels."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un problème n'autorise que quelques valeurs et qu'on les vérifie toutes, ces calculs établissent bien ce qui se passe dans ce domaine fini. Cela n'étend pas la conclusion à tous les rationnels. Relie toujours ton affirmation au domaine et à ce que ton argument vérifie réellement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une condition peut être toujours ou jamais vérifiée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chercher des solutions ne garantit pas qu'il y ait un nombre unique à trouver. Dans x + 4 = x + 4, tout rationnel permis vérifie la condition : les deux membres représentent le même calcul. Si cette égalité est présentée comme une équation, tous les rationnels sont solutions. C'est aussi une identité. L'intention de chercher des solutions peut coexister avec le fait que l'affirmation est vraie pour tous."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans x + 4 = x + 6, il se produit autre chose : le membre droit est toujours supérieur de deux unités au membre gauche. Changer x modifie les deux membres, mais conserve cette différence. Aucun rationnel ne peut les rendre égaux. Nous avons donné une raison qui couvre toutes les valeurs, et non une simple liste d'essais infructueux. Démontrer l'absence de solutions, c'est aussi résoudre une équation (Gelfand & Shen, 1993, p. 94)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "todos_ninguno_y_algunos",
+          "prompt": "Associe chaque condition à son ensemble de solutions dans le domaine de tous les rationnels. « Au moins un, mais pas tous » ne demande pas d'énumérer toutes les solutions. Complète les trois associations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "todos_ninguno_y_algunos__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "diferencia",
+                  "label": "m + 6 = m + 7"
+                },
+                {
+                  "id": "fijo",
+                  "label": "m + 6 = 10"
+                },
+                {
+                  "id": "mismos",
+                  "label": "m + 6 = m + 6"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "todos",
+                  "label": "Tous les rationnels"
+                },
+                {
+                  "id": "algunos",
+                  "label": "Au moins un, mais pas tous"
+                },
+                {
+                  "id": "ninguno",
+                  "label": "Aucun rationnel"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "diferencia": "ninguno",
+                  "fijo": "algunos",
+                  "mismos": "todos"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans la première condition, le membre droit dépasse toujours le gauche d'une unité : il n'y a pas de solution. La deuxième fonctionne avec m = 4 et échoue avec m = 0 : elle a au moins une solution, mais pas tous les rationnels. La troisième compare chaque quantité à elle-même : toutes conviennent.",
+            "incorrect": "Distingue la comparaison d'un calcul avec lui-même de celle avec une quantité qui lui est toujours supérieure. Pour la condition contenant dix, trouve une valeur qui convient et une autre qui échoue."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sin_soluciones_no_es_abandono",
+          "prompt": "Après avoir justifié que x + 4 = x + 6 n'a pas de solutions rationnelles, comment faut-il présenter le résultat ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sin_soluciones_no_es_abandono__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Comme une recherche complète dont l'ensemble de solutions est vide.",
+                  "reviewFeedback": "Distingue le fait de n'avoir trouvé aucune valeur de la preuve que l'ensemble des solutions est vide."
+                },
+                {
+                  "id": "b",
+                  "label": "Comme une recherche incomplète jusqu'à trouver un rationnel qui convient.",
+                  "reviewFeedback": "Revois quelle conclusion permet une contradiction obtenue par des étapes valables avant de poursuivre la recherche."
+                },
+                {
+                  "id": "c",
+                  "label": "Comme une identité parce que les deux expressions contiennent la même lettre.",
+                  "reviewFeedback": "La présence d'une lettre dans les deux membres ne suffit pas à créer une identité ; examine leurs autres termes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La différence fixe entre les membres démontre qu'aucun rationnel ne convient. Il n'y a pas de solution cachée à trouver par d'autres essais.",
+            "incorrect": "Résoudre comprend la justification de l'absence de solutions. Avoir la même lettre des deux côtés ne rend pas les membres égaux."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'égalité conserve aussi les restrictions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi la différence entre substituer un nombre et respecter le domaine. Pour écrire q/q, il faut exclure q = 0, car diviser par zéro n'est pas défini. Avec tout rationnel non nul, q divisé par lui-même vaut un. Ainsi q/q = 1 est une identité dans le domaine des rationnels différents de zéro, sans inclure zéro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un résultat simplifié ne permet pas d'oublier comment l'expression était définie. Le fait que le membre droit soit un et s'écrive sans division ne rend pas valide la substitution q = 0 dans le membre gauche. Pour vérifier une proposition, il faut que tous les calculs soient définis et que la valeur appartienne au domaine indiqué."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_del_cociente",
+          "prompt": "Quel est le plus grand domaine de nombres rationnels sur lequel q/q est définie et q/q = 1 est vraie pour chaque valeur permise ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_del_cociente__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Tous les rationnels, y compris zéro.",
+                  "reviewFeedback": "Vérifie ce qui arrive à la division lorsqu'on utilise la valeur incluse dans cette affirmation."
+                },
+                {
+                  "id": "b",
+                  "label": "Tous les rationnels non nuls.",
+                  "reviewFeedback": "Relie la condition nécessaire sur le diviseur aux valeurs rationnelles que tu veux permettre."
+                },
+                {
+                  "id": "c",
+                  "label": "Seuls les rationnels positifs, en excluant tous les négatifs.",
+                  "reviewFeedback": "Examine quelle condition de la division imposerait de restreindre le signe en plus d'exclure les diviseurs interdits."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Diviser un nombre non nul par lui-même donne un, qu'il soit positif ou négatif. Zéro est exclu à cause de la division ; exclure tous les négatifs serait inutile.",
+            "incorrect": "Identifie l'opération qui restreint le domaine. Un signe négatif n'empêche pas une division par un nombre non nul."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_no_es_una_comprobacion",
+          "prompt": "Quelqu'un substitue q = 0 dans q/q = 1 et écrit 0/0 = 1. Que faut-il corriger ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_no_es_una_comprobacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il faut évaluer 0/0 comme zéro, puis déclarer l'égalité fausse.",
+                  "reviewFeedback": "Avant d'attribuer une valeur au quotient, vérifie si la division est définie pour le diviseur utilisé."
+                },
+                {
+                  "id": "b",
+                  "label": "Il faut évaluer 0/0 comme un parce que les deux zéros sont égaux.",
+                  "reviewFeedback": "Deux écritures identiques ne définissent pas une division ; vérifie d'abord les conditions de cette opération."
+                },
+                {
+                  "id": "c",
+                  "label": "La substitution ne peut pas être évaluée : elle utilise un diviseur nul hors du domaine.",
+                  "reviewFeedback": "Identifie la condition que le diviseur doit remplir pour permettre le calcul du quotient."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0/0 n'a pas de valeur attribuée dans ces opérations. Cette donnée est hors du domaine ; ce n'est pas une vérification numérique valable de l'identité.",
+            "incorrect": "Avant de comparer des valeurs, vérifie que les expressions ont une valeur. Diviser un nombre par lui-même exige qu'il soit non nul."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Du modèle à une condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un réservoir commence avec douze litres d'eau. Pendant un cycle, une pompe extrait trois litres par minute à débit constant. Le cycle dure trois minutes : nous étudierons les durées rationnelles comprises entre zéro et trois minutes, bornes incluses. Si t mesure le temps écoulé en minutes, 12 − 3t représente le volume restant en litres."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'expression permet de calculer différents états. Un objectif ajoute une condition : « nous voulons qu'il reste une certaine quantité ». Pour l'écrire, il faut comparer le volume calculé au volume souhaité. Nous pouvons ensuite proposer une durée, vérifier le domaine et contrôler l'égalité. Ne confonds pas la loi qui décrit les états avec la condition qui sélectionne les états recherchés."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "condicion_del_deposito",
+          "prompt": "Le réservoir contient initialement douze litres et perd trois litres par minute. t mesure la durée en minutes. Complète l'égalité qui exige qu'il reste quatre litres et demi : indique le débit d'extraction et la quantité finale.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion_del_deposito__cantidades",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "ritmo",
+                  "type": "numeric",
+                  "label": "Litres extraits par minute",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Litres devant rester",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "12 − "
+                },
+                {
+                  "field": "ritmo"
+                },
+                {
+                  "text": "t = "
+                },
+                {
+                  "field": "final"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ritmo": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 − 3t représente les litres restants. La condition est 12 − 3t = 9/2, parce que quatre litres et demi valent 9/2 litres. t est mesuré en minutes afin que 3t représente les litres extraits.",
+            "incorrect": "Soustrais la quantité extraite de la quantité initiale. Distingue le débit, qui multiplie le temps, de la quantité finale fixée par l'objectif. Les écritures numériques équivalentes de quatre litres et demi sont admises."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuestas_del_deposito",
+          "prompt": "Pour 12 − 3t = 9/2, évalue le membre gauche avec t = 5/2 minutes et t = 3 minutes. Sélectionne les propositions qui respectent l'objectif pendant le cycle autorisé.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuestas_del_deposito__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Litres restants avec t = 5/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Litres restants avec t = 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "propuestas_del_deposito__cumplen",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "entero",
+                  "label": "t = 3 minutes",
+                  "reviewFeedback": "Calcule le volume à cette durée et vérifie aussi qu'elle appartient au cycle autorisé."
+                },
+                {
+                  "id": "fraccion",
+                  "label": "t = 5/2 minutes",
+                  "reviewFeedback": "Conserve la fraction pendant le calcul du volume et compare le résultat à l'objectif du cycle."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "fraccion"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec 5/2 minutes, il reste 12 − 15/2 = 9/2 litres : l'objectif est atteint. Avec trois minutes, il reste trois litres : l'objectif de 9/2 n'est pas atteint. Les deux durées appartiennent au cycle, mais appartenir au domaine ne suffit pas pour être une solution.",
+            "incorrect": "Le domaine autorise les deux durées. Pour déterminer les solutions, compare le volume restant pour chacune au volume exigé."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "propuesta_fuera_del_ciclo",
+          "prompt": "L'objectif passe à quinze litres. En remplaçant t = −1 dans 12 − 3t, on obtient quinze. −1 minute est-il une solution du problème du réservoir pendant ce cycle ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "propuesta_fuera_del_ciclo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Non : le calcul coïncide, mais cette durée est hors du domaine du cycle.",
+                  "reviewFeedback": "Compare la durée choisie au domaine temporel du cycle, ainsi qu'au volume calculé."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui : obtenir le volume indiqué suffit, même si la durée est négative.",
+                  "reviewFeedback": "Vérifier l'égalité des volumes ne remplace pas la condition définissant les durées admises."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : les opérations portant sur une durée négative sont toujours invalides en arithmétique.",
+                  "reviewFeedback": "Distingue une opération arithmétique définie de l'interprétation physique d'une durée pendant le cycle."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 − 3 × (−1) = 15 est un calcul valide. Le modèle n'étudie que les durées comprises entre zéro et trois minutes : −1 est exclu et ne représente pas un état autorisé du cycle.",
+            "incorrect": "Distingue validité arithmétique et admissibilité dans le contexte. Une coïncidence numérique ne supprime pas la définition de la durée étudiée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le jugement sans recopier une méthode"
+        },
+        {
+          "type": "paragraph",
+          "text": "Laisse de côté les nombres du réservoir. Face à une nouvelle écriture, demande-toi quelle tâche elle propose : évaluer une expression, vérifier une proposition ou justifier ce qui se passe sur tout le domaine. La présence d'une lettre ne décide pas de la tâche ; le signe égal ne transforme pas non plus automatiquement une condition en identité."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_las_tres_lecturas",
+          "prompt": "Sans utiliser le contexte du réservoir, associe chaque écriture à son sens dans le domaine de tous les rationnels p. Utilise les propriétés des opérations pour justifier les égalités et une substitution pour écarter une affirmation universelle si nécessaire.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_las_tres_lecturas__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "identidad",
+                  "label": "p + p + 2 = 2(p + 1)"
+                },
+                {
+                  "id": "expresion",
+                  "label": "p + p + 2"
+                },
+                {
+                  "id": "condicion",
+                  "label": "p + p + 2 = 10"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "condicion",
+                  "label": "Égalité vérifiée par certains rationnels, mais pas tous"
+                },
+                {
+                  "id": "expresion",
+                  "label": "Expression que l'on peut évaluer ; elle n'affirme pas une égalité"
+                },
+                {
+                  "id": "identidad",
+                  "label": "Égalité vraie pour tous les rationnels"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "identidad": "identidad",
+                  "expresion": "expresion",
+                  "condicion": "condicion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "p + p + 2 est une expression. L'égalité avec dix fonctionne pour p = 4 et échoue pour p = 0. L'autre est une identité : p + p = 2p et la distributivité donne 2(p + 1) = 2p + 2. La même valeur est comparée pour tout rationnel p.",
+            "incorrect": "Vérifie d'abord si l'écriture affirme une égalité. Distingue ensuite une coïncidence dépendant de la valeur choisie d'une autre garantie par les propriétés pour toutes les valeurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_de_distributiva",
+          "prompt": "Une note affirme que 5(a + 1) = 5a + 1 pour tout rationnel a. Évalue les deux membres avec a = 3/2. Sélectionne ensuite toutes les conclusions justifiées par cette vérification.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnostico_de_distributiva__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Membre gauche avec a = 3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre droit avec a = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "25/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnostico_de_distributiva__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'égalité est confirmée parce que les deux membres contiennent le facteur cinq.",
+                  "reviewFeedback": "Vérifie l'effet du facteur sur chaque terme et calcule les deux membres avant de justifier leur égalité."
+                },
+                {
+                  "id": "b",
+                  "label": "L'affirmation d'égalité pour tous les rationnels est fausse.",
+                  "reviewFeedback": "Examine la portée d'un contre-exemple admissible face à une affirmation universelle."
+                },
+                {
+                  "id": "c",
+                  "label": "Les résultats diffèrent parce que 3/2 est hors du domaine.",
+                  "reviewFeedback": "Relis le domaine annoncé et vérifie s'il exclut réellement ce type de nombre."
+                },
+                {
+                  "id": "d",
+                  "label": "3/2 est un contre-exemple parce qu'il est admis et produit des membres différents.",
+                  "reviewFeedback": "Justifie séparément l'admissibilité de la donnée et la différence entre les membres calculés."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le membre gauche vaut 5 × 5/2 = 25/2 et le droit vaut 15/2 + 1 = 17/2. Ils diffèrent : 3/2 est un contre-exemple à l'affirmation universelle. Les calculs sont définis avec un rationnel permis ; la différence ne peut donc pas être imputée à une donnée exclue.",
+            "incorrect": "Distribuer le cinq exige aussi de multiplier le un dans la parenthèse. Conserve la différence entre 5(a + 1) et le membre écrit 5a + 1 ; ne corrige pas la note avant de la vérifier."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve la portée de chaque argument. Une valeur qui convient prouve cette solution ; un contre-exemple du domaine réfute une affirmation universelle ; une justification fondée sur les propriétés peut couvrir des valeurs que nous n'énumérons pas. Plus tard, tu apprendras à transformer les équations pour rechercher et justifier toutes leurs solutions. Ici, tu as préparé leur sens et les critères de vérification d'une proposition."
+        }
+      ]
+    }
+  ]
+}
