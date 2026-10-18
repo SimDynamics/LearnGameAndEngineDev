@@ -1,0 +1,217 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones",
+  "title": "Checking Internal Agreements with Assertions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check at Runtime a Condition That Should Hold"
+        },
+        {
+          "type": "paragraph",
+          "text": "In C++ 1 you used static_assert to check constant conditions during compilation. We will revisit that distinction when introducing assert: when enabled, this assertion checks its condition during execution, using the values the program has at that moment. If the condition is true, execution continues; if false, it reports the violation and causes abnormal termination. It does not produce a bool for the caller to handle."
+        },
+        {
+          "type": "paragraph",
+          "text": "An assertion can make a contradiction of an internal agreement visible: something the program assumed should already be true at that point. The source recommends these checks for detecting unexpected violations and distinguishes that interruption from recoverable handling of rejected inputs (Kernighan & Pike, 1999, pp. 141–142). Their usefulness depends on choosing a relevant condition and understanding exactly what it checked."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_ejecucion_y_compilacion",
+          "question": "A program built successfully. During execution it reaches an enabled assertion whose condition evaluates to false. What does assert do?",
+          "options": [
+            "The build retroactively becomes a compilation error, as though static_assert had failed.",
+            "Execution stops abnormally after reporting the failed condition.",
+            "The expression returns false, and the program continues until the caller checks that bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "The condition was checked at runtime in an already built program. A failing enabled assertion interrupts execution; it does not return a recoverable rejection status to the caller.",
+          "reviewFeedback": [
+            "Distinguish when the values of this condition were obtained and at which stage the violation occurred.",
+            "Relate the consequence to the execution point where the internal condition stopped holding.",
+            "Check whether this mechanism gives the caller another handling option or interrupts execution."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recoverable Rejection and an Internal Contradiction Have Different Roles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the box client: intentar_cajas accepts any int, rejects quantities outside 0 to 20, and leaves the output unchanged when returning false. The client explains the rejection and can continue with the next request. A quantity of -1 may appear as rejected data without contradicting that behavior. Normal validation must remain in place to satisfy that contract."
+        },
+        {
+          "type": "paragraph",
+          "text": "Inside the calculation, after a quantity is accepted, we can check a different property: the capacity of the calculated boxes must be enough to hold those pieces. If a valid quantity of five pieces results in only one four-slot box, the calculation contradicts something we want to check. The person who provided five did not violate the permitted range. The internal diagnostic should help locate that contradiction rather than blame data that were correctly accepted."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_rechazo_que_debe_permanecer",
+          "question": "The client must report a quantity outside 0..20 and continue processing later requests. How does that responsibility relate to adding an internal assertion to the calculation?",
+          "options": [
+            "Replace rejection with a range assertion because comparing the same limits preserves the same policy.",
+            "Remove the acceptance decision if the calculation prints a message, because reporting it preserves batch handling.",
+            "Keep normal rejection; the assertion serves a different purpose and does not replace the client's promised continuation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The external agreement includes how to reject and continue, not just which values it accepts. A check that may interrupt execution is not equivalent to returning false and processing the next request. The internal condition observes a different requirement after accepting input.",
+          "reviewFeedback": [
+            "Compare the consequences of both checks, not just the numerical relation they express.",
+            "Distinguish displaying a message from deciding whether calculation and batch processing may continue under the agreement.",
+            "Relate each check to the external agreement or internal property it must preserve."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Internal Condition Checked During Execution"
+        },
+        {
+          "type": "paragraph",
+          "text": "The <cassert> header provides the assert macro. Write assert(condition); without std:: in front: this is not a call to a function in that namespace. The condition should express something you expect already to be true. In this example it only observes cajas, piezas_por_caja, and piezas; the calculation and return remain outside the check (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). The initial calculation is deliberately flawed so you can safely study a violation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, trace the prepared requests -1 and 5 separately. Note which is rejected without calling the calculation, what capacity the other obtains, and whether the internal condition is true. Recall the client's limit: at most eight complete, representable integers, followed by normal end of input. Only 0..20 reaches the calculation, the divisor is four, and the products in this check fit in int. Preserve that domain across all three lab states."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Boxes: request \" << peticion << \", pieces=\" << piezas\n            << \". An integer from 0 to 20 is allowed. Review the quantity.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boxes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "First run this state with assertions enabled. Preserve normal output, the diagnostic, and termination information shown by the lab separately. Identify the public message for the first request and the expression behind the internal violation in the second. Do not predict the literal assertion diagnostic: its format depends on the implementation. Abnormal termination does not mean main reached its return statement with a value chosen there. If your configuration does not show the violation, check whether assertions were enabled before interpreting the calculation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Disabling the Check Leaves the Calculation Defect"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the second state, add exactly #define NDEBUG at the start of this file, before including <cassert>. This line defines a preprocessor name; it does not create a bool variable. In this minimal example, defining it before that inclusion means assert does not evaluate its condition. The header allows these checks to be disabled (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). A configuration name such as Debug or Release does not replace checking how your program was built. Do not change app settings: here, the difference is visible in the file."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#define NDEBUG\n#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = piezas / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Boxes: request \" << peticion << \", pieces=\" << piezas\n            << \". An integer from 0 to 20 is allowed. Review the quantity.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boxes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running the second state with the same input, predict whether the calculation changed and which check still rejects -1. Then record both streams and termination again. The valid request for five now prints Boxes=1, although that capacity is insufficient. The public diagnostic for -1 remains, and main returns 1 because there was a recoverable rejection. Removing the internal check did not repair the operation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_desactivada_y_codigo_final",
+          "question": "In the second state, Boxes=1 is printed, rejection of -1 is reported, and main returns 1. What explains this combination?",
+          "options": [
+            "The disabled assertion returns 1 to report the violation, and main preserves that value.",
+            "The client still rejects -1 and records that rejection in its return value; the defective calculation runs without the internal check.",
+            "The public diagnostic for -1 proves that the assert condition still executed in a different format."
+          ],
+          "correctIndex": 1,
+          "explanation": "The normal return comes from hubo_rechazos in main. The if inside intentar_cajas still runs; disabling assert neither removes that decision nor fixes the formula in cajas_para.",
+          "reviewFeedback": [
+            "Locate the expression in the file that determines main's return value and what assert actually contributes when disabled.",
+            "Relate handling of the first request to the value main returns at the end of the batch.",
+            "Identify which function emits the public diagnostic and which condition causes it to be called."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repair the Calculation and State What a Condition Guarantees"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the third state, remove the educational #define NDEBUG line and restore the box formula developed earlier. Keep the local value and the assertion observing its capacity. Before running, predict the result for five and distinguish the normal return that still corresponds to rejecting -1. Copy this reference into the same lab and retain the input -1 5."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Boxes: request \" << peticion << \", pieces=\" << piezas\n            << \". An integer from 0 to 20 is allowed. Review the quantity.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boxes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare all three states against your predictions: altered calculation with the check enabled, the same calculation with the check disabled, and repaired calculation with the check enabled. In the last state Boxes=2 is printed, and the assertion allows execution to continue. The rejection message and normal return 1 remain because of the first request. Explain what evidence you attribute to each mechanism. A true assertion establishes only that condition for the execution that reached it; here, it checks capacity, without proving by itself that we chose the minimum number of boxes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_cobertura_no_demuestra_minimalidad",
+          "question": "Another calculation returns five boxes for five pieces. It satisfies cajas * piezas_por_caja >= piezas. Does this condition prove that it returned the fewest boxes needed?",
+          "options": [
+            "Yes: satisfying one internal property of the result establishes all obligations of that calculation.",
+            "Yes, provided the program terminates normally; that termination completes the proof of minimality.",
+            "No: the boxes may have enough capacity while still using more than needed; the minimality requirement needs separate checking."
+          ],
+          "correctIndex": 2,
+          "explanation": "The condition compares available slots with the number of pieces. A result larger than necessary can also satisfy the inequality. Choosing a useful condition does not make that partial observation a check of the entire contract.",
+          "reviewFeedback": [
+            "Separate the property expressed by that inequality from the other requirements for computing a minimum.",
+            "Check what additional information normal termination provides about the number of boxes chosen.",
+            "Connect the inequality's scope with the specific obligation that still needs evidence."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Required Work Must Survive the Check"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall registrar_visita and its initialized counter, used earlier to observe without repeating operations. This time, the required call was placed inside assert. Analyze this program by reading it, without adding another run to the lab: when the check is enabled, the call records a visit; when it is disabled before including <cassert>, the condition is not evaluated, and the visit is not recorded. The problem is not that C++ prohibits placing a call there, but that we made required work depend on a check that may disappear."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    assert(registrar_visita() > 0);\n    std::cout << \"Visits=\" << numero_visita << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_conservar_operacion_necesaria",
+          "question": "The program must record exactly one visit with assert both enabled and disabled. Which reorganization preserves that work while allowing the result to be checked when appropriate?",
+          "options": [
+            "Call registrar_visita once outside assert, keep its result, and then check that value without repeating the operation.",
+            "Keep registrar_visita inside assert and change the comparison to >= 1 so it expresses the required registration.",
+            "Keep the call inside assert and add another call afterward to compensate when the check is disabled."
+          ],
+          "correctIndex": 0,
+          "explanation": "The required operation runs outside the condition. The assertion can observe its result without deciding whether the visit is recorded. Adding compensating calls would also change the history when the check was enabled.",
+          "reviewFeedback": [
+            "Check separately how many visits are recorded in each configuration and which part merely observes a value.",
+            "Check whether changing a comparison causes its call to be evaluated when the check is disabled.",
+            "Count the calls made with the check enabled and verify the required amount."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const int primera = registrar_visita();\nassert(primera > 0);\nstd::cout << \"Visits=\" << numero_visita << \";First=\" << primera << \"\\n\";\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When reviewing your own programs, choose an internal condition and explain three things in comments in your draft: which agreement it checks, which operations must execute even when it is disabled, and which recoverable handling the client must preserve. Then return to the box example and explain, without changing the input, why the normal return 1 in the second and third states has a different cause from the interruption in the first. If you cannot attribute the difference to a specific condition and the execution path that reaches it, revisit the sequence before declaring the test explained."
+        }
+      ]
+    }
+  ]
+}

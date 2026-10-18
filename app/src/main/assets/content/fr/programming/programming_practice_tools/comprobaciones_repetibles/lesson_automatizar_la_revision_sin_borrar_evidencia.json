@@ -1,0 +1,314 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia",
+  "title": "Automatiser la vérification sans perdre les preuves",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un outil pour examiner des résultats déjà enregistrés"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as déjà conservé des programmes de vérification qui appellent un composant et comparent son résultat à une attente indépendante. Cette fois, le travail est différent : tu reçois un journal textuel produit par une exécution antérieure et tu construis un utilitaire pour l'examiner sans comparer chaque ligne à la main. L'utilitaire lit ce qui a été enregistré ; il ne rappelle pas le composant, ne change pas ses résultats et ne corrige pas les attentes. Tu reprends la lecture ligne par ligne, l'analyse avec istringstream et les compteurs de C++ 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un format régulier permet aux personnes comme aux outils d'examiner les données. Les sources recommandent des messages analysables et l'automatisation du traitement des sorties de débogage ; elles relient également un texte compréhensible à la vérification des tests (Kernighan & Pike, 1999, pp. 124, 127 ; Thomas & Hunt, 2020, pp. 75–77). Notre utilitaire C++ est un exercice original dans un langage que tu connais déjà. Il ne remplace pas l'étude d'autres langages de traitement du texte et ne suppose pas l'accès à une console de commandes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_fuente_de_la_comparacion",
+          "question": "Tu dois examiner un journal existant en conservant ce qui a été observé lors de son exécution. Quelle tâche correspond à cet utilitaire ?",
+          "options": [
+            "Rappeler le composant et remplacer la colonne du résultat obtenu par la réponse actuelle.",
+            "Calculer les résultats attendus avec le même composant pour compléter les colonnes manquantes.",
+            "Lire les colonnes enregistrées et signaler leurs correspondances, leurs différences et leurs problèmes de format."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'objet de la vérification est le journal reçu. Comparer ses colonnes conserve une observation antérieure ; relancer le composant produirait une nouvelle observation. Une ligne incomplète est signalée sans inventer ses données.",
+          "reviewFeedback": [
+            "Vérifie à quelle exécution appartiendrait le nouveau résultat et s'il resterait bien la donnée à examiner.",
+            "Examine l'origine de cette attente et vérifie si la construire ainsi préserverait une comparaison indépendante.",
+            "Relie la tâche choisie à la provenance des données reçues par l'utilitaire."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le format et l'unité de preuve sont deux accords distincts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque ligne physique doit comporter trois champs, dans cet ordre : cas attendu obtenu. Le cas est une étiquette d'un seul mot ; les deux autres colonnes sont des entiers lus avec >>. Les espaces ignorés lors de l'extraction, y compris en fin de ligne, sont admis, mais aucun champ supplémentaire. Par exemple, A 2 1 signifie : cas A, attendu 2, obtenu 1. Le nom ou l'extension d'un fichier ne suffirait pas à connaître cet ordre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque ligne reçue représente une occurrence à examiner, même si son étiquette et ses valeurs se répètent. Deux enregistrements A peuvent correspondre à deux observations ; le texte seul n'autorise pas leur fusion. En C++ 1, un chargeur rejetait les identifiants répétés parce que son contrat exigeait l'unicité. Ici, nous conservons les occurrences et leur ordre. Le numéro de ligne localise chacune sans modifier son étiquette. Cette règle ne prétend pas expliquer pourquoi le cas a été répété."
+        },
+        {
+          "type": "note",
+          "text": "Périmètre des laboratoires : douze lignes physiques au maximum, texte ASCII, valeurs numériques représentables par int et fin normale de l'entrée. Les lignes mal formées sont admises pour vérifier leur diagnostic. Un lot vide est valide ; une ligne vide est une ligne reçue qui ne respecte pas le format. La dernière ligne est analysée même sans saut de ligne final. Les pannes du dispositif d'entrée ne sont pas étudiées."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_ocurrencias_del_mismo_caso",
+          "question": "Le journal contient deux lignes A 2 1 consécutives. Quel traitement conserve les preuves selon le contrat de cet utilitaire ?",
+          "options": [
+            "Examiner et signaler les deux occurrences, en conservant leurs numéros de ligne distincts.",
+            "Ne garder que la première, car l'étiquette et les colonnes répètent le même contenu.",
+            "Additionner les deux valeurs obtenues pour produire un seul résultat pour le cas A."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le contrat compte les occurrences, pas les étiquettes uniques. Les deux lignes présentent une différence et restent séparées. Ni l'identité du texte ni une somme n'autorisent à remplacer deux observations par une autre.",
+          "reviewFeedback": [
+            "Vérifie si le traitement conserve le nombre d'observations reçues et l'emplacement de chacune.",
+            "Rappelle-toi l'unité que ce contrat a décidé de conserver et ce qui serait perdu en supprimant une ligne reçue.",
+            "Distingue comparer un résultat enregistré de calculer une valeur qui ne figurait dans aucune ligne."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ne pas pouvoir analyser une ligne ne signifie pas trouver une correspondance"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'analyseur fourni reprend le travail de C++ 1 : il initialise des variables locales, extrait trois mots et exige qu'il ne reste que des espaces. Il interprète ensuite entièrement chacun des deux mots numériques en entier, avec un flux local pour chaque champ. Ainsi, A 1-1 ne devient pas deux colonnes. Les champs ne sont transmis qu'après ces vérifications. Tu n'as pas besoin de réécrire l'analyseur. Une ligne telle que A 2, une ligne vide ou A 2 1 suite reçoit FORMAT. L'utilitaire ne peut pas comparer des colonnes qu'il n'a pas obtenues correctement, mais poursuit l'examen des lignes suivantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le premier laboratoire, stdout contient une ligne par enregistrement valide : Ligne=n Cas=étiquette Attendu=e Obtenu=o CORRESPOND, ou DIFFÈRE en dernier mot. Les champs numériques sont affichés en décimal. stderr contient Ligne=n:FORMAT pour chaque ligne mal formée. Toutes ces lignes se terminent par un saut de ligne. À la fin, stdout ajoute Résumé : valides=V;correspondent=C;diffèrent=D;format=F. Le code de sortie vaut 1 en présence d'une différence ou d'un problème de format ; sinon, il vaut 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque ligne reçue appartient à une seule catégorie : correspondance, différence ou problème de format. Ainsi, V=C+D et le nombre total de lignes examinées est V+F. Une correspondance avec zéro ou un nombre négatif reste valide. Conserve les deux flux et le code de sortie séparément ; aucun ordre global de stdout et stderr n'est promis."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_formato_y_cotejo",
+          "question": "La première ligne est A 2 et la seconde B 0 0. Que doit conserver le rapport ?",
+          "options": [
+            "Une différence pour A en prenant zéro comme valeur obtenue puisque ce champ manque.",
+            "Un problème de format pour la première ligne et la correspondance de B pour la seconde.",
+            "Seulement la correspondance de B, en omettant la ligne dont les colonnes n'ont pas pu être obtenues."
+          ],
+          "correctIndex": 1,
+          "explanation": "A 2 ne fournit pas les trois champs exigés : elle est signalée comme FORMAT sans inventer de résultat. Cela n'empêche pas d'analyser B 0 0, dont les deux valeurs coïncident.",
+          "reviewFeedback": [
+            "Vérifie si les données utilisées pour comparer ont bien été reçues et validées ou si tu les inventerais.",
+            "Examine séparément la validité de chaque ligne et la conservation de l'observation suivante.",
+            "Réfléchis aux preuves qui subsisteraient sur la ligne que l'utilitaire n'a pas pu analyser."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : conserver les occurrences que l'outil omettait"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme initial essaie d'économiser des lignes : après avoir analysé un enregistrement, il l'omet si son étiquette correspond à celle du dernier enregistrement conservé. Il ne parcourt pas toutes les étiquettes précédentes et ne prouve pas que deux observations proviennent de la même exécution. Ce filtre viole notre contrat. L'analyseur leer_registro, l'affichage et le traitement de FORMAT sont fournis ; conserve-les. Modifie main pour examiner chaque occurrence valide sans ce critère d'omission."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, classe à la main les huit lignes préparées. A apparaît aux lignes 1, 2, 4 et 8 ; C;=lote répète exactement son étiquette et ses colonnes aux lignes 6 et 7. La ligne 5, A 1-1, ne comporte que deux mots et ne respecte pas le format ; la ligne 8, A 1 -1, en a trois et permet de comparer une valeur obtenue négative. Le résultat exigé conserve sept enregistrements valides : deux correspondances et cinq différences, plus un problème de format. Note les numéros des lignes que chaque flux doit afficher. Ne modifie pas les données pour masquer une répétition."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    bool hay_anterior{false};\n    std::string caso_anterior;\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Ligne=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        if (hay_anterior && caso == caso_anterior) {\n            continue;\n        }\n        hay_anterior = true;\n        caso_anterior = caso;\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Ligne=\" << lineas << \" Cas=\" << caso\n                  << \" Attendu=\" << esperado << \" Obtenu=\" << obtenido\n                  << \" \" << (coincide ? \"CORRESPOND\" : \"DIFFÈRE\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Échec de la source\\n\";\n        return 1;\n    }\n    std::cout << \"Résumé : valides=\" << validos << \";correspondent=\" << coinciden\n              << \";diffèrent=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n",
+          "initialStandardInput": "A 0 0\nA 2 1\nB -1 -1\nA 2 1\nA 1-1\nC;=lote 0 1\nC;=lote 0 1\nA 1 -1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Exécute d'abord la version initiale et explique les lignes omises en utilisant leurs numéros. Corrige ensuite la cause et compare le rapport entier, pas seulement son code de sortie : les deux versions peuvent se terminer avec 1. Dans la correction, le résumé doit être Résumé : valides=7;correspondent=2;diffèrent=5;format=1. stderr contient seulement Ligne=5:FORMAT, suivi d'un saut de ligne. Aucun problème de format ne doit empêcher l'examen des lignes suivantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec le programme corrigé, modifie seulement l'entrée pour avoir deux lignes : 0 0 0 et N -2 -2, sans saut après la seconde. Il doit signaler deux correspondances, un résumé 2/2/0/0, stderr vide et le code 0. Teste ensuite un lot entièrement vide : seul le résumé avec quatre zéros s'affiche et le code vaut 0. L'étiquette 0 et les colonnes nulles sont des données présentes ; elles ne signifient pas l'absence de lignes. Essaie ces comparaisons avant de consulter la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : examiner les preuves sans imposer l'unicité des cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence retire uniquement l'état et le critère qui omettaient les étiquettes répétées. Chaque ligne valide arrive à la comparaison et à ses compteurs. Une ligne mal formée augmente formato, est signalée, puis le traitement continue ; elle ne contribue ni à coinciden ni à difieren. leer_registro laisse les trois destinations de l'appelant inchangées lorsqu'elle renvoie false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Ligne=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Ligne=\" << lineas << \" Cas=\" << caso\n                  << \" Attendu=\" << esperado << \" Obtenu=\" << obtenido\n                  << \" \" << (coincide ? \"CORRESPOND\" : \"DIFFÈRE\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Échec de la source\\n\";\n        return 1;\n    }\n    std::cout << \"Résumé : valides=\" << validos << \";correspondent=\" << coinciden\n              << \";diffèrent=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec l'entrée initiale, stdout rapporte les lignes 1, 2, 3, 4, 6, 7 et 8 dans cet ordre. Seules les lignes 1 et 3 se terminent par CORRESPOND. Les lignes 2, 4, 6, 7 et 8 se terminent par DIFFÈRE et conservent leurs données ; les deux lignes C;=lote restent présentes. Les champs du rapport sont séparés par des espaces : les signes ; et = internes font partie de l'étiquette et ne délimitent pas de nouvelles colonnes. Le résumé vaut 7/2/5/1 et le code final 1. La version initiale omettait 2 et 7 : son résumé était 5/2/3/1. Le code final 1 ne révélait pas à lui seul cette perte de preuves."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_limite_de_la_coincidencia",
+          "question": "L'utilitaire indique CORRESPOND pour toutes les lignes valides d'un journal. Que peut-on conclure de cette seule vérification ?",
+          "options": [
+            "Que la fonction d'origine a été exécutée à nouveau et a respecté son contrat pour ces entrées.",
+            "Que chaque paire de colonnes analysée contient la même valeur dans le journal reçu.",
+            "Que les résultats attendus du journal ont été calculés indépendamment et sont corrects."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'utilitaire compare deux entiers enregistrés. Il ne sait pas comment chaque colonne a été obtenue, ne réexécute pas le composant et ne détermine pas si une attente correspond à l'exigence. Ces affirmations nécessitent d'autres preuves.",
+          "reviewFeedback": [
+            "Cherche quelles instructions de l'utilitaire exécuteraient la fonction d'origine et quelles données il a réellement reçues.",
+            "Relie la conclusion à l'opération réalisée sur chaque paire de colonnes.",
+            "Demande-toi si l'égalité de deux nombres prouve l'origine de l'attente ou la raison de sa valeur."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer l'absence de données, une ligne vide et les valeurs nulles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de réduire le rapport, retrouve l'unité parcourue par le lecteur. Ne recevoir aucune ligne est différent de recevoir une ligne sans caractère. Une ligne dont un champ vaut zéro n'est pas non plus vide. Le programme suivant compte les lignes physiques ; il n'analyse pas les champs et ne classe pas encore leur format."
+        },
+        {
+          "type": "output_prediction",
+          "id": "automatizar_vacio_linea_y_cero",
+          "question": "Prédis la sortie exacte, sans saut de ligne final. Chaque appel reçoit un texte indépendant ; le dernier ne se termine pas par un saut de ligne.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint contar_lineas(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::string linea;\n    int lineas{0};\n    while (std::getline(origen, linea)) {\n        ++lineas;\n    }\n    return lineas;\n}\n\nint main() {\n    std::cout << contar_lineas(\"\") << ':'\n              << contar_lineas(\"\\n\") << ':'\n              << contar_lineas(\"0 0 0\");\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Le texte vide ne fournit aucune ligne. Un saut de ligne fournit une ligne au contenu vide. Le texte 0 0 0 fournit une ligne avec des données, même sans saut final. Dans l'analyseur du laboratoire, seul le deuxième exemple produirait FORMAT.",
+          "reviewFeedback": "Suis chaque tentative de getline et distingue la réception d'une ligne de la validation de son contenu. N'interprète pas la valeur d'un champ comme le nombre de lignes de l'entrée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour préserver cette distinction, prépare les entrées complètes avant l'exécution. L'utilitaire commence chaque exécution avec de nouveaux compteurs. Il ne concatène pas les journaux des essais antérieurs et ne modifie pas le texte original que tu utilises pour comparer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : choisir ce que l'on affiche sans changer ce que l'on compte"
+        },
+        {
+          "type": "paragraph",
+          "text": "La personne qui enquête veut voir seulement les différences individuelles, mais elle a besoin du résumé de toutes les lignes examinées et de tous les problèmes de format. Modifie uniquement cette règle de présentation : les correspondances n'ont plus de ligne individuelle dans stdout, mais elles continuent à compter dans validos et coinciden. Les différences conservent leur ordre, leurs occurrences et leurs colonnes. stderr, le résumé et le code final gardent leur contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme ci-dessous conserve déjà les étiquettes répétées, mais omet les correspondances avant de mettre à jour les compteurs. Corrige cette séparation sans toucher à leer_registro, aux données ou au sens des compteurs. Décide quelles opérations s'imposent pour chaque enregistrement valide et lesquelles dépendent de son affichage. Cet exercice ne demande pas de revenir à la sortie détaillée ni de changer le contrat pour correspondre au défaut."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Ligne=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        if (coincide) {\n            continue;\n        }\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Ligne=\" << lineas << \" Cas=\" << caso\n                  << \" Attendu=\" << esperado << \" Obtenu=\" << obtenido\n                  << \" \" << (coincide ? \"CORRESPOND\" : \"DIFFÈRE\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Échec de la source\\n\";\n        return 1;\n    }\n    std::cout << \"Résumé : valides=\" << validos << \";correspondent=\" << coinciden\n              << \";diffèrent=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n",
+          "initialStandardInput": "N 0 0\nR -1 -1\nR 0 -1\nP 3\nR 0 -1\nZ 9 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, déduis ceci : il y a six lignes, dont une mal formée et cinq valides ; trois correspondent et deux diffèrent. stdout doit afficher individuellement les lignes 3 et 5 seulement, toutes deux du cas R avec attendu 0 et obtenu -1, puis ajouter Résumé : valides=5;correspondent=3;diffèrent=2;format=1. stderr conserve Ligne=4:FORMAT et le code de sortie vaut 1. L'enregistrement R de la ligne 2 est lui aussi examiné, même sans ligne individuelle dans stdout."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste ensuite les deux lignes 0 0 0 et N -2 -2. stdout doit contenir seulement le résumé 2/2/0/0 : il n'y a aucune différence individuelle à afficher, mais deux enregistrements valides. Avec un lot vide, le résumé vaut 0/0/0/0. Dans les deux cas, stderr reste vide et le code vaut 0. Explique quelle comparaison distingue les deux entrées même lorsque le filtre n'affiche aucune ligne individuelle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert : la sélection appartient à la présentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence met à jour les compteurs de chaque enregistrement valide et n'applique le filtre qu'à sa ligne individuelle. Elle ne conditionne ni le diagnostic de format ni le résumé. La comparaison conserve les mêmes données ; seule la sélection de l'affichage change."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Ligne=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        if (!coincide) {\n            std::cout << \"Ligne=\" << lineas << \" Cas=\" << caso\n                      << \" Attendu=\" << esperado << \" Obtenu=\" << obtenido\n                      << \" \" << (coincide ? \"CORRESPOND\" : \"DIFFÈRE\") << \"\\n\";\n        }\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Échec de la source\\n\";\n        return 1;\n    }\n    std::cout << \"Résumé : valides=\" << validos << \";correspondent=\" << coinciden\n              << \";diffèrent=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le lot de transfert, le programme défectueux affichait aussi les deux différences, mais son résumé était 2/0/2/1. La référence conserve les informations manquantes et produit 5/3/2/1. C'est pourquoi examiner uniquement les lignes sélectionnées ou seulement le code final ne prouve pas que l'utilitaire a parcouru tout le journal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_seleccion_sin_lineas_individuales",
+          "question": "La version corrigée qui affiche seulement les différences reçoit 0 0 0 et N -2 -2. Aucune ligne individuelle n'apparaît dans stdout. Quelle preuve distingue ce cas d'un lot vide ?",
+          "options": [
+            "Le code final, parce que les correspondances avec zéro et des nombres négatifs doivent renvoyer 1.",
+            "Un message FORMAT pour chaque correspondance que le filtre n'affiche plus.",
+            "Le résumé, qui conserve deux enregistrements valides et deux correspondances."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le filtre ne montre pas les correspondances individuelles, mais le résumé les compte. L'entrée n'était pas vide : les deux lignes ont été analysées et comparées correctement. Leurs valeurs ne changent pas ce fait.",
+          "reviewFeedback": [
+            "Retrouve les conditions qui déterminent le code final et demande-toi si le signe d'une correspondance modifie sa validité.",
+            "Vérifie quelle condition produit FORMAT et si masquer une ligne modifie les champs reçus.",
+            "Relie les compteurs conservés au nombre d'enregistrements que le lecteur a pu examiner."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver l'automatisation sans perdre le journal qui la soutient"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reviens aux deux versions de l'utilitaire. Prépare un lot qui répète une étiquette pour des observations identiques et différentes, contient une ligne avec un quatrième champ et laisse une autre ligne valide après celle-ci. Classe chaque occurrence à la main avant l'exécution. Compare les deux vues avec le même texte : résumés, diagnostics et codes doivent coïncider ; seules les lignes individuelles changent selon le filtre choisi."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_preservar_la_fuente_de_evidencia",
+          "question": "Une personne conserve seulement la vue des différences et son résumé. Plus tard, elle veut examiner les valeurs exactes des correspondances initiales. Quel document doit-elle conserver ?",
+          "options": [
+            "Le journal original reçu par l'utilitaire, puisque le filtre a omis ces détails individuels.",
+            "Le résumé seulement, parce que ses compteurs permettent de reconstruire toutes les valeurs initiales.",
+            "Une nouvelle exécution du composant, parce que répéter les mêmes étiquettes reconstitue les observations antérieures."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le filtre est une vue qui perd volontairement certains détails individuels. Ses compteurs distinguent des quantités, mais ne permettent pas de reconstruire les données non affichées. Conserver le journal d'entrée permet de les examiner plus tard.",
+          "reviewFeedback": [
+            "Vérifie si ce document conserve les champs exacts dont on aura besoin plus tard.",
+            "Examine les informations individuelles contenues dans chaque compteur et celles qui disparaissent lorsqu'on réduit plusieurs lignes à un nombre.",
+            "Demande-toi si une nouvelle exécution conserve les anciennes observations et ce que permet de retrouver une simple étiquette."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "L'automatisation doit répondre à une obligation vérifiable et avoir une portée explicite. Ici, elle permet de réexaminer le même texte et d'obtenir un rapport cohérent avec le filtre choisi. Elle ne prouve pas l'exactitude des attentes, ne répare pas la fonction d'origine et ne garantit pas que le journal reçu soit complet. Cette limite rend l'utilitaire utile sans lui attribuer de preuves qu'il n'a pas produites."
+        },
+        {
+          "type": "note",
+          "text": "Utilise les journaux d'exemple de cette pratique. L'utilitaire lit une entrée préparée et écrit un rapport ; il n'a pas besoin d'écraser des fichiers source ni des ressources personnelles. Conserver le journal original et le comparer au rapport peut aussi révéler les erreurs de l'utilitaire lui-même."
+        }
+      ]
+    }
+  ]
+}

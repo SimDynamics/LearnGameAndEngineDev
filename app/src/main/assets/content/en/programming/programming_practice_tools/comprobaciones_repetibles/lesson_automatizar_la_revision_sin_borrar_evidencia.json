@@ -1,0 +1,314 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia",
+  "title": "Automating Review Without Losing Evidence",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Tool for Reviewing Previously Recorded Results"
+        },
+        {
+          "type": "paragraph",
+          "text": "You have already kept test programs that call a component and compare its result with an independently established expectation. This task is different: you receive a text log produced by an earlier run and build a utility to review it without checking each line by hand. The utility reads what was recorded; it does not call the component again, change its results, or correct the expected values. You will revisit line-based input, parsing with istringstream, and counters from C++ 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "A regular format lets both people and tools examine data. The sources recommend parseable messages and automated processing of debugging output; they also connect understandable text with the review of tests (Kernighan & Pike, 1999, pp. 124, 127; Thomas & Hunt, 2020, pp. 75–77). Our C++ utility is an original exercise using a language you already know. It neither replaces learning other text-processing languages nor assumes access to a command-line shell."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_fuente_de_la_comparacion",
+          "question": "You need to review an existing log while preserving observations from the run that produced it. Which task fits this utility?",
+          "options": [
+            "Call the component again and replace the recorded actual column with the current answer.",
+            "Calculate expectations using the same component to fill missing columns.",
+            "Read the recorded columns and report matches, differences, and format problems."
+          ],
+          "correctIndex": 2,
+          "explanation": "The object of review is the received log. Comparing its columns preserves an earlier observation; running the component again would create a new one. An incomplete line is reported as such, without inventing data.",
+          "reviewFeedback": [
+            "Consider which run would produce that new result and whether it would still be the observation you were asked to review.",
+            "Examine where the expectation would come from and whether constructing it that way would preserve an independent comparison.",
+            "Relate the chosen task to the source of the data received by the utility."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Format and Unit of Evidence Are Separate Agreements"
+        },
+        {
+          "type": "paragraph",
+          "text": "Every physical line must contain three fields, in this order: case expected actual. The case is a one-word label; the other columns are integers read using >>. Whitespace skipped by extraction, including trailing whitespace, is allowed, but extra fields are not. For example, A 2 1 means case A, expected 2, actual 1. A file's name or extension alone would not tell you that order."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each received line is one occurrence to review, even if its label and values are repeated. Two records labeled A could come from two observations; the text alone does not authorize merging them. In C++ 1, a loader rejected duplicate IDs because its contract required uniqueness. Here, we preserve occurrences and their order. The line number locates each one without changing its label. This policy does not claim we know why the case repeated."
+        },
+        {
+          "type": "note",
+          "text": "Lab scope: up to twelve physical lines, ASCII text, numeric quantities representable as int, and normal end of input. Malformed lines are allowed so their diagnostics can be tested. An empty batch is valid; an empty line is a received line that fails the format. The final line is also parsed when it lacks a trailing newline. Input-device failures are not investigated."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_ocurrencias_del_mismo_caso",
+          "question": "The log contains two consecutive lines A 2 1. Which treatment preserves evidence under this utility's agreement?",
+          "options": [
+            "Review and report both occurrences, preserving their different line numbers.",
+            "Keep only the first because the label and columns repeat the same content.",
+            "Add the two actual values to construct one result for case A."
+          ],
+          "correctIndex": 0,
+          "explanation": "The agreement counts occurrences, not unique labels. Both lines contain a discrepancy and must remain separate. Neither identical text nor addition authorizes replacing two observations with another one.",
+          "reviewFeedback": [
+            "Check whether this treatment preserves how many observations were received and where each appears.",
+            "Recall the unit of evidence this contract chose and what would be lost by omitting one received line.",
+            "Distinguish comparing a recorded result from calculating a value neither line supplied."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Line That Cannot Be Parsed Is Not a Match"
+        },
+        {
+          "type": "paragraph",
+          "text": "The supplied parser reuses work from C++ 1: it initializes local destinations, extracts three words, and requires that no text other than whitespace remain. It then fully parses each numeric word as an integer, using a separate local stream for each field. This prevents A 1-1 from being interpreted as two columns. It publishes fields only after those checks succeed. You do not need to rewrite it. A line such as A 2, an empty line, or A 2 1 extra receives FORMAT. The utility cannot compare columns it did not validly obtain, but continues reviewing later lines."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the first lab, stdout contains one line for each valid record: Line=n Case=label Expected=e Actual=o MATCH, or DIFFERS as its final word. Numeric fields appear in decimal. stderr contains Line=n:FORMAT for each malformed line. Every one of these lines ends with a newline. Finally, stdout adds Summary: valid=V;matches=C;differs=D;format=F. The exit code is 1 if there was any difference or format problem; otherwise it is 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each received line belongs to exactly one category: match, difference, or format problem. Thus V=C+D, and the total number of reviewed lines is V+F. A match involving zero or a negative number is still valid. Keep both streams and the exit code separate; no combined ordering of stdout and stderr is promised."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_formato_y_cotejo",
+          "question": "The first line is A 2 and the second is B 0 0. What must the report preserve?",
+          "options": [
+            "A difference for A, using zero as the actual value because that field is missing.",
+            "A format problem on the first line and B's match on the second.",
+            "Only B's match, omitting the line from which no columns could be obtained."
+          ],
+          "correctIndex": 1,
+          "explanation": "A 2 does not supply the required three fields, so it is reported as FORMAT without inventing a result. That line does not prevent parsing B 0 0, whose two numeric values match.",
+          "reviewFeedback": [
+            "Check whether the data used in the comparison was received and validated or would be invented.",
+            "Check each line's validity separately and whether the review preserves the following observation.",
+            "Consider what evidence would remain about the line the utility could not parse."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Preserve the Occurrences the Utility Was Skipping"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial program tries to save lines: after parsing a record, it skips it if its label matches the last record it kept. It does not search all earlier labels or establish that two observations belong to the same execution. That filter violates our agreement. The parser leer_registro, presentation, and FORMAT handling are provided; preserve them. Modify main to review every valid occurrence without that skipping rule."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, classify the eight prepared lines by hand. A appears on lines 1, 2, 4, and 8; C;=lote repeats the exact label and columns on lines 6 and 7. Line 5, A 1-1, has only two words and fails the format; line 8, A 1 -1, has three and allows comparison with a negative actual value. The required result preserves seven valid records: two matches and five differences, plus one format problem. Note which line numbers each stream should show. Do not alter the inputs to hide a repetition."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    bool hay_anterior{false};\n    std::string caso_anterior;\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Line=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        if (hay_anterior && caso == caso_anterior) {\n            continue;\n        }\n        hay_anterior = true;\n        caso_anterior = caso;\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Line=\" << lineas << \" Case=\" << caso\n                  << \" Expected=\" << esperado << \" Actual=\" << obtenido\n                  << \" \" << (coincide ? \"MATCH\" : \"DIFFERS\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Input source failure\\n\";\n        return 1;\n    }\n    std::cout << \"Summary: valid=\" << validos << \";matches=\" << coinciden\n              << \";differs=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n",
+          "initialStandardInput": "A 0 0\nA 2 1\nB -1 -1\nA 2 1\nA 1-1\nC;=lote 0 1\nC;=lote 0 1\nA 1 -1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Run the initial version first and explain what it skips, referring to line numbers. Then repair the cause and compare the complete report, not just its exit code: both versions may exit with 1. In the repair, the summary must read Summary: valid=7;matches=2;differs=5;format=1. stderr contains only Line=5:FORMAT, followed by a newline. A format problem must not prevent later lines from being reviewed."
+        },
+        {
+          "type": "paragraph",
+          "text": "With the repaired program, change only the input to two lines: 0 0 0 and N -2 -2, without a newline after the second. It must report both matches, summary 2/2/0/0, empty stderr, and exit code 0. Then test a completely empty batch: only the summary with four zeros is printed, and the exit code is 0. The label 0 and numeric zero columns are present data; they do not mean that no lines were received. Attempt these comparisons before consulting the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Reviewing Evidence Does Not Require Unique Cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference removes only the state and rule that skipped repeated labels. Every valid line reaches comparison and its counters. A malformed line increments formato, is diagnosed, and processing continues; it does not contribute values to coinciden or difieren. leer_registro preserves all three caller outputs when it returns false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Line=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Line=\" << lineas << \" Case=\" << caso\n                  << \" Expected=\" << esperado << \" Actual=\" << obtenido\n                  << \" \" << (coincide ? \"MATCH\" : \"DIFFERS\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Input source failure\\n\";\n        return 1;\n    }\n    std::cout << \"Summary: valid=\" << validos << \";matches=\" << coinciden\n              << \";differs=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the initial input, stdout reports lines 1, 2, 3, 4, 6, 7, and 8, in that order. Only 1 and 3 end in MATCH. Lines 2, 4, 6, 7, and 8 end in DIFFERS and keep their own data; both C;=lote lines remain. Report fields are separated by whitespace: the internal ; and = signs belong to that label and do not delimit new columns. The summary is 7/2/5/1 and the final exit code is 1. The initial version omitted lines 2 and 7: its summary was 5/2/3/1. Preserving a final exit code of 1 alone did not reveal that lost evidence."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_limite_de_la_coincidencia",
+          "question": "The utility reports MATCH for every valid line in a log. What can you conclude from that review alone?",
+          "options": [
+            "That the original function ran again and satisfied its contract for those inputs.",
+            "That each parsed pair of columns holds the same value in the received log.",
+            "That the log's expected results were computed independently and are correct."
+          ],
+          "correctIndex": 1,
+          "explanation": "The utility compares two recorded integers. It does not observe how each column was obtained, rerun the component, or determine whether an expectation represents a requirement. Those claims need their own evidence.",
+          "reviewFeedback": [
+            "Check which instructions in the utility would run the original function and what data the utility actually received.",
+            "Relate the conclusion to the operation performed on each pair of columns.",
+            "Ask whether equality between two numbers proves where the expectation came from or why it should have that value."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish No Data, an Empty Line, and Zero Values"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before reducing the report, recall the unit traversed by the reader. Receiving no lines differs from receiving a line containing zero characters. Nor is a line whose field has value zero an empty line. The following program counts physical lines; it does not parse fields or classify their formats yet."
+        },
+        {
+          "type": "output_prediction",
+          "id": "automatizar_vacio_linea_y_cero",
+          "question": "Predict the exact output, without a trailing newline. Each call receives a separate text; the last does not end with a newline.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint contar_lineas(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::string linea;\n    int lineas{0};\n    while (std::getline(origen, linea)) {\n        ++lineas;\n    }\n    return lineas;\n}\n\nint main() {\n    std::cout << contar_lineas(\"\") << ':'\n              << contar_lineas(\"\\n\") << ':'\n              << contar_lineas(\"0 0 0\");\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "An empty string provides no lines. A newline provides one line with empty content. The text 0 0 0 provides a line with data even without a trailing newline. In the lab parser, only the second example would produce FORMAT.",
+          "reviewFeedback": "Trace every getline attempt and distinguish receiving a line from validating its contents. Do not interpret a field's value as the number of lines in the input."
+        },
+        {
+          "type": "paragraph",
+          "text": "To preserve this distinction, prepare each complete input before executing. The utility starts each run with fresh counters. It does not concatenate logs from earlier attempts or change the original text you use for comparison."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: Select What Is Displayed Without Changing What Is Counted"
+        },
+        {
+          "type": "paragraph",
+          "text": "The person investigating wants to see only individual differences, but needs a summary of every reviewed line and every format problem. Change only that presentation policy: matching lines no longer have individual entries in stdout, but they still count toward validos and coinciden. Differences retain their order, occurrences, and columns. stderr, the summary, and the exit code keep their agreement."
+        },
+        {
+          "type": "paragraph",
+          "text": "The program below already preserves repeated labels, but skips matches before updating the counts. Correct that separation without changing leer_registro, the data, or the meaning of the counters. Decide which work must happen for every valid record and which work depends on whether you display it. This practice does not ask you to restore the full detailed output or to change the contract to match the defect."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Line=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        if (coincide) {\n            continue;\n        }\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        std::cout << \"Line=\" << lineas << \" Case=\" << caso\n                  << \" Expected=\" << esperado << \" Actual=\" << obtenido\n                  << \" \" << (coincide ? \"MATCH\" : \"DIFFERS\") << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Input source failure\\n\";\n        return 1;\n    }\n    std::cout << \"Summary: valid=\" << validos << \";matches=\" << coinciden\n              << \";differs=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n",
+          "initialStandardInput": "N 0 0\nR -1 -1\nR 0 -1\nP 3\nR 0 -1\nZ 9 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before execution, derive the following: there are six lines, one malformed and five valid; three match and two differ. stdout must show individual reports only for lines 3 and 5, both labeled R with expected 0 and actual -1; then append Summary: valid=5;matches=3;differs=2;format=1. stderr retains Line=4:FORMAT and the exit code is 1. The R record on line 2 is also reviewed even though it has no individual line in stdout."
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, test the two lines 0 0 0 and N -2 -2. stdout must contain only the summary 2/2/0/0: there are no individual differences to display, but there are two valid records. With an empty batch, the summary is 0/0/0/0. In both cases stderr is empty and the exit code is 0. Explain which comparison distinguishes the two inputs even though the filter displays no individual lines."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference: Selection Belongs to Presentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference updates the counters for every valid record and only then conditions its individual line. It does not condition the format diagnostic or summary. The comparison preserves the same data; only the display selection changed."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_entero(const std::string& texto, int& destino) {\n    std::istringstream campo{texto};\n    int candidato{0};\n    if (!(campo >> candidato)) {\n        return false;\n    }\n    campo >> std::ws;\n    if (!campo.eof() || campo.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool leer_registro(const std::string& linea, std::string& caso,\n                   int& esperado, int& obtenido) {\n    std::istringstream campos{linea};\n    std::string caso_leido;\n    std::string texto_esperado;\n    std::string texto_obtenido;\n    if (!(campos >> caso_leido >> texto_esperado >> texto_obtenido)) {\n        return false;\n    }\n    campos >> std::ws;\n    if (!campos.eof() || campos.bad()) {\n        return false;\n    }\n    int esperado_leido{0};\n    int obtenido_leido{0};\n    if (!leer_entero(texto_esperado, esperado_leido)\n        || !leer_entero(texto_obtenido, obtenido_leido)) {\n        return false;\n    }\n    caso = caso_leido;\n    esperado = esperado_leido;\n    obtenido = obtenido_leido;\n    return true;\n}\n\nint main() {\n    std::string linea;\n    int lineas{0};\n    int validos{0};\n    int coinciden{0};\n    int difieren{0};\n    int formato{0};\n    while (std::getline(std::cin, linea)) {\n        ++lineas;\n        std::string caso;\n        int esperado{0};\n        int obtenido{0};\n        if (!leer_registro(linea, caso, esperado, obtenido)) {\n            ++formato;\n            std::cerr << \"Line=\" << lineas << \":FORMAT\\n\";\n            continue;\n        }\n        const bool coincide{esperado == obtenido};\n        ++validos;\n        if (coincide) {\n            ++coinciden;\n        } else {\n            ++difieren;\n        }\n        if (!coincide) {\n            std::cout << \"Line=\" << lineas << \" Case=\" << caso\n                      << \" Expected=\" << esperado << \" Actual=\" << obtenido\n                      << \" \" << (coincide ? \"MATCH\" : \"DIFFERS\") << \"\\n\";\n        }\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cerr << \"Input source failure\\n\";\n        return 1;\n    }\n    std::cout << \"Summary: valid=\" << validos << \";matches=\" << coinciden\n              << \";differs=\" << difieren << \";format=\" << formato << \"\\n\";\n    return (difieren > 0 || formato > 0) ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the transfer batch, the defective program also displayed the two differences, but its summary was 2/0/2/1. The reference preserves the missing information and produces 5/3/2/1. This is why inspecting only selected lines or just the exit code does not verify that the utility reviewed the entire log."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_seleccion_sin_lineas_individuales",
+          "question": "The corrected differences-only version receives 0 0 0 and N -2 -2. No individual line appears in stdout. What evidence distinguishes this from an empty batch?",
+          "options": [
+            "The final exit code, because matches involving zero and negative numbers must return 1.",
+            "A FORMAT message for every match that the filter stopped displaying.",
+            "The summary, which preserves two valid records and two matches."
+          ],
+          "correctIndex": 2,
+          "explanation": "The selection does not show individual matches, but the summary counts them. The input was not empty: both lines were parsed and compared correctly. Their values do not change that meaning.",
+          "reviewFeedback": [
+            "Recall which conditions determine this program's exit code and whether the sign of a match affects its validity.",
+            "Check which condition produces FORMAT and whether hiding a line changes its received fields.",
+            "Relate the preserved counters to the number of records that the reader successfully reviewed."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall Automation Without Losing Its Supporting Log"
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, return to both versions of the utility. Prepare a batch that repeats a label with both equal and differing observations, includes a line with a fourth field, and leaves another valid line afterward. Classify each occurrence by hand before running. Compare both views using the same text: their summaries, diagnostics, and exit codes must agree; individual lines change only according to the chosen selection."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "automatizar_preservar_la_fuente_de_evidencia",
+          "question": "Someone retains only the differences-only view and its summary. Later, they want to inspect the exact values of the original matches. What must they preserve to do that?",
+          "options": [
+            "The original log received by the utility, because the selection omitted those individual details.",
+            "Only the summary, because its counts allow reconstruction of every original value.",
+            "A new run of the component, because repeating the same labels reconstructs the earlier observations."
+          ],
+          "correctIndex": 0,
+          "explanation": "The filter is a view that deliberately loses individual details. Its counters distinguish quantities but cannot reconstruct data it did not present. Keeping the input log makes later inspection possible.",
+          "reviewFeedback": [
+            "Check whether the material preserves the actual fields that will be needed later.",
+            "Examine what individual information each counter stores and which data disappear when multiple lines become a count.",
+            "Ask whether a new execution preserves the previous observations and what can be recovered from a label alone."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Automation needs a verifiable obligation and an explicit scope. Here, it lets you review the same text again and obtain a report consistent with the selected policy. It does not prove that the expected values are correct, repair the original function, or guarantee that the received log is complete. That limit makes the utility useful without attributing evidence it did not produce."
+        },
+        {
+          "type": "note",
+          "text": "Use the sample logs from this practice. The utility reads prepared input and writes a report; it does not need to overwrite source files or personal resources. Preserving the original log and comparing against it can also reveal defects in the utility itself."
+        }
+      ]
+    }
+  ]
+}
