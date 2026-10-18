@@ -1,0 +1,814 @@
+{
+  "id": "math_geometria_plana__angulos_y_rectas__lados_vertice_y_region_de_un_angulo",
+  "title": "Lados, vértice y región de un ángulo (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos lados que parten de un mismo punto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una semirrecta tiene un origen y continúa indefinidamente en un sentido. Toma ahora dos semirrectas diferentes que parten de un mismo punto y no forman una misma recta. Esa figura permite introducir un ángulo: llamaremos lados a las semirrectas y vértice a su origen común (Kiselev, 2006, p. 9)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El vértice sigue siendo un punto sin longitud, aunque su marca se dibuje grande. Los lados tampoco reciben una longitud finita porque la pantalla sólo muestre una parte. Una marca sobre un lado ayuda a nombrarlo; no lo corta allí."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, si dos semirrectas parten de P y pasan por Q y R, sus lados se nombran PQ y PR. La primera letra de cada nombre indica el origen. Comprobar ese origen común es diferente de observar que dos trazos se cruzan."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_el_vertice_y_los_lados_del_angulo",
+          "prompt": "El esquema representa las semirrectas VM y VN, con V, M y N distintos y no alineados. Identifica su vértice y sus lados. Decide también cómo se interpreta la flecha al final de cada trazo visible.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Dos semirrectas parten de V: una pasa por M y otra por N. Las flechas indican su continuación.",
+              "points": [
+                {
+                  "id": "V",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "V"
+                  ]
+                },
+                {
+                  "id": "M",
+                  "x": 6,
+                  "y": 0,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "N",
+                  "x": 3,
+                  "y": 5,
+                  "labels": [
+                    "N"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "lado_m",
+                  "kind": "ray",
+                  "through": [
+                    "V",
+                    "M"
+                  ],
+                  "contains": [
+                    "V",
+                    "M"
+                  ]
+                },
+                {
+                  "id": "lado_n",
+                  "kind": "ray",
+                  "through": [
+                    "V",
+                    "N"
+                  ],
+                  "contains": [
+                    "V",
+                    "N"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identificar_el_vertice_y_los_lados_del_angulo__lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "vertice",
+                  "type": "dropdown",
+                  "label": "Vértice de la figura",
+                  "options": [
+                    {
+                      "id": "m",
+                      "label": "M",
+                      "reviewFeedback": "Comprueba si ambas semirrectas comienzan en el punto que elegiste."
+                    },
+                    {
+                      "id": "v",
+                      "label": "V",
+                      "reviewFeedback": "Localiza el punto del que parten las dos semirrectas."
+                    },
+                    {
+                      "id": "n",
+                      "label": "N",
+                      "reviewFeedback": "Distingue un punto de un lado del origen compartido por los dos lados."
+                    }
+                  ]
+                },
+                {
+                  "id": "lado_m",
+                  "type": "dropdown",
+                  "label": "Lado que parte de V y pasa por M",
+                  "options": [
+                    {
+                      "id": "segmento_vm",
+                      "label": "Segmento VM",
+                      "reviewFeedback": "Revisa si M limita el objeto o señala por dónde continúa."
+                    },
+                    {
+                      "id": "recta_vm",
+                      "label": "Recta VM",
+                      "reviewFeedback": "Comprueba si el objeto dado se prolonga también al otro lado del origen o sólo en el sentido indicado."
+                    },
+                    {
+                      "id": "semirrecta_vm",
+                      "label": "Semirrecta VM",
+                      "reviewFeedback": "Contrasta el origen y la continuación del objeto elegido con los del esquema."
+                    }
+                  ]
+                },
+                {
+                  "id": "lado_n",
+                  "type": "dropdown",
+                  "label": "Lado que parte de V y pasa por N",
+                  "options": [
+                    {
+                      "id": "semirrecta_vn",
+                      "label": "Semirrecta VN",
+                      "reviewFeedback": "Conserva el origen y el sentido al interpretar este lado."
+                    },
+                    {
+                      "id": "segmento_vn",
+                      "label": "Segmento VN",
+                      "reviewFeedback": "Examina si N es un extremo final o un punto que indica la dirección."
+                    },
+                    {
+                      "id": "recta_vn",
+                      "label": "Recta VN",
+                      "reviewFeedback": "Compara las prolongaciones de una recta con las del lado representado."
+                    }
+                  ]
+                },
+                {
+                  "id": "extremo_final",
+                  "type": "dropdown",
+                  "label": "¿La flecha representa un extremo final del lado?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Recupera qué significa la flecha de una semirrecta y distingue el objeto de su porción visible."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Recupera qué significa la flecha de una semirrecta y distingue el objeto de su porción visible."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "vertice": {
+                    "type": "exact_text",
+                    "expected": "v"
+                  },
+                  "lado_m": {
+                    "type": "exact_text",
+                    "expected": "semirrecta_vm"
+                  },
+                  "lado_n": {
+                    "type": "exact_text",
+                    "expected": "semirrecta_vn"
+                  },
+                  "extremo_final": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "V es el origen común de VM y VN: es el vértice. Cada lado es una semirrecta. M y N indican puntos por los que pasan, sin fijar extremos finales. Las flechas señalan que los lados continúan; el borde del dibujo sólo limita la parte visible.",
+            "incorrect": "Localiza el origen de cada objeto y revisa sus prolongaciones antes de interpretar la figura."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para reconocer el vértice hay que conservar los objetos dados. El lugar donde se encuentran dos trazos puede pertenecer a ambos sin ser el origen de ninguno. Cambiar el punto desde el que consideramos una semirrecta cambia el objeto."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_cruce_y_origen_comun",
+          "prompt": "En otra figura, las semirrectas XY y ZT tienen orígenes distintos X y Z. Se cruzan en M, que no es ninguno de esos orígenes. Sin modificar las dos semirrectas dadas, ¿puede ese cruce convertir a M en su vértice común?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_cruce_y_origen_comun__razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "cruce_suficiente",
+                  "label": "Sí: el cruce en M basta para convertirlo en origen común de las dos semirrectas.",
+                  "reviewFeedback": "Comprueba dónde comienza cada semirrecta y qué papel tiene el punto de cruce."
+                },
+                {
+                  "id": "origenes_distintos",
+                  "label": "No: X y Z siguen siendo los orígenes de los dos objetos dados.",
+                  "reviewFeedback": "Justifica la conclusión utilizando los orígenes, sin cambiar los objetos del enunciado."
+                },
+                {
+                  "id": "nunca_se_cruzan",
+                  "label": "No: dos semirrectas con orígenes diferentes no pueden tener un punto común.",
+                  "reviewFeedback": "Conserva el dato de que se cruzan y distingue compartir un punto de compartir el origen."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "origenes_distintos"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las semirrectas dadas conservan X y Z como orígenes. Pasar ambas por M no hace que comiencen allí. A partir de M podríamos considerar otras semirrectas para formar ángulos, pero serían otros objetos: no cambiaría retroactivamente el origen de XY ni el de ZT.",
+            "incorrect": "Revisa la relación que tu elección atribuye a M. Un punto común y un origen común cumplen funciones diferentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un nombre conserva el vértice y los lados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para nombrar un ángulo usaremos tres letras: en medio va el vértice y en los extremos van puntos de los dos lados, distintos del vértice. Así, QPR sitúa el vértice en P y usa las semirrectas PQ y PR. Con la misma región interior elegida, RPQ también nombra ese ángulo (Kiselev, 2006, p. 9)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos tomar otro punto del mismo lado para nombrarlo. Si T está en la semirrecta PQ y es distinto de P, la semirrecta PT coincide con PQ. La longitud del segmento PT puede ser diferente de la de PQ; eso no crea un lado nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "A veces una sola letra basta porque sólo hay un ángulo señalado en ese vértice. Cuando aparecen varios pares de lados, esa abreviatura puede resultar ambigua. Recuperar las tres letras obliga a precisar el par que queremos estudiar."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_vertice_y_lados_al_nombrar_un_angulo",
+          "prompt": "En el esquema, S, A y C aparecen en ese orden sobre una semirrecta; S, B y D aparecen en ese orden sobre otra. SE es una tercera semirrecta distinta. Queremos nombrar el ángulo de lados SA y SB, conservando una misma región interior al comparar sus nombres. Elige otra denominación, decide si aquí bastaría la letra S y analiza desplazar C a otro punto de SA distinto de S.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Tres semirrectas parten de S. La primera contiene A y después C; la segunda contiene B y después D; la tercera pasa por E.",
+              "points": [
+                {
+                  "id": "S",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "S"
+                  ]
+                },
+                {
+                  "id": "A",
+                  "x": 3,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 6,
+                  "y": 0,
+                  "labels": [
+                    "C"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 3,
+                  "y": 4,
+                  "labels": [
+                    "B"
+                  ]
+                },
+                {
+                  "id": "D",
+                  "x": 6,
+                  "y": 8,
+                  "labels": [
+                    "D"
+                  ]
+                },
+                {
+                  "id": "E",
+                  "x": -4,
+                  "y": 3,
+                  "labels": [
+                    "E"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "sa",
+                  "kind": "ray",
+                  "through": [
+                    "S",
+                    "A"
+                  ],
+                  "contains": [
+                    "S",
+                    "A",
+                    "C"
+                  ]
+                },
+                {
+                  "id": "sb",
+                  "kind": "ray",
+                  "through": [
+                    "S",
+                    "B"
+                  ],
+                  "contains": [
+                    "S",
+                    "B",
+                    "D"
+                  ]
+                },
+                {
+                  "id": "se",
+                  "kind": "ray",
+                  "through": [
+                    "S",
+                    "E"
+                  ],
+                  "contains": [
+                    "S",
+                    "E"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_vertice_y_lados_al_nombrar_un_angulo__lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "nombre",
+                  "type": "dropdown",
+                  "label": "Otra denominación que conserva el vértice y los dos lados pedidos",
+                  "options": [
+                    {
+                      "id": "scd",
+                      "label": "Ángulo SCD",
+                      "reviewFeedback": "Comprueba qué punto queda en medio del nombre y qué vértice se pidió conservar."
+                    },
+                    {
+                      "id": "csd",
+                      "label": "Ángulo CSD",
+                      "reviewFeedback": "Localiza la letra central y sigue las dos semirrectas que determina el nombre elegido."
+                    },
+                    {
+                      "id": "ase",
+                      "label": "Ángulo ASE",
+                      "reviewFeedback": "Sigue cada lado que determina esta escritura y contrástalo con los dos lados pedidos."
+                    }
+                  ]
+                },
+                {
+                  "id": "solo_vertice",
+                  "type": "dropdown",
+                  "label": "¿La expresión «ángulo S» elige por sí sola ese par de lados en este esquema?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Examina cuántos pares de lados distintos parten de S y qué información conserva una sola letra."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Examina cuántos pares de lados distintos parten de S y qué información conserva una sola letra."
+                    }
+                  ]
+                },
+                {
+                  "id": "mover_c",
+                  "type": "dropdown",
+                  "label": "Al desplazar C por SA, manteniéndolo distinto de S, la semirrecta SC…",
+                  "options": [
+                    {
+                      "id": "misma",
+                      "label": "Coincide con la misma semirrecta SA.",
+                      "reviewFeedback": "Revisa si se conservan origen y sentido al cambiar el punto usado para nombrar el lado."
+                    },
+                    {
+                      "id": "cambia",
+                      "label": "Se convierte en otra semirrecta por cambiar la distancia SC.",
+                      "reviewFeedback": "Distingue el tramo entre dos puntos de la semirrecta que continúa más allá de ellos."
+                    },
+                    {
+                      "id": "no_se_sabe",
+                      "label": "Queda sin determinar, aunque se conserve C sobre SA y distinto de S.",
+                      "reviewFeedback": "Recupera qué origen y qué sentido fijan los datos del desplazamiento."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "nombre": {
+                    "type": "exact_text",
+                    "expected": "csd"
+                  },
+                  "solo_vertice": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "mover_c": {
+                    "type": "exact_text",
+                    "expected": "misma"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "CSD conserva S como letra central. Como C está en SA y D en SB, sus lados son las mismas semirrectas. La letra S sola resulta ambigua porque el esquema tiene más pares de lados con ese vértice. Desplazar C sobre SA, sin llevarlo a S, conserva el origen y el sentido: la semirrecta SC coincide con SA, aunque cambie la longitud del segmento SC.",
+            "incorrect": "Conserva el vértice y cada lado al leer la escritura. Después distingue nombrar una semirrecta de medir un segmento."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Al recuperar un ángulo de sus datos, comprueba el origen común y el sentido de cada lado. Una escritura parecida o una distancia distinta entre marcas no sustituyen esas condiciones. Falta precisar además qué región consideramos interior: esa elección será explícita en las siguientes figuras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los mismos lados permiten elegir dos regiones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos semirrectas distintas con origen común, que no están en una misma recta, separan el resto del plano en dos regiones. Para interpretar el interior del ángulo hay que elegir una. En el uso habitual se elige la que contiene los puntos situados estrictamente entre dos extremos tomados en lados diferentes, ninguno de ellos el vértice. Los extremos permanecen en los lados. Cuando se elige la otra región, se declara expresamente (Kiselev, 2006, pp. 9–10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, entre un lado dirigido hacia la derecha y otro dirigido hacia arriba podemos elegir la región comprendida entre ambos por ese lado del plano. También podemos elegir la región que los rodea por el otro lado. Los lados y el vértice son la frontera de esa elección; no son puntos interiores de ninguna de las dos regiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una circunferencia auxiliar centrada en el vértice corta los dos lados en dos puntos. Los dos arcos entre esos puntos permiten señalar las dos regiones: los extremos están en los lados y los puntos intermedios del arco señalan la región elegida. Es una forma de hacer explícita la elección, no un tercer lado del ángulo (Lang, 1971, pp. 111–112)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La circunferencia auxiliar puede tener otro radio positivo. Entonces cambian sus puntos de intersección con los lados, pero podemos conservar las mismas semirrectas y la misma región interior. El tamaño de esa marca circular no determina por sí solo el ángulo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_la_region_elegida_y_el_arco_auxiliar",
+          "prompt": "Los dos paneles representan las mismas semirrectas PQ y PM. En el primero elegimos como interior la región señalada por el arco QTM; en el segundo elegimos la señalada por QUM. Compara los lados y las regiones. Después considera otra circunferencia auxiliar centrada en P, de radio positivo distinto: se marcan sus nuevas intersecciones con los lados, conservando las semirrectas y la región elegida.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Primer panel: semirrectas PQ y PM y circunferencia auxiliar centrada en P. Se destaca el arco QTM.",
+              "points": [
+                {
+                  "id": "P",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "P"
+                  ]
+                },
+                {
+                  "id": "Q",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "Q"
+                  ]
+                },
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 5,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "T",
+                  "x": 3,
+                  "y": 4,
+                  "labels": [
+                    "T"
+                  ]
+                },
+                {
+                  "id": "U",
+                  "x": -3,
+                  "y": -4,
+                  "labels": [
+                    "U"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "pq",
+                  "kind": "ray",
+                  "through": [
+                    "P",
+                    "Q"
+                  ],
+                  "contains": [
+                    "P",
+                    "Q"
+                  ]
+                },
+                {
+                  "id": "pm",
+                  "kind": "ray",
+                  "through": [
+                    "P",
+                    "M"
+                  ],
+                  "contains": [
+                    "P",
+                    "M"
+                  ]
+                }
+              ],
+              "circles": [
+                {
+                  "id": "auxiliar",
+                  "center": "P",
+                  "radius": 5,
+                  "contains": [
+                    "Q",
+                    "M",
+                    "T",
+                    "U"
+                  ]
+                }
+              ],
+              "arcs": [
+                {
+                  "id": "marca_region",
+                  "circle": "auxiliar",
+                  "through": [
+                    "Q",
+                    "T",
+                    "M"
+                  ],
+                  "contains": [
+                    "Q",
+                    "T",
+                    "M"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "euclidean_diagram",
+              "description": "Segundo panel: se conservan las mismas semirrectas PQ y PM. En la circunferencia auxiliar se destaca el arco QUM.",
+              "points": [
+                {
+                  "id": "P",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "P"
+                  ]
+                },
+                {
+                  "id": "Q",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "Q"
+                  ]
+                },
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 5,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "T",
+                  "x": 3,
+                  "y": 4,
+                  "labels": [
+                    "T"
+                  ]
+                },
+                {
+                  "id": "U",
+                  "x": -3,
+                  "y": -4,
+                  "labels": [
+                    "U"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "pq",
+                  "kind": "ray",
+                  "through": [
+                    "P",
+                    "Q"
+                  ],
+                  "contains": [
+                    "P",
+                    "Q"
+                  ]
+                },
+                {
+                  "id": "pm",
+                  "kind": "ray",
+                  "through": [
+                    "P",
+                    "M"
+                  ],
+                  "contains": [
+                    "P",
+                    "M"
+                  ]
+                }
+              ],
+              "circles": [
+                {
+                  "id": "auxiliar",
+                  "center": "P",
+                  "radius": 5,
+                  "contains": [
+                    "Q",
+                    "M",
+                    "T",
+                    "U"
+                  ]
+                }
+              ],
+              "arcs": [
+                {
+                  "id": "marca_region",
+                  "circle": "auxiliar",
+                  "through": [
+                    "Q",
+                    "U",
+                    "M"
+                  ],
+                  "contains": [
+                    "Q",
+                    "U",
+                    "M"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_la_region_elegida_y_el_arco_auxiliar__lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "lados",
+                  "type": "dropdown",
+                  "label": "¿Los dos paneles conservan los mismos lados?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Compara el origen y el sentido de las dos semirrectas, separándolos del arco señalado."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Compara el origen y el sentido de las dos semirrectas, separándolos del arco señalado."
+                    }
+                  ]
+                },
+                {
+                  "id": "interior",
+                  "type": "dropdown",
+                  "label": "¿Se eligió la misma región interior en los dos paneles?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Sigue el arco destacado en cada panel y ubica la región que señala entre los lados."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Sigue el arco destacado en cada panel y ubica la región que señala entre los lados."
+                    }
+                  ]
+                },
+                {
+                  "id": "papel_arco",
+                  "type": "dropdown",
+                  "label": "Papel del arco destacado",
+                  "options": [
+                    {
+                      "id": "tercer_lado",
+                      "label": "Añade un tercer lado al ángulo.",
+                      "reviewFeedback": "Recupera qué objetos se definieron como lados y contrástalos con la curva destacada."
+                    },
+                    {
+                      "id": "cuenta_vueltas",
+                      "label": "Registra cuántas vueltas completas se recorrieron.",
+                      "reviewFeedback": "Comprueba si aquí se conserva un recorrido acumulado o se está señalando una región del plano."
+                    },
+                    {
+                      "id": "auxiliar",
+                      "label": "Ayuda a identificar la región interior elegida.",
+                      "reviewFeedback": "Relaciona la marca circular con la elección que describe el enunciado."
+                    }
+                  ]
+                },
+                {
+                  "id": "radio_auxiliar",
+                  "type": "dropdown",
+                  "label": "¿Cambiar sólo ese radio auxiliar cambia el ángulo con sus lados y región conservados?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Distingue las condiciones que definen la figura de las que sitúan su marca auxiliar."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Distingue las condiciones que definen la figura de las que sitúan su marca auxiliar."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "lados": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  },
+                  "interior": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "papel_arco": {
+                    "type": "exact_text",
+                    "expected": "auxiliar"
+                  },
+                  "radio_auxiliar": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "PQ y PM se conservan en ambos paneles, pero el arco QTM señala una región y QUM la otra. La elección del interior es diferente. El arco no añade un lado: los lados siguen siendo dos semirrectas. Otra circunferencia auxiliar de radio positivo cortaría esas semirrectas en otros puntos; al conservar lados y región se conserva el ángulo que estamos estudiando.",
+            "incorrect": "Separa los lados, la región elegida y la marca utilizada para señalarla. Revisa cada comparación con los datos que se conservaron."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera las tres decisiones sin mirar las definiciones: dónde está el vértice, cuáles son los lados completos y qué región se eligió. Al comparar ángulos conservaremos esas condiciones; observar solamente el largo de dos trazos o dos extremos de un arco no basta para interpretar la figura."
+        }
+      ]
+    }
+  ]
+}
