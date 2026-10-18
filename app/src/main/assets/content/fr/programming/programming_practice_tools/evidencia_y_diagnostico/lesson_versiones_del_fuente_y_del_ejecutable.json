@@ -1,0 +1,266 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__versiones_del_fuente_y_del_ejecutable",
+  "title": "Relier une observation au programme exécuté",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une observation a besoin d'une provenance"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce cours fait suite à « Programmer à partir de zéro avec C++ ». Tu sais déjà exprimer des exigences, séparer les fonctions, travailler avec des collections et des flux, organiser les fichiers sources et vérifier des cas. Tu apprendras maintenant à construire des projets et à les maintenir à l'aide de preuves : quelles sources ont été utilisées, comment le programme a été produit, quelles données il a reçues et quel résultat il a donné. Se souvenir qu'une version a fonctionné ne suffit pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette première leçon, tu distingueras un fichier source enregistré, le processus qui le transforme en programme exécutable et l'exécution particulière observée. Tu relieras un écart à sa version et prépareras un cas permettant d'en rechercher la cause. Les nouvelles connaissances concernent le travail avec les programmes ; aucune connaissance préalable de CMake, Git ou d'un débogueur n'est nécessaire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un petit gestionnaire de stocks doit demander un réapprovisionnement lorsque la quantité disponible est inférieure ou égale au minimum. Son domaine est 0 ≤ disponibles ≤ 40 et 1 ≤ minimo ≤ 40 ; les deux valeurs sont entières. La fonction renvoie un bool et ne modifie pas les quantités. Nous étudierons uniquement les appels de ce domaine. Dans la sortie ordinaire de std::cout, sans boolalpha, false s'affiche comme 0 et true comme 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le compte rendu « avec 5 unités et un minimum de 5, aucun réapprovisionnement n'est demandé » désigne un symptôme. Avant d'en expliquer la cause, nous devons savoir quel programme a reçu ces données. Enregistrer une correction ne prouve pas que le test l'a exécutée ; examiner une autre version ferait perdre la valeur des observations (Kernighan & Pike, 1999, p. 129)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_del_caso_reportado",
+          "question": "Une sortie de 0 a été observée pour disponibles=5 et minimo=5. Que permet d'affirmer l'exigence, sans inventer encore de cause ?",
+          "options": [
+            "Il faut intégrer la sortie à l'exigence ; la répéter confirme la règle de réapprovisionnement nécessaire au problème.",
+            "La sortie contredit l'exigence pour ce cas ; il reste à identifier le programme et à expliquer l'écart.",
+            "La sortie prouve qu'une ancienne copie a été exécutée ; l'échec sur l'égalité suffit à identifier sa provenance."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'égalité est incluse : le résultat attendu est true, affiché comme 1. Cette observation établit un écart par rapport à l'exigence et au domaine ; à elle seule, elle ne distingue pas une mauvaise comparaison d'un mauvais exécutable.",
+          "reviewFeedback": [
+            "Sépare la règle demandée du résultat observé. Reconsidère d'où devrait venir une modification de l'exigence et quelle partie du rapport décrit seulement une exécution.",
+            "Relie le cas observé à la règle et distingue la mesure de l'explication de sa cause. Vérifie quelles preuves soutiennent chaque affirmation de ta réponse.",
+            "Attribuer une sortie à une révision exige des éléments sur sa provenance. Examine quelles données du rapport identifient le programme et lesquelles restent inconnues."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Source, construction et exécution : des preuves distinctes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le fichier source est le texte que tu enregistres. Un exécutable est le résultat d'une construction antérieure ; il ne change pas automatiquement chaque fois que tu modifies le texte. Nous appellerons révision A et révision B deux états enregistrés différents. Ces noms désignent des états pour cet exercice ; ce ne sont pas des commandes et ils ne nécessitent pas de système de contrôle de versions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'on compile une source C++, son contenu est vérifié et traduit ; à l'édition de liens, les résultats et les implémentations nécessaires sont réunis pour former le programme. Une déclaration peut permettre de compiler un appel, mais ne remplace pas la définition nécessaire à l'édition de liens. Dans les projets comportant plusieurs sources, connaître la liste sélectionnée aide à identifier ce qui a réellement été construit. Une commande peut coordonner les deux étapes, mais leur automatisation ne supprime pas leur différence. Une construction peut aussi réutiliser les résultats des sources inchangées ; elle ne recompile pas toujours tout."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construire ne signifie pas non plus exécuter. Un outil de construction coordonne le travail et indique s'il s'est achevé ; le programme produit est ensuite exécuté avec ses données. CMake prépare les règles pour les outils de construction : ce n'est ni un autre nom du compilateur ni celui du programme de l'élève. Nous étudierons sa configuration et sa génération en construisant des projets reproductibles (Scott, 2025, chap. 1–2)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "construccion_y_comportamiento",
+          "question": "La construction s'est terminée sans erreur et main a renvoyé 0 lors de l'exécution. Quelle preuve manque encore pour valider l'exigence de réapprovisionnement ?",
+          "options": [
+            "Il faut comparer des cas pertinents à l'exigence, en identifiant le programme construit et les données utilisées.",
+            "Aucun autre test n'est nécessaire : une construction réussie et un retour de 0 prouvent les décisions de réapprovisionnement.",
+            "Il suffit de vérifier que le fichier conserve son nom ; cela identifie la révision déjà testée."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une construction réussie prouve qu'un programme a été obtenu lors de ce processus ; le retour de 0 indique comment l'exécution s'est terminée. Aucun des deux ne détermine la bonne décision de réapprovisionnement selon l'exigence. Le nom d'un fichier n'identifie pas non plus son contenu.",
+          "reviewFeedback": [
+            "Distingue produire un exécutable, terminer une exécution et vérifier une décision du programme. Relis laquelle de ces affirmations doit être établie par le test.",
+            "Construire et terminer sans erreur décrivent des étapes précises. Examine les informations qu'elles fournissent sur les décisions exigées pour les données du problème.",
+            "Un nom identifie un fichier dans un dossier, mais ne résume pas son comportement. Réfléchis à l'observation qui permettrait de vérifier la règle de réapprovisionnement."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir un cas qui distingue les explications"
+        },
+        {
+          "type": "paragraph",
+          "text": "La révision A présentée dans l'activité utilise <. Calcule séparément ce que cette implémentation produit et ce que l'exigence demande, sans corriger le code pendant la prédiction. Détermine ensuite quel appel permet de distinguer les deux règles. Tester de part et d'autre d'une borne et sur la borne elle-même aide à examiner des hypothèses précises (Kernighan & Pike, 1999, pp. 140–141)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salida_de_la_revision_a",
+          "question": "Prédit uniquement la sortie du programme affiché, sans le corriger pendant le calcul. Compare-la ensuite à l'exigence.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Domaine : disponibles de 0 à 40 ; minimo de 1 à 40.\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    std::cout << debe_reponer(4, 5) << \":\"\n              << debe_reponer(5, 5) << \":\"\n              << debe_reponer(6, 5);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "explanation": "L'implémentation utilise <: 4<5 est vrai, 5<5 est faux et 6<5 est faux. Le programme affiche 1:0:0, tandis que l'exigence impose 1:1:0. Ne modifie pas la sortie attendue pour la faire coïncider avec la fonction suspecte.",
+          "reviewFeedback": "Suis les appels dans l'ordre indiqué et applique la comparaison écrite sans la corriger pendant la prédiction. Note leurs valeurs bool, puis reproduis les séparateurs de cout."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_discrimina_la_frontera",
+          "question": "Si tu ne peux ajouter qu'un seul cas pour distinguer la règle < de la règle <=, avec minimo=5, lequel choisis-tu ?",
+          "options": [
+            "disponibles=4.",
+            "disponibles=41.",
+            "disponibles=5."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'égalité est le cas discriminant. La valeur 4 reste un contrôle utile, mais elle ne distingue pas ces hypothèses. La valeur 41 ne respecte pas la précondition et n'est pas une preuve concernant le contrat indiqué.",
+          "reviewFeedback": [
+            "Une valeur du domaine est pertinente, mais vérifie si les deux règles concurrentes produiraient des résultats différents pour ce cas.",
+            "Vérifie la précondition avant d'utiliser cette valeur comme preuve concernant le contrat. Un appel hors du domaine soulève une autre question que la comparaison demandée.",
+            "Un cas discriminant doit appartenir au domaine et permettre de comparer les deux règles. Applique ces deux critères à la valeur choisie."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une correction enregistrée n'est pas forcément celle qui a été exécutée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine ce travail en dehors du lecteur : existencias.exe a été construit avec la révision A. Tu enregistres ensuite la révision B en remplaçant < par <=. Lors de la construction de B, une erreur ailleurs dans le fichier empêche de produire un nouvel exécutable. L'ancien exécutable A reste dans son dossier ; plus tard, tu le lances manuellement et il affiche de nouveau 1:0:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce résultat ne réfute pas la modification <=, car il ne provient pas d'une construction réussie de B. Il ne prouve pas non plus que B soit correcte : cette version n'a pas encore pu être construite et testée. Un dossier peut contenir des artefacts provenant de tentatives précédentes. Ce scénario décrit une séquence explicite ; il n'affirme pas que le compilateur intégré du lecteur exécute automatiquement d'anciens artefacts."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conservar_la_procedencia_del_resultado",
+          "question": "Dans le scénario décrit, quelle conclusion est la plus précise ?",
+          "options": [
+            "B exclut toujours l'égalité : la dernière source enregistrée détermine quelle révision s'exécute avec le même nom.",
+            "La sortie appartient à A. Il faut d'abord construire B sans erreur, puis vérifier l'exécution obtenue à partir de ses sources.",
+            "La sortie de A doit être acceptée comme référence de l'exigence ; n'importe quelle copie disponible suffit pour conserver cette observation."
+          ],
+          "correctIndex": 1,
+          "explanation": "La provenance de l'observation est préservée. Il ne faut pas attribuer une exécution de A au texte de B. Corriger l'erreur de construction permettra d'étudier B ; il faudra encore comparer sa sortie à l'exigence.",
+          "reviewFeedback": [
+            "Détermine de quelle construction provient l'exécution observée. Vérifie si son résultat permet d'attribuer un comportement au code que tu viens de modifier.",
+            "Vérifie que ta conclusion conserve le lien entre la révision, le résultat de la construction et l'exécution. Ne considère pas un programme comme testé simplement parce que son source est enregistré.",
+            "Distingue ce qu'exige le contrat de ce qu'a produit une exécution concrète. Vérifie quelles preuves justifieraient de changer la règle plutôt que d'examiner l'écart."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'une correction semble sans effet, vérifie l'état enregistré, le résultat complet de la construction et le chemin exact de l'exécutable utilisé. Si deux dossiers contiennent des fichiers du même nom, celui-ci ne résout pas l'ambiguïté. Enregistre les entrées et le résultat avec cette identification. Reproduis l'échec et teste tes hypothèses avant d'accuser l'environnement ou de changer plusieurs parties à la fois (Thomas & Hunt, 2020, pp. 90–97)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mismo_nombre_distinto_programa",
+          "question": "Il existe une copie dans salida/ et une autre dans respaldo/, toutes deux nommées existencias.exe. Seul salida/ a été reconstruit correctement avec B. Un test de respaldo/ échoue sur l'égalité. Quelle action produit une preuve concernant B ?",
+          "options": [
+            "Répéter le test de respaldo/ avec les mêmes données : le nom commun existencias.exe permet d'attribuer l'exécution à B.",
+            "Renommer les deux copies avec l'étiquette B et tester n'importe laquelle : les deux porteront le nom de la nouvelle révision.",
+            "Exécuter la copie de salida/ construite avec B, avec les mêmes données, puis comparer son résultat à l'exigence."
+          ],
+          "correctIndex": 2,
+          "explanation": "Conserver les données contrôle cette partie de la comparaison ; choisir la copie construite avec B contrôle la version. Renommer ou répéter la mauvaise copie n'apporte pas cette preuve.",
+          "reviewFeedback": [
+            "Répéter une exécution produit des observations sur la copie choisie. Vérifie d'abord si elle provient de la révision sur laquelle tu veux conclure.",
+            "Changer un nom ne reconstruit pas son contenu et n'établit pas sa provenance. Réfléchis à la façon d'identifier la copie utilisée lors du relevé du résultat.",
+            "Vérifie dans ton choix la provenance de la copie, les données du test et la règle utilisée pour évaluer la sortie."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une vérification indépendante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, pars de la fonction de la révision A dans l'éditeur. Avant d'exécuter quoi que ce soit, écris hors du programme les résultats attendus pour (4,5), (5,5) et (6,5). Déduis-les de l'exigence. Conserve cet enregistrement pendant la construction et l'exécution ; ne le remplis pas en recopiant ce que renvoie la fonction étudiée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implémente les trois vérifications dans main. Chacune doit comparer debe_reponer au résultat attendu et indiquer quel cas a échoué. Si une vérification échoue, le programme de test doit se terminer avec un code de retour non nul ; si les trois réussissent, avec zéro. Tu peux utiliser des conditions, un bool accumulé ou une structure de cas déjà connue. Commence avec la révision A sans la modifier pour vérifier que ton test détecte l'écart ; change ensuite uniquement la comparaison et répète les mêmes cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sépare les preuves : le compilateur peut construire correctement un test qui renvoie 1 lorsqu'il détecte un échec de comportement. Ce résultat n'est pas une erreur de compilation. Un main qui renvoie toujours 0 ne supprime pas l'écart, mais communique mal le résultat du test. Connaître les résultats attendus avant le test et vérifier le programme de test lui-même évite d'accepter une référence erronée (Kernighan & Pike, 1999, pp. 146–150)."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    // Compare les trois appels aux résultats attendus tirés de l'exigence.\n    // Affiche les cas en échec et indique le résultat par le code de retour.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "esperados_sin_copiar_la_funcion",
+          "question": "Quelle conception des tests permet aux trois vérifications de détecter l'erreur de la fonction ?",
+          "options": [
+            "Obtenir le résultat attendu en rappelant debe_reponer avec les mêmes arguments.",
+            "Fixer les résultats attendus à true, true et false selon la règle de l'exigence, puis les comparer aux appels.",
+            "Afficher les trois appels et déclarer que la sortie observée est toujours correcte."
+          ],
+          "correctIndex": 1,
+          "explanation": "Répéter l'appel reproduit la même interprétation erronée. L'oracle de ces trois cas est la règle indépendante de l'exigence ; afficher sans comparer produit seulement des observations.",
+          "reviewFeedback": [
+            "Vérifie si ton résultat attendu pourrait différer de celui de la fonction suspecte lorsque celle-ci interprète mal la règle. Réutiliser cette interprétation exigerait une justification indépendante.",
+            "Vérifie que chaque résultat attendu provient de l'exigence et que le test le compare à une observation identifiée. Tu pourras ainsi expliquer quel désaccord il détecterait.",
+            "Afficher montre ce qui s'est passé. Réfléchis à l'origine d'un critère indépendant permettant de déterminer si cette sortie satisfait le contrat."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la tentative et retrouver les preuves"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cet exemple après avoir construit ta vérification. Il n'est pas nécessaire de copier les noms, les messages ou cette organisation : ce qui compte est de respecter les critères."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test valide de A accepte les décisions de (4,5) et (6,5), détecte l'échec de (5,5) et renvoie un code non nul. Après avoir corrigé seulement la comparaison en <=, les trois appels doivent correspondre aux attentes et le programme de test doit renvoyer 0. Le relevé de chaque exécution doit identifier la révision, les trois cas et le résultat, sans attribuer à une révision les sorties produites par une autre."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Révision A : à conserver pour vérifier le test.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Échec : \" << disponibles << \",\" << minimo\n              << \" attendu=\" << esperado << \" obtenu=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque vérification s'exécute même si une précédente échoue. Une expression avec && peut omettre des appels suivants par court-circuit ; un résultat final false ne prouve pas que tous les cas ont été observés. Après avoir corrigé A, conserve les contrôles qui fonctionnaient et ajoute une autre borne, (8,8), avec un cas de chaque côté. Ces nouvelles données testent la règle, et pas seulement l'échantillon 4,5,6."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "transferir_el_registro_de_prueba",
+          "question": "La révision corrigée réussit (4,5),(5,5),(6,5). Quelle modification du relevé est la plus utile pour tester minimo=8 ?",
+          "options": [
+            "Conserver les trois cas et ajouter seulement (7,8) et (9,8) : inutile de répéter l'égalité, déjà réussie avec le minimum 5.",
+            "Remplacer les trois anciens cas par (7,8),(8,8),(9,8) : les cas avec le minimum 5 ne servent plus à vérifier la fonction.",
+            "Conserver les trois cas et ajouter (7,8),(8,8),(9,8), avec les résultats attendus true,true,false tirés de la même règle."
+          ],
+          "correctIndex": 2,
+          "explanation": "La règle vaut pour tous les minimums du domaine. Une égalité réussie avec le minimum 5 ne garantit pas celle du minimum 8 ; l'omettre pourrait masquer une correction adaptée au premier échantillon. Conserver les anciens cas permet également de vérifier que le changement n'a pas détérioré des décisions auparavant correctes. Cette variation apporte de nouvelles preuves, même si ces six cas ne démontrent pas à eux seuls la validité sur tout le domaine.",
+          "reviewFeedback": [
+            "Un cas réussi pour un minimum apporte une preuve concernant cet appel. Vérifie quelle partie de la borne ne serait pas examinée en faisant varier le minimum avec la sélection proposée.",
+            "Réfléchis à l'utilité des anciens contrôles après avoir modifié ou étendu un test. Les remplacer change les comportements que tu continueras à observer.",
+            "Vérifie que ton relevé conserve les contrôles précédents et examine la nouvelle borne à partir de la règle, sans confondre un échantillon avec tout le domaine."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour la suite, nous utiliserons l'identité du programme, les données et les résultats attendus pour confronter les causes. Distingue les observations, la construction et le respect de l'exigence : si l'un change, tu dois savoir quelle comparaison reste valable."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__versiones_del_fuente_y_del_ejecutable",
+  "title": "Linking an Observation to the Executed Program",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Observation Needs Provenance"
+        },
+        {
+          "type": "paragraph",
+          "text": "This course follows “Programming from Scratch with C++.” You already know how to express requirements, separate functions, work with collections and streams, organize source files, and test cases. Now you will learn to build and maintain projects with evidence: which sources were used, how the program was produced, what input it received, and what result it produced. Remembering that some version worked is not enough."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this first lesson, you will distinguish a saved source file, the process that turns it into an executable program, and the particular execution you observe. You will connect a discrepancy to its version and prepare a case that helps investigate its cause. The new skills concern working with programs; prior experience with CMake, Git, or a debugger is not required."
+        },
+        {
+          "type": "paragraph",
+          "text": "A small inventory manager must request restocking when the available quantity is less than or equal to the minimum. Its domain is 0 ≤ disponibles ≤ 40 and 1 ≤ minimo ≤ 40; both values are integers. The function returns a bool and does not modify the quantities. Here we examine only calls within this domain. In ordinary std::cout output without boolalpha, false is printed as 0 and true as 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "The report “with 5 items and minimum 5 it does not request restocking” identifies a symptom. Before explaining its cause, we need to know which program received those data. Saving a fix does not prove the test executed that fix; investigating a different version wastes evidence (Kernighan & Pike, 1999, p. 129)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_del_caso_reportado",
+          "question": "An output of 0 was observed for disponibles=5 and minimo=5. What does the requirement establish, without inventing a cause yet?",
+          "options": [
+            "The output should be incorporated into the requirement; repeating it confirms what restocking rule the problem needs.",
+            "The output contradicts the requirement for this case; we still need to identify the program and explain the discrepancy.",
+            "The output proves that an old copy was executed; failure at equality is enough to identify its provenance."
+          ],
+          "correctIndex": 1,
+          "explanation": "Equality is included: the expected result is true, printed as 1. The data establish a discrepancy under the requirement and domain; on their own, they do not distinguish a wrong comparison from the wrong executable.",
+          "reviewFeedback": [
+            "Separate the requested rule from the observed result. Reconsider where a change in requirements would have to come from and which part of the report merely describes one execution.",
+            "Relate the observed case to the rule, and distinguish the measurement from the explanation of its cause. Check what evidence supports each claim in your answer.",
+            "Attributing an output to a revision requires provenance evidence. Review which report details identify the program and which are still unknown."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Source, Build, and Execution Are Different Kinds of Evidence"
+        },
+        {
+          "type": "paragraph",
+          "text": "The source file is the text you save. An executable is the product of a previous build; it does not automatically change each time you edit that text. We will call two different saved states revision A and revision B. These names identify states for this exercise; they are not commands and do not require a version control system."
+        },
+        {
+          "type": "paragraph",
+          "text": "When compiling C++ source, its contents are checked and translated; linking combines the results and required implementations to produce the program. A declaration may let a call compile but does not replace the definition needed at link time. In projects with multiple source files, knowing which files were selected is part of identifying what was actually built. A command can coordinate both steps, but automating them does not erase the distinction. A build may also reuse results for unchanged sources; it does not always recompile everything."
+        },
+        {
+          "type": "paragraph",
+          "text": "Building is not running, either. A build tool coordinates the work and reports whether it completed successfully; the resulting program runs later with its input. CMake prepares rules for build tools: it is not another name for the compiler or for the student's program. We will study its configuration and generation when we build reproducible projects (Scott, 2025, chs. 1–2)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "construccion_y_comportamiento",
+          "question": "The build finished without errors and main returned 0 when run. What evidence is still missing to verify the restocking requirement?",
+          "options": [
+            "We still need to check relevant cases against the requirement, identifying the built program and the input used.",
+            "No further test is needed: a successful build and return value of 0 prove the program's restocking decisions.",
+            "We only need to check that the file retains its name; that identifies the revision already tested."
+          ],
+          "correctIndex": 0,
+          "explanation": "A successful build shows that a program was produced by that process; a return value of 0 shows how that execution ended. Neither determines which restocking decision the requirement calls for. A filename does not identify its contents, either.",
+          "reviewFeedback": [
+            "Distinguish producing an executable, finishing an execution, and checking a program decision. Reread which of these claims the test must establish.",
+            "Building and finishing without errors describe particular stages. Review what they tell us about the decisions the requirement demands for its input.",
+            "A name identifies a file within a directory but does not summarize its behavior. Reconsider what observation would check the restocking rule."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a Case That Distinguishes Explanations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Revision A in the activity uses <. Calculate separately what this implementation produces and what the requirement demands, without fixing the code during the prediction. Then decide which call provides evidence to distinguish the two rules. Testing conditions on both sides of a boundary and at the boundary itself helps investigate precise assumptions (Kernighan & Pike, 1999, pp. 140–141)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salida_de_la_revision_a",
+          "question": "Predict only the output of the program shown, without correcting it while you calculate. Then compare it with the requirement.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Domain: disponibles from 0 to 40; minimo from 1 to 40.\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    std::cout << debe_reponer(4, 5) << \":\"\n              << debe_reponer(5, 5) << \":\"\n              << debe_reponer(6, 5);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "explanation": "The implementation uses <: 4<5 is true, 5<5 is false, and 6<5 is false. The program prints 1:0:0, whereas the requirement demands 1:1:0. Do not adjust the expected output to match the suspect function.",
+          "reviewFeedback": "Follow the calls in the order shown and apply the written comparison without fixing it during prediction. Note their bool values and then reproduce the cout separators."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_discrimina_la_frontera",
+          "question": "If you can add only one case to distinguish the < rule from the <= rule, keeping minimo=5, which do you choose?",
+          "options": [
+            "disponibles=4.",
+            "disponibles=41.",
+            "disponibles=5."
+          ],
+          "correctIndex": 2,
+          "explanation": "Equality is the discriminating case. The value 4 is still a useful control, but it does not distinguish these hypotheses. The value 41 violates the precondition and is not evidence about the stated contract.",
+          "reviewFeedback": [
+            "A value in the domain is relevant, but check whether the two competing rules would produce different results for this case.",
+            "Check the precondition before using this value as evidence about the contract. A call outside the domain raises a different question from the requested comparison.",
+            "A discriminating case must belong to the domain and allow both rules to be compared. Apply both criteria to your chosen value."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Saved Fix May Not Be the Execution You Observed"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine this workflow outside the reader: existencias.exe was built from revision A. You then save revision B, changing < to <=. When you try to build B, an error elsewhere in the file prevents a new executable from being produced. The earlier executable A remains in its directory; later you run it manually and it again prints 1:0:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "This result does not refute the <= change because it did not come from a successful build of B. Nor does it prove B is correct: that version has not yet been built and tested. A directory can contain artifacts from previous attempts. This scenario describes a specific sequence; it does not claim that the reader's integrated compiler automatically runs old artifacts."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conservar_la_procedencia_del_resultado",
+          "question": "In the described scenario, what is the most precise conclusion?",
+          "options": [
+            "B still excludes equality: the most recently saved source determines which revision runs when the filename is the same.",
+            "The output belongs to A. First build B without errors, then check the execution produced from its sources.",
+            "The output from A should be accepted as the requirement's reference; any available copy is enough to preserve that observation."
+          ],
+          "correctIndex": 1,
+          "explanation": "The provenance of the observation is preserved. An execution of A must not be attributed to source B. Resolving the build error will allow B to be studied; its output must still be checked against the requirement.",
+          "reviewFeedback": [
+            "Identify which build produced the observed execution. Reconsider whether its result says anything about the source you just edited.",
+            "Check that your conclusion preserves the link between revision, build result, and execution. Do not assume a program has been tested merely because its source was saved.",
+            "Keep the requirement separate from what a particular execution produced. Consider what evidence would justify changing the rule rather than investigating the discrepancy."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "When a fix seems to have no effect, verify the saved state, complete build result, and exact path of the executable used. If two directories contain files with the same name, that name does not resolve the ambiguity. Record the inputs and output alongside that identification. Reproduce the failure and test your assumptions before blaming the environment or changing several things at once (Thomas & Hunt, 2020, pp. 90–97)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mismo_nombre_distinto_programa",
+          "question": "There is one copy in salida/ and another in respaldo/, both named existencias.exe. Only salida/ was successfully rebuilt from B. A test of respaldo/ fails at equality. Which action provides evidence about B?",
+          "options": [
+            "Repeat the test of respaldo/ with the same data: the shared name existencias.exe allows that execution to be attributed to B.",
+            "Rename both copies with the label B and test either one: both will bear the new revision's name.",
+            "Run the copy in salida/ that was built from B, using the same data, and compare its output against the requirement."
+          ],
+          "correctIndex": 2,
+          "explanation": "Keeping the data fixed controls that part of the comparison; selecting the copy built from B controls the version. Renaming or repeatedly running the wrong copy does not provide that evidence.",
+          "reviewFeedback": [
+            "Repeating an execution produces more observations from the chosen copy. First verify whether that copy came from the revision you want to make a claim about.",
+            "Changing a name does not rebuild its contents or establish its provenance. Reconsider how to identify the copy used when recording the result.",
+            "Check whether your choice correctly matches the copy's provenance, the test data, and the rule used to judge its output."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Building an Independent Check"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, start with the revision A function in the editor. Before running anything, write down the expected results for (4,5), (5,5), and (6,5) outside the program. Derive them from the requirement. Keep that record when building and running; do not fill it by copying what the function under investigation returns."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement all three checks in main. Each must compare debe_reponer with its expected result and report which case failed. If any check fails, the test program must end with a nonzero exit code; if all three pass, with zero. You can use conditionals, an accumulated bool, or a case structure you already know. First use revision A unchanged to verify that your test detects the discrepancy; then change only the comparison and repeat the same cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep the evidence separate: the compiler can successfully build a test that returns 1 when it detects a behavioral failure. That result is not a compilation error. A main that always returns 0 does not make the discrepancy disappear, but communicates the test result poorly. Knowing expected results before testing and reviewing the test program itself helps prevent acceptance of an incorrect baseline (Kernighan & Pike, 1999, pp. 146–150)."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    // Compare the three calls with expected results derived from the requirement.\n    // Report failed cases and communicate the result through the return code.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "esperados_sin_copiar_la_funcion",
+          "question": "What kind of test design allows the three checks to detect the function's error?",
+          "options": [
+            "Obtain the expected result by calling debe_reponer again with the same arguments.",
+            "Set the expected results to true, true, and false from the requirement's rule and compare them with the calls.",
+            "Print the three calls and declare that the observed output is always correct."
+          ],
+          "correctIndex": 1,
+          "explanation": "Repeating the call duplicates the same incorrect interpretation. The oracle for these three cases is the independent rule from the requirement; printing without checking merely produces observations.",
+          "reviewFeedback": [
+            "Check whether your expected result could disagree with the suspect function when it interprets the rule incorrectly. Using the same interpretation again would need independent justification.",
+            "Check that every expected result comes from the requirement and that the test compares it with an identified observation. Then you can explain what disagreement the test would detect.",
+            "Printing shows what happened. Consider where an independent criterion would come from to decide whether the output satisfies the contract."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparing the Attempt and Recovering the Evidence"
+        },
+        {
+          "type": "note",
+          "text": "Consult this reference after building your own check. You do not need to copy the names, messages, or structure: meeting the criteria is what matters."
+        },
+        {
+          "type": "paragraph",
+          "text": "A valid test of A accepts the decisions for (4,5) and (6,5), detects the failure for (5,5), and returns a nonzero code. After changing only the comparison to <=, all three calls should agree and the test program should return 0. Each execution record must identify the revision, the three cases, and the result, without attributing one revision's outputs to another."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Revision A: keep this to validate the test.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Failed: \" << disponibles << \",\" << minimo\n              << \" expected=\" << esperado << \" actual=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Every check runs even when an earlier one fails. An expression using && may skip later calls through short-circuit evaluation; a final result of false does not prove every case was observed. After fixing A, keep the working controls and add another boundary, (8,8), with one case on either side. These new data test the rule rather than just the sample 4,5,6."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "transferir_el_registro_de_prueba",
+          "question": "The corrected revision passes (4,5),(5,5),(6,5). Which revision to the test record is most useful when testing minimo=8?",
+          "options": [
+            "Keep the three cases and add only (7,8) and (9,8): there is no need to repeat equality because it already passed with minimum 5.",
+            "Replace the three earlier cases with (7,8),(8,8),(9,8): cases with minimum 5 no longer help test the function.",
+            "Keep all three cases and add (7,8),(8,8),(9,8), with expected true,true,false from the same rule."
+          ],
+          "correctIndex": 2,
+          "explanation": "The rule applies to every minimum in the domain. Equality passing for minimum 5 does not guarantee equality for minimum 8; omitting it could hide a fix tailored to the first sample. Keeping the earlier cases also checks that the change did not break decisions previously correct. The variation provides new evidence, although these six cases alone do not prove behavior for the entire domain.",
+          "reviewFeedback": [
+            "A case that passed for one minimum provides evidence about that call. Review which part of the boundary would remain untested when changing the minimum with your proposed selection.",
+            "Consider why earlier controls matter after modifying or extending a test. Replacing them changes which behaviors you continue to observe.",
+            "Check that your record keeps earlier controls and tests the new boundary against the rule, without confusing a sample with the entire domain."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "As we continue, we will use the program's identity, input data, and expected results to compare possible causes. Keep observations, builds, and satisfaction of requirements distinct: when any of them changes, you must know which comparison is still valid."
+        }
+      ]
+    }
+  ]
+}

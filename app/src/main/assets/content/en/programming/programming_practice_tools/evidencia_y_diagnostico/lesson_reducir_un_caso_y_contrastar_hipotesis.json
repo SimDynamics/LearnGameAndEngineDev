@@ -1,0 +1,438 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__reducir_un_caso_y_contrastar_hipotesis",
+  "title": "Reducing a Case and Testing Hypotheses",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Result Belongs to a Particular Call"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know how to connect an observation to the source, build, and executable used. Now we will investigate a failure that depends on the history of calls within a single execution. The goal is to choose tests that distinguish explanations, reduce a case while preserving the failure, and check a fix beyond the initial situation."
+        },
+        {
+          "type": "paragraph",
+          "text": "contar_altos takes a vector<int> named datos and an int named minimo. It returns how many elements of the vector are greater than or equal to minimo. Each call must count only its own data: it does not incorporate results from earlier calls. In these experiments, values range from 0 to 9, and minimo ranges from 1 to 9. The collections are small, and their counts fit in an int."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, contar_altos({1, 4, 7}, 4) must return 2: both 4 and 7 qualify. For an empty vector, the required result is 0, regardless of the permitted minimum. We calculate these results from the task's requirements, without using the version under investigation as the oracle."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contar_solo_datos_de_la_llamada",
+          "question": "An earlier call counted {5} with minimum 5. You now query {0, 3} with minimum 5. Under the contract, what must this second call return?",
+          "options": [
+            "1, because it retains the count from the earlier call.",
+            "0, because neither of its two values reaches the minimum.",
+            "2, because it must count every element present."
+          ],
+          "correctIndex": 1,
+          "explanation": "The contract requires a separate count for each call. Neither 0 nor 3 reaches 5; the preceding result is not part of this query.",
+          "reviewFeedback": [
+            "Identify which data belong to the current query. Reconsider whether the outcome of an earlier call is part of what the contract asks you to count now.",
+            "Apply the contract's condition to each value in this query, keeping its count separate from earlier calls.",
+            "Distinguish the vector's size from the number of elements satisfying the condition. Review what test each value must pass to be counted."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Matching Result Leaves Several Hypotheses Open"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine that a first test, run from a fresh start, queries {6} with minimum 5 and returns 1. That observation matches the requirement, but it does not explain how the program produced it. We will consider two specific hypotheses: H_boundary counts separately on each call but uses > instead of >=; H_carryover uses >= but adds counts to a total retained between calls."
+        },
+        {
+          "type": "paragraph",
+          "text": "Both hypotheses predict 1 for that first query: 6 exceeds 5, and there was no earlier count. We cannot choose between them by repeating that single case. Forming a hypothesis does not mean that it is true: it helps predict what we should see if it were."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "coincidencia_no_selecciona_la_causa",
+          "question": "The initial query {6}, minimum 5, produced 1. What can we conclude from that result?",
+          "options": [
+            "The comparison uses >= because its result agrees with the requirement.",
+            "Every call starts its counter at zero because the first returned 1.",
+            "Both hypotheses remain compatible with the observation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The value 6 is above the boundary, and this is the first call. The test examines neither equality with the minimum nor possible dependence on earlier calls.",
+          "reviewFeedback": [
+            "Two comparisons can agree for some data. Review whether the observed query tests the exact difference between the boundary rules.",
+            "The first call has no earlier query against which to test dependence. Consider what observation could support the assumed initialization.",
+            "Calculate separately what each hypothesis predicts for the same experiment. Distinguish an observed agreement from an identified explanation."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "We could also suspect that a different revision was executed. Here we have already checked that the source under investigation matches the successful build and the executable that ran. We use that evidence to rule out this explanation in this case; in another case, we would need to check it again. Verified provenance reduces the hypotheses but does not establish that the code is correct."
+        },
+        {
+          "type": "note",
+          "text": "Reproducing the problem, collecting precise observations, and testing assumptions before blaming the environment are part of the debugging method studied in the cited source. The data and models in this case are original (Thomas & Hunt, 2020, topic 20, pp. 90–97)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a Test That Distinguishes the Models"
+        },
+        {
+          "type": "paragraph",
+          "text": "A test provides information for this question when the hypotheses predict different behavior. We want to examine both the boundary and what happens after a call that counted an item. Each experiment starts with a new process. Within that process, calls will be consecutive: restarting between them would change the situation under investigation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "elegir_experimento_discriminante",
+          "question": "Which experiment tests equality with the minimum and then whether a count carries over from the earlier call?",
+          "options": [
+            "Query {6} with minimum 5; restart the process and repeat the same query.",
+            "In the same process, first query {2} with minimum 2 and then an empty vector with minimum 2.",
+            "Query two empty vectors with minimum 2, starting a new process for each."
+          ],
+          "correctIndex": 1,
+          "explanation": "The first value lies exactly on the boundary and the second call has nothing to count. The other proposals do not combine an equality that should be counted with a later query in the same process.",
+          "reviewFeedback": [
+            "Examine which property your chosen data test and what history each process retains. Consider whether repeating the case after a restart reveals dependence between calls.",
+            "Check that your experiment tests both requested properties: the boundary condition and the relationship between queries within the same execution.",
+            "Consider what empty queries in separate processes can reveal about a count left over by an earlier call. Every hypothesis needs a condition that challenges it."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "predecir_modelos_antes_de_observar",
+          "question": "For the sequence {2}, minimum 2; then {}, minimum 2, which result pairs do H_boundary and H_carryover predict, in that order? Both begin with a new process.",
+          "options": [
+            "H_boundary: 0:0; H_carryover: 1:1.",
+            "H_boundary: 1:0; H_carryover: 1:0.",
+            "H_boundary: 0:1; H_carryover: 1:0."
+          ],
+          "correctIndex": 0,
+          "explanation": "With >, the 2 is not counted, and neither is the empty vector. With >= and a retained total, the 2 increments that total to 1 and the second call returns it without adding anything. These predictions are different and are recorded before running.",
+          "reviewFeedback": [
+            "Apply each model's rules separately to the full sequence. Do not mix predictions with results required by the contract.",
+            "A hypothesis predicts according to its rule even if it conflicts with the requirement. Recalculate every query under its own model rather than copying the contract's expected results.",
+            "For each model, record which comparison it uses and what it retains between calls. Then check what could change when an empty collection is received."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Under the requirement, the expected pair is 1:0. Keep three records separate: the required outcome, each hypothesis's prediction, and what you actually observe. If an observation contradicts a model, that specific model is ruled out under the conditions we have fixed; this does not prove that another, different defect cannot exist."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observing What the Implementation Retains"
+        },
+        {
+          "type": "paragraph",
+          "text": "This is the implementation under investigation. The declaration int acumulado{0}; is outside the functions: it prepares a counter before main begins. Calls to contar_altos use that same counter; they do not execute its external declaration again. The function body increments acumulado when a value qualifies and returns its current value."
+        },
+        {
+          "type": "paragraph",
+          "text": "We therefore need to track both the arguments of each call and acumulado before and after it. Studying addresses or memory management is not necessary to observe the difference between preparing a program once and executing a function body several times."
+        },
+        {
+          "type": "output_prediction",
+          "id": "observar_secuencia_minima",
+          "language": "cpp",
+          "question": "Predict the output of this implementation, not the pair required by the contract. Both calls occur in the same execution.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "The first call finds a qualifying value and increments acumulado from 0 to 1. The second vector is empty, so nothing is incremented; nevertheless, the function returns the retained 1. The requirement called for 1:0. This observation agrees with H_carryover and contradicts H_boundary for this test.",
+          "reviewFeedback": "Track how the counter is prepared and changes across both calls. Distinguish not incrementing it from initializing it again; predict the implementation shown before judging its contract."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "localizar_dato_que_excede_la_consulta",
+          "question": "The second call receives an empty vector and returns 1. What contradiction with the requirement helps locate the problem?",
+          "options": [
+            "Minimum 2 cannot be used with an empty collection.",
+            "The program should change >= to > to count the empty vector.",
+            "The answer includes a count not derived from this call's data."
+          ],
+          "correctIndex": 2,
+          "explanation": "An empty vector contains no qualifying values, whether the comparison uses > or >=. The 1 comes from the earlier call: changing only the comparison does not explain why a count is returned for a query with no data.",
+          "reviewFeedback": [
+            "Check whether an empty collection is permitted by the declared domain. Do not add a precondition merely to explain the result that appeared.",
+            "Review which loop instructions execute when no elements are present. Explain how changing the comparison would affect the returned value for this query.",
+            "Relate the returned count to the data actually received by this call. Check which information may have come from outside its own query."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducing While Preserving the Failing Property"
+        },
+        {
+          "type": "paragraph",
+          "text": "The original report might include a first query {0, 2, 6, 9} with minimum 2 and a second {0, 1} with minimum 2. The requirement predicts 3:0; this implementation returns 3:3. Investigating many data at once can be distracting. We want to preserve the contradiction: the second query returns an earlier count that does not belong to it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reduction does not require retaining the literal number 3. You can remove data from a reproduction and recalculate the expected outcome from the requirement. Then check whether the same kind of contradiction remains. Do not assume that removing data preserves a bug: sometimes the defect depends on several elements or their combination."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reduccion_conserva_reproduccion",
+          "question": "With the implementation shown and each proposal starting from a new process, which smaller reproduction preserves an improper count in a later call?",
+          "options": [
+            "Query {2}, minimum 2; start another process and query {}, minimum 2.",
+            "Query {}, minimum 2; then {}, minimum 2, without restarting.",
+            "Query {2}, minimum 2; then {}, minimum 2, without restarting."
+          ],
+          "correctIndex": 2,
+          "explanation": "The first proposal starts another process between queries: it requires 1:0 and returns 1:0, so it no longer reproduces the failure. In the second, both collections are empty and the counter stays zero: it produces 0:0. The third retains both calls within the same process: it requires 1:0 but returns 1:1, reproducing the carried-over count. A small reproduction must preserve the conditions that caused the contradiction.",
+          "reviewFeedback": [
+            "Reduction must preserve the condition exposing the problem. Check what history is still available if you start another process between queries.",
+            "Track which instructions might change the counter in your chosen sequence. A reproduction must show the contradiction, not merely contain multiple calls.",
+            "From a known initial state, check that the sequence preserves the type of contradiction under investigation. Its small size alone does not prove that."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_la_reduccion",
+          "question": "What happens if you remove the only value {2} from the first query of the small reproduction but keep both calls?",
+          "options": [
+            "Both calls return 0; this reduction no longer reproduces the observed failure.",
+            "The failure remains because two calls are always enough to accumulate something.",
+            "The second call returns 1 because the program retains the value of minimo."
+          ],
+          "correctIndex": 0,
+          "explanation": "With two empty vectors, the counter remains at zero. For this implementation, the reproduction needs one call that increases the total and a later call that exposes the improper count. Other valid small reproductions use a different qualifying value; {2} is not the only possible form.",
+          "reviewFeedback": [
+            "Track the counter again using the data left after reduction. Determine whether a discrepancy with the contract still appears, without assuming that removing data preserves the failure.",
+            "A call changes the count only when instructions that modify it execute. Review what each loop does after that value is removed.",
+            "Distinguish the argument used in the comparison from the object used for counting. Identify which instructions can copy, increment, or return each value."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "The goal of reduction is to make a failure easy to reproduce and verify, not to transform the input until the test passes. Seeking a small reproduction and testing assumptions draw on the debugging topic; this particular reduction is original (Thomas & Hunt, 2020, topic 20, pp. 91–96)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Control That Changes Only the Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now compare two experiments. Each starts with acumulado at zero, on a newly started process. In the first, the order was {2} followed by {}. In the second, we retain the collections, minimum, and code, but reverse their order: first {} and then {2}. Within each experiment we do not restart between calls."
+        },
+        {
+          "type": "output_prediction",
+          "id": "control_invertir_orden",
+          "language": "cpp",
+          "question": "Predict the output of the implementation under investigation when the two queries are reversed.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "The initial empty vector does not increment acumulado and returns 0. Then the value 2 increments the total to 1 and returns 1. In this particular order, the output agrees with the requirement, although the code is the same one that failed with the earlier order.",
+          "reviewFeedback": "Start from the specified initial state and follow the queries in their new order. Do not carry the final counter from another execution into this experiment, or restart between its calls."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "control_no_equivale_a_reparacion",
+          "question": "The order control produced 0:1, as required for these two queries. How should you interpret that agreement?",
+          "options": [
+            "It is a fix achieved by changing the sequence; always use that order for queries.",
+            "It is a passing test without changing the function; keep the failing case as well.",
+            "It is an equality issue; change >= to > and test the same order."
+          ],
+          "correctIndex": 1,
+          "explanation": "The carried-over counter violates this contract only when an earlier count contaminates a later query. This control clarifies the order dependence but neither changes the implementation nor invalidates the failing case.",
+          "reviewFeedback": [
+            "Check whether the contract requires this query order or whether you selected it for the control. A change to the test must be distinguished from a change to the function.",
+            "Identify what changed between the failing case and its control, and preserve evidence from both. Limit your conclusion to the behavior each one tested.",
+            "Review which hypothesis the change in order was intended to isolate. Also changing the comparison would introduce an implementation change requiring its own justification."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting from a known state enables experiments to be compared; keeping calls in the same process allows us to examine their shared history. These are different decisions. If you restart the program before each call, precisely the condition we wanted to investigate disappears. Note what you changed, what you kept, and which observation distinguishes your hypotheses."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fixing and Testing Your Explanation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fix contar_altos so each query receives the count of its own data. Preserve the >= comparison, all five calls in main, and the actual calculation of the results. You may change how the counter is organized. Do not replace the work with constant numbers or restart the program between queries."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, derive the results from the contract. The small reproduction requires Minimum:1:0. Next, the queries {8, 1, 5} with minimum 5; {6, 7} with minimum 5; and {} with minimum 9 require New:2:2:0. All five calls belong to one execution. The second batch checks a nonempty query after another has already counted data."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a brief explanation: what dependence caused the error, what you changed, and why later queries no longer include previous counts. After checking both batches, reverse the order of the two nonempty queries in the second batch; derive their expected results first, then confirm that each result still corresponds to its own query."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repair the count without changing the contract or the queries.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimum:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"New:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The lab is open-ended: different implementations can satisfy this contract. The next page provides a reference solution after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reference Implementation with a Separate Count per Call"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimum:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"New:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad is declared inside the body of contar_altos. Each call initializes it to zero, iterates only over the data received, and returns its own result. It does not need the total left by another call. The calculated output is Minimum:1:0 and, on the next line, New:2:2:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: count values equal to the minimum, count each qualifying element once, return 0 for an empty vector, and remain independent of earlier calls. This local solution expresses that independence clearly. In this sequential program, resetting the external counter at the start of each call, before iterating, may also satisfy the contract; check it with the cases, without confusing that repair with restarting the process between queries."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparacion_frente_a_cambiar_la_prueba",
+          "question": "What is the difference between starting a count at zero inside each call and running each query in a separate process?",
+          "options": [
+            "One repairs the function; the other avoids the call sequence that exposed the failure.",
+            "Both repair the function: every query must always run without any earlier history.",
+            "The first preserves the cause; the second tests independence between calls."
+          ],
+          "correctIndex": 0,
+          "explanation": "The requirement allows multiple queries in one execution. The repair must work in that context. Restarting the program between queries may make the defective version look correct by removing the very condition the test needed to preserve.",
+          "reviewFeedback": [
+            "Compare what changes in the function with what changes in the execution conditions. Examine which decision allows several queries to be tested within the required context.",
+            "Reread the context in which the query must work. Consider whether requiring separate processes preserves that context or removes the condition being examined.",
+            "Track when the counter is initialized and what history exists between queries. Check whether your proposed test ever observes a call following another in the same process."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Passing the Small Case Is Not Enough"
+        },
+        {
+          "type": "paragraph",
+          "text": "Someone else adds only a special return for an empty vector. Their version now returns 1:0 in the small reproduction but still uses the external counter for nonempty vectors. Before accepting this fix, use a situation that also exposes the carried-over count without relying on an empty vector."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contraprueba_de_retorno_especial",
+          "language": "cpp",
+          "question": "Predict this partial fix's output for the two nonempty queries. Calculate separately what the contract requires.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "2:4"
+          ],
+          "explanation": "The first call counts 8 and 5, leaving acumulado at 2. The second counts 6 and 7, adds them to that total, and returns 4. The contract requires 2:2. The empty case passed because of a special return; the dependence contaminating other queries remains.",
+          "reviewFeedback": "Determine whether the queries shown take the special return path. Then track the counter during both actual calls, separating what this partial fix executes from what the requirement calls for."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "variacion_refuta_reparacion_parcial",
+          "question": "The small reproduction passes, but the nonempty counterexample produces 2:4 instead of 2:2. Which action is justified?",
+          "options": [
+            "Review the counter so each call counts its own data, then rerun both the initial case and the variation.",
+            "Keep the counter and special return, and limit further tests to empty vectors.",
+            "Keep the code and replace the second query's expected result with the observed total."
+          ],
+          "correctIndex": 0,
+          "explanation": "The expected result comes from the requirement: {6, 7} contains only two elements. A fix must explain and correct the cause while preserving the case that detected the failure. Adjusting the oracle to the defective result would stop the test from checking the contract.",
+          "reviewFeedback": [
+            "Relate the proposed fix to the cause explaining the initial case. Check which controls and variations you would retain to test that explanation.",
+            "A passing test checks the conditions it actually exercises. Consider what evidence about nonempty queries would remain if you stopped testing them.",
+            "Distinguish the observed result from the criterion used to judge it. Check where the expected value comes from before replacing it with the output of the implementation being investigated."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep the small reproduction, original report, and nonempty variation as regression checks. When you change the function again, they help reveal whether the dependency returns. Later we will study how to organize and automate tests; here you can already justify inputs and outputs without assuming a testing framework."
+        },
+        {
+          "type": "note",
+          "text": "Testing assumptions in the actual context and retaining a case that catches a returning defect are principles from the cited source. This count, partial fix, and counterexample are original activities (Thomas & Hunt, 2020, topic 20, pp. 96–97; topic 51, p. 278)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Contract Decides Whether Retaining History Is a Defect"
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not conclude that all data retained between calls are incorrect. Consider a different task: registrar_visita must return the number of visits recorded since the program began. For the three calls in this experiment, the contract requires 1, 2, and 3. This purpose differs from counting one collection independently."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_conservado_con_otro_contrato",
+          "language": "cpp",
+          "question": "Predict the output. Does it match the goal of recording visits since the start of this execution?",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "explanation": "Each call increments the same numero_visita and returns the resulting total. Here retaining that history is exactly what the requirement means; resetting to zero on every call would make them all return 1.",
+          "reviewFeedback": "Follow the calls in this program and note when its counter is initialized. First calculate what the shown function does; then compare that history with the new visit-recording contract."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_convertir_causa_en_regla_absoluta",
+          "question": "Which judgment correctly connects the two programs studied?",
+          "options": [
+            "Both should retain their counters because external integers are always correct.",
+            "Both should use a fresh counter per call because retaining history is always a mistake.",
+            "contar_altos requires independence per query; registrar_visita requires continuity between calls."
+          ],
+          "correctIndex": 2,
+          "explanation": "We do not judge code organization merely by appearance. We compare results against the contract and usage context. Retaining history, which contaminated one query, is necessary for numbering visits within an execution.",
+          "reviewFeedback": [
+            "A counter's location does not by itself determine correctness. Compare what relation between calls each contract demands before justifying history retention in both.",
+            "Consider the information needed by an operation that numbers visits from the start. A fix useful under a different contract does not automatically become a universal rule.",
+            "Explain what belongs to a query and what must continue between operations in each program. Use the contracts to assess the chosen organization."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "To apply the method to another failure, start from the required result and the program's provenance. Form hypotheses that produce testable predictions. Choose data that distinguish them; reduce the case while preserving reproduction; change one relevant condition at a time. Then test the fix against both the original case and a variation that might refute your explanation. If the data do not distinguish two hypotheses, preserve the uncertainty and seek another observation."
+        }
+      ]
+    }
+  ]
+}

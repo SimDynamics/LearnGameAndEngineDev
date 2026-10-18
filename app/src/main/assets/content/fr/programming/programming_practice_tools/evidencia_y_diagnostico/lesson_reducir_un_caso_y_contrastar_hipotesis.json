@@ -1,0 +1,438 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__reducir_un_caso_y_contrastar_hipotesis",
+  "title": "Réduire un cas et confronter des hypothèses",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résultat appartient à un appel précis"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà relier une observation à la source, à la construction et à l'exécutable utilisés. Nous allons maintenant examiner un échec qui dépend de l'historique des appels pendant une même exécution. L'objectif est de choisir des tests distinguant les explications, de réduire le cas en conservant l'échec et de vérifier une correction au-delà de la situation initiale."
+        },
+        {
+          "type": "paragraph",
+          "text": "contar_altos reçoit un vector<int> nommé datos et un int nommé minimo. Il renvoie le nombre d'éléments du vecteur supérieurs ou égaux à minimo. Chaque appel doit compter uniquement ses propres données : il n'intègre pas les résultats des appels précédents. Dans ces expériences, les valeurs sont comprises entre 0 et 9 et minimo entre 1 et 9. Les collections sont petites et le comptage tient dans un int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, contar_altos({1, 4, 7}, 4) doit renvoyer 2 : les valeurs 4 et 7 conviennent. Pour un vecteur vide, le résultat attendu est 0, quel que soit le minimum autorisé. Nous calculons ces résultats à partir des exigences, sans prendre la version étudiée comme oracle."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contar_solo_datos_de_la_llamada",
+          "question": "Un appel précédent a compté {5} avec le minimum 5. Tu consultes maintenant {0, 3} avec le minimum 5. Selon le contrat, que doit renvoyer ce deuxième appel ?",
+          "options": [
+            "1, parce qu'il conserve le comptage de l'appel précédent.",
+            "0, parce qu'aucune de ses deux valeurs n'atteint le minimum.",
+            "2, parce qu'il doit compter tous les éléments présents."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le contrat exige un comptage indépendant pour chaque appel. Ni 0 ni 3 n'atteignent 5 ; le résultat précédent ne fait pas partie de cette consultation.",
+          "reviewFeedback": [
+            "Identifie les données appartenant à la consultation actuelle. Vérifie si le résultat d'un appel précédent fait réellement partie de ce que le contrat demande de compter maintenant.",
+            "Applique la condition du contrat à chaque donnée de cette consultation, en distinguant son comptage de celui des appels précédents.",
+            "Distingue la taille du vecteur du nombre d'éléments satisfaisant la condition. Vérifie quel test chaque donnée doit réussir pour être comptée."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résultat concordant laisse plusieurs hypothèses ouvertes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine qu'un premier test, exécuté après un nouveau démarrage, consulte {6} avec le minimum 5 et renvoie 1. Cette observation correspond à l'exigence, mais elle n'explique pas comment le programme l'a obtenue. Nous examinerons deux hypothèses précises : H_frontière compte séparément à chaque appel, mais utilise > au lieu de >= ; H_persistance utilise >=, mais ajoute les comptes à un total conservé entre les appels."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux hypothèses prédisent 1 pour ce premier appel : 6 dépasse 5 et aucun comptage précédent n'existait. Répéter ce seul cas ne permet pas de les départager. Formuler une hypothèse ne signifie pas qu'elle est vraie : elle sert à anticiper ce que nous devrions observer si elle l'était."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "coincidencia_no_selecciona_la_causa",
+          "question": "La consultation initiale {6}, minimum 5, a produit 1. Que permet de conclure cette observation ?",
+          "options": [
+            "La comparaison utilise >=, car le résultat correspond à l'exigence.",
+            "Chaque appel commence avec un compteur à zéro, puisque le premier a renvoyé 1.",
+            "Les deux hypothèses restent compatibles avec cette observation."
+          ],
+          "correctIndex": 2,
+          "explanation": "La valeur 6 est au-dessus de la limite et c'est le premier appel. Le test n'examine ni l'égalité avec le minimum ni une éventuelle dépendance aux appels précédents.",
+          "reviewFeedback": [
+            "Deux comparaisons peuvent coïncider pour certaines données. Vérifie si la consultation observée teste précisément la différence entre les règles de frontière.",
+            "Le premier appel ne possède aucun appel précédent pour étudier une dépendance. Réfléchis à l'observation qui étayerait l'hypothèse d'initialisation.",
+            "Calcule séparément la prédiction de chaque hypothèse pour cette expérience. Distingue une concordance observée d'une explication identifiée."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "On pourrait également soupçonner l'exécution d'une autre révision. Dans ce cas, nous avons déjà vérifié la correspondance entre la source étudiée, la construction réussie et l'exécutable utilisé. Nous nous appuierons sur cette preuve pour exclure cette explication ici ; ailleurs, il faudrait la revérifier. Une provenance vérifiée réduit les hypothèses, mais ne démontre pas que le code est correct."
+        },
+        {
+          "type": "note",
+          "text": "Reproduire le problème, recueillir des observations précises et confronter les hypothèses avant d'accuser l'environnement font partie de la méthode de débogage étudiée dans la source citée. Les données et les modèles de ce cas sont originaux (Thomas & Hunt, 2020, sujet 20, pp. 90–97)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir un test qui distingue les modèles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test apporte une information pour cette question lorsque les hypothèses prévoient des comportements différents. Nous voulons examiner la borne et ce qui se produit après un appel qui a compté une donnée. Chaque expérience commence avec un nouveau processus. À l'intérieur, les appels restent consécutifs : redémarrer entre eux modifierait la situation étudiée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "elegir_experimento_discriminante",
+          "question": "Quelle expérience examine l'égalité avec le minimum puis la persistance éventuelle d'un compte provenant de l'appel précédent ?",
+          "options": [
+            "Consulter {6} avec le minimum 5 ; redémarrer le processus et répéter la même consultation.",
+            "Dans le même processus, consulter d'abord {2} avec le minimum 2, puis un vecteur vide avec le minimum 2.",
+            "Consulter deux vecteurs vides avec le minimum 2, en démarrant un nouveau processus pour chacun."
+          ],
+          "correctIndex": 1,
+          "explanation": "La première valeur se situe exactement à la borne et le deuxième appel n'a aucune donnée à compter. Les autres propositions ne combinent pas une égalité qui doit être comptée avec une consultation ultérieure dans le même processus.",
+          "reviewFeedback": [
+            "Examine quelle propriété teste la donnée choisie et quel historique conserve chaque processus. Réfléchis à la possibilité d'observer une dépendance entre appels en redémarrant.",
+            "Vérifie que l'expérience choisie teste les deux propriétés demandées : la condition de frontière et le lien entre consultations au cours de la même exécution.",
+            "Réfléchis aux informations que peuvent fournir des consultations vides dans des processus séparés concernant un compte conservé par un appel précédent. Chaque hypothèse a besoin d'une condition qui la mette à l'épreuve."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "predecir_modelos_antes_de_observar",
+          "question": "Pour la séquence {2}, minimum 2 ; puis {}, minimum 2, quels couples de résultats H_frontière et H_persistance prédisent-ils, dans cet ordre ? Les deux commencent dans un nouveau processus.",
+          "options": [
+            "H_frontière : 0:0 ; H_persistance : 1:1.",
+            "H_frontière : 1:0 ; H_persistance : 1:0.",
+            "H_frontière : 0:1 ; H_persistance : 1:0."
+          ],
+          "correctIndex": 0,
+          "explanation": "Avec >, le 2 n'est pas compté et le vecteur vide non plus. Avec >= et un total conservé, le 2 incrémente ce total à 1 et le deuxième appel le renvoie sans l'augmenter. Ces prédictions sont distinctes et sont fixées avant l'exécution.",
+          "reviewFeedback": [
+            "Applique séparément les règles de chaque modèle à la séquence complète. Ne confonds pas les prédictions avec les résultats exigés par le contrat.",
+            "Une hypothèse prédit selon sa règle, même si celle-ci contredit l'exigence. Recalcule chaque consultation sous son modèle au lieu de recopier les résultats attendus du contrat.",
+            "Pour chaque modèle, note sa comparaison et ce qu'il conserve entre les appels. Vérifie ensuite ce qui pourrait changer lorsqu'il reçoit une collection vide."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Selon l'exigence, le couple attendu est 1:0. Conserve trois relevés distincts : le résultat exigé, la prédiction de chaque hypothèse et l'observation réelle. Si une observation contredit un modèle, ce modèle précis est écarté dans les conditions fixées ; nous n'avons pas prouvé qu'aucun autre défaut ne pouvait exister."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observer ce que l'implémentation conserve"
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici l'implémentation étudiée. La déclaration int acumulado{0}; se trouve hors des fonctions : elle prépare un compteur avant le démarrage de main. Les appels de contar_altos utilisent ce même compteur ; ils ne réexécutent pas sa déclaration extérieure. Le corps de la fonction incrémente acumulado lorsqu'une valeur convient et renvoie la valeur conservée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous devons donc suivre les arguments de chaque appel et la valeur de acumulado avant et après. Il n'est pas nécessaire d'étudier les adresses ni la gestion de la mémoire pour observer la différence entre préparer le programme une fois et exécuter plusieurs fois le corps d'une fonction."
+        },
+        {
+          "type": "output_prediction",
+          "id": "observar_secuencia_minima",
+          "language": "cpp",
+          "question": "Prédit la sortie de cette implémentation, et non le couple exigé par le contrat. Les deux appels appartiennent à la même exécution.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "Le premier appel trouve une valeur admissible et incrémente acumulado de 0 à 1. Le deuxième vecteur est vide, donc rien n'est incrémenté ; pourtant, la fonction renvoie le 1 conservé. Le contrat exigeait 1:0. Cette observation correspond à H_persistance et contredit H_frontière pour ce test.",
+          "reviewFeedback": "Suis la préparation du compteur et ses changements pendant les deux appels. Distingue l'absence d'incrémentation d'une nouvelle initialisation ; prédis le comportement de l'implémentation affichée avant de juger son contrat."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "localizar_dato_que_excede_la_consulta",
+          "question": "Le deuxième appel reçoit un vecteur vide et renvoie 1. Quelle contradiction avec l'exigence permet de localiser le problème ?",
+          "options": [
+            "Le minimum 2 ne peut pas être utilisé avec une collection vide.",
+            "Le programme devait remplacer >= par > pour compter le vecteur vide.",
+            "La réponse comprend un comptage qui ne provient pas des données de cet appel."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un vecteur vide ne contient aucune valeur admissible, avec > comme avec >=. Le 1 vient de l'appel précédent : changer seulement la comparaison n'explique pas pourquoi un comptage est renvoyé pour une consultation sans données.",
+          "reviewFeedback": [
+            "Vérifie dans le domaine déclaré si une collection vide est autorisée. N'ajoute pas une précondition uniquement pour expliquer le résultat obtenu.",
+            "Examine les instructions de la boucle qui s'exécuteraient sans aucun élément. Justifie comment ce changement de comparaison affecterait la valeur renvoyée par cette consultation.",
+            "Relie le comptage renvoyé aux données effectivement reçues par cet appel. Vérifie quelles informations pourraient venir de l'extérieur de sa consultation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réduire tout en conservant la propriété défaillante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le rapport initial pourrait contenir une première consultation {0, 2, 6, 9} avec le minimum 2, puis une deuxième {0, 1} avec le minimum 2. Le contrat prévoit 3:0 ; cette implémentation renvoie 3:3. Examiner de nombreuses données à la fois peut distraire. Nous voulons préserver la contradiction : la deuxième consultation renvoie un comptage antérieur qui ne lui appartient pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Réduire n'impose pas de conserver littéralement le nombre 3. Tu peux retirer des données de la reproduction et recalculer le résultat attendu à partir du contrat. Vérifie ensuite si le même type de contradiction subsiste. Ne suppose pas que supprimer des données conserve toujours un bogue : le défaut dépend parfois de plusieurs éléments ou de leur combinaison."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reduccion_conserva_reproduccion",
+          "question": "Avec l'implémentation affichée et en démarrant chaque proposition dans un nouveau processus, quelle reproduction plus petite conserve le comptage indu lors d'un appel ultérieur ?",
+          "options": [
+            "Consulter {2}, minimum 2 ; démarrer un autre processus et consulter {}, minimum 2.",
+            "Consulter {}, minimum 2 ; puis {}, minimum 2, sans redémarrer.",
+            "Consulter {2}, minimum 2 ; puis {}, minimum 2, sans redémarrer."
+          ],
+          "correctIndex": 2,
+          "explanation": "La première proposition démarre un autre processus entre les consultations : elle exige 1:0 et renvoie 1:0 ; le défaut n'est donc plus reproduit. Dans la deuxième, les deux collections sont vides et le compteur reste à zéro : elle produit 0:0. La troisième conserve les appels dans le même processus : elle exige 1:0 mais renvoie 1:1, reproduisant le compte conservé. Une petite reproduction doit conserver la situation causant la contradiction.",
+          "reviewFeedback": [
+            "Réduire exige de préserver la condition qui révélait le problème. Vérifie quel historique reste disponible si tu démarres un autre processus entre les consultations.",
+            "Suis les instructions qui pourraient modifier le compteur dans la séquence choisie. Une reproduction doit produire la contradiction, et pas seulement contenir plusieurs appels.",
+            "À partir d'une initialisation connue, vérifie que la séquence conserve le type de contradiction étudié. Sa petite taille ne suffit pas à elle seule à le prouver."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_la_reduccion",
+          "question": "Que se passe-t-il si tu retires l'unique valeur {2} de la première consultation de la petite reproduction en conservant les deux appels ?",
+          "options": [
+            "Les deux renvoient 0 ; cette réduction ne reproduit plus le défaut observé.",
+            "Le défaut persiste, car deux appels suffisent toujours pour accumuler quelque chose.",
+            "Le deuxième appel renvoie 1 parce que le programme conserve la valeur de minimo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Avec deux vecteurs vides, le compteur reste à zéro. Pour cette implémentation, la reproduction exige un appel qui augmente le total et un appel ultérieur révélant le comptage indu. D'autres petites reproductions valides utilisent une valeur admissible différente ; {2} n'est pas l'unique possibilité.",
+          "reviewFeedback": [
+            "Suis à nouveau le compteur avec les données restant après la réduction. Détermine si une différence avec le contrat apparaît encore, sans supposer que retirer des données préserve l'échec.",
+            "Un appel ne modifie le compteur que si les instructions qui le changent sont exécutées. Examine ce que fait chaque boucle après la suppression de cette valeur.",
+            "Distingue l'argument utilisé pour comparer de l'objet utilisé pour compter. Identifie les instructions qui peuvent copier, incrémenter ou renvoyer chaque valeur."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "Le but de la réduction est de faciliter la reproduction vérifiable d'un échec, et non de transformer l'entrée jusqu'à ce que le test réussisse. La recherche d'une petite reproduction et la vérification des hypothèses s'appuient sur le thème du débogage ; cette réduction précise est originale (Thomas & Hunt, 2020, sujet 20, pp. 91–96)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un contrôle qui ne change que l'ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare maintenant deux expériences. Chacune commence avec acumulado à zéro lors du démarrage d'un nouveau processus. Dans la première, l'ordre était {2}, puis {}. Dans la seconde, nous conservons les collections, le minimum et le code, mais inversons l'ordre : d'abord {}, puis {2}. Au sein de chaque expérience, nous ne redémarrons pas entre les appels."
+        },
+        {
+          "type": "output_prediction",
+          "id": "control_invertir_orden",
+          "language": "cpp",
+          "question": "Prédis la sortie de l'implémentation étudiée en inversant l'ordre des deux consultations.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "Le premier vecteur vide n'incrémente pas acumulado et renvoie 0. Ensuite, la valeur 2 porte le total à 1 et renvoie 1. Dans cet ordre précis, la sortie correspond à l'exigence, même si le code est identique à celui qui échouait dans l'ordre précédent.",
+          "reviewFeedback": "Commence avec l'initialisation indiquée et suis les consultations dans leur nouvel ordre. Ne reporte pas le compteur final d'une autre exécution dans cette expérience et ne redémarre pas entre ses appels."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "control_no_equivale_a_reparacion",
+          "question": "Le contrôle d'ordre a produit 0:1, comme demandé par le contrat pour ces deux consultations. Comment interpréter cette concordance ?",
+          "options": [
+            "C'est une correction obtenue en changeant la séquence ; il suffit de toujours utiliser cet ordre.",
+            "C'est un test qui réussit sans modifier la fonction ; conserve aussi le cas qui échouait.",
+            "C'est un problème d'égalité ; remplace >= par > et teste le même ordre."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le compteur conservé ne contredit ce contrat que lorsqu'un compte précédent contamine une consultation ultérieure. Le contrôle permet de comprendre la dépendance à l'ordre, mais ne modifie pas l'implémentation et n'invalide pas le cas défaillant.",
+          "reviewFeedback": [
+            "Vérifie si le contrat impose cet ordre de consultations ou si tu l'as choisi pour le contrôle. Il faut distinguer une modification du test d'une modification de la fonction.",
+            "Identifie ce qui a changé entre le cas défaillant et son contrôle, puis conserve les preuves des deux. Limite ta conclusion au comportement examiné par chacun.",
+            "Vérifie quelle hypothèse l'inversion de l'ordre devait isoler. Changer aussi la comparaison ajouterait une modification de l'implémentation qui aurait besoin de sa propre justification."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Partir d'un état connu permet de comparer les expériences ; conserver les appels dans un même processus permet d'étudier leur historique partagé. Ce sont deux décisions différentes. Si tu redémarres le programme avant chaque appel, la condition que nous voulions justement examiner disparaît. Note ce que tu as changé, ce que tu as conservé et quelle observation distingue tes hypothèses."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Corriger et mettre ton explication à l'épreuve"
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige contar_altos pour que chaque consultation obtienne le compte de ses propres données. Conserve la comparaison >=, les cinq appels de main et le calcul réel des résultats. Tu peux modifier l'organisation du compteur. Ne remplace pas le travail par des nombres constants et ne redémarre pas le programme entre les consultations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, déduis les résultats du contrat. La petite reproduction exige Minimum:1:0. Ensuite, les consultations {8, 1, 5} avec le minimum 5 ; {6, 7} avec le minimum 5 ; et {} avec le minimum 9 exigent Nouveau:2:2:0. Les cinq appels appartiennent à une seule exécution. La deuxième série examine une consultation non vide après une autre ayant déjà compté des données."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une brève explication : quelle dépendance causait l'erreur, ce que tu as modifié et pourquoi les consultations suivantes n'incorporent plus les comptes précédents. Après avoir vérifié les deux séries, inverse l'ordre des deux consultations non vides de la seconde ; déduis d'abord les résultats attendus et vérifie que chaque résultat correspond toujours à sa consultation."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Corrige le comptage sans changer le contrat ni les consultations.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimum:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nouveau:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Le laboratoire est ouvert : différentes implémentations peuvent satisfaire ce contrat. La page suivante propose une solution de référence après ta tentative."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une solution de référence avec un comptage propre à chaque appel"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimum:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nouveau:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad est déclaré dans le corps de contar_altos. Chaque appel l'initialise à zéro, parcourt uniquement les données reçues et renvoie son propre résultat. Il n'a pas besoin du total laissé par un autre appel. La sortie calculée est Minimum:1:0 et, sur la ligne suivante, Nouveau:2:2:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : compter aussi les valeurs égales au minimum, compter une fois chaque élément admissible, renvoyer 0 pour un vecteur vide et rester indépendant des appels précédents. Cette solution locale exprime clairement cette indépendance. Dans ce programme séquentiel, remettre le compteur extérieur à zéro au début de chaque appel, avant le parcours, peut également satisfaire le contrat ; vérifie-le avec les cas, sans confondre cette correction avec un redémarrage du processus entre consultations."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparacion_frente_a_cambiar_la_prueba",
+          "question": "Quelle différence y a-t-il entre initialiser un compteur à zéro dans chaque appel et exécuter chaque consultation dans un processus différent ?",
+          "options": [
+            "L'une corrige la fonction ; l'autre évite la séquence d'appels qui révélait le défaut.",
+            "Les deux corrigent la fonction : chaque consultation doit toujours s'exécuter sans historique préalable.",
+            "La première conserve la cause ; la deuxième vérifie l'indépendance entre appels."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le contrat autorise plusieurs consultations au cours d'une même exécution. La correction doit fonctionner dans ce contexte. Redémarrer le programme entre les consultations peut donner l'impression que la version défectueuse fonctionne, car cela supprime précisément la condition que le test devait préserver.",
+          "reviewFeedback": [
+            "Compare ce qui change dans la fonction à ce qui change dans les conditions d'exécution. Examine quelle décision permet de tester plusieurs consultations dans le contexte exigé.",
+            "Relis le contexte dans lequel la consultation doit fonctionner. Réfléchis à la question de savoir si imposer des processus distincts conserve ce contexte ou supprime la condition étudiée.",
+            "Suis le moment où le compteur est initialisé et l'historique entre les consultations. Vérifie si ton test proposé observe réellement un appel après un autre dans le même processus."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réussir le petit cas ne suffit pas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre personne ajoute uniquement un retour spécial pour un vecteur vide. Sa version renvoie désormais 1:0 dans la petite reproduction, mais conserve le compteur extérieur pour les vecteurs non vides. Avant d'accepter cette correction, utilise un cas qui révèle aussi le comptage conservé sans dépendre d'un vecteur vide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contraprueba_de_retorno_especial",
+          "language": "cpp",
+          "question": "Prédis la sortie de cette correction partielle pour les deux consultations non vides. Calcule séparément ce qu'exige le contrat.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "2:4"
+          ],
+          "explanation": "Le premier appel compte 8 et 5 et laisse acumulado à 2. Le deuxième compte 6 et 7, les ajoute au total et renvoie 4. Le contrat exige 2:2. Le cas vide a réussi grâce à un retour spécial ; la dépendance contaminant les autres consultations persiste.",
+          "reviewFeedback": "Détermine si les consultations montrées passent par le retour spécial. Suis ensuite le compteur pendant les deux appels effectifs, en séparant ce que fait cette correction partielle de ce qu'exige le contrat."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "variacion_refuta_reparacion_parcial",
+          "question": "La petite reproduction réussit, mais la contre-épreuve non vide produit 2:4 au lieu de 2:2. Quelle action est justifiée ?",
+          "options": [
+            "Corriger le compteur pour que chaque appel traite ses propres données, puis répéter le cas initial et la variation.",
+            "Conserver le compteur et le retour spécial, puis limiter les tests suivants au vecteur vide.",
+            "Conserver le code et remplacer le résultat attendu de la deuxième consultation par le total observé."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le résultat attendu vient du contrat : {6, 7} ne contient que deux données. Une correction doit expliquer et éliminer la cause tout en conservant le cas qui a révélé le défaut. Adapter l'oracle au résultat erroné empêcherait le test de vérifier le contrat.",
+          "reviewFeedback": [
+            "Relie la correction proposée à la cause expliquant le cas initial. Vérifie quels contrôles et variations tu conserverais pour mettre cette explication à l'épreuve.",
+            "Un test réussi vérifie uniquement les conditions qu'il exerce. Réfléchis aux preuves qui resteraient sur les consultations non vides si tu cessais de les tester.",
+            "Distingue le résultat observé du critère utilisé pour le juger. Vérifie d'où vient la valeur attendue avant de la remplacer par celle de l'implémentation étudiée."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve la petite reproduction, le rapport initial et la variation non vide comme tests de régression. Lorsque tu modifieras à nouveau la fonction, ils aideront à détecter le retour de cette dépendance. Plus tard, nous étudierons comment organiser et automatiser les tests ; tu peux déjà justifier les entrées et les résultats sans supposer de framework de test."
+        },
+        {
+          "type": "note",
+          "text": "Mettre les hypothèses à l'épreuve dans leur contexte et conserver un cas détectant le retour d'un défaut sont des principes de la source citée. Ce comptage, cette correction partielle et cette contre-épreuve sont des activités originales (Thomas & Hunt, 2020, sujet 20, pp. 96–97 ; sujet 51, p. 278)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le contrat détermine si conserver l'historique est un défaut"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne conclus pas que toute donnée conservée entre les appels est incorrecte. Imagine une autre tâche : registrar_visita doit renvoyer le nombre de visites enregistrées depuis le démarrage du programme. Pour les trois appels de cette expérience, le contrat exige 1, 2 et 3. Cette intention diffère du comptage indépendant d'une collection."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_conservado_con_otro_contrato",
+          "language": "cpp",
+          "question": "Prédis la sortie. Correspond-elle à l'objectif d'enregistrer les visites depuis le début de cette exécution ?",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "explanation": "Chaque appel incrémente le même numero_visita et renvoie le total atteint. Ici, conserver cet historique exprime exactement l'exigence ; remettre le compteur à zéro à chaque appel les ferait tous renvoyer 1.",
+          "reviewFeedback": "Suis les appels de ce programme et le moment où son compteur est initialisé. Calcule d'abord ce que fait le corps affiché ; compare ensuite cet historique au nouveau contrat de visites."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_convertir_causa_en_regla_absoluta",
+          "question": "Quel jugement relie correctement les deux programmes étudiés ?",
+          "options": [
+            "Les deux doivent conserver leurs compteurs, car les entiers extérieurs sont toujours corrects.",
+            "Les deux doivent utiliser un nouveau compteur par appel, car conserver un historique est toujours une erreur.",
+            "contar_altos exige un comptage indépendant par consultation ; registrar_visita exige une continuité entre les appels."
+          ],
+          "correctIndex": 2,
+          "explanation": "Nous ne jugeons pas une organisation uniquement selon son apparence. Nous comparons le résultat au contrat et au contexte d'utilisation. La conservation de l'historique qui contaminait une consultation est nécessaire pour numéroter les visites d'une exécution.",
+          "reviewFeedback": [
+            "L'emplacement d'un compteur ne détermine pas à lui seul sa validité. Compare la relation entre appels exigée par chaque contrat avant de justifier un historique dans les deux.",
+            "Réfléchis aux informations nécessaires à une opération qui numérote les visites depuis le début. Une correction utile pour un autre contrat ne devient pas automatiquement une règle universelle.",
+            "Explique ce qui doit appartenir à une consultation et ce qui doit persister entre les opérations de chaque programme. Utilise leurs contrats pour juger l'organisation choisie."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour transférer la méthode à un autre défaut, commence par le résultat exigé et la provenance du programme. Formule des hypothèses qui produisent des prédictions vérifiables. Choisis des données qui les distinguent ; réduis le cas tout en conservant sa reproduction ; change un paramètre pertinent à la fois. Ensuite, confronte la correction au cas initial et à une variation susceptible de réfuter ton explication. Si les données ne distinguent pas deux hypothèses, conserve le doute et cherche une autre observation."
+        }
+      ]
+    }
+  ]
+}
