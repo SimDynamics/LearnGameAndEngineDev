@@ -1,0 +1,1623 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__rangos_y_condiciones_simultaneas",
+  "title": "Intervalles et conditions simultanées",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux conditions pour une même valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu'ici, nous avons résolu des conditions comme x < 1 ou x ≥ −2. Si les deux doivent être vérifiées en même temps, nous cherchons une même valeur qui les satisfait toutes les deux. On peut écrire −2 ≤ x < 1. Cette double inégalité abrège −2 ≤ x et x < 1 ; il ne suffit pas de vérifier une seule partie."
+        },
+        {
+          "type": "paragraph",
+          "text": "−2 est la borne inférieure et un la borne supérieure. L'intervalle réunit toutes les valeurs situées entre elles qui respectent les extrémités : ici, il inclut −2 et exclut un. Nous travaillerons uniquement avec les rationnels, sauf si le contexte restreint davantage le domaine. Nous utiliserons les inégalités pour écrire les intervalles (Lang, 1971, pp. 78–79)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur une droite graduée, les valeurs augmentent vers la droite. Un point plein inclut la valeur marquée ; un point vide l'exclut. Une demi-droite colorée avec une flèche désigne les valeurs qui continuent dans ce sens. Les graduations visibles aident à lire l'échelle, mais ne sont pas les seules valeurs : entre les entiers, il existe aussi des rationnels comme −1/2. Les deux droites suivantes représentent séparément les conditions portant sur le même x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_en_dos_rectas",
+          "prompt": "Observe les conditions représentées. Sélectionne tous les rationnels proposés qui appartiennent aux deux demi-droites simultanément.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "Première condition : x ≥ −2."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": -2,
+              "closed": true,
+              "direction": "right"
+            },
+            {
+              "type": "text",
+              "text": "Deuxième condition : x < 1."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": 1,
+              "closed": false,
+              "direction": "left"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_en_dos_rectas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−3",
+                  "reviewFeedback": "Place cette valeur sur chaque droite et exige que les deux conditions soient vérifiées simultanément."
+                },
+                {
+                  "id": "b",
+                  "label": "−2",
+                  "reviewFeedback": "Examine pour ce point les symboles et le type d'extrémité de chacune des deux demi-droites."
+                },
+                {
+                  "id": "c",
+                  "label": "−1/2",
+                  "reviewFeedback": "Compare ce rationnel à chaque borne séparément, sans remplacer l'exigence simultanée par une seule condition."
+                },
+                {
+                  "id": "d",
+                  "label": "0",
+                  "reviewFeedback": "Vérifie l'appartenance de ce point à chaque demi-droite, y compris le traitement des bornes."
+                },
+                {
+                  "id": "e",
+                  "label": "1",
+                  "reviewFeedback": "Compare cette valeur à la borne inférieure ainsi qu'à la borne supérieure."
+                },
+                {
+                  "id": "f",
+                  "label": "3/2",
+                  "reviewFeedback": "Examine si ce point est une extrémité et quelles conditions incluent ou excluent cette borne."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2, −1/2 et zéro satisfont x ≥ −2 et x < 1. −3 ne satisfait pas la première condition ; un et 3/2 ne satisfont pas la deuxième. Le point plein inclut −2 ; le point vide exclut un. Satisfaire une seule condition ne suffit pas pour appartenir à l'intervalle commun.",
+            "incorrect": "Lis d'abord la valeur de chaque point, puis la direction colorée. Conserve uniquement les valeurs qui conviennent sur les deux droites, en tenant compte de leurs extrémités."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_cotas_e_inclusion",
+          "prompt": "Pour −7/4 < t ≤ 5/4, écris les bornes inférieure et supérieure, puis indique si chaque extrémité est incluse. Les bornes délimitent l'intervalle, qui contient aussi des rationnels entre elles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_cotas_e_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Ton choix inclut la borne inférieure. Remplace l'inconnue par cette valeur dans la comparaison qui la définit et vérifie si son symbole autorise l'égalité."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Ton choix exclut la borne inférieure. Vérifie si cette extrémité satisfait elle-même la condition écrite en tenant compte du symbole."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité supérieure",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour justifier l'inclusion de la borne supérieure, teste cette valeur dans la comparaison qui la limite. Distingue l'égalité du dépassement."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour justifier l'exclusion de la borne supérieure, examine ce qu'exige le symbole lorsque la valeur coïncide exactement avec la borne."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-7/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La borne inférieure est −7/4 et est exclue parce que la première comparaison est stricte. La borne supérieure est 5/4 et est incluse grâce à ≤. Zéro se trouve dans l'intervalle, mais n'est pas une de ses extrémités.",
+            "incorrect": "Lis séparément les deux comparaisons : t doit être supérieur à −7/4 et inférieur ou égal à 5/4. Repère celle qui autorise l'égalité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Types d'extrémités et intervalles à une seule borne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec des bornes distinctes, un intervalle ouvert exclut ses deux extrémités et un intervalle fermé les inclut toutes les deux. Un intervalle mixte en inclut une et exclut l'autre ; on l'appelle aussi semi-ouvert ou semi-fermé. Ces noms décrivent l'inclusion des extrémités sans supprimer les valeurs intérieures (Lang, 1971, p. 78)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_los_extremos",
+          "prompt": "Classe chaque intervalle selon l'inclusion de ses extrémités : −3 ≤ x < 4 ; 1/2 < y < 2 ; −2 ≤ z ≤ −1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "dropdown",
+                  "label": "Type d'extrémités de −3 ≤ x < 4",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Les deux extrémités sont exclues.",
+                      "reviewFeedback": "Ton classement exclut les deux extrémités de l'intervalle avec x. Teste séparément l'égalité avec chaque borne à l'aide des symboles de cette condition."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Les deux extrémités sont incluses.",
+                      "reviewFeedback": "Ton classement inclut les deux extrémités de l'intervalle avec x. Vérifie la proposition à chaque borne sans supposer que les deux symboles ont le même sens."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Une seule extrémité est incluse.",
+                      "reviewFeedback": "Ton classement autorise une seule borne de l'intervalle avec x. Justifie ce nombre d'extrémités incluses en examinant chaque comparaison séparément."
+                    }
+                  ]
+                },
+                {
+                  "id": "y",
+                  "type": "dropdown",
+                  "label": "Type d'extrémités de 1/2 < y < 2",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Les deux extrémités sont exclues.",
+                      "reviewFeedback": "Ton classement exclut les deux bornes de l'intervalle avec y. Vérifie ce qu'exige chaque symbole lorsque la valeur atteint exactement sa borne."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Les deux extrémités sont incluses.",
+                      "reviewFeedback": "Ton classement inclut les deux bornes de l'intervalle avec y. Vérifie chaque égalité avec les signes écrits dans cette condition."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Une seule extrémité est incluse.",
+                      "reviewFeedback": "Ton classement inclut une seule borne de l'intervalle avec y. Cherche dans les deux comparaisons ce qui justifierait cette différence de traitement."
+                    }
+                  ]
+                },
+                {
+                  "id": "z",
+                  "type": "dropdown",
+                  "label": "Type d'extrémités de −2 ≤ z ≤ −1",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Les deux extrémités sont exclues.",
+                      "reviewFeedback": "Ton classement exclut les deux bornes de l'intervalle avec z. Compare cette exclusion à ce que permet chaque symbole lors de l'égalité avec la borne."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Les deux extrémités sont incluses.",
+                      "reviewFeedback": "Ton classement inclut les deux bornes de l'intervalle avec z. Vérifie leur appartenance en remplaçant l'inconnue par chaque extrémité."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Une seule extrémité est incluse.",
+                      "reviewFeedback": "Ton classement traite différemment les bornes de l'intervalle avec z. Vérifie si les symboles des deux bornes justifient ce traitement."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "exact_text",
+                    "expected": "mixto"
+                  },
+                  "y": {
+                    "type": "exact_text",
+                    "expected": "abierto"
+                  },
+                  "z": {
+                    "type": "exact_text",
+                    "expected": "cerrado"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le premier est mixte : il inclut −3 et exclut quatre. Le deuxième est ouvert : il exclut 1/2 et deux. Le troisième est fermé : il inclut −2 et −1. Tous contiennent aussi les rationnels intérieurs.",
+            "incorrect": "Décide séparément si chaque extrémité est autorisée. N'appelle pas un intervalle fermé simplement parce qu'il inclut une extrémité, ni ouvert simplement parce qu'il en exclut une."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre deux bornes rationnelles distinctes, il existe des valeurs intérieures. Si a < b, le milieu m = (a + b)/2 est rationnel. Les différences m − a et b − m valent toutes les deux (b − a)/2 et sont positives. Ainsi a < m < b, même si les deux extrémités sont exclues. Construire un milieu produit une valeur intérieure, sans affirmer qu'elle soit la seule."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_un_punto_medio",
+          "prompt": "Calcule le milieu des bornes 2/3 et 5/6. Écris aussi de combien il dépasse la borne inférieure et combien il lui manque pour atteindre la borne supérieure. Tu vérifies ainsi qu'il appartient à l'intervalle 2/3 ≤ x < 5/6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_un_punto_medio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Milieu des deux bornes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sobre_inferior",
+                  "type": "numeric",
+                  "label": "Milieu moins borne inférieure",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "hasta_superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure moins milieu",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  },
+                  "sobre_inferior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  },
+                  "hasta_superior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  }
+                }
+              }
+            },
+            {
+              "id": "construir_un_punto_medio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le milieu est rationnel et les deux différences positives le placent à l'intérieur ; d'autres valeurs intérieures peuvent exister.",
+                  "reviewFeedback": "Utilise les différences calculées pour justifier la position du point, sans en déduire qu'il est le seul possible."
+                },
+                {
+                  "id": "b",
+                  "label": "Seul le milieu peut satisfaire deux bornes.",
+                  "reviewFeedback": "Distingue trouver un point intérieur et prouver qu'aucun autre n'existe ; essaie une petite variation rationnelle."
+                },
+                {
+                  "id": "c",
+                  "label": "Exclure l'extrémité supérieure élimine toutes les valeurs intérieures.",
+                  "reviewFeedback": "Examine un point strictement intérieur avant de conclure sur l'effet de l'exclusion d'une borne."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La moyenne est (2/3 + 5/6)/2 = (3/2)/2 = 3/4. Les deux différences valent 1/12 et sont positives : le point satisfait donc les deux conditions. L'exercice demandait ce milieu précis ; d'autres rationnels intérieurs appartiennent aussi à l'intervalle.",
+            "incorrect": "Additionne les bornes en utilisant un dénominateur commun, puis divise la somme par deux. Vérifie ensuite chaque différence. Exclure une extrémité n'exclut pas les valeurs strictement comprises entre les bornes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un intervalle peut aussi n'être borné que d'un côté. Dans x > −5/3, il y a une borne inférieure mais pas de borne supérieure : on peut choisir des rationnels toujours plus grands. Dans x ≤ 4, il n'y a qu'une borne supérieure. Ces intervalles sans borne d'un côté sont aussi appelés intervalles non bornés ; l'absence de borne n'est ni un nombre ni une extrémité que l'on peut atteindre (Lang, 1971, p. 79). Ici, « infini » signifie continuer sans borne d'un côté. Un intervalle borné dont les bornes sont distinctes contient aussi une infinité de rationnels : on peut construire de nouveaux milieux entre un point intérieur et une borne, sans jamais l'atteindre."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_una_cota_sin_inventar_la_otra",
+          "prompt": "Pour x > −5/3, écris la borne numérique indiquée, décide si elle est incluse et indique de quel côté il n'y a pas de borne.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identificar_una_cota_sin_inventar_la_otra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cota",
+                  "type": "numeric",
+                  "label": "Borne numérique indiquée dans la condition",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusion de cette borne",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Ton choix inclut la borne de cette demi-droite. Vérifie si la valeur limite elle-même satisfait la comparaison initiale."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Ton choix exclut la borne de cette demi-droite. Examine le symbole initial et justifie ce qui se produit exactement à la limite."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Borne absente de cette condition",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "Il n'y a pas de borne supérieure.",
+                      "reviewFeedback": "Ton affirmation permet de continuer sans limite vers les grandes valeurs. Examine si la condition donnée impose une borne dans ce sens."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "Il n'y a pas de borne inférieure.",
+                      "reviewFeedback": "Ton affirmation permet de continuer sans limite vers les petites valeurs. Vérifie si ces positions satisferaient encore la condition écrite."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Il y a une borne inférieure et une borne supérieure.",
+                      "reviewFeedback": "Ton affirmation propose des limites dans les deux directions. Trouve dans la condition la restriction qui justifierait chaque borne, sans inventer une extrémité supplémentaire."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cota": {
+                    "type": "numeric",
+                    "expected": "-5/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La borne numérique indiquée est −5/3, exclue par >. Il n'y a pas de borne supérieure : tout rationnel supérieur à −5/3 convient, aussi grand soit-il. Zéro peut appartenir à l'intervalle, mais ne remplace pas une borne absente.",
+            "incorrect": "Distingue la borne explicite de la direction dans laquelle l'intervalle se prolonge. Ne remplace pas l'absence de borne par zéro ou par une réponse numérique inventée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prendre l'intersection signifie conserver ce qui est commun"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'intersection de deux intervalles réunit les valeurs appartenant aux deux. Pour −2 ≤ x < 3 et 1 < x ≤ 4, l'intervalle commun est 1 < x < 3. Un ne satisfait pas la deuxième condition et trois ne satisfait pas la première ; les valeurs intérieures satisfont les deux."
+        },
+        {
+          "type": "paragraph",
+          "text": "S'il existe deux bornes inférieures, la plus grande impose l'exigence la plus forte. S'il existe deux bornes supérieures, c'est la plus petite. Une extrémité résultante n'est incluse que si sa valeur satisfait toutes les conditions. Une comparaison stricte dont la borne est plus éloignée peut admettre cette extrémité ; la simple présence d'un symbole < ou > quelque part ne suffit pas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intersecar_dos_rangos_acotados",
+          "prompt": "Trouve l'intersection de −5/4 < x ≤ 7/4 et −1/2 ≤ x < 5/2 dans les rationnels. Écris les bornes de l'intervalle commun et indique si ses extrémités sont incluses.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intersecar_dos_rangos_acotados__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure de l'intervalle commun",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure de l'intervalle commun",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité inférieure commune, teste ce point dans chaque condition initiale de l'intersection. Il doit appartenir aux deux simultanément."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité inférieure commune, examine son appartenance à chacun des intervalles initiaux. Appuie-toi sur les comparaisons, pas seulement sur une marque."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité supérieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité supérieure commune, confronte sa valeur à toutes les restrictions initiales. Conserve l'exigence d'appartenance simultanée."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité supérieure commune, vérifie quelle condition initiale empêcherait de l'admettre. Ne déduis pas son traitement de son seul statut de borne."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La borne inférieure la plus contraignante est −1/2 et la borne supérieure la plus contraignante est 7/4. −1/2 dépasse −5/4 et est autorisé par la deuxième condition ; 7/4 est autorisé par la première et est inférieur à 5/2. L'intervalle commun est donc −1/2 ≤ x ≤ 7/4, avec les deux extrémités incluses.",
+            "incorrect": "Compare entre elles les bornes inférieures, puis les bornes supérieures. Teste chaque extrémité choisie dans les deux intervalles initiaux ; une inégalité stricte moins contraignante ne l'exclut pas automatiquement."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_exigencia_estricta_en_la_misma_cota",
+          "prompt": "Il faut satisfaire simultanément x ≥ −1, x > −1 et x ≤ 2. Écris les bornes restantes et indique si leurs extrémités sont incluses.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_exigencia_estricta_en_la_misma_cota__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure commune",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure commune",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de la borne inférieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Ta décision inclut la borne inférieure malgré plusieurs exigences. Remplace l'inconnue par cette borne dans chacune et vérifie si toutes autorisent l'égalité."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Ta décision exclut la borne inférieure commune. Revois toutes les exigences portant sur ce point pour justifier son traitement dans l'intersection."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de la borne supérieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Ta décision inclut la borne supérieure commune. Vérifie que ce point satisfait les trois exigences, y compris celles qui délimitent l'autre côté."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Ta décision exclut la borne supérieure commune. Examine le symbole agissant à cette borne et vérifie aussi les autres exigences au même point."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux exigences inférieures ont la même borne, mais x > −1 exclut −1. Le résultat est −1 < x ≤ 2. Deux satisfait aussi les restrictions inférieures et est autorisé par la supérieure. Lorsque les bornes coïncident, il suffit qu'une condition exclue l'extrémité pour qu'elle n'appartienne pas à l'intersection.",
+            "incorrect": "Satisfaire x ≥ −1 ne suffit pas si l'on exige aussi x > −1. Vérifie séparément l'inclusion de chaque extrémité ; l'exclusion de la borne inférieure n'impose pas celle de la supérieure."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "interseccion_sin_cota_superior",
+          "prompt": "Trouve l'intersection de x ≥ 1/3 et x > −2/3. Écris la borne inférieure restante, son inclusion et le côté qui se prolonge sans borne.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "interseccion_sin_cota_superior__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure commune",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure la borne inférieure de ces deux demi-droites, remplace l'inconnue par cette valeur dans les deux conditions et vérifie les deux comparaisons."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure la borne inférieure de ces deux demi-droites, vérifie si leur intersection rejette ce point. Conserve la même valeur en testant les deux exigences."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Côté qui reste sans borne",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "Il n'y a pas de borne supérieure.",
+                      "reviewFeedback": "Ton affirmation laisse les valeurs continuer sans borne vers les grandes valeurs. Vérifie si les deux conditions restent satisfaites en allant dans ce sens."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "Il n'y a pas de borne inférieure.",
+                      "reviewFeedback": "Ton affirmation laisse les valeurs continuer sans borne vers les petites valeurs. Vérifie si les deux conditions permettent d'aller arbitrairement loin dans ce sens."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Il y a une borne inférieure et une borne supérieure.",
+                      "reviewFeedback": "Ton affirmation attribue deux bornes à l'intervalle commun. Identifie l'exigence qui justifierait une limite de chaque côté, au lieu de supposer tous les intervalles bornés."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "1/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condition x ≥ 1/3 est plus forte. Un tiers est aussi supérieur à −2/3 ; il est donc inclus. La solution est x ≥ 1/3, sans borne supérieure. La condition stricte dont la borne est plus petite n'exclut pas l'extrémité de la condition plus forte.",
+            "incorrect": "Détermine laquelle des restrictions inférieures exige des valeurs plus grandes. Teste son extrémité dans l'autre condition et conserve le fait qu'aucune n'impose de limite supérieure."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bornes confondues, intervalles vides et absence de restrictions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la borne inférieure dépasse la borne supérieure, aucune valeur ne peut satisfaire les deux : l'intervalle commun est vide. Si les bornes coïncident en un rationnel a et autorisent toutes deux l'égalité, il ne reste que x = a. Si l'une exclut cette valeur, il ne reste aucune solution. Cette vérification distingue une valeur unique d'un intervalle contenant des valeurs intérieures."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une condition vraie pour tous les rationnels n'impose aucune restriction lorsqu'on l'intersecte avec une autre. Si les deux sont vraies pour tous, tous les rationnels restent. Une condition fausse pour tous rend l'intersection vide. Dans ces cas, on décrit la catégorie ; on n'invente pas de bornes numériques."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_cotas_coincidentes_o_cruzadas",
+          "prompt": "Classe les solutions rationnelles de chaque ensemble de conditions : −1 ≤ x ≤ −1 ; −1 < y ≤ −1 ; 4 ≤ z < 3 ; r + 4 ≥ r + 3 avec 2r − 1 < 2r + 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_cotas_coincidentes_o_cruzadas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coinciden",
+                  "type": "dropdown",
+                  "label": "Solutions de −1 ≤ x ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Un seul nombre rationnel convient.",
+                      "reviewFeedback": "Ton classement affirme l'unicité pour les bornes confondues de x. Examine quelles positions peuvent respecter les deux bornes et comment l'égalité est traitée."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme l'impossibilité pour les bornes de x. Teste le point limite et vérifie chaque symbole avant d'affirmer qu'aucune valeur ne convient."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs rationnels, mais pas tous, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs valeurs pour les bornes de x. Vérifie si un déplacement de part et d'autre de la borne respecte encore les deux exigences."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine pour les bornes de x. Teste cette portée avec une valeur d'un côté de la borne et revois les deux conditions."
+                    }
+                  ]
+                },
+                {
+                  "id": "exclusion",
+                  "type": "dropdown",
+                  "label": "Solutions de −1 < y ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Un seul nombre rationnel convient.",
+                      "reviewFeedback": "Ton classement affirme une seule valeur pour les bornes de y. Vérifie où y devrait se trouver et si cette position satisfait les deux symboles initiaux."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme l'impossibilité pour les bornes de y. Cherche s'il existe un point qui respecte simultanément les deux comparaisons."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs rationnels, mais pas tous, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs valeurs pour les bornes de y. Justifie où ces points pourraient être placés par rapport aux deux bornes avant de les considérer comme solutions."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine pour les bornes de y. Examine ce qu'exigerait chaque comparaison d'un rationnel quelconque, en conservant son caractère strict ou inclusif."
+                    }
+                  ]
+                },
+                {
+                  "id": "cruzadas",
+                  "type": "dropdown",
+                  "label": "Solutions de 4 ≤ z < 3",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Un seul nombre rationnel convient.",
+                      "reviewFeedback": "Ton classement affirme une solution unique pour les bornes de z. Place le candidat par rapport aux limites imposées par les deux comparaisons et vérifie-les."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme l'impossibilité pour les bornes de z. Représente leurs restrictions sur la droite graduée et cherche une position commune."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs rationnels, mais pas tous, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs valeurs pour les bornes de z. Examine où ces points devraient se situer par rapport aux deux bornes."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine pour les bornes de z. Vérifie si une valeur quelconque pourrait satisfaire les deux restrictions écrites."
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_restriccion",
+                  "type": "dropdown",
+                  "label": "Solutions des deux conditions avec r",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Un seul nombre rationnel convient.",
+                      "reviewFeedback": "Ton classement affirme l'unicité pour les conditions avec r. Réduis les membres et examine s'il reste une restriction identifiant une valeur particulière."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme l'impossibilité pour les conditions avec r. Simplifie chaque comparaison et examine quel raisonnement permettrait d'exclure toutes les valeurs du domaine."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs rationnels, mais pas tous, conviennent.",
+                      "reviewFeedback": "Ton classement admet seulement certains rationnels pour les conditions avec r. Vérifie si les comparaisons simplifiées dépendent encore de la valeur choisie."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tous les rationnels pour les conditions avec r. Justifie cette portée par des étapes valides, sans te contenter de quelques substitutions favorables."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coinciden": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "exclusion": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "cruzadas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "sin_restriccion": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première admet seulement −1. La deuxième exigerait d'être supérieur à −1 et de ne pas lui être supérieur simultanément : aucune solution. Dans la troisième, on ne peut pas être au moins égal à quatre et inférieur à trois. Les conditions avec r se réduisent à 4 ≥ 3 et −1 < 3, toutes deux vraies : tous les rationnels conviennent.",
+            "incorrect": "Si les bornes coïncident, vérifie l'égalité dans les deux parties. Si elles sont inversées, les exigences sont incompatibles. Pour les conditions avec r, annule les termes égaux par des soustractions réversibles et décide si les comparaisons restantes sont vraies."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_inecuaciones_que_fijan_un_valor",
+          "prompt": "Résous simultanément (x − 1)/2 ≥ 3/4 et 3 − x ≥ 1/2. Écris la borne inférieure imposée par la première, la borne supérieure imposée par la deuxième, puis classe l'ensemble commun des solutions rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_inecuaciones_que_fijan_un_valor__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure obtenue de la première inéquation",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure obtenue de la deuxième inéquation",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "categoria",
+                  "type": "dropdown",
+                  "label": "Nombre de solutions rationnelles communes",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Un seul nombre rationnel convient.",
+                      "reviewFeedback": "Ton classement affirme un seul point commun à ces deux inéquations. Vérifie les positions permises par les bornes obtenues et l'appartenance de leur limite."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucun nombre rationnel ne convient.",
+                      "reviewFeedback": "Ton classement affirme qu'il n'existe aucun point commun. Vérifie si les bornes obtenues permettent une valeur satisfaisant les symboles initiaux."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs rationnels, mais pas tous, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs points communs. Examine l'espace entre les bornes obtenues et s'il admet plus d'une position rationnelle."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Tous les nombres rationnels conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout le domaine. Teste la portée des deux restrictions initiales après tes transformations équivalentes."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "categoria": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplier la première par deux et ajouter un donne x ≥ 5/2. Dans la deuxième, soustraire trois donne −x ≥ −5/2 ; diviser par −1 inverse le sens et donne x ≤ 5/2. Les deux bornes autorisent l'égalité : l'unique valeur est donc 5/2. Dans les conditions initiales, on obtient 3/4 ≥ 3/4 et 1/2 ≥ 1/2.",
+            "incorrect": "Résous les deux conditions pour le même x. Vérifie l'inversion du sens lors de la division par −1 dans la deuxième, puis détermine si l'égalité aux bornes est autorisée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtenir des intervalles en résolvant deux comparaisons"
+        },
+        {
+          "type": "paragraph",
+          "text": "−1 < 2x + 3 ≤ 7 contient deux conditions : −1 < 2x + 3 et 2x + 3 ≤ 7. Soustraire trois dans chacune donne −4 < 2x ≤ 4. Diviser par deux, qui est positif, donne −2 < x ≤ 2. La forme abrégée permet de suivre les deux comparaisons, mais chaque étape doit être justifiée dans les deux (Lang, 1971, pp. 75–78, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec un facteur négatif, les deux sens s'inversent. Dans 1 ≤ −2x + 3 < 7, soustraire trois donne −2 ≤ −2x < 4. Diviser par −2 donne 1 ≥ x > −2. En mettant la plus petite borne à gauche, cela s'écrit −2 < x ≤ 1. L'extrémité exclue −2 provient de la comparaison stricte avec sept ; l'extrémité incluse un provient de la comparaison non stricte avec un."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_condicion_doble",
+          "prompt": "Résous −3/4 ≤ (1/2)t + 1/4 < 5/4 dans les rationnels. Écris les bornes inférieure et supérieure de t et l'inclusion de chaque extrémité. Tu peux résoudre séparément les deux parties.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_condicion_doble__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure pour t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure pour t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité inférieure de t, teste cette borne dans la partie initiale qui la définit. Conserve la comparaison pendant les opérations."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité inférieure de t, vérifie comment le symbole de la partie initiale correspondante traite l'égalité."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité supérieure pour t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité supérieure de t, revois la comparaison initiale qui fixe ce côté et évalue l'égalité à la borne."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité supérieure de t, vérifie la condition initiale à cette borne. Distingue atteindre la limite du fait de rester strictement en deçà."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire 1/4 donne −1 ≤ t/2 < 1. Multiplier par deux conserve les deux sens et donne −2 ≤ t < 2. La borne inférieure produit une égalité dans la comparaison non stricte ; la supérieure produit une égalité dans la comparaison stricte et est exclue.",
+            "incorrect": "Applique la soustraction aux deux comparaisons. Multiplier par deux, positif, n'inverse pas l'ordre. Conserve l'information sur l'extrémité provenant d'une comparaison autorisant l'égalité."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "invertir_y_reordenar_los_extremos",
+          "prompt": "Résous 0 ≤ −(3/2)u + 1 < 3. Écris l'intervalle de u avec la borne inférieure en premier, puis indique l'inclusion des deux extrémités.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "invertir_y_reordenar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure pour u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure pour u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure pour u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure la borne inférieure de u, identifie quelle partie initiale la produit après division par un facteur négatif. Vérifie ce point dans la condition de départ."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure la borne inférieure de u, suis la comparaison menant à cette borne et revois son traitement de l'égalité après l'inversion de l'ordre."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité supérieure pour u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure la borne supérieure de u, relie cette extrémité à la comparaison initiale qui l'impose. Remplace l'inconnue par cette valeur sans perdre le signe du coefficient."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure la borne supérieure de u, vérifie le cas d'égalité dans l'exigence initiale. Ne déduis pas l'inclusion uniquement du signe du diviseur."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-4/3"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2/3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire un donne −1 ≤ −(3/2)u < 2. Diviser par −3/2 inverse les deux comparaisons : 2/3 ≥ u > −4/3. En remettant les bornes dans l'ordre, on obtient −4/3 < u ≤ 2/3. Pour u = −4/3, l'expression initiale vaut trois et ne satisfait pas < 3 ; pour u = 2/3, elle vaut zéro et satisfait 0 ≤ 0.",
+            "incorrect": "Inverse les deux sens lors de la division par le nombre négatif donné. Réordonne ensuite les extrémités en conservant leur inclusion : ne modifie pas seulement les nombres ni une seule des comparaisons."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "S'exercer et vérifier quelle condition a été perdue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour résoudre plusieurs exigences, tu peux transformer chacune par une méthode différente, puis prendre l'intersection de leurs solutions. Vérifie les extrémités obtenues dans toutes les conditions initiales. Examiner la donnée ou l'étape oubliée peut révéler l'erreur plus clairement que répéter la même suite d'opérations (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_condiciones_simultaneas_por_cuenta_propia",
+          "prompt": "Les conditions (2x − 1)/3 > 1/2, 5 − x ≥ 2 et x/2 + 1 ≤ 3 doivent être vérifiées simultanément. Résous-les par ta propre méthode et écris les bornes de l'intervalle commun, avec leur inclusion.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_condiciones_simultaneas_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure commune pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure commune pour x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité inférieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité inférieure commune à ces trois inéquations, évalue ce point dans chacune. Revois quels symboles autorisent leurs bornes respectives."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité inférieure commune à ces trois inéquations, vérifie ce qui se passe lorsque tu remplaces l'inconnue par cette valeur dans chaque exigence initiale, en les conservant toutes simultanément."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de l'extrémité supérieure commune",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure l'extrémité supérieure commune, teste la valeur proposée dans les trois conditions avant de décider si elle appartient à l'intervalle final."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure l'extrémité supérieure commune, vérifie comment chaque symbole traite ce point. Une extrémité de l'intervalle résultant doit être contrôlée dans les conditions initiales."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première donne x > 5/4 ; la deuxième, x ≤ 3 ; la troisième, x ≤ 4. La borne supérieure trois est plus contraignante que quatre. On obtient 5/4 < x ≤ 3. L'extrémité inférieure échoue à la comparaison stricte de la première ; trois satisfait les trois conditions initiales. Résoudre la condition moins contraignante reste utile pour confirmer qu'elle n'ajoute aucune exclusion.",
+            "incorrect": "Résous chaque condition sans perdre ses groupes ni oublier l'inversion du sens lors de la division par −1 dans la deuxième. Conserve ensuite l'exigence inférieure et la plus forte des supérieures. N'omets pas une condition avant de justifier qu'elle est moins contraignante."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_cumplir_una_en_vez_de_ambas",
+          "prompt": "Pour x > 1 et x ≤ 3, une note affirme qu'il suffit de satisfaire une seule des deux conditions. Sélectionne toutes les valeurs proposées qui satisfont réellement les deux, puis choisis le bon diagnostic.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0",
+                  "reviewFeedback": "Remplace l'inconnue par cette proposition dans les deux comparaisons ; ne considère pas qu'une seule suffit."
+                },
+                {
+                  "id": "b",
+                  "label": "1",
+                  "reviewFeedback": "Vérifie en particulier si le symbole strict autorise l'égalité pour cette valeur."
+                },
+                {
+                  "id": "c",
+                  "label": "2",
+                  "reviewFeedback": "Vérifie les deux exigences avec cette valeur et conserve chaque comparaison dans ton raisonnement."
+                },
+                {
+                  "id": "d",
+                  "label": "3",
+                  "reviewFeedback": "Examine cette valeur face aux deux bornes et au symbole utilisé pour chacune."
+                },
+                {
+                  "id": "e",
+                  "label": "4",
+                  "reviewFeedback": "Vérifie également la borne supérieure avec cette valeur, et pas uniquement l'inférieure."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            },
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La note conserve des valeurs qui ne satisfont pas une exigence ; appartenir à l'intervalle commun suppose de satisfaire les deux.",
+                  "reviewFeedback": "Pour justifier ce diagnostic, confronte chaque exigence à une valeur concrète proposée par la note."
+                },
+                {
+                  "id": "b",
+                  "label": "Si une valeur satisfait une condition, elle satisfait automatiquement l'autre.",
+                  "reviewFeedback": "Teste cette prétendue implication avec une valeur qui satisfait la première condition, puis calcule la seconde."
+                },
+                {
+                  "id": "c",
+                  "label": "Le fait qu'une bonne proposition coïncide prouve que la note conserve toutes les solutions.",
+                  "reviewFeedback": "Distingue la vérification d'une proposition de la justification qu'un critère conserve tout l'ensemble des solutions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Deux et trois satisfont les deux conditions. Zéro et un satisfont x ≤ 3, mais pas x > 1 ; quatre satisfait x > 1, mais pas x ≤ 3. Zéro, par exemple, réfute la note. L'intersection complète est 1 < x ≤ 3 parce qu'elle conserve exactement les deux exigences ; il ne suffit pas de compter les propositions de la liste pour le justifier.",
+            "incorrect": "Teste chaque proposition dans les deux conditions sans choisir seulement celle qui lui convient. Un contre-exemple suffit à réfuter la note ; décrire toutes les solutions exige de conserver les deux restrictions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Adapter l'intervalle à un domaine concret"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une illustration de largeur x centimètres doit convenir à deux modèles. x peut être un rationnel non négatif. Le premier modèle ajoute 3/2 cm de marges à la largeur et exige un total d'au moins six centimètres. Le deuxième ajoute 5/2 cm et exige un total inférieur à onze centimètres. Les deux modèles doivent fonctionner avec la même illustration."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_ancho_compatible_con_dos_plantillas",
+          "prompt": "Construis les conditions des deux modèles et résous-les sans suite d'étapes imposée. Écris les bornes de la largeur commune en centimètres et l'inclusion de leurs extrémités. Vérifie ensuite le domaine non négatif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_ancho_compatible_con_dos_plantillas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Borne inférieure de la largeur x, en centimètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Borne supérieure de la largeur x, en centimètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion de la largeur minimale",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure la largeur minimale, interprète la borne au regard des restrictions des modèles. Vérifie également qu'il s'agit d'une longueur non négative."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure la largeur minimale, vérifie si l'égalité satisfait les restrictions du modèle. Conserve le centimètre comme unité pendant la vérification."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion de la largeur maximale",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "L'extrémité est incluse.",
+                      "reviewFeedback": "Pour inclure la largeur maximale, remplace l'inconnue par cette borne dans les conditions construites à partir des modèles. Vérifie le traitement de l'égalité."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "L'extrémité est exclue.",
+                      "reviewFeedback": "Pour exclure la largeur maximale, relie ta décision aux symboles exprimant les limites des modèles et vérifie le point limite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les conditions sont x + 3/2 ≥ 6 et x + 5/2 < 11. Soustraire chaque marge donne x ≥ 9/2 et x < 17/2. La largeur doit satisfaire 9/2 ≤ x < 17/2 cm ; toutes ces valeurs sont non négatives. L'extrémité inférieure permet d'atteindre six centimètres dans le premier modèle ; l'extrémité supérieure atteindrait onze dans le deuxième et est exclue.",
+            "incorrect": "Ajoute chaque marge à la même largeur x et compare-la au total autorisé par son modèle. « Au moins » autorise l'égalité ; « inférieur à » l'exclut. Les bornes finales représentent des centimètres d'illustration, et non les largeurs totales marges comprises."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un jeu de société, une réserve contient n jetons, un entier non négatif. Son score est n + 2 et doit être d'au moins huit. Sa consommation est de 2n + 1 unités d'énergie et doit être inférieure à dix-huit. Les deux exigences utilisent leurs unités respectives et doivent être satisfaites simultanément."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_rango_racional_y_una_reserva_entera",
+          "prompt": "Résous les deux exigences du jeu en conservant le domaine des jetons entiers. Sélectionne toutes les réserves autorisées parmi les propositions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_rango_racional_y_una_reserva_entera__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 jetons",
+                  "reviewFeedback": "Teste cette réserve dans les deux exigences du jeu ; appartenir au domaine des entiers ne suffit pas."
+                },
+                {
+                  "id": "b",
+                  "label": "6 jetons",
+                  "reviewFeedback": "Vérifie cette réserve à la fois dans le domaine des jetons entiers et dans les deux conditions."
+                },
+                {
+                  "id": "c",
+                  "label": "7 jetons",
+                  "reviewFeedback": "Évalue les deux conditions pour cette quantité, en conservant l'unité « jetons »."
+                },
+                {
+                  "id": "d",
+                  "label": "8 jetons",
+                  "reviewFeedback": "Vérifie comment les deux exigences traitent cette réserve et ses éventuelles bornes."
+                },
+                {
+                  "id": "e",
+                  "label": "15/2 jetons",
+                  "reviewFeedback": "Examine ce qu'une fraction de jeton représente dans le domaine indiqué, en plus des bornes numériques."
+                },
+                {
+                  "id": "f",
+                  "label": "17/2 jetons",
+                  "reviewFeedback": "Distingue satisfaire les bornes rationnelles et représenter un nombre admissible de jetons entiers."
+                },
+                {
+                  "id": "g",
+                  "label": "9 jetons",
+                  "reviewFeedback": "Vérifie cette réserve dans les deux conditions du jeu, et pas seulement dans une."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n + 2 ≥ 8 donne n ≥ 6 ; 2n + 1 < 18 donne n < 17/2. Dans les rationnels, on obtient 6 ≤ n < 17/2. Dans le domaine des entiers non négatifs, seuls six, sept ou huit jetons sont autorisés. 15/2 satisfait les calculs, mais ne compte pas des jetons entiers. 17/2 atteint dix-huit unités et est exclu, outre le fait de ne pas être entier.",
+            "incorrect": "Résous les deux comparaisons, puis vérifie quelles propositions sont entières. Satisfaire un intervalle rationnel ne suffit pas pour compter des jetons entiers. Conserve le caractère strict de la borne de consommation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_punto_racional_puede_fallar_en_otro_dominio",
+          "prompt": "Un réglage impose n ≥ 5/2 et n ≤ 5/2 simultanément. Classe les solutions d'abord si n peut être n'importe quel rationnel, puis si n compte un nombre entier non négatif de pièces.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_punto_racional_puede_fallar_en_otro_dominio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racionales",
+                  "type": "dropdown",
+                  "label": "Solutions dans tous les rationnels",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Une seule valeur du domaine convient.",
+                      "reviewFeedback": "Ton classement affirme l'unicité dans le domaine rationnel. Examine quelles positions restent lorsque les deux bornes sont exigées et si toutes deux autorisent leur coïncidence."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucune valeur du domaine ne convient.",
+                      "reviewFeedback": "Ton classement affirme l'impossibilité dans le domaine rationnel. Teste le point où les bornes coïncident et vérifie chaque symbole initial."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs valeurs, mais pas toutes celles du domaine, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs rationnels admissibles. Vérifie s'il reste de la place pour déplacer un point sans violer l'une des deux bornes."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Toutes les valeurs du domaine conviennent.",
+                      "reviewFeedback": "Ton classement inclut tous les rationnels. Vérifie ce qui se passe si l'on teste simultanément les deux conditions avec une valeur différente de la borne."
+                    }
+                  ]
+                },
+                {
+                  "id": "piezas",
+                  "type": "dropdown",
+                  "label": "Solutions comme nombre entier non négatif de pièces",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Une seule valeur du domaine convient.",
+                      "reviewFeedback": "Ton classement affirme une seule quantité possible de pièces. Vérifie si la valeur qui satisfait les bornes appartient au domaine des entiers non négatifs."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Aucune valeur du domaine ne convient.",
+                      "reviewFeedback": "Ton classement affirme qu'aucune quantité de pièces ne convient. Vérifie ensemble la nature entière du compte, son signe et les deux exigences de bornes."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Plusieurs valeurs, mais pas toutes celles du domaine, conviennent.",
+                      "reviewFeedback": "Ton classement affirme plusieurs quantités possibles de pièces. Justifie que chacune respecte à la fois le domaine de comptage et les deux bornes."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Toutes les valeurs du domaine conviennent.",
+                      "reviewFeedback": "Ton classement accepte tout entier non négatif. Vérifie l'effet des deux bornes sur un nombre entier de pièces choisi librement."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racionales": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "piezas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les bornes coïncident et autorisent toutes deux l'égalité : dans les rationnels, il ne reste que 5/2. Cette valeur n'est pas entière, donc aucun nombre de pièces n'est autorisé. L'arrondir modifierait une des exigences ; il faut vérifier le domaine après avoir pris l'intersection.",
+            "incorrect": "Commence par vérifier si la valeur commune est incluse dans les deux conditions. Demande-toi ensuite si elle appartient au domaine du contexte. « Aucune » signifie absence de valeurs autorisées, et non le nombre zéro."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserver ce qui est commun exige d'appliquer toutes les conditions à une même valeur, de respecter chaque extrémité et de vérifier le domaine. Un dessin ou une liste de propositions aide à examiner le résultat ; la résolution de chaque condition et leur intersection justifient l'intervalle complet. Vérifier les unités redonne du sens aux bornes (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

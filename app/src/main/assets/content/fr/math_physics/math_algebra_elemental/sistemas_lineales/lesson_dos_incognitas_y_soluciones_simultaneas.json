@@ -1,0 +1,1243 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__dos_incognitas_y_soluciones_simultaneas",
+  "title": "Deux inconnues et solutions simultanées",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux valeurs avec deux rôles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu'à présent, de nombreuses situations pouvaient être décrites avec une inconnue et des quantités liées à elle. D'autres nécessitent de nommer deux quantités encore inconnues. Avant de les relier par des conditions, chacune a besoin d'une définition, d'une unité et d'un domaine. Cette leçon prépare le sens des solutions simultanées ; les techniques pour les trouver seront étudiées plus tard."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si x mesure la longueur d'un cordon A et y celle d'un cordon B, en centimètres, les lettres désignent des quantités différentes. Avant d'ajouter une relation entre elles, les deux longueurs peuvent être choisies dans leurs domaines positifs. Cela n'impose pas des valeurs différentes : les deux cordons pourraient avoir la même longueur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous écrirons les valeurs dans l'ordre (x, y). Le couple (4, 7) attribue quatre à x et sept à y ; le couple (7, 4) échange ces attributions. L'ordre conserve le rôle de chaque quantité. Le couple n'est ni une somme ni une valeur unique : il réunit deux données utilisées ensemble dans chaque condition."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_de_los_valores_en_un_par",
+          "prompt": "Pour les couples (2, 3) et (3, 2), écrits dans l'ordre (x, y), calcule x − 2y. Écris le résultat pour chaque couple ; les différences de longueur se mesurent en centimètres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden_de_los_valores_en_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "x − 2y avec le couple (2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiado",
+                  "type": "numeric",
+                  "label": "x − 2y avec le couple (3, 2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "intercambiado": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec (2, 3), x − 2y = 2 − 2 × 3 = −4. Avec (3, 2), on obtient 3 − 2 × 2 = −1. Échanger les valeurs modifie le rôle de chaque quantité. Une différence négative ne rend pas négatives les longueurs positives des cordons.",
+            "incorrect": "Attribue d'abord la première valeur à x et la deuxième à y. Multiplie la valeur de y par deux avant de la soustraire. Conserve l'ordre même si le couple contient les deux mêmes nombres."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_no_exigen_valores_distintos",
+          "prompt": "Quelle interprétation du couple (5, 5), dans l'ordre (x, y), est correcte pour les deux cordons ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_no_exigen_valores_distintos__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le couple est invalide parce que deux inconnues doivent avoir des valeurs différentes.",
+                  "reviewFeedback": "Les lettres désignent des longueurs distinctes ; vérifie si le contexte impose réellement des valeurs différentes."
+                },
+                {
+                  "id": "b",
+                  "label": "Les deux longueurs valent cinq centimètres, même si elles désignent deux cordons différents.",
+                  "reviewFeedback": "Attribue chaque composante à son cordon et conserve l'ordre et les unités du couple."
+                },
+                {
+                  "id": "c",
+                  "label": "Le couple attribue dix centimètres à une seule longueur en additionnant ses composantes.",
+                  "reviewFeedback": "Distingue le sens de chaque composante du résultat de leur addition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x et y désignent deux quantités, mais peuvent avoir la même valeur. Ici, les deux longueurs valent cinq centimètres. On n'additionne pas les composantes pour interpréter le couple et elles ne doivent pas nécessairement être différentes.",
+            "incorrect": "Distingue le nom d'une quantité de sa valeur. Deux quantités différentes peuvent coïncider numériquement et doivent conserver leurs rôles lorsqu'on vérifie une relation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une équation sélectionne des couples"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous travaillons maintenant sans contexte de longueurs : x et y peuvent être n'importe quels rationnels. Un couple est une solution de x + y = 8 lorsque ses deux valeurs rendent cette égalité vraie. Par exemple, (1, 7), (3, 5) et (−2, 10) la vérifient. Dans une équation à deux inconnues, une proposition doit attribuer une valeur à chacune (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette condition ne détermine pas un seul couple : les différents exemples ont tous une somme égale à huit. Connaître seulement la valeur de x ne fournit pas une proposition complète tant qu'on ne l'a pas reliée à y. De même, une substitution correcte pour un couple ne prouve pas que toutes les solutions ont été trouvées."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_pares_para_una_condicion",
+          "prompt": "Sélectionne tous les couples de la liste qui satisfont x + y = 8. L'ordre est (x, y) et les deux valeurs peuvent être n'importe quels rationnels.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_pares_para_una_condicion__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(5, 5)",
+                  "reviewFeedback": "Additionne les composantes de ce couple et compare la somme à la condition donnée."
+                },
+                {
+                  "id": "b",
+                  "label": "(0, 8)",
+                  "reviewFeedback": "Calcule la somme de ce couple complet et vérifie le domaine des deux composantes."
+                },
+                {
+                  "id": "c",
+                  "label": "(3/2, 13/2)",
+                  "reviewFeedback": "Conserve les fractions en additionnant ce couple avant de vérifier l'égalité."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 9)",
+                  "reviewFeedback": "Vérifie à la fois les signes de la somme et le domaine rationnel indiqué."
+                },
+                {
+                  "id": "e",
+                  "label": "(8, 0)",
+                  "reviewFeedback": "Attribue les composantes dans l'ordre indiqué et vérifie leur somme."
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)",
+                  "reviewFeedback": "Vérifie si le contexte impose des composantes différentes ou simplement la condition écrite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les sommes de (0, 8), (3/2, 13/2), (−1, 9), (8, 0) et (4, 4) valent huit. Le couple (5, 5) a une somme de dix. Zéro, les nombres négatifs et les fractions sont autorisés dans ce domaine abstrait ; chaque composante conserve sa place.",
+            "incorrect": "Vérifie la somme de chaque couple sans ajouter de restrictions non indiquées. Ce domaine ne compte pas des objets entiers et n'impose pas des longueurs positives."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "alcance_de_comprobar_un_par",
+          "prompt": "Pour x − y = 4, on propose le couple (−1/2, −9/2). Calcule le membre de gauche et détermine ce que cette vérification prouve.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance_de_comprobar_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Valeur de x − y pour le couple proposé",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "alcance_de_comprobar_un_par__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle prouve que c'est le seul couple rationnel qui puisse convenir.",
+                  "reviewFeedback": "Vérifier un seul couple ne prouve pas qu'aucun autre n'existe ; revois la portée de cette vérification."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle prouve que le couple proposé est une solution de l'équation.",
+                  "reviewFeedback": "Attribue les deux composantes dans l'ordre et compare le membre calculé à celui de droite."
+                },
+                {
+                  "id": "c",
+                  "label": "Elle prouve que tout couple de rationnels satisfait l'équation.",
+                  "reviewFeedback": "Distingue vérifier une proposition particulière et étendre le résultat à tous les couples du domaine."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 − (−9/2) = 8/2 = 4. Cela vérifie la proposition. On n'exclut pas d'autres couples et on n'affirme pas que tous conviennent. Par exemple, (4, 0) satisfait aussi x − y = 4.",
+            "incorrect": "Soustraire un nombre négatif revient à ajouter son opposé. Distingue ensuite prouver une proposition de justifier une affirmation sur tout l'ensemble des solutions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux conditions doivent être vérifiées par le même couple"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un système réunit des conditions qui doivent être satisfaites simultanément. Considère x + y = 11 et x − y = 5 dans les rationnels. Le couple (8, 3) satisfait les deux : 8 + 3 = 11 et 8 − 3 = 5. Pour vérifier une solution simultanée, on conserve les mêmes valeurs de x et de y dans toutes les équations (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le couple (7, 4) satisfait la somme, mais sa différence vaut trois. Le couple (6, 1) satisfait la différence, mais sa somme vaut sept. Utiliser (7, 4) dans une équation et (6, 1) dans l'autre ne construit pas une solution commune : les quantités ont changé entre les conditions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_ambas_con_dos_propuestas",
+          "prompt": "Pour le système x + y = 11 et x − y = 5, vérifie les couples (3/2, 19/2) et (11/2, 1/2). Calcule la somme et la différence pour chacun, puis détermine si l'un des deux satisfait simultanément les deux conditions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma_a",
+                  "type": "numeric",
+                  "label": "x + y avec (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_a",
+                  "type": "numeric",
+                  "label": "x − y avec (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "suma_b",
+                  "type": "numeric",
+                  "label": "x + y avec (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_b",
+                  "type": "numeric",
+                  "label": "x − y avec (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma_a": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "diferencia_a": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "suma_b": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "diferencia_b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le premier couple satisfait les deux conditions.",
+                  "reviewFeedback": "Calcule à la fois la somme et la différence pour le premier couple ; exiger les deux ne permet pas d'en choisir une seule."
+                },
+                {
+                  "id": "b",
+                  "label": "Le deuxième couple satisfait les deux conditions.",
+                  "reviewFeedback": "Évalue chaque condition avec le deuxième couple entier, sans échanger ses composantes."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucun de ces deux couples ne satisfait les deux conditions.",
+                  "reviewFeedback": "Pour soutenir cette conclusion, vérifie séparément les deux conditions pour chaque proposition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le premier couple donne une somme de onze et une différence de −8 : seule la première équation est satisfaite. Le deuxième donne une somme de six et une différence de cinq : seule la deuxième est satisfaite. Aucun n'est une solution commune. Cela ne signifie pas que le système n'a pas de solution : nous avons déjà vérifié (8, 3).",
+            "incorrect": "Utilise chaque couple entier dans les deux équations. Ne combine pas la somme correcte d'une proposition avec la différence correcte d'une autre pour affirmer l'existence d'un couple commun."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cada_ecuacion_se_revisiona_por_separado",
+          "prompt": "Quelle vérification suffit à prouver qu'un couple proposé est une solution simultanée de ce système ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cada_ecuacion_se_revisiona_por_separado__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Vérifier les deux équations avec les mêmes valeurs proposées de x et de y.",
+                  "reviewFeedback": "Explique pourquoi les mêmes composantes doivent être conservées lors de la vérification de toutes les conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "Vérifier la première avec un couple et la deuxième avec n'importe quel autre couple convenable.",
+                  "reviewFeedback": "Une solution simultanée utilise un même couple ; examine ce que prouverait son changement entre les équations."
+                },
+                {
+                  "id": "c",
+                  "label": "Vérifier uniquement l'équation qui contient le plus d'opérations.",
+                  "reviewFeedback": "Le nombre d'opérations ne détermine pas quelle condition doit être satisfaite ; revois toutes les exigences du système."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une solution simultanée attribue une seule valeur à chaque inconnue et conserve cette attribution dans toutes les conditions. La longueur d'une écriture ne justifie pas d'omettre une autre équation.",
+            "incorrect": "Réfléchis aux quantités qui restent fixes pendant la vérification. Chaque condition doit être vraie pour la même proposition complète, et non pour des propositions indépendantes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une autre écriture peut conserver la même condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Considère x + 2y = 12 et 3x + 6y = 36 dans les rationnels. Multiplier la première par trois donne la deuxième ; diviser la deuxième par trois redonne la première. Elles sélectionnent donc les mêmes couples. Les écrire ensemble n'ajoute pas de restriction différente sur les deux inconnues (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'identité 3(x + 2y) = 3x + 6y est vraie pour tout couple par distributivité. Mais le système impose aussi que x + 2y soit égal à douze. Une comparaison de deux écritures aboutissant à 0 = 0 ne permet pas d'effacer cette condition initiale ni de déclarer tous les couples libres."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_dos_condiciones_equivalentes",
+          "prompt": "Sélectionne tous les couples de la liste qui satisfont simultanément x + 2y = 12 et 3x + 6y = 36. Les deux composantes appartiennent aux rationnels.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_dos_condiciones_equivalentes__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(2, 5)",
+                  "reviewFeedback": "Vérifie les deux conditions avec ce couple et justifie leur relation."
+                },
+                {
+                  "id": "b",
+                  "label": "(1, 2)",
+                  "reviewFeedback": "Évalue les membres de gauche initiaux avec cette proposition avant d'accepter ses nombres à cause de leur apparence."
+                },
+                {
+                  "id": "c",
+                  "label": "(0, 6)",
+                  "reviewFeedback": "Vérifie comment les composantes de ce couple sont utilisées dans les deux conditions."
+                },
+                {
+                  "id": "d",
+                  "label": "(−2, 7)",
+                  "reviewFeedback": "Conserve les signes en évaluant ce couple et consulte le domaine indiqué."
+                },
+                {
+                  "id": "e",
+                  "label": "(3/2, 21/4)",
+                  "reviewFeedback": "Conserve les fractions pendant les deux vérifications sans remplacer l'égalité par une approximation."
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)",
+                  "reviewFeedback": "Remplace les inconnues par les mêmes composantes dans les deux équations et vérifie chaque résultat."
+                },
+                {
+                  "id": "g",
+                  "label": "(12, 12)",
+                  "reviewFeedback": "Évalue les deux membres de gauche avec cette proposition ; des composantes égales ne vérifient pas automatiquement les conditions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les couples (2, 5), (0, 6), (−2, 7), (3/2, 21/4) et (4, 4) donnent x + 2y égal à douze. Le membre de gauche de la deuxième équation vaut alors le triple : trente-six. (1, 2) donne cinq et quinze ; (12, 12) donne trente-six et cent huit. Les deux conditions conservent la relation initiale entre x et y.",
+            "incorrect": "Vérifie d'abord une des conditions et utilise la multiplication par trois pour contrôler l'autre. Le fait que la deuxième répète la première ne signifie pas que n'importe quel couple satisfait cette première condition."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_borra_la_condicion",
+          "prompt": "Une note obtient 0 = 0 en comparant les formes précédentes et affirme que le couple (1, 3) peut être accepté sans autre vérification. Calcule les membres de gauche initiaux et décide si ce couple est une solution du système.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_borra_la_condicion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x + 2y avec (1, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 6y avec (1, 3)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "21"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_borra_la_condicion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : la comparaison 0 = 0 rend toutes les propositions vraies.",
+                  "reviewFeedback": "Distingue une identité issue de la comparaison des équations des restrictions initiales imposées à un couple."
+                },
+                {
+                  "id": "b",
+                  "label": "Oui : il suffit que les membres calculés soient liés par un facteur trois.",
+                  "reviewFeedback": "Vérifie si les résultats conservent seulement une proportion ou coïncident aussi avec les membres de droite exigés."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : le couple ne satisfait pas les conditions initiales, même si les écritures sont équivalentes.",
+                  "reviewFeedback": "Calcule les membres initiaux avec le couple proposé avant de décider s'il est admissible."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec (1, 3), les membres de gauche valent sept et vingt et un, et non douze et trente-six. Les calculs sont liés par trois, mais ne satisfont pas les valeurs exigées. L'identité entre deux formes ne remplace pas la condition qu'elles décrivent toutes deux.",
+            "incorrect": "Reviens aux valeurs exigées par chaque équation. Préserver une relation entre expressions et satisfaire la valeur cible d'une équation sont deux affirmations différentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le même problème peut nommer ses deux parties"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve une situation déjà étudiée : douze groupes complets, certains valant cinq points et d'autres trois, réunissent cinquante points. Avant, nous appelions n le nombre de grands groupes et écrivions 12 − n pour les petits. Maintenant, appelons x le nombre de grands groupes et y celui des petits ; tous deux sont des entiers non négatifs compris entre zéro et douze."
+        },
+        {
+          "type": "paragraph",
+          "text": "La condition x + y = 12 compte les groupes. La condition 5x + 3y = 50 compte les points. Chaque égalité compare des quantités de même nature. Utiliser deux lettres permet de nommer les deux parties, mais ne supprime pas la relation imposée par le nombre total de groupes. Passer d'une description à une inconnue à une description à deux inconnues doit préserver toutes les quantités du problème (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La solution déjà établie n = 7 se représente maintenant par (x, y) = (7, 5). La vérification donne sept plus cinq groupes et 5 × 7 + 3 × 5 points. On retrouve ainsi un résultat antérieur ; nous ne développons pas encore de technique générale pour trouver des couples dans n'importe quel système."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intercambiar_conteos_cambia_su_papel",
+          "prompt": "Un relevé échange les comptes et propose (x, y) = (5, 7). Calcule le nombre de groupes et le total des points. Détermine ensuite quelle condition ce couple satisfait.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupos",
+                  "type": "numeric",
+                  "label": "Nombre de groupes x + y pour (5, 7)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos",
+                  "type": "numeric",
+                  "label": "Total des points 5x + 3y pour (5, 7)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupos": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "puntos": {
+                    "type": "numeric",
+                    "expected": "46"
+                  }
+                }
+              }
+            },
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il satisfait les deux conditions parce qu'il conserve les deux nombres.",
+                  "reviewFeedback": "Conserver les nombres ne conserve pas nécessairement leurs rôles ; attribue chaque composante à la quantité qu'elle définit."
+                },
+                {
+                  "id": "b",
+                  "label": "Il satisfait seulement la condition du total des points.",
+                  "reviewFeedback": "Calcule les points avec les comptes échangés et vérifie aussi le nombre total de groupes."
+                },
+                {
+                  "id": "c",
+                  "label": "Il satisfait seulement la condition du nombre total de groupes.",
+                  "reviewFeedback": "Vérifie le nombre total de groupes et calcule indépendamment les points pour cette attribution."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinq plus sept font douze groupes, mais 5 × 5 + 3 × 7 = 25 + 21 = 46 points. L'échange des comptes conserve leur somme, mais pas le poids de chaque type. La lettre x doit continuer à compter les groupes de cinq points.",
+            "incorrect": "Chaque coefficient indique combien de points apporte un groupe du type correspondant. La somme des groupes peut rester identique après un échange alors que le total des points change."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire chaque condition selon son propre sens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un assemblage joint, sans chevauchement, deux pièces A de même longueur x centimètres et une pièce B de longueur y centimètres. La longueur totale doit être de dix-sept centimètres. De plus, chaque pièce B doit mesurer deux centimètres de plus qu'une pièce A. x et y sont des rationnels positifs : ils représentent les longueurs entières avant l'assemblage."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces données imposent deux conditions sur le même couple de longueurs. Le nombre de pièces A influe sur le total ; la comparaison entre B et A relie les longueurs d'une pièce de chaque type. Séparer ces éléments du récit permet de construire des conditions précises sans les confondre (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_total_y_diferencia_de_longitudes",
+          "prompt": "Écris séparément l'équation de la longueur totale et celle qui exige que B mesure deux centimètres de plus que A. Chaque champ doit exprimer sa propre condition selon les définitions de x et de y ; des formes équivalentes de cette condition sont acceptées.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__total",
+              "type": "math_expression_input",
+              "label": "Condition du total de dix-sept centimètres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+y=17"
+              }
+            },
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__comparacion",
+              "type": "math_expression_input",
+              "label": "Condition que B mesure deux centimètres de plus que A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=x+2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La longueur totale est 2x + y, donc la première condition est 2x + y = 17. La seconde est y = x + 2, équivalente à y − x = 2. Les unités de chaque égalité sont des centimètres. Changer l'écriture conserve le sens ; échanger le rôle des champs ne le conserve pas.",
+            "incorrect": "Compte les deux pièces A dans l'expression du total. Pour la seconde condition, conserve le fait que B est la pièce la plus longue. Écris une équation pour chaque donnée, sans la remplacer par une autre condition du système."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_una_propuesta_del_montaje",
+          "prompt": "Le couple (x, y) = (4, 6) est proposé pour cet assemblage. Calcule 2x + y et y − x. Détermine ensuite s'il satisfait les deux conditions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_una_propuesta_del_montaje__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Longueur totale avec (4, 6), en centimètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Longueur de B moins longueur de A, en centimètres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_una_propuesta_del_montaje__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il satisfait uniquement la condition sur la différence des longueurs.",
+                  "reviewFeedback": "Évalue la différence indiquée ainsi que la longueur totale avec le même couple."
+                },
+                {
+                  "id": "b",
+                  "label": "Il satisfait uniquement la condition sur la longueur totale.",
+                  "reviewFeedback": "Calcule la longueur totale sans oublier le facteur et vérifie également la différence."
+                },
+                {
+                  "id": "c",
+                  "label": "Il satisfait les deux conditions de l'assemblage.",
+                  "reviewFeedback": "Pour vérifier les deux, il faut comparer séparément les résultats des relations initiales."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les pièces totaliseraient 2 × 4 + 6 = 14 cm, et non dix-sept. B serait plus longue de deux centimètres, car 6 − 4 = 2 cm. Les deux longueurs sont positives, mais la proposition ne satisfait pas une des égalités et n'est pas une solution de l'assemblage.",
+            "incorrect": "Des longueurs admissibles qui satisfont une comparaison ne garantissent pas que le total convienne. Évalue les deux conditions avec les mêmes valeurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_propuestas_para_el_montaje",
+          "prompt": "Sélectionne tous les couples de la liste qui respectent le domaine et satisfont les deux conditions de l'assemblage : 2x + y = 17 et y = x + 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_propuestas_para_el_montaje__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(1/2, 16)",
+                  "reviewFeedback": "Calcule les deux relations avec cette fraction et conserve le domaine des longueurs."
+                },
+                {
+                  "id": "b",
+                  "label": "(5, 7)",
+                  "reviewFeedback": "Vérifie chaque relation avec les composantes dans l'ordre fixé par l'assemblage."
+                },
+                {
+                  "id": "c",
+                  "label": "(4, 6)",
+                  "reviewFeedback": "Vérifie cette proposition à la fois dans la condition du total et dans la relation entre longueurs."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 19)",
+                  "reviewFeedback": "Vérifie le domaine physique des composantes, en plus de calculer les deux égalités."
+                },
+                {
+                  "id": "e",
+                  "label": "(7, 5)",
+                  "reviewFeedback": "Échanger les longueurs change leur rôle dans la relation ; vérifie cette attribution dans l'ordre indiqué."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Parmi les propositions, (5, 7) satisfait 2 × 5 + 7 = 17 et 7 = 5 + 2, avec des longueurs positives. (1/2, 16) satisfait le total, mais pas la comparaison ; (4, 6) satisfait la comparaison, mais pas le total. (−1, 19) comporte en plus une longueur hors du domaine. (7, 5) ne satisfait aucune des deux équations. Cette vérification sélectionne les couples valides de la liste sans remplacer une justification générale de toutes les solutions.",
+            "incorrect": "Conserve l'ordre (x, y), vérifie la positivité et les deux égalités. N'accepte pas une proposition simplement parce qu'elle satisfait une condition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le domaine peut différer selon la quantité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une commande de câble associe des bobines fermées de huit mètres chacune et une longueur de câble libre. x compte les bobines complètes : c'est un entier non négatif. y mesure les mètres libres : c'est un rationnel non négatif. La commande doit contenir vingt-six mètres au total et ajouter deux mètres libres par bobine fermée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les produits connus convertissent les comptes en longueurs : huit mètres par bobine multipliés par x bobines donnent 8x mètres. De même, deux mètres libres par bobine multipliés par x donnent la longueur libre nécessaire. On n'additionne pas directement un nombre de bobines avec une longueur en mètres."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_un_conteo_y_una_longitud",
+          "prompt": "Écris les deux conditions de la commande : vingt-six mètres au total et deux mètres libres par bobine. Conserve les définitions et les domaines différents de x et de y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_un_conteo_y_una_longitud__total",
+              "type": "math_expression_input",
+              "label": "Condition des vingt-six mètres totaux",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "8x+y=26"
+              }
+            },
+            {
+              "id": "modelar_un_conteo_y_una_longitud__suelto",
+              "type": "math_expression_input",
+              "label": "Condition des deux mètres libres par bobine",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=2x"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condition du total est 8x + y = 26. La longueur libre nécessaire est 2x, donc l'autre condition est y = 2x. Les deux égalités comparent des mètres ; x reste un compte entier et y une longueur éventuellement fractionnaire.",
+            "incorrect": "Multiplie chaque bobine par ses huit mètres avant d'ajouter la longueur libre. L'exigence de deux mètres par bobine relie y à la même valeur de x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cumplir_igualdades_no_sustituye_el_dominio",
+          "prompt": "On propose (x, y) = (13/5, 26/5) pour la commande. Calcule 8x + y et y − 2x. Détermine ensuite si ce couple peut être accepté dans le contexte.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Valeur de 8x + y, en mètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Valeur de y − 2x, en mètres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "26"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : satisfaire les égalités permet d'ignorer les domaines.",
+                  "reviewFeedback": "Une proposition doit respecter à la fois les égalités et les domaines définis pour chaque quantité."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : y doit être entier parce qu'il accompagne une autre inconnue.",
+                  "reviewFeedback": "Le caractère entier d'une quantité découle de son sens, et non du fait qu'elle accompagne une autre lettre."
+                },
+                {
+                  "id": "c",
+                  "label": "Non : x ne compte pas un nombre entier de bobines fermées.",
+                  "reviewFeedback": "Identifie quelle quantité compte des unités indivisibles et vérifie la proposition selon cette définition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 × 13/5 + 26/5 = 130/5 = 26, et 26/5 − 2 × 13/5 = 0. Le couple satisfait les deux équations dans les rationnels, mais x = 13/5 n'appartient pas au domaine entier des bobines. y = 26/5 serait bien une longueur autorisée par son propre domaine. Cette vérification rejette la proposition dans le contexte ; nous n'avons pas développé ici de méthode pour trouver tous les couples.",
+            "incorrect": "Vérifie séparément les deux égalités et le domaine de chaque composante. Une longueur fractionnaire peut être valide alors qu'un compte fractionnaire d'objets entiers ne l'est pas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Couples rationnels hors d'un contexte de comptage"
+        },
+        {
+          "type": "paragraph",
+          "text": "Revenons à un système abstrait : (3/2)x + y = 7/4 et x + 2y = 9/2. Les domaines de x et de y sont tous les rationnels. Aucune restriction de positivité ni d'intégrité n'a été imposée ; de telles restrictions doivent venir du contexte, pas de la présence de deux lettres."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_fracciones_con_la_misma_asignacion",
+          "prompt": "Vérifie les couples A = (−1/2, 5/2) et B = (1/2, 1). Calcule les membres de gauche des deux équations avec chaque couple et sélectionne la bonne conclusion sur ces propositions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "(3/2)x + y avec le couple A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "x + 2y avec le couple A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "(3/2)x + y avec le couple B",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "x + 2y avec le couple B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A est une solution commune ; B satisfait seulement la première équation.",
+                  "reviewFeedback": "Vérifie chaque proposition entière dans les deux équations avant d'affirmer lesquelles elle satisfait."
+                },
+                {
+                  "id": "b",
+                  "label": "B est une solution commune ; A est rejeté à cause de sa valeur négative.",
+                  "reviewFeedback": "Consulte le domaine de chaque composante avant de rejeter une donnée en raison de son signe, puis calcule les deux relations."
+                },
+                {
+                  "id": "c",
+                  "label": "Les deux propositions sont des solutions communes parce qu'elles satisfont la première équation.",
+                  "reviewFeedback": "Satisfaire la première équation ne remplace pas une vérification indépendante de la deuxième."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec A, (3/2)(−1/2) + 5/2 = −3/4 + 10/4 = 7/4 et −1/2 + 2 × 5/2 = 9/2. Avec B, 3/4 + 1 = 7/4, mais 1/2 + 2 = 5/2, pas 9/2. A est une solution commune autorisée dans ces domaines ; B satisfait seulement la première condition.",
+            "incorrect": "Conserve les signes pendant la multiplication des rationnels et utilise le même couple dans les deux expressions. Compare chaque valeur au membre de droite de son équation ; n'ajoute pas ici de domaine de comptage."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "los_dominios_proceden_de_las_definiciones",
+          "prompt": "Pourquoi le couple A est-il admis dans ce système abstrait alors qu'une proposition fractionnaire de bobines a été rejetée dans le problème précédent ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "los_dominios_proceden_de_las_definiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Une fraction ne peut être admise que dans la deuxième composante.",
+                  "reviewFeedback": "Examine si la position d'une composante dans le couple détermine son domaine ou si c'est sa définition."
+                },
+                {
+                  "id": "b",
+                  "label": "Les domaines donnés ici admettent tous les rationnels ; les bobines exigeaient un compte entier.",
+                  "reviewFeedback": "Relie le domaine de chaque problème au sens des quantités représentées par ses lettres."
+                },
+                {
+                  "id": "c",
+                  "label": "En réunissant deux équations, les domaines n'ont plus d'importance.",
+                  "reviewFeedback": "Réunir des conditions ne supprime pas les restrictions définissant déjà les valeurs admissibles."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le sens de chaque inconnue détermine son domaine. Ici, les deux acceptent tous les rationnels ; dans la commande, x comptait des bobines fermées. Avoir deux équations ne supprime ni ne crée des restrictions à lui seul.",
+            "incorrect": "Rappelle-toi ce que représente chaque lettre et quelles valeurs l'énoncé autorise. La notation d'un couple n'impose aucune règle universelle de positivité ou d'intégrité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le critère sans mélanger les propositions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une vérification autonome organise le travail : fixe l'ordre du couple, conserve les valeurs, vérifie chaque condition initiale et contrôle chaque domaine. L'objectif est que tu puisses mener cet examen sans dépendre toujours d'une suite d'étapes déjà préparée (Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_dos_revisiones_aisladas",
+          "prompt": "Pour x − y = 1 et 3x + y = 9, une note utilise (2, 1) dans la première équation et (1, 6) dans la deuxième. Calcule les deux membres de gauche pour chaque couple. Choisis ensuite ce que ces vérifications permettent réellement d'affirmer.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "x − y avec (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "3x + y avec (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "x − y avec (1, 6)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "3x + y avec (1, 6)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Les deux couples ensemble constituent une solution commune.",
+                  "reviewFeedback": "Distingue l'accumulation de vérifications avec des couples différents de la recherche d'une même proposition simultanée."
+                },
+                {
+                  "id": "b",
+                  "label": "Les vérifications ne prouvent pas qu'un même couple satisfait les deux équations.",
+                  "reviewFeedback": "Vérifie chaque couple dans les deux relations et précise ce que la note démontre réellement."
+                },
+                {
+                  "id": "c",
+                  "label": "Le système n'a pas de solutions parce que ces deux propositions échouent.",
+                  "reviewFeedback": "L'échec de quelques propositions ne démontre pas l'impossibilité ; examine ce qu'il reste à justifier concernant l'ensemble complet."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec (2, 1), on obtient un et sept ; avec (1, 6), −5 et neuf. Chaque proposition satisfait une seule équation. Cela ne prouve pas que le système est sans solution : (5/2, 3/2) donne une différence de un et 3 × 5/2 + 3/2 = 9. Vérifier un couple commun valide cette proposition ; la recherche et la justification générales de toutes les solutions seront développées plus tard.",
+            "incorrect": "Ne change pas de couple entre les conditions pour obtenir une vérification favorable. L'échec de deux propositions n'examine pas non plus tous les couples possibles du domaine."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada",
+          "prompt": "Dans les rationnels, sélectionne tous les couples de la liste qui satisfont x + y = 7 et 2x + y = 10. Utilise chaque proposition entière dans les deux équations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(3, 4)",
+                  "reviewFeedback": "Vérifie cette proposition dans les deux relations en conservant toujours les composantes dans le même ordre."
+                },
+                {
+                  "id": "b",
+                  "label": "(4, 3)",
+                  "reviewFeedback": "Évalue la somme et la combinaison avec coefficient à partir de ce couple sans échanger ses composantes."
+                },
+                {
+                  "id": "c",
+                  "label": "(2, 6)",
+                  "reviewFeedback": "Calcule les deux relations pour ce couple ; partager une composante avec une autre donnée ne vérifie pas le système."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 8)",
+                  "reviewFeedback": "Conserve le signe de la première composante lorsque tu vérifies chaque condition."
+                },
+                {
+                  "id": "e",
+                  "label": "(0, 10)",
+                  "reviewFeedback": "Vérifie les deux membres de droite exigés, et pas seulement l'une des équations du système."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans cette liste, (3, 4) satisfait 3 + 4 = 7 et 2 × 3 + 4 = 10. (4, 3) et (−1, 8) satisfont seulement la première équation ; (2, 6) et (0, 10) satisfont seulement la deuxième. Toutes les composantes sont des rationnels autorisés, mais chaque égalité exige une vérification.",
+            "incorrect": "Vérifie les deux calculs avec chaque couple. Une valeur nulle ou négative n'est pas rejetée à cause de son apparence dans ce domaine ; seule compte la satisfaction des conditions."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as préparé le sens d'un système et d'une solution commune. Les prochaines leçons développeront des procédures pour trouver et justifier toutes les solutions. Retiens ces critères : deux équations ne garantissent pas deux restrictions distinctes ; une identité obtenue lors d'une vérification n'efface pas l'équation initiale ; un couple doit conserver son ordre, satisfaire toutes les conditions et appartenir aux domaines indiqués."
+        }
+      ]
+    }
+  ]
+}

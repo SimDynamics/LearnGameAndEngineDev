@@ -1,0 +1,1243 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__dos_incognitas_y_soluciones_simultaneas",
+  "title": "Two Unknowns and Simultaneous Solutions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Values with Two Roles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Until now, many situations could be described using one unknown and quantities related to it. Others require naming two quantities that are still unknown. Before relating them through conditions, each needs a definition, a unit, and a domain. This lesson prepares the meaning of simultaneous solutions; methods for finding them will be developed later."
+        },
+        {
+          "type": "paragraph",
+          "text": "If x measures the length of cord A and y that of cord B in centimeters, the letters name different quantities. Before adding a relation between them, both lengths can be chosen within their positive domains. That does not force their values to be different: the two cords could have equal lengths."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will write values in the order (x, y). The pair (4, 7) assigns four to x and seven to y; the pair (7, 4) swaps those assignments. Order preserves the role of each quantity. The pair is not a sum or a single value: it contains two pieces of data that will be used together in every condition."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_de_los_valores_en_un_par",
+          "prompt": "For the pairs (2, 3) and (3, 2), written in (x, y) order, calculate x − 2y. Enter the result for each pair; differences in length are measured in centimeters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden_de_los_valores_en_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "x − 2y for the pair (2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiado",
+                  "type": "numeric",
+                  "label": "x − 2y for the pair (3, 2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "intercambiado": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For (2, 3), x − 2y = 2 − 2 × 3 = −4. For (3, 2), it is 3 − 2 × 2 = −1. Swapping values changes which quantity plays each role. A negative difference does not make the positive cord lengths negative.",
+            "incorrect": "Assign the first value to x and the second to y. Multiply y by two before subtracting it. Keep the assigned order even if the pair contains the same two numbers."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_no_exigen_valores_distintos",
+          "prompt": "Which interpretation of the pair (5, 5), in (x, y) order, is correct for the two cords?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_no_exigen_valores_distintos__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The pair is invalid because two unknowns must have different values.",
+                  "reviewFeedback": "The letters identify different lengths; check whether the context actually requires different numerical values."
+                },
+                {
+                  "id": "b",
+                  "label": "Both lengths equal five centimeters, although they name different cords.",
+                  "reviewFeedback": "Assign each component to its cord and preserve the pair's order and units."
+                },
+                {
+                  "id": "c",
+                  "label": "The pair assigns ten centimeters to one length by adding its components.",
+                  "reviewFeedback": "Distinguish the meaning of each component from the result of adding them."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x and y name two quantities, but they can have the same value. Here both lengths are five centimeters. We do not add components to interpret the pair, and their values need not differ.",
+            "incorrect": "Distinguish a quantity's name from its value. Different quantities can coincide numerically and must retain their roles when checking a relation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Equation Selects Pairs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now we work without a length context: x and y can be any rational numbers. A pair is a solution of x + y = 8 when its two values make that equality true. For example, (1, 7), (3, 5), and (−2, 10) satisfy it. In an equation with two unknowns, a proposed solution must assign a value to each one (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "This condition does not determine a single pair: its different examples all sum to eight. Knowing just x does not give a complete proposal until it is related to y. Nor does a successful substitution of one pair prove that every solution of the equation has been found."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_pares_para_una_condicion",
+          "prompt": "Select all listed pairs that satisfy x + y = 8. The order is (x, y), and both values may be any rational numbers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_pares_para_una_condicion__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(5, 5)",
+                  "reviewFeedback": "Add the components of this pair and compare the sum with the given condition."
+                },
+                {
+                  "id": "b",
+                  "label": "(0, 8)",
+                  "reviewFeedback": "Calculate the sum for this entire pair and check the domain of both components."
+                },
+                {
+                  "id": "c",
+                  "label": "(3/2, 13/2)",
+                  "reviewFeedback": "Keep the fractions when adding this pair before checking the equality."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 9)",
+                  "reviewFeedback": "Review both the signs in the sum and the declared rational domain."
+                },
+                {
+                  "id": "e",
+                  "label": "(8, 0)",
+                  "reviewFeedback": "Assign the components in the specified order and check their sum."
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)",
+                  "reviewFeedback": "Check whether the context requires different components or only the written condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sums for (0, 8), (3/2, 13/2), (−1, 9), (8, 0), and (4, 4) equal eight. The pair (5, 5) sums to ten. Zero, negative numbers, and fractions are allowed in this abstract domain; each component retains its position.",
+            "incorrect": "Check the sum for each pair without introducing unstated restrictions. This domain does not count whole objects or require positive lengths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "alcance_de_comprobar_un_par",
+          "prompt": "For x − y = 4, the pair (−1/2, −9/2) is proposed. Calculate the left-hand side and decide what this check establishes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance_de_comprobar_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Value of x − y for the proposed pair",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "alcance_de_comprobar_un_par__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It proves this is the only rational pair that can satisfy the equation.",
+                  "reviewFeedback": "Checking one pair does not by itself prove that no other pairs exist; review the scope of the test."
+                },
+                {
+                  "id": "b",
+                  "label": "It proves that the proposed pair is a solution of the equation.",
+                  "reviewFeedback": "Assign both components in order and compare the calculated left-hand side with the right-hand side."
+                },
+                {
+                  "id": "c",
+                  "label": "It proves every pair of rational numbers satisfies the equation.",
+                  "reviewFeedback": "Distinguish testing a particular proposal from extending the conclusion to every pair in the domain."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 − (−9/2) = 8/2 = 4. This verifies the proposed pair. It does not exclude other pairs or claim all pairs work. For example, (4, 0) also satisfies x − y = 4.",
+            "incorrect": "Subtracting a negative adds its opposite. Then distinguish proving one proposed solution from justifying a statement about the whole solution set."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Conditions Must Hold for the Same Pair"
+        },
+        {
+          "type": "paragraph",
+          "text": "A system combines conditions that must hold simultaneously. Consider x + y = 11 and x − y = 5 over the rational numbers. The pair (8, 3) satisfies both: 8 + 3 = 11 and 8 − 3 = 5. To check a simultaneous solution, keep the same x and y values in every equation (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The pair (7, 4) satisfies the sum, but its difference is three. The pair (6, 1) satisfies the difference, but its sum is seven. Using (7, 4) in one equation and (6, 1) in the other does not yield a common solution: the quantities were changed between conditions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_ambas_con_dos_propuestas",
+          "prompt": "For the system x + y = 11 and x − y = 5, check the pairs (3/2, 19/2) and (11/2, 1/2). Calculate the sum and difference for each pair; then decide whether either pair satisfies both conditions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma_a",
+                  "type": "numeric",
+                  "label": "x + y for (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_a",
+                  "type": "numeric",
+                  "label": "x − y for (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "suma_b",
+                  "type": "numeric",
+                  "label": "x + y for (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_b",
+                  "type": "numeric",
+                  "label": "x − y for (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma_a": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "diferencia_a": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "suma_b": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "diferencia_b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The first pair satisfies both conditions.",
+                  "reviewFeedback": "Calculate both the sum and the difference for the first pair; requiring both means you cannot choose just one."
+                },
+                {
+                  "id": "b",
+                  "label": "The second pair satisfies both conditions.",
+                  "reviewFeedback": "Evaluate every condition using the complete second pair, without swapping components."
+                },
+                {
+                  "id": "c",
+                  "label": "Neither of these two pairs satisfies both conditions.",
+                  "reviewFeedback": "To support that conclusion, check both conditions separately for each proposed pair."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first pair gives a sum of eleven and a difference of −8: only the first equation holds. The second gives a sum of six and a difference of five: only the second holds. Neither is a common solution. This does not mean the system has no solutions: we already verified (8, 3).",
+            "incorrect": "Use each entire pair in both equations. Do not combine the correct sum from one proposal with the correct difference from another and claim a common pair exists."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cada_ecuacion_se_revisiona_por_separado",
+          "prompt": "Which check is sufficient to establish that a proposed pair is a simultaneous solution of this system?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cada_ecuacion_se_revisiona_por_separado__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Check both equations using the same proposed x and y values.",
+                  "reviewFeedback": "Explain why the same components must be retained when checking all conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "Check the first with one pair and the second with any other pair that works.",
+                  "reviewFeedback": "A simultaneous solution uses the same pair; examine what changing the pair between equations would prove."
+                },
+                {
+                  "id": "c",
+                  "label": "Check only the equation involving more operations.",
+                  "reviewFeedback": "The number of operations does not determine which condition must hold; review every requirement of the system."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A simultaneous solution assigns one value to each unknown and preserves that assignment across all conditions. A longer expression is no reason to omit another equation.",
+            "incorrect": "Think about which quantities stay fixed during the check. Every condition must be true for the same complete proposal, not for independent proposals."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Different Form May Preserve the Same Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consider x + 2y = 12 and 3x + 6y = 36 over the rational numbers. Multiplying the first by three gives the second; dividing the second by three recovers the first. Thus they select the same pairs. Writing them together does not add a different restriction on the two unknowns (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The identity 3(x + 2y) = 3x + 6y holds for every pair because it distributes a factor. But the system additionally requires x + 2y to equal twelve. Comparing two expressions and obtaining 0 = 0 does not permit deleting that original requirement or declaring every pair unrestricted."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_dos_condiciones_equivalentes",
+          "prompt": "Select all listed pairs that simultaneously satisfy x + 2y = 12 and 3x + 6y = 36. Both components have rational domains.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_dos_condiciones_equivalentes__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(2, 5)",
+                  "reviewFeedback": "Check both conditions with this pair and justify their relationship."
+                },
+                {
+                  "id": "b",
+                  "label": "(1, 2)",
+                  "reviewFeedback": "Evaluate the original left-hand sides with this proposal before accepting its numbers because of how they look."
+                },
+                {
+                  "id": "c",
+                  "label": "(0, 6)",
+                  "reviewFeedback": "Check how this pair's components are used in both conditions."
+                },
+                {
+                  "id": "d",
+                  "label": "(−2, 7)",
+                  "reviewFeedback": "Keep track of signs when evaluating this pair and refer to the specified domain."
+                },
+                {
+                  "id": "e",
+                  "label": "(3/2, 21/4)",
+                  "reviewFeedback": "Keep the fractions in both checks without replacing equality with an approximation."
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)",
+                  "reviewFeedback": "Substitute this same pair into both equations and check each result."
+                },
+                {
+                  "id": "g",
+                  "label": "(12, 12)",
+                  "reviewFeedback": "Evaluate both left-hand sides for this proposal; matching components do not automatically verify the conditions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The pairs (2, 5), (0, 6), (−2, 7), (3/2, 21/4), and (4, 4) make x + 2y equal twelve. The left-hand side of the second equation is then three times as much: thirty-six. (1, 2) gives five and fifteen; (12, 12) gives thirty-six and one hundred eight. Both conditions preserve the original relationship between x and y.",
+            "incorrect": "Check one condition first, then use the fact that the other is three times as large. Repeating the first condition in another form does not mean that every pair satisfies it."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_borra_la_condicion",
+          "prompt": "A note obtains 0 = 0 when comparing the previous forms and claims that the pair (1, 3) may be accepted without another check. Calculate the original left-hand sides and decide whether that pair is a solution of the system.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_borra_la_condicion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of x + 2y for (1, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of 3x + 6y for (1, 3)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "21"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_borra_la_condicion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: the comparison 0 = 0 makes every proposal valid.",
+                  "reviewFeedback": "Distinguish an identity obtained by comparing equations from the original restrictions on a pair."
+                },
+                {
+                  "id": "b",
+                  "label": "Yes: it is enough that the calculated left-hand sides are related by a factor of three.",
+                  "reviewFeedback": "Check whether the results merely maintain a proportion or actually match the required right-hand sides."
+                },
+                {
+                  "id": "c",
+                  "label": "No: the pair fails the original conditions even though the two expressions are equivalent.",
+                  "reviewFeedback": "Calculate the original left-hand sides using the proposed pair before deciding whether it is admissible."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For (1, 3), the left-hand sides equal seven and twenty-one, not twelve and thirty-six. The calculations differ by a factor of three, but do not meet the required values. An identity between two forms cannot replace the condition they both describe.",
+            "incorrect": "Return to the numbers required by each equation. Preserving a relationship between expressions and meeting an equation's specified value are different claims."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Problem Can Name Both of Its Parts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall a previously studied pattern: twelve complete groups, some worth five points and others worth three, add up to fifty points. We previously used n for the number of larger groups and wrote 12 − n for the smaller ones. Now let x be the number of larger groups and y the number of smaller ones; both are nonnegative integers from zero through twelve."
+        },
+        {
+          "type": "paragraph",
+          "text": "The condition x + y = 12 counts groups. The condition 5x + 3y = 50 counts points. Each equality compares quantities of the same kind. Using two letters lets us name both parts, but does not remove the relationship imposed by the total number of groups. The connection between a one-unknown description and a two-unknown description must preserve every quantity in the problem (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The previously established solution n = 7 is now represented by (x, y) = (7, 5). Checking it gives seven plus five groups, and 5 × 7 + 3 × 5 points. This recovers an earlier result; we are not yet developing a general technique for finding pairs for any system."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intercambiar_conteos_cambia_su_papel",
+          "prompt": "A record swaps the counts and proposes (x, y) = (5, 7). Calculate the number of groups and total points. Then decide which condition this pair satisfies.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupos",
+                  "type": "numeric",
+                  "label": "Number of groups x + y for (5, 7)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos",
+                  "type": "numeric",
+                  "label": "Total points 5x + 3y for (5, 7)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupos": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "puntos": {
+                    "type": "numeric",
+                    "expected": "46"
+                  }
+                }
+              }
+            },
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It satisfies both conditions because the two numbers are preserved.",
+                  "reviewFeedback": "Keeping the numbers does not necessarily preserve their roles; assign each component to the quantity it defines."
+                },
+                {
+                  "id": "b",
+                  "label": "It satisfies only the total-points condition.",
+                  "reviewFeedback": "Calculate the points with the swapped counts and compare the total number of groups as well."
+                },
+                {
+                  "id": "c",
+                  "label": "It satisfies only the total-groups condition.",
+                  "reviewFeedback": "Check the number of groups and independently calculate the points for this assignment."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Five plus seven is twelve groups, but 5 × 5 + 3 × 7 = 25 + 21 = 46 points. Swapping counts preserves their sum, not the contribution from each group type. The letter x must continue counting the five-point groups.",
+            "incorrect": "Each coefficient indicates how many points a group of its corresponding type contributes. The group count may remain the same after swapping, while the total points change."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Building Each Condition from Its Own Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "An assembly joins, without overlap, two pieces A of the same length x centimeters and one piece B of length y centimeters. The total length must be seventeen centimeters. Also, each piece B must be two centimeters longer than a piece A. x and y are positive rational numbers: they describe the full lengths before assembly."
+        },
+        {
+          "type": "paragraph",
+          "text": "The data impose two conditions on the same pair of lengths. The number of pieces A affects the total; comparing B with A relates the lengths of one piece of each type. Separating these parts of the description lets us build precise conditions without confusing them (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_total_y_diferencia_de_longitudes",
+          "prompt": "Write separately the equation for the total length and the equation requiring B to be two centimeters longer than A. Each field must express its own condition using the definitions of x and y; equivalent forms of that condition are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__total",
+              "type": "math_expression_input",
+              "label": "Condition for seventeen centimeters in total",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+y=17"
+              }
+            },
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__comparacion",
+              "type": "math_expression_input",
+              "label": "Condition that B is two centimeters longer than A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=x+2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total length is 2x + y, so the first condition is 2x + y = 17. The second is y = x + 2, equivalent to y − x = 2. Both equations use centimeters. Rewriting a condition preserves its meaning; swapping the purposes of the fields does not.",
+            "incorrect": "Count both A pieces when expressing the total. For the second condition, preserve the fact that B is the longer piece. Write one equation for each stated fact, without replacing it with a different condition from the system."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_una_propuesta_del_montaje",
+          "prompt": "The pair (x, y) = (4, 6) is proposed for this assembly. Calculate 2x + y and y − x. Then decide whether it satisfies both conditions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_una_propuesta_del_montaje__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Total length for (4, 6), in centimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Length of B minus length of A, in centimeters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_una_propuesta_del_montaje__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It satisfies only the difference-of-lengths condition.",
+                  "reviewFeedback": "Evaluate the stated difference and the total length with the same pair."
+                },
+                {
+                  "id": "b",
+                  "label": "It satisfies only the total-length condition.",
+                  "reviewFeedback": "Calculate the total length without omitting the factor and also check the difference."
+                },
+                {
+                  "id": "c",
+                  "label": "It satisfies both assembly conditions.",
+                  "reviewFeedback": "Checking both requires separately comparing the results of the two original relations."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The pieces would total 2 × 4 + 6 = 14 cm, not seventeen. B would be two centimeters longer because 6 − 4 = 2 cm. Both lengths are positive, but the proposal fails one equality and is not a solution of the assembly.",
+            "incorrect": "That the lengths are allowed and satisfy one comparison does not guarantee the total. Evaluate both conditions using the same values."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_propuestas_para_el_montaje",
+          "prompt": "Select all pairs in the list that respect the domain and satisfy both assembly conditions: 2x + y = 17 and y = x + 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_propuestas_para_el_montaje__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(1/2, 16)",
+                  "reviewFeedback": "Calculate both relations with this fraction and keep the domain of lengths in mind."
+                },
+                {
+                  "id": "b",
+                  "label": "(5, 7)",
+                  "reviewFeedback": "Check each relation with components in the order defined by the assembly."
+                },
+                {
+                  "id": "c",
+                  "label": "(4, 6)",
+                  "reviewFeedback": "Check this proposal against both the total-length condition and the relation between lengths."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 19)",
+                  "reviewFeedback": "Check the physical domain of the components as well as both equalities."
+                },
+                {
+                  "id": "e",
+                  "label": "(7, 5)",
+                  "reviewFeedback": "Swapping lengths changes their roles in the relation; check this assignment in the specified order."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Of these proposals, (5, 7) satisfies 2 × 5 + 7 = 17 and 7 = 5 + 2, with positive lengths. (1/2, 16) satisfies the total but not the comparison; (4, 6) satisfies the comparison but not the total. (−1, 19) also has a length outside the domain. (7, 5) fails both equations. This check selects valid pairs from the list without replacing a general proof of all solutions.",
+            "incorrect": "Keep the order (x, y), check positivity, and verify both equalities. Do not accept a proposal merely because it satisfies one condition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Each Quantity May Have a Different Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "A cable order combines sealed reels of eight meters each with a loose length. x counts complete reels: a nonnegative integer. y measures loose meters: a nonnegative rational number. The order must contain twenty-six meters in total and include two loose meters for each sealed reel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Known products convert counts into lengths: eight meters per reel multiplied by x reels gives 8x meters. Likewise, two loose meters per reel multiplied by x gives the required loose length. You cannot directly add a reel count to a number of meters."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_un_conteo_y_una_longitud",
+          "prompt": "Write the two order conditions: twenty-six meters in total and two loose meters per reel. Preserve the definitions and different domains of x and y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_un_conteo_y_una_longitud__total",
+              "type": "math_expression_input",
+              "label": "Condition for twenty-six meters in total",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "8x+y=26"
+              }
+            },
+            {
+              "id": "modelar_un_conteo_y_una_longitud__suelto",
+              "type": "math_expression_input",
+              "label": "Condition for two loose meters per reel",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=2x"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total condition is 8x + y = 26. The required loose length is 2x, so the other condition is y = 2x. Both equalities compare meters; x is still an integer count and y a length that may be fractional.",
+            "incorrect": "Multiply each reel by its eight meters before adding the loose length. The requirement of two meters per reel relates y to the same x value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cumplir_igualdades_no_sustituye_el_dominio",
+          "prompt": "The pair (x, y) = (13/5, 26/5) is proposed for the order. Calculate 8x + y and y − 2x. Then decide whether the pair can be accepted in context.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Value of 8x + y, in meters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Value of y − 2x, in meters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "26"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: satisfying the equations means the domains can be ignored.",
+                  "reviewFeedback": "A proposed pair must satisfy both the equations and the domains defined for each quantity."
+                },
+                {
+                  "id": "b",
+                  "label": "No: y must be an integer because it accompanies another unknown.",
+                  "reviewFeedback": "A quantity's integer requirement comes from its meaning, not from appearing next to another letter."
+                },
+                {
+                  "id": "c",
+                  "label": "No: x does not count a whole number of sealed reels.",
+                  "reviewFeedback": "Identify which quantity counts indivisible units and check the proposal against that definition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 × 13/5 + 26/5 = 130/5 = 26, and 26/5 − 2 × 13/5 = 0. The pair satisfies both equations over rational numbers, but x = 13/5 does not belong to the integer domain of reels. y = 26/5 would be a valid length under its own domain. This check rejects the contextual proposal; we have not yet developed a method for finding every pair.",
+            "incorrect": "Review both equalities and each component's domain separately. A fractional length can be valid while a fractional count of whole objects is not."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rational Pairs Outside a Counting Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "We return to an abstract system: (3/2)x + y = 7/4 and x + 2y = 9/2. The domains of x and y are all rational numbers. No positivity or integer restrictions have been imposed; such restrictions must come from the context, not from the presence of two letters."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_fracciones_con_la_misma_asignacion",
+          "prompt": "Check the pairs A = (−1/2, 5/2) and B = (1/2, 1). Calculate the left-hand side of both equations for each pair and select the correct conclusion about these proposals.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "(3/2)x + y for pair A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "x + 2y for pair A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "(3/2)x + y for pair B",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "x + 2y for pair B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A is a common solution; B satisfies only the first equation.",
+                  "reviewFeedback": "Check each complete proposal in both equations before claiming which ones it satisfies."
+                },
+                {
+                  "id": "b",
+                  "label": "B is a common solution; A is rejected because it contains a negative value.",
+                  "reviewFeedback": "Consult the domain of each component before rejecting a value because of its sign, and calculate both relations."
+                },
+                {
+                  "id": "c",
+                  "label": "Both proposals are common solutions because they satisfy the first equation.",
+                  "reviewFeedback": "Matching the first equation does not replace independently checking the second."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With A, (3/2)(−1/2) + 5/2 = −3/4 + 10/4 = 7/4 and −1/2 + 2 × 5/2 = 9/2. With B, 3/4 + 1 = 7/4, but 1/2 + 2 = 5/2, not 9/2. A is an allowed common solution in these domains; B satisfies only the first condition.",
+            "incorrect": "Keep track of signs when multiplying rational numbers and use the same pair in both expressions. Compare each value with its equation's right-hand side; do not add a counting domain here."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "los_dominios_proceden_de_las_definiciones",
+          "prompt": "Why is pair A allowed in this abstract system even though a fractional proposal for reels was rejected in the previous problem?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "los_dominios_proceden_de_las_definiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A fraction can only be allowed in the second component.",
+                  "reviewFeedback": "Examine whether a component's position in a pair establishes its domain or whether its definition does."
+                },
+                {
+                  "id": "b",
+                  "label": "Both domains here allow any rational numbers; reels required an integer count.",
+                  "reviewFeedback": "Relate each problem's domain to the meaning of the quantities represented by its letters."
+                },
+                {
+                  "id": "c",
+                  "label": "When two equations are combined, domains no longer matter.",
+                  "reviewFeedback": "Combining conditions does not eliminate restrictions already defining admissible values."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The meaning of each unknown determines its domain. Here both allow all rational numbers; in the order x counted sealed reels. Having two equations neither removes nor creates restrictions by itself.",
+            "incorrect": "Recall what each letter represents and what values the statement allows. Pair notation imposes no universal rule requiring positivity or integer values."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recovering the Criterion Without Mixing Proposals"
+        },
+        {
+          "type": "paragraph",
+          "text": "An independent review organizes the work: fix the order of the pair, keep the values, check each original condition, and compare each domain. The goal is for you to direct this review without always relying on a prescribed sequence of steps (Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_dos_revisiones_aisladas",
+          "prompt": "For x − y = 1 and 3x + y = 9, a note uses (2, 1) in the first equation and (1, 6) in the second. Calculate both left-hand sides for each pair. Then choose what these checks actually establish.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "x − y for (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "3x + y for (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "x − y for (1, 6)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "3x + y for (1, 6)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The two pairs together constitute a common solution.",
+                  "reviewFeedback": "Distinguish accumulating checks using different pairs from finding one simultaneous proposal."
+                },
+                {
+                  "id": "b",
+                  "label": "The checks do not establish that a single pair satisfies both equations.",
+                  "reviewFeedback": "Check each pair in both relations and state exactly what the note's review proves."
+                },
+                {
+                  "id": "c",
+                  "label": "The system has no solutions because these two proposals fail.",
+                  "reviewFeedback": "The failure of some proposals does not prove impossibility; examine what remains to be justified about the entire set."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "For (2, 1) the results are one and seven; for (1, 6), −5 and nine. Each proposal satisfies only one equation. This does not prove that the system has no solutions: (5/2, 3/2) gives a difference of one and 3 × 5/2 + 3/2 = 9. Checking a common pair validates that proposal; general procedures for finding and justifying all solutions will come later.",
+            "incorrect": "Do not change the pair between conditions to obtain a favorable check. Failing with two proposals does not examine every possible pair in the domain either."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada",
+          "prompt": "Over the rational numbers, select every listed pair satisfying x + y = 7 and 2x + y = 10. Use each complete proposal in both equations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(3, 4)",
+                  "reviewFeedback": "Check this proposal in both relations, always keeping the components in the same order."
+                },
+                {
+                  "id": "b",
+                  "label": "(4, 3)",
+                  "reviewFeedback": "Evaluate the sum and weighted combination for this pair without swapping components."
+                },
+                {
+                  "id": "c",
+                  "label": "(2, 6)",
+                  "reviewFeedback": "Calculate both relations with this pair; sharing one component with another proposal does not verify the system."
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 8)",
+                  "reviewFeedback": "Keep the sign of the first component when checking each condition."
+                },
+                {
+                  "id": "e",
+                  "label": "(0, 10)",
+                  "reviewFeedback": "Check both required right-hand sides, not just one equation in the system."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "From this list, (3, 4) satisfies 3 + 4 = 7 and 2 × 3 + 4 = 10. (4, 3) and (−1, 8) satisfy only the first equation; (2, 6) and (0, 10) satisfy only the second. Every component is an allowed rational number, but each equality adds a necessary check.",
+            "incorrect": "Check both calculations for each pair. A zero or negative value is not rejected on appearance in this domain; what matters is satisfying the conditions."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "You have prepared the meaning of a system and a common solution. The next lessons will develop procedures for finding and justifying every solution. Retain these criteria: two equations do not guarantee two different restrictions; an identity obtained during a check does not erase an original equation; a pair must preserve its order, satisfy all conditions, and belong to the specified domains."
+        }
+      ]
+    }
+  ]
+}

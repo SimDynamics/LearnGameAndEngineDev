@@ -1,0 +1,1623 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__rangos_y_condiciones_simultaneas",
+  "title": "Ranges and Simultaneous Conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Conditions for the Same Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far we have solved conditions such as x < 1 or x ≥ −2. If both must hold at the same time, we seek a single value satisfying both. We can write this as −2 ≤ x < 1. This double inequality abbreviates −2 ≤ x and x < 1; checking just one part is not enough."
+        },
+        {
+          "type": "paragraph",
+          "text": "−2 is the lower bound and one is the upper bound. The interval contains all values between them that satisfy the endpoint conditions: here it includes −2 and excludes one. We will work only with rational numbers, unless the context further restricts the domain. We will use inequalities to express ranges (Lang, 1971, pp. 78–79)."
+        },
+        {
+          "type": "paragraph",
+          "text": "On a number line, values increase to the right. A filled dot includes the marked value; an open dot excludes it. A colored ray with an arrow indicates values continuing in that direction. Visible marks help us read the scale, but they are not the only values: rational numbers such as −1/2 also lie between integers. The next two number lines show the separate conditions for the same x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_en_dos_rectas",
+          "prompt": "Look at the represented conditions. Select every offered rational number that belongs to both rays simultaneously.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "First condition: x ≥ −2."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": -2,
+              "closed": true,
+              "direction": "right"
+            },
+            {
+              "type": "text",
+              "text": "Second condition: x < 1."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": 1,
+              "closed": false,
+              "direction": "left"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_en_dos_rectas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−3",
+                  "reviewFeedback": "Place this value on each number line and require both conditions to hold at once."
+                },
+                {
+                  "id": "b",
+                  "label": "−2",
+                  "reviewFeedback": "Examine the symbols and endpoint types of both rays at this point."
+                },
+                {
+                  "id": "c",
+                  "label": "−1/2",
+                  "reviewFeedback": "Compare this rational number against each bound separately, rather than replacing the simultaneous requirement with only one condition."
+                },
+                {
+                  "id": "d",
+                  "label": "0",
+                  "reviewFeedback": "Check whether this point belongs to each ray, including the treatment of boundaries."
+                },
+                {
+                  "id": "e",
+                  "label": "1",
+                  "reviewFeedback": "Compare this value with the lower bound and also with the upper bound."
+                },
+                {
+                  "id": "f",
+                  "label": "3/2",
+                  "reviewFeedback": "Examine whether this point is an endpoint and which conditions include or exclude that boundary."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2, −1/2, and zero satisfy both x ≥ −2 and x < 1. −3 fails the first condition; one and 3/2 fail the second. The filled dot includes −2; the open dot excludes one. Satisfying just one condition is not enough to belong to the common range.",
+            "incorrect": "Read the value of each point first and then the colored direction. Retain only values that work on both number lines, respecting their endpoints."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_cotas_e_inclusion",
+          "prompt": "For −7/4 < t ≤ 5/4, enter the lower and upper bounds and decide whether each endpoint is included. The bounds describe the limits; the range also contains rational numbers between them.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_cotas_e_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Your choice includes the lower bound. Substitute it into the comparison that defines it and check whether its symbol allows equality."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Your choice excludes the lower bound. Check whether that endpoint itself satisfies the written condition, paying attention to its symbol."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To justify including the upper bound, test that value in the comparison that limits it. Distinguish equality from exceeding the bound."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To justify excluding the upper bound, review what its symbol requires when the value exactly equals the bound."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-7/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The lower bound is −7/4 and is excluded because the first comparison is strict. The upper bound is 5/4 and is included because of ≤. Zero lies inside the range but is not an endpoint.",
+            "incorrect": "Read both comparisons separately: t must be greater than −7/4 and less than or equal to 5/4. Keep track of which comparison allows equality."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Endpoint Types and Ranges with a Single Bound"
+        },
+        {
+          "type": "paragraph",
+          "text": "With distinct bounds, an open interval excludes both endpoints and a closed interval includes both. A mixed interval includes one endpoint and excludes the other; it is also called half-open or half-closed. These names describe endpoint inclusion, without excluding interior values (Lang, 1971, p. 78)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_los_extremos",
+          "prompt": "Classify each range according to endpoint inclusion: −3 ≤ x < 4; 1/2 < y < 2; −2 ≤ z ≤ −1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "dropdown",
+                  "label": "Endpoint type for −3 ≤ x < 4",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Both endpoints are excluded.",
+                      "reviewFeedback": "Your classification excludes both endpoints of the range involving x. Test equality with each bound separately using the symbols in that condition."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Both endpoints are included.",
+                      "reviewFeedback": "Your classification includes both endpoints of the range involving x. Check the proposal at each boundary without assuming both symbols have the same meaning."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Only one endpoint is included.",
+                      "reviewFeedback": "Your classification allows just one boundary of the range involving x. Justify that number of included endpoints by reviewing each comparison separately."
+                    }
+                  ]
+                },
+                {
+                  "id": "y",
+                  "type": "dropdown",
+                  "label": "Endpoint type for 1/2 < y < 2",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Both endpoints are excluded.",
+                      "reviewFeedback": "Your classification excludes both boundaries of the range involving y. Check what each symbol requires when the value reaches its bound exactly."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Both endpoints are included.",
+                      "reviewFeedback": "Your classification includes both boundaries of the range involving y. Check equality with each bound against the symbols in that condition."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Only one endpoint is included.",
+                      "reviewFeedback": "Your classification includes just one boundary of the range involving y. Find in the two comparisons what would justify treating them differently."
+                    }
+                  ]
+                },
+                {
+                  "id": "z",
+                  "type": "dropdown",
+                  "label": "Endpoint type for −2 ≤ z ≤ −1",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Both endpoints are excluded.",
+                      "reviewFeedback": "Your classification excludes both boundaries of the range involving z. Compare that exclusion with what each symbol permits at equality."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Both endpoints are included.",
+                      "reviewFeedback": "Your classification includes both boundaries of the range involving z. Check their membership by substituting each endpoint into the condition."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Only one endpoint is included.",
+                      "reviewFeedback": "Your classification treats the boundaries of the range involving z differently. Check whether both bound symbols justify that treatment."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "exact_text",
+                    "expected": "mixto"
+                  },
+                  "y": {
+                    "type": "exact_text",
+                    "expected": "abierto"
+                  },
+                  "z": {
+                    "type": "exact_text",
+                    "expected": "cerrado"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first is mixed: it includes −3 and excludes four. The second is open: it excludes 1/2 and two. The third is closed: it includes −2 and −1. All three also contain rational numbers in their interiors.",
+            "incorrect": "Decide separately whether each endpoint is allowed. Do not call a range closed merely because it includes one endpoint, or open merely because it excludes one."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Between two distinct rational bounds there are interior values. If a < b, the midpoint m = (a + b)/2 is rational. The differences m − a and b − m both equal (b − a)/2 and are positive. Therefore a < m < b, even when both endpoints are excluded. Constructing a midpoint produces one interior value; it does not claim that it is the only one."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_un_punto_medio",
+          "prompt": "Calculate the midpoint of the bounds 2/3 and 5/6. Also enter how much it exceeds the lower bound and how far it falls short of the upper bound. This checks that it is inside the range 2/3 ≤ x < 5/6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_un_punto_medio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Midpoint of the two bounds",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sobre_inferior",
+                  "type": "numeric",
+                  "label": "Midpoint minus lower bound",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "hasta_superior",
+                  "type": "numeric",
+                  "label": "Upper bound minus midpoint",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  },
+                  "sobre_inferior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  },
+                  "hasta_superior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  }
+                }
+              }
+            },
+            {
+              "id": "construir_un_punto_medio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The midpoint is rational and both positive differences place it inside the range; other interior values may exist.",
+                  "reviewFeedback": "Use the calculated differences to justify the point's position, without inferring that it is the only possible one."
+                },
+                {
+                  "id": "b",
+                  "label": "Only the midpoint can satisfy two bounds.",
+                  "reviewFeedback": "Distinguish finding an interior point from proving there are no others; try a small rational change."
+                },
+                {
+                  "id": "c",
+                  "label": "Excluding the upper endpoint removes every interior value.",
+                  "reviewFeedback": "Examine a point strictly inside the interval before concluding what excluding a boundary means."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The mean is (2/3 + 5/6)/2 = (3/2)/2 = 3/4. Both differences are 1/12 and positive, so the point meets both conditions. The task asked for that particular midpoint; other interior rational numbers also belong to the range.",
+            "incorrect": "Add the bounds using a common denominator, then divide the sum by two. Check each difference afterward. Excluding an endpoint does not exclude values strictly between the bounds."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "A range can also be bounded on only one side. In x > −5/3 there is a lower bound and no upper bound: arbitrarily large rational numbers are permitted. In x ≤ 4 there is only an upper bound. These ranges without a bound on one side are also called unbounded intervals; a missing bound is not a number or an endpoint that can be reached (Lang, 1971, p. 79). Here “infinite” refers to continuing without a bound on one side. A bounded interval with distinct bounds also contains infinitely many rational numbers: we can construct new midpoints between an interior point and a bound without ever reaching it."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_una_cota_sin_inventar_la_otra",
+          "prompt": "For x > −5/3, enter the stated numerical bound, decide whether it is included, and indicate which side has no bound.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identificar_una_cota_sin_inventar_la_otra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cota",
+                  "type": "numeric",
+                  "label": "Numerical bound stated in the condition",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusion of that bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Your choice includes the boundary of this ray. Check whether setting the unknown equal to the bound satisfies the original comparison."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Your choice excludes the boundary of this ray. Examine the original symbol and justify what happens exactly at the bound."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Bound missing from this condition",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "There is no upper bound.",
+                      "reviewFeedback": "Your statement allows values to continue without limit toward greater numbers. Check whether the given condition imposes a bound in that direction."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "There is no lower bound.",
+                      "reviewFeedback": "Your statement allows values to continue without limit toward smaller numbers. Check whether those positions still satisfy the written condition."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "There are both lower and upper bounds.",
+                      "reviewFeedback": "Your statement proposes bounds in both directions. Locate the restriction that would justify each bound, rather than inventing another endpoint."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cota": {
+                    "type": "numeric",
+                    "expected": "-5/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The stated numerical bound is −5/3, excluded by >. There is no upper bound: every rational number greater than −5/3 satisfies the condition, however large it is. Zero may belong to the range, but cannot replace a missing bound.",
+            "incorrect": "Distinguish the explicit boundary from the direction in which the range continues. Do not replace an absent bound with zero or an invented numerical answer."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intersection Means Keeping What Is Common"
+        },
+        {
+          "type": "paragraph",
+          "text": "The intersection of two ranges contains the values belonging to both. For −2 ≤ x < 3 and 1 < x ≤ 4, the common range is 1 < x < 3. One fails the second condition and three fails the first; the interior values satisfy both."
+        },
+        {
+          "type": "paragraph",
+          "text": "If there are two lower bounds, the greater imposes the stronger requirement. If there are two upper bounds, the smaller does. A resulting endpoint is included only if its value satisfies every condition. A strict comparison with a more distant bound may still allow that endpoint; seeing a < or > symbol somewhere is not enough."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intersecar_dos_rangos_acotados",
+          "prompt": "Intersect −5/4 < x ≤ 7/4 and −1/2 ≤ x < 5/2 over the rational numbers. Enter the bounds of the common range and indicate whether its endpoints are included.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intersecar_dos_rangos_acotados__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of the common range",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound of the common range",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common lower endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the common lower endpoint, test that value in each original condition of the intersection. Membership requires satisfying both simultaneously."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the common lower endpoint, check whether that value belongs to each original range. Base your decision on the comparisons, not just on a mark."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common upper endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the common upper endpoint, compare its value with every original restriction. Maintain the requirement of simultaneous membership."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the common upper endpoint, check which original condition would prevent its inclusion. Do not decide its treatment merely because it is a boundary."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The stronger lower bound is −1/2 and the stronger upper bound is 7/4. −1/2 is greater than −5/4 and is allowed by the second condition; 7/4 is allowed by the first and is less than 5/2. Thus the common range is −1/2 ≤ x ≤ 7/4, including both endpoints.",
+            "incorrect": "Compare the lower bounds with each other and then the upper bounds. Test each selected endpoint in both original ranges; a weaker strict inequality does not automatically exclude it."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_exigencia_estricta_en_la_misma_cota",
+          "prompt": "The conditions x ≥ −1, x > −1, and x ≤ 2 must all hold at once. Enter the remaining bounds and indicate whether their endpoints are included.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_exigencia_estricta_en_la_misma_cota__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Common lower bound",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Common upper bound",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common lower bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Your decision includes the lower bound even though several requirements apply. Substitute it into each one and check whether all permit equality."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Your decision excludes the common lower bound. Review all the requirements affecting that point to justify its treatment in the intersection."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common upper bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "Your decision includes the common upper bound. Check that it satisfies all three requirements, including those bounding the other side."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "Your decision excludes the common upper bound. Examine the symbol at that boundary and check the remaining requirements at the same point."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The two lower requirements have the same bound, but x > −1 excludes −1. The result is −1 < x ≤ 2. Two also satisfies the lower restrictions and is allowed by the upper one. When bounds coincide, one condition excluding the endpoint is enough to exclude it from the intersection.",
+            "incorrect": "Satisfying x ≥ −1 is not enough when x > −1 is also required. Review each endpoint's inclusion separately; excluding the lower one does not force exclusion of the upper one."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "interseccion_sin_cota_superior",
+          "prompt": "Intersect x ≥ 1/3 and x > −2/3. Enter the remaining lower bound, whether it is included, and the side that continues without a bound.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "interseccion_sin_cota_superior__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Common lower bound",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common lower endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the lower endpoint of these two rays, substitute it into both conditions and check both comparisons."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the lower endpoint of these two rays, determine whether their intersection rejects that point. Use the same value when checking both requirements."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Side that remains unbounded",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "There is no upper bound.",
+                      "reviewFeedback": "Your statement allows values to continue without bound toward larger numbers. Check whether both conditions remain true as you proceed in that direction."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "There is no lower bound.",
+                      "reviewFeedback": "Your statement allows values to continue without bound toward smaller numbers. Check whether both conditions permit continuing arbitrarily far in that direction."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "There are both lower and upper bounds.",
+                      "reviewFeedback": "Your statement assigns two bounds to the common range. Identify what requirement would justify a boundary on each side rather than assuming every range is bounded."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "1/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The condition x ≥ 1/3 is stronger. One third is also greater than −2/3, so it is included. The result is x ≥ 1/3, without an upper bound. The strict condition with the smaller bound does not exclude the endpoint of the stronger condition.",
+            "incorrect": "Determine which lower restriction requires greater values. Test its endpoint in the other condition and keep in mind that neither imposes an upper limit."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Coincident Bounds, Empty Ranges, and Missing Restrictions"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a lower bound exceeds an upper bound, no value can satisfy both: the common range is empty. If both bounds coincide at a rational number a and both allow equality, only x = a remains. If either excludes that value, none remain. This check distinguishes a single value from a range containing interior values."
+        },
+        {
+          "type": "paragraph",
+          "text": "A condition that is true for every rational number imposes no restriction when intersected with another condition. If both are always true, every rational remains. A condition that is always false makes the intersection empty. In these cases we describe the category; we do not invent numerical bounds."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_cotas_coincidentes_o_cruzadas",
+          "prompt": "Classify the rational solutions of each set of conditions: −1 ≤ x ≤ −1; −1 < y ≤ −1; 4 ≤ z < 3; r + 4 ≥ r + 3 together with 2r − 1 < 2r + 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_cotas_coincidentes_o_cruzadas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coinciden",
+                  "type": "dropdown",
+                  "label": "Solutions of −1 ≤ x ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims exactly one value for the coincident bounds of x. Examine which positions can satisfy both bounds and how equality is handled."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims the bounds for x are incompatible. Test the boundary itself and check both symbols before claiming no value works."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several rational numbers, but not all, satisfy it.",
+                      "reviewFeedback": "Your classification claims several values for the bounds of x. Check whether moving to either side of the boundary preserves both requirements."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes the whole domain for the bounds of x. Test that claim with a value on one side of the boundary and review both conditions."
+                    }
+                  ]
+                },
+                {
+                  "id": "exclusion",
+                  "type": "dropdown",
+                  "label": "Solutions of −1 < y ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims just one value for the bounds of y. Check where y would have to lie and whether it satisfies both original symbols."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims the bounds for y are incompatible. See whether a point can satisfy both comparisons simultaneously."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several rational numbers, but not all, satisfy it.",
+                      "reviewFeedback": "Your classification claims several values for the bounds of y. Justify where those points could lie relative to both boundaries before counting them as solutions."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes the whole domain for the bounds of y. Examine what each comparison requires of any rational number, retaining its strict or inclusive character."
+                    }
+                  ]
+                },
+                {
+                  "id": "cruzadas",
+                  "type": "dropdown",
+                  "label": "Solutions of 4 ≤ z < 3",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims exactly one value for the bounds of z. Place the candidate between the references required by both comparisons and check them."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims the bounds for z are incompatible. Represent their restrictions on the number line and look for a shared position."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several rational numbers, but not all, satisfy it.",
+                      "reviewFeedback": "Your classification claims several values for the bounds of z. Examine where these points would have to lie relative to both boundaries."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes the whole domain for the bounds of z. Check whether an arbitrary value could satisfy both written restrictions."
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_restriccion",
+                  "type": "dropdown",
+                  "label": "Solutions of both conditions involving r",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims a unique value for the conditions involving r. Simplify both sides and check whether any restriction identifying a particular value remains."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims the conditions involving r are impossible. Simplify each comparison and examine what would justify excluding every value in the domain."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several rational numbers, but not all, satisfy it.",
+                      "reviewFeedback": "Your classification admits only some rational numbers for the conditions involving r. Check whether the simplified comparisons still depend on the chosen value."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes every rational number for the conditions involving r. Justify that scope using valid steps rather than relying only on a few favorable substitutions."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coinciden": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "exclusion": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "cruzadas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "sin_restriccion": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first admits only −1. The second would require exceeding −1 and not exceeding that bound at the same time: no solutions. In the third, a number cannot be at least four and less than three. The conditions involving r simplify to 4 ≥ 3 and −1 < 3, both true, so all rational numbers satisfy them.",
+            "incorrect": "When the bounds coincide, check equality in both parts. If they are reversed, the requirements are incompatible. For the conditions involving r, cancel equal terms with reversible subtraction and determine whether the remaining comparisons are true."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_inecuaciones_que_fijan_un_valor",
+          "prompt": "Solve simultaneously (x − 1)/2 ≥ 3/4 and 3 − x ≥ 1/2. Enter the lower bound imposed by the first, the upper bound imposed by the second, and classify the common rational solution set.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_inecuaciones_que_fijan_un_valor__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound obtained from the first inequality",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound obtained from the second inequality",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "categoria",
+                  "type": "dropdown",
+                  "label": "Number of common rational solutions",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims a single common point for these two inequalities. Check the positions allowed by the resulting bounds and whether their boundary belongs."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational number satisfies it.",
+                      "reviewFeedback": "Your classification claims there is no common point. Check whether the resulting bounds allow a value satisfying the original symbols."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several rational numbers, but not all, satisfy it.",
+                      "reviewFeedback": "Your classification claims several common points. Examine the space between the bounds you obtained and whether it permits more than one rational position."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers satisfy it.",
+                      "reviewFeedback": "Your classification includes the whole domain. Test the reach of both original restrictions after your equivalent transformations."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "categoria": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplying the first by two and adding one gives x ≥ 5/2. In the second, subtracting three yields −x ≥ −5/2; dividing by −1 reverses the direction and gives x ≤ 5/2. Both bounds include equality, so the only value is 5/2. In the originals it gives 3/4 ≥ 3/4 and 1/2 ≥ 1/2.",
+            "incorrect": "Solve both conditions for the same x. Check the direction reversal when dividing by −1 in the second, then decide whether equality at the bounds is allowed."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtaining Ranges by Solving Two Comparisons"
+        },
+        {
+          "type": "paragraph",
+          "text": "−1 < 2x + 3 ≤ 7 contains two conditions: −1 < 2x + 3 and 2x + 3 ≤ 7. Subtracting three in each gives −4 < 2x ≤ 4. Dividing by positive two gives −2 < x ≤ 2. The abbreviated form lets us track both comparisons, but each step must be justified for both (Lang, 1971, pp. 75–78, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "With a negative factor, both directions reverse. In 1 ≤ −2x + 3 < 7, subtracting three gives −2 ≤ −2x < 4. Dividing by −2 gives 1 ≥ x > −2. Written with the smaller bound on the left, this is −2 < x ≤ 1. The excluded endpoint −2 comes from the strict comparison with seven; the included endpoint one comes from the non-strict comparison with one."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_condicion_doble",
+          "prompt": "Solve −3/4 ≤ (1/2)t + 1/4 < 5/4 over the rational numbers. Enter the lower and upper bounds for t and whether each endpoint is included. You may solve the two parts separately.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_condicion_doble__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound for t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower endpoint for t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the lower endpoint of t, test your boundary in the original part that imposes it. Preserve the comparison during the operations."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the lower endpoint of t, check how the symbol in the corresponding original part treats equality."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper endpoint for t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the upper endpoint of t, review the original comparison that determines that side and evaluate equality at the boundary."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the upper endpoint of t, test your boundary in the original condition. Distinguish reaching the limit from remaining strictly below it."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting 1/4 gives −1 ≤ t/2 < 1. Multiplying by two preserves both directions and gives −2 ≤ t < 2. The lower boundary produces equality in the non-strict comparison; the upper produces equality in the strict comparison and is excluded.",
+            "incorrect": "Apply the subtraction to both comparisons. Multiplying by positive two does not reverse the order. Remember which endpoint came from a comparison allowing equality."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "invertir_y_reordenar_los_extremos",
+          "prompt": "Solve 0 ≤ −(3/2)u + 1 < 3. Write the range of u with its lower bound first and indicate inclusion of both endpoints.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "invertir_y_reordenar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound for u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound for u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower endpoint for u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the lower boundary of u, identify which original part produces it when dividing by a negative factor. Check that point in the starting condition."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the lower boundary of u, follow the comparison leading to that boundary and review how equality is treated after the direction reverses."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper endpoint for u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the upper boundary of u, link it to the original comparison that imposes it. Substitute that value without dropping the coefficient's sign."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the upper boundary of u, test the equality case in the original requirement. Do not infer inclusion merely from the divisor's sign."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-4/3"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2/3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting one gives −1 ≤ −(3/2)u < 2. Dividing by −3/2 reverses both comparisons: 2/3 ≥ u > −4/3. Reordering gives −4/3 < u ≤ 2/3. At u = −4/3, the original expression equals three and fails < 3; at u = 2/3 it equals zero and satisfies 0 ≤ 0.",
+            "incorrect": "Reverse both directions when dividing by the given negative number. Then reorder the endpoints without changing their inclusion: do not change only the numbers or only one comparison."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Practicing and Checking Which Condition Was Lost"
+        },
+        {
+          "type": "paragraph",
+          "text": "To solve several requirements, you may transform each separately and then intersect their solution sets. Check the resulting endpoints in every original condition. Reviewing the data or the step that was omitted may reveal an error more clearly than repeating the same sequence (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_condiciones_simultaneas_por_cuenta_propia",
+          "prompt": "The conditions (2x − 1)/3 > 1/2, 5 − x ≥ 2, and x/2 + 1 ≤ 3 must all hold simultaneously. Solve by your own method and enter the bounds of the common range and whether they are included.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_condiciones_simultaneas_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Common lower bound for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Common upper bound for x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common lower endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the common lower endpoint of these three inequalities, test it in all of them. Review which symbols permit their respective boundaries."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the common lower endpoint of these three inequalities, check what happens when it is substituted into every original requirement, keeping all requirements simultaneous."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the common upper endpoint",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the common upper endpoint, test the proposed value in all three conditions before deciding whether it belongs to the final range."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the common upper endpoint, check how each symbol treats that value. An endpoint of the resulting range must be checked against the original conditions."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first gives x > 5/4; the second gives x ≤ 3; the third gives x ≤ 4. The upper bound three is stronger than four. The result is 5/4 < x ≤ 3. The lower endpoint fails the first strict comparison; three satisfies all three original conditions. Solving the weaker condition is still useful to confirm that it introduces no additional exclusion.",
+            "incorrect": "Solve each condition without losing its groupings or reversing the direction incorrectly when dividing by −1 in the second. Then keep the lower requirement and the stronger upper one. Do not omit a condition before justifying that it is weaker."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_cumplir_una_en_vez_de_ambas",
+          "prompt": "For x > 1 and x ≤ 3, a note claims it is enough to satisfy one of the two conditions. Select all proposed values that actually satisfy both and choose the correct diagnosis.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0",
+                  "reviewFeedback": "Substitute this proposal into both comparisons; do not accept that satisfying just one is enough."
+                },
+                {
+                  "id": "b",
+                  "label": "1",
+                  "reviewFeedback": "Check specifically whether the strict symbol admits equality for this value."
+                },
+                {
+                  "id": "c",
+                  "label": "2",
+                  "reviewFeedback": "Check both requirements with this value and preserve each comparison in your reasoning."
+                },
+                {
+                  "id": "d",
+                  "label": "3",
+                  "reviewFeedback": "Examine this value against both bounds and the symbol used for each."
+                },
+                {
+                  "id": "e",
+                  "label": "4",
+                  "reviewFeedback": "Check the upper bound as well for this proposal, not just the lower one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            },
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The note keeps values that fail one requirement; belonging to the common range requires satisfying both.",
+                  "reviewFeedback": "To justify this diagnosis, compare each requirement with a concrete value proposed in the note."
+                },
+                {
+                  "id": "b",
+                  "label": "If a value satisfies one condition, it automatically satisfies the other.",
+                  "reviewFeedback": "Test the claimed implication using a value that satisfies the first condition, and evaluate the second."
+                },
+                {
+                  "id": "c",
+                  "label": "The fact that one correct proposal matches proves the note preserves all solutions.",
+                  "reviewFeedback": "Distinguish checking one proposed value from justifying that a criterion preserves the whole solution set."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Two and three satisfy both. Zero and one satisfy x ≤ 3 but fail x > 1; four satisfies x > 1 but fails x ≤ 3. Zero, for example, refutes the note. The complete intersection is 1 < x ≤ 3 because it retains both requirements; this is not justified merely by counting listed proposals.",
+            "incorrect": "Test every proposal against both conditions rather than choosing the one that suits it. One counterexample is enough to refute the note; describing every solution requires retaining both restrictions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferring the Range to a Meaningful Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "An illustration with width x centimeters must fit two templates. x can be a nonnegative rational number. The first template adds 3/2 cm of margins to the width and requires a total of at least six centimeters. The second adds 5/2 cm and requires a total less than eleven centimeters. Both templates must work with the same illustration."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_ancho_compatible_con_dos_plantillas",
+          "prompt": "Build the conditions for both templates and solve them without prescribed steps. Enter the bounds of the common width in centimeters and indicate whether their endpoints are included. Then check the nonnegative domain.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_ancho_compatible_con_dos_plantillas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Lower bound of width x, in centimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Upper bound of width x, in centimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the lower width bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the lower width, interpret the boundary within the template restrictions. Also check that it represents a nonnegative length."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the lower width, check whether equality satisfies the model's restrictions. Keep centimeters as the unit while checking."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusion of the upper width bound",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "The endpoint is included.",
+                      "reviewFeedback": "To include the upper width, substitute that bound into the conditions constructed from the templates. Review how equality is handled."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "The endpoint is excluded.",
+                      "reviewFeedback": "To exclude the upper width, relate your decision to the symbols describing the templates' limits and check the boundary position."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The conditions are x + 3/2 ≥ 6 and x + 5/2 < 11. Subtracting each margin gives x ≥ 9/2 and x < 17/2. The width must satisfy 9/2 ≤ x < 17/2 cm; all these values are nonnegative. The lower endpoint allows the first template to reach six centimeters; the upper would reach eleven in the second and is excluded.",
+            "incorrect": "Add each margin to the same width x and compare with the total allowed by its template. “At least” allows equality; “less than” excludes it. The resulting bounds represent centimeters of illustration, not total widths including margins."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "In a board game, a reserve contains n tokens, a nonnegative integer. Its score is n + 2 and must be at least eight. Its energy use is 2n + 1 units and must be less than eighteen. Both requirements are expressed in their own units and must hold simultaneously."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_rango_racional_y_una_reserva_entera",
+          "prompt": "Solve both game requirements and retain the domain of whole tokens. Select every allowed reserve from those offered.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_rango_racional_y_una_reserva_entera__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 tokens",
+                  "reviewFeedback": "Substitute this reserve into both game requirements; belonging to the integer domain is not sufficient."
+                },
+                {
+                  "id": "b",
+                  "label": "6 tokens",
+                  "reviewFeedback": "Check this reserve against both the domain of whole tokens and the two conditions."
+                },
+                {
+                  "id": "c",
+                  "label": "7 tokens",
+                  "reviewFeedback": "Evaluate both conditions at this amount, retaining tokens as the unit."
+                },
+                {
+                  "id": "d",
+                  "label": "8 tokens",
+                  "reviewFeedback": "Check how both requirements treat this reserve and its potential boundaries."
+                },
+                {
+                  "id": "e",
+                  "label": "15/2 tokens",
+                  "reviewFeedback": "Consider what a fractional token means in the specified domain, in addition to the numerical bounds."
+                },
+                {
+                  "id": "f",
+                  "label": "17/2 tokens",
+                  "reviewFeedback": "Distinguish satisfying rational bounds from representing an admissible count of whole tokens."
+                },
+                {
+                  "id": "g",
+                  "label": "9 tokens",
+                  "reviewFeedback": "Check this reserve against both game conditions rather than only one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n + 2 ≥ 8 gives n ≥ 6; 2n + 1 < 18 gives n < 17/2. Over the rational numbers this is 6 ≤ n < 17/2. In the nonnegative integer domain, only six, seven, or eight tokens are allowed. 15/2 satisfies the arithmetic but does not count whole tokens. 17/2 reaches eighteen units and is excluded, besides not being an integer.",
+            "incorrect": "Solve both comparisons and then check which proposals are integers. Satisfying a rational range is not enough when counting whole tokens. Remember that the energy bound is strict."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_punto_racional_puede_fallar_en_otro_dominio",
+          "prompt": "An adjustment requires n ≥ 5/2 and n ≤ 5/2 simultaneously. Classify the solutions first if n may be any rational number and then if n represents a nonnegative integer number of pieces.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_punto_racional_puede_fallar_en_otro_dominio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racionales",
+                  "type": "dropdown",
+                  "label": "Solutions over all rational numbers",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification claims exactly one solution in the rational domain. Examine what positions remain after imposing both bounds and whether both allow equality."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification claims no solution in the rational domain. Test the point where both bounds coincide and check each original symbol."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several values, but not all values in the domain, satisfy it.",
+                      "reviewFeedback": "Your classification claims several admissible rational values. Check whether there is room to move a point while satisfying both bounds."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Every value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification includes all rational numbers. Check what happens when a position different from the boundary is tested against both conditions."
+                    }
+                  ]
+                },
+                {
+                  "id": "piezas",
+                  "type": "dropdown",
+                  "label": "Solutions as a nonnegative integer number of pieces",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification claims one possible piece count. Check whether the point satisfying both bounds belongs to the nonnegative integer domain."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification claims no piece count works. Check together the integer nature of the count, its sign, and both bound requirements."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Several values, but not all values in the domain, satisfy it.",
+                      "reviewFeedback": "Your classification claims several possible piece counts. Justify that each one satisfies both the counting domain and the two bounds simultaneously."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Every value in the domain satisfies it.",
+                      "reviewFeedback": "Your classification accepts any nonnegative count. Check the effect of both bounds on an arbitrarily chosen whole-number count."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racionales": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "piezas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The bounds coincide and both allow equality: among rational numbers only 5/2 remains. That value is not an integer, so there is no permitted number of pieces. Rounding it would change one of the requirements; the domain must be checked after taking the intersection.",
+            "incorrect": "First check whether the common value is included by both conditions. Then determine whether it belongs to the contextual domain. “None” means no permitted values, not the number zero."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Keeping what is common requires applying every condition to the same value, respecting each endpoint and checking the domain. A diagram or a list of proposals helps examine the result; solving each condition and intersecting the solutions justifies the entire range. Checking the units restores meaning to the bounds (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}
