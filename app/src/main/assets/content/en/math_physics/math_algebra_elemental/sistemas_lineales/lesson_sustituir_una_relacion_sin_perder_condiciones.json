@@ -1,0 +1,845 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__sustituir_una_relacion_sin_perder_condiciones",
+  "title": "Substituting a Relation Without Losing Conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Relation Lets Us Replace an Unknown"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know how to verify that the same pair satisfies two conditions and how to transform an equation without changing its solutions. Now we will find pairs by substitution: express one unknown in terms of the other and use that relation in the second equation. Unless the context imposes a restriction, x and y can take rational values."
+        },
+        {
+          "type": "paragraph",
+          "text": "Consider x − y = 3 and 2x + y = 12. The first is equivalent to x = y + 3: adding y to both sides preserves its condition. For any pair satisfying that first relation, x and y + 3 are the same quantity. In the second equation, we can therefore replace every occurrence of x with y + 3, without changing whether the pair satisfies it. We get 2(y + 3) + y = 12, while retaining x = y + 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distributing and combining terms gives 3y + 6 = 12; subtracting six and dividing by three gives y = 2. The retained relation gives x = 5. In the originals, 5 − 2 = 3 and 2·5 + 2 = 12. Every solution would have to yield those values, and that pair satisfies both conditions: this shows both that it works and that no other solutions were missed (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_relacion_entra_en_la_otra",
+          "prompt": "Work with x − y = −2 and x + 2y = 7. Use the first to express x in terms of y. Then replace x in the second, combine terms, and solve. Enter the coefficient of y remaining on the left and the final values of x and y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_relacion_entra_en_la_otra__expresion",
+              "type": "math_expression_input",
+              "label": "Expression replacing x in terms of y",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2"
+              }
+            },
+            {
+              "id": "una_relacion_entra_en_la_otra__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient of y after combining terms on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Final value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Final value of y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first relation gives x = y − 2. Replacing x in the second gives (y − 2) + 2y = 7, or 3y − 2 = 7. Therefore y = 3 and then x = 1. In the originals, 1 − 3 = −2 and 1 + 2·3 = 7: the same pair satisfies both.",
+            "incorrect": "Adding y to x − y = −2 gives x = y − 2. Substitute that entire expression wherever x appears, preserve −2, and use the first relation to recover x after calculating y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_la_relacion_al_sustituir",
+          "prompt": "For that same system, which description preserves both conditions after x is replaced in the second equation?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_la_relacion_al_sustituir__sistema",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Keep only the value found for y and allow x to be any rational number.",
+                  "reviewFeedback": "Examine what relationship would allow you to recover the other unknown from the reduced relation."
+                },
+                {
+                  "id": "b",
+                  "label": "Keep the rearranged first relation together with the second equation in which x was replaced.",
+                  "reviewFeedback": "Check how both original conditions can be recovered using the rearranged relation you retained."
+                },
+                {
+                  "id": "c",
+                  "label": "Replace both conditions with x = y because only one letter remains in the calculation.",
+                  "reviewFeedback": "A calculation with a single letter does not justify identifying the two quantities; review their original relation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The simplified second condition lets us find y, and the first still relates x to that value. Without retaining that relation, an incompatible choice of x might satisfy the reduced calculation while failing the original system.",
+            "incorrect": "Calculating with one unknown does not eliminate the relation connecting the two quantities. Substitution is meant to solve for both, not accidentally leave one unrestricted."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a Relation Without Requiring a Single Path"
+        },
+        {
+          "type": "paragraph",
+          "text": "It is often convenient to isolate an unknown whose coefficient is one or negative one, because it requires fewer calculations. It is also valid to divide by any known nonzero coefficient. That choice is a strategy; it does not make other correct paths wrong. Choose a path you can justify and retain the relation used to reconstruct the pair."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you isolate y, replace y wherever it appears; if you isolate x, replace x. The resulting expression still depends on the other unknown. It is not yet an independent numerical value. Finding another path can help you review the reasoning and understand how the conditions are connected (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varios_despejes_correctos_para_elegir",
+          "prompt": "In the system 2x + y = 8 and x − 3y = −3, select all valid rearrangements of the specified equation.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "varios_despejes_correctos_para_elegir__rutas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "From 2x + y = 8: y = 8 − 2x.",
+                  "reviewFeedback": "Repeat the operations on both sides and check that this rearrangement can be reversed."
+                },
+                {
+                  "id": "b",
+                  "label": "From x − 3y = −3: x = 3y − 3.",
+                  "reviewFeedback": "Preserve the signs and terms while isolating the unknown in the specified equation."
+                },
+                {
+                  "id": "c",
+                  "label": "From 2x + y = 8: x = 8 − 2y.",
+                  "reviewFeedback": "Check the coefficient of the isolated unknown and apply the operations to the entire side."
+                },
+                {
+                  "id": "d",
+                  "label": "From x − 3y = −3: y = (x + 3)/3.",
+                  "reviewFeedback": "Reconstruct this rearrangement using the entire divisor and check the starting relation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Option a subtracts 2x from both sides. Option b adds 3y to both sides. Option d rearranges to 3y = x + 3 and divides by three. These are valid paths; d remains valid even though it includes a quotient. Option c changes the coefficients and does not express the first condition.",
+            "incorrect": "Keep track of which quantity each coefficient multiplies. If you isolate x in the first equation, you must divide 8 − y by two; you cannot swap the roles of x and y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_el_despeje_elegido",
+          "prompt": "Solve that system using one of the valid paths. Enter x and y, and calculate the original left-hand sides with the same pair, in the order of the given equations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_el_despeje_elegido__par",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of 2x + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of x − 3y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One path uses y = 8 − 2x in the second equation: x − 3(8 − 2x) = −3, giving 7x − 24 = −3 and x = 3. Then y = 2. Another uses x = 3y − 3 in the first and obtains 7y − 6 = 8, with the same pair. The original checks give eight and negative three.",
+            "incorrect": "Keep the parentheses when substituting a multi-term expression. Then recover the other unknown and check both original conditions, not just the reduced equation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Replacing an Entire Expression, Including Fractions"
+        },
+        {
+          "type": "paragraph",
+          "text": "An isolated unknown can be expressed using additions, subtractions, or fractions. When you replace the unknown, that entire expression takes the place of the quantity it represented. Parentheses preserve which terms are multiplied or subtracted together. The denominators we use remain nonzero constant values."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustituir_una_relacion_fraccionaria",
+          "prompt": "Solve x/2 + y = 5/2 together with x − y = 1. Use only the first condition to write y as an expression in terms of x; then use both conditions to find the pair. Check the original left-hand sides with those values.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustituir_una_relacion_fraccionaria__despeje",
+              "type": "math_expression_input",
+              "label": "Expression for y in terms of x, using only the first condition",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5/2-x/2"
+              }
+            },
+            {
+              "id": "sustituir_una_relacion_fraccionaria__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of x/2 + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first gives y = 5/2 − x/2. Replacing y in the second leaves x − (5/2 − x/2) = 1, or (3/2)x − 5/2 = 1. Thus x = 7/3 and then y = 4/3. In the originals, 7/6 + 4/3 = 5/2 and 7/3 − 4/3 = 1. The parentheses ensure that subtracting −x/2 contributes +x/2.",
+            "incorrect": "Isolating y requires subtracting x/2 without changing 5/2. In x − y, subtracting the entire expression for y changes the signs of both its terms. Use exact fractions and return to the original equations."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_resta_de_toda_la_expresion",
+          "prompt": "In another system, the first relation is 2x + y = 7 and the second is x − 3y = 1. After isolating y, it was replaced in the second as x − 3(7 − 2x) = 1. Which expansion preserves the condition?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_resta_de_toda_la_expresion__expansion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 21 + 6x = 1.",
+                  "reviewFeedback": "Distribute the signed factor across the entire group and check each resulting term."
+                },
+                {
+                  "id": "b",
+                  "label": "x − 7 + 2x = 1.",
+                  "reviewFeedback": "Examine whether this expansion preserves the factor affecting all terms in the group."
+                },
+                {
+                  "id": "c",
+                  "label": "x − 21 − 6x = 1.",
+                  "reviewFeedback": "Calculate the product of the signs when distributing over the term containing the unknown."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The factor −3 multiplies both seven and −2x: it contributes −21 and +6x. Therefore the result is x − 21 + 6x = 1. The relation y = 7 − 2x remains available to recover y after solving the equation.",
+            "incorrect": "Distribute the complete factor, including its sign. The product of −3 and −2x is +6x; omitting the three or changing only one term would alter the condition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "When the Reduced Equation Is an Identity or a Contradiction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Not every system determines a unique pair. With x + y = 6 and 2x + 2y = 12, the first gives x = 6 − y, and the second becomes 2(6 − y) + 2y = 12. Simplifying leaves 12 = 12. That identity does not make every pair unrestricted: x = 6 − y is still required. Every rational number chosen for y gives a pair satisfying that relation, so there are infinitely many pairs, but all must add to six."
+        },
+        {
+          "type": "paragraph",
+          "text": "If the second condition were 2x + 2y = 13, the same substitution would leave 12 = 13. No pair can satisfy both that comparison and the original relation. This calculation distinguishes a repeated condition from a contradiction; it does not permit deleting the retained equation (Lang, 1971, pp. 54–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_resultados_al_conservar_una_relacion",
+          "prompt": "Classify each system over rational pairs. A: x − 2y = 4 and 3x − 6y = 12. B: x − 2y = 4 and 3x − 6y = 15. C: x − 2y = 4 and 3x − 5y = 12. In each case retain the first relation when substituting into the second.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_resultados_al_conservar_una_relacion__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Solution set of A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "One rational pair",
+                      "reviewFeedback": "Check whether substitution in A, together with the retained first relation, determines a unique pair. Justify existence and uniqueness separately."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Review the absence of solutions you propose for A using the substitution result and the first equation. Check what it would take for a pair to satisfy both."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many rational pairs",
+                      "reviewFeedback": "Justify the multiplicity you selected for A using the substituted condition and the retained relation. Check how pairs satisfying both originals can be produced."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Solution set of B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "One rational pair",
+                      "reviewFeedback": "Check whether B admits a pair and whether substitution uniquely determines it. Retain the first relation when interpreting the resulting condition."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Justify the claimed absence for B by analyzing the equality obtained after substitution. Check that every transformation preserves the solutions of both original equations."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many rational pairs",
+                      "reviewFeedback": "Examine what freedom the substituted condition of B would allow while the first equation is satisfied. Do not infer multiplicity merely because terms disappear."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Solution set of C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "One rational pair",
+                      "reviewFeedback": "Review the existence and uniqueness of the pair you propose for C. Use the substituted condition and first relation, and check both original equations."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "No rational pair",
+                      "reviewFeedback": "Examine whether C excludes every rational pair after substitution. Compare the resulting condition with the first relation before claiming there are no solutions."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitely many rational pairs",
+                      "reviewFeedback": "Justify the proposed multiplicity for C by checking which unknowns can vary. Any freedom must satisfy both the substitution and the retained relation."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "unico"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "All three first relations give x = 2y + 4. A leaves 12 = 12 and retains the infinitely many pairs satisfying that relation. B leaves 12 = 15 and admits none. C gives y + 12 = 12, so y = 0 and x = 4: exactly one pair. A value of zero for y is an ordinary solution; it does not mean that no solution exists.",
+            "incorrect": "Replace x with 2y + 4 in each second equation, distribute, and combine terms. An identity leaves the retained relation; a contradiction rules out every pair; a nonzero coefficient lets you find y and reconstruct x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_permite_cualquier_par",
+          "prompt": "For system A above, y = −1/2 is proposed. Use the retained relation to calculate x and decide which description gives the entire rational solution set.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_permite_cualquier_par__ejemplo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x for the proposed y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_permite_cualquier_par__conjunto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Every pair of rational numbers, with no relation between x and y.",
+                  "reviewFeedback": "An identity after reduction does not eliminate the relation you retained; check the original condition for the pairs."
+                },
+                {
+                  "id": "b",
+                  "label": "Every rational pair satisfying x − 2y = 4.",
+                  "reviewFeedback": "Relate the described family to the retained equation and check how one component can vary."
+                },
+                {
+                  "id": "c",
+                  "label": "Only the pair using the y value proposed in this activity.",
+                  "reviewFeedback": "Proposing one component does not by itself restrict the whole solution set; examine what condition remains for the others."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With y = −1/2, x = 2·(−1/2) + 4 = 3. That pair satisfies x − 2y = 4 and 3x − 6y = 12. It is an example of the family: for every other allowed rational y, the relation determines x. The set is neither limited to this one pair nor extended to pairs that fail the relation.",
+            "incorrect": "The equality 12 = 12 appeared after using x = 2y + 4. Do not forget that condition. Choosing a value for y lets you construct an example, but does not make it the only one."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Spotting an Incorrect Replacement and Recovering the Method"
+        },
+        {
+          "type": "paragraph",
+          "text": "A substitution must use an equality between the unknown being replaced and its expression. It is not enough that the expression appears in some rearrangement. If a calculation produces a pair, check it in both original equations: it may satisfy one and fail the other. That comparison helps locate the condition that was lost, rather than repeating the same calculation unchanged (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reemplazar_la_incognita_equivocada",
+          "prompt": "For x + y = 9 and 3x − 2y = 7, a note isolates x = 9 − y but changes the second condition to 3x − 2(9 − y) = 7. Together with the first, it obtains the proposed pair x = 7, y = 2. Identify the first error and calculate the original left-hand sides using that proposal.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reemplazar_la_incognita_equivocada__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The rearrangement for x is correct, but y was replaced with an expression that the first relation equates to x.",
+                  "reviewFeedback": "Identify which unknown the rearrangement names and compare it with the place where the expression was inserted."
+                },
+                {
+                  "id": "b",
+                  "label": "The first rearrangement should have been x = 9 + y, so the error occurred before substitution.",
+                  "reviewFeedback": "Reconstruct this rearrangement by performing the same operation on both sides and check the signs."
+                },
+                {
+                  "id": "c",
+                  "label": "There is no error: satisfying the first condition is enough to solve the system.",
+                  "reviewFeedback": "Satisfying the first condition does not replace the second; check both with the announced pair."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reemplazar_la_incognita_equivocada__propuesta",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Original value of x + y with the proposed pair",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Original value of 3x − 2y with the proposed pair",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "17"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The rearrangement x = 9 − y is valid, but 9 − y must replace x, not y. The proposal satisfies 7 + 2 = 9, while 3·7 − 2·2 = 17, not seven. The correct substitution is 3(9 − y) − 2y = 7. Alternatively, you could isolate y = 9 − x and replace y correctly.",
+            "incorrect": "Ask which unknown equals the expression you are using. Then evaluate the same pair in the originals: an unsuccessful check is not fixed by ignoring that equation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_sustitucion_sin_cadena",
+          "prompt": "Solve (x − 2y)/3 = 1 together with x + y = −3 by a path you can justify. Enter the pair and check both original left-hand sides. The unknowns are rational.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_sustitucion_sin_cadena__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Value of x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Value of y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Value of (x − 2y)/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Value of x + y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One path multiplies the first by three: x − 2y = 3, hence x = 2y + 3. Substituting into the second gives 3y + 3 = −3, so y = −2 and x = −1. The originals yield (−1 − 2·(−2))/3 = 1 and −1 + (−2) = −3. Negative values are allowed in this domain.",
+            "incorrect": "Multiplication by three must affect both sides of the first equation. Preserve the sign of −3 in the second and use the isolated relation to recover the other unknown. Do not replace a negative value with its magnitude."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Returning from the Two Quantities to the Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "An assembly uses whole blocks of two sizes. Each small block has a mass of two kilograms, and each large block a mass of three. Ten blocks are required in total, and their exact combined mass must be twenty-four kilograms. Let x be the number of small blocks and y the number of large ones. Both are nonnegative integers; since there are ten altogether, neither count can exceed ten."
+        },
+        {
+          "type": "paragraph",
+          "text": "Both unknowns use the same counting unit, but each contributes a different mass. One equation will describe the number of blocks, and another the total mass. Choosing units and preserving what each letter represents connects the model to the data, as in the two-unknown problems in the reference (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_para_bloques_y_masa",
+          "prompt": "Write one equation for the total number of blocks and another for the total mass, using x for small blocks and y for large ones. Then solve both conditions and enter the resulting counts. Check that they are integers in the domain.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__conteo",
+              "type": "math_expression_input",
+              "label": "Equation expressing only the total number of blocks",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=10"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__masa",
+              "type": "math_expression_input",
+              "label": "Equation expressing only the total mass, in kilograms",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+3y=24"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pequenos",
+                  "type": "numeric",
+                  "label": "Number of small blocks",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Number of large blocks",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pequenos": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The conditions are x + y = 10 and 2x + 3y = 24. From the first, x = 10 − y; substituting into the second gives 20 − 2y + 3y = 24, so y = 4 and x = 6. The checks give ten blocks and 12 + 12 = 24 kg. The counts are nonnegative integers within the stated limit.",
+            "incorrect": "Do not add a mass to a number of blocks as though they were the same kind of quantity. The first total counts blocks; the second multiplies each count by the corresponding mass per block. Preserve which size each letter names."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_restriccion_adicional_sin_borrar_los_totales",
+          "prompt": "We then learn that only three large blocks are available. Both original totals still apply, and the blocks must remain whole. Which conclusion now respects every condition?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_restriccion_adicional_sin_borrar_los_totales__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "You can use one fewer large block without checking the block count or total mass again.",
+                  "reviewFeedback": "Recalculate both totals with the proposed modification and require them to hold simultaneously."
+                },
+                {
+                  "id": "b",
+                  "label": "No assembly is possible with all the given data: the pair required by both totals exceeds the available supply.",
+                  "reviewFeedback": "Compare the available supply with the pair required by the totals, preserving the domain of whole blocks."
+                },
+                {
+                  "id": "c",
+                  "label": "Splitting a large block solves the problem without changing the domain of whole blocks.",
+                  "reviewFeedback": "Splitting a unit changes the physical counting domain; check whether the statement allows that change."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The two totals determine the unique pair of six small blocks and four large blocks. The new availability requires y ≤ 3, which that pair does not satisfy. There is no second pair that preserves both totals. Removing or splitting a block would change a condition; it is not a solution to the stated problem.",
+            "incorrect": "The additional condition must hold together with the earlier ones. Check the number of large blocks determined by the system, and distinguish respecting the data from replacing them with different data."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Solving by substitution retains one relation, reduces the other, and reconstructs the same values for both unknowns. Checking the originals verifies the pair; the equivalence of the steps justifies that no other solution was lost. If an identity or contradiction appears, interpret the entire solution set and the remaining relation. In contextual problems, also check units, domain, and additional data afterward (Gelfand & Shen, 1993, pp. 94–95; Pólya, 1957, pp. 14–15)."
+        }
+      ]
+    }
+  ]
+}

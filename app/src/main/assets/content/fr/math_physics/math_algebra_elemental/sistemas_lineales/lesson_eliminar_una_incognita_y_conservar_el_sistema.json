@@ -1,0 +1,1210 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__eliminar_una_incognita_y_conservar_el_sistema",
+  "title": "Éliminer une inconnue en conservant le système",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Additionner pour éliminer une inconnue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un système, un même couple (x, y) doit satisfaire les deux équations. Jusqu'ici, tu as utilisé une relation pour substituer une inconnue. Une autre possibilité consiste à combiner les équations pour que les termes contenant une des lettres s'annulent. Dans cette leçon, x et y sont rationnels, sauf restrictions explicites du contexte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 3x + 2y = 14 et x − 2y = 2, additionne les membres de gauche entre eux et les membres de droite entre eux. Comme 2y + (−2y) = 0, tu obtiens 4x = 16. Donc x = 4. Conserve, par exemple, x − 2y = 2 : pour x = 4, on trouve y = 1. Les équations initiales donnent 3·4 + 2·1 = 14 et 4 − 2·1 = 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tout couple satisfaisant les équations initiales satisfait également leur somme. L'équation 4x = 16, prise seule, ne relie pas encore y à x. La méthode d'élimination combine les conditions pour obtenir un calcul plus simple, puis utilise une autre équation pour retrouver la deuxième inconnue et vérifier les deux conditions (Lang, 1971, pp. 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_por_suma_y_recuperar_el_par",
+          "prompt": "Résous 5x + 3y = 19 et x − 3y = −1. Dans cet exercice, additionne les deux équations pour éliminer y. Écris le coefficient de x et le membre de droite de cette somme ; retrouve le couple, puis calcule les deux membres de gauche initiaux avec celui-ci.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_por_suma_y_recuperar_el_par__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_x",
+                  "type": "numeric",
+                  "label": "Coefficient de x dans la somme",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite de la somme",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 5x + 3y avec le couple trouvé",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x − 3y avec le couple trouvé",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_x": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La somme donne 6x = 18 et donc x = 3. Dans x − 3y = −1, on obtient 3 − 3y = −1 : y = 4/3. La vérification donne 5·3 + 3·(4/3) = 19 et 3 − 3·(4/3) = −1. Le même couple satisfait les deux équations initiales.",
+            "incorrect": "Additionne aussi les membres de droite : 19 + (−1). Utilise ensuite une équation initiale pour retrouver y. Une solution fractionnaire est autorisée dans notre domaine ; ne l'arrondis pas avant de vérifier."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver une équation permet de revenir en arrière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le système précédent, remplace 5x + 3y = 19 par la somme 6x = 18, et conserve x − 3y = −1. Ce nouveau système possède exactement les mêmes couples solutions : les équations initiales impliquent la somme, et le nouveau système permet de retrouver la première en soustrayant l'équation conservée de la somme. En effet, 6x − (x − 3y) = 18 − (−1) redonne 5x + 3y = 19."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette opération inverse explique pourquoi aucune condition n'est perdue. Il ne suffit pas de dire que la somme est vraie : nous devons conserver assez d'informations pour reconstituer les deux équations initiales. Vérifier un couple et justifier que la méthode ne laisse pas d'autres solutions jouent deux rôles différents (Lang, 1971, pp. 53–55 ; Pólya, 1957, pp. 14–15)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_ecuacion_que_se_reemplazo",
+          "prompt": "Un autre système réduit conserve 9x = 22 et 3x − 4y = −2. Soustrais la deuxième équation entière de la première. Complète les coefficients et le membre de droite de la relation retrouvée, sous la forme (coefficient de x)x + (coefficient de y)y = membre de droite.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_ecuacion_que_se_reemplazo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_x",
+                  "type": "numeric",
+                  "label": "Coefficient de x dans la relation retrouvée",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient de y dans la relation retrouvée",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite de la relation retrouvée",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_x": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9x − (3x − 4y) = 6x + 4y, puisque le signe moins s'applique aux deux termes du groupe. À droite, 22 − (−2) = 24. Conserver 3x − 4y = −2 avec 6x + 4y = 24 permet de retrouver 9x = 22 par addition.",
+            "incorrect": "Soustrais tout le membre de gauche, avec parenthèses, ainsi que le membre de droite entier. Le terme −4y devient +4y lorsqu'on le soustrait ; il faut aussi soustraire −2 à droite."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_suma_aislada_admite_un_par_ajeno",
+          "prompt": "Le couple (3, 0) satisfait 6x = 18. Calcule les valeurs de 5x + 3y et x − 3y. Choisis ensuite ce que ce couple démontre à propos du système initial 5x + 3y = 19, x − 3y = −1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_suma_aislada_admite_un_par_ajeno__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 5x + 3y pour (3, 0)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x − 3y pour (3, 0)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "la_suma_aislada_admite_un_par_ajeno__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Satisfaire la somme suffit toujours pour satisfaire les deux conditions initiales.",
+                  "reviewFeedback": "Une conséquence du système ne le remplace pas automatiquement ; compare le couple à chaque condition initiale."
+                },
+                {
+                  "id": "b",
+                  "label": "La somme isolée peut admettre des couples rejetés par le système initial ; il faut conserver une autre condition.",
+                  "reviewFeedback": "Identifie les informations conservées par la somme et la restriction à maintenir pour retrouver le système."
+                },
+                {
+                  "id": "c",
+                  "label": "Il est impossible d'additionner des équations lorsque l'un de leurs membres de droite est négatif.",
+                  "reviewFeedback": "L'addition d'équations agit sur les deux membres ; le signe négatif d'un membre de droite n'empêche pas en soi cette opération."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le couple donne 15 et 3, et non 19 et −1. C'est un contre-exemple à l'équivalence entre la somme isolée et le système. Conserver x − 3y = −1 empêche d'accepter ce couple étranger au système.",
+            "incorrect": "Une conséquence des conditions ne contient pas nécessairement toute leur information. Remplace les inconnues par le même couple dans les deux équations initiales : satisfaire seulement 6x = 18 ne prouve pas qu'il résout le système."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Soustraire une équation entière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux aussi éliminer des coefficients égaux par soustraction. Dans 4x − 5y = −2 et 4x + 3y = 14, soustrais la première équation de la deuxième : (4x + 3y) − (4x − 5y) = 14 − (−2). Il reste 8y = 16, donc y = 2 et une équation initiale donne x = 2. Vérifie : 4·2 − 5·2 = −2 et 4·2 + 3·2 = 14."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le signe moins affecte tout le membre que tu soustrais. En particulier, −(−5y) = +5y et −(−2) = +2. L'ordre choisi change le signe de l'équation obtenue, mais les deux ordres peuvent être valides si les calculs et l'équation conservée sont cohérents. L'élimination peut annuler x ou y : les lettres n'ont pas d'ordre obligatoire (Lang, 1971, pp. 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_coeficientes_iguales",
+          "prompt": "Travaille avec 7x − 2y = −4 et 7x + 5y = 10. Dans cet exercice, soustrais la première équation de la deuxième pour éliminer x. Écris le coefficient de y et le membre de droite obtenus, puis retrouve x et y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_coeficientes_iguales__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient de y lorsqu'on soustrait la première de la deuxième",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite lorsqu'on soustrait la première de la deuxième",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La soustraction donne 7y = 14, donc y = 2. Dans la première équation, 7x − 4 = −4, d'où x = 0. Les équations initiales donnent −4 et 10. Zéro est une valeur normale pour une inconnue ; il ne fait pas disparaître le système.",
+            "incorrect": "Écris (7x + 5y) − (7x − 2y) avant d'enlever les parenthèses. Le membre de droite est 10 − (−4). Utilise une équation initiale pour retrouver la lettre éliminée."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "detectar_una_resta_de_signos_incorrecta",
+          "prompt": "Dans 2x − 3y = 5 et 2x − y = 1, quelqu'un soustrait la première équation de la deuxième et écrit −y − 3y = 1 − 5. Identifie l'erreur et effectue correctement la soustraction. Donne le coefficient de y, le membre de droite et le couple solution.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "detectar_una_resta_de_signos_incorrecta__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le terme soustrait était −3y ; l'expression correcte est donc −y − (−3y).",
+                  "reviewFeedback": "Écris entre parenthèses le terme soustrait et conserve son signe avant de simplifier."
+                },
+                {
+                  "id": "b",
+                  "label": "La soustraction est correcte ; il suffit de changer 1 − 5 en 5 − 1.",
+                  "reviewFeedback": "Reconstitue la soustraction dans le même ordre pour les deux membres, sans inverser uniquement le membre de droite."
+                },
+                {
+                  "id": "c",
+                  "label": "La soustraction est impossible parce que les termes en y sont négatifs.",
+                  "reviewFeedback": "Les quantités négatives peuvent aussi être soustraites ; revois les règles de signes appliquées aux termes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "detectar_una_resta_de_signos_incorrecta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient de y dans la soustraction correcte",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite dans la soustraction correcte",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire −3y revient à ajouter 3y : −y + 3y = 2y. On obtient 2y = −4, puis y = −2. La deuxième équation donne 2x + 2 = 1, d'où x = −1/2. Les vérifications sont 2·(−1/2) − 3·(−2) = 5 et 2·(−1/2) − (−2) = 1.",
+            "incorrect": "L'erreur survient avant la résolution : le signe du terme entier soustrait n'a pas été pris en compte. Conserve l'ordre deuxième moins première dans les deux membres, puis retrouve x et vérifie les deux conditions."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer des coefficients compatibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si les coefficients ne s'annulent pas encore, tu peux multiplier une équation entière par un nombre connu non nul. Cette transformation est réversible : diviser par ce même nombre permet de retrouver l'équation. Multiplie chaque terme et le membre de droite ; ne change pas seulement le terme que tu veux éliminer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considère 4x + y = 7 et 3x − 2y = −3. Pour éliminer y, multiplie la première par deux et ajoute la deuxième : (8x + 2y) + (3x − 2y) = 14 + (−3), soit 11x = 11. Pour éliminer x, une autre méthode consiste à prendre trois fois la première moins quatre fois la deuxième : (12x + 3y) − (12x − 8y) = 21 − (−12), soit 11y = 33. Les deux méthodes conduisent au même couple, (1, 3), en utilisant une équation initiale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve la deuxième équation initiale avec la combinaison. Dans la première méthode, soustraire la deuxième de la combinaison puis diviser par deux permet de retrouver la première. Dans l'autre, ajouter quatre fois la deuxième puis diviser par trois permet de la retrouver. Les deux méthodes conservent ainsi le système entier. Choisir des coefficients pratiques peut réduire les calculs, mais aucune lettre ne doit obligatoirement être éliminée (Lang, 1971, pp. 53–54 ; Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varias_combinaciones_conservan_y_eliminan",
+          "prompt": "Appelle E1 l'équation 2x + 3y = 4 et E2 l'équation 5x − 2y = −9. Sélectionne toutes les méthodes qui éliminent une inconnue et permettent de retrouver E1 tout en conservant E2. Chaque addition ou soustraction s'applique aux membres entiers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "varias_combinaciones_conservan_y_eliminan__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Remplacer E1 par cinq fois E1 moins deux fois E2 ; conserver E2.",
+                  "reviewFeedback": "Calcule les coefficients obtenus avec cette méthode et vérifie si tu peux retrouver la condition remplacée."
+                },
+                {
+                  "id": "b",
+                  "label": "Remplacer E1 par deux fois E1 plus trois fois E2 ; conserver E2.",
+                  "reviewFeedback": "Évalue la combinaison proposée et examine quelles informations permettent de retrouver l'équation précédente."
+                },
+                {
+                  "id": "c",
+                  "label": "Remplacer E1 par moins cinq fois E1 plus deux fois E2 ; conserver E2.",
+                  "reviewFeedback": "Conserve les signes des multiplicateurs pour vérifier l'élimination et la réversibilité."
+                },
+                {
+                  "id": "d",
+                  "label": "Remplacer E1 par trois fois E1 moins deux fois E2 ; conserver E2.",
+                  "reviewFeedback": "Calcule le coefficient de chaque inconnue après cette combinaison avant d'affirmer qu'une disparaît."
+                },
+                {
+                  "id": "e",
+                  "label": "Remplacer E1 par zéro fois E1, ce qui donne 0 = 0 ; conserver E2.",
+                  "reviewFeedback": "Examine quelles informations restent sur la condition remplacée et si l'opération est réversible."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La proposition a donne 19y = 38 ; b donne 19x = −19 ; c donne −19y = −38. Dans chaque cas, tu peux retrouver E1 avec E2 et un diviseur connu non nul. La proposition d conserve également le système avec E2, mais donne −4x + 13y = 30 sans éliminer aucune inconnue : elle ne remplit donc pas l'objectif. La proposition e efface la première condition et ne permet pas de la retrouver.",
+            "incorrect": "Distingue deux objectifs : conserver le système et éliminer une de ses lettres. Une combinaison peut satisfaire le premier sans satisfaire le deuxième. Multiplier E1 par zéro efface des informations ; ce n'est pas une préparation réversible."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_la_cancelacion_elegida",
+          "prompt": "Résous ce nouveau système : 3x + 2y = 4 et 4x − 3y = 11. Choisis une élimination valide, ou toute autre méthode équivalente que tu peux justifier. Écris le couple et les valeurs des membres de gauche initiaux, dans l'ordre des équations données.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_la_cancelacion_elegida__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 3x + 2y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 4x − 3y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le couple est (2, −1). Par exemple, trois fois la première équation plus deux fois la deuxième donne 17x = 34 ; la première permet de retrouver y = −1. Les équations initiales donnent 3·2 + 2·(−1) = 4 et 4·2 − 3·(−1) = 11. Une autre méthode conservant les deux conditions conduit au même couple.",
+            "incorrect": "Tu peux choisir l'inconnue à éliminer. Retrouve ensuite l'autre à l'aide d'une relation conservée et vérifie le même couple dans les deux équations initiales. Un membre de droite négatif n'empêche pas d'additionner, de soustraire ni de multiplier les équations par une constante."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les rationnels et les facteurs négatifs suivent les mêmes règles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les coefficients peuvent être des fractions. Tu peux parfois additionner directement les équations parce que les coefficients d'une inconnue sont déjà opposés. Tu peux aussi éliminer les dénominateurs en multipliant chaque équation par un dénominateur constant connu non nul. Ce sont des choix de calcul, et non des conditions différentes sur les couples. Un facteur négatif convient pour une égalité à condition de multiplier les deux membres entiers et de pouvoir diviser pour revenir en arrière (Lang, 1971, pp. 37–38, 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_con_coeficientes_fraccionarios",
+          "prompt": "Résous x/2 + y/3 = −3/4 et 3x/2 − y/3 = 7/4. Choisis ta méthode : tu peux profiter des termes opposés en y ou transformer d'abord les fractions. Écris x, y et les deux membres de gauche initiaux avec le couple obtenu.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_con_coeficientes_fraccionarios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x/2 + y/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 3x/2 − y/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-3/4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'addition donne 2x = 1, donc x = 1/2. Dans la première équation, il reste 1/4 + y/3 = −3/4 ; d'où y = −3. La vérification donne 1/4 − 1 = −3/4 et 3/4 + 1 = 7/4. Le domaine rationnel admet les valeurs trouvées ; inutile de les convertir en décimaux approximatifs.",
+            "incorrect": "Si tu additionnes directement, additionne aussi les fractions des membres de droite. Si tu élimines les dénominateurs, multiplie tous les termes et le membre de droite de chaque équation. Retrouve le couple et évalue les équations initiales, pas seulement les équations transformées."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_por_un_numero_negativo",
+          "prompt": "Dans 3x − 2y = 1 et 6x + y = 5, multiplie la première équation par −2 et ajoute-la à la deuxième. Écris le coefficient de y et le membre de droite de la combinaison. Retrouve ensuite le couple.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escalar_por_un_numero_negativo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient de y après avoir ajouté moins deux fois la première à la deuxième",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Membre de droite de cette combinaison",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "11/15"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplier la première par −2 donne −6x + 4y = −2. En ajoutant la deuxième, on obtient 5y = 3, donc y = 3/5. La première donne 3x = 11/5 et x = 11/15. Vérifie : 3·(11/15) − 2·(3/5) = 1 et 6·(11/15) + 3/5 = 5.",
+            "incorrect": "Le facteur −2 transforme également −2y en +4y et le membre de droite en −2. La combinaison élimine x, mais tu as encore besoin d'une équation initiale pour le retrouver. Conserve les fractions exactes lors de la vérification."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quand la combinaison produit une identité ou une contradiction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Éliminer une lettre peut également annuler l'autre. S'il reste 0 = 0, cette combinaison n'ajoute aucune restriction : l'équation conservée doit toujours être satisfaite. Si le résultat rend 0 égal à un nombre non nul, aucun couple ne peut satisfaire les équations initiales. Ces conclusions reposent sur la conservation du système par des étapes réversibles ; elles ne viennent pas de l'effacement délibéré d'une équation par multiplication par zéro (Lang, 1971, pp. 54–55)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, conserver 2x − y = 7 après une combinaison donnant 0 = 0 laisse tous les couples satisfaisant cette relation. Chaque y rationnel détermine x = (7 + y)/2 ; il y a une infinité de couples, mais pas tous les couples rationnels. Le couple (0, 0) échoue, car 2·0 − 0 n'est pas égal à 7."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_sin_borrar_la_relacion",
+          "prompt": "Les trois systèmes ont x + 3y = 2 comme première équation. Leurs deuxièmes équations sont : A, 2x + 6y = 4 ; B, 2x + 6y = 5 ; C, 2x + 5y = 4. Dans chaque cas, soustrais deux fois la première de la deuxième, conserve la première et classe l'ensemble des couples rationnels.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_sin_borrar_la_relacion__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Ensemble des couples solutions du système A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Vérifie si la condition réduite de A, avec la relation conservée, détermine un couple unique. Vérifier un exemple ne démontre pas l'unicité."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Justifie l'absence choisie pour A en examinant la réduction et la relation conservée. Vérifie si un couple rationnel pourrait satisfaire les deux."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels satisfaisant la relation conservée",
+                      "reviewFeedback": "Examine la liberté permise par la condition réduite de A en maintenant la première relation. Justifie cette multiplicité sans abandonner aucune équation initiale."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Ensemble des couples solutions du système B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Vérifie si la réduction de B admet un couple et permet de justifier son unicité. Conserve la première équation pour interpréter le résultat de l'élimination."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Revois l'absence proposée pour B à l'aide de la condition restant après élimination et de la relation conservée. Justifie si un couple pourrait les satisfaire ou non."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels satisfaisant la relation conservée",
+                      "reviewFeedback": "Examine si la condition réduite de B permet de construire des couples rationnels tout en conservant la première relation. Ne déduis pas la multiplicité uniquement parce qu'une inconnue disparaît."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Ensemble des couples solutions du système C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Justifie l'existence et l'unicité du couple proposé pour C. Vérifie la condition réduite, puis retrouve le couple avec la relation conservée."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Vérifie si la condition réduite de C exclut tous les couples rationnels. Compare cette absence à ce qu'exige également la première équation."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels satisfaisant la relation conservée",
+                      "reviewFeedback": "Examine la liberté qui resterait dans C après élimination. Vérifie si les deux inconnues peuvent encore varier lorsqu'on conserve la première relation."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "unico"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A laisse 0 = 0 avec x + 3y = 2 : il existe une infinité de couples satisfaisant cette relation. B laisse 0 = 1 : aucun couple ne convient. C laisse −y = 0, donc y = 0 et la première donne x = 2 : il existe un seul couple. Qu'une solution possède une coordonnée nulle ne signifie pas que tous les couples sont des solutions.",
+            "incorrect": "Compare aussi les membres de droite après la combinaison. Une identité n'efface pas la première équation conservée. Une contradiction rejette tous les couples. Si une lettre conserve un coefficient non nul, calcule-la et retrouve l'autre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "relacion_que_permanece_con_infinitos_pares",
+          "prompt": "Pour le système A précédent, écris une équation linéaire décrivant exactement tous les couples à conserver. Prends ensuite y = 1/3, retrouve x et calcule les membres de gauche initiaux de x + 3y = 2 et 2x + 6y = 4. L'équation doit décrire toute la famille, et non uniquement le couple vérifié.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relacion_que_permanece_con_infinitos_pares__relacion",
+              "type": "math_expression_input",
+              "label": "Équation décrivant la famille complète de couples du système A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+3y=2"
+              }
+            },
+            {
+              "id": "relacion_que_permanece_con_infinitos_pares__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x lorsque y = 1/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x + 3y pour ce couple",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 2x + 6y pour ce couple",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La relation restante est x + 3y = 2 ; des formes équivalentes comme x = 2 − 3y conviennent aussi. Pour y = 1/3, on obtient x = 1. Alors 1 + 3·(1/3) = 2 et 2·1 + 6·(1/3) = 4. La famille contient ce couple ainsi que tous les autres satisfaisant la relation ; 0 = 0 seul admettrait des couples étrangers.",
+            "incorrect": "Conserve la condition initiale qui continue de relier les lettres. Écrire seulement x = 1 décrirait moins de couples, et écrire seulement 0 = 0 en admettrait davantage. Vérifier un couple particulier sert à examiner la famille, pas à remplacer son équation."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Résoudre sans suite d'étapes imposée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choisis maintenant toi-même comment préparer et combiner les équations. Avant de calculer, identifie l'inconnue la plus pratique à éliminer et l'équation que tu conserveras pour la retrouver. Si tu préfères substituer plutôt qu'éliminer, cela convient aussi : l'objectif de ces deux exercices est de résoudre et de justifier le système sans imposer une méthode."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu utilises l'élimination, écris d'abord l'opération portant sur les équations entières. Vérifie si la lettre choisie s'annule réellement et si tous les termes et membres de droite ont été multipliés. Si tu substitues, conserve la relation utilisée et remplace l'inconnue correspondante par l'expression entière. Après avoir retrouvé le couple, vérifie les deux équations initiales. Relire l'étape la plus délicate et comparer le résultat aux conditions de départ aide à repérer une erreur que la répétition du même calcul pourrait masquer (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_un_sistema_con_un_grupo",
+          "prompt": "Résous (x + 2y)/3 = −1 et 2x − y = 4 dans les rationnels. Ni la lettre à éliminer ni la méthode ne sont indiquées. Écris le couple et les membres de gauche initiaux, en conservant le groupe et la division par trois dans la première vérification.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_un_sistema_con_un_grupo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de (x + 2y)/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 2x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le couple est (1, −2). Une méthode multiplie la première équation par trois : x + 2y = −3. Ajoute deux fois la deuxième pour obtenir 5x = 5 ; puis y = −2. Les vérifications initiales sont (1 + 2·(−2))/3 = −1 et 2·1 − (−2) = 4. Chaque préparation et combinaison conserve le système avec une équation suffisante pour revenir en arrière.",
+            "incorrect": "Le diviseur trois s'applique au groupe entier. Tu peux le supprimer de manière réversible, mais il faut également multiplier le membre de droite par trois. Retrouve l'autre lettre et vérifie avec le même couple, sans mélanger des valeurs de tentatives différentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_conservar_fracciones_exactas",
+          "prompt": "Résous 2x + 5y = 1 et 3x − y = −2. Choisis une méthode valable et conserve les fractions exactes. Écris x, y et les valeurs des membres de gauche initiaux.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_conservar_fracciones_exactas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 2x + 5y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de 3x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-9/17"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "7/17"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ajouter cinq fois la deuxième équation à la première donne 17x = −9. Ainsi x = −9/17, et la deuxième permet de retrouver y = 7/17. Les équations initiales donnent (−18 + 35)/17 = 1 et (−27 − 7)/17 = −2. Aucun arrondi n'est nécessaire : les fractions permettent de vérifier exactement les conditions.",
+            "incorrect": "Il existe plusieurs méthodes correctes. Si une combinaison n'élimine pas la lettre prévue, revois ses coefficients avant de poursuivre. Les résultats fractionnaires sont admis ; une approximation décimale peut empêcher une vérification exacte."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire les conditions, résoudre et vérifier le domaine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un mélange d'encres pour un essai, appelons x les litres d'encre A et y les litres d'encre B. x et y sont des rationnels non négatifs. Chaque litre de A apporte deux grammes d'un marqueur, et chaque litre de B en apporte cinq. Le modèle suppose que les volumes s'additionnent et que la quantité de marqueur est la somme de ces contributions. Il faut trois litres au total avec neuf grammes de marqueur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une condition pour le volume et une autre pour la quantité de marqueur. Les termes de chaque condition doivent avoir les mêmes unités : des litres pour l'une et des grammes pour l'autre. Résoudre le système donne un candidat ; vérifie ensuite simultanément les égalités, les unités et les restrictions sur les quantités. Une réponse algébrique doit répondre au problème posé et utiliser toutes ses données pertinentes (Lang, 1971, pp. 55–56 ; Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_y_resolver_una_mezcla",
+          "prompt": "Utilise x pour les litres de A et y pour les litres de B de l'essai décrit. Écris les deux équations linéaires complètes : l'une exprimant seulement le volume, et l'autre seulement le marqueur. Résous ensuite par une méthode valable et calcule le volume et la quantité totale de marqueur avec le même couple. Ne remplace pas une condition complète par la valeur finale d'une seule inconnue.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_y_resolver_una_mezcla__volumen",
+              "type": "math_expression_input",
+              "label": "Équation de la condition du volume total, en litres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=3"
+              }
+            },
+            {
+              "id": "construir_y_resolver_una_mezcla__contenido",
+              "type": "math_expression_input",
+              "label": "Équation de la condition du marqueur total, en grammes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+5y=9"
+              }
+            },
+            {
+              "id": "construir_y_resolver_una_mezcla__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Litres d'encre A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Litres d'encre B",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "volumen",
+                  "type": "numeric",
+                  "label": "Volume total, en litres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "marcador",
+                  "type": "numeric",
+                  "label": "Quantité totale de marqueur, en grammes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "volumen": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "marcador": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les conditions sont x + y = 3 et 2x + 5y = 9, ou des équations équivalentes à chacune séparément. Soustraire deux fois la condition de volume de celle du marqueur annule x et donne 3y = 3 ; donc y = 1 et x = 2. Le couple utilise des quantités rationnelles non négatives, totalise trois litres et apporte 2·2 + 5·1 = 9 grammes. Conserver l'équation de volume permet de revenir en arrière et de reconstituer les deux conditions.",
+            "incorrect": "Le coefficient de chaque volume dans la condition du marqueur dépend du type d'encre. Vérifie aussi les unités et le domaine. Donner seulement x ou y n'exprime pas une condition complète sur tous les couples possibles."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_una_disponibilidad_adicional",
+          "prompt": "Pour ce même essai, il ne reste qu'un demi-litre de B. Les objectifs de trois litres et neuf grammes de marqueur sont maintenus. Quelqu'un propose (x, y) = (5/2, 1/2), ce qui respecte la disponibilité. Calcule le volume et le marqueur de ce couple ; détermine ensuite si un mélange admissible peut satisfaire simultanément les deux conditions initiales et la nouvelle disponibilité.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_una_disponibilidad_adicional__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "volumen",
+                  "type": "numeric",
+                  "label": "Volume du couple (5/2, 1/2), en litres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "marcador",
+                  "type": "numeric",
+                  "label": "Marqueur du couple (5/2, 1/2), en grammes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "volumen": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "marcador": {
+                    "type": "numeric",
+                    "expected": "15/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_una_disponibilidad_adicional__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui ; respecter la disponibilité et le volume suffit, même si la quantité de marqueur change.",
+                  "reviewFeedback": "La disponibilité ne remplace pas l'objectif du marqueur ; confronte cette proposition à toutes les conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "Non ; le seul couple satisfaisant les deux conditions initiales nécessite davantage de B qu'il n'en reste, et le couple proposé échoue pour le marqueur.",
+                  "reviewFeedback": "Compare la disponibilité aux exigences simultanées des deux conditions initiales et vérifie la proposition."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui ; il suffit d'arrondir la quantité de marqueur proposée à neuf grammes.",
+                  "reviewFeedback": "Une exigence exacte n'autorise pas à arrondir un résultat différent ; vérifie la quantité calculée initialement."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le couple proposé totalise 5/2 + 1/2 = 3 litres, mais apporte 2·(5/2) + 5·(1/2) = 15/2 grammes, et non neuf. Les transformations réversibles des deux conditions initiales donnent l'unique couple (2, 1) ; il faut un litre de B alors qu'il n'en reste qu'un demi. Aucun mélange ne satisfait donc à la fois le modèle et la disponibilité. Changer ou arrondir une donnée ne supprime pas cette incompatibilité.",
+            "incorrect": "Respecte toutes les conditions, pas seulement la nouvelle. La vérification doit utiliser le même couple pour le volume et le marqueur. L'unicité est justifiée par les transformations du système ; une seule proposition qui échoue ne prouverait pas, à elle seule, qu'aucun autre couple ne convient."
+          }
+        }
+      ]
+    }
+  ]
+}

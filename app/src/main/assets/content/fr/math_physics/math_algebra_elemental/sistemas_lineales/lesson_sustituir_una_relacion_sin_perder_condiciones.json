@@ -1,0 +1,845 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__sustituir_una_relacion_sin_perder_condiciones",
+  "title": "Substituer une relation sans perdre les conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une relation permet de remplacer une inconnue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà vérifier qu'un même couple satisfait deux conditions et transformer une équation sans changer ses solutions. Nous allons maintenant rechercher les couples par substitution : exprimer une inconnue en fonction de l'autre et utiliser cette relation dans la deuxième équation. Sauf restriction liée au contexte, x et y peuvent prendre des valeurs rationnelles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considère x − y = 3 et 2x + y = 12. La première équivaut à x = y + 3 : ajouter y aux deux membres conserve sa condition. Pour tout couple qui satisfait cette première relation, x et y + 3 sont la même quantité. Dans la deuxième équation, nous pouvons donc remplacer chaque occurrence de x par y + 3, sans changer si le couple la satisfait. On obtient 2(y + 3) + y = 12, tout en conservant x = y + 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Développer et regrouper donne 3y + 6 = 12 ; soustraire six et diviser par trois donne y = 2. La relation conservée donne x = 5. Dans les équations initiales, 5 − 2 = 3 et 2·5 + 2 = 12. Toute solution devrait conduire à ces valeurs, et ce couple satisfait les deux conditions : nous justifions ainsi qu'il convient et qu'aucune autre solution n'a été oubliée (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_relacion_entra_en_la_otra",
+          "prompt": "Travaille avec x − y = −2 et x + 2y = 7. Utilise la première équation pour exprimer x en fonction de y. Remplace ensuite x dans la deuxième, regroupe les termes et résous. Écris le coefficient de y restant à gauche et les valeurs finales de x et de y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_relacion_entra_en_la_otra__expresion",
+              "type": "math_expression_input",
+              "label": "Expression qui remplace x en fonction de y",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2"
+              }
+            },
+            {
+              "id": "una_relacion_entra_en_la_otra__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coefficient de y après regroupement à gauche",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur finale de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur finale de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première relation donne x = y − 2. Remplacer x dans la deuxième produit (y − 2) + 2y = 7, soit 3y − 2 = 7. On obtient donc y = 3, puis x = 1. Dans les équations initiales, 1 − 3 = −2 et 1 + 2·3 = 7 : le même couple satisfait les deux.",
+            "incorrect": "Ajouter y à x − y = −2 donne x = y − 2. Substitue cette expression entière à chaque occurrence de x, conserve −2 et utilise la première relation pour retrouver x après avoir calculé y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_la_relacion_al_sustituir",
+          "prompt": "Pour ce même système, quelle description conserve les deux conditions après le remplacement de x dans la deuxième équation ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_la_relacion_al_sustituir__sistema",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Conserver seulement la valeur trouvée pour y, en laissant x prendre n'importe quelle valeur rationnelle.",
+                  "reviewFeedback": "Examine quelle relation permettrait de retrouver l'autre inconnue à partir de la relation réduite."
+                },
+                {
+                  "id": "b",
+                  "label": "Conserver la première relation isolée ainsi que la deuxième équation dans laquelle x a été remplacé.",
+                  "reviewFeedback": "Vérifie comment les deux conditions initiales peuvent être retrouvées à l'aide de la relation isolée que tu as conservée."
+                },
+                {
+                  "id": "c",
+                  "label": "Remplacer les deux conditions par x = y, puisqu'il ne reste qu'une seule lettre dans le calcul.",
+                  "reviewFeedback": "Qu'un calcul utilise une seule lettre ne justifie pas d'identifier les deux quantités ; revois leur relation initiale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La deuxième condition simplifiée permet de trouver y, et la première relie toujours x à cette valeur. Sans conserver cette relation, un choix incompatible de x pourrait satisfaire le calcul réduit tout en échouant au système initial.",
+            "incorrect": "Calculer avec une seule inconnue ne supprime pas la relation entre les deux quantités. La substitution sert à les résoudre toutes deux, pas à laisser accidentellement l'une d'elles libre."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une relation sans imposer une méthode unique"
+        },
+        {
+          "type": "paragraph",
+          "text": "Il est souvent pratique d'isoler une inconnue dont le coefficient vaut un ou moins un, car cela demande moins de calculs. Il est également valable de diviser par n'importe quel coefficient connu non nul. Ce choix est une stratégie ; il ne rend pas incorrectes les autres méthodes valides. Choisis une méthode que tu peux justifier et conserve la relation utilisée pour reconstituer le couple."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu isoles y, remplace y là où il apparaît ; si tu isoles x, remplace x. L'expression obtenue dépend encore de l'autre inconnue. Ce n'est pas encore une valeur numérique indépendante. Chercher une autre méthode peut t'aider à vérifier le raisonnement et à comprendre le lien entre les conditions (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varios_despejes_correctos_para_elegir",
+          "prompt": "Dans le système 2x + y = 8 et x − 3y = −3, sélectionne toutes les transformations valides de l'équation indiquée.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "varios_despejes_correctos_para_elegir__rutas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "À partir de 2x + y = 8 : y = 8 − 2x.",
+                  "reviewFeedback": "Reproduis les opérations dans les deux membres et vérifie que cette transformation est réversible."
+                },
+                {
+                  "id": "b",
+                  "label": "À partir de x − 3y = −3 : x = 3y − 3.",
+                  "reviewFeedback": "Conserve les signes et les termes en isolant l'inconnue de l'équation indiquée."
+                },
+                {
+                  "id": "c",
+                  "label": "À partir de 2x + y = 8 : x = 8 − 2y.",
+                  "reviewFeedback": "Vérifie le coefficient de l'inconnue isolée et applique les opérations au membre entier."
+                },
+                {
+                  "id": "d",
+                  "label": "À partir de x − 3y = −3 : y = (x + 3)/3.",
+                  "reviewFeedback": "Refais cette transformation avec le diviseur entier et vérifie la relation initiale."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La proposition a soustrait 2x aux deux membres. La proposition b ajoute 3y aux deux membres. La proposition d réorganise l'équation en 3y = x + 3 et divise par trois. Ces méthodes sont valides ; d reste correcte même si elle utilise un quotient. La proposition c modifie les coefficients et n'exprime pas la première condition.",
+            "incorrect": "Conserve le rôle de chaque coefficient. Si tu isoles x de la première équation, tu dois diviser 8 − y par deux ; tu ne peux pas échanger les rôles de x et de y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_el_despeje_elegido",
+          "prompt": "Résous ce système par l'une des méthodes valides. Écris x et y et calcule les membres de gauche initiaux avec le même couple, dans l'ordre des équations données.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_el_despeje_elegido__par",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de 2x + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x − 3y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une méthode utilise y = 8 − 2x dans la deuxième équation : x − 3(8 − 2x) = −3, ce qui donne 7x − 24 = −3 et x = 3. Puis y = 2. Une autre utilise x = 3y − 3 dans la première et obtient 7y − 6 = 8, avec le même couple. Les vérifications initiales donnent huit et moins trois.",
+            "incorrect": "Conserve les parenthèses lorsque tu substitues une expression à plusieurs termes. Retrouve ensuite l'autre inconnue et vérifie les deux conditions initiales, pas seulement l'équation réduite."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Remplacer une expression entière, même avec des fractions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une inconnue isolée peut être exprimée au moyen d'additions, de soustractions ou de fractions. En remplaçant une inconnue, cette expression occupe toute la place de la quantité qu'elle désignait. Les parenthèses préservent les termes multipliés ou soustraits ensemble. Les dénominateurs utilisés restent des constantes non nulles."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustituir_una_relacion_fraccionaria",
+          "prompt": "Résous x/2 + y = 5/2 ainsi que x − y = 1. Utilise uniquement la première condition pour écrire y en fonction de x ; utilise ensuite les deux pour trouver le couple. Vérifie les membres de gauche initiaux avec ces valeurs.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustituir_una_relacion_fraccionaria__despeje",
+              "type": "math_expression_input",
+              "label": "Expression de y en fonction de x, avec la première condition uniquement",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5/2-x/2"
+              }
+            },
+            {
+              "id": "sustituir_una_relacion_fraccionaria__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de x/2 + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La première donne y = 5/2 − x/2. Remplacer y dans la deuxième laisse x − (5/2 − x/2) = 1, soit (3/2)x − 5/2 = 1. Ainsi x = 7/3, puis y = 4/3. Dans les équations initiales, 7/6 + 4/3 = 5/2 et 7/3 − 4/3 = 1. Les parenthèses font que soustraire −x/2 ajoute +x/2.",
+            "incorrect": "Isoler y exige de soustraire x/2, sans modifier 5/2. Dans x − y, soustraire toute l'expression de y change le signe de ses deux termes. Utilise des fractions exactes et reviens aux équations initiales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_resta_de_toda_la_expresion",
+          "prompt": "Dans un autre système, la première relation est 2x + y = 7 et la deuxième x − 3y = 1. On a isolé y, puis remplacé dans la deuxième par x − 3(7 − 2x) = 1. Quel développement conserve cette condition ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_resta_de_toda_la_expresion__expansion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 21 + 6x = 1.",
+                  "reviewFeedback": "Distribue le facteur signé sur tout le groupe et vérifie chaque terme obtenu."
+                },
+                {
+                  "id": "b",
+                  "label": "x − 7 + 2x = 1.",
+                  "reviewFeedback": "Vérifie si ce développement conserve le facteur qui multiplie tous les termes du groupe."
+                },
+                {
+                  "id": "c",
+                  "label": "x − 21 − 6x = 1.",
+                  "reviewFeedback": "Calcule le produit des signes lors de la distribution sur le terme contenant l'inconnue."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le facteur −3 multiplie sept ainsi que −2x : il donne −21 et +6x. Il reste donc x − 21 + 6x = 1. La relation y = 7 − 2x est toujours conservée pour retrouver y une fois le calcul résolu.",
+            "incorrect": "Distribue le facteur entier, avec son signe. Le produit de −3 par −2x est +6x ; omettre le trois ou changer un seul terme modifierait la condition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quand l'équation réduite est une identité ou une contradiction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tous les systèmes ne déterminent pas un couple unique. Avec x + y = 6 et 2x + 2y = 12, la première donne x = 6 − y et la deuxième devient 2(6 − y) + 2y = 12. Le calcul aboutit à 12 = 12. Cette identité ne rend pas tous les couples libres : on exige encore x = 6 − y. Chaque rationnel choisi pour y produit un couple respectant cette relation ; il existe donc une infinité de couples, mais ils doivent tous avoir une somme de six."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la deuxième condition était 2x + 2y = 13, la même substitution conduirait à 12 = 13. Aucun couple ne peut satisfaire à la fois cette comparaison et la relation initiale. Le calcul distingue une condition répétée d'une contradiction ; il n'autorise pas à effacer l'équation conservée (Lang, 1971, pp. 54–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_resultados_al_conservar_una_relacion",
+          "prompt": "Classe chaque système dans le domaine des couples rationnels. A : x − 2y = 4 et 3x − 6y = 12. B : x − 2y = 4 et 3x − 6y = 15. C : x − 2y = 4 et 3x − 5y = 12. Dans chaque cas, conserve la première relation lorsque tu effectues la substitution dans la deuxième.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_resultados_al_conservar_una_relacion__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Ensemble des solutions de A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Vérifie si la substitution dans A, avec la première relation conservée, détermine un couple unique. Justifie séparément l'existence et l'unicité."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Examine l'absence que tu proposes pour A à l'aide du résultat de la substitution et de la première équation. Vérifie ce qu'exigerait un couple pour satisfaire les deux."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels",
+                      "reviewFeedback": "Justifie la multiplicité choisie pour A avec la condition substituée et la relation conservée. Vérifie comment produire des couples satisfaisant les deux équations initiales."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Ensemble des solutions de B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Vérifie si B admet un couple et si la substitution permet de le déterminer de manière unique. Conserve la première relation pour interpréter la condition obtenue."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Justifie l'absence choisie pour B en analysant l'égalité obtenue après substitution. Vérifie que chaque transformation conserve les solutions des deux équations initiales."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels",
+                      "reviewFeedback": "Examine la liberté que permettrait la condition substituée de B tout en satisfaisant la première équation. Ne conclus pas à la multiplicité simplement parce que des termes disparaissent."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Ensemble des solutions de C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un couple rationnel",
+                      "reviewFeedback": "Vérifie l'existence et l'unicité du couple que tu proposes pour C. Utilise la condition substituée et la première relation, et vérifie les deux équations initiales."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Aucun couple rationnel",
+                      "reviewFeedback": "Examine si C exclut tous les couples rationnels après substitution. Compare la condition obtenue à la première relation avant d'affirmer l'absence de solutions."
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Une infinité de couples rationnels",
+                      "reviewFeedback": "Justifie la multiplicité proposée pour C en vérifiant quelles inconnues peuvent varier. Cette liberté doit être compatible à la fois avec la substitution et la relation conservée."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "unico"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les trois premières relations donnent x = 2y + 4. A laisse 12 = 12 et conserve l'infinité des couples satisfaisant cette relation. B laisse 12 = 15 et n'admet aucun couple. C donne y + 12 = 12, d'où y = 0 et x = 4 : un seul couple. Que y vaille zéro est une solution normale ; cela ne signifie pas qu'il n'existe aucune solution.",
+            "incorrect": "Remplace x par 2y + 4 dans chaque deuxième équation, développe et réunis les termes. Une identité laisse subsister la relation conservée ; une contradiction exclut tout couple ; un coefficient non nul permet de calculer y et de retrouver x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_permite_cualquier_par",
+          "prompt": "Pour le système A précédent, on propose y = −1/2. Utilise la relation conservée pour calculer x et choisis la description de l'ensemble complet des solutions rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_permite_cualquier_par__ejemplo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x pour le y proposé",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_permite_cualquier_par__conjunto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Tous les couples de rationnels, sans relation entre x et y.",
+                  "reviewFeedback": "Une identité obtenue après réduction ne supprime pas la relation conservée ; vérifie la condition initiale pour ces couples."
+                },
+                {
+                  "id": "b",
+                  "label": "Tous les couples rationnels satisfaisant x − 2y = 4.",
+                  "reviewFeedback": "Relie la famille décrite à l'équation conservée et vérifie comment une composante peut varier."
+                },
+                {
+                  "id": "c",
+                  "label": "Uniquement le couple correspondant au y proposé dans cette activité.",
+                  "reviewFeedback": "Proposer une valeur pour une composante ne limite pas, à lui seul, l'ensemble complet ; examine quelle condition reste pour les autres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Avec y = −1/2, x = 2·(−1/2) + 4 = 3. Ce couple satisfait x − 2y = 4 et 3x − 6y = 12. Il représente un exemple de la famille : pour tout autre y rationnel admis, la relation détermine x. L'ensemble ne se limite pas à ce couple et ne comprend pas les couples qui ne satisfont pas la relation.",
+            "incorrect": "L'égalité 12 = 12 est apparue après l'utilisation de x = 2y + 4. N'oublie pas cette condition. Choisir une valeur pour y permet de construire un exemple, mais n'en fait pas le seul."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repérer un remplacement incorrect et retrouver la méthode"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une substitution doit reposer sur une égalité entre l'inconnue remplacée et son expression. Il ne suffit pas que cette expression apparaisse dans une certaine transformation. Si un calcul donne un couple, vérifie-le dans les deux équations initiales : il peut satisfaire l'une et pas l'autre. Cette comparaison aide à repérer la condition perdue, plutôt qu'à répéter les mêmes calculs sans rien changer (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reemplazar_la_incognita_equivocada",
+          "prompt": "Pour x + y = 9 et 3x − 2y = 7, une note isole x = 9 − y, mais remplace la deuxième condition par 3x − 2(9 − y) = 7. Avec la première équation, elle obtient le couple proposé x = 7, y = 2. Identifie la première erreur et calcule les membres de gauche initiaux avec ce couple.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reemplazar_la_incognita_equivocada__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "L'isolement de x est correct, mais y a été remplacé par une expression que la première relation identifie à x.",
+                  "reviewFeedback": "Identifie l'inconnue nommée par la relation isolée et compare-la à l'endroit où l'expression a été insérée."
+                },
+                {
+                  "id": "b",
+                  "label": "Le premier isolement aurait dû donner x = 9 + y ; l'erreur précède donc la substitution.",
+                  "reviewFeedback": "Reconstitue cet isolement en effectuant la même opération dans les deux membres et vérifie les signes."
+                },
+                {
+                  "id": "c",
+                  "label": "Il n'y a pas d'erreur : satisfaire la première condition suffit pour résoudre le système.",
+                  "reviewFeedback": "Satisfaire la première condition ne remplace pas la deuxième ; vérifie les deux avec le couple annoncé."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reemplazar_la_incognita_equivocada__propuesta",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur initiale de x + y avec le couple proposé",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur initiale de 3x − 2y avec le couple proposé",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "17"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'isolement x = 9 − y est valide, mais 9 − y doit remplacer x, et non y. La proposition satisfait 7 + 2 = 9, tandis que 3·7 − 2·2 = 17 et non sept. La substitution correcte est 3(9 − y) − 2y = 7. On pourrait aussi isoler y = 9 − x et remplacer correctement y.",
+            "incorrect": "Demande-toi quelle inconnue est égale à l'expression utilisée. Évalue ensuite le même couple dans les équations initiales : une vérification échouée ne se corrige pas en ignorant cette équation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_sustitucion_sin_cadena",
+          "prompt": "Résous (x − 2y)/3 = 1 avec x + y = −3 par une méthode que tu peux justifier. Écris le couple et vérifie les deux membres de gauche initiaux. Les inconnues sont rationnelles.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_sustitucion_sin_cadena__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valeur de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valeur de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valeur de (x − 2y)/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valeur de x + y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une méthode multiplie la première équation par trois : x − 2y = 3, d'où x = 2y + 3. Substituer dans la deuxième donne 3y + 3 = −3, donc y = −2 et x = −1. Dans les équations initiales, on obtient (−1 − 2·(−2))/3 = 1 et −1 + (−2) = −3. Les valeurs négatives sont autorisées dans ce domaine.",
+            "incorrect": "Multiplier par trois doit affecter les deux membres de la première équation. Conserve le signe de −3 dans la deuxième et utilise la relation isolée pour retrouver l'autre inconnue. Ne remplace pas une valeur négative par sa valeur absolue."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revenir des deux quantités au contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un assemblage utilise des blocs entiers de deux tailles. Chaque petit bloc a une masse de deux kilogrammes, et chaque grand bloc de trois. Il faut dix blocs au total et leur masse exacte doit être de vingt-quatre kilogrammes. Appelons x le nombre de petits blocs et y celui des grands. Les deux sont des entiers non négatifs ; le total étant de dix, aucun des deux comptes ne peut dépasser dix."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux inconnues utilisent la même unité de comptage, mais contribuent chacune une masse différente. Une équation exprimera le nombre total de blocs, et une autre la masse totale. Choisir les unités et conserver ce que représente chaque lettre permet de relier le modèle aux données, comme dans les problèmes à deux inconnues de la référence (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_para_bloques_y_masa",
+          "prompt": "Écris une équation pour le nombre total de blocs et une autre pour la masse totale, en utilisant x pour les petits et y pour les grands. Résous ensuite les deux conditions et écris les comptes obtenus. Vérifie qu'il s'agit d'entiers du domaine.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__conteo",
+              "type": "math_expression_input",
+              "label": "Équation exprimant uniquement le nombre total de blocs",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=10"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__masa",
+              "type": "math_expression_input",
+              "label": "Équation exprimant uniquement la masse totale, en kilogrammes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+3y=24"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pequenos",
+                  "type": "numeric",
+                  "label": "Nombre de petits blocs",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Nombre de grands blocs",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pequenos": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les conditions sont x + y = 10 et 2x + 3y = 24. La première donne x = 10 − y ; la substitution dans la deuxième donne 20 − 2y + 3y = 24, donc y = 4 et x = 6. Les vérifications donnent dix blocs et 12 + 12 = 24 kg. Les comptes sont des entiers non négatifs dans la limite indiquée.",
+            "incorrect": "N'additionne pas une masse et un nombre de blocs comme s'il s'agissait de la même quantité. Le premier total compte les blocs ; le deuxième multiplie chaque compte par sa masse par bloc. Conserve la taille désignée par chaque lettre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_restriccion_adicional_sin_borrar_los_totales",
+          "prompt": "On apprend ensuite que seuls trois grands blocs sont disponibles. Les deux totaux initiaux sont maintenus et les blocs doivent rester entiers. Quelle conclusion respecte désormais toutes les conditions ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_restriccion_adicional_sin_borrar_los_totales__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "On peut utiliser un grand bloc de moins sans revérifier le nombre de blocs ni la masse totale.",
+                  "reviewFeedback": "Recalcule les deux totaux avec la modification proposée et exige leur satisfaction simultanée."
+                },
+                {
+                  "id": "b",
+                  "label": "Aucun assemblage n'est possible avec toutes les données : le couple exigé par les deux totaux dépasse la disponibilité.",
+                  "reviewFeedback": "Compare la disponibilité au couple exigé par les totaux tout en conservant le domaine des blocs entiers."
+                },
+                {
+                  "id": "c",
+                  "label": "Diviser un grand bloc résout le problème sans modifier le domaine des blocs entiers.",
+                  "reviewFeedback": "Diviser une unité change le domaine physique du comptage ; examine si l'énoncé autorise cette modification."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux totaux déterminent l'unique couple de six petits blocs et quatre grands. La nouvelle disponibilité exige y ≤ 3, ce que ce couple ne satisfait pas. Il n'existe pas de deuxième couple conservant les deux totaux. Retirer ou diviser un bloc modifierait une condition : ce n'est pas une solution au problème posé.",
+            "incorrect": "La condition supplémentaire doit être vérifiée avec les précédentes. Revois le nombre de grands blocs déterminé par le système et distingue respecter les données de les remplacer par d'autres."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Résoudre par substitution conserve une relation, réduit l'autre et retrouve les mêmes valeurs pour les deux inconnues. La vérification dans les équations initiales valide le couple ; l'équivalence des étapes justifie qu'aucune autre solution n'a été perdue. Si une identité ou une contradiction apparaît, interprète l'ensemble complet et la relation qui demeure. Dans un contexte concret, vérifie ensuite les unités, le domaine et les données supplémentaires (Gelfand & Shen, 1993, pp. 94–95 ; Pólya, 1957, pp. 14–15)."
+        }
+      ]
+    }
+  ]
+}
