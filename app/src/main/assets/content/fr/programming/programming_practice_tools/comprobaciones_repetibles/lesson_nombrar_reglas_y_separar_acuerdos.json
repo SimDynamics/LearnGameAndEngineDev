@@ -1,0 +1,478 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
+  "title": "Nommer les règles et distinguer les accords",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver une révision sans modifier l'accord"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le premier cours, tu as appris à simplifier un programme sans changer son comportement, à choisir des noms et à utiliser const. Dans ce cours, tu as conservé une bibliothèque partagée entre une application et un programme de vérification ayant des résultats attendus indépendants. Tu vas réutiliser ces compétences pour reconnaître la décision exprimée par chaque nombre d'une implémentation, puis distinguer cette amélioration d'une modification autorisée d'une exigence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous travaillons toujours avec 0 à 20 pièces, des boîtes pouvant contenir quatre pièces et le nombre minimal de boîtes suffisant, y compris zéro boîte pour zéro pièce. Cette révision respecte déjà cet accord sur tout le domaine. Nous allons d'abord mieux exprimer la règle, sans corriger un défaut ni changer la capacité."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nom indique un rôle dans son contexte. Appeler une constante quatre conserve le nombre sous une autre forme, mais n'explique pas sa présence. Allonger tous les noms sans réfléchir à ce qui les distingue n'aide pas non plus. La lisibilité et la justesse du calcul demandent des vérifications distinctes (Kernighan & Pike, 1999, pp. 2–5)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_nombre_de_la_capacidad",
+          "question": "Quel nom exprime le rôle du diviseur dans cajas_para, même si une autre capacité est convenue plus tard ?",
+          "options": [
+            "piezas_por_caja, car il indique la capacité utilisée par le calcul.",
+            "numero_cuatro, car il indique le nombre de la révision actuelle.",
+            "cajas_por_pieza, car il indique le nombre de boîtes que chaque pièce peut contenir."
+          ],
+          "correctIndex": 0,
+          "explanation": "piezas_por_caja exprime combien de pièces entrent dans une boîte. Ce nom reste pertinent si la valeur change ; cajas_por_pieza inverse la relation et numero_cuatro ne fait que répéter le nombre.",
+          "reviewFeedback": [
+            "Relie le nom aux unités de l'accord et à ce qui divise le nombre de pièces.",
+            "Imagine un changement de capacité : ce nom expliquerait-il toujours le rôle de la valeur ?",
+            "Lis la relation à voix haute et vérifie quelle quantité est mesurée par boîte."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une même règle peut apparaître sous plusieurs nombres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le 4 du diviseur représente la capacité. Le 3 ajouté n'est pas une autre décision métier : c'est une quantité dérivée, une place de moins que cette capacité. Pour des quantités non négatives, ajouter la capacité moins un avant une division entière préserve les multiples exacts et ajoute une boîte lorsqu'il reste des pièces. Les quantités sont petites ici : nous ne prétendons pas que cette addition soit sûre pour tous les entiers possibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, avec une capacité de six, six pièces demandent toujours une boîte et sept en demandent deux. La quantité ajoutée doit rester liée à cette capacité ; si on la conserve comme un autre nombre à modifier manuellement, les deux peuvent diverger. Nommer les valeurs importantes et exprimer leurs relations facilite la lecture et la maintenance du programme (Kernighan & Pike, 1999, pp. 19–20)."
+        },
+        {
+          "type": "fill_code",
+          "id": "regla_cantidad_derivada",
+          "question": "Uniquement pour étudier l'expression avec une capacité de six, complète le décalage qui conserve cette relation. Saisis un seul littéral entier décimal, ou un littéral réel équivalent, sans opération.",
+          "code": "const int piezas_por_caja{6};\nconst int desplazamiento = ____; // Une place de moins que la capacité.\n",
+          "answers": [
+            "5",
+            "5.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "La quantité dérivée vaut cinq : six moins un. Cet exercice porte sur la relation ; il ne demande pas encore de modifier le contrat des boîtes de quatre places.",
+          "reviewFeedback": "Relie le décalage à une place de moins que la capacité indiquée. Distingue cette valeur dérivée de la capacité elle-même."
+        },
+        {
+          "type": "output_prediction",
+          "id": "regla_constante_sin_relacion",
+          "question": "Cette variante utilise des entiers et ne modifie ensuite aucune constante. Prédis sa sortie exacte, sans saut de ligne final. Décris ce qu'elle exécute, même si elle ne respecte pas un accord prévoyant des boîtes de six places.",
+          "code": "#include <iostream>\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + 3) / piezas_por_caja;\n}\nint main() {\n    std::cout << cajas_para(6) << \":\" << cajas_para(7)\n              << \":\" << cajas_para(12) << \":\" << cajas_para(13);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:2:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Les divisions sont 9/6, 10/6, 15/6 et 16/6 : elles donnent 1, 1, 2, 2. Nommer le diviseur n'a pas mis à jour le décalage ; sept et treize pièces montrent que cette variante ne respecte pas une capacité de six.",
+          "reviewFeedback": "Suis séparément chaque addition et division entière de ce corps. Ne remplace pas l'addition écrite par celle que tu pensais trouver."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : exprimer la relation en conservant les preuves"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet reprend la description de construction répartie et la bibliothèque déjà corrigée lors de l'exercice précédent. Construis et exécute comprobar_cajas avant toute modification : ses sept cas doivent réussir. Conserve les entrées et les résultats attendus, l'en-tête, le client et les deux descriptions CMake. L'accord prévoit toujours quatre places et le domaine 0..20."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie uniquement le corps de cajas_para : déclare un const int local portant un nom explicite pour la capacité et déduis de cette constante la quantité ajoutée. Tu peux choisir un autre nom clair et une expression équivalente. Ne place pas cette constante dans le programme de vérification et ne crée pas les résultats attendus avec la fonction évaluée. Reconstruis et exécute le programme de vérification, puis consultar_cajas. La solution de référence figure à la page suivante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : le nombre minimal de boîtes reste inchangé pour chaque entrée du domaine ; les sept cas et le client conservent exactement leurs sorties, et le programme de vérification se termine avec le code 0. Explique quelle décision unique représentent les nombres du corps et pourquoi un nom ne suffit pas à prouver le calcul. Les cas prouvent seulement ces appels, pas tous les entiers possibles."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places suffisant pour toutes les pièces.\n// Zéro pièce nécessite zéro boîte.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "order_code",
+          "id": "regla_orden_de_la_revision",
+          "question": "Remets ces trois étapes du laboratoire dans l'ordre, en conservant le même contrat et la même batterie de tests.",
+          "fragments": [
+            "Reconstruire la révision modifiée et exécuter la batterie de tests conservée.",
+            "Construire et exécuter la révision initiale avec cette batterie.",
+            "Modifier uniquement le corps pour nommer la capacité et en déduire le décalage."
+          ],
+          "correctOrder": [
+            1,
+            2,
+            0
+          ],
+          "explanation": "Tu associes d'abord les preuves à la révision initiale ; tu effectues ensuite la modification limitée et recueilles les preuves de la nouvelle construction en gardant les mêmes attentes.",
+          "reviewFeedback": "Relie chaque résultat à la révision qui l'a produit. Vérifie quelle observation doit précéder la modification et laquelle exige une nouvelle construction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : une valeur, plusieurs usages"
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici une solution possible pour le corps de la fonction du laboratoire ; tu n'es pas obligé de choisir exactement cet identifiant."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La valeur 4 figure dans une seule déclaration. Les deux usages du nom expriment la même capacité ; répéter le nom n'oblige pas à entretenir deux copies de la décision. Le 1 appartient à la relation « une place de moins », et non à une autre capacité configurable. Une règle de style n'impose pas de nommer chaque nombre isolé : l'important est de rendre le sens visible et d'éviter une maintenance inutile (Kernighan & Pike, 1999, pp. 20, 22)."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'expression conserve le calcul précédent : elle remplace 4 par une constante valant 4 et 3 par 4−1. Sur ce domaine, aucune somme ne dépasse 23. Le client affiche toujours 1:2 ; les cas 0, 4, 8, 20, 1, 5, 17 gardent respectivement les résultats attendus 0, 1, 2, 5, 1, 2, 5, et Batterie : OK avec un code de sortie 0."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_lo_que_prueba_el_nombre",
+          "question": "La capacité porte maintenant un nom clair, mais quelqu'un a laissé return piezas / piezas_por_caja. Quelle conclusion faut-il en tirer ?",
+          "options": [
+            "La déclaration const suffit à conserver le résultat de la division précédente.",
+            "Les cas multiples de quatre suffisent à exclure tout changement pour les autres entrées.",
+            "Il faut revoir l'expression : le nom ne fournit pas l'ajustement manquant dans le calcul."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le nom exprime le rôle du diviseur, mais ce corps de fonction ignore le reste. Les cas 1, 5, 17 de la batterie détectent cette différence ; la clarté du nom et le respect de l'accord se vérifient séparément.",
+          "reviewFeedback": [
+            "Vérifie ce que const garantit pour la valeur et quelles instructions calculent réellement le résultat.",
+            "Cherche une propriété commune aux entrées observées et une autre que tu n'as pas encore vérifiée.",
+            "Compare le corps aux entrées qui laissent une boîte partiellement remplie."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux accords peuvent partager le même nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un projet décide aussi si un envoi arrive dans les délais : pour un nombre de jours compris entre 0 et 7, llega_a_tiempo renvoie true si le délai ne dépasse pas quatre jours. La capacité d'une boîte et ce délai valent tous deux quatre, mais correspondent à des quantités dont les unités et les raisons de changer sont différentes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nconst int limite{4};\n\nint cajas_para(int piezas) {\n    return (piezas + limite - 1) / limite;\n}\n\nbool llega_a_tiempo(int dias) {\n    return dias <= limite;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette révision respecte les deux accords actuels. Pourtant, limite les associe : modifier un seul nombre affecte les deux fonctions. Le fait qu'ils coïncident aujourd'hui ne justifie pas ce couplage. Éviter la duplication des connaissances consiste à reconnaître une même décision maintenue à plusieurs endroits ; trouver la même valeur ou le même texte ne prouve pas qu'il s'agit d'une seule décision. La distinction entre coïncidence et duplication porte sur les connaissances représentées (Thomas & Hunt, 2020, pp. 31, 34)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_igualdad_no_es_mismo_acuerdo",
+          "question": "Seul l'agrandissement des boîtes à six places a été convenu. Le délai de livraison reste de quatre jours. Quelle organisation respecte les deux accords ?",
+          "options": [
+            "Utiliser la capacité commune pour décider également du nombre de jours permis.",
+            "Nommer séparément la capacité en pièces et le nombre maximal de jours autorisé.",
+            "Conserver quatre comme diviseur et ne modifier que le texte de l'en-tête."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les deux valeurs ont des significations indépendantes. La capacité passe à six ; le délai reste à quatre. Des noms et des usages distincts expriment cette modification sans lier des décisions différentes.",
+          "reviewFeedback": [
+            "Vérifie si l'accord sur les places d'une boîte change également le délai de livraison autorisé.",
+            "Identifie les unités et la raison d'un éventuel changement pour chaque constante.",
+            "Compare l'accord annoncé à l'expression réellement exécutée lors de la division."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_esperado_independiente",
+          "question": "Pour réduire les répétitions, quelqu'un veut calculer les résultats attendus en appelant cajas_para. Quel critère préserve le rôle de la batterie de tests ?",
+          "options": [
+            "Les résultats attendus proviennent de l'accord, sans être calculés à partir du résultat évalué.",
+            "Chaque résultat attendu doit rappeler cajas_para avec la même entrée que celle vérifiée.",
+            "Le programme de vérification doit traiter une sortie conservée de n'importe quelle révision comme une exigence."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un résultat attendu doit être justifié indépendamment de l'implémentation. Sa coïncidence numérique avec une sortie ne constitue pas une duplication inutile : il joue un autre rôle, celui de vérifier cette implémentation.",
+          "reviewFeedback": [
+            "Vérifie ce qui justifie le résultat attendu et si cela permettrait de détecter un corps incorrect.",
+            "Imagine ce qui arriverait si les deux appels reproduisaient le même défaut de la fonction.",
+            "Distingue une observation historique de la décision définissant ce qui doit être respecté."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : modifier une règle et conserver l'autre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis et exécute d'abord comprobar_cajas dans ce projet : ses sept cas sur les pièces et deux cas sur le délai doivent réussir avec les accords actuels. L'application affiche 1:2:1:0. Un changement précis est maintenant autorisé : les boîtes passent à six places ; le domaine des pièces reste 0..20 et le délai reste de quatre jours pour 0..7. Ne prolonge pas ce délai."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de modifier le corps, justifie les nouveaux résultats attendus des sept entrées conservées et ajoute les deux nouvelles limites 6 et 7. Garde les vérifications des jours 4 et 5. Tu peux modifier les attentes parce que l'exigence de capacité a changé, et non parce qu'une exécution a donné d'autres valeurs. Enregistre les nouveaux résultats et exécute encore l'ancienne bibliothèque pour voir quels cas la distinguent."
+        },
+        {
+          "type": "fill_code",
+          "id": "regla_nuevo_esperado_del_acuerdo",
+          "question": "Selon le nouvel accord de six places, complète uniquement le résultat attendu pour cinq pièces. Saisis un littéral entier décimal ou un réel équivalent, sans opération.",
+          "code": "if (!comprobar(5, ____)) { correcto = false; }",
+          "answers": [
+            "1",
+            "1.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "Une boîte de six places suffit pour cinq pièces. Cette mise à jour est justifiée par la nouvelle exigence ; le résultat attendu précédent de deux concernait les boîtes de quatre places.",
+          "reviewFeedback": "Vérifie combien de places chaque boîte offre selon le nouvel accord et quel nombre minimal suffit pour cinq pièces."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie ensuite l'implémentation afin d'exprimer les deux accords avec des constantes locales explicites. Mets à jour le commentaire de capacité dans l'en-tête, mais conserve les signatures, le client et les descriptions CMake. Reconstruis et exécute la batterie entière et le client. Comme contre-épreuve temporaire, essaie également six comme limite de jours ; sépare ensuite de nouveau les règles et répète la vérification. Les références figurent après ta tentative."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les neuf cas sur les pièces doivent respecter les boîtes de six places, les jours 4/5 doivent toujours donner true/false, aucune vérification ne doit être omise et le résultat final doit être Batterie : OK avec un code de sortie 0. Explique pourquoi le client conserve sa sortie initiale alors que certaines entrées de la batterie ont de nouveaux résultats attendus."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domaine : 0 <= piezas <= 20.\n// Nombre minimal de boîtes de 4 places suffisant pour toutes les pièces.\n// Zéro pièce nécessite zéro boîte.\nint cajas_para(int piezas);\n\n// Domaine : 0 <= dias <= 7. Le délai est respecté si la livraison prend au plus 4 jours.\nbool llega_a_tiempo(int dias);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nconst int limite{4};\n\nint cajas_para(int piezas) {\n    return (piezas + limite - 1) / limite;\n}\n\nbool llega_a_tiempo(int dias) {\n    return dias <= limite;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8)\n              << \":\" << llega_a_tiempo(4) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : séparer capacité, délai et vérification"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= dias_maximos;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'en-tête conserve les signatures ; le commentaire sur les boîtes passe à six places, tandis que celui sur les jours reste à quatre. Les noms locaux montrent leurs rôles distincts. Aucune constante globale n'est nécessaire pour les relier, puisqu'il n'existe pas d'accord commun."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" attendu=\" << esperado\n              << \" obtenu=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Batterie : ÉCHEC\\n\";\n        return 1;\n    }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les anciennes entrées 0, 4, 8, 20, 1, 5, 17 sont conservées ; leurs nouveaux résultats attendus sont 0, 1, 2, 4, 1, 1, 3. On ajoute 6→1 et 7→2 pour couvrir la nouvelle frontière. Les cas de jours restent 4→true et 5→false. Chaque comparaison n'obtient toujours le résultat réel qu'une seule fois et s'exécute dans un if indépendant."
+        },
+        {
+          "type": "output_prediction",
+          "id": "regla_contraprueba_del_limite",
+          "question": "Prédis la sortie exacte de la contre-épreuve où l'unique limite a été portée à six, sans saut de ligne final. Ici, bool s'affiche sous la forme 0 ou 1, sans boolalpha.",
+          "code": "#include <iostream>\nconst int limite{6};\nint cajas_para(int piezas) { return (piezas + limite - 1) / limite; }\nbool llega_a_tiempo(int dias) { return dias <= limite; }\nint main() {\n    std::cout << cajas_para(5) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cinq pièces demandent une boîte, et cinq jours respectent la limite écrite de six : 1:1. La seconde observation contredit le délai convenu de quatre jours. La batterie des jours permet de détecter cette modification étrangère à l'accord.",
+          "reviewFeedback": "Lis la valeur unique utilisée par les deux fonctions dans cette révision. Suis chaque comparaison telle qu'elle s'exécute, même si elle ne correspond pas à l'accord à conserver."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_cliente_que_no_distingue",
+          "question": "Le client affiche 1:2:1:0 avant et après la modification correcte. Comment expliquer cette coïncidence ?",
+          "options": [
+            "L'égalité des résultats de ces appels prouve qu'aucune entrée du domaine n'a changé.",
+            "La capacité n'a changé que dans le commentaire, puisque le texte visible du client est identique.",
+            "Les entrées choisies conservent leurs résultats ; d'autres appels distinguent les capacités."
+          ],
+          "correctIndex": 2,
+          "explanation": "Quatre et huit pièces nécessitent une et deux boîtes avec l'une ou l'autre capacité ; le délai ne change pas. Cinq, dix-sept ou vingt pièces distinguent les accords, et 6/7 couvrent la nouvelle frontière.",
+          "reviewFeedback": [
+            "Vérifie si les appels observés couvrent les autres quantités qui pourraient demander un nombre différent de boîtes.",
+            "Calcule les résultats des appels du client selon chaque accord.",
+            "Relie chaque résultat à son entrée et compare-le à une donnée qui distingue les capacités."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : un prix n'est pas une quantité minimale"
+        },
+        {
+          "type": "paragraph",
+          "text": "Travaille maintenant sans CMake pour que l'organisation des dossiers ne décide pas à ta place. Pour 0 à 10 articles, precio_total calcule le total arithmétique à cinq crédits par article, y compris 0→0. Séparément, alcanza_minimo indique si l'on a au moins cinq articles. Cette fonction n'ajoute pas de supplément et ne modifie pas le calcul du total lorsque le minimum n'est pas atteint."
+        },
+        {
+          "type": "paragraph",
+          "text": "Exécute la révision initiale et conserve les cinq entrées de la batterie. Seul le prix est autorisé à passer à sept crédits par article : le minimum reste de cinq articles. Avant de modifier, calcule les nouveaux totaux attendus et détermine quelles attentes ne doivent pas changer. Sépare ensuite les noms explicites et leurs usages dans les deux fonctions ; ne modifie ni la méthode de comparaison ni les entrées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Contre-épreuve : réunir les deux accords dans une constante égale à sept peut produire les bons totaux tout en rejetant à tort des quantités qui atteignent encore le minimum. Vérifie que la batterie le détecte, puis rétablis la solution avec des règles indépendantes. Critères finaux : les cinq totaux et les cinq résultats de minimum correspondent, aucun appel n'est omis, Batterie : OK et code de sortie 0. Une implémentation équivalente est valable ; la référence est à la page suivante."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" attendu=\" << total_esperado << \" minimum=\" << alcanza\n              << \" minimum_attendu=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Batterie : ÉCHEC\\n\"; return 1; }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert et révision"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint precio_total(int articulos) {\n    const int creditos_por_articulo{7};\n    return articulos * creditos_por_articulo;\n}\n\nbool alcanza_minimo(int articulos) {\n    const int minimo_de_articulos{5};\n    return articulos >= minimo_de_articulos;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" attendu=\" << total_esperado << \" minimum=\" << alcanza\n              << \" minimum_attendu=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"ÉCHEC\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Batterie : ÉCHEC\\n\"; return 1; }\n    std::cout << \"Batterie : OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour 0, 4, 5, 6, 10 articles, les totaux deviennent 0, 28, 35, 42, 70 crédits. Les résultats concernant le minimum restent false,false,true,true,true. Le prix en crédits par article a changé ; le seuil mesuré en articles n'a pas changé. Conserver une même valeur écrite dans deux règles indépendantes ne constituait pas une duplication d'une seule décision."
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "regla_recuperar_los_papeles",
+          "question": "Rétablis maintenant les deux accords d'expédition sans modifier leurs déclarations. Fais glisser dans chaque espace le nom correspondant à son usage.",
+          "template": "int cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + [] - 1) / piezas_por_caja;\n}\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{4};\n    return dias <= [];\n}\n",
+          "choices": [
+            "dias_maximos",
+            "dias",
+            "piezas_por_caja",
+            "piezas"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ],
+          "reviewFeedback": "Vérifie quelle grandeur représente chaque nom placé et s'il joue le rôle adapté dans cette opération. Distingue l'entrée d'une règle d'expédition et vérifie ce qui devrait varier lorsqu'un seul accord change.",
+          "explanation": "Le décalage se déduit de piezas_por_caja, qui exprime la capacité. La comparaison des jours utilise dias_maximos, qui exprime le délai. piezas et dias sont les données reçues, et non les règles qui les interprètent. Garder ces rôles séparés permet de changer un accord sans modifier l'autre."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "regla_el_criterio_de_la_revision",
+          "question": "Dans une révision ultérieure, tu trouves deux constantes égales à sept. Que dois-tu déterminer avant de les réunir ?",
+          "options": [
+            "Si elles appartiennent à la même bibliothèque et sont déclarées avec le même type.",
+            "Si elles ont réussi une fois les mêmes données de test sans différence visible.",
+            "Si elles représentent la même décision et doivent changer ensemble selon le même accord."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le critère est la connaissance représentée et sa raison de changer. La valeur, la ressemblance des textes et quelques observations concordantes ne prouvent pas l'existence d'un accord commun.",
+          "reviewFeedback": [
+            "Vérifie si un fichier ou un type commun suffit à établir la décision représentée par chaque valeur.",
+            "Demande-toi si ces observations excluent deux exigences distinctes qui ont aujourd'hui la même valeur.",
+            "Relie chaque constante à la personne qui définit sa valeur et au changement qui obligerait à la revoir."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrôler les noms rétablis et conserver le critère"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la tentative de rétablissement des noms : le décalage se déduit de la capacité, piezas_por_caja. La comparaison des jours utilise dias_maximos. La donnée reçue ne peut pas remplacer la règle qui l'interprète."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors des prochaines modifications d'un projet, reprends ces questions : quel accord conserves-tu ou modifies-tu, quelle décision chaque nom représente-t-il, quelles valeurs en découlent et quelles preuves indépendantes la nouvelle révision exige-t-elle ? Les laboratoires ont entraîné cette habitude ; ils ne couvrent pas encore la conception générale, la refactorisation avancée ni le contrôle de versions."
+        }
+      ]
+    }
+  ]
+}

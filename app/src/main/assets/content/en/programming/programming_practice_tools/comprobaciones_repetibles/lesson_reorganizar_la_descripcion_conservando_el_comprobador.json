@@ -1,0 +1,734 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador",
+  "title": "Reorganizing the Build Description While Keeping the Test Program",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribute the Build Description Without Disconnecting the Evidence"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already have an envios library, an application, and a test program with seven preserved cases. In this exercise, the C++ files are ready: the header and implementation are in componente/, while app/ and pruebas/ remain next to the root. The initial build description knows those paths from a single CMakeLists.txt. You will now split that description between two files, preserving the same component and consumers."
+        },
+        {
+          "type": "paragraph",
+          "text": "The new idea is not to add more folders. It is to decide which description gets processed and from where its paths are interpreted. You will keep the overall project structure at the root and place the library and its usage requirements next to the component. That location reduces how much the root needs to know about the component's internal files (Scott, 2025, pp. 68–69, 79)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_evidencia_que_se_conserva",
+          "question": "Which comparison lets you evaluate this reorganization without also changing the agreed behavior?",
+          "options": [
+            "Update expected results with new outputs and compare another run of the distributed project.",
+            "Keep the cases in another executable with a copied function and test that version separately.",
+            "Preserve sources, cases, and expected results; rebuild and run both consumers after splitting the build description."
+          ],
+          "correctIndex": 2,
+          "explanation": "Keeping the contract and the same sources makes it possible to compare the reorganization using comparable evidence. You must also verify that the test program still uses the real library.",
+          "reviewFeedback": [
+            "Review where an expectation comes from and which change you are trying to examine. Adapting it to a new observation could hide a discrepancy.",
+            "A copied implementation may evolve separately. Check which function body the test program would observe after a library change.",
+            "Connect the revised description to both targets and to the evidence you will keep from their executions."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Enter a Component and Return to the Root"
+        },
+        {
+          "type": "paragraph",
+          "text": "The add_subdirectory(componente) command makes CMake process componente/CMakeLists.txt at that point. Once that file is finished, processing continues at the root's next command. The folder must have its own CMakeLists.txt; merely existing does not make CMake visit it. Here, we use only a relative source path within the project (Scott, 2025, p. 68)."
+        },
+        {
+          "type": "paragraph",
+          "text": "To observe that sequence, we use message(STATUS \"text\"): during configuration, it displays a status message containing that text. STATUS is the message mode, not a build target. The messages describe CMake processing, not the output of the C++ program. The next two cards represent separate files; other tool messages may appear between the three status messages. This informative use of STATUS follows the description of the message command (Scott, 2025, pp. 151–152)."
+        },
+        {
+          "type": "note",
+          "text": "Root file: CMakeLists.txt."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Recorrido LANGUAGES CXX)\nmessage(STATUS \"inicio\")\nadd_subdirectory(componente)\nmessage(STATUS \"regreso\")\n"
+        },
+        {
+          "type": "note",
+          "text": "Component file: componente/CMakeLists.txt."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "message(STATUS \"interior\")\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_recorrido_de_avisos",
+          "question": "Considering only the three texts printed by message, in what order do they appear when configuring these files?",
+          "options": [
+            "inicio, interior, regreso",
+            "inicio, regreso, interior",
+            "interior, inicio, regreso"
+          ],
+          "correctIndex": 0,
+          "explanation": "The first message is processed at the root; add_subdirectory immediately processes the component file, and then the root resumes. Therefore the sequence is inicio, interior, regreso.",
+          "reviewFeedback": [
+            "Trace which file is being processed and which command transfers control to the other file.",
+            "Find the point where add_subdirectory runs. Check whether you are incorrectly postponing its content until the root continues.",
+            "Look for the command in the root file that reaches the component's file. An existing folder still has to be reached by the build description."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_aviso_no_es_ejecucion",
+          "question": "All three messages appeared, and configuration finished. What evidence do you have about the seven cajas_para cases?",
+          "options": [
+            "You observed the processing of the build description; you still need to build and run the test program to observe its cases.",
+            "The cases passed: adding the component also made CMake run the targets that depend on it.",
+            "The application has already run: the STATUS messages are the output produced by its main."
+          ],
+          "correctIndex": 0,
+          "explanation": "These messages come from the CMake interpreter. Configuration prepares the build; it does not replace running comprobar_cajas.",
+          "reviewFeedback": [
+            "Attribute each piece of evidence to the phase and process that actually produced it.",
+            "Distinguish interpreting the description from executing the calls in the test program's main. Which action produced the message?",
+            "Identify which tool printed the text and during which phase. The same visible output channel can contain observations from different processes."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Path Needs a Starting Point"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the commands used here, relative source paths and include directories are interpreted from the source directory containing the CMakeLists.txt that declares them. At the root, componente/src/cajas.cpp reaches the implementation. Within componente/CMakeLists.txt, src/cajas.cpp reaches the same file. Keeping the componente/ prefix inside the child would lead to a different path: componente/componente/src/cajas.cpp."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "# Declarations at the root\nadd_library(envios STATIC componente/src/cajas.cpp)\ntarget_include_directories(envios PUBLIC componente/publico)\n"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "# Equivalent declarations inside componente/CMakeLists.txt\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The two library declarations are not used together: the cards compare alternative locations for the same build description. Declaring PUBLIC publico in the child makes CMake resolve that directory relative to the child's source directory and propagate it as a usage requirement to targets linking envios. It is not reinterpreted from app/ or pruebas/. The C++ include \"envio/cajas.h\" still names the path within that public directory (Scott, 2025, pp. 69, 183)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_ruta_desde_el_hijo",
+          "question": "The physical file is componente/src/cajas.cpp. Within componente/CMakeLists.txt, add_library(envios STATIC componente/src/cajas.cpp) appears. Which interpretation explains the problem?",
+          "options": [
+            "It looks for the target componente/envios: the child folder is prefixed to the library's declared name.",
+            "It looks for componente/componente/src/cajas.cpp: the path repeats a prefix already provided by the child's source directory.",
+            "It looks for app/componente/src/cajas.cpp: the path is interpreted relative to the folder of the consumer being built."
+          ],
+          "correctIndex": 1,
+          "explanation": "The child's starting point for that path is already componente/. Repeating the prefix makes it seek a different file; it does not change the logical target name envios.",
+          "reviewFeedback": [
+            "Separate a target's name from the path to one of its sources. What information does each argument of add_library convey?",
+            "Write the starting directory followed by the relative path to see which file CMake looks for.",
+            "Identify the tool resolving the path and the CMakeLists.txt that declared it. Another consumer's folder does not decide that resolution."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_publico_para_dos_clientes",
+          "question": "The library declares PUBLIC publico in the child, and both consumers link envios. How should the consumers interpret that directory?",
+          "options": [
+            "As app/publico or pruebas/publico: each consumer resolves the relative name from its own folder.",
+            "As a local copy of publico: each consumer receives copied headers when building its own target.",
+            "As componente/publico for both: the directory was resolved relative to where it was declared."
+          ],
+          "correctIndex": 2,
+          "explanation": "CMake resolves the relative directory from the declaration's source location. The public requirement belongs to envios, and both consumers receive that same directory.",
+          "reviewFeedback": [
+            "Check when the include directory becomes fixed. Changing consumers does not physically move the header.",
+            "An include directory says where to locate an existing header. Check whether you have confused that information with a copy operation.",
+            "Connect the declaration's location to the shared directory that both consumers receive."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Split a Build Description That Already Works"
+        },
+        {
+          "type": "paragraph",
+          "text": "All required files are prepared, including an empty componente/CMakeLists.txt. First configure the flat description, build and run consultar_cajas, and observe 1:2. Then select comprobar_cajas, build it, and run its seven cases. Preserve its output lines, expected results, and final exit code as the pre-change reference."
+        },
+        {
+          "type": "paragraph",
+          "text": "Edit only the two CMakeLists.txt files to place the library, its public include directory, its C++20 requirement, and the disabling of extensions within the component. The root retains project, the two executables, their links, and their requirements. Have it reach the child with add_subdirectory. Do not duplicate envios or change C++ files to accommodate a misinterpreted path. Preserve all three target names. Add the status messages raiz_antes and raiz_despues around add_subdirectory and componente inside the child."
+        },
+        {
+          "type": "paragraph",
+          "text": "After changing the description, configure again; build and run both the test program and the application. Compare their results with the previous ones. As a separate control, temporarily change the return expression in componente/src/cajas.cpp to piezas / 4, rebuild the test program, and observe which cases reject it. Restore the original body, rebuild, and rerun the same seven cases. The final state must preserve all original C++ files. This countercheck measures test-suite sensitivity; it is not part of the reorganization (Kernighan & Pike, 1999, pp. 149–150)."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC componente/src/cajas.cpp)\ntarget_include_directories(envios PUBLIC componente/publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domain: 0 <= piezas <= 20.\n// Minimum number of four-slot boxes needed for all pieces.\n// Zero pieces require zero boxes.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consultar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_dos_consumidores_despues",
+          "question": "After splitting the build description, consultar_cajas again prints 1:2. What is still needed to check that the test program was preserved?",
+          "options": [
+            "Reuse the earlier report: the test program's sources and seven cases have not changed.",
+            "Build comprobar_cajas, run its seven cases, and compare the result with the earlier record.",
+            "Repeat only the cases shared with the application: the others are unnecessary if client output matches."
+          ],
+          "correctIndex": 1,
+          "explanation": "The client calls the function only for four and eight. Evidence about the test program requires associating its seven cases with the target built under the new organization.",
+          "reviewFeedback": [
+            "Relate the earlier observation to the build description and build that produced it. Check whether it applies to the change you just made.",
+            "Identify which target produced each result and which set of inputs it observed.",
+            "Reorganizing the build does not change the function's domain. Reconsider which behavior would stop being observed if those cases were removed."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Local Responsibility, Preserved Consumers"
+        },
+        {
+          "type": "note",
+          "text": "Consult this after attempting the reorganization. This is a reference description; you may justify another compatible organization that preserves the same sources, targets, requirements, and behavior."
+        },
+        {
+          "type": "paragraph",
+          "text": "At the root, project still declares the entire project. The child does not need another project command to provide a library. add_subdirectory processes the child's description before the consumers, which link to the envios target. A target name is not a path: you still select comprobar_cajas in the target selector (Scott, 2025, pp. 68, 72, 79–80)."
+        },
+        {
+          "type": "note",
+          "text": "Root CMakeLists.txt:"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "note",
+          "text": "componente/CMakeLists.txt:"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The public include directory is declared only once, next to envios. The root knows the library's name and the folder it includes; it no longer lists its source file or header directory. The status messages must appear in the order raiz_antes, componente, raiz_despues. The application retains 1:2; the original correct test suite retains its seven OK results and Suite: OK with exit code zero."
+        },
+        {
+          "type": "order_code",
+          "id": "desc_orden_de_la_reorganizacion",
+          "question": "Put these complete actions in order to attribute the result to the build-description change. Start from the prepared flat project, whose test suite you have yet to record.",
+          "fragments": [
+            "Build and run both consumers with the new description, then compare their results with the saved reference.",
+            "Edit both CMakeLists.txt files while preserving C++ sources, cases, expected results, and target names.",
+            "Build and run both consumers of the flat project, and record which revision and cases produced the results.",
+            "Configure the project again after changing its build description."
+          ],
+          "correctOrder": [
+            2,
+            1,
+            3,
+            0
+          ],
+          "explanation": "The earlier reference makes comparison possible. Next, only the description changes, then the project is configured again to generate the new build, and both rebuilt consumers are executed. This process identifies the revision behind each observation.",
+          "reviewFeedback": "For each action in your sequence, determine which description would have been configured and which build would be run. Check whether you already have an earlier observation to compare against and whether the result corresponds to the files you just edited."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_objetivo_no_es_ruta",
+          "question": "The test program is declared at the root and the library under componente/. What should you enter in the target selector to build the test program?",
+          "options": [
+            "comprobar_cajas",
+            "pruebas/comprobar_cajas",
+            "componente/comprobar_cajas"
+          ],
+          "correctIndex": 0,
+          "explanation": "The target is named comprobar_cajas because it was declared that way with add_executable. File and folder paths are not automatically prefixed to that logical name.",
+          "reviewFeedback": [
+            "Connect the selected name to the first argument of the executable's declaration.",
+            "Distinguish the folder containing a source file from the declared name of the executable. Which kind of value does the selector request?",
+            "The library folder does not rename its consumers. Check the declared name of the executable you want to build."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish Two Similar-Looking Errors"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repeating a prefix can affect two kinds of path. If add_library names a nonexistent source, CMake may read the commands but fail to finish generating the build. If the source exists but the header search directory is wrong, configuration may finish and compilation may fail while processing #include. Keep the diagnostic from the phase that actually failed; do not attribute both problems to the calculation in cajas_para."
+        },
+        {
+          "type": "paragraph",
+          "text": "To decide what to change, combine the declaration's source directory with its relative path and compare that with the physical file. Then examine the tool's message. A source-file path selects a file to compile. An include-search path indicates where to start looking for the name written in #include. They are not interchangeable arguments."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "componente/\n  CMakeLists.txt\n  src/cajas.cpp\n  publico/envio/cajas.h\napp/consulta.cpp\npruebas/cajas_casos.cpp\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_diagnostico_de_fuente",
+          "question": "Generation stops with a diagnostic saying it cannot find a source named in add_library. What should you compare before editing?",
+          "options": [
+            "Check the test suite's expected results: a mismatch in its cases can prevent build generation.",
+            "Check the return value of cajas_para: an incorrect result can make CMake reject the source during generation.",
+            "Compare the declared path and its starting directory in CMakeLists.txt with the source file's physical location."
+          ],
+          "correctIndex": 2,
+          "explanation": "At this phase, the tools are still identifying which files to build. Determining the effective path lets you fix the description without changing behavior or expected results.",
+          "reviewFeedback": [
+            "Expected results belong to comparisons made during execution. Did that phase occur in the failed build?",
+            "Distinguish locating a source file from evaluating its function's instructions. What evidence in the diagnostic justifies editing the body?",
+            "Attribute the diagnostic to the file and declaration that caused it before changing another layer."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_generar_no_examina_includes",
+          "question": "After repairing the source path, configuration finishes; when building, an error reports that envio/cajas.h cannot be found. How do you interpret the difference?",
+          "options": [
+            "The diagnostic now comes from execution: the test program reports that its cases cannot find the needed function.",
+            "Configuration certified the includes: the new message must be a transient compiler failure.",
+            "Generation described the build; now the compiler is trying to find a header using the include directories it received."
+          ],
+          "correctIndex": 2,
+          "explanation": "The phases provide different evidence. The compiler processes #include while building and may detect an incorrect search directory even though CMake successfully generated the build.",
+          "reviewFeedback": [
+            "Determine where the process stopped before attributing results to main. A build diagnostic is not yet a test-suite comparison.",
+            "Review what information CMake generates and what the compiler must read afterward. Completing one phase does not certify all subsequent phases.",
+            "Connect the new diagnostic to the specific work of the tool that just ran."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Repair Paths in the Layer Where They Belong"
+        },
+        {
+          "type": "paragraph",
+          "text": "The next project preserves the correct implementation and seven cases. Its child has two incorrect paths; do not fix them simultaneously without observing which phase fails. Before running anything, write down the physical path each declaration would attempt to use. Configure and save the first diagnostic. Repair only the source named in add_library, then configure again."
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, build comprobar_cajas and connect the diagnostic to the public include directory. Repair that directory in the child, configure again, and build/run the test program. Also select consultar_cajas and build/run it. Keep all C++ files, their includes, cases, and expected results unchanged. Your record should distinguish the generation that did not finish, the build that did not finish, and the two subsequent executions."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC componente/src/cajas.cpp)\ntarget_include_directories(envios PUBLIC componente/publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domain: 0 <= piezas <= 20.\n// Minimum number of four-slot boxes needed for all pieces.\n// Zero pieces require zero boxes.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_no_cambiar_datos_por_ruta",
+          "question": "When the build cannot find the header, you propose replacing cases 1,5,17 with multiples of four. How is that edit related to the observed diagnostic?",
+          "options": [
+            "It reduces the cases to known inputs, so there is no longer any need to check header lookup.",
+            "It changes test-suite data without fixing the directory used by the build to locate the header.",
+            "It restores the client's evidence; if the client passed with those inputs, the test program's build is also verified."
+          ],
+          "correctIndex": 1,
+          "explanation": "Finding a header does not depend on the values later passed to the function. Fix the diagnostic in the build description that supplies that directory, while preserving the test suite.",
+          "reviewFeedback": [
+            "The include is processed at compile time, before the program receives those values. Examine the connection you are assuming between input data and finding a file.",
+            "Relate the proposed edit to the available evidence: which file was not found, and which declaration governs its lookup?",
+            "Review which cases each main actually observed and which built revision produced that evidence. An earlier client result does not include the current test program."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Paths Repaired, Agreement Preserved"
+        },
+        {
+          "type": "note",
+          "text": "Consult this after attempting the phase-by-phase diagnosis. Both fixes below belong in the child; the root and all C++ files are preserved."
+        },
+        {
+          "type": "paragraph",
+          "text": "In componente/CMakeLists.txt, remove the prefix already supplied by the child's source directory. First, restore the physical source path; then restore the directory containing envio/. The target is still named envios. No copy of cajas.cpp is added to either executable."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "After these repairs, rebuilding comprobar_cajas should restore all seven comparisons and a zero exit code. The client still prints 1:2. The header is still included as \"envio/cajas.h\" because the public directory ends just before envio/. The build directory belonging to the child holds generated products; it does not replace that source folder (Scott, 2025, pp. 68–69, 183)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_include_conservado",
+          "question": "With PUBLIC publico declared in the correct child, why can you keep #include \"envio/cajas.h\" in both the application and the library?",
+          "options": [
+            "CMake interprets the include from the project root and removes the component's physical prefix when compiling.",
+            "PUBLIC provides the directory containing envio/; envio/cajas.h still reaches the same header through that search path.",
+            "The include is resolved from each source file's folder; directories propagated through envios do not matter."
+          ],
+          "correctIndex": 1,
+          "explanation": "The relative include path is combined with the include directories given to the compiler. Moving the CMakeLists.txt declaration of that directory does not require editing the include text.",
+          "reviewFeedback": [
+            "Check which part of the path is supplied by the include directory and which by the include directive. Do not assume CMake automatically rewrites C++ code.",
+            "Verify that combining the received directory with the included name still reaches the physical header.",
+            "Review which directories the compiler receives and how it searches for the header. A source file's folder does not automatically replace its include directories."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: Compose Another Component Without Altering Its Test Suite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to lotes_para: it takes zero to eighteen pieces and calculates the needed batches of six slots. The correct implementation and comparisons for 0,6,7,18 are already preserved. This time, the physical files are in codigo/lotes/motor/ and codigo/lotes/publico/, while the application stays in programa/. The root declares only the project and the child is empty: no targets have been described yet, even though the C++ files exist."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write both build descriptions without changing those C++ files. In codigo/lotes/CMakeLists.txt, declare the lotes library, its public directory, and its requirements. The root must include that folder and declare consultar_lotes and verificar_lotes linked against lotes. Use C++20 and disable extensions on all three targets, as in the earlier labs. Before running, note the paths relative to each declaration. Configure, build, and run both consumers; attribute four cases to the test program and 1:2 to the client. An initially empty configuration can finish successfully, but cannot create missing targets."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\n"
+            },
+            {
+              "path": "codigo/lotes/CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "codigo/lotes/publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Domain: 0 <= piezas <= 18.\n// Minimum number of six-slot batches needed for all pieces.\n// Zero pieces require zero batches.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "codigo/lotes/motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return (piezas + 5) / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_hijo_existente_sin_recorrido",
+          "question": "The root only declares the project, and the prepared child contains valid declarations that the root has not reached. What should you inspect to explain why the child's targets do not appear?",
+          "options": [
+            "Whether the root includes codigo/lotes and processes the file containing those target declarations.",
+            "Whether the C++ files are complete: when it finds their main functions, CMake can create missing targets.",
+            "Whether the consumers link to lotes: writing the link is sufficient to process the file declaring the library."
+          ],
+          "correctIndex": 0,
+          "explanation": "Existing files must be incorporated into CMake processing. Instructions that will later run inside programs do not create build targets.",
+          "reviewFeedback": [
+            "Trace how the build description reaches the file containing the declarations you need.",
+            "Distinguish existing C++ code from commands describing how to build it. Check whether you assumed targets were discovered automatically from main.",
+            "Examine what effect you attribute to writing a library name in a link. That alone does not explain how CMake reaches the file containing other declarations."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference and Later Review"
+        },
+        {
+          "type": "note",
+          "text": "Check this after attempting the transfer. An equivalent description may use a different ordering where there are no dependencies, but it must reach the same sources and preserve the requirements of all three targets."
+        },
+        {
+          "type": "paragraph",
+          "text": "The child starts from codigo/lotes/, so motor/cantidad.cpp and publico reach their prepared files. The root starts from the project directory, where it finds programa/consulta.cpp and pruebas/lotes_casos.cpp. Both consumers receive the same public requirement when linking lotes. There is no reason to prefix the logical library name with codigo/lotes/."
+        },
+        {
+          "type": "note",
+          "text": "Root CMakeLists.txt:"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_subdirectory(codigo/lotes)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset_target_properties(consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "note",
+          "text": "codigo/lotes/CMakeLists.txt:"
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\nset_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The test program retains four OK lines and Suite: OK, with exit code zero. The client retains 1:2. Record which descriptions and targets produced that evidence. When returning to a project, first check what changed: an edited description requires configuring again; when only a C++ function body changes, rebuild the relevant target before attributing a new execution to it."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "desc_retomar_tras_cambio_de_descripcion",
+          "question": "When returning to the project, you find codigo/lotes/CMakeLists.txt edited and an earlier green report. Which procedure lets you attribute the evidence to that edit?",
+          "options": [
+            "Run the previous product: since only CMakeLists.txt changed, its behavior also verifies the new revision.",
+            "Build using the previous rules and run the test suite without processing the newly edited description.",
+            "Reconfigure, build, and run the relevant consumers, recording which revision produced each result."
+          ],
+          "correctIndex": 2,
+          "explanation": "Previous evidence belongs to its build. Reconfiguring the description and rebuilding/running lets you observe the current revision while comparing it with the preserved cases.",
+          "reviewFeedback": [
+            "Determine whether that product was built from the edited description. Running an older build again does not incorporate changes saved afterward.",
+            "Connect the build rules with the description that generated them. Do the rules you propose to use correspond to the file you just edited?",
+            "Connect each result to the build description, built target, and executed cases."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve a Revision to Restore a Specific Change"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lab's local history lets you deliberately record a revision of its files, compare it with the current draft, and later restore a specific file. The draft holds what you are editing; a recorded revision keeps the point you chose to save. Editing the draft later does not automatically update that point. The source emphasizes preserving identifiable changes and inspecting differences so earlier work can be recovered (Thomas & Hunt, 2020, pp. 84–85). Here, you will practice those local operations with a project you already understand."
+        },
+        {
+          "type": "paragraph",
+          "text": "The new lab starts with the two correct distributed build descriptions and preserves the implementation and seven cases already studied: 0, 4, 8, 20, 1, 5, and 17 pieces. It has its own draft, so you do not need to overwrite attempts from earlier labs. Before changing it, open History and select Record Revision; enter your own label describing this distributed baseline and its seven cases. Identify the revision you just recorded. Saving its sources is not the same as building them or producing a new execution."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Domain: 0 <= piezas <= 20.\n// Minimum number of four-slot boxes needed for all pieces.\n// Zero pieces require zero boxes.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return (piezas + 3) / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" expected=\" << esperado\n              << \" actual=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FAIL\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Suite: FAIL\\n\";\n        return 1;\n    }\n    std::cout << \"Suite: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "The History window separates the revision list from the current draft. When you select a revision, Revision Files displays each path's state relative to that point; opening a path lets you see its comparison. The legend distinguishes − recorded revision from + current draft. Identify what was saved and what you are comparing it with before changing the project; a label or a date alone does not describe which instructions the compiler will execute later."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Two Edits and Choose What to Restore"
+        },
+        {
+          "type": "paragraph",
+          "text": "After recording the baseline, change only the return expression in componente/src/cajas.cpp to piezas / 4. Keep the seven cases and their expectations untouched. Also add your own comment in the root CMakeLists.txt about the organization, one that you want to keep; do not change its commands. This second edit is independent of the altered calculation. Before continuing, note which two files should differ from the recorded revision and which lines explain the differences."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict all seven comparisons of the modified test program. Configure again, build comprobar_cajas, and run it; save its output lines and final exit code. You already know this alteration: here it helps you explore how selective restoration keeps some edits and removes others. Do not adapt expected results to the altered calculation or use the application's previous result as evidence for these seven cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "Open History, select the baseline you recorded, and examine both the source and the root CMakeLists.txt through Revision Files. Check their states and the lines of both comparisons before deciding. Your goal is to restore the correct implementation with Restore This File, while keeping the independent comment. Identify the path that meets that goal; do not fix the expression by retyping it or restore an unrelated edit that you meant to keep."
+        },
+        {
+          "type": "paragraph",
+          "text": "After restoring, close History, leave this lesson, and return to the same lab. Reopen the revision to verify that it is still available, that the restored source matches it, and that the comment remains in the root draft. Configure again, build comprobar_cajas, and run its seven cases with the state you just resumed. Restoration changes files; observing the test program again requires building and running the relevant target, rather than attributing to it a saved result from another build."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "historial_origen_de_las_lineas_comparadas",
+          "question": "The source comparison shows '− return (piezas + 3) / 4;' and '+ return piezas / 4;'. According to the History legend, where does each line come from?",
+          "options": [
+            "The recorded revision contains piezas / 4 and the draft retains (piezas + 3) / 4; the comparison shows those two texts in that order.",
+            "The recorded revision contains (piezas + 3) / 4 and the draft contains piezas / 4; the signs indicate which state each line belongs to.",
+            "The lines belong to two separate test-program executions, and their signs indicate which one succeeded, without indicating the origin of the compared files."
+          ],
+          "correctIndex": 1,
+          "explanation": "The legend assigns − to the selected revision and + to the current draft. This view compares file contents; it neither reports execution results nor changes either version on its own.",
+          "reviewFeedback": [
+            "Compare the meaning of each sign with the visible legend and assign the two lines to their states again.",
+            "Identify the saved point you selected and the text currently held in the draft of the file being compared.",
+            "Check whether this view contains file lines or results from the test program's main, and what its legend identifies."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Restoring One File Can Preserve Another Edit"
+        },
+        {
+          "type": "paragraph",
+          "text": "After attempting the sequence, check your decision. Before restoration, componente/src/cajas.cpp and the root CMakeLists.txt both appear as Modified in draft relative to the selected baseline. In the source, the revision contains (piezas + 3) / 4, while the draft contains piezas / 4. At the root, the new comment belongs to the draft. One possible independent comment is '# Independent note: preserve the split by component.'; yours may differ. Restoring only componente/src/cajas.cpp returns that source to the selected point and leaves the root comment intact."
+        },
+        {
+          "type": "paragraph",
+          "text": "After rebuilding the altered test program, cases for 0, 4, 8, and 20 pieces still report OK; for 1, 5, and 17, it produces 0, 1, and 4, against expectations of 1, 2, and 5. Those three comparisons report FAIL, followed by Suite: FAIL and exit code 1. After restoring the source, resuming the lab, and rebuilding/running, all seven comparisons report OK, followed by Suite: OK and exit code 0. stderr is empty in both runs. These results belong to their respective builds, not to the act of recording or opening a revision."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "historial_recuperacion_selectiva_y_borrador",
+          "question": "After restoring the source, History shows No changes for componente/src/cajas.cpp and Modified in draft for CMakeLists.txt, which retains your comment. How should you interpret this?",
+          "options": [
+            "Restoration was incomplete: you must also restore CMakeLists.txt and remove its comment so both files show No changes against that revision.",
+            "The recorded revision automatically included the comment when you edited it; the CMakeLists.txt status therefore indicates another baseline was saved for that file.",
+            "The source matches the selected revision and the comment remains as an independent edit; this preserves both intentions of the selective restoration."
+          ],
+          "correctIndex": 2,
+          "explanation": "You restored the file whose alteration you wanted to remove. The other edit remains in the draft and still differs from the baseline. You do not need to remove a useful difference for the chosen restoration to succeed.",
+          "reviewFeedback": [
+            "Review which edit you wanted to remove and which you had decided to preserve before starting restoration.",
+            "Distinguish the point created with Record Revision from the draft's current contents and identify what is being compared.",
+            "Connect each status to its path and the intention to restore one source while retaining another edit."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "When you return to this project another day, try explaining the sequence before opening this reference: which baseline you selected, which two files changed, which one you restored, and why the other remained modified. Then check the preserved differences and identify the build that produced the observation you use. If you decide to record another point, describe its actual state; preserving sources and preserving evidence from their execution are related tasks that must remain distinguishable."
+        }
+      ]
+    }
+  ]
+}
