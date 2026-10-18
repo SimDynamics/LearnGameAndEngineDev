@@ -1,0 +1,306 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion",
+  "title": "Diagnostics for Correcting a Request",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Correct Rejection Still Needs a Useful Explanation"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas already decides whether to accept a quantity and preserves the output on rejection. We will not change that library or its calculation here. The client must explain a rejection to someone preparing a batch who needs to correct their data without knowing the names of our functions. The new skill is choosing information that makes action possible, rather than adding more words for their own sake."
+        },
+        {
+          "type": "paragraph",
+          "text": "A useful diagnostic connects the operation, the specific request, and its input to the condition that was not met. It should help the recipient without claiming causes that the program has not checked. The source recommends identifying where a message comes from and stating the valid input format; tailoring communication to its audience and purpose guides this practice (Kernighan & Pike, 1999, pp. 113–114; Thomas & Hunt, 2020, pp. 20–21)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_destinatario_del_rechazo",
+          "question": "The person preparing the pieces wants to correct their batch and does not know the code. Which information meets that need?",
+          "options": [
+            "The number of internal calls, so they can reconstruct the path through our functions.",
+            "The rejected request and its input, so they can review the quantity they tried to provide.",
+            "The previous output value, so they can keep it as the result of the current request."
+          ],
+          "correctIndex": 1,
+          "explanation": "The request identifies the entry, and its input allows review. The recipient does not need to reconstruct internal calls to correct the quantity. The previous result does not belong to the rejected request.",
+          "reviewFeedback": [
+            "Relate the chosen detail to what the person preparing the batch needs to do and what they know about the program.",
+            "Check whether the information would let them locate and review the input being processed.",
+            "Distinguish a value preserved by the library from a result produced for this request."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "State What Was Checked and Suggest a Consistent Action"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas accepts exactly quantities from 0 to 20. If it receives 21 and returns false, we know that request falls outside the allowed range. We have not observed warehouse stock, vehicle availability, or why someone entered 21. A diagnostic must not turn a plausible explanation into a proven cause."
+        },
+        {
+          "type": "paragraph",
+          "text": "The suggested action must also respect the task. Asking someone to review the quantity can help. Claiming it has already been corrected, automatically changing it to 20, or recommending a change to box capacity would do something different. In these labs we only calculate and present results; we neither ship goods nor correct inputs on our own."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_afirmacion_sostenida",
+          "question": "You know the contract and that intentar_cajas(21, resultado) was rejected. Which diagnostic is supported by that information?",
+          "options": [
+            "21 exceeds the permitted quantity range; you can state that integers from 0 to 20 are allowed.",
+            "21 exceeds warehouse stock; you can state that more available material must be supplied.",
+            "21 exceeds the selected capacity of one box; you can state that its four slots must be increased."
+          ],
+          "correctIndex": 0,
+          "explanation": "The rejection concerns the quantity domain of this interface. Neither stock levels nor a problem with the capacity of one box was observed. The guidance should help correct the input without changing the contract.",
+          "reviewFeedback": [
+            "Connect every diagnostic claim to the condition actually checked by the function.",
+            "Check whether the program received or observed any inventory data that would support that cause.",
+            "Distinguish the allowed total number of pieces from the per-box capacity used by the calculation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Results, Diagnostics, and Exit Codes Are Different Evidence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall std::cout for normal output and std::cerr for diagnostics. In this practice, the client writes one result per accepted request to stdout, the cout stream. Rejections are explained on stderr, the cerr stream. The client continues processing later requests and finally returns 1 if any request was rejected; otherwise it returns 0. That code is not another printed result."
+        },
+        {
+          "type": "paragraph",
+          "text": "The message function receives std::ostream& destino. You have already used that interface to write to different destinations; here main passes std::cerr. The function must use the destination it receives. When comparing an execution, keep stdout, stderr, and the exit code separate. Do not infer relative ordering between the two streams from the way a tool displays them."
+        },
+        {
+          "type": "note",
+          "text": "Input contract for both labs: at most eight complete requests, integers representable as int, and a normal end of input. In the first lab each request has one integer; in the second, two. An empty batch is valid. Input is read from cin until EOF; this exercise does not cover malformed text, incomplete pairs, or input-device failures."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_comparar_los_canales",
+          "question": "An execution calculates results for some requests and writes diagnostics for others. Which comparison preserves the evidence required by the contract?",
+          "options": [
+            "One combined list of all lines in the order they appear in a window.",
+            "The contents of stderr as a sufficient report for the batch because some requests were rejected.",
+            "The contents of each stream and the exit code, distinguishing results, messages, and termination."
+          ],
+          "correctIndex": 2,
+          "explanation": "Each stream serves a purpose, and the exit code indicates how the batch ended. Combining them can hide where a message appeared or incorrectly require an ordering not promised between streams.",
+          "reviewFeedback": [
+            "Check whether its visual position identifies the original stream and whether that combined order belongs to the contract.",
+            "Consider what evidence of accepted requests remains if you keep diagnostics alone.",
+            "Connect each comparison with a different program obligation instead of reducing them to one observation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: A Rejection That Helps Find and Review the Input"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial program calculates and decides correctly, but Error does not show which quantity in the batch was rejected. Modify only the body of informar_rechazo_cajas. Preserve cajas_para, intentar_cajas, main, and the prepared input. The message must identify the box operation, request number, received quantity, permitted integer range, and a review action that does not change the task."
+        },
+        {
+          "type": "paragraph",
+          "text": "With -1 0 21 5, the first and third requests are rejected; zero is accepted. Before running, derive the results and the data each diagnostic should preserve separately. stdout must contain Boxes=0 and Boxes=2, one line per result; the final exit code is 1. Both diagnostics go to stderr and must not claim missing stock or a correction that was not performed."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Error\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boxes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 0 21 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, test 0 1 20 4 without changing the program: all four requests are accepted, stderr is empty, and the exit code is 0. Also check the empty batch: both streams are empty and the exit code is 0. Different wording can satisfy the criteria; the compiler alone cannot determine whether a message helps its recipient. Attempt and review your version before opening the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Context Without Changing the Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference leaves the library, input handling, decisions, and ordinary output untouched. It develops only the message function. The request number locates the quantity within the batch; piezas identifies the input; the allowed range and invitation to review suggest a possible action. No unrelated cause has been inferred from these data."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Boxes: request \" << peticion << \", pieces=\" << piezas\n            << \". Enter an integer from 0 to 20. Review the quantity.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boxes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the initial input, stderr contains two lines: the first identifies request 1 and pieces=-1; the second, request 3 and pieces=21. Both state the inclusive range 0 to 20. You do not have to copy these sentences: you do need to preserve those facts and write to the supplied stream. Results and exit codes retain their earlier meanings."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_variar_el_extremo",
+          "question": "A version identifies pieces=-1 but adds 'the quantity is too large.' What revision addresses the problem without changing acceptance?",
+          "options": [
+            "Change the input shown in the message to 21 so the sentence describes a quantity above the limit.",
+            "Describe the received input and allowed range without attributing the wrong direction to it.",
+            "Accept the -1 request so it no longer triggers a sentence written only for large quantities."
+          ],
+          "correctIndex": 1,
+          "explanation": "The message must match the real input at both out-of-range ends. Describing the range preserves rejection and avoids claiming that -1 is above the upper limit.",
+          "reviewFeedback": [
+            "Check whether the input you display still belongs to the request being diagnosed.",
+            "Compare each part of the sentence with the actual received value and both bounds of the contract.",
+            "Distinguish an improvement in presentation from a change in which requests the library accepts."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Also Check Which Value Goes with Each Label"
+        },
+        {
+          "type": "paragraph",
+          "text": "A program may produce readable text while associating its data incorrectly. Check message fields, not merely whether words such as peticion and piezas appear. The following call supplies two values with different roles."
+        },
+        {
+          "type": "output_prediction",
+          "id": "diagnostico_etiquetas_y_valores",
+          "question": "Predict the exact output, without a trailing newline. Follow the code as shown without repairing its labels or swapping arguments.",
+          "code": "#include <iostream>\n\nvoid informar(std::ostream& destino, int peticion, int piezas) {\n    destino << \"request=\" << piezas << \";pieces=\" << peticion;\n}\n\nint main() {\n    informar(std::cout, 3, 21);\n    return 0;\n}\n",
+          "answers": [
+            "request=21;pieces=3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "The first field inserts piezas, whose value is 21, and the second inserts peticion, whose value is 3. The text can be generated, but it associates each value with the wrong role. A correct presentation must also preserve the relationship between each label and its data.",
+          "reviewFeedback": "Trace which parameter is inserted after each label and which argument it received. Distinguish what the message should communicate from what the code actually prints."
+        },
+        {
+          "type": "paragraph",
+          "text": "When reviewing your own function, identify where every field comes from in the request. Preserve the input even if it is not valid for calculation: that is precisely the input that needs review. The message function must not rerun the operation to determine it or treat a previous result as the rejected quantity."
+        },
+        {
+          "type": "note",
+          "text": "Someone reading a public message does not always know our source file. A function name may help a developer, but it does not replace the operation and data that this person needs. Choose details according to the task; a longer message is not automatically more useful."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: Diagnose a Request with Two Fields"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reuse calcular_saldo exactly as it stood in the previous lesson. It accepts a pair when cobros and devoluciones are each within 0 to 9 inclusive, returning their difference through a reference. The client already interprets bool correctly. Your task is to develop only informar_rechazo_saldo for a person preparing such pairs who needs to know what to review."
+        },
+        {
+          "type": "paragraph",
+          "text": "The prepared input contains four requests: (2,3), (10,0), (0,-1), (5,5). stdout must contain Balance=-1 and Balance=0, one line per result. Requests 2 and 3 are rejected; the final exit code is 1. On stderr, identify the operation, request, and both fields by name and their actual values; state the valid condition for each field and suggest reviewing the data. Do not classify a negative balance as an error or claim a collection or refund occurred when it did not."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Balance error\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Balance=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "2 3 10 0 0 -1 5 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preserve the library, main, and input while improving the message. Next, change only the input to 2 3 0 0 9 0 0 9: all four requests are valid. Derive the four balances before execution and check that a result's negative sign does not trigger a diagnostic. An empty batch must also leave both streams empty and exit with code 0. Try the transfer before consulting its reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference: Preserve Names and Values"
+        },
+        {
+          "type": "paragraph",
+          "text": "The message displays the complete pair and states that both fields must be integers from 0 to 9. It does not claim that both are wrong. It helps identify which one violates the agreement, while retaining what was actually received. Presentation remains outside the calculation component."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Balance: request \" << peticion << \", charges=\" << cobros\n            << \", refunds=\" << devoluciones\n            << \". Both fields must be integers from 0 to 9. Review the data pair.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Balance=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the original batch, diagnostics describe charges=10, refunds=0 in request 2, and charges=0, refunds=-1 in request 3. With the all-valid batch, balances -1, 0, 9, and -9 are printed in that order; stderr stays empty and the exit code is 0. Negative balances are accepted results, not explanations for a rejection."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_conservar_los_dos_campos",
+          "question": "For request (10,0), a message reads 'charges=10; devoluciones=10; both fields from 0 to 9.' What needs review?",
+          "options": [
+            "The association of the second field with its input: the request supplied zero refunds.",
+            "The allowed range for both fields: it needs to be extended to ten to describe this request.",
+            "The rejection: if devoluciones is in range, that alone suffices to accept the pair."
+          ],
+          "correctIndex": 0,
+          "explanation": "The text repeated the first value in the second field. Reporting a received value does not require accepting it or changing the domain. The diagnostic must preserve each value under its correct label.",
+          "reviewFeedback": [
+            "Check which argument produced each field and whether its label still describes that same input.",
+            "Distinguish being able to display a received quantity from permitting it in the calculation.",
+            "Recall the complete condition for accepting a pair before blaming the rejection."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the Purpose When a Message Leaves Its Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine someone keeps only one stderr line to review the batch later. The message should still identify the operation and request without relying on their access to the code or earlier lines. This check also helps uncover omitted labels or values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_linea_fuera_de_contexto",
+          "question": "The person reviewing the batch receives a single diagnostic line. What decision keeps the message useful outside its original screen?",
+          "options": [
+            "Mention where the previous line appeared on the screen, since that is where the earlier result was displayed.",
+            "Preserve the operation, request, inputs, and condition so the indicated entry can be located and reviewed.",
+            "Name the internal function and omit the input, because its name explains what quantity was received."
+          ],
+          "correctIndex": 1,
+          "explanation": "The line preserves the information needed to link it to a request and review its inputs. A visual position no longer available, or a function's name, cannot replace that information.",
+          "reviewFeedback": [
+            "Consider which part of the screen the recipient of a single isolated line can actually inspect.",
+            "Relate each preserved datum to locating the request and the review the recipient must perform.",
+            "Check what specific information the function name provides about the values actually supplied."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, prepare a different request below the lower limit and one above the upper limit. Before executing, write down the facts each diagnostic should preserve; then check its fields, output stream, and exit code without editing the library. Include an accepted request between the rejections to confirm that it still produces its result."
+        },
+        {
+          "type": "note",
+          "text": "Review the message from the reader's task: what they can locate, which input they can correct, and what they still do not know. A reference sentence lets you compare one concrete implementation; it does not prove everyone will understand the message or make different wording wrong if it meets the purpose."
+        }
+      ]
+    }
+  ]
+}

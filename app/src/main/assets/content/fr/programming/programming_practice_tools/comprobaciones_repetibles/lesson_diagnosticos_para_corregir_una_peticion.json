@@ -1,0 +1,306 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion",
+  "title": "Diagnostics pour corriger une demande",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rejet correct a encore besoin d'une explication utile"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas décide déjà s'il accepte une quantité et préserve la sortie en cas de rejet. Nous ne modifierons ni cette bibliothèque ni son calcul. Le client doit expliquer le rejet à une personne qui prépare un lot et doit corriger ses données sans connaître les noms de nos fonctions. La nouveauté consiste à choisir les informations qui permettent d'agir, et non à ajouter du texte sans raison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un diagnostic utile relie l'opération, la demande précise et sa donnée à la condition non respectée. Il doit aider le destinataire sans affirmer des causes que le programme n'a pas vérifiées. La source recommande d'identifier l'origine du message et d'indiquer la forme d'entrée valide ; adapter la communication au destinataire et à son objectif guide cet exercice (Kernighan & Pike, 1999, pp. 113–114 ; Thomas & Hunt, 2020, pp. 20–21)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_destinatario_del_rechazo",
+          "question": "La personne qui prépare les pièces veut corriger son lot et ne connaît pas le code. Quelles informations répondent à son besoin ?",
+          "options": [
+            "Le nombre d'appels internes, pour reconstituer le parcours de nos fonctions.",
+            "La demande rejetée et sa donnée, pour vérifier la quantité qu'elle voulait fournir.",
+            "L'ancienne valeur de sortie, pour la conserver comme résultat de la demande actuelle."
+          ],
+          "correctIndex": 1,
+          "explanation": "La demande permet de localiser l'entrée, et la donnée permet de la vérifier. Le destinataire n'a pas besoin de reconstruire les appels internes pour corriger cette quantité. Le résultat précédent n'appartient pas à la demande rejetée.",
+          "reviewFeedback": [
+            "Relie le détail choisi à ce que doit faire la personne qui prépare le lot et à ce qu'elle connaît du programme.",
+            "Vérifie si les informations choisies permettent de retrouver et de revoir la donnée traitée.",
+            "Distingue une valeur préservée par la bibliothèque d'un résultat produit pour cette demande."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décrire ce qui a été vérifié et proposer une action cohérente"
+        },
+        {
+          "type": "paragraph",
+          "text": "intentar_cajas accepte exactement les quantités de 0 à 20. Si la fonction reçoit 21 et renvoie false, nous savons que cette demande ne respecte pas l'intervalle autorisé. Nous n'avons observé ni les stocks de l'entrepôt, ni la disponibilité des véhicules, ni la raison pour laquelle quelqu'un a saisi 21. Le diagnostic ne doit pas transformer une explication plausible en cause démontrée."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'action suggérée doit également respecter la tâche. Demander de vérifier la quantité peut aider. Annoncer qu'elle a déjà été corrigée, la ramener automatiquement à 20 ou recommander de modifier la capacité des boîtes reviendrait à faire autre chose. Dans ces laboratoires, nous calculons et présentons uniquement les résultats ; nous n'expédions aucune marchandise et ne corrigeons pas les saisies de notre propre initiative."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_afirmacion_sostenida",
+          "question": "Tu connais le contrat et le rejet de intentar_cajas(21, resultado). Quel diagnostic ces informations permettent-elles d'affirmer ?",
+          "options": [
+            "21 dépasse l'intervalle autorisé pour les quantités ; on peut indiquer que les entiers de 0 à 20 sont permis.",
+            "21 dépasse les stocks de l'entrepôt ; on peut indiquer qu'il faut réapprovisionner le matériel.",
+            "21 dépasse la capacité d'une boîte ; on peut indiquer qu'il faut augmenter ses quatre places."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le rejet concerne le domaine des quantités de cette interface. Ni les stocks ni un problème de capacité d'une boîte n'ont été observés. L'indication doit aider à corriger la donnée sans changer le contrat.",
+          "reviewFeedback": [
+            "Relie chaque affirmation du diagnostic à la condition réellement vérifiée par la fonction.",
+            "Vérifie si le programme dispose de données sur les stocks permettant d'affirmer cette cause.",
+            "Distingue la limite du nombre de pièces de la capacité de chaque boîte utilisée par le calcul."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Résultat, diagnostic et code de sortie sont des preuves distinctes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi std::cout pour la sortie ordinaire et std::cerr pour les diagnostics. Dans cet exercice, le client écrit un résultat par demande acceptée dans stdout, le flux cout. Les rejets sont expliqués dans stderr, le flux cerr. Le client continue avec les demandes suivantes et renvoie finalement 1 si au moins une demande a été rejetée ; sinon, il renvoie 0. Ce code n'est pas un autre résultat affiché."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction de message reçoit std::ostream& destino. Tu as déjà utilisé cette interface pour écrire vers différentes destinations ; ici, main lui transmet std::cerr. La fonction doit utiliser le flux reçu. Pour comparer une exécution, conserve séparément stdout, stderr et le code de sortie. Ne déduis pas l'ordre relatif des deux flux de la façon dont un outil les affiche."
+        },
+        {
+          "type": "note",
+          "text": "Contrat d'entrée des deux laboratoires : au maximum huit demandes complètes, des entiers représentables par int et une fin normale du flux. Dans le premier, chaque demande possède un entier ; dans le second, deux. Un lot vide est valide. La lecture se fait avec cin jusqu'à EOF ; cet exercice ne traite ni les textes mal formés, ni les paires incomplètes, ni les erreurs du dispositif d'entrée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_comparar_los_canales",
+          "question": "Une exécution calcule des résultats pour certaines demandes et écrit des diagnostics pour d'autres. Quelle comparaison préserve les preuves du contrat ?",
+          "options": [
+            "Une liste unique regroupant toutes les lignes selon leur ordre d'apparition dans une fenêtre.",
+            "Le contenu de stderr comme rapport suffisant du lot, puisqu'il y a eu des demandes rejetées.",
+            "Le contenu de chaque flux et le code de sortie, en distinguant résultats, messages et fin d'exécution."
+          ],
+          "correctIndex": 2,
+          "explanation": "Chaque flux a une fonction, et le code indique comment le lot s'est terminé. Les mélanger peut masquer l'origine d'un message ou imposer un ordre qui n'a pas été promis entre les flux.",
+          "reviewFeedback": [
+            "Vérifie si la position affichée identifie le flux d'origine et si cet ordre commun fait partie du contrat.",
+            "Réfléchis aux preuves qui restent pour les demandes acceptées si tu conserves seulement les diagnostics.",
+            "Relie chaque comparaison à une obligation distincte du programme, sans les réduire à une seule observation."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : un rejet qui permet de retrouver et de vérifier la donnée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme initial calcule et décide correctement, mais Erreur ne permet pas de savoir quelle quantité du lot a été rejetée. Modifie uniquement le corps de informar_rechazo_cajas. Conserve cajas_para, intentar_cajas, main et l'entrée préparée. Le message doit identifier l'opération sur les boîtes, le numéro de demande, la quantité reçue, l'intervalle d'entiers autorisé et une action de vérification qui ne change pas la tâche."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec -1 0 21 5, les première et troisième demandes sont rejetées ; zéro est accepté. Avant l'exécution, déduis séparément les résultats et les données que chaque diagnostic doit conserver. stdout doit contenir Boîtes=0 et Boîtes=2, une ligne par résultat ; le code de sortie final est 1. Les deux diagnostics sont écrits dans stderr et ne doivent annoncer ni manque de stock ni correction qui n'a pas été effectuée."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Erreur\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boîtes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "-1 0 21 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste ensuite 0 1 20 4 sans modifier le programme : les quatre demandes sont acceptées, stderr reste vide et le code de sortie est 0. Vérifie aussi le lot vide : les deux flux restent vides et le code vaut 0. Une formulation différente peut satisfaire les critères ; le compilateur ne détermine pas à lui seul si le message aide son destinataire. Essaie et vérifie ta version avant de consulter la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après l'exercice : le contexte sans changer le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence laisse la bibliothèque, la lecture, les décisions et la sortie ordinaire inchangées. Elle développe seulement la fonction de message. Le numéro de demande permet de retrouver la quantité dans le lot ; piezas identifie la donnée ; l'intervalle et l'invitation à vérifier orientent une action possible. Aucune cause étrangère à ces données n'a été supposée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Boîtes : demande \" << peticion << \", pièces=\" << piezas\n            << \". Saisissez un entier de 0 à 20. Vérifiez la quantité.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Boîtes=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour l'entrée initiale, stderr contient deux lignes : la première nomme la demande 1 et pièces=-1 ; la seconde, la demande 3 et pièces=21. Toutes deux indiquent l'intervalle inclusif de 0 à 20. Il n'est pas nécessaire de recopier ces phrases : il faut en revanche conserver les faits et écrire dans le flux reçu. Les résultats et codes de sortie gardent leur signification précédente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_variar_el_extremo",
+          "question": "Une version identifie pièces=-1, mais ajoute « la quantité est trop grande ». Quelle modification résout le problème sans changer l'acceptation ?",
+          "options": [
+            "Modifier la donnée affichée en 21 afin que la phrase décrive une quantité supérieure à la limite.",
+            "Décrire la donnée reçue et l'intervalle autorisé sans attribuer une direction erronée.",
+            "Accepter la demande -1 pour qu'elle ne déclenche plus une phrase réservée aux grandes quantités."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le message doit correspondre à la donnée réelle aux deux extrémités non admises. Décrire l'intervalle conserve le rejet et évite d'affirmer que -1 dépasse la limite supérieure.",
+          "reviewFeedback": [
+            "Vérifie si la donnée présentée appartient toujours à la demande diagnostiquée.",
+            "Compare chaque partie de la phrase à la valeur reçue et aux deux limites du contrat.",
+            "Distingue une amélioration de la présentation d'un changement des demandes acceptées par la bibliothèque."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier également la valeur associée à chaque étiquette"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programme peut construire un texte lisible tout en associant mal ses données. Vérifie les champs du message, pas seulement la présence de mots tels que peticion et piezas. L'appel suivant fournit deux valeurs aux rôles différents."
+        },
+        {
+          "type": "output_prediction",
+          "id": "diagnostico_etiquetas_y_valores",
+          "question": "Prédis la sortie exacte, sans saut de ligne final. Suis le code affiché sans corriger les étiquettes ni permuter les arguments.",
+          "code": "#include <iostream>\n\nvoid informar(std::ostream& destino, int peticion, int piezas) {\n    destino << \"demande=\" << piezas << \";pièces=\" << peticion;\n}\n\nint main() {\n    informar(std::cout, 3, 21);\n    return 0;\n}\n",
+          "answers": [
+            "demande=21;pièces=3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Le premier champ insère piezas, qui vaut 21, et le second insère peticion, qui vaut 3. Le texte peut être généré, mais chaque valeur est attribuée au mauvais rôle. Une présentation correcte doit également préserver la relation entre l'étiquette et la donnée.",
+          "reviewFeedback": "Suis le paramètre inséré après chaque étiquette et l'argument reçu. Distingue ce que le message devrait communiquer de ce que ce code affiche."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tu relis ta fonction, retrouve l'origine de chaque champ dans la demande. Conserve la donnée même si elle n'est pas valide pour le calcul : c'est précisément celle qu'il faut vérifier. La fonction de message ne doit pas relancer l'opération pour la retrouver ni transformer un résultat antérieur en quantité rejetée."
+        },
+        {
+          "type": "note",
+          "text": "La personne qui lit un message public ne connaît pas toujours notre fichier source. Un nom de fonction peut aider le développeur, mais ne remplace pas l'opération et les données nécessaires à cette personne. Choisis les détails selon sa tâche ; un message plus long n'est pas forcément plus utile."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert : diagnostiquer une demande à deux champs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Réutilise calcular_saldo exactement comme à la leçon précédente. Elle accepte chaque paire si cobros et devoluciones sont, chacun, compris entre 0 et 9 inclus, et renvoie leur différence par référence. Le client interprète déjà correctement bool. Ta tâche consiste uniquement à développer informar_rechazo_saldo pour une personne qui prépare ces paires et doit savoir quoi vérifier."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'entrée préparée contient quatre demandes : (2,3), (10,0), (0,-1), (5,5). stdout doit contenir Solde=-1 et Solde=0, une ligne par résultat. Les demandes 2 et 3 sont rejetées ; le code de sortie final vaut 1. Dans stderr, indique l'opération, la demande et les deux champs par leur nom et leur valeur réelle ; précise la condition valide de chaque champ et suggère de vérifier les données. Ne classe pas un solde négatif comme une erreur et n'annonce pas un encaissement ou un remboursement qui n'a pas eu lieu."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Erreur de solde\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Solde=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n",
+          "initialStandardInput": "2 3 10 0 0 -1 5 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve la bibliothèque, main et les données pendant que tu améliores le message. Change ensuite uniquement l'entrée en 2 3 0 0 9 0 0 9 : les quatre demandes sont valides. Déduis les quatre soldes avant l'exécution et vérifie que le signe négatif d'un résultat ne déclenche aucun diagnostic. Un lot vide doit aussi laisser les deux flux vides et se terminer avec le code 0. Essaie le transfert avant de consulter la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert : préserver les noms et les valeurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le message présente la paire complète et précise que les deux champs doivent être des entiers de 0 à 9. Cela ne signifie pas qu'ils sont tous deux erronés. La personne peut ainsi vérifier lequel ne respecte pas le contrat, en conservant les données réellement reçues. La présentation reste extérieure au composant de calcul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid informar_rechazo_saldo(std::ostream& destino, int peticion,\n                            int cobros, int devoluciones) {\n    destino << \"Solde : demande \" << peticion << \", encaissements=\" << cobros\n            << \", remboursements=\" << devoluciones\n            << \". Les deux champs doivent être des entiers de 0 à 9. Vérifiez les données.\\n\";\n}\n\nint main() {\n    int cobros{0};\n    int devoluciones{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> cobros >> devoluciones) {\n        ++peticion;\n        int resultado{77};\n        if (calcular_saldo(cobros, devoluciones, resultado)) {\n            std::cout << \"Solde=\" << resultado << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_saldo(std::cerr, peticion, cobros, devoluciones);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec le lot initial, les diagnostics décrivent encaissements=10, remboursements=0 pour la demande 2 et encaissements=0, remboursements=-1 pour la demande 3. Pour le lot ne contenant que des demandes valides, les soldes -1, 0, 9 et -9 s'affichent dans cet ordre ; stderr reste vide et le code est 0. Les soldes négatifs sont des résultats acceptés, pas des explications d'un rejet."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_conservar_los_dos_campos",
+          "question": "Pour la demande (10,0), un message indique « encaissements=10 ; devoluciones=10 ; les deux champs de 0 à 9 ». Quel aspect faut-il revoir ?",
+          "options": [
+            "L'association du second champ à sa donnée : la demande comportait zéro remboursement.",
+            "La limite des deux champs : il faut l'étendre à dix pour pouvoir décrire cette demande.",
+            "Le rejet : il suffit que devoluciones soit dans l'intervalle pour accepter la paire."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le texte a répété la première valeur dans le second champ. Présenter la donnée reçue n'exige ni de l'accepter ni de changer le domaine. Le diagnostic doit conserver chaque valeur sous son étiquette.",
+          "reviewFeedback": [
+            "Vérifie quel argument est à l'origine de chaque champ et si son étiquette désigne toujours la même donnée.",
+            "Distingue la possibilité de présenter une quantité reçue de l'autorisation de l'utiliser dans le calcul.",
+            "Rappelle-toi la condition complète d'acceptation d'une paire avant d'attribuer le problème au rejet."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver l'objectif lorsque le message sort de son contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine qu'une personne conserve une seule ligne de stderr pour revoir le lot plus tard. Le message doit encore identifier l'opération et la demande sans dépendre de l'accès au code ou aux lignes précédentes. Cette vérification aide aussi à repérer les étiquettes ou valeurs manquantes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_linea_fuera_de_contexto",
+          "question": "La personne qui vérifie le lot ne reçoit qu'une ligne de diagnostic. Quel choix permet au message de rester utile en dehors de son écran d'origine ?",
+          "options": [
+            "Mentionner la position visuelle de la ligne précédente, où figurait le résultat antérieur.",
+            "Conserver l'opération, la demande, les données et la condition pour retrouver et vérifier l'entrée concernée.",
+            "Mentionner la fonction interne en omettant la donnée, car son nom explique la quantité reçue."
+          ],
+          "correctIndex": 1,
+          "explanation": "La ligne conserve ce qui permet de la relier à une demande et de vérifier ses données. Une position visuelle devenue inaccessible ou le nom d'une fonction ne remplace pas ces informations.",
+          "reviewFeedback": [
+            "Réfléchis aux parties de l'écran réellement accessibles à la personne ayant reçu une ligne isolée.",
+            "Relie chaque donnée conservée à la localisation de la demande et à la vérification nécessaire.",
+            "Vérifie les informations concrètes que ce nom fournit sur les valeurs données."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, prépare une demande différente sous la limite inférieure et une autre au-dessus de la limite supérieure. Avant l'exécution, note les faits que chaque diagnostic doit conserver ; vérifie ensuite ses champs, son flux et son code de sortie sans modifier la bibliothèque. Ajoute une demande acceptée entre les rejets pour vérifier qu'elle produit toujours son résultat."
+        },
+        {
+          "type": "note",
+          "text": "Examine le message du point de vue de la tâche de son lecteur : que peut-il retrouver, quelle donnée peut-il corriger et que ne sait-il toujours pas ? Une phrase de référence permet de comparer une implémentation concrète ; elle ne prouve pas que tout le monde la comprendra et ne rend pas incorrecte une autre formulation répondant au même objectif."
+        }
+      ]
+    }
+  ]
+}

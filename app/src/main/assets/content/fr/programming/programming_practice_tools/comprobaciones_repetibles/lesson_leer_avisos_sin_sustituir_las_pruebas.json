@@ -1,0 +1,250 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__leer_avisos_sin_sustituir_las_pruebas",
+  "title": "Lire les avertissements sans remplacer les tests",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un avertissement apporte une preuve ; une construction réussie ne démontre pas le contrat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu distingues déjà configuration, construction et exécution ; tu conserves aussi une batterie de tests avec des résultats attendus indépendants. Tu vas maintenant intégrer une autre source de preuves : les avertissements émis par le compilateur lorsqu'il analyse le code. Les examiner peut éviter des recherches ultérieures ; les ignorer parce qu'un exécutable existe gaspille des informations. Un compilateur silencieux ne peut pas non plus démontrer toutes les propriétés du programme (Kernighan & Pike, 1999, pp. 118, 120 ; Thomas & Hunt, 2020, pp. 90, 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi une règle du premier cours : en C++, 0 <= dato <= 20 ne vérifie pas l'appartenance à un intervalle. L'expression 0 <= dato est évaluée d'abord ; son résultat booléen participe ensuite à la deuxième comparaison. Nous ne réintroduisons pas cette règle : nous l'utiliserons pour apprendre à interpréter un avertissement sans le confondre avec un résultat de test. La forme sans parenthèses peut même être considérée comme une erreur selon le compilateur. Le projet du laboratoire écrit (0 <= dato) <= 20 pour rendre explicite le bool intermédiaire : ce regroupement ne corrige pas la condition et ne supprime pas l'avertissement concernant sa comparaison à 20."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_construccion_y_contrato",
+          "question": "La construction se termine avec le code 0 et laisse un avertissement dans cantidad.cpp. Que permet de conclure cet état ?",
+          "options": [
+            "La fonction respecte le contrat pour toute entrée puisqu'un exécutable a été produit.",
+            "La construction s'est terminée ; il reste à interpréter l'avertissement et à vérifier le comportement.",
+            "La batterie a déjà été exécutée et a rejeté une entrée alors que tu n'as pas encore lancé Exécuter."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'état correspond à la phase qui l'a produit. Une construction réussie n'équivaut ni à l'exécution de la batterie ni à la preuve du contrat.",
+          "reviewFeedback": [
+            "Réexamine ce qu'un processus de construction peut observer du comportement exigé de la fonction.",
+            "Relie chaque conclusion à la phase et aux preuves qui la soutiennent réellement.",
+            "Repère l'action qui lance le programme et le moment où les résultats de ses cas apparaîtraient."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Demander des avertissements à la cible qui compile la définition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet utilise la bibliothèque cantidades, qui compile cantidad.cpp, et l'exécutable comprobar_cantidad, qui consomme sa fonction. Retrouve cette séparation avant de lire la description. target_compile_options ajoute des options de compilation à une cible existante ; PRIVATE les applique à cette cible sans les transformer en exigences de compilation pour ses consommateurs. Il ne s'agit ni d'une option d'exécution ni d'un réglage universel de CMake (Scott, 2025, p. 184)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le profil Clang de ce laboratoire, ces options demandent des groupes d'avertissements du compilateur. Elles ne signifient pas « tous les avertissements possibles » et ne remplacent pas les tests. D'autres compilateurs peuvent demander des options différentes ; nous ne définissons pas ici une politique portable pour tous. Voir un avertissement ne suffit pas non plus pour identifier l'option qui l'a activé : certains peuvent déjà être actifs. Nous conserverons les options inchangées pendant tout l'exercice."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_objetivo_que_compila",
+          "question": "cantidad.cpp appartient à cantidades et comprobar.cpp à comprobar_cantidad. Tu veux examiner la compilation de la définition de cantidad_admitida. À quelle cible appliquer ces options ?",
+          "options": [
+            "À cantidades, qui compile le fichier de définition.",
+            "Seulement à comprobar_cantidad, puisque son exécutable utilise la fonction.",
+            "Au texte d'entrée d'Exécuter, pour que le programme demande les avertissements."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les options agissent sur la compilation de la cible indiquée. Lier un consommateur à une bibliothèque ne fait pas appliquer rétroactivement ses options PRIVATE à la compilation de cette bibliothèque.",
+          "reviewFeedback": [
+            "Relie le fichier contenant la définition à la cible qui le compile.",
+            "Vérifie la portée de PRIVATE et le fichier compilé par ce consommateur.",
+            "Distingue les données reçues par un programme en cours d'exécution des instructions nécessaires pour compiler ses sources."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : conserver les tests et lire l'avertissement réel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrat : cantidad_admitida accepte toute valeur représentable par int et renvoie true exactement pour les entiers de 0 à 20 inclus. Elle ne modifie aucun état externe. Les quatre résultats attendus du vérificateur proviennent de ce contrat : -1 est rejeté, 0 et 20 sont acceptés, 21 est rejeté. Ces cas constituent un échantillon discriminant ; leur réussite ne démontre pas le comportement pour tous les entiers."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant toute modification, configure et génère le projet, puis construis comprobar_cantidad. Lis le panneau Construction même s'il annonce une réussite. Localise le fichier et la ligne cités, distingue la catégorie de l'avertissement de son explication et relie celle-ci à l'expression correspondante. Dans les diagnostics de ce profil, fichier:ligne:colonne précède warning et son texte : c'est une indication de localisation pour enquêter, pas une solution automatique. Lis également les lignes de contexte du même message (Thomas & Hunt, 2020, p. 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Exécute la batterie initiale et conserve séparément les observations de construction et d'exécution : quels cas diffèrent, les résultats attendus et obtenus, et l'état de chaque phase. Corrige uniquement l'expression renvoyée dans cantidad.cpp pour respecter le contrat. Construis et exécute à nouveau ; compare l'avertissement et les quatre cas. Ne modifie ni cantidad.hpp, ni comprobar.cpp, ni les résultats attendus, ni les options, ni le contrat pour obtenir un panneau vide. Consulte la référence de la page suivante après ton essai."
+        },
+        {
+          "type": "cpp_compiler",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\nadd_library(cantidades STATIC cantidad.cpp)\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "cantidad.hpp",
+              "initialCode": "#ifndef CANTIDAD_HPP\n#define CANTIDAD_HPP\n\nbool cantidad_admitida(int dato);\n\n#endif\n"
+            },
+            {
+              "path": "cantidad.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return (0 <= dato) <= 20;\n}\n"
+            },
+            {
+              "path": "comprobar.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"valeur=\" << datos[i]\n                  << \" attendu=\" << esperados[i]\n                  << \" obtenu=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERREUR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Batterie : OK\\n\" : \"Batterie : ERREUR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cantidad",
+            "buildType": "Debug"
+          },
+          "language": "cpp",
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"valeur=\" << datos[i]\n                  << \" attendu=\" << esperados[i]\n                  << \" obtenu=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERREUR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Batterie : OK\\n\" : \"Batterie : ERREUR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Confronter une correction à deux types de preuves"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette version de référence de cantidad.cpp réunit les deux comparaisons complètes. La valeur limite 20 fait partie du contrat ; faire fonctionner quelques valeurs intérieures ne suffit pas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato <= 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruis pour que le diagnostic corresponde à la source actuelle, puis exécute cette construction. Ici, deux observations différentes soutiennent la correction : l'avertissement relatif à cette expression disparaît et les quatre résultats correspondent aux attentes conservées. Si le compilateur émet un autre message, lis-le plutôt que de le classer automatiquement comme le même problème. Noter « sans cet avertissement dans cette construction » est plus précis que dire « aucune erreur possible » (Kernighan & Pike, 1999, p. 120)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_archivo_antes_de_editar",
+          "question": "L'avertissement de Construction cite cantidad.cpp et l'expression renvoyée. Dans un autre panneau, l'exécution signale des écarts pour -1 et 21. Quelle enquête respecte les deux observations ?",
+          "options": [
+            "Modifier les résultats attendus de -1 et 21 pour qu'ils correspondent à l'exécution initiale.",
+            "Masquer l'avertissement et conserver l'expression initiale.",
+            "Comparer l'expression signalée au contrat, puis reconstruire et réexécuter après correction."
+          ],
+          "correctIndex": 2,
+          "explanation": "La localisation de l'avertissement oriente l'examen et les cas permettent de vérifier l'hypothèse. Conserver l'oracle indépendant empêche d'adapter le contrat à une implémentation défectueuse.",
+          "reviewFeedback": [
+            "Retrouve l'origine de chaque résultat attendu et ce qui serait perdu s'il provenait de cette implémentation.",
+            "Réfléchis à ce que masquer un diagnostic prouve réellement sur le comportement de l'expression.",
+            "Relie l'emplacement signalé par l'outil à la propriété exigée pour les données."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une variante silencieuse qui casse la limite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens au même laboratoire. Après avoir enregistré et vérifié ta correction, remplace seulement l'expression renvoyée par dato >= 0 && dato < 20. Conserve les quatre résultats attendus et les options. Avant l'exécution, prédis quel cas distingue cette variante de la correction. Construis et exécute de nouveau. Dans ce profil, l'expression ne provoque plus l'avertissement lié à la comparaison d'un résultat booléen avec 20, mais ta conclusion doit aussi tenir compte des résultats de la batterie."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato < 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas 20 attend true et obtient false : le vérificateur se termine avec le code 1, même si la construction s'est achevée avec le code 0 et sans cet avertissement. Ce sont des états de phases différentes. Le compilateur ne connaît pas l'accord « y compris 20 » simplement en voyant une expression valide. Rétablis la correction inclusive, reconstruis et exécute une quatrième fois ; vérifie les quatre cas et conserve les deux types de preuves. Ne laisse pas la mutation volontaire comme version finale."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_silencio_no_es_oraculo",
+          "question": "La variante dato < 20 s'est construite sans cet avertissement. La batterie conservée rejette son résultat pour 20. Que démontre cette combinaison ?",
+          "options": [
+            "L'absence de l'avertissement ne garantit pas l'inclusion de la limite exigée.",
+            "Il faut retirer le cas 20, car il contredit une construction réussie.",
+            "Le code 1 du vérificateur prouve que CMake n'a pas généré le projet."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le compilateur a accepté une expression valide du langage ; le vérificateur a trouvé un écart par rapport au contrat. Leurs responsabilités et leurs preuves sont distinctes.",
+          "reviewFeedback": [
+            "Relie la propriété exigée par le contrat à ce qu'analyse cet avertissement précis.",
+            "Reconsidère ce qui justifie le cas de la limite et pourquoi il existait avant cette variante.",
+            "Situe l'état de la batterie dans la phase qui devait être atteinte pour produire ce résultat."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver et transférer la méthode sans modifier le contrat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sans revenir à la référence, explique ce que tu conserverais pour permettre à une autre personne de répéter l'enquête : révision de la source, cible et profil du compilateur, diagnostic avec emplacement et texte, cas et résultats attendus, et résultats de construction et d'exécution. Évite de remplacer ces données par « ça compile » ou « ça a échoué ». Cette explication ouverte est évaluée selon ces critères ; les questions suivantes vérifient seulement des décisions concrètes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_transferir_al_otro_extremo",
+          "question": "Un autre contrat accepte les valeurs de 2 à 9 inclus. Son implémentation renvoie dato >= 2 && dato < 9 et ne produit aucun avertissement lors de la construction observée. Quel cas la batterie doit-elle conserver pour distinguer ce défaut du comportement prévu ?",
+          "options": [
+            "La valeur 5, car elle est loin des limites.",
+            "La valeur 9, dont le résultat attendu découle de l'inclusion de la limite supérieure.",
+            "La valeur 10 avec true comme résultat attendu, pour adapter le contrat à l'implémentation."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le cas 9 distingue les deux conditions : le contrat l'inclut, l'implémentation l'exclut. Son résultat attendu est établi avant de consulter la sortie du programme.",
+          "reviewFeedback": [
+            "Vérifie si cette valeur ferait agir différemment les deux conditions comparées.",
+            "Retrouve l'accord concernant la limite et compare-le à chaque opérateur de l'expression.",
+            "Rétablis le domaine accepté avant de choisir un résultat attendu pour une valeur extérieure."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Prendre en compte les avertissements dès le départ et recueillir des observations précises évite de poursuivre des symptômes sans base reproductible. Cela n'autorise pas à désactiver les messages pour obtenir le silence ni à proclamer une correction universelle après une série de tests réussie. Lors d'une autre enquête, conserve les diagnostics pertinents et les cas qui distinguent les comportements (Thomas & Hunt, 2020, p. 90)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_recuperar_evidencias",
+          "question": "Une collègue reçoit seulement la phrase « il n'y a plus rien ». Elle veut répéter ta comparaison de la correction finale. Qu'est-ce qui lui permet d'interpréter et de reproduire cette affirmation ?",
+          "options": [
+            "Une capture vide sans préciser si elle vient de Construction ou d'Exécuter.",
+            "La promesse que tous les compilateurs détectent tous les défauts possibles.",
+            "La source et le profil du compilateur utilisés, la phase observée et les cas conservés avec leurs résultats."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une observation a besoin d'un contexte reproductible. Distinguer les phases et conserver les cas évite de confondre l'absence d'un message avec la réussite de la batterie ou une preuve universelle.",
+          "reviewFeedback": [
+            "Identifie les informations manquantes pour relier le panneau à une phase et à une source précises.",
+            "Réexamine la portée réelle d'un outil et le type de preuves qu'il peut fournir.",
+            "Relie chaque détail conservé à la possibilité de reproduire la même observation."
+          ]
+        }
+      ]
+    }
+  ]
+}

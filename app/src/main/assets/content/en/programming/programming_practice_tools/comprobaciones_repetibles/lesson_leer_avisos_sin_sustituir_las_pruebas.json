@@ -1,0 +1,250 @@
+{
+  "id": "programming_practice_tools__comprobaciones_repetibles__leer_avisos_sin_sustituir_las_pruebas",
+  "title": "Reading Warnings Without Replacing Tests",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Warning Provides Evidence; a Successful Build Does Not Prove the Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already distinguish configuring, building, and running; you also preserve a test suite with independent expected results. Now you will add another source of evidence: warnings issued by the compiler when analyzing code. Paying attention to them can save an investigation later; ignoring them because an executable exists wastes information. A compiler that produces no warnings cannot prove every property of the program either (Kernighan & Pike, 1999, pp. 118, 120; Thomas & Hunt, 2020, pp. 90, 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall a rule from the first course: in C++, 0 <= dato <= 20 does not test membership in a range. First, 0 <= dato is evaluated; its boolean result then participates in the second comparison. We are not introducing that rule again: we will use it to learn how to interpret a warning without confusing it with a test result. The form without parentheses may even be diagnosed as an error depending on the compiler. The lab project writes (0 <= dato) <= 20 to make the intermediate bool explicit: the grouping does not fix the condition or remove the warning about comparing it with 20."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_construccion_y_contrato",
+          "question": "The build finishes with exit code 0 and leaves a warning in cantidad.cpp. What can you conclude from that status?",
+          "options": [
+            "The function satisfies its contract for every input because an executable was produced.",
+            "The build completed; you still need to interpret the warning and test the behavior.",
+            "The test suite has already run and rejected an input even though you have not clicked Run."
+          ],
+          "correctIndex": 1,
+          "explanation": "The status belongs to the phase that produced it. A successful build is not equivalent to running the test suite or proving the contract.",
+          "reviewFeedback": [
+            "Reconsider what a build process can observe about the function's required behavior.",
+            "Match each conclusion with the phase and evidence that actually supports it.",
+            "Identify which action starts the program and when its test results would exist."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Request Warnings for the Target That Compiles the Definition"
+        },
+        {
+          "type": "paragraph",
+          "text": "The project uses the cantidades library, which compiles cantidad.cpp, and the comprobar_cantidad executable, which consumes its function. Recall that separation before reading the build description. target_compile_options adds compiler options to an existing target; PRIVATE applies them to that target without making them compilation requirements for its consumers. This is neither a runtime option nor a universal CMake setting (Scott, 2025, p. 184)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this lab's Clang profile, these options request groups of compiler warnings. They do not mean 'every possible warning' or replace tests. Other compilers may require different options; we are not defining a portable policy for all of them here. Seeing a warning is not enough to deduce which option enabled it either: some warnings may already be enabled. We will keep the options unchanged throughout the practice."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_objetivo_que_compila",
+          "question": "cantidad.cpp belongs to cantidades, and comprobar.cpp belongs to comprobar_cantidad. You want to examine compilation of the cantidad_admitida definition. Where should you apply these options?",
+          "options": [
+            "To cantidades, which compiles the definition's source file.",
+            "Only to comprobar_cantidad, because its executable uses the function.",
+            "To the input text for Run, so the program requests the warnings."
+          ],
+          "correctIndex": 0,
+          "explanation": "The options affect compilation of the specified target. A consumer linking a library does not cause its PRIVATE options to apply backward to compilation of that library.",
+          "reviewFeedback": [
+            "Connect the source file containing the definition to the target that compiles it.",
+            "Review the direction in which PRIVATE limits an option and which file the consumer compiles.",
+            "Distinguish data passed to a running program from instructions for compiling its sources."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Preserve Tests and Read the Actual Warning"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contract: cantidad_admitida accepts any value representable by int and returns true exactly for integers from 0 through 20, inclusive. It does not modify external state. The test program's four expected results were established from that contract: -1 is rejected, 0 and 20 are accepted, and 21 is rejected. These cases are a discriminating sample; passing them does not prove correctness for every integer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before editing, configure and generate the project, then build comprobar_cantidad. Read the Build panel even if it reports success. Locate the cited file and line, distinguish the warning category from its explanation, and connect that explanation with the expression on that line. In diagnostics for this profile, file:line:column precedes warning and its text: it locates what to investigate, not an automatic solution. Read the accompanying context lines too (Thomas & Hunt, 2020, p. 92)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Run the initial test suite and keep build and execution observations separate: which cases differ, their expected and actual results, and each phase's status. Repair only the returned expression in cantidad.cpp to satisfy the contract. Build and run again; compare the warning and all four cases. Do not change cantidad.hpp, comprobar.cpp, expected results, options, or the contract just to obtain an empty panel. Consult the next page's reference after your attempt."
+        },
+        {
+          "type": "cpp_compiler",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(AvisosYContrato LANGUAGES CXX)\nadd_library(cantidades STATIC cantidad.cpp)\ntarget_compile_features(cantidades PUBLIC cxx_std_20)\nset_target_properties(cantidades PROPERTIES CXX_EXTENSIONS OFF)\ntarget_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\nadd_executable(comprobar_cantidad comprobar.cpp)\ntarget_link_libraries(comprobar_cantidad PRIVATE cantidades)\nset_target_properties(comprobar_cantidad PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "cantidad.hpp",
+              "initialCode": "#ifndef CANTIDAD_HPP\n#define CANTIDAD_HPP\n\nbool cantidad_admitida(int dato);\n\n#endif\n"
+            },
+            {
+              "path": "cantidad.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return (0 <= dato) <= 20;\n}\n"
+            },
+            {
+              "path": "comprobar.cpp",
+              "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"value=\" << datos[i]\n                  << \" expected=\" << esperados[i]\n                  << \" actual=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Suite: OK\\n\" : \"Suite: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cantidad",
+            "buildType": "Debug"
+          },
+          "language": "cpp",
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"value=\" << datos[i]\n                  << \" expected=\" << esperados[i]\n                  << \" actual=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Suite: OK\\n\" : \"Suite: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare a Repair Using Two Kinds of Evidence"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference implementation of cantidad.cpp combines the two complete comparisons. The boundary value 20 is included in the contract; getting some interior values right is not sufficient."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato <= 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build again so the diagnostic corresponds to the current source; then run that build. Here, two distinct observations support the repair: the warning about the expression disappears and all four results match their preserved expectations. If the compiler produces another message, read it instead of automatically classifying it as the same problem. Recording 'without that warning in this build' is more precise than claiming 'no possible errors' (Kernighan & Pike, 1999, p. 120)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_archivo_antes_de_editar",
+          "question": "The Build warning cites cantidad.cpp and its returned expression. Execution, in another panel, reports discrepancies for -1 and 21. Which investigation respects both observations?",
+          "options": [
+            "Change the expected results for -1 and 21 to match the initial execution.",
+            "Add a suppression for the warning and retain the original expression.",
+            "Examine the cited expression against the contract, then rebuild and rerun after repairing it."
+          ],
+          "correctIndex": 2,
+          "explanation": "The warning location guides inspection, while the cases let you test the hypothesis. Preserving the independent oracle prevents adjusting the agreement to a defective implementation.",
+          "reviewFeedback": [
+            "Recall how each expected result was established and what would be lost by deriving it from this implementation.",
+            "Reconsider what hiding a diagnostic tells you about the expression's behavior.",
+            "Relate the tool's highlighted location to the property required for the inputs."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Variation That Removes the Warning but Breaks the Boundary"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to the same lab. After saving and testing your repair, replace only the returned expression with dato >= 0 && dato < 20. Preserve the four expected results and the options. Before running, predict which case distinguishes this variation from the repair. Build and run again. In this profile, that expression does not trigger the warning about comparing a boolean result with 20, but your conclusion must include the test results."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"cantidad.hpp\"\n\nbool cantidad_admitida(int dato) {\n    return dato >= 0 && dato < 20;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The case for 20 expects true and gets false: the test program exits with code 1, even though the build completed with code 0 and without that warning. These are statuses from different phases. The compiler cannot know the requirement 'including 20' just from seeing a valid expression. Restore the inclusive repair, build, and run a fourth time; check the four cases again and preserve both kinds of evidence. Do not leave the deliberate mutation as the final version."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_silencio_no_es_oraculo",
+          "question": "The dato < 20 variation built without that warning. The preserved test suite rejects its result for 20. What does that combination show?",
+          "options": [
+            "Absence of the warning does not certify that the required boundary is included.",
+            "The case for 20 should be removed because it contradicts a successful build.",
+            "The test suite's exit code 1 proves that CMake failed to generate the project."
+          ],
+          "correctIndex": 0,
+          "explanation": "The compiler accepted a valid language expression; the test program found a difference from the contract. Their responsibilities and evidence are distinct.",
+          "reviewFeedback": [
+            "Connect the contract requirement with what that particular warning analyzes.",
+            "Reconsider what justifies the boundary test and why it existed before observing this variation.",
+            "Place the test suite's status in the phase that had to run to produce it."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall and Transfer the Method Without Changing the Agreement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Without returning to the reference, explain what you would preserve so someone else could repeat the investigation: source revision, target and compiler profile, diagnostic with its location and text, test cases and expected results, and the build and execution outcomes. Avoid replacing those data with 'it compiles fine' or 'it failed.' This open explanation is reviewed against those criteria; the following questions test only specific decisions."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_transferir_al_otro_extremo",
+          "question": "Another contract accepts values from 2 through 9, inclusive. Its implementation returns dato >= 2 && dato < 9 and produces no warnings in the observed build. Which case must a test suite retain to distinguish this defect from the agreed behavior?",
+          "options": [
+            "The value 5, because it is far from the boundaries.",
+            "The value 9, whose expected result must follow from including the upper boundary.",
+            "The value 10 with an expected result of true, to adapt the contract to the implementation."
+          ],
+          "correctIndex": 1,
+          "explanation": "Case 9 distinguishes the two conditions because the contract includes it but the implementation excludes it. Its expected result is derived before consulting the program's output.",
+          "reviewFeedback": [
+            "Check whether that value makes the two compared conditions behave differently.",
+            "Recall the agreement about the boundary and compare it with each operator in the expression.",
+            "Reestablish the accepted domain before choosing the expected result for an out-of-range input."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial practice of attending to warnings and collecting precise observations helps avoid chasing symptoms without a reproducible baseline. It does not justify disabling messages just to obtain silence or claiming universal correctness after one green test batch. In later investigations, preserve both relevant diagnostics and cases that discriminate behavior (Thomas & Hunt, 2020, p. 90)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "aviso_recuperar_evidencias",
+          "question": "A colleague receives only the phrase 'nothing appears anymore.' She wants to reproduce your comparison of the final repair. What lets her interpret and repeat that claim?",
+          "options": [
+            "An empty screenshot without indicating whether it comes from Build or Run.",
+            "A promise that every compiler will detect every possible defect.",
+            "The source and compiler profile used, the observed phase, and the preserved test cases with their results."
+          ],
+          "correctIndex": 2,
+          "explanation": "An observation needs reproducible context. Distinguishing phases and preserving cases prevents confusing absence of a message with successful execution of the test suite or with a universal proof.",
+          "reviewFeedback": [
+            "Identify what is missing to associate that panel with a specific phase and source.",
+            "Reconsider the actual scope of a tool and the evidence it can provide.",
+            "Connect each preserved detail with the ability to reproduce the same observation."
+          ]
+        }
+      ]
+    }
+  ]
+}
