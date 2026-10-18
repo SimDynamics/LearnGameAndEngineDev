@@ -1,0 +1,940 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__modelos_lineales_y_revision_de_condiciones",
+  "title": "Modèles linéaires et vérification des conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'équation doit conserver la question du problème"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà résoudre des équations linéaires et distinguer une solution unique, aucune solution ou toutes les solutions d'un domaine. Tu vas maintenant intégrer ces outils à la modélisation : ce que nous cherchons, les données connues, les valeurs permises et les quantités à comparer. Les situations utiliseront des rationnels, des dénominateurs constants non nuls et des produits d'une inconnue par des quantités connues."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un mot isolé ne détermine pas l'opération. Commence par comprendre la relation entière, définis l'inconnue et son unité, puis distingue les conditions à satisfaire. Écris ensuite les expressions décrivant les quantités et l'égalité représentant l'objectif. Cette lecture par parties doit préserver le sens global du problème (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, un cadre rectangulaire a une largeur de w centimètres et une longueur supérieure de cinq centimètres. Son périmètre, somme des quatre côtés, doit mesurer trente centimètres. Les deux petits côtés mesurent w et les deux grands w + 5. Ainsi, 2w + 2(w + 5) = 30 compare le périmètre calculé au périmètre exigé. Le domaine est celui des rationnels w positifs : la largeur ne peut pas être nulle ou négative."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distribuer et regrouper donne 4w + 10 = 30 ; soustraire dix et diviser par quatre donne w = 5. La longueur est dix. Avec les mesures initiales, 5 + 10 + 5 + 10 = 30 cm et les deux types de côtés sont positifs. L'équivalence des équations justifie qu'aucune autre solution n'a été oubliée ; la vérification du cadre confirme que le résultat représente ce qui était demandé (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_el_alcance_de_un_resultado",
+          "prompt": "Pour l'exemple du cadre, sélectionne toutes les affirmations correctes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_el_alcance_de_un_resultado__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La solution w mesure la longueur parce que c'est le plus grand côté.",
+                  "reviewFeedback": "Repère quel côté représente la lettre et examine si sa définition dépend du fait d'être le plus grand."
+                },
+                {
+                  "id": "b",
+                  "label": "Vérifier le périmètre consiste à additionner les quatre côtés.",
+                  "reviewFeedback": "Reconstitue le périmètre en parcourant les quatre côtés avec leurs unités."
+                },
+                {
+                  "id": "c",
+                  "label": "Le domaine impose une largeur positive, en plus de l'égalité.",
+                  "reviewFeedback": "Distingue vérifier une égalité de représenter une longueur autorisée par le domaine."
+                },
+                {
+                  "id": "d",
+                  "label": "Trente doit être comparé à la somme de deux côtés adjacents.",
+                  "reviewFeedback": "Relie la quantité de l'énoncé à la totalité du parcours définissant un périmètre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "w est défini comme la largeur ; la longueur est w + 5. Le périmètre additionne quatre côtés, et non deux. Le modèle doit conserver à la fois l'égalité des longueurs totales et le domaine positif de chaque côté.",
+            "incorrect": "Lis ce que désigne w avant d'interpréter le résultat. Reconstitue ensuite le périmètre à partir des quatre côtés et distingue cette vérification de la contrainte de positivité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une même inconnue coordonne deux positions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un essai sur une voie rectiligne, on fixe une origine commune pour mesurer les positions en mètres. Au départ, le repère A se trouve à trois mètres de l'origine et B à quinze. A avance de deux mètres par seconde et B d'un demi-mètre par seconde, tous deux vers les positions croissantes. Ces déplacements restent proportionnels même pendant des fractions de seconde : le déplacement est égal à la vitesse multipliée par le temps."
+        },
+        {
+          "type": "paragraph",
+          "text": "Appelons t le temps écoulé depuis ce départ commun, en secondes. L'essai observe les temps rationnels entre zéro et dix secondes, bornes incluses. Nous cherchons quand les positions coïncident, pas quand les repères ont parcouru la même distance depuis leur point de départ. Pour écrire une position finale, il faut additionner position initiale et déplacement."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_posiciones_y_encuentro",
+          "prompt": "Écris les positions de A et B en mètres en fonction de t. Construis ensuite une équation indiquant qu'elles coïncident. Les expressions et égalités équivalentes conservant la définition de t sont admises.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_posiciones_y_encuentro__a",
+              "type": "math_expression_input",
+              "label": "Position de A, en mètres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__b",
+              "type": "math_expression_input",
+              "label": "Position de B, en mètres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "15+t/2"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__encuentro",
+              "type": "math_expression_input",
+              "label": "Équation exigeant la même position",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t=15+t/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A est à 3 + 2t mètres et B à 15 + t/2 mètres. La condition 3 + 2t = 15 + t/2 compare des positions mesurées depuis la même origine au même instant. Égaler uniquement 2t et t/2 oublierait les différentes positions initiales.",
+            "incorrect": "Chaque expression doit contenir la position initiale et le déplacement. Un demi-mètre par seconde produit t/2 mètres pendant t secondes. L'égalité doit comparer les positions entières, et non seulement les déplacements séparés."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_comprobar_el_encuentro",
+          "prompt": "Résous la condition de rencontre par une méthode que tu peux justifier. Indique le temps t en secondes et la position de chaque repère à cet instant. Vérifie que le temps appartient à l'intervalle observé.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_comprobar_el_encuentro__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "tiempo",
+                  "type": "numeric",
+                  "label": "Temps t, en secondes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Position de A, en mètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Position de B, en mètres",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "tiempo": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Une méthode soustrait t/2, puis trois : (3/2)t = 12. Multiplier par 2/3 donne t = 8 s. A est en 3 + 2 × 8 = 19 m et B en 15 + 8/2 = 19 m. Huit appartient à l'intervalle de zéro à dix ; les étapes réversibles montrent qu'il n'y a pas d'autre instant rationnel de rencontre dans ce modèle.",
+            "incorrect": "La solution de l'équation mesure du temps, pas une position. Évalue ensuite les deux expressions initiales avec le même temps. Conserve les positions de départ et vérifie aussi l'intervalle autorisé."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le temps proposé rendait égaux les déplacements, mais pas les positions, il répondrait à une autre question. La substitution doit revenir aux quantités initiales et à toutes les conditions, pas seulement à une ligne abrégée du calcul. Vérifier le résultat et le raisonnement répond à deux objectifs différents (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La condition supplémentaire détermine aussi la validité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un récipient A contient vingt-quatre litres d'eau et un récipient B en contient six. B peut contenir trente litres au maximum. Nous transférons x litres de A vers B sans pertes ni ajout d'eau extérieure. x est un rationnel compris entre zéro et vingt-quatre litres : nous ne pouvons pas retirer plus d'eau que le contenu de A, et B peut recevoir cette quantité entière. Nous voulons qu'à la fin A contienne deux fois plus d'eau que B."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le même transfert diminue une quantité et augmente l'autre. Choisir une inconnue au sens stable permet de relier les parties du problème avant de transformer l'équation. Ensuite, vérifie les quantités physiques, leurs unités et les restrictions initiales (Lang, 1971, pp. 47–48)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_dos_volumenes_relacionados",
+          "prompt": "Écris les volumes finaux de A et B en litres. Construis ensuite l'égalité exprimant que A contient deux fois le volume de B. Conserve x comme quantité transférée de A vers B, en litres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_dos_volumenes_relacionados__a",
+              "type": "math_expression_input",
+              "label": "Volume final de A, en litres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__b",
+              "type": "math_expression_input",
+              "label": "Volume final de B, en litres",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "6+x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__condicion",
+              "type": "math_expression_input",
+              "label": "Équation de la relation finale",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x=2(6+x)"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les volumes finaux sont 24 − x et 6 + x litres. Le double du volume de B est 2(6 + x) ; une condition correcte est donc 24 − x = 2(6 + x). Le facteur deux multiplie tout le volume final de B, y compris ses six litres initiaux.",
+            "incorrect": "Le même x quitte A et entre dans B. N'utilise pas deux valeurs distinctes et ne double pas seulement l'eau transférée : la condition compare les volumes finaux entiers."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_la_transferencia",
+          "prompt": "Résous la condition et écris le nombre de litres transférés et les volumes finaux. Vérifie le double demandé et la capacité disponible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_la_transferencia__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "transferencia",
+                  "type": "numeric",
+                  "label": "Litres transférés x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Litres finaux dans A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Litres finaux dans B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "transferencia": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En distribuant, on obtient 24 − x = 12 + 2x ; ajouter x et soustraire douze donne 12 = 3x, donc x = 4. A conserve vingt litres et B en contient dix : vingt est le double de dix et le total reste trente. Quatre appartient au domaine et dix ne dépasse pas la capacité de B.",
+            "incorrect": "Résous avec la même inconnue des deux côtés et recalcule les deux volumes. Ils doivent conserver le total initial et vérifier la relation, sans quantité négative ni dépassement de capacité."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "anadir_un_limite_a_la_transferencia",
+          "prompt": "On ajoute une condition au même problème : on ne peut transférer que trois litres au maximum pendant l'opération. Quelle conclusion respecte maintenant toutes les conditions ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "anadir_un_limite_a_la_transferencia__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Transférer trois litres satisfait encore la relation demandée.",
+                  "reviewFeedback": "Vérifie ce transfert dans la relation initiale et par rapport à la nouvelle limite."
+                },
+                {
+                  "id": "b",
+                  "label": "Transférer quatre litres est valable parce que l'égalité est vérifiée.",
+                  "reviewFeedback": "Une égalité et une limite sont des conditions simultanées ; compare la proposition à chacune."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucun transfert admis ne satisfait les deux conditions.",
+                  "reviewFeedback": "Pour justifier l'impossibilité, compare l'ensemble des solutions de l'égalité à la nouvelle limite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'égalité a l'unique solution x = 4, mais la limite supplémentaire impose x ≤ 3. Il n'existe donc aucune solution dans le nouveau domaine du problème. Transférer trois litres laisse vingt et un litres dans A et neuf dans B ; vingt et un n'est pas le double de neuf. L'équation possède toujours une solution rationnelle, mais le problème entier ne permet pas ce transfert.",
+            "incorrect": "Ne remplace pas un objectif exact par une valeur proche. Compare la solution algébrique à la nouvelle limite et détermine si une autre proposition pourrait vérifier la même égalité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une solution rationnelle peut ne pas représenter un dénombrement entier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un motif est formé de douze groupes complets de points. Chaque petit groupe contient trois points et chaque grand groupe cinq. Les groupes ne sont pas divisés ni recombinés à partir de morceaux d'autres groupes. Appelons n le nombre de grands groupes : un entier de zéro à douze, bornes incluses. Nous voulons obtenir exactement cinquante points."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le nombre total de groupes est connu. Si n d'entre eux sont grands, les autres sont petits. Cette relation permet de décrire les deux parties avec une seule inconnue. Nous n'avons pas créé de deuxième inconnue indépendante ; le total fixe le rapport entre les parties (Lang, 1971, p. 47)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "componer_dos_tipos_de_grupo",
+          "prompt": "Écris le nombre de petits groupes restants en fonction de n, une expression du nombre total de points et une équation exigeant cinquante points. Conserve n comme nombre de grands groupes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componer_dos_tipos_de_grupo__pequenos",
+              "type": "math_expression_input",
+              "label": "Nombre de petits groupes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-n"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__total",
+              "type": "math_expression_input",
+              "label": "Total des points du motif",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__objetivo",
+              "type": "math_expression_input",
+              "label": "Équation pour cinquante points",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)=50"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Il reste 12 − n petits groupes. Les grands contribuent 5n points et les petits 3(12 − n) ; le total est 5n + 3(12 − n). L'égaler à cinquante exprime l'objectif. La lettre n compte les grands groupes, pas les grands points.",
+            "incorrect": "Retrouve la définition de n et le total de douze groupes. Le nombre de points de chaque type multiplie le nombre de groupes correspondants. Additionner les deux contributions conserve les unités : elles comptent toutes deux des points."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_reconstruir_el_patron",
+          "prompt": "Résous le modèle et écris n. Calcule ensuite combien de points apportent les grands groupes et combien les petits. Vérifie que le nombre de groupes correspond à des entiers admis et que leurs contributions totalisent cinquante.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_reconstruir_el_patron__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Nombre n de grands groupes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_grandes",
+                  "type": "numeric",
+                  "label": "Points apportés par les grands groupes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_pequenos",
+                  "type": "numeric",
+                  "label": "Points apportés par les petits groupes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "puntos_grandes": {
+                    "type": "numeric",
+                    "expected": "35"
+                  },
+                  "puntos_pequenos": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En distribuant, on obtient 5n + 36 − 3n = 50, soit 2n + 36 = 50 ; soustraire trente-six et diviser par deux donne n = 7. Il reste cinq petits groupes. Les contributions sont 5 × 7 = 35 et 3 × 5 = 15 points : cinquante au total. Les deux nombres de groupes sont des entiers positifs ou nuls et leur somme est douze.",
+            "incorrect": "Ne confonds pas le nombre de groupes et leur contribution en points. Après avoir résolu n, calcule aussi le nombre de petits groupes comme douze moins n et vérifie les deux totaux différents."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambiar_el_objetivo_conservando_el_dominio",
+          "prompt": "Le même motif de douze groupes complets est conservé, mais l'objectif passe à quarante-neuf points. Résous la nouvelle égalité dans les rationnels et détermine si cette solution permet de construire le motif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racional",
+                  "type": "numeric",
+                  "label": "Solution rationnelle n pour le nouvel objectif",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racional": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oui : toute solution rationnelle permet de compter des groupes complets.",
+                  "reviewFeedback": "Interprète la signification d'une valeur rationnelle de l'inconnue face à l'exigence de groupes complets."
+                },
+                {
+                  "id": "b",
+                  "label": "Non : la valeur obtenue ne compte pas un nombre entier de groupes.",
+                  "reviewFeedback": "Examine le domaine du modèle en plus de l'égalité numérique que tu as résolue."
+                },
+                {
+                  "id": "c",
+                  "label": "Oui : arrondir à l'entier le plus proche conserve les quarante-neuf points.",
+                  "reviewFeedback": "Substitue le nombre arrondi dans la règle ; distingue l'approximation d'un nombre du maintien du total exact."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le total se réduit à 36 + 2n. Pour quarante-neuf points, 2n = 13 et n = 13/2. Cette valeur n'appartient pas au domaine des entiers ; le motif demandé est donc impossible sous ces conditions. Arrondir à six donne quarante-huit points et à sept donne cinquante. Tu peux aussi utiliser la parité : trente-six plus le double d'un entier est toujours pair.",
+            "incorrect": "Résous d'abord l'égalité sans arrondir, puis interprète n comme un nombre de groupes complets. L'objectif exact et le domaine doivent être respectés simultanément."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux relevés peuvent répéter la même information"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une séance comporte des périodes de même durée p secondes, où p est un rationnel positif. Deux relevés décrivent la durée totale à l'aide de regroupements différents ; aucun ne fournit encore une mesure du total. Deux écritures distinctes ne garantissent pas deux conditions indépendantes permettant de déterminer p."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registros_que_no_fijan_la_duracion",
+          "prompt": "Lis les deux relevés. Écris leurs durées totales en fonction de p, une égalité les comparant et la conclusion correspondant à cette comparaison.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Relevé",
+                "Description de la durée totale"
+              ],
+              "rows": [
+                [
+                  "A",
+                  "Trois périodes de p secondes plus six secondes."
+                ],
+                [
+                  "B",
+                  "Deux groupes de p + 3 secondes et une autre période de p secondes."
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registros_que_no_fijan_la_duracion__a",
+              "type": "math_expression_input",
+              "label": "Durée totale selon le relevé A, en secondes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__b",
+              "type": "math_expression_input",
+              "label": "Durée totale selon le relevé B, en secondes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__comparacion",
+              "type": "math_expression_input",
+              "label": "Égalité entre les durées décrites",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Un p unique est déterminé parce qu'il y a trois périodes.",
+                  "reviewFeedback": "Regroupe les termes de chaque durée ; compter les périodes ne permet pas de déterminer leur durée."
+                },
+                {
+                  "id": "b",
+                  "label": "Tout p du domaine vérifie la comparaison, sans être déterminé.",
+                  "reviewFeedback": "Examine quelle restriction reste sur l'inconnue après avoir simplifié la comparaison."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucun p ne convient parce que les relevés utilisent des regroupements différents.",
+                  "reviewFeedback": "Distingue des regroupements écrits différemment de leurs durées totales une fois calculées."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A décrit 3p + 6 secondes et B décrit 2(p + 3) + p, qui vaut aussi 3p + 6. Leur comparaison est une identité pour chaque p autorisé. Les relevés sont compatibles, mais ne précisent pas la durée de chaque période. Par exemple, p = 1 et p = 2 produisent des séances différentes satisfaisant toutes deux la comparaison.",
+            "incorrect": "Distribue et regroupe avant de déterminer ce qu'impose l'égalité. Deux descriptions d'une même quantité peuvent être compatibles sans sélectionner une durée particulière."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, l'insuffisance des données est démontrée par la relation entière : tous les p positifs la vérifient. On ne résout pas cela en choisissant un nombre pratique ou en supposant que le nombre de périodes détermine leur durée. Une condition supplémentaire doit apporter une information absente des deux écritures."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_dato_que_si_determina_el_periodo",
+          "prompt": "Une mesure exacte est ajoutée : toute la séance dure dix-huit secondes. Construis la condition qui utilise cette nouvelle donnée et résous-la. Écris p et la durée de chaque groupe de p + 3 secondes du relevé B.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_dato_que_si_determina_el_periodo__condicion",
+              "type": "math_expression_input",
+              "label": "Équation utilisant la durée totale mesurée",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=18"
+              }
+            },
+            {
+              "id": "un_dato_que_si_determina_el_periodo__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "periodo",
+                  "type": "numeric",
+                  "label": "Durée p, en secondes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grupo",
+                  "type": "numeric",
+                  "label": "Durée de chaque groupe de p + 3 secondes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "periodo": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "grupo": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La nouvelle condition est 3p + 6 = 18, ou une égalité équivalente. Soustraire six et diviser par trois donne p = 4 s. Chaque groupe p + 3 dure sept secondes ; B totalise 7 + 7 + 4 = 18 s. Le relevé A donne 3 × 4 + 6 = 18 s. La mesure détermine une durée positive unique.",
+            "incorrect": "La mesure concerne toute la séance, pas une période isolée. Égaler directement p à dix-huit changerait ce qui a été mesuré. Utilise l'expression totale que tu as déjà interprétée."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une incohérence ne se résout pas en inventant une inconnue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux rapports prétendent maintenant décrire la durée totale exacte d'un même essai. Dans les deux, chacune des trois périodes dure p secondes, avec p rationnel positif. Le rapport A indique six secondes en dehors de ces périodes. Le rapport B ajoute deux secondes à chaque période et une seconde à la fin. Nous ne savons pas lequel décrit fidèlement l'essai réel."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_reportes_incompatibles",
+          "prompt": "Écris les durées de A et B en fonction de p et l'égalité nécessaire pour que les rapports coïncident. Calcule aussi la différence « durée de B moins durée de A », en secondes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_reportes_incompatibles__a",
+              "type": "math_expression_input",
+              "label": "Durée totale selon A, en secondes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__b",
+              "type": "math_expression_input",
+              "label": "Durée totale selon B, en secondes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__coincidencia",
+              "type": "math_expression_input",
+              "label": "Équation exigeant l'accord des rapports",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Durée de B moins durée de A, en secondes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B décrit 3(p + 2) + 1 = 3p + 7 secondes ; A décrit 3p + 6. Leur différence vaut un pour chaque p. Exiger l'égalité réduit la condition à 6 = 7, ce qui est faux. Aucun p ne peut donc rendre les rapports compatibles dans les conditions indiquées.",
+            "incorrect": "Dans B, les deux secondes sont ajoutées à chacun des trois groupes et la seconde finale n'est ajoutée qu'une fois. Regroupe les constantes puis soustrais les durées entières pour comparer ce que décrivent réellement les rapports."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette situation diffère des relevés précédents : auparavant, toutes les durées permises convenaient et il manquait une donnée pour en sélectionner une. Ici, aucune durée permise ne vérifie la comparaison. Mesurer p ne peut pas transformer six en sept ; il faut revoir les données ou la portée des descriptions, sans supprimer arbitrairement une condition."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_permita_inferir_la_incompatibilidad",
+          "prompt": "Sélectionne toutes les conclusions justifiées par la comparaison de ces deux rapports.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_permita_inferir_la_incompatibilidad__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Mesurer p rendra les deux relevés compatibles sans les corriger.",
+                  "reviewFeedback": "Vérifie si modifier l'inconnue change la différence entre les durées décrites."
+                },
+                {
+                  "id": "b",
+                  "label": "Le rapport A est exact parce que son écriture est plus courte.",
+                  "reviewFeedback": "La longueur d'une écriture ne prouve pas sa fidélité ; cherche quelles observations justifieraient ton affirmation."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucun p du domaine ne rend égales les durées décrites.",
+                  "reviewFeedback": "Réduis la comparaison et confronte sa condition finale au domaine avant de conclure à l'impossibilité."
+                },
+                {
+                  "id": "d",
+                  "label": "L'incompatibilité ne permet pas à elle seule de savoir quel rapport est fidèle.",
+                  "reviewFeedback": "Distingue démontrer le désaccord entre rapports et disposer d'éléments montrant lequel décrit le fait réel."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La différence constante d'une seconde empêche l'accord pour tout p. Cela montre que les deux rapports ne peuvent pas être des descriptions exactes de la même durée, sans révéler lequel est fidèle. La longueur d'une formule ne valide pas ses données.",
+            "incorrect": "Distingue ce que démontre l'égalité des informations nécessitant une observation supplémentaire. Choisir une valeur de p ne corrige pas une différence indépendante de p et ne permet pas de sélectionner un rapport selon son apparence."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour repérer le problème, reviens aux parties décrites : ce qu'inclut chaque relevé, l'unité utilisée et la quantité qu'il prétend mesurer. Réexaminer le sens et les points faibles du raisonnement est plus utile que répéter le même calcul sans critique (Pólya, 1957, pp. 60–61, 173–177)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer la méthode à une autre quantité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux panneaux rectangulaires sont placés sans chevauchement. Le panneau A a une hauteur de trois centimètres et une largeur inconnue x centimètres. Le panneau B a une hauteur de deux centimètres et mesure quatre centimètres de plus en largeur que A. L'espace réservé à A autorise une largeur maximale de douze centimètres. x est rationnel positif et inférieur ou égal à douze."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous utilisons ici la règle donnée pour un rectangle : son aire est le produit de la base et de la hauteur. Si les longueurs sont exprimées en centimètres, les aires sont en centimètres carrés. Les hauteurs sont connues ; seules les largeurs dépendent de x, et nous ne multiplions donc pas deux inconnues. Nous voulons que les deux panneaux aient ensemble exactement soixante centimètres carrés d'aire."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_areas_con_alturas_conocidas",
+          "prompt": "Écris l'aire de chaque panneau en centimètres carrés en fonction de x. Construis ensuite une équation pour l'aire totale exigée. Conserve x comme largeur de A en centimètres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_areas_con_alturas_conocidas__a",
+              "type": "math_expression_input",
+              "label": "Aire de A, en centimètres carrés",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__b",
+              "type": "math_expression_input",
+              "label": "Aire de B, en centimètres carrés",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(x+4)"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__total",
+              "type": "math_expression_input",
+              "label": "Équation pour soixante centimètres carrés",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x+2(x+4)=60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "L'aire de A vaut 3x cm². La largeur de B est x + 4 ; son aire vaut donc 2(x + 4) cm². Sans chevauchement, le total est la somme des deux aires : 3x + 2(x + 4) = 60. Le nombre quatre décrit une différence de largeur ; il ne s'ajoute pas directement comme une aire.",
+            "incorrect": "Conserve la définition de x et les unités. Détermine d'abord la largeur de B, puis multiplie-la par sa hauteur connue et additionne les aires de même nature. Ne confonds pas des centimètres de différence avec des centimètres carrés de surface."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_revisar_areas_originales",
+          "prompt": "Résous le modèle par ta propre méthode. Écris la largeur x et l'aire de chaque panneau. Vérifie l'aire totale et la restriction de l'espace réservé à A.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_revisar_areas_originales__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ancho",
+                  "type": "numeric",
+                  "label": "Largeur x du panneau A, en centimètres",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Aire de A, en centimètres carrés",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Aire de B, en centimètres carrés",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ancho": {
+                    "type": "numeric",
+                    "expected": "52/5"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "156/5"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "144/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributivité donne 3x + 2x + 8 = 60, soit 5x + 8 = 60 ; soustraire huit et diviser par cinq donne x = 52/5 cm. L'aire de A vaut 3 × 52/5 = 156/5 cm². B a une largeur de 72/5 cm et son aire vaut 2 × 72/5 = 144/5 cm². Les aires totalisent 300/5 = 60 cm². La largeur de A est positive et inférieure à douze : 52/5 < 60/5.",
+            "incorrect": "Vérifie chaque aire à partir des dimensions initiales. La solution de l'équation est une largeur : multiplie-la par la hauteur correspondante pour obtenir une aire. Respecte aussi la limite de douze centimètres."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un modèle complet relie les données, le sens et le calcul. Une égalité peut déterminer une solution, admettre toutes celles du domaine ou être incohérente ; le contexte peut aussi exclure un résultat algébrique. Choisis une méthode que tu peux justifier, vérifie les quantités initiales et revois chaque condition supplémentaire avant d'accepter une réponse."
+        }
+      ]
+    }
+  ]
+}

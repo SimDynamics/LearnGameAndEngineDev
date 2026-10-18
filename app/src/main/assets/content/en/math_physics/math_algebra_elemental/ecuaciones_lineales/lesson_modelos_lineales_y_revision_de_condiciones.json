@@ -1,0 +1,940 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__modelos_lineales_y_revision_de_condiciones",
+  "title": "Linear Models and Checking Conditions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Equation Must Preserve the Problem's Question"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can already solve linear equations and distinguish a unique solution, no solutions, or every solution in a domain. Now you will integrate these tools with setting up the problem: what is sought, what is known, what values are permitted, and which quantities must be compared. The situations will use rational numbers, nonzero constant denominators, and products of an unknown with known quantities."
+        },
+        {
+          "type": "paragraph",
+          "text": "An isolated word does not determine the operation. First understand the complete relationship, define the unknown and its unit, and separate the conditions to satisfy. Then write expressions describing the quantities and an equality representing the goal. Reading the parts must preserve the problem's overall meaning (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, a rectangular frame has width w centimeters and length five centimeters greater. Its perimeter, the sum of all four sides, must be thirty centimeters. Both short sides measure w, and the two long sides measure w + 5. Thus 2w + 2(w + 5) = 30 compares the calculated perimeter with the required one. The domain is positive rational w: width cannot be zero or negative."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distributing and combining terms gives 4w + 10 = 30; subtracting ten and dividing by four gives w = 5. The length is ten. In the original quantities, 5 + 10 + 5 + 10 = 30 cm, and both kinds of sides are positive. Equivalent equations show that no other solutions were left out; checking the frame confirms that the result answers the question (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_el_alcance_de_un_resultado",
+          "prompt": "For the frame example, select all correct statements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_el_alcance_de_un_resultado__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Solution w measures the length because it is the longer side.",
+                  "reviewFeedback": "Identify which side the letter represents and consider whether its definition depends on being the longer one."
+                },
+                {
+                  "id": "b",
+                  "label": "Checking the perimeter means adding all four sides.",
+                  "reviewFeedback": "Reconstruct the perimeter by going around all four sides, retaining the units."
+                },
+                {
+                  "id": "c",
+                  "label": "The domain requires a positive width in addition to satisfying the equality.",
+                  "reviewFeedback": "Distinguish satisfying an equation from representing a length allowed by its domain."
+                },
+                {
+                  "id": "d",
+                  "label": "Thirty is compared with the sum of two adjacent sides.",
+                  "reviewFeedback": "Connect the quantity in the problem to the complete path that defines a perimeter."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "w was defined as the width; the length is w + 5. Perimeter adds all four sides, not just two. The model must preserve both the equality of total lengths and the positive domain for each side.",
+            "incorrect": "Read what w represents before interpreting the result. Then reconstruct the perimeter from all four sides and distinguish that check from the positivity restriction."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One Unknown Coordinates Two Positions"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a test on a straight track, a common origin is established to measure positions in meters. At the start, marker A is three meters from the origin and B is fifteen. A advances two meters per second and B advances half a meter per second, both toward increasing positions. These movements remain proportional even over fractions of a second: distance traveled equals speed multiplied by time."
+        },
+        {
+          "type": "paragraph",
+          "text": "Let t be the time elapsed since that same starting instant, in seconds. The test observes rational times from zero to ten seconds, including the endpoints. We seek when the positions coincide, not when both markers have traveled the same distance from their starting points. To write a final position, add the starting position and the movement."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_posiciones_y_encuentro",
+          "prompt": "Write the positions of A and B in meters as functions of t. Then construct an equation for their positions to coincide. Equivalent expressions and equalities preserving the definition of t are accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_posiciones_y_encuentro__a",
+              "type": "math_expression_input",
+              "label": "Position of A, in meters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__b",
+              "type": "math_expression_input",
+              "label": "Position of B, in meters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "15+t/2"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__encuentro",
+              "type": "math_expression_input",
+              "label": "Equation requiring the same position",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t=15+t/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A is at 3 + 2t meters and B at 15 + t/2 meters. The condition 3 + 2t = 15 + t/2 compares positions measured from the same origin at the same instant. Equating only 2t and t/2 would forget that they started at different positions.",
+            "incorrect": "Each expression needs the starting position and the movement. Half a meter per second gives t/2 meters over t seconds. The equality must compare complete positions, not just the separate movements."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_comprobar_el_encuentro",
+          "prompt": "Solve the meeting condition using a route you can justify. Give time t in seconds and each marker's position at that instant. Check that time lies in the observed interval.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_comprobar_el_encuentro__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "tiempo",
+                  "type": "numeric",
+                  "label": "Time t, in seconds",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Position of A, in meters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Position of B, in meters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "tiempo": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One route subtracts t/2 and then three: (3/2)t = 12. Multiplying by 2/3 gives t = 8 s. A is at 3 + 2 × 8 = 19 m, and B at 15 + 8/2 = 19 m. Eight lies between zero and ten; reversible steps show there is no other rational meeting time in this model.",
+            "incorrect": "The equation's result measures time, not position. Evaluate both original expressions at that same time, keeping the starting positions and checking the permitted interval too."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "If a proposed time made their movements equal but not their positions, it would answer a different question. Substitute into the original quantities and all the conditions, not just a shortened calculation. Checking the result and checking the reasoning serve different purposes (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Additional Condition Also Determines Validity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Container A holds twenty-four liters of water and container B holds six. B has capacity for thirty liters. We transfer x liters from A to B without losses or adding external water. x is rational from zero to twenty-four liters: we cannot remove more water than A has, and B can receive that entire amount. We want A to contain twice as much water as B after the transfer."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same transfer decreases one quantity and increases the other. Choosing an unknown with a stable meaning helps relate parts of the problem before transforming an equation. Afterwards, check the physical quantities, units, and original restrictions (Lang, 1971, pp. 47–48)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_dos_volumenes_relacionados",
+          "prompt": "Write the final volumes of A and B in liters. Then construct the equality stating that A contains twice as much as B. Keep x as liters transferred from A to B.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_dos_volumenes_relacionados__a",
+              "type": "math_expression_input",
+              "label": "Final volume of A, in liters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__b",
+              "type": "math_expression_input",
+              "label": "Final volume of B, in liters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "6+x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__condicion",
+              "type": "math_expression_input",
+              "label": "Equation for the final relationship",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x=2(6+x)"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The final volumes are 24 − x and 6 + x liters. Twice the volume of B is 2(6 + x), so a correct condition is 24 − x = 2(6 + x). The factor two multiplies B's entire final volume, including its initial six liters.",
+            "incorrect": "The same x leaves A and enters B. Do not use two different values or double only the transferred water: the condition compares the complete final volumes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_la_transferencia",
+          "prompt": "Solve the condition and give the transferred liters and final volumes. Check the required doubling and the available capacity.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_la_transferencia__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "transferencia",
+                  "type": "numeric",
+                  "label": "Transferred liters x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Final liters in A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Final liters in B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "transferencia": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing gives 24 − x = 12 + 2x; adding x and subtracting twelve yields 12 = 3x and x = 4. A has twenty liters left and B has ten: twenty is twice ten, and the total remains thirty. Four is in the domain, and ten does not exceed B's capacity.",
+            "incorrect": "Solve using the same unknown on both sides and recalculate both volumes. They must preserve the original total and satisfy the relationship, without negative quantities or exceeding capacity."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "anadir_un_limite_a_la_transferencia",
+          "prompt": "An extra condition is added to the same problem: no more than three liters may be transferred during the operation. What conclusion respects all the conditions now?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "anadir_un_limite_a_la_transferencia__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Transferring three liters still satisfies the required relationship.",
+                  "reviewFeedback": "Check this transfer against the original relationship as well as the newly added limit."
+                },
+                {
+                  "id": "b",
+                  "label": "Transferring four liters is valid because it satisfies the equality.",
+                  "reviewFeedback": "Equality and a limit are simultaneous conditions; compare the proposal with each."
+                },
+                {
+                  "id": "c",
+                  "label": "No permitted transfer satisfies both conditions.",
+                  "reviewFeedback": "To justify impossibility, compare the equation's solution set with the permitted limit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The equality has the unique solution x = 4, but the additional limit requires x ≤ 3. Therefore, there is no solution in the new contextual domain. Transferring three liters leaves twenty-one in A and nine in B; twenty-one is not twice nine. The equation still has a rational solution, even though the complete problem does not allow that transfer.",
+            "incorrect": "Do not replace an exact goal with a nearby value. Compare the algebraic solution with the new limit and consider whether any other candidate can satisfy the same equality."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Rational Solution May Fail an Integer Count"
+        },
+        {
+          "type": "paragraph",
+          "text": "A pattern consists of twelve complete groups of dots. Each small group has three dots and each large group has five. Groups are not split or recombined from pieces of other groups. Let n be the number of large groups: an integer from zero to twelve, including endpoints. The goal is exactly fifty dots."
+        },
+        {
+          "type": "paragraph",
+          "text": "The total number of groups is known. If n are large, the rest are small. This relationship describes both kinds using a single unknown. We have not introduced an independent second unknown; the known total determines how the parts relate (Lang, 1971, p. 47)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "componer_dos_tipos_de_grupo",
+          "prompt": "Write how many small groups remain in terms of n, an expression for the total dots, and an equation requiring fifty dots. Keep n as the number of large groups.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componer_dos_tipos_de_grupo__pequenos",
+              "type": "math_expression_input",
+              "label": "Number of small groups",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-n"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__total",
+              "type": "math_expression_input",
+              "label": "Total dots in the pattern",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__objetivo",
+              "type": "math_expression_input",
+              "label": "Equation for fifty dots",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)=50"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "There are 12 − n small groups. The large groups contribute 5n dots and the small ones 3(12 − n); the total is 5n + 3(12 − n). Setting it equal to fifty expresses the goal. The letter n counts large groups, not large dots.",
+            "incorrect": "Recall what n means and the total of twelve groups. The dots per group of each type multiply its number of groups. Adding both contributions preserves their units: both count dots."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_reconstruir_el_patron",
+          "prompt": "Solve the model and give n. Then calculate how many dots the large groups and small groups contribute. Check that the group counts are allowed integers and that their contributions add to fifty.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_reconstruir_el_patron__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Number n of large groups",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_grandes",
+                  "type": "numeric",
+                  "label": "Dots contributed by large groups",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_pequenos",
+                  "type": "numeric",
+                  "label": "Dots contributed by small groups",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "puntos_grandes": {
+                    "type": "numeric",
+                    "expected": "35"
+                  },
+                  "puntos_pequenos": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing gives 5n + 36 − 3n = 50, or 2n + 36 = 50; subtracting thirty-six and dividing by two yields n = 7. Five small groups remain. The contributions are 5 × 7 = 35 and 3 × 5 = 15 dots: fifty in total. Both group counts are nonnegative integers and add up to twelve.",
+            "incorrect": "Do not confuse the number of groups with the dots they contribute. After solving n, also calculate the number of small groups as twelve minus n and check both different totals."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambiar_el_objetivo_conservando_el_dominio",
+          "prompt": "The same pattern of twelve complete groups is retained, but the new goal is forty-nine dots. Solve the new equation over the rationals and decide whether the solution allows the pattern to be built.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racional",
+                  "type": "numeric",
+                  "label": "Rational solution n for the new goal",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racional": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Yes: any rational solution counts complete groups.",
+                  "reviewFeedback": "Interpret what a rational value of the unknown means when complete groups are required."
+                },
+                {
+                  "id": "b",
+                  "label": "No: the resulting value does not count a whole number of groups.",
+                  "reviewFeedback": "Consider the domain of the model as well as the numerical equality you solved."
+                },
+                {
+                  "id": "c",
+                  "label": "Yes: rounding to the nearest integer preserves the forty-nine dots.",
+                  "reviewFeedback": "Substitute the rounded amount into the rule; distinguish approximating a number from preserving the exact total."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total simplifies to 36 + 2n. For forty-nine dots, 2n = 13 and n = 13/2. This value is outside the integer domain, so the required pattern cannot be built under these conditions. Rounding down to six gives forty-eight dots; rounding up to seven gives fifty. You can also use parity: thirty-six plus twice an integer is always even.",
+            "incorrect": "First solve the equation without rounding, then interpret n as a count of complete groups. Both the exact goal and the domain must be satisfied."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Records May Repeat the Same Information"
+        },
+        {
+          "type": "paragraph",
+          "text": "A session is designed with periods of the same duration p seconds, where p is a positive rational number. Two records describe the total duration using different groupings; neither provides a measurement of the total yet. Two different expressions do not guarantee two independent conditions determining p."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registros_que_no_fijan_la_duracion",
+          "prompt": "Read both records. Write their total durations in terms of p, an equality comparing them, and the correct conclusion from that comparison.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Record",
+                "Description of Total Duration"
+              ],
+              "rows": [
+                [
+                  "A",
+                  "Three periods of p seconds plus six seconds."
+                ],
+                [
+                  "B",
+                  "Two groups of p + 3 seconds and another period of p seconds."
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registros_que_no_fijan_la_duracion__a",
+              "type": "math_expression_input",
+              "label": "Total duration according to record A, in seconds",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__b",
+              "type": "math_expression_input",
+              "label": "Total duration according to record B, in seconds",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__comparacion",
+              "type": "math_expression_input",
+              "label": "Equality between the described durations",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A unique p is determined because there are three periods.",
+                  "reviewFeedback": "Combine the duration terms; counting periods alone does not determine a unique duration."
+                },
+                {
+                  "id": "b",
+                  "label": "Every p in the domain satisfies the comparison, without being determined.",
+                  "reviewFeedback": "Check what restriction remains on the unknown after simplifying the comparison."
+                },
+                {
+                  "id": "c",
+                  "label": "No p works because the records use different groups.",
+                  "reviewFeedback": "Distinguish different written groupings from their total durations once calculated."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A describes 3p + 6 seconds and B describes 2(p + 3) + p, which also equals 3p + 6. Their comparison is an identity for every allowed p. The records are compatible but do not say how long each period is. For example, p = 1 and p = 2 produce different sessions that both satisfy the comparison.",
+            "incorrect": "Distribute and combine terms before deciding what equality requires. Two descriptions of the same quantity may agree without specifying one particular duration."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, the lack of information is proved by the whole relationship: every positive p satisfies it. It cannot be fixed by choosing a convenient number or assuming the number of periods determines their duration. An additional condition must supply information not already present in the two expressions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_dato_que_si_determina_el_periodo",
+          "prompt": "An exact measurement is added: the entire session lasts eighteen seconds. Construct the condition using this new datum and solve it. Give p and the duration of each group of p + 3 seconds in record B.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_dato_que_si_determina_el_periodo__condicion",
+              "type": "math_expression_input",
+              "label": "Equation using the measured total duration",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=18"
+              }
+            },
+            {
+              "id": "un_dato_que_si_determina_el_periodo__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "periodo",
+                  "type": "numeric",
+                  "label": "Duration p, in seconds",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grupo",
+                  "type": "numeric",
+                  "label": "Duration of each p + 3 second group",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "periodo": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "grupo": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The new condition is 3p + 6 = 18, or an equivalent equality. Subtracting six and dividing by three gives p = 4 s. Each group of p + 3 lasts seven seconds; B totals 7 + 7 + 4 = 18 s. Record A gives 3 × 4 + 6 = 18 s. The measured value selects exactly one positive duration.",
+            "incorrect": "The measurement concerns the whole session, not a single period. Setting p directly equal to eighteen would change what was observed. Use a total expression you have already interpreted."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Inconsistency Cannot Be Solved by Inventing an Unknown"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now two reports claim to describe the exact total duration of the same test. In both, each of three periods lasts p seconds, where p is a positive rational number. Report A describes six seconds outside those periods. Report B groups two seconds with each period and adds one second at the end. We do not know which report accurately reflects the real test."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_reportes_incompatibles",
+          "prompt": "Write the durations of A and B in terms of p and the equality required for both reports to agree. Also calculate \"duration of B minus duration of A\" in seconds.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_reportes_incompatibles__a",
+              "type": "math_expression_input",
+              "label": "Total duration according to A, in seconds",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__b",
+              "type": "math_expression_input",
+              "label": "Total duration according to B, in seconds",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__coincidencia",
+              "type": "math_expression_input",
+              "label": "Equation requiring the reports to agree",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Duration of B minus duration of A, in seconds",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B describes 3(p + 2) + 1 = 3p + 7 seconds; A describes 3p + 6. Their difference is one for every p. Requiring equality reduces the condition to 6 = 7, which is false. Thus no p can make these reports agree under the stated conditions.",
+            "incorrect": "In B, two seconds are added inside each of the three groups, while the final second is added only once. Combine those constants and subtract the full durations to compare what the records really describe."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "This differs from the preceding records: there, all allowed durations worked and an additional datum was needed to select one. Here, no allowed duration satisfies the comparison. Measuring p cannot turn six into seven; the information or scope of the descriptions must be reviewed rather than arbitrarily removing a condition."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_permita_inferir_la_incompatibilidad",
+          "prompt": "Select all conclusions justified by comparing these two reports.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_permita_inferir_la_incompatibilidad__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Measuring p will make the two records compatible without correcting them.",
+                  "reviewFeedback": "Check whether changing the unknown alters the difference between the described durations."
+                },
+                {
+                  "id": "b",
+                  "label": "Report A must be true because its notation is shorter.",
+                  "reviewFeedback": "An expression's length is no evidence of accuracy; look for evidence that would justify the selected claim."
+                },
+                {
+                  "id": "c",
+                  "label": "No p in the domain makes the described durations agree.",
+                  "reviewFeedback": "Simplify the comparison and check its final condition against the domain before claiming impossibility."
+                },
+                {
+                  "id": "d",
+                  "label": "The incompatibility alone does not reveal which report is accurate.",
+                  "reviewFeedback": "Distinguish proving disagreement from having evidence about which report describes the actual event."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The constant difference of one second prevents agreement for every p. This proves that the two reports cannot both be exact descriptions of the same duration, but does not reveal which is accurate. Formula length does not validate its data.",
+            "incorrect": "Distinguish what equality proves from what needs an additional observation. Choosing a value of p cannot fix a difference independent of p, nor can we pick a report based on appearance."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "To locate the problem, review the described parts: what each record includes, which units it uses, and what it claims to measure. Checking meaning and weak points in the argument is more useful than repeating the same calculation uncritically (Pólya, 1957, pp. 60–61, 173–177)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Method to Another Quantity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two rectangular panels are placed without overlap. Panel A is three centimeters high and has an unknown width x centimeters. Panel B is two centimeters high and is four centimeters wider than A. The space reserved for A permits a width of at most twelve centimeters. x is positive rational and does not exceed twelve."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this problem we use the given rule for a rectangle: area equals base times height. If lengths are in centimeters, area is in square centimeters. The heights are known; only the widths depend on x, so we do not multiply two unknowns. We want the two panels to have a combined area of exactly sixty square centimeters."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_areas_con_alturas_conocidas",
+          "prompt": "Write the area of each panel in square centimeters as a function of x. Then construct an equation for the required total area. Keep x as A's width in centimeters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_areas_con_alturas_conocidas__a",
+              "type": "math_expression_input",
+              "label": "Area of A, in square centimeters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__b",
+              "type": "math_expression_input",
+              "label": "Area of B, in square centimeters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(x+4)"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__total",
+              "type": "math_expression_input",
+              "label": "Equation for sixty square centimeters",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x+2(x+4)=60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A has area 3x cm². B's width is x + 4, so its area is 2(x + 4) cm². With no overlap, the total is the sum of both areas: 3x + 2(x + 4) = 60. The four represents a difference in widths; it is not directly added as an area.",
+            "incorrect": "Preserve the meaning of x and the units. First find B's width, then multiply by its known height and add areas of the same kind. Do not confuse centimeters of width difference with square centimeters of area."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_revisar_areas_originales",
+          "prompt": "Solve the model using your own route. Give width x and each panel's area. Check the total surface and the width restriction of the space reserved for A.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_revisar_areas_originales__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ancho",
+                  "type": "numeric",
+                  "label": "Width x of panel A, in centimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Area of A, in square centimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Area of B, in square centimeters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ancho": {
+                    "type": "numeric",
+                    "expected": "52/5"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "156/5"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "144/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing gives 3x + 2x + 8 = 60, or 5x + 8 = 60; subtracting eight and dividing by five gives x = 52/5 cm. A has 3 × 52/5 = 156/5 cm². B's width is 72/5 cm, so its area is 2 × 72/5 = 144/5 cm². The areas add to 300/5 = 60 cm². A's width is positive and less than twelve: 52/5 < 60/5.",
+            "incorrect": "Check each area from the original dimensions. The equation's result is a width; multiply it by the relevant height to obtain an area. Also preserve the limit of twelve centimeters."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "A complete model connects data, meaning, and calculation. An equality may determine one solution, allow every value in the domain, or be inconsistent; the context may also exclude an algebraic result. Choose a plan you can justify, check the original quantities, and review every additional condition before accepting an answer."
+        }
+      ]
+    }
+  ]
+}

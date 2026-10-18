@@ -1,0 +1,1085 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__coeficiente_cero_ninguna_o_todas_las_soluciones",
+  "title": "Zero Coefficient: No Solutions or All Solutions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Simplification Can End Without a Visible Unknown"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far, you have solved equations whose final coefficient of the unknown was nonzero. Sometimes, combining terms makes that coefficient zero. The conclusion then depends on the remaining equality, not on trying to isolate a value at all costs. Unless a context restricts the domain, we continue to work with all rational numbers."
+        },
+        {
+          "type": "paragraph",
+          "text": "In 4x + 1 = 4x + 9, subtracting 4x from both sides leaves 1 = 9. This equality is false for every x: changing x cannot change one or nine. The equation has no solutions. By contrast, 4x + 1 = 4x + 1 leaves 1 = 1 when we subtract 4x from both sides. Since this is true for every x, all rational numbers are solutions to the second equation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Concluding that no solutions exist also solves an equation, provided the reasoning justifies that conclusion. Solving requires finding all solutions or proving none exist; it does not require a number to appear as the answer every time (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sin_letra_dos_conclusiones",
+          "prompt": "Two equations have been simplified using equivalent steps. One ends in 3 = 8 and the other in 3 = 3. Classify their solutions over all rational numbers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sin_letra_dos_conclusiones__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "falsa",
+                  "type": "dropdown",
+                  "label": "Equation ending in 3 = 8",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Your choice claims existence and uniqueness. Check what the stated final equality can tell you about an unknown before assigning a particular value."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Consider whether any rational number could change the final equality in this field. Justify the claimed absence using the simplified condition."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Check what would be required for every rational number to satisfy this condition. Examine the stated final equality without transferring conclusions from another case."
+                    }
+                  ]
+                },
+                {
+                  "id": "verdadera",
+                  "type": "dropdown",
+                  "label": "Equation ending in 3 = 3",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Consider what could distinguish one particular value of the unknown in this final equality. A single-solution classification requires showing both existence and uniqueness."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Compare the absence claimed by your choice with this field's final equality. Does choosing a rational number change anything?"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Justify your universal claim by examining the final equality. Check what restriction it actually places on rational numbers."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "falsa": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "verdadera": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 = 8 is always false, so the first equation has no solutions. 3 = 3 is always true, so the second allows every rational number. Equivalent steps preserve these conclusions for the original equations.",
+            "incorrect": "The disappearance of the letter does not decide the answer by itself. Check whether the remaining equality is true or false: no value can change the numbers left behind."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_letra_desaparecida",
+          "prompt": "An equation ends in 0 = 0 after equivalent transformations. Its domain is all rational numbers. What does the zero mean?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_letra_desaparecida__lectura",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The unknown must be zero because both sides equal zero.",
+                  "reviewFeedback": "Try another allowed value of the unknown in the previous equation; distinguish a side's value from the unknown's value."
+                },
+                {
+                  "id": "b",
+                  "label": "The equality holds for every rational number; it does not select a single value of the unknown.",
+                  "reviewFeedback": "Connect the final equality to the reversible steps and check what restrictions remain on the domain."
+                },
+                {
+                  "id": "c",
+                  "label": "There are no solutions because the unknown no longer appears.",
+                  "reviewFeedback": "Consider whether a numerical equality without an unknown can be true; then interpret what this means for the original values."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The zeros are the values of the simplified sides, not an instruction to set the unknown to zero. The equality holds for zero, one, a fraction, or any other rational number.",
+            "incorrect": "Distinguish a side's value from the proposed value of the unknown. An equality that is always true admits the entire domain, even when the letter has disappeared."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Why 0x Cannot Be Solved by Division"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplying by zero gives zero for every rational number: 0x = 0. Thus 0x = 6 is impossible, while 0x = 0 holds for all rationals. Dividing both sides by the coefficient is permitted only when that coefficient is nonzero: zero has no multiplicative inverse (Lang, 1971, pp. 14–15, 37, 42–45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, 5t − 2t = 3t becomes 3t = 3t after combining terms and then 0 = 0 after subtracting 3t. With 5t − 2t = 3t + 4, the same steps leave 0 = 4. In both cases we use reversible addition or subtraction; the difference is the remaining constant, not choosing t = 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_producto_y_propuesta",
+          "prompt": "Check both equations with t = −2/3 and then classify them for all rational numbers. First: 5t − 2t = 3t. Second: 5t − 2t = 3t + 4.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_producto_y_propuesta__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_izq",
+                  "type": "numeric",
+                  "label": "Left side of the first equation",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_der",
+                  "type": "numeric",
+                  "label": "Right side of the first equation",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_izq",
+                  "type": "numeric",
+                  "label": "Left side of the second equation",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_der",
+                  "type": "numeric",
+                  "label": "Right side of the second equation",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_izq": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera_der": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "segunda_izq": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "segunda_der": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cero_producto_y_propuesta__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "dropdown",
+                  "label": "Solution set of the first equation",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Check whether simplifying the first equation identifies a single rational number. Testing one candidate does not establish uniqueness."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Examine the absence claimed by your choice by simplifying the equation in this field. Relate the resulting condition to the permitted domain values."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Simplify the first equation in a way valid for every rational number. Justify the scope of your claim without relying on just one substitution."
+                    }
+                  ]
+                },
+                {
+                  "id": "segunda",
+                  "type": "dropdown",
+                  "label": "Solution set of the second equation",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Check whether the second equation's reduced condition can identify just one rational number. First examine what the condition requires."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Justify the absence claimed by considering the entire second equation. Simplify using equivalent steps and check whether any value can satisfy the result."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Check what it would mean for every rational number to satisfy the second equation. Preserve all its terms when simplifying and examine the final equality."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "segunda": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With t = −2/3, both sides of the first equal −2 and −2; the second gives −2 and 2. The general classification follows by simplification: 0 = 0 is always true, and 0 = 4 is always false. Testing this value helps us check, but cannot replace reasoning covering the entire domain.",
+            "incorrect": "Combine 5t − 2t into 3t and calculate with the sign of t. Then subtract 3t from both sides: whether the remaining equality is true or false determines the complete solution set."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_el_coeficiente_cero",
+          "prompt": "A note changes 0x = 0 into x = 0 and claims it divided by x's coefficient. Which assessment preserves the original condition?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_el_coeficiente_cero__reparacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Dividing by one produces x = 0 and justifies the note.",
+                  "reviewFeedback": "Identify the coefficient by which the note claims to divide; check whether the proposed operation is actually the one described."
+                },
+                {
+                  "id": "b",
+                  "label": "Division by zero is forbidden; 0x = 0 admits every rational number, not just zero.",
+                  "reviewFeedback": "Check the original condition with several values in the domain and whether the division is defined."
+                },
+                {
+                  "id": "c",
+                  "label": "The note works if only negative values are forbidden.",
+                  "reviewFeedback": "Consider why the sign of a domain value would or would not affect the original product."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividing by zero is undefined. Dividing by one would leave 0x = 0, not isolate x. Both x = 0 and x = 1 or x = −1/2 satisfy the original condition; replacing it with x = 0 would lose solutions.",
+            "incorrect": "The coefficient is zero, not one. Try multiplying a positive and a negative value by zero: both satisfy 0x = 0."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Criterion After Combining Terms and Preserving the Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "If equivalent transformations leave ax = d, where a and d are rational constants, there are three possibilities. If a ≠ 0, dividing by a gives the unique solution x = d/a. If a = 0 and d = 0, all rationals satisfy the equation. If a = 0 and d ≠ 0, no rational number satisfies it. What matters is the combined coefficient of the unknown, not every zero that appears while working."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, 0x + 2x = 6 is neither unsolvable nor an identity. Combining terms gives 2x = 6, whose coefficient is two, not zero. Its only solution is x = 3. The term 0x disappears, but 2x remains."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_resultados_de_ax",
+          "prompt": "Classify these equations over all rational numbers. The letter x has the same domain in each.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_resultados_de_ax__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "no_nulo",
+                  "type": "dropdown",
+                  "label": "(−3/2)x = 0",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Your choice must justify a value and its uniqueness. Consider what the coefficient of this equation permits and check the original condition."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Check whether the equation rules out every rational number. Examine the coefficient and constant before claiming no solutions."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Examine the equation's restriction on the unknown and determine whether it holds throughout the domain."
+                    }
+                  ]
+                },
+                {
+                  "id": "cero_igual",
+                  "type": "dropdown",
+                  "label": "0x = 0",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Consider what part of this equality could distinguish one value of the unknown. Uniqueness requires information preserved when evaluating the equation."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Test the claimed absence using the product in this field. Compare its value with the other side of the equality."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Check how each side depends on the unknown. Justify the claim for every rational using the full equality."
+                    }
+                  ]
+                },
+                {
+                  "id": "cero_distinto",
+                  "type": "dropdown",
+                  "label": "0x = −5/2",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Check what value could satisfy this equation and how you would establish uniqueness. Evaluate the product before attempting division."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Justify the classification by examining the value of the product and what equality requires."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Review the claim that every rational satisfies this equality. Can varying the unknown change the side containing its product?"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "no_nulo": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "cero_igual": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "cero_distinto": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In the first equation, coefficient −3/2 is nonzero: dividing by it gives x = 0, one solution. The second is always true and the third always false. A zero on the right alone does not mean every value works.",
+            "incorrect": "First examine x's coefficient. If it is nonzero, division is defined even when the right side is zero. If the coefficient is zero, compare the remaining constant with zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_termino_cero_no_borra_el_otro",
+          "prompt": "Solve 0q + 4q = −6 and determine how many rational solutions it has.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_termino_cero_no_borra_el_otro__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Value of q",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_termino_cero_no_borra_el_otro__tipo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "None: any term 0q makes the equation impossible.",
+                  "reviewFeedback": "Combine the terms containing the unknown before deciding what the zero-coefficient term does."
+                },
+                {
+                  "id": "b",
+                  "label": "All rationals: when 0q disappears, no condition remains.",
+                  "reviewFeedback": "Check which other terms still depend on the unknown after simplifying."
+                },
+                {
+                  "id": "c",
+                  "label": "One: combining terms leaves a nonzero coefficient of q.",
+                  "reviewFeedback": "Calculate the remaining coefficient and check whether you can isolate the unknown through a reversible operation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0q + 4q = 4q, so 4q = −6 gives q = −3/2. Substituting makes the left side −6. The combined coefficient is four, so division is allowed and the solution is unique.",
+            "incorrect": "A zero-coefficient term contributes zero but does not erase the others. Keep 4q and divide −6 by four."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribute Before Deciding Which Coefficient Remains"
+        },
+        {
+          "type": "paragraph",
+          "text": "A coefficient's disappearance can be hidden by parentheses. In 2(v + 5) = 2v + 9, distributing gives 2v + 10 = 2v + 9; subtracting 2v leaves 10 = 9. No rational number can make that equality true. The ten comes from multiplying five as well, not just the v term."
+        },
+        {
+          "type": "paragraph",
+          "text": "To describe a simplification without skipping steps, first distribute and combine within each side. Then subtract the right side's term containing the unknown from both sides, and subtract the left side's constant from both sides. This produces ax = d, with all x terms on the left and the constant on the right. Other valid routes exist; the following questions specify this route so you can review every intermediate result."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_y_clasificar_con_coeficiente_cero",
+          "prompt": "Work with −3(x + 2) = −3x + 5. Distribute on the left. Then subtract −3x from both sides and subtract the constant left on the left. Give the data from each resulting form and classify its solutions over all rationals.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_y_clasificar_con_coeficiente_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_distribuido",
+                  "type": "numeric",
+                  "label": "Coefficient of x after distributing on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_distribuida",
+                  "type": "numeric",
+                  "label": "Constant after distributing on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_final",
+                  "type": "numeric",
+                  "label": "Coefficient a in ax = d after combining on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_final",
+                  "type": "numeric",
+                  "label": "Constant d in ax = d",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_distribuido": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "const_distribuida": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "coef_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "const_final": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            },
+            {
+              "id": "distribuir_y_clasificar_con_coeficiente_cero__tipo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluciones",
+                  "type": "dropdown",
+                  "label": "Solution set",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Review the transformations in this field before claiming uniqueness. Check whether the final condition still determines a specific value of the unknown."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Justify your claimed absence from the final condition. Keep signs intact and verify that every transformation preserves the original solutions."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Check your universal claim using the reduced equation. Review the distribution and constants before deciding which rational numbers satisfy it."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluciones": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribution gives −3x − 6 = −3x + 5. Subtracting −3x leaves −6 = 5; subtracting −6 leaves 0x = 11. The equality is impossible for every rational. The negative factor multiplies both x and the two inside the parentheses.",
+            "incorrect": "First calculate (−3)·2 = −6. Subtracting −3x means adding 3x to both sides. Then adding six transforms −6 = 5 into 0 = 11; do not divide by zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_distribuida_y_todas_las_soluciones",
+          "prompt": "Now simplify (3/4)(4x − 8) = 3x − 6 using the same route: distribute, subtract the right side's x term from both sides, then subtract the left constant. Classify the equation over all rational numbers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion_distribuida_y_todas_las_soluciones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_distribuido",
+                  "type": "numeric",
+                  "label": "Coefficient of x after distributing on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_distribuida",
+                  "type": "numeric",
+                  "label": "Constant after distributing on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_final",
+                  "type": "numeric",
+                  "label": "Coefficient a in ax = d after combining on the left",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_final",
+                  "type": "numeric",
+                  "label": "Constant d in ax = d",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_distribuido": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "const_distribuida": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "coef_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "const_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "fraccion_distribuida_y_todas_las_soluciones__tipo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluciones",
+                  "type": "dropdown",
+                  "label": "Solution set",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Examine the restriction remaining after simplifying this equation. A single-solution claim must establish existence and rule out other allowed values."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Review the proposed absence using distribution and equivalent operations. Check whether the final equality admits any rational before keeping your choice."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Justify the claim for the entire rational domain by reviewing the whole simplification. Distinguish checking one example from interpreting the resulting condition."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluciones": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplying 3/4 by 4x gives 3x, and by −8 gives −6. The equation becomes 3x − 6 = 3x − 6, and the specified steps lead to 0x = 0. Every rational satisfies the original equation; the result is not only x = 0.",
+            "incorrect": "Multiply 3/4 by both terms inside the parentheses. After canceling 3x, compare the constants: equal constants allow the entire domain, while different ones admit no value."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classify Independently and Review the Conclusion"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now choose steps without a prescribed route. Keep the original equation to check your conclusion. If simplification leaves a zero coefficient, review the distribution and constants before deciding. If the coefficient is nonzero, check the quotient and substitute it into both original sides. Examine the weakest part of the argument rather than repeating every calculation mechanically (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificacion_independiente_con_signos_y_fracciones",
+          "prompt": "Solve and classify each condition over all rational numbers. A: −2(y − 3) = −2y + 6. B: (3z − 2)/4 = 3z/4 − 1. C: −(w + 1)/3 = (2w − 5)/6. For C, also write the solution you obtain.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificacion_independiente_con_signos_y_fracciones__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Solutions of A",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Check whether equation A distinguishes a unique value after distributing and combining terms. Justify the number of solutions, not merely one substitution."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Analyze only equation A using equivalent steps. Compare the claimed absence with the equality obtained after simplifying both sides."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Review the universal claim for A without relying on a particular candidate. Examine what restriction remains on the unknown."
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Solutions of B",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "Check whether equation B can produce a particular value and justify its uniqueness. Preserve the scope of each fraction during simplification."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Review the claimed absence for B through an equivalent transformation of both sides. Check what condition a rational number would have to satisfy."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Consider what would be required for every rational number to satisfy B. Simplify the equation while preserving its constants and interpret the final equality."
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Solutions of C",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Exactly one rational solution",
+                      "reviewFeedback": "To classify C this way, verify both existence and uniqueness. Simplify without altering the fractions and check the original equation with the value you calculate."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No rational solutions",
+                      "reviewFeedback": "Check whether C excludes every rational number. Justify that absence with equivalent steps, preserving signs and denominators on both sides."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "All rational numbers are solutions",
+                      "reviewFeedback": "Review the scope of your universal claim for C. Check what information about the unknown remains after combining terms."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  }
+                }
+              }
+            },
+            {
+              "id": "clasificacion_independiente_con_signos_y_fracciones__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "w",
+                  "type": "numeric",
+                  "label": "Solution of C",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "w": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A distributes to −2y + 6 = −2y + 6 and admits all rational numbers. In B, multiplying by four gives 3z − 2 = 3z − 4, requiring −2 = −4, so there are no solutions. In C, multiplying by six gives −2(w + 1) = 2w − 5; hence −4w = −3 and w = 3/4. Substituting into C, both sides equal −7/12.",
+            "incorrect": "For A, multiplying two negative factors contributes +6. For B, multiply −1 by four as well. For C, the minus sign applies to both w and one; calculate both sides with your candidate to check the result."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_sustitucion_no_clasifica_el_conjunto",
+          "prompt": "Two notes test only w = 0. In 4w + 3 = 3, the value works, and the first note concludes \"all rational numbers work.\" In 4w + 3 = 11, it fails, and the second concludes \"there are no solutions.\" Solve both equations and review the claims.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_sustitucion_no_clasifica_el_conjunto__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Solution of 4w + 3 = 3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Solution of 4w + 3 = 11",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_sustitucion_no_clasifica_el_conjunto__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Both conclusions are justified by those substitutions.",
+                  "reviewFeedback": "Distinguish what a single substitution proves from a conclusion covering the entire domain."
+                },
+                {
+                  "id": "b",
+                  "label": "Both conclusions confuse a tested value with the complete solution set; each equation has exactly one solution.",
+                  "reviewFeedback": "Solve each equality using reversible steps and use substitutions as checks, not complete classifications."
+                },
+                {
+                  "id": "c",
+                  "label": "The first has every rational as a solution, but the second has only one.",
+                  "reviewFeedback": "Simplify each equation before deciding whether it is an identity or imposes a restriction on the unknown."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting three and dividing by four gives w = 0 in the first and w = 2 in the second. The first test confirmed one solution, not all; the second only ruled out w = 0, not other values. The coefficient four is nonzero in both.",
+            "incorrect": "Solving means describing all satisfying values. One success does not show that any value works, and one failure does not show that none do. Simplify each equation through reversible operations."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "All Means All Values Allowed by the Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "An equation may hold for every rational number while a real-world problem permits only some of them. The problem's solutions must respect that domain. An additional condition may also narrow the possibilities: consider all the given information, not just the equality recently simplified."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a simulator, setting r represents a length in millimeters and can only be 0, 1/2, or 1. The computed measurements L = 2(r + 3) and R = 2r + 6 are also in millimeters. Three inside the parentheses represents three millimeters; the factor two is dimensionless. The problem requires L = R for the two calculations to agree."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identidad_con_tres_ajustes_permitidos",
+          "prompt": "Calculate L for all three permitted settings and determine which satisfy L = R. Preserve the simulator's domain: r may only be 0, 1/2, or 1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identidad_con_tres_ajustes_permitidos__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "r_cero",
+                  "type": "numeric",
+                  "label": "L in millimeters when r = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "r_medio",
+                  "type": "numeric",
+                  "label": "L in millimeters when r = 1/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "r_uno",
+                  "type": "numeric",
+                  "label": "L in millimeters when r = 1",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "r_cero": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "r_medio": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "r_uno": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "identidad_con_tres_ajustes_permitidos__conjunto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "All three allowed settings: 0, 1/2, and 1.",
+                  "reviewFeedback": "Check each setting included in this claim using the rule and the stated domain."
+                },
+                {
+                  "id": "b",
+                  "label": "Only r = 0, because a zero appears after simplifying.",
+                  "reviewFeedback": "Do not interpret a zero obtained by simplifying as the unknown's value without checking the original equation."
+                },
+                {
+                  "id": "c",
+                  "label": "Every rational number, including settings the simulator does not allow.",
+                  "reviewFeedback": "Distinguish solutions to the equality from the settings the simulator actually allows."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing shows L = 2r + 6, exactly the formula for R. The equality holds for all three permitted settings, with measurements of six, seven, and eight millimeters. The identity does not permit the simulator to use values outside its domain.",
+            "incorrect": "First compare the formulas, then keep the list of permitted settings. A value may satisfy the algebraic equality but not be an option in the problem."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_condicion_adicional_selecciona_un_ajuste",
+          "prompt": "The same simulator keeps r ∈ {0, 1/2, 1} and condition L = R. It now also requires L to measure 7 mm. Give the setting satisfying all the conditions and the corresponding value of R.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_condicion_adicional_selecciona_un_ajuste__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ajuste",
+                  "type": "numeric",
+                  "label": "Setting r, in millimeters",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "medida_r",
+                  "type": "numeric",
+                  "label": "Measurement R, in millimeters",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ajuste": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "medida_r": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The condition L = R remains true for every allowed setting, but L = 7 requires 2(r + 3) = 7. Subtracting six and dividing by two gives r = 1/2, which belongs to the domain. Then R = 2·(1/2) + 6 = 7 mm. All conditions are satisfied simultaneously.",
+            "incorrect": "Equality between L and R does not itself include the required measurement of seven millimeters. Add that condition to the model and check that the resulting setting belongs to the allowed list."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep this distinction in mind: equivalent simplification determines which values satisfy the equation; the domain and additional conditions determine which answer the problem. When 0x appears, check the remaining constant before deciding whether no solutions or all solutions exist. When the coefficient is nonzero, you can still isolate and check the unknown."
+        }
+      ]
+    }
+  ]
+}
