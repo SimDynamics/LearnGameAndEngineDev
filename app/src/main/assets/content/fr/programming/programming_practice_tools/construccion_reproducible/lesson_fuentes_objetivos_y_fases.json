@@ -1,0 +1,592 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__fuentes_objetivos_y_fases",
+  "title": "Sources, cibles et phases de CMake",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer ce que tu écris de ce que produit la construction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une construction reproductible demande davantage que de se souvenir du dossier où se trouve un exécutable. Il faut conserver les fichiers sources, la description du projet, les outils choisis et les options utilisées. CMake permet de décrire des projets et de préparer les règles avec lesquelles un autre outil coordonne leur construction. Nous distinguerons d'abord les éléments de ce processus, puis nous les utiliserons dans un projet réel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous appelons répertoire des sources l'emplacement contenant main.cpp et CMakeLists.txt. Le premier contient notre programme C++ ; le second décrit sa construction dans le langage CMake. Le répertoire de construction reçoit les règles générées, les vérifications et les produits obtenus. Nous choisissons des répertoires distincts pour séparer ces rôles ; plusieurs répertoires de construction peuvent aussi utiliser les mêmes sources (Scott, 2025, pp. 7–8)."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "proyecto/\n  fuente/\n    CMakeLists.txt\n    main.cpp\n  construccion/\n    ... artefacts générés ...\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cet arbre représente une organisation d'exemple, pas une instruction pour déplacer ton dépôt ou supprimer des dossiers. La séparation ne dépend pas de ces noms : un répertoire appelé salida ne devient pas source ou produit par son nom seul. Ce qui compte est de savoir qui maintient ses fichiers et comment ils sont obtenus."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "modificar_la_descripcion_conservada",
+          "question": "Tu veux modifier les fichiers sources qui composent le programme. Où conserver ce choix afin qu'une nouvelle configuration puisse le retrouver ?",
+          "options": [
+            "Uniquement dans une règle générée lors d'une construction précédente.",
+            "Dans la description CMakeLists.txt conservée avec les fichiers sources.",
+            "Uniquement dans le nom choisi pour le répertoire de construction."
+          ],
+          "correctIndex": 1,
+          "explanation": "La description maintenue est une entrée de la configuration. Une règle générée peut être reproduite ; n'enregistrer une décision qu'en modifiant cette règle rompt le lien avec la source qui l'a produite. Renommer un dossier ne sélectionne pas non plus des fichiers C++.",
+          "reviewFeedback": [
+            "Réfléchis à ce que deviendrait cette modification lors d'une nouvelle génération des règles à partir des entrées conservées. Vérifie de quoi dépendrait la récupération de ton choix dans une nouvelle construction.",
+            "Vérifie que ton critère permet de retrouver le choix des sources à partir du projet maintenu, sans dépendre des produits d'une construction antérieure.",
+            "Distingue le nom d'un répertoire du contenu utilisé par l'outil pour décider quoi construire. Explique comment ce nom préserverait la sélection des sources."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurer et générer ne signifie pas construire ton application"
+        },
+        {
+          "type": "paragraph",
+          "text": "La configuration interprète la description du projet, définit les options et vérifie les outils activés. La génération produit les règles destinées à l'outil de construction choisi, comme Ninja. Une invocation de CMake effectue normalement les deux phases, mais leurs fonctions sont différentes. La construction ultérieure utilise ces règles pour mettre à jour les produits nécessaires (Scott, 2025, pp. 8–10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En activant C++, project peut vérifier le compilateur en compilant et en liant de petits programmes de test. Cela ne signifie pas que notre application a déjà été compilée. Une configuration inchangée peut aussi réutiliser les contrôles précédents ; interpréter un message de réussite exige d'identifier l'étape concernée (Scott, 2025, pp. 14–15)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "alcance_del_exito_de_configuracion",
+          "question": "La configuration et la génération ont réussi. La construction de la cible n'a pas encore été demandée. Quelle conclusion correspond à cette preuve ?",
+          "options": [
+            "La description a été traitée et les règles générées ; il reste à construire consulta et à exécuter ses cas.",
+            "Les vérifications de C++ ont déjà traduit main.cpp ; il suffit d'exécuter le programme produit.",
+            "La configuration a créé consulta.exe, même si son comportement reste inconnu."
+          ],
+          "correctIndex": 0,
+          "explanation": "La réussite concerne les phases réellement effectuées. Elle peut comprendre des tests internes du compilateur, mais ne prouve pas que notre programme a été construit, exécuté ou qu'il respecte son contrat.",
+          "reviewFeedback": [
+            "Relie chaque conclusion à la phase effectivement réalisée. Vérifie de quelles preuves tu disposes pour la cible demandée et ses cas.",
+            "Identifie le fichier source utilisé par la vérification du compilateur et celui qui contient ton application. Examine si tu as attribué la même opération aux deux sans le vérifier.",
+            "Recherche quelle opération aurait produit le fichier exécutable mentionné. Relie son existence et sa révision à un relevé concret, pas seulement à un message de configuration."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "compilador_durante_configuracion",
+          "question": "Une vérification du compilateur réussit pendant la configuration. Quelle interprétation évite de confondre les phases ?",
+          "options": [
+            "Elle compile main.cpp ; consulta est mis à jour sans demander sa construction.",
+            "Elle peut vérifier le compilateur à l'aide d'un programme auxiliaire ; la construction de consulta reste à faire.",
+            "Si le compilateur a été appelé, l'application a déjà réussi sa construction, même si les règles ne sont pas encore générées."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les vérifications d'outils ont leurs propres programmes et objectifs. Il faut les distinguer de main.cpp et de la cible décrivant notre application.",
+          "reviewFeedback": [
+            "Examine quel fichier source était impliqué dans cet appel au compilateur. Distingue vérifier un outil de mettre à jour la cible que tu étudies.",
+            "Vérifie le rôle du programme utilisé dans le contrôle et les opérations documentées jusqu'ici pour ton propre projet.",
+            "Identifie le but de cette invocation du compilateur avant de lui attribuer la portée d'une construction complète de l'application. Voir un outil dans le journal ne signifie pas qu'il a effectué toutes les tâches."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Projet, cible et fichier ne portent pas forcément le même nom"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'exemple suivant, CMakeLists.txt utilise trois commandes. cmake_minimum_required déclare la version minimale de CMake admise par la description : 3.20 est le profil de cet exemple, et non la version de C++. project donne un nom au projet et active C++, noté CXX dans le langage CMake. add_executable définit la cible consulta à partir de main.cpp (Scott, 2025, pp. 13–15)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet s'appelle Existencias et la cible consulta. Par défaut, le fichier exécutable reprend le nom de la cible selon les conventions de la plateforme : dans l'environnement Windows de cet exemple, ce sera consulta.exe. Ne déduis pas que le projet et le fichier doivent porter le même nom. La description présentée ne fixe pas encore de standard C++ ni toutes les options d'un environnement ; ces données devront aussi être déclarées pour construire notre projet de travail."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_para_el_objetivo",
+          "question": "Pour la description présentée, quel nom identifie la cible exécutable à demander à l'outil de construction ?",
+          "options": [
+            "main.cpp, parce que le nom de la source identifie la cible à construire.",
+            "Existencias, parce que project choisit le nom de la cible exécutable.",
+            "consulta, parce que add_executable définit la cible exécutable sous ce nom."
+          ],
+          "correctIndex": 2,
+          "explanation": "project et add_executable remplissent des rôles différents. consulta identifie la cible ; main.cpp est une de ses entrées. Le nom du fichier résultant dépend également de la plateforme et d'éventuelles propriétés.",
+          "reviewFeedback": [
+            "Examine le rôle de main.cpp dans les arguments de la commande qui l'utilise. Distingue une entrée de construction du nom servant à demander un produit.",
+            "Vérifie ce que nomme project et quelle décision sur une cible exécutable tu lui attribues. Justifie ce lien à partir des arguments de la description.",
+            "Relie le nom choisi à sa fonction dans la commande. Vérifie ensuite ce que tu demanderais à l'outil de construction sans confondre cible et fichier résultant."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "archivo_que_no_es_fuente_cpp",
+          "question": "Qu'est-ce qui distingue correctement les deux fichiers conservés dans fuente/ ?",
+          "options": [
+            "CMake interprète CMakeLists.txt ; le compilateur C++ traduit main.cpp lors de la construction de consulta.",
+            "Le compilateur C++ interprète CMakeLists.txt et l'utilise pour traduire main.cpp.",
+            "CMake interprète les deux fichiers ; le compilateur choisit seulement le nom consulta.exe."
+          ],
+          "correctIndex": 0,
+          "explanation": "Il s'agit de langages et de rôles différents. Ajouter CMakeLists.txt dans un éditeur de fichiers ne signifie pas que le compilateur C++ interprète ses commandes. Les décisions de ce fichier ne sont vérifiées que lorsque CMake le traite.",
+          "reviewFeedback": [
+            "Suis le parcours de chaque fichier : quel langage contient-il, quel outil le traite et pendant quelle phase l'utilise-t-il ? Sépare ces trois questions.",
+            "Examine la syntaxe de CMakeLists.txt et les types de commandes que tu attribues au compilateur C++. Vérifie quel langage cet outil est conçu pour interpréter.",
+            "Repère les instructions C++ du programme et explique quel travail doit être effectué sur elles pour obtenir du code exécutable. Réexamine le rôle que tu laisses au compilateur."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La suite consistera à préparer les fichiers, fixer les outils et les options, configurer et générer, construire consulta puis exécuter le résultat avec des cas connus. Nous conserverons séparément les preuves de chaque phase et reconstruirons après un changement. Lire cette description prépare ces décisions ; la pratique avec le projet est une partie indispensable de l'apprentissage."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exprimer les exigences d'une cible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les trois commandes précédentes décrivaient le projet et sa cible. Nous ajoutons maintenant deux décisions de construction. Ce cours utilise un profil C++20 : l'outil choisi doit fournir au moins les fonctionnalités de ce standard. C'est un choix d'environnement de travail, même si notre petit programme n'a pas besoin de toutes ces fonctionnalités."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans CMake, une commande prend la forme nom(arguments). Dans ces descriptions, les arguments sont séparés par des espaces ou des sauts de ligne et les parenthèses délimitent la liste. On ne copie ni les virgules entre les arguments ni le point-virgule final d'un appel C++. CMake interprète ces commandes comme un langage de construction, tandis que le compilateur C++ interprète le programme source. Observe les mots et l'ordre des arguments : chaque commande leur attribue une fonction différente (Scott, 2025, pp. 12–15)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "target_compile_features reçoit le nom de la cible, la portée et les fonctionnalités requises. Ici, consulta est la cible déjà créée par add_executable ; PRIVATE applique l'exigence à sa propre compilation. Ce mot appartient au langage CMake et ne constitue pas une déclaration d'accès d'une classe C++. cxx_std_20 demande un standard offrant au moins les fonctionnalités de C++20 ; il n'oblige pas un compilateur à revenir d'un mode plus récent qui les fournit déjà (Scott, 2025, pp. 216–217)."
+        },
+        {
+          "type": "paragraph",
+          "text": "set_target_properties attribue des propriétés aux cibles. Ici, PROPERTIES introduit la paire nom/valeur CXX_EXTENSIONS OFF : le mode des extensions du compilateur est désactivé pour consulta. Cette propriété ne prouve pas que chaque programme soit portable et n'empêche pas, à elle seule, l'utilisation d'une bibliothèque indisponible ailleurs. Le standard requis et les extensions sont deux décisions distinctes (Scott, 2025, pp. 214–215)."
+        },
+        {
+          "type": "paragraph",
+          "text": "cmake_minimum_required(VERSION 3.20) définit la version minimale de CMake admise par cette description et établit son cadre de politiques ; il ne sélectionne pas C++20. Le nombre choisi n'est pas présenté comme minimum universel de tout projet C++20. Distingue la version de CMake, les capacités du compilateur C++ et les exigences de la cible (Scott, 2025, p. 13)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "identificar_el_requisito_del_objetivo",
+          "question": "Quelle ligne de cette description exige pour la cible consulta au moins les fonctionnalités de C++20 ?",
+          "options": [
+            "project(Existencias LANGUAGES CXX)",
+            "set_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)",
+            "target_compile_features(consulta PRIVATE cxx_std_20)"
+          ],
+          "correctIndex": 2,
+          "explanation": "L'exigence de fonctionnalités est associée à la cible par target_compile_features. Vérifie quelle décision exprime chaque argument avant de le transposer dans un autre projet.",
+          "reviewFeedback": [
+            "Vérifie ce qu'apporte LANGUAGES CXX. Distingue l'activation d'un langage de l'exigence d'un ensemble de ses fonctionnalités.",
+            "Examine la propriété CXX_EXTENSIONS choisie. Explique sa décision concernant les extensions et ce que tu affirmes au sujet des fonctionnalités requises.",
+            "Vérifie comment le nom de la cible, la portée et la fonctionnalité demandée se rapportent les uns aux autres dans la commande."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conservar_el_alcance_del_perfil",
+          "question": "La construction a utilisé un mode C++ plus récent que C++20 et satisfaisant l'exigence déclarée. Quelle conclusion est valable ?",
+          "options": [
+            "L'exigence minimale peut être satisfaite par ce mode ; nous n'avions pas imposé exactement C++20.",
+            "La construction ne respecte pas le profil, car 20 interdit tout mode ultérieur.",
+            "Il faut remplacer le numéro de cmake_minimum_required par celui de ce standard C++."
+          ],
+          "correctIndex": 0,
+          "explanation": "cxx_std_20 exprime un minimum. Si un projet nécessite d'autres restrictions, elles doivent être déclarées et vérifiées ; elles ne découlent pas de ce nom.",
+          "reviewFeedback": [
+            "Compare les capacités du mode utilisé à la portée de l'exigence déclarée. Sépare la version de CMake des fonctionnalités du langage C++.",
+            "Reviens au sens de « minimum » dans l'exigence de fonctionnalités. Vérifie quelle restriction tu ajoutes en interprétant le nombre comme une interdiction des modes ultérieurs.",
+            "Identifie à quel outil appartient la version de cmake_minimum_required avant de l'associer à un mode du langage C++."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calculer le comportement avant la construction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme décide s'il faut réapprovisionner le stock. debe_reponer(disponibles, minimo) doit renvoyer true lorsque disponibles est inférieur ou égal à minimo. Nous utiliserons des entiers avec 0 ≤ disponibles ≤ 40 et 1 ≤ minimo ≤ 40. L'égalité fait partie des cas de réapprovisionnement : atteindre le minimum exige toujours un réapprovisionnement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous effectuerons trois appels dans cet ordre : (4,5), (5,5) et (6,5). Avant de regarder une exécution, détermine ce que le contrat exige pour chaque couple. Ici, std::cout affiche les bool sous forme de 1 ou 0 ; nous les séparerons par des deux-points, sans espace ni saut final. boolalpha n'est pas activé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "deducir_el_oraculo_de_reposicion",
+          "question": "Selon le contrat, quelle sortie doivent produire les trois appels, dans l'ordre indiqué ?",
+          "options": [
+            "1:0:0",
+            "1:1:0",
+            "0:1:1"
+          ],
+          "correctIndex": 1,
+          "explanation": "Les valeurs 4 et 5 satisfont la comparaison « inférieur ou égal » à 5 ; 6 ne la satisfait pas. Le résultat attendu découle de l'exigence, et non de l'implémentation que nous allons étudier.",
+          "reviewFeedback": [
+            "Applique de nouveau le critère du contrat au cas d'égalité. Justifie la place de cet appel dans la séquence des résultats choisie.",
+            "Vérifie chaque couple séparément avec la règle de réapprovisionnement. Conserve l'ordre et les séparateurs lors du regroupement des résultats.",
+            "Vérifie le sens de la comparaison entre disponibles et minimo dans les cas de part et d'autre de la borne. Garde les arguments dans l'ordre de chaque appel."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce résultat servira d'oracle pour ces cas : une référence indépendante avec laquelle comparer l'observation. Trois concordances constituent des preuves concernant ces appels, et non tous les éléments du domaine. Nous conserverons également les sources, la description, les outils et les étapes ayant produit chaque observation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limitar_la_evidencia_del_caso",
+          "question": "Un exécutable a produit le résultat attendu pour ces trois appels. Qu'est-ce qui a été directement établi ?",
+          "options": [
+            "Que toute entrée du domaine et toute révision future donnent le bon résultat.",
+            "Que la configuration seule exécutera correctement toutes les consultations futures.",
+            "Que cet artefact respecte le contrat pour ces appels et ces conditions précises."
+          ],
+          "correctIndex": 2,
+          "explanation": "Relie la preuve aux cas effectivement observés. D'autres entrées ou un source modifié exigent un raisonnement et des vérifications pertinents.",
+          "reviewFeedback": [
+            "Examine quelles entrées ont été observées et quelle révision a été exécutée. Justifie le passage de ces observations à des entrées ou des changements non encore vérifiés.",
+            "Identifie l'action qui a produit la sortie observée. Vérifie le lien supposé entre cette observation et ce que ferait une configuration seule.",
+            "Relie ta conclusion à l'artefact, aux appels et aux conditions précises de l'essai. Explique quelles preuves seraient nécessaires pour étendre sa portée."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et vérifier consulta dans le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce laboratoire conserve deux fichiers modifiables. CMakeLists.txt contient la description complète du profil ; main.cpp contient le programme C++. La cible demandée est consulta et le type de construction initial est Debug. Debug est une configuration de construction, pas une preuve de correction ni une condition pour que la comparaison soit inclusive."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur le téléphone, CMake utilise Ninja et le compilateur Clang sélectionné pour produire un programme WebAssembly exécuté avec WASI. Le fichier consulta.exe de l'exemple Windows précédent n'est pas l'artefact de cet environnement Android. Consulte les outils et les commandes indiqués dans le journal plutôt que de les déduire du nom d'un fichier. Cette pratique exige le profil CMake disponible pour ARM64 et Android 9 ou ultérieur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Appuie d'abord sur Configurer / Générer et lis le résultat. Demande ensuite Construire la cible et, seulement après une construction réussie, Exécuter la cible. Compare la sortie et le code de retour avec le résultat attendu précédemment. Le projet n'a pas besoin d'entrée standard. Note quelle phase a produit chaque journal : leurs réussites n'ont pas la même portée."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "distinguir_la_construccion_de_la_prueba",
+          "question": "La configuration et la construction de consulta ont réussi. Tu ne l'as pas encore exécuté. Quelle est la prochaine étape pour vérifier les trois appels ?",
+          "options": [
+            "Accepter que le contrat est prouvé, puisque la construction s'est terminée sans erreur.",
+            "Changer le nom du projet avant d'utiliser l'artefact construit.",
+            "Exécuter la cible courante et comparer sa sortie et sa terminaison à l'oracle."
+          ],
+          "correctIndex": 2,
+          "explanation": "La construction a produit le programme, mais tu n'as pas encore observé son comportement sur ces appels. Conserve le lien entre l'artefact et les cas lors de l'exécution.",
+          "reviewFeedback": [
+            "Identifie ce qu'affirme le résultat de la construction sur le produit obtenu. Examine d'où viendraient les preuves du comportement de ses appels.",
+            "Explique le lien entre le nom du projet et le comportement à vérifier. Avant de le modifier, identifie quelle question ce changement résoudrait.",
+            "Définis ce que tu observerais et avec quelle référence tu le comparerais. Vérifie que les cas et l'artefact proposés correspondent à la même révision."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour ce programme de référence, l'exécution doit afficher 1:1:0 et se terminer avec le code 0. En cas d'écart, compare d'abord les fichiers conservés, la cible, le profil et les journaux ; une observation ne peut être attribuée qu'au projet réellement construit et exécuté."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un petit changement exige de nouvelles preuves"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous allons examiner une révision qui remplace uniquement <= par < dans debe_reponer. La description CMake et les trois appels restent inchangés. Avant de construire cette version, prédis son comportement ; distingue-le du résultat exigé par le contrat."
+        },
+        {
+          "type": "output_prediction",
+          "id": "predecir_la_revision_estricta",
+          "language": "cpp",
+          "question": "Qu'affiche cette révision avec une comparaison stricte ? Prédis son comportement réel sans le remplacer par l'exigence.",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "explanation": "4 est inférieur à 5 ; 5 n'est pas inférieur à 5, et 6 non plus. Le changement touche la borne d'égalité : cet écart peut exister même si la construction réussit.",
+          "reviewFeedback": "Suis les trois appels en appliquant la comparaison écrite dans cette révision, surtout à l'égalité. Rassemble ensuite leurs valeurs bool selon le format de cout, en distinguant ce que fait le code de ce qu'exige le contrat initial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le laboratoire commence avec cette révision stricte. Configure, construis et exécute pour l'observer. Modifie ensuite uniquement la comparaison dans main.cpp pour respecter le contrat, puis reconstruis et exécute à nouveau. Dans ce projet simple, modifier le texte d'une source C++ tout en conservant ses chemins et sa description permet de reconstruire avec les règles existantes. Modifier CMakeLists.txt ou le profil exige en revanche une nouvelle configuration. N'attribue pas l'ancien résultat au nouveau brouillon."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "clasificar_un_fallo_de_frontera",
+          "question": "La révision stricte s'est construite correctement et a produit 1:0:0 au lieu du résultat attendu. Quelle preuve met en évidence le problème ?",
+          "options": [
+            "L'écart fonctionnel à l'égalité, observé dans la révision construite.",
+            "Une erreur de compilation, parce que l'utilisation de < ne peut pas produire de programme C++ valide.",
+            "Le respect du contrat, parce qu'une sortie avec le code 0 prouve la correction de toutes les consultations."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une construction réussie ne décide pas de la relation exigée par le contrat. Le deuxième appel permet de comparer la borne d'égalité sans accuser une phase qui s'est achevée correctement.",
+          "reviewFeedback": [
+            "Relie le résultat observé à l'appel qui examine la borne. Justifie la nature des preuves utilisées pour ce diagnostic.",
+            "Distingue la syntaxe acceptée par le compilateur du sens de la relation. Compare ton diagnostic au journal de construction réussie donné dans l'énoncé.",
+            "Examine ce que signifie le code de retour et ce que le contrat exige pour chaque appel. Justifie pourquoi une terminaison normale ne prouve pas à elle seule la validité des résultats."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Corriger la comparaison et varier les appels"
+        },
+        {
+          "type": "paragraph",
+          "text": "La correction doit préserver la borne inclusive du contrat. Elle ne change ni l'exigence, ni l'ordre des trois cas, ni les outils pour faire coïncider une sortie. Complète d'abord la fonction et, après avoir reconstruit cette révision, vérifie que les cas initiaux produisent à nouveau 1:1:0. Une fois ce résultat obtenu, varie les appels pour examiner la correction au-delà du premier cas."
+        },
+        {
+          "type": "fill_code",
+          "id": "recuperar_la_comparacion_inclusiva",
+          "language": "cpp",
+          "question": "Complète uniquement l'opérateur de comparaison qui conserve le contrat inclusif. Ne change ni les noms ni les appels.",
+          "code": "bool debe_reponer(int disponibles, int minimo) {\n    return disponibles ___ minimo;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "L'égalité fait partie des cas exigeant un réapprovisionnement. L'expression « inférieur ou égal » représente cette exigence en conservant l'ordre initial des deux arguments.",
+          "reviewFeedback": "Exprime avec des mots quand il faut réapprovisionner, en gardant disponibles et minimo dans leur ordre. Vérifie si l'opérateur choisi couvre les cas de part et d'autre de la borne ainsi que l'égalité, sans modifier les appels."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ton laboratoire corrigé, remplace ensuite les trois couples par (12,7), (7,7) et (3,7), en conservant la bonne comparaison. Calcule d'abord les résultats attendus à partir du contrat ; reconstruis et compare l'observation. Tu pourras ensuite rétablir les données initiales. Chaque révision nécessite ses propres preuves : ne considère pas un ancien résultat comme provenant de nouvelles sources."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localiser une erreur dans la phase qui l'a produite"
+        },
+        {
+          "type": "paragraph",
+          "text": "CMakeLists.txt reste valable, mais main.cpp contient désormais une erreur de syntaxe. Identifie la révision complète avant d'intervenir. La configuration peut vérifier le compilateur avec des programmes auxiliaires sans traduire ce main.cpp ; son succès ne permet donc pas d'écarter une erreur dans l'application."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis jusqu'où ce projet devrait aller. Configure et génère, puis demande la construction de consulta et lis le diagnostic. Localise le point-virgule manquant dans l'instruction return de main. Corrige uniquement ce détail, conserve les autres fichiers et reconstruis avant d'essayer d'exécuter. Le diagnostic exact peut varier selon le compilateur ; le fichier et le contexte comptent plus que la mémorisation d'une phrase."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interpretar_configuracion_y_error_cpp",
+          "question": "La configuration a réussi, mais le journal de construction suivant signale une erreur de syntaxe dans main.cpp lors de la construction de consulta. Quelle intervention conserve le lien entre cause et phase ?",
+          "options": [
+            "Répéter la configuration sans modifier main.cpp pour que CMake répare l'instruction.",
+            "Corriger l'instruction C++ signalée, puis reconstruire la cible à partir de cette source.",
+            "Utiliser le résultat enregistré de l'ancien artefact, puisque la nouvelle configuration a réussi."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'échec observé appartient à la construction de la révision étudiée. Corriger sa source et reconstruire permet d'obtenir de nouvelles preuves ; la configuration ne remplace pas cette étape.",
+          "reviewFeedback": [
+            "Repère où est conservée l'instruction signalée et ce que changerait une nouvelle configuration sans modification. Explique quel mécanisme pourrait corriger ce texte selon ta proposition.",
+            "Identifie le fichier source et la phase du diagnostic avant de prévoir une intervention. Vérifie comment tu relierais la preuve suivante à cette révision.",
+            "Vérifie à quelle version appartient l'artefact conservé. Examine si la construction échouée l'a mis à jour avant d'attribuer ses résultats à la tentative actuelle."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La correction de référence est return 0; à la fin de main. Après une construction réussie, exécute et vérifie à nouveau 1:1:0 et le code de sortie 0. Si une construction échoue, ne présente pas l'exécution d'un ancien artefact comme résultat de cette tentative. La présence d'un fichier dans un dossier ne prouve pas sa mise à jour."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Créer la description sans recopier aussitôt une solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le dernier laboratoire conserve un inventario.cpp correct avec les appels (12,7), (7,7) et (3,7) ; CMakeLists.txt est initialement vide. Écris une description qui accepte CMake à partir de la version 3.20, nomme le projet InventarioLocal, active C++, crée comprobar à partir de inventario.cpp et impose à cette cible les fonctionnalités minimales de C++20 avec les extensions désactivées. La cible demandée est désormais comprobar, de type de construction Debug. La solution de référence figure à la page suivante : essaie de produire et de justifier la tienne avant de la consulter."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les outils doivent interpréter ta description ; la cible comprobar doit être construite à partir du fichier indiqué ; son journal d'exécution doit correspondre à cet artefact et afficher 0:1:1 sans saut final, avec un code de retour 0. Explique-toi quelle décision prend chaque commande et quelle réussite tu attends de chaque phase. Il n'existe pas une seule disposition textuelle valable : les espaces, commentaires et commandes supplémentaires cohérentes ne changent pas à eux seuls ces critères."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "inventario.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool primera = debe_reponer(12, 7);\n    const bool segunda = debe_reponer(7, 7);\n    const bool tercera = debe_reponer(3, 7);\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_el_nombre_en_la_descripcion",
+          "question": "Ta description crée une cible nommée reserva, mais tu demandes à construire comprobar. Que faut-il vérifier avant d'attribuer cet échec au C++ de inventario.cpp ?",
+          "options": [
+            "Que le nom demandé corresponde à une cible créée par la description en vigueur.",
+            "Que project reçoive comprobar, puisque le nom du projet remplace celui de la cible.",
+            "Que inventario.cpp soit dans un répertoire appelé comprobar, ce qui déterminerait la cible."
+          ],
+          "correctIndex": 0,
+          "explanation": "Relie la demande à la cible réellement créée par add_executable. Les noms de variables du programme et celui du projet ont d'autres rôles ; ils ne résolvent pas cette demande de construction.",
+          "reviewFeedback": [
+            "Relie la demande aux noms et aux rôles présents dans la description. Vérifie où est déclaré l'artefact auquel tu attribues l'observation.",
+            "Distingue le regroupement nommé par project des produits dont tu demandes la construction. Justifie en quoi modifier cet argument résoudrait la demande que tu examines.",
+            "Explique quelles informations de construction fournit le nom d'un répertoire dans la description. Sépare l'organisation des fichiers de l'identité utilisée dans la demande."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer une description et retrouver la méthode"
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici une solution de référence du laboratoire libre. Compare-la à tes décisions après avoir essayé. La cible comprobar est créée avant qu'on lui attribue ses exigences et propriétés ; inventario.cpp appartient à la description de cette cible. Changer les trois noms demande de comprendre leurs rôles, pas de remplacer tous les mots par un même nom."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(InventarioLocal LANGUAGES CXX)\nadd_executable(comprobar inventario.cpp)\ntarget_compile_features(comprobar PRIVATE cxx_std_20)\nset_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre description peut être valable si elle respecte les mêmes critères. Il ne suffit pas de faire afficher une chaîne fixe par n'importe quel exécutable : le programme doit conserver la fonction qui décide selon ses arguments et l'utiliser dans les appels indiqués. La pratique consiste à construire le projet décrit et à lui attribuer son comportement, et non à copier une sortie dans le journal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "elegir_el_paso_tras_cambiar_la_descripcion",
+          "question": "Tu as modifié CMakeLists.txt pour que comprobar utilise un autre fichier source déjà existant. Quelle suite d'actions relie l'observation suivante à cette nouvelle décision ?",
+          "options": [
+            "Exécuter sans configurer ni construire et conserver l'ancien résultat comme preuve.",
+            "Configurer/générer à nouveau, construire comprobar et exécuter l'artefact de cette description.",
+            "Construire une cible avec un autre nom sans vérifier la description modifiée."
+          ],
+          "correctIndex": 1,
+          "explanation": "La description est une entrée de la configuration. Après l'avoir modifiée, génère les règles à jour, construis la cible demandée et vérifie le programme obtenu.",
+          "reviewFeedback": [
+            "Relie l'ancienne sortie aux fichiers qui l'ont produite. Examine quelles preuves du changement enregistré tu aurais si tu conservais seulement cette observation.",
+            "Pour chaque action proposée, identifie les entrées qu'elle utilise et la révision qu'elle produit. Vérifie que l'observation puisse être attribuée aux fichiers actuels.",
+            "Identifie le produit désigné par le nom alternatif choisi et pourquoi il permettrait d'observer la décision modifiée. Préserve le lien entre la demande et la description."
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "transferir_la_reposicion_a_otro_orden",
+          "language": "cpp",
+          "question": "Retrouve le contrat avec trois nouveaux cas aux limites autorisées. Cette implémentation conserve la comparaison inclusive : quelle sortie produisent ses appels dans l'ordre ?",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool primera = debe_reponer(40, 40);\n    const bool segunda = debe_reponer(0, 1);\n    const bool tercera = debe_reponer(1, 1);\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1"
+          ],
+          "explanation": "40 égale le minimum 40 ; zéro est inférieur à 1 ; 1 égale 1. Les trois appels exigent un réapprovisionnement. Une quantité disponible de 0 est autorisée : ne la confonds pas avec un minimum de 0, exclu du domaine.",
+          "reviewFeedback": "Vérifie le domaine de chaque argument, en distinguant stock disponible et minimum exigé. Applique la condition à chaque couple extrême et rassemble les valeurs dans l'ordre exact des insertions de cout."
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve la méthode sans consulter le code : définis le comportement et ses cas ; identifie les sources, la description et le profil ; configure et génère ; construis la cible ; exécute et compare ; après un changement, répète les étapes concernées et conserve leurs preuves. Les deux leçons précédentes aident à distinguer une observation ancienne d'une hypothèse non encore vérifiée. Dans la suite, nous appliquerons cette relation à plusieurs fichiers, dépendances et options de projet ; cet exercice ne prétend pas couvrir déjà ces fondements ni tout le reste du cours."
+        }
+      ]
+    }
+  ]
+}

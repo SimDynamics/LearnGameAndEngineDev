@@ -1,0 +1,206 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__evaluar_una_recomendacion_con_sus_supuestos",
+  "title": "Assessing Advice and Its Assumptions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Turning Advice Into a Question You Can Investigate"
+        },
+        {
+          "type": "paragraph",
+          "text": "You encounter this technical note, written specifically for this activity: “If a vector is only read through its parameter, pass it by const&: you avoid a copy and the program preserves its results.” This is an original recommendation for this exercise, not a quotation from the books. Before accepting it as a rule, identify what you need to know to apply it to the program you will maintain."
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know copies, references, and const from C++ 1. Here you will revisit them to learn how to assess a recommendation: identify its claims, seek relevant information, test its assumptions, and reformulate what you can justify. The new learning goal is that review of knowledge you will incorporate into your work. The source connects continuous learning with thinking critically about what you read and asking about its context and conditions of use (Thomas & Hunt, 2020, pp. 14–18)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a specific question in your own words before continuing; you may keep it as a comment in the lab. Distinguish a question about what const& means from one about whether the change preserves a particular program's behavior. Short advice may leave out information needed to answer the second question."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_pregunta_de_aprendizaje",
+          "question": "You want to know whether you can apply the note to a program whose results must be preserved. Which question directs your investigation toward that goal?",
+          "options": [
+            "Under what conditions does changing the parameter preserve this program's results?",
+            "How many different ways of writing a reference appear in the examples I find?",
+            "Which advice about passing vectors is repeated most often by other people?"
+          ],
+          "correctIndex": 0,
+          "explanation": "This question connects the advice to the obligation you must preserve and seeks its conditions. Counting syntactic forms or recommendations may collect information but cannot by itself decide when the behavior remains unchanged.",
+          "reviewFeedback": [
+            "Connect your question to the program property you need to preserve when applying the advice.",
+            "Consider what counting different syntactic forms would teach you and whether it answers the preservation question you care about.",
+            "Distinguish how many people repeat a recommendation from the information needed to justify it for your program."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consult a Source to Answer One Question, Not to Settle Them All"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall what you have already practiced: a vector parameter passed by value creates its own object from the argument; a const reference lets you read the referenced object without modifying it through that reference. That restriction does not make all other access to the object const, nor does it turn the reference into a snapshot copy of its state. These facts clarify the question but do not automatically establish a conclusion for every function."
+        },
+        {
+          "type": "paragraph",
+          "text": "The reading about interfaces distinguishes preserving information through copies from sharing access to information another operation may change (Kernighan & Pike, 1999, p. 107). That is the contribution we use here. The page does not contain our note about passing this vector by const& or verify the original programs in this activity. Examine which part of your question a source answers and which part requires information about the actual case."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_alcance_de_la_fuente",
+          "question": "The relevant reading clarifies the difference between a copy and shared access. What does that allow you to do with the activity's technical note?",
+          "options": [
+            "Accept immediately that all results are preserved, because the reading explains the difference between parameter types.",
+            "Understand that difference and continue investigating how the objects are used in the particular program.",
+            "Dismiss it without examining its content, because a book published in 1999 cannot contribute to this case."
+          ],
+          "correctIndex": 1,
+          "explanation": "A source can answer part of a question without establishing a conclusion about a program it does not examine. Its date helps place it in context; neither its age automatically invalidates it nor a relevant explanation proves every recommendation we associate with it.",
+          "reviewFeedback": [
+            "Check whether the reading examined this program's behavior or explained a property you must still apply to its uses.",
+            "Distinguish which information the reading clarified from which program conditions you need to examine next.",
+            "Consider which specific claim you are evaluating and which part of the source's content might still be relevant to answering it."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Write down your assumptions about the function and its calls before testing the change. You do not need to follow one fixed sequence of steps: you can return to the reading when the code raises another question. What matters is distinguishing what you already understood, what you merely assumed, and what the new evidence allows you to learn."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Ask What Context the Advice Needs"
+        },
+        {
+          "type": "paragraph",
+          "text": "registrar_y_medir takes two vectors, appends 7 through its second parameter, and returns a size obtained through its first parameter. The initial version takes antes by value. The note proposes changing only that first parameter to const std::vector<int>&. Before doing so, write your question and predict whether the advice preserves the observations made in main. Examine which relationships between arguments the function signature allows; it does not require different objects."
+        },
+        {
+          "type": "paragraph",
+          "text": "The calls are separate from output so the results and sizes can be observed afterward. Each execution starts with new objects. Input vectors contain zero to three integers; the single push_back leaves at most four elements. Within that bound, static_cast<int>(antes.size()) represents the known size exactly. References in the program bind to complete vector objects that remain in scope throughout the calls. You are revisiting these C++ 1 operations."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    // Write your question and predictions before running.\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separate=\" << separados << \";Input=\" << entrada.size()\n              << \";Current=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Shared=\" << juntos << \";Current=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "First predict and execute the by-value version, preserving its full output. Then change only the first parameter declaration to const std::vector<int>& antes; leave the body, calls, and data unchanged. Predict again before building and running. Compare Separate, Input, Shared, and both Current fields individually. Both executions end with code 0; that code does not compare the two versions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write beside your question which observation supports or limits the note and which information in the code explains it. Distinguish the separate objects entrada and destino from passing compartido in both positions. Copying an output is not enough: relate the result to when the object named by each parameter is examined. Attempt the comparison and a provisional conclusion before consulting the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: A Favorable Example Does Not Decide Every Use"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference applies exactly the suggested parameter change. It makes no other modification. The first comparison uses two independent objects; the second allows both parameters to refer to the same vector belonging to the caller. These are different usage contexts for the same function."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    // Write your question and predictions before running.\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separate=\" << separados << \";Input=\" << entrada.size()\n              << \";Current=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Shared=\" << juntos << \";Current=\" << compartido.size() << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The by-value version prints Separate=2;Input=2;Current=2 and then Shared=2;Current=3. With the reference parameter, the first line is the same, but the second prints Shared=3;Current=3. Every line ends with a newline; stderr is empty and both exit codes are 0. In the second call in main, the original copy retained size 2; the reference reads the vector after the append, when it contains three elements. The const restriction applies only to modifications through antes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_alcance_del_contraste",
+          "question": "The versions agree when entrada and destino are separate, but differ when compartido occupies both argument positions. Which conclusion is supported?",
+          "options": [
+            "The advice holds without further conditions: comparing two separate objects confirmed the general rule.",
+            "const& should be avoided in every function receiving a vector, because a result changed here.",
+            "Preserving results requires conditions on how the objects are used; the note did not state them."
+          ],
+          "correctIndex": 2,
+          "explanation": "The shared-object case contradicts the unconditional claim. The separate-object case also matters: it shows why the finding should not be turned into a blanket ban on const&. Learning from the comparison requires qualifying the recommendation.",
+          "reviewFeedback": [
+            "Check whether one favorable observation allows you to ignore the other situation admitted by this signature.",
+            "Distinguish a context that limits the recommendation from a claim about all functions and all their uses.",
+            "Relate your conclusion to the conditions that changed between the two situations and to both observations."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reformulating What You Learned with a Relevant Condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to the question you wrote. A provisional reformulation might point out that replacing a copy with a reference requires checking whether another path modifies the object before the observation whose result you needed to preserve. In this function, actual can do so when it shares the object with antes. The assessment does not depend only on vector size or the presence of const in a signature."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    const int cantidad_anterior = static_cast<int>(antes.size());\n    actual.push_back(7);\n    return cantidad_anterior;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recomendacion_momento_de_la_consulta",
+          "question": "Read this variation of the function for the same shared vector initially containing {2,5}. Which detail allows it to return the previous size even though actual appends an element?",
+          "options": [
+            "The signature contains const&, so the body can no longer modify any object passed to the function.",
+            "The shared vector becomes an independent copy when cantidad_anterior is declared.",
+            "The size is copied into an int before the append; the return uses that saved quantity."
+          ],
+          "correctIndex": 2,
+          "explanation": "cantidad_anterior stores the number 2 before the vector is modified. The append still happens, and the shared vector then contains three elements. The saved value is that integer, not a copy of the vector. This reasoning prevents us from concluding that sharing an object is always incompatible with returning its earlier size.",
+          "reviewFeedback": [
+            "Identify which parameter is used for the append and which access const actually restricts.",
+            "Check the new object's type and distinguish saving a quantity from copying the whole collection.",
+            "Track when the quantity is read and which object is then used to produce the return value."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Read this fragment in the context of the lab and reason about the timing of the observation. The difference between passing a parameter by value and by reference describes the example's object model; the observed output does not measure any speed improvement. Record a conclusion that answers your question without extending it to claims this exercise did not examine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep a Better Question and Revisit the Criterion Later"
+        },
+        {
+          "type": "paragraph",
+          "text": "Beside your initial question, now write what you understood, which evidence changed or qualified your idea, and what remains uncertain. A useful note might mention the other parameter's role and the time of observation instead of replacing the original advice with “always” or “never.” Keep the words of the recommendation, the source's contribution, and your program's observations distinct."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, try to explain the comparison before looking at its results. Form another question about the same advice, such as what would happen with an empty shared vector. Derive the size preserved by each version and what you would need to observe to check that prediction. You can reuse the same lab with your chosen data, keeping the limit of three elements at entry explicit."
+        },
+        {
+          "type": "note",
+          "text": "Incorporating knowledge into your work requires being able to justify it again later. Choosing a specific question, consulting relevant information, and examining its scope may take several iterations, moving back and forth between reading and code. The goal is to improve what you understand and can apply, not turn that work into a checklist of reading or completed steps."
+        }
+      ]
+    }
+  ]
+}
