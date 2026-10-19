@@ -18,6 +18,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.EditText
 import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -147,6 +148,9 @@ class WrongFeedbackNarrationDeviceTest {
 
     @Test fun spanishCppIncorrectGuidanceUsesRealKokoroAndKeepsPageBookmarkAndSuccessGate() =
         exercise(NarrationLanguage.SPANISH, mathematical = false)
+
+    @Test fun spanishInlineFillGuidanceUsesRealKokoroAndKeepsPageBookmarkAndSuccessGate() =
+        exercise(NarrationLanguage.SPANISH, mathematical = false, inline = true)
 
     @Test fun americanEnglishCppIncorrectGuidanceUsesRealKokoroAndKeepsPageBookmarkAndSuccessGate() =
         exercise(NarrationLanguage.AMERICAN_ENGLISH, mathematical = false)
@@ -416,13 +420,13 @@ class WrongFeedbackNarrationDeviceTest {
         }
     }
 
-    private fun exercise(language: NarrationLanguage, mathematical: Boolean) {
+    private fun exercise(language: NarrationLanguage, mathematical: Boolean, inline: Boolean = false) {
         val locale = language.locale.language
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, locale) }
         NarrationSettingsRepository.saveLanguage(context, language)
         NarrationSettingsRepository.saveKokoroVoice(context, language.defaultVoice)
         NarrationSettingsRepository.saveEnabled(context, false)
-        val fixture = fixture(language, mathematical)
+        val fixture = fixture(language, mathematical, inline)
         val sourceJson = LessonRepository.loadLessonJson(context, fixture.route, fixture.sourceLesson).toString()
         val sourceHash = sha(sourceJson.toByteArray())
         val resumeStore = NarrationResumeStore(context)
@@ -488,12 +492,18 @@ class WrongFeedbackNarrationDeviceTest {
                 assertFalse(saved(fixture).getBoolean("correct"))
                 assertEquals("A failed attempt cannot complete the puzzle", 0, field<Int>(activity, "completedExercises"))
             }
-            awaitNative(host, "The deliberate failed submission must actually play its own Kokoro guide", 180_000L) { activity ->
+            // This case verifies seeking *within* one real guide recording. A
+            // short leading verdict may be under a second: rewinding it by a
+            // second correctly returns to the original page, which the separate
+            // backwardPastTheWrongGuideStart test covers. Observe a sufficiently
+            // long WAV and a measured position safely beyond that boundary.
+            awaitNative(host, "A real guide WAV must audibly reach an interior seek position", 180_000L) { activity ->
                 val reader = controller(activity)
                 val guide = field<Any?>(reader, "incorrectFeedback")
                 val player = field<MediaPlayer?>(reader, "player")
                 guide != null && reader.isPlaying && field<Boolean>(reader, "playerReady") &&
-                    player != null && player.currentPosition > 350
+                    player != null && player.duration > 2_200 &&
+                    player.currentPosition in 1_301..(player.duration - 400)
             }
             host.onActivity { activity ->
                 val reader = controller(activity)
@@ -529,12 +539,19 @@ class WrongFeedbackNarrationDeviceTest {
                 captureView(result, "${language.tag}-incorrect-visible")
                 reader.pauseKeepingPosition()
                 assertNull("Pausing a guide also releases the same MediaPlayer", field<MediaPlayer?>(reader, "player"))
+                val guidePart = field<Int>(guide, "index")
                 guidePauseOffset = field(guide, "offset")
-                assertTrue(guidePauseOffset > 0L)
+                assertTrue("The real paused offset supports an interior one-second rewind", guidePauseOffset > 1_300L)
                 assertEquals(originalBookmark, resumePreferences().all)
                 reader.seekBy(-1)
-                assertTrue("Backward applies to the transient guide", field<Long>(guide, "offset") <= guidePauseOffset)
+                assertSame("An interior rewind retains the active guide", guide, field<Any?>(reader, "incorrectFeedback"))
+                assertEquals(guidePart, field<Int>(guide, "index"))
+                assertEquals("Backward uses the measured source offset exactly", guidePauseOffset - 1_000L, field<Long>(guide, "offset"))
                 reader.seekBy(1)
+                assertSame("Forward still addresses the same guide, not a stale reference", guide, field<Any?>(reader, "incorrectFeedback"))
+                assertEquals(guidePart, field<Int>(guide, "index"))
+                assertEquals(firstGuideToken, field<Long>(guide, "token"))
+                assertEquals("The paired interior seeks restore the exact paused offset", guidePauseOffset, field<Long>(guide, "offset"))
                 guidePauseOffset = field(guide, "offset")
                 assertTrue("A forward guide seek retains a measured offset", guidePauseOffset >= 1_000L)
                 assertEquals("A guide seek cannot credit any successful feedback", originalHeard, originalGate.heardThrough)
@@ -631,7 +648,7 @@ class WrongFeedbackNarrationDeviceTest {
         }
         assertEquals("No published text or curricular answer changed", sourceHash,
             sha(LessonRepository.loadLessonJson(context, fixture.route, fixture.sourceLesson).toString().toByteArray()))
-        File(evidence(), "${language.tag}-${if (mathematical) "math" else "cpp"}-native.json").writeText(JSONObject()
+        File(evidence(), "${language.tag}-${if (inline) "inline" else if (mathematical) "math" else "cpp"}-native.json").writeText(JSONObject()
             .put("package", context.packageName).put("device", Build.MODEL).put("language", language.tag)
             .put("voice", language.defaultVoice).put("route", fixture.route).put("guide", fixture.guide)
             .put("guideAudioSha256", guideSha).put("guideDurationMs", guideDuration).put("savedGuideOffsetMs", guidePauseOffset)
@@ -646,7 +663,8 @@ class WrongFeedbackNarrationDeviceTest {
                                val mathematical: Boolean, val language: NarrationLanguage,
                                val guide: String, val absentReview: String, val success: String, val tail: String, val lesson: JSONObject)
 
-    private fun fixture(language: NarrationLanguage, mathematical: Boolean): Fixture {
+    private fun fixture(language: NarrationLanguage, mathematical: Boolean, inline: Boolean = false): Fixture {
+        require(!inline || (language == NarrationLanguage.SPANISH && !mathematical))
         val text = when (language) {
             NarrationLanguage.SPANISH -> listOf(
                 "Considera con cuidado qué parte del programa muestra el mensaje y qué recurso representa cada nombre antes de elegir una respuesta.",
@@ -668,9 +686,25 @@ class WrongFeedbackNarrationDeviceTest {
                 "This unselected option's guidance must never be spoken.",
                 "The output instruction uses the indicated resource and preserves the original message.")
         }
-        val id = (if (mathematical) "math_course_01__numeros_y_operaciones" else "cpp_fundamentals__programas_y_ejecucion") +
+        val id = (if (mathematical) "math_course_01__numeros_y_operaciones" else if (inline) "cpp_fundamentals__objetos_y_estado"
+            else "cpp_fundamentals__programas_y_ejecucion") +
             "__wrong_feedback_qa_" + UUID.randomUUID().toString().replace("-", "")
-        val block = if (mathematical) JSONObject().put("type", "math_puzzle").put("schemaVersion", 1).put("id", "wrong_feedback_choice")
+        val inlineGuide = "Revisa el tipo de los operandos antes de considerar el destino del cociente. Distingue el cálculo de su almacenamiento antes de volver a responder."
+        // This exact reasoning is already in the later curricular paragraph p9 b3.
+        // Only the in-memory QA copy attaches it to the existing success gate.
+        val inlineSuccess = "Los huecos se completan con `double`, `longitud_metros` y `partes`, en ese orden. " +
+            "Aunque el inicializador escrito sea el entero `9`, la variable `longitud_metros` tiene el tipo `double` elegido en su definición."
+        val block = if (inline) {
+            val original = LessonRepository.loadLessonJson(context, "programming", INLINE_SOURCE)
+            assertTrue(original.getJSONArray("pages").getJSONObject(8).getJSONArray("blocks").getJSONObject(2)
+                .getString("text").contains(inlineSuccess))
+            JSONObject(original.getJSONArray("pages").getJSONObject(7).getJSONArray("blocks").getJSONObject(6).toString())
+                .put("reviewFeedback", inlineGuide).put("explanation", inlineSuccess).also {
+                    assertEquals("inline_fill_code", it.getString("type"))
+                    assertEquals(listOf("double", "longitud_metros", "partes"),
+                        List(it.getJSONArray("answers").length()) { index -> it.getJSONArray("answers").getString(index) })
+                }
+        } else if (mathematical) JSONObject().put("type", "math_puzzle").put("schemaVersion", 1).put("id", "wrong_feedback_choice")
             .put("prompt", text[0]).put("responses", JSONArray().put(JSONObject().put("id", RESPONSE_ID)
                 .put("type", "math_multiple_choice_single").put("options", JSONArray()
                     .put(JSONObject().put("id", "wrong").put("label", "6 × 100 = 6").put("reviewFeedback", text[1]))
@@ -688,7 +722,8 @@ class WrongFeedbackNarrationDeviceTest {
         val lesson = JSONObject().put("id", id).put("title", "").put("language", language.tag)
             .put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block).put(JSONObject().put("type", "paragraph").put("text", tail)))))
         return Fixture(id, if (mathematical) "math_physics" else "programming",
-            if (mathematical) MATH_SOURCE else CPP_SOURCE, mathematical, language, text[1], text[2], text[3], tail, lesson)
+            if (mathematical) MATH_SOURCE else if (inline) INLINE_SOURCE else CPP_SOURCE,
+            mathematical, language, if (inline) inlineGuide else text[1], text[2], if (inline) inlineSuccess else text[3], tail, lesson)
     }
 
     private fun withFixture(fixture: Fixture, body: (ActivityScenario<LessonActivity>) -> Unit) {
@@ -696,7 +731,8 @@ class WrongFeedbackNarrationDeviceTest {
         ProgressRepository.saveCurrentPage(context, fixture.route, fixture.sourceLesson, 0)
         val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", fixture.route)
             .putExtra("courseId", if (fixture.mathematical) "math_course_01" else "cpp_fundamentals")
-            .putExtra("unitId", if (fixture.mathematical) "numeros_y_operaciones" else "programas_y_ejecucion")
+            .putExtra("unitId", if (fixture.mathematical) "numeros_y_operaciones"
+                else if (fixture.sourceLesson == INLINE_SOURCE) "objetos_y_estado" else "programas_y_ejecucion")
             .putExtra("lessonId", fixture.sourceLesson).putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)
         ActivityScenario.launch<LessonActivity>(intent).use { host ->
             activeScenario = host
@@ -735,6 +771,22 @@ class WrongFeedbackNarrationDeviceTest {
     }
 
     private fun select(activity: LessonActivity, fixture: Fixture, correct: Boolean) {
+        val block = fixture.lesson.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(0)
+        if (block.optString("type") == "inline_fill_code") {
+            val answers = block.getJSONArray("answers")
+            val values = List(answers.length()) { index -> if (!correct && index == 0) "int" else answers.getString(index) }
+            val inputs = descendants(content(activity)).filterIsInstance<EditText>()
+            assertEquals("The original independent holes remain editable", values.size, inputs.size)
+            values.forEachIndexed { index, value -> inputs[index].setText(value) }
+            assertEquals(values, inputs.map { it.text.toString() })
+            // As in every technical field, a first draft is not a submitted attempt.
+            // After a reviewed attempt, editing persists its same independent holes.
+            ProgressRepository.getExerciseState(context, fixture.id, 0, 0)?.let { draft ->
+                assertFalse(draft.getBoolean("correct"))
+                assertEquals(values, List(draft.getJSONArray("answers").length()) { draft.getJSONArray("answers").getString(it) })
+            }
+            return
+        }
         val choices = descendants(content(activity)).filterIsInstance<CompoundButton>()
         assertEquals(2, choices.size)
         val index = if (correct) 1 else 0
@@ -825,6 +877,7 @@ class WrongFeedbackNarrationDeviceTest {
     companion object {
         private const val RESPONSE_ID = "qa_internal_quantity_response"
         private const val CPP_SOURCE = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        private const val INLINE_SOURCE = "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones"
         private const val MATH_SOURCE = "math_course_01__numeros_y_operaciones__magnitudes_y_numeracion"
         private val QA_PACKAGES = setOf("com.learngraphicsprogramming.app.curricularqa", "com.learngraphicsprogramming.app.realdownloadsqa")
         private val KNOWN_PREFERENCES = setOf("learning_progress", "navigation_state", "lesson_narration_settings", "lesson_narration_resume_bounded_v1",

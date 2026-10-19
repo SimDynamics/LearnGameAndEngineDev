@@ -4060,7 +4060,7 @@ class LessonActivity : AppCompatActivity() {
     private fun cppIncorrectGuidance(block: JSONObject, selectedIndex: Int? = null): String {
         val fallback = when (block.getString("type")) {
             "multiple_choice" -> R.string.cpp_review_choice
-            "fill_code" -> R.string.cpp_review_fill
+            "fill_code", "inline_fill_code" -> R.string.cpp_review_fill
             "output_prediction" -> R.string.cpp_review_output
             "order_code" -> R.string.cpp_review_order
             "drag_fill_code" -> R.string.cpp_review_drag
@@ -5038,9 +5038,20 @@ class LessonActivity : AppCompatActivity() {
 
         // Output predictions are programming answer editors, even when the
         // expected output is plain text. The shared shortcut bar is focus-
-        // driven, not punctuation-driven. Keep the original IME, Tab, Enter,
-        // single/multiline behavior and existing validation unchanged.
+        // driven, not punctuation-driven. Preserve Tab, Enter, single/multiline
+        // behavior and existing validation while protecting literal input.
         input.tag = CODE_INPUT_TAG
+
+        // Literal program output is technical text, not prose to spell-check.
+        // Match the existing C++ editor's IME contract while keeping line breaks
+        // for exercises whose accepted output contains more than one line.
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+            android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+            if (submitOnEnter) 0 else android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            input.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+        }
 
         input.hint =
             getString(R.string.exercise_expected_output)
@@ -9440,7 +9451,8 @@ class LessonActivity : AppCompatActivity() {
                         block.getString(
                             "text"
                         ),
-                        block.optString("mathMode", "auto")
+                        block.optString("mathMode", "auto"),
+                        block.opt("emphasis")
                     )
                 }
 
@@ -12056,7 +12068,8 @@ class LessonActivity : AppCompatActivity() {
 
     private fun addParagraph(
         text: String,
-        mathMode: String = "auto"
+        mathMode: String = "auto",
+        emphasis: Any? = null
     ) {
 
         val view =
@@ -12086,6 +12099,8 @@ class LessonActivity : AppCompatActivity() {
             0,
             dp(18)
         )
+
+        LessonParagraphEmphasis.apply(view, emphasis)
 
         // The semantic underlay retains its original hue; only body glyphs brighten.
         // Reader word-level shading and timing are unchanged.
@@ -14911,7 +14926,15 @@ class LessonActivity : AppCompatActivity() {
         }
         inputs.forEach { PuzzleAnswerSubmit.install(it, checkButton) }
         fun currentInlineAnswers() = org.json.JSONArray(inputs.map { it.text.toString() })
-        fun inlineIncorrectReview() = getString(R.string.exercise_wrong_spacing) + "\n" + getString(R.string.cpp_review_fill)
+        fun inlineIncorrectReview(): String {
+            val status = if (block.has("reviewFeedback")) R.string.exercise_incorrect else R.string.exercise_wrong_spacing
+            return getString(status) + "\n" + cppIncorrectGuidance(block)
+        }
+        fun inlineSuccessReview(): String {
+            val explanation = CppExerciseFeedback.successExplanation(block)
+            return if (explanation.isEmpty()) getString(R.string.lesson_correct_feedback)
+            else getString(R.string.lesson_correct_explanation, explanation)
+        }
 
         for (
         input in inputs
@@ -15290,8 +15313,7 @@ class LessonActivity : AppCompatActivity() {
             checkButton.text =
                 getString(R.string.exercise_correct)
 
-            result.text =
-                getString(R.string.lesson_correct_feedback)
+            result.text = inlineSuccessReview()
 
             result.setTextColor(
                 Color.rgb(
@@ -15318,8 +15340,14 @@ class LessonActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            var incorrectReview = ""
+            var successReview = ""
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
                 evaluation = {
+                    // Malformed optional feedback is a technical error, never a
+                    // charged answer or a silently ignored content contract.
+                    incorrectReview = inlineIncorrectReview()
+                    successReview = inlineSuccessReview()
                     CppExerciseAnswers.inlineMatches(block, actual)
                 }, verdict = { it }) ?: return@setOnClickListener
 
@@ -15367,8 +15395,7 @@ class LessonActivity : AppCompatActivity() {
                 correct
             ) {
 
-                result.text =
-                    getString(R.string.lesson_correct_feedback)
+                result.text = successReview
 
                 result.setTextColor(
                     Color.rgb(
@@ -15407,7 +15434,7 @@ class LessonActivity : AppCompatActivity() {
 
             } else {
 
-                result.text = inlineIncorrectReview()
+                result.text = incorrectReview
 
                 narrateIncorrectAttempt(exercisePage, blockIndex, listOf(result.text.toString()))
 

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
 FIELDS = {
     "heading": {"type", "text"},
-    "paragraph": {"type", "text"},
+    "paragraph": {"type", "text", "emphasis"},
     "note": {"type", "text"},
     "code": {"type", "language", "code"},
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
@@ -21,13 +21,13 @@ FIELDS = {
     "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison", "reviewFeedback"},
     "order_code": {"type", "id", "question", "language", "fragments", "correctOrder", "explanation", "reviewFeedback"},
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder", "explanation", "reviewFeedback"},
-    "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives"},
+    "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives", "reviewFeedback", "explanation"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
     "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake"}
-REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code"}
+REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
 # Precisiones revisadas de consigna; todos los demás campos del ejercicio,
@@ -66,6 +66,24 @@ QUESTION_CLARIFICATIONS = {
 }
 # Precisiones textuales revisadas. Se conserva el resto del ejercicio entero.
 EXPLANATION_CLARIFICATIONS = {
+    # Revisiones curriculares de U2L8 verificadas por Work; todos los demás
+    # campos, código, respuestas, ID y coordenadas conservan igualdad exacta.
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 1, 5):
+        ('fill_code', "`'K'` es un literal de carácter: las comillas simples delimitan el símbolo que recibe `fila`. La consola muestra la letra sin esas comillas (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43)."),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 2, 3):
+        ('output_prediction', 'La consola muestra `8 8`. La primera cifra procede del carácter guardado en `marca`; la segunda, del entero guardado en `cantidad`. El espacio entre ellas procede del literal `" "`. Ver las mismas cifras no significa que los objetos tengan el mismo tipo (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).'),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 3, 3):
+        ('output_prediction', "La primera instrucción muestra `A` y el carácter de salto `'\\n'`. Después, la asignación sustituye el valor de `marca` por `B`, que se muestra en la segunda línea. El programa no imprime las comillas ni los dos signos del escape (Stroustrup, 2024, sección 2.5, p. 37; Köppe et al., 2023, sección 5.13.3, párr. 4 y tabla 10)."),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 4, 3):
+        ('output_prediction', '`mensaje` empieza con `Listo`. La operación `+= signo` añade el carácter guardado en `signo` y actualiza esa cadena. Por eso se muestra `Listo!`, sin espacio intermedio: la operación no inventa un separador (Köppe et al., 2023, sección 23.4.3.7.1, párr. 5; sección 23.4.3.7.2, párr. 11).'),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 2):
+        ('output_prediction', '`registro` copia `true` cuando se inicializa. Después, la asignación cambia `disponible` a `false`, sin actualizar la copia. La salida predeterminada representa esos valores como `1 0` (Stroustrup, 2024, sección 2.5, p. 37; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 3):
+        ('fill_code', '`false` indica que la condición «terminada» no se cumple todavía. Es un literal lógico, escrito sin comillas. La salida predeterminada lo presenta como `0` (Stroustrup, 2024, sección 2.2, p. 32; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 5):
+        ('output_prediction', '`auto` deduce el tipo `bool` a partir del inicializador `true`. La asignación posterior cambia el valor a `false`, pero no cambia el tipo deducido. En la consola aparece `0` por el formato predeterminado (Stroustrup, 2024, sección 2.10, p. 47; sección 2.8, p. 43; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 8, 5):
+        ('output_prediction', '`nombre` aporta la secuencia `Modulo`; `inicial` aporta el carácter `M`; `preparado` conserva `false`, que en este formato se muestra como `0`. Los dos espacios están escritos en las instrucciones de salida. Ninguno de los objetos cambia de tipo por aparecer junto a los otros (Stroustrup, 2024, sección 2.2, p. 32; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).'),
     ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 4, 3):
         ("order_code", "Primero #include <iostream> permite usar el recurso de salida; después se abre main, se escribe la instrucción que muestra el mensaje y se termina el cuerpo."),
     ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 3, 3):
@@ -275,6 +293,7 @@ EXACT_OUTPUT_LOCATIONS = {
     ("datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json", 15, 3),
 }
 INLINE_ANSWER_ALTERNATIVES = {
+    ("objetos_y_estado/lesson_conversiones_y_deduccion.json", 4, 6): [["double", "float", "long double", "double long"]],
     ("objetos_y_estado/lesson_enteros_y_aproximaciones.json", 4, 4): [["int", "signed", "signed int", "int signed"], ["double"]],
     ("expresiones_y_decisiones/lesson_combinar_condiciones.json", 2, 4): [["&&", "and"], ["||", "or"]],
     ("expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json", 3, 6): [["=="], ["!=", "not_eq"]],
@@ -439,16 +458,49 @@ def without_review_feedback(block):
     return {key: value for key, value in block.items() if key != "reviewFeedback"}
 
 
+def validate_paragraph_emphasis_contract(block, where):
+    """Only explicit exact selections decorate original paragraph text; no markup."""
+    if "emphasis" not in block:
+        return
+    require(block.get("type") == "paragraph", where, "emphasis sólo está disponible en párrafos")
+    items, text = block["emphasis"], block.get("text")
+    require(isinstance(items, list) and isinstance(text, str), where,
+            "emphasis requiere una lista y el texto original del párrafo")
+    if not isinstance(items, list) or not isinstance(text, str):
+        return
+    for item in items:
+        valid = isinstance(item, dict) and set(item) <= {"text", "occurrence"}
+        fragment = item.get("text") if isinstance(item, dict) else None
+        valid = valid and isinstance(fragment, str) and bool(fragment.strip())
+        require(valid, where, "cada énfasis requiere un fragmento textual exacto no vacío")
+        if not valid:
+            continue
+        occurrence, starts, index = item.get("occurrence"), [], 0
+        while index <= len(text) - len(fragment):
+            index = text.find(fragment, index)
+            if index < 0:
+                break
+            starts.append(index)
+            index += 1  # Coincidencias superpuestas, igual que el selector Kotlin.
+        if "occurrence" in item:
+            valid_number = (not isinstance(occurrence, bool) and isinstance(occurrence, (int, float))
+                            and occurrence >= 1 and occurrence <= len(starts)
+                            and int(occurrence) == occurrence)
+            require(valid_number, where, "occurrence debe seleccionar una coincidencia positiva existente")
+        else:
+            require(len(starts) == 1, where, "un fragmento de énfasis repetido requiere occurrence explícito")
+
+
 def validate_code_presentation_contract(block, where):
     """Optional presentation does not evaluate a response or infer its solution."""
     if block.get("type") == "order_code" and "language" in block:
         language = block["language"]
         require(isinstance(language, str) and language.strip().lower() in {"cpp", "c++", "cmake"},
                 where, "language de order_code debe ser cpp, c++ o cmake")
-    if block.get("type") == "drag_fill_code" and "explanation" in block:
+    if block.get("type") in {"drag_fill_code", "inline_fill_code"} and "explanation" in block:
         explanation = block["explanation"]
         require(isinstance(explanation, str) and bool(explanation.strip()),
-                where, "explanation de drag_fill_code debe ser texto no vacío reservado al acierto")
+                where, "explanation debe ser texto no vacío reservado al acierto")
 
 
 def validate_answer_contract(block, where):
@@ -598,6 +650,10 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
 def preserves_previous_exercise(relative, pn, bn, old, current):
     old = without_review_feedback(old)
     current = without_review_feedback(current)
+    # La explicación opcional nueva de inline no reemplaza ningún dato anterior.
+    # Si ya existía en el bloque de referencia, su texto sigue protegido.
+    if old.get("type") == "inline_fill_code" and "explanation" not in old:
+        current = {key: value for key, value in current.items() if key != "explanation"}
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
@@ -607,9 +663,13 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
             return True
     revision = FILL_CODE_REVISIONS.get(location)
     if revision is not None and old["type"] == "fill_code":
+        expected = dict(old, **revision)
+        explanation = EXPLANATION_CLARIFICATIONS.get(location)
+        if explanation is not None and old["type"] == explanation[0]:
+            expected["explanation"] = explanation[1]
         return (
             current.get("answers", [])[:len(old["answers"])] == old["answers"]
-            and current == dict(old, **revision)
+            and current == expected
         )
     if location in EXACT_OUTPUT_LOCATIONS and old["type"] == "output_prediction":
         if current == dict(old, outputComparison="exact"):
@@ -700,6 +760,7 @@ def main():
                 require(set(block) <= FIELDS[kind], where, "campo ajeno al contrato comprobado")
                 validate_review_feedback_contract(block, where)
                 validate_code_presentation_contract(block, where)
+                validate_paragraph_emphasis_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where)
                 if kind in {"heading", "paragraph", "note"}:

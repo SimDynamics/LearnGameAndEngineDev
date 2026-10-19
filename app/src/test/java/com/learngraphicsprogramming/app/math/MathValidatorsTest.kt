@@ -286,7 +286,9 @@ class MathValidatorsTest {
                 }
             }
         }
-        assertEquals(MathPuzzleTypes.responseTypes, seen)
+        // The original sandbox is immutable curriculum; the optional rigid-copy contract
+        // is exercised by RigidAngleCopyTest, not by adding an unreviewed curricular puzzle.
+        assertEquals(MathPuzzleTypes.responseTypes - "math_rigid_angle_copy", seen)
     }
 
     @Test fun answerCodecRoundTripsEveryMechanism() {

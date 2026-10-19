@@ -28,10 +28,53 @@ import kotlin.math.round
 /** Controls share typed answers and can freeze after success without discarding their state. */
 object MathVisualControls {
     fun create(context: Context, spec: MathResponseSpec, accentColor: Int, onChange: () -> Unit): MathResponseControl? = when (spec.type) {
+        "math_rigid_angle_copy" -> rigidAngle(context, spec, accentColor, onChange)
         "math_coordinate_graph_builder", "math_geometry_builder" -> graph(context, spec, accentColor, onChange)
         "math_number_line" -> if (spec.config.optString("mode", "build_inequality") == "build_inequality") numberLine(context, spec, accentColor, onChange) else null
         "math_slider_interaction" -> sliders(context, spec, accentColor, onChange)
         else -> null
+    }
+
+    private fun rigidAngle(context: Context, response: MathResponseSpec, accent: Int, onChange: () -> Unit): MathResponseControl {
+        val spec = RigidAngleCopySpec.parse(response.validator)
+        val visual = MathRigidAngleCopyView(context, spec, accent)
+        val root = column(context)
+        response.config.optString("label").takeIf { it.isNotBlank() }?.let { root.addView(label(context, it)) }
+        root.addView(label(context, context.getString(R.string.math_rigid_help)))
+        root.addView(label(context, context.getString(R.string.math_rigid_legend)))
+        val panel = object : LinearLayout(context), MathFullscreenGestureCapability {
+            override val allowEdgeSwipeToDismiss = false
+        }.apply { orientation = LinearLayout.VERTICAL }
+        val controls = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        val modes = listOf(R.string.math_rigid_move to MathRigidAngleCopyView.Mode.MOVE_COPY,
+            R.string.math_rigid_rotate to MathRigidAngleCopyView.Mode.ROTATE_COPY, R.string.math_rigid_view to MathRigidAngleCopyView.Mode.VIEW)
+        val buttons = modes.map { (text, mode) -> MathWidgetUi.button(context, context.getString(text), accent).apply {
+            tag = "rigid_angle_mode_$mode"
+            setOnClickListener {
+                visual.mode = mode
+                (0 until controls.childCount).forEach { index -> controls.getChildAt(index).isSelected = modes[index].second == mode }
+            }
+            isSelected = mode == visual.mode
+            controls.addView(this, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        } }
+        panel.addView(controls)
+        val resetCopy = MathWidgetUi.button(context, context.getString(R.string.math_rigid_reset), accent).apply {
+            tag = "rigid_angle_reset"
+            setOnClickListener { visual.restorePlacement(spec.initial); onChange() }
+        }
+        panel.addView(resetCopy)
+        panel.addView(visual, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        root.addView(MathExpandableRepresentation.wrap(context, panel, accent, 1.1f))
+        visual.onPlacementChanged = onChange
+        return object : MathResponseControl {
+            override val view: View = root
+            override fun answer(): MathAnswer = MathAnswer.RigidAngle(visual.placement)
+            override fun restore(answer: MathAnswer) { if (answer is MathAnswer.RigidAngle) visual.restorePlacement(answer.placement) }
+            override fun setEditable(enabled: Boolean) { visual.editable = enabled; buttons.forEach { it.isEnabled = enabled }; resetCopy.isEnabled = enabled }
+            override fun hasDraftChanges() = visual.placement != spec.initial
+            override fun saveDraft(): JSONObject = MathAnswerJson.encode(answer())
+            override fun restoreDraft(state: JSONObject) { MathAnswerJson.decode(state)?.let(::restore) }
+        }
     }
 
     private fun graph(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit): MathResponseControl {

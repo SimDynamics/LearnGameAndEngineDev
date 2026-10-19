@@ -14,6 +14,8 @@ internal object MathPuzzleUiInstructions {
     const val INTERVAL_DIRECTION = "math_number_line:interval_direction"
     const val AUXILIARY_TOOL = "math_puzzle:auxiliary_tool"
     const val UNIT_TEMPLATE = "math_text:unit_template"
+    const val RIGID_ANGLE_HELP = "math_rigid_angle_copy:help"
+    const val RIGID_ANGLE_LEGEND = "math_rigid_angle_copy:legend"
 
     /** The existing hole announcement follows the narration language, independently of the UI. */
     fun spokenBlank(language: NarrationLanguage): String = when (language) {
@@ -36,6 +38,7 @@ internal object MathPuzzleUiInstructions {
         else config.optString("label", "")
 
     fun supplementary(type: String, resolve: (String) -> String): List<String> = when (type) {
+        "math_rigid_angle_copy" -> listOf(resolve(RIGID_ANGLE_HELP), resolve(RIGID_ANGLE_LEGEND))
         "math_coordinate_graph_builder", "math_geometry_builder" -> listOf(resolve(EDIT_COORDINATES))
         "math_number_line" -> listOf(resolve(POSITION), resolve(INTERVAL_DIRECTION))
         else -> emptyList()

@@ -92,8 +92,18 @@ class MultilingualReadingCorpusTest {
             val original = lesson.toString()
             val blocks = lesson.getJSONArray("pages").getJSONObject(2).getJSONArray("blocks")
             val source = (0 until blocks.length()).map { blocks.getJSONObject(it).optString("text") }
-                .single { it.count { char -> char == ';' } == 3 }
+                // Editorial wording and citation punctuation differ by locale;
+                // the actual technical-terminator explanation remains the fixture.
+                .single { it.contains("#include <iostream>") && it.contains(";.") }
             assertMapping(source, "auto", language, "U1/L2/P3/semicolon-explanation")
+            val regression = when (language) {
+                NarrationLanguage.SPANISH -> "Cada instrucción termina con ;. No añadas ; a cualquier línea. Las llaves delimitan instrucciones; tampoco son una salida."
+                NarrationLanguage.FRENCH -> "Chaque instruction se termine par ;. N'ajoute pas ; à toutes les lignes. Les accolades délimitent les instructions ; elles ne sont pas un message."
+                else -> "Each statement ends with ;. Do not add ; to every line. Braces delimit statements; they are not an output message."
+            }
+            assertEquals("Keep the earlier two technical signs plus ordinary punctuation as an explicit regression", 3,
+                regression.count { it == ';' })
+            assertMapping(regression, "auto", language, "three-semicolons-regression")
             assertEquals(original, lesson.toString())
         }
     }

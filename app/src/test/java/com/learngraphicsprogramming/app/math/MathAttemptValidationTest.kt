@@ -29,6 +29,7 @@ class MathAttemptValidationTest {
             fixture("math_slider_interaction", JSONObject().put("type", "sliders").put("values", JSONObject().put("scale", validator("numeric", 1))),
                 MathAnswer.Sliders(mapOf("scale" to 2.0))).configure { put("parameters", ids("scale")) },
             fixture("math_coordinate_graph_builder", coordinates("point", point(1, 1)), graph(point(2, 2))),
+            fixture("math_rigid_angle_copy", RigidAngleCopyTest.spec(), MathAnswer.RigidAngle(RigidAnglePlacement(-3.0, 8.0, .5))),
             fixture("math_geometry_builder", validator("geometry", 4).put("shape", "rectangle"),
                 graph(point(0, 0), point(3, 0), point(3, 2), point(0, 2)))
         )

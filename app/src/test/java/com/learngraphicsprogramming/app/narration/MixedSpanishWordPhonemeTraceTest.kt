@@ -63,7 +63,7 @@ class MixedSpanishWordPhonemeTraceTest {
         val lesson = JSONObject(file.readText())
         val before = lesson.toString()
         val block = lesson.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks").getJSONObject(3)
-        assertTrue(block.getString("text").startsWith("Una biblioteca reúne recursos ya preparados"))
+        assertTrue(block.getString("text").startsWith("Una biblioteca reúne recursos que otros programas pueden utilizar."))
         val script = LessonNarrationScript.page(lesson, 0, NarrationLanguage.SPANISH, forKokoro = true)
         val plan = requireNotNull(script.readingPlan(NarrationEngine.KOKORO))
         val parts = NarrationSegments.sentences(script.texts)

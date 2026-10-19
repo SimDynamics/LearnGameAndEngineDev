@@ -15,11 +15,14 @@ sealed class MathAnswer {
     data class NumberLine(val value: Double, val closed: Boolean, val direction: String) : MathAnswer()
     data class Sliders(val values: Map<String, Double>) : MathAnswer()
     data class Graph(val points: List<MathPoint>) : MathAnswer()
+    data class RigidAngle(val placement: RigidAnglePlacement) : MathAnswer()
 }
 
 object MathAnswerJson {
     fun encode(answer: MathAnswer): JSONObject = JSONObject().apply {
         when (answer) {
+            is MathAnswer.RigidAngle -> put("type", "rigid_angle").put("x", answer.placement.x)
+                .put("y", answer.placement.y).put("rotation", answer.placement.rotation)
             is MathAnswer.Text -> put("type", "text").put("value", answer.value)
             is MathAnswer.Choice -> put("type", "choice").put("selected", JSONArray(answer.selected.sorted()))
             is MathAnswer.Fields -> put("type", "fields").put("values", JSONObject(answer.values))
@@ -46,6 +49,7 @@ object MathAnswerJson {
     /** Corrupted or old state returns null so the renderer can use its normal initial answer. */
     fun decode(json: JSONObject): MathAnswer? = try {
         when (json.getString("type")) {
+            "rigid_angle" -> MathAnswer.RigidAngle(RigidAnglePlacement(json.getDouble("x"), json.getDouble("y"), json.getDouble("rotation")))
             "text" -> MathAnswer.Text(json.getString("value"))
             "choice" -> MathAnswer.Choice(strings(json.getJSONArray("selected")).toSet())
             "fields" -> MathAnswer.Fields(stringMap(json.getJSONObject("values")))

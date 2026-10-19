@@ -241,15 +241,26 @@ class SpanishTechnicalSpeechTest {
         val before = lesson.toString()
         val blocks = lesson.getJSONArray("pages").getJSONObject(2).getJSONArray("blocks")
         val source = (0 until blocks.length()).map { blocks.getJSONObject(it).optString("text") }
-            .single { it.contains("No añadas ;") }
+            .single { it.contains("Cada instrucción de salida") && it.contains("termina con ;.") }
         val prepared = SpanishTechnicalSpeech.prepareForKokoro(source).text
         val spoken = ManualEnglishSpeech.strip(prepared)
-        assertEquals(2, Regex("punto y coma").findAll(spoken).count())
-        assertTrue(spoken.contains("instrucciones; tampoco"))
+        assertEquals("The current explanation has one technical terminator", 1, Regex("punto y coma").findAll(spoken).count())
+        assertTrue("The citation's ordinary semicolon remains punctuation", spoken.contains("25; sección"))
+        assertEquals(1, spoken.count { it == ';' })
         val parts = NarrationSegments.sentences(listOf(prepared)).withIndex().associate { it.index to it.value }
         val mapping = NarrationWordMappings.forBlock(0, source, parts)
         assertEquals(parts.keys, mapping.keys)
         assertEquals(source.indices.toSet(), mapping.values.flatMap { it.displayed.flatMap { range -> range.start until range.endExclusive } }.toSet())
+        val legacy = "Cada instrucción termina con ;. No añadas ; a cualquier línea. Las llaves delimitan instrucciones; tampoco son una salida."
+        val legacyPrepared = SpanishTechnicalSpeech.prepareForKokoro(legacy).text
+        val legacySpoken = ManualEnglishSpeech.strip(legacyPrepared)
+        assertEquals("Keep the original two technical mentions as an explicit regression", 2,
+            Regex("punto y coma").findAll(legacySpoken).count())
+        assertTrue(legacySpoken.contains("instrucciones; tampoco"))
+        val legacyParts = NarrationSegments.sentences(listOf(legacyPrepared)).withIndex().associate { it.index to it.value }
+        val legacyMapping = NarrationWordMappings.forBlock(0, legacy, legacyParts)
+        assertEquals(legacyParts.keys, legacyMapping.keys)
+        assertEquals(legacy.indices.toSet(), legacyMapping.values.flatMap { it.displayed.flatMap { range -> range.start until range.endExclusive } }.toSet())
         assertEquals(before, lesson.toString())
     }
 

@@ -25,7 +25,7 @@ object MathPuzzleTypes {
         "math_multi_input", "math_expression_input", "math_structured_answer",
         "math_equation_fill_blanks", "math_ordering_drag", "math_number_line",
         "math_slider_interaction", "math_matching_drag", "math_coordinate_graph_builder",
-        "math_geometry_builder"
+        "math_geometry_builder", "math_rigid_angle_copy"
     )
 
     fun isExercise(type: String): Boolean = type == "math_puzzle" || type in responseTypes
@@ -91,6 +91,7 @@ object MathPuzzleParser {
         "numeric", "tolerance", "exact_fraction", "equivalent_expression", "symbolic", "parametric_rational_expression", "text", "exact_text", "latex" -> "text"
         "choice", "fields", "order", "matching", "number_line", "sliders" -> type
         "coordinates", "geometry" -> "graph"
+        "rigid_angle_copy" -> "rigid_angle"
         else -> null // Registered extensions define their own answer contract.
     }
 
@@ -103,6 +104,7 @@ object MathPuzzleParser {
             "math_matching_drag" -> "matching"
             "math_number_line" -> "number_line"
             "math_slider_interaction" -> "sliders"
+            "math_rigid_angle_copy" -> "rigid_angle"
             else -> "graph"
         }
         val validatorType = validator.getString("type")
@@ -111,6 +113,11 @@ object MathPuzzleParser {
             "La respuesta $id ($type) no es compatible con el validador $validatorType."
         }
         when (family) {
+            "rigid_angle" -> {
+                require(validatorType == "rigid_angle_copy") { "La copia rígida requiere su validador geométrico." }
+                // One contract supplies both presentation and evaluation; there is no hidden second figure.
+                RigidAngleCopySpec.parse(validator)
+            }
             "choice" -> {
                 val optionIds = ids(raw, "options", id)
                 validateOptionReviews(raw, id)

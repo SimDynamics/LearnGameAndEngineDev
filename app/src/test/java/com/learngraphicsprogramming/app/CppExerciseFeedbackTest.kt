@@ -21,14 +21,14 @@ class CppExerciseFeedbackTest {
     }
 
     @Test fun legacyBlocksKeepTheirSafeFallbackAndNeverReadExplanation() {
-        for (type in listOf("multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code")) {
+        for (type in listOf("multiple_choice", "fill_code", "inline_fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             val legacy = JSONObject().put("type", type).put("explanation", "SOLUTION")
             assertEquals("Revisa tu razonamiento.", CppExerciseFeedback.review(legacy, 1, "Revisa tu razonamiento."))
         }
     }
 
     @Test fun freeResponsesAndOrderUseOnlyTheirAuthoredProcessReview() {
-        for (type in listOf("fill_code", "output_prediction", "order_code", "drag_fill_code")) {
+        for (type in listOf("fill_code", "inline_fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             val block = JSONObject().put("type", type).put("reviewFeedback", "Comprueba el proceso.\nConserva el borrador.")
                 .put("answers", "DO NOT READ").put("correctOrder", "DO NOT READ").put("explanation", "SOLUTION")
             assertEquals("Comprueba el proceso.\nConserva el borrador.", CppExerciseFeedback.review(block, fallback = "safe"))
@@ -47,12 +47,12 @@ class CppExerciseFeedbackTest {
     }
 
     @Test fun malformedTextAndUnsupportedFamiliesAreNotSilentlyAccepted() {
-        for (type in listOf("fill_code", "output_prediction", "order_code", "drag_fill_code")) {
+        for (type in listOf("fill_code", "inline_fill_code", "output_prediction", "order_code", "drag_fill_code")) {
             for (value in listOf<Any>(JSONObject.NULL, "", "\n\t", JSONArray().put("review"), JSONObject(), 1, false)) {
                 assertInvalid { CppExerciseFeedback.review(JSONObject().put("type", type).put("reviewFeedback", value), fallback = "safe") }
             }
         }
-        for (type in listOf("inline_fill_code", "cpp_compiler", "paragraph", "math_multiple_choice_single")) {
+        for (type in listOf("cpp_compiler", "paragraph", "math_multiple_choice_single")) {
             assertInvalid { CppExerciseFeedback.review(JSONObject().put("type", type).put("reviewFeedback", "review"), fallback = "safe") }
         }
         assertInvalid { CppExerciseFeedback.review(choice().put("options", "wrong"), 0, "safe") }

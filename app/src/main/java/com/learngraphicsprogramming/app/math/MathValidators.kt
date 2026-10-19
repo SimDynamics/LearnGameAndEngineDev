@@ -54,6 +54,7 @@ object MathValidators {
         register("sliders", ::sliders)
         register("coordinates", ::coordinates)
         register("geometry", ::geometry)
+        register("rigid_angle_copy", ::rigidAngle)
     }
 
     fun register(type: String, validator: MathAnswerValidator) {
@@ -86,6 +87,7 @@ object MathValidators {
         requireMath(type in registry) { "Tipo de validador desconocido: $type" }
         tolerance(spec)
         when (type) {
+            "rigid_angle_copy" -> RigidAngleCopySpec.parse(spec)
             "numeric", "tolerance", "exact_fraction" -> number(spec, "expected")
             "equivalent_expression", "symbolic" -> {
                 requireMath(spec.opt("expected") is String) { "$type requiere expected como texto." }
@@ -108,7 +110,7 @@ object MathValidators {
                         ?: throw IllegalArgumentException("$type.$key requiere un objeto validador.")
                     validateSpec(validator)
                     val childType = validator.getString("type")
-                    val nonTextBuiltins = setOf("choice", "fields", "order", "matching", "number_line", "sliders", "coordinates", "geometry")
+                    val nonTextBuiltins = setOf("choice", "fields", "order", "matching", "number_line", "sliders", "coordinates", "geometry", "rigid_angle_copy")
                     requireMath(childType !in nonTextBuiltins) { "$type.$key requiere un validador de entrada textual/numeral." }
                 }
             }
@@ -151,6 +153,21 @@ object MathValidators {
                 }
             }
         }
+    }
+
+    private fun rigidAngle(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val placement = (answer as? MathAnswer.RigidAngle)?.placement ?: return wrongKind()
+        val condition = RigidAngleCopySpec.parse(spec).evaluate(placement)
+        val message = MathUiMessage(when (condition) {
+            RigidAngleCondition.SATISFIED -> R.string.math_rigid_satisfied
+            RigidAngleCondition.VERTEX -> R.string.math_rigid_review_vertex
+            RigidAngleCondition.DIRECTION -> R.string.math_rigid_review_direction
+            RigidAngleCondition.FIRST_SIDE -> R.string.math_rigid_review_first_side
+            RigidAngleCondition.REGION -> R.string.math_rigid_review_region
+            RigidAngleCondition.SECOND_SIDE -> R.string.math_rigid_review_second_side
+            RigidAngleCondition.INCLUSION -> R.string.math_rigid_review_inclusion
+        })
+        return MathValidationResult(condition == RigidAngleCondition.SATISFIED, message.diagnostic, uiMessage = message)
     }
 
     private fun numeric(spec: JSONObject, answer: MathAnswer): MathValidationResult {

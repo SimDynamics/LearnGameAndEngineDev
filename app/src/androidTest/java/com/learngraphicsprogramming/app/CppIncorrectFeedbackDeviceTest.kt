@@ -116,19 +116,31 @@ class CppIncorrectFeedbackDeviceTest {
         }
     }
 
-    @Test fun eighteenUnchangedPuzzlesGiveSafeFallbackAndIndependentRetries() =
+    @Test fun eighteenUnchangedPuzzlesGiveSafeFallbackAndIndependentRetries() {
+        // Work now supplies reviewFeedback in all eighteen published blocks. Explicitly
+        // remove only that optional field in the QA copy to keep the legacy regression,
+        // then verify the original authored guidance without replacing it with QA prose.
         exerciseAllLocations(authored = false)
+        exerciseAllLocations(authored = true, preservePublishedGuidance = true)
+    }
 
     @Test fun eighteenPublishedPuzzlesAcceptOptionalConceptualGuidanceWithoutRevealingSolutions() =
         exerciseAllLocations(authored = true)
 
-    private fun exerciseAllLocations(authored: Boolean) {
-        val mode = if (authored) "authored" else "legacy-fallback"
+    private fun exerciseAllLocations(authored: Boolean, preservePublishedGuidance: Boolean = false) {
+        val mode = if (preservePublishedGuidance) "published-guidance" else if (authored) "authored" else "legacy-fallback"
         var rejected = 0
         var accepted = 0
         val evidence = JSONArray()
         for (location in LOCATIONS) {
-            withBlock(location, transform = { if (authored) addReviewedGuidance(it) }) { scenario, fixture ->
+            withBlock(location, transform = { block ->
+                when {
+                    preservePublishedGuidance -> assertTrue("The current published block must retain Work's authored guidance", block.has("reviewFeedback"))
+                    authored -> addReviewedGuidance(block)
+                    else -> block.remove("reviewFeedback")
+                }
+            }) { scenario, fixture ->
+                assertEquals("A legacy fixture must explicitly omit the optional contract", authored, fixture.block.has("reviewFeedback"))
                 val wrongAnswers = wrongAnswers(fixture.block)
                 assertEquals("Two genuinely distinct incorrect attempts per published puzzle", 2, wrongAnswers.distinct().size)
                 wrongAnswers.forEachIndexed { index, answer ->
@@ -173,7 +185,9 @@ class CppIncorrectFeedbackDeviceTest {
         assertEquals(18, accepted)
         File(evidenceDirectory(), "$mode-summary.json").writeText(JSONObject().put("mode", mode)
             .put("package", context.packageName).put("rejected", rejected).put("accepted", accepted)
-            .put("puzzles", evidence).put("authoredGuidanceIsQaOverlayOnly", authored)
+            .put("puzzles", evidence).put("authoredGuidanceIsQaOverlayOnly", authored && !preservePublishedGuidance)
+            .put("publishedGuidancePreserved", preservePublishedGuidance)
+            .put("legacyOptionalFieldRemovedOnlyInQaCopy", !authored)
             .put("sourceAssetUntouched", true).toString(2))
     }
 

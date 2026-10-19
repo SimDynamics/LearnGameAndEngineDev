@@ -68,7 +68,7 @@ class TechnicalReadingCorpusTest {
             "cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json").readText())
         val source = lesson.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks")
             .getJSONObject(3).getString("text")
-        assertTrue(source.startsWith("Una biblioteca reúne recursos ya preparados"))
+        assertTrue(source.startsWith("Una biblioteca reúne recursos que otros programas pueden utilizar."))
         observed(source)
         observed("¿Lee #include <iostream>, std::cout << 42; y std::? { main(); } ¡Después, return 0!")
         observed("`std::cout << 7;` contiene ::, < >, { }, ; y números. Después calcula \\(x+2\\).")

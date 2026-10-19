@@ -32,7 +32,7 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
         self.assertIn("reviewFeedback", contract.FIELDS["multiple_choice"])
 
     def test_free_and_order_reviews_are_optional_nonempty_text(self):
-        for kind in ("fill_code", "output_prediction", "order_code", "drag_fill_code"):
+        for kind in ("fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"):
             self.assert_valid({"type": kind, "reviewFeedback": "Revisa el proceso.\nConserva tu borrador."})
             for value in (None, "", " \t\n", False, 1, [], {}, ["text"]):
                 with self.subTest(kind=kind, value=value):
@@ -99,7 +99,7 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
                 self.assertFalse(self.preserved(old, current))
 
     def test_review_on_unsupported_type_remains_part_of_content(self):
-        for kind in ("inline_fill_code",):
+        for kind in ("paragraph", "code"):
             block = self.legacy(kind)
             changed = dict(block, reviewFeedback="Not supported")
             self.assertIs(block, contract.without_review_feedback(block))
@@ -116,15 +116,27 @@ class CppReviewFeedbackContractTest(unittest.TestCase):
             contract.validate_code_presentation_contract({"type": "order_code", "language": language}, "fixture")
             self.assertTrue(contract.ERRORS)
 
-    def test_drag_explanation_is_optional_nonempty_success_text(self):
-        for explanation in ("Una explicación posterior al acierto.",):
+    def test_drag_and_inline_explanations_are_optional_nonempty_success_text(self):
+        for kind in ("drag_fill_code", "inline_fill_code"):
             contract.ERRORS.clear()
-            contract.validate_code_presentation_contract({"type": "drag_fill_code", "explanation": explanation}, "fixture")
+            contract.validate_code_presentation_contract({"type": kind, "explanation": "Sólo después del acierto."}, "fixture")
             self.assertEqual([], contract.ERRORS)
-        for explanation in (None, "", "\t\n", False, 1, [], {}):
-            contract.ERRORS.clear()
-            contract.validate_code_presentation_contract({"type": "drag_fill_code", "explanation": explanation}, "fixture")
-            self.assertTrue(contract.ERRORS)
+            for explanation in (None, "", "\t\n", False, 1, [], {}):
+                contract.ERRORS.clear()
+                contract.validate_code_presentation_contract({"type": kind, "explanation": explanation}, "fixture")
+                self.assertTrue(contract.ERRORS)
+
+    def test_new_inline_success_text_preserves_original_answer_and_every_existing_field(self):
+        old = {"type": "inline_fill_code", "id": "original", "question": "Una pregunta.",
+               "template": "int x = [];", "answers": ["3"], "answerAlternatives": [["3", "03"]]}
+        current = dict(old, reviewFeedback="Revisa la cantidad.", explanation="Explicación posterior.")
+        self.assertTrue(self.preserved(old, current))
+        for key, value in (("answers", ["4"]), ("template", "int y = [];"),
+                           ("answerAlternatives", [["3", "4"]]), ("id", "changed"), ("question", "Changed")):
+            with self.subTest(key=key):
+                self.assertFalse(self.preserved(old, dict(current, **{key: value})))
+        old["explanation"] = "Existing success."
+        self.assertFalse(self.preserved(old, current))
 
     @staticmethod
     def choice():

@@ -15,7 +15,7 @@ class ProgrammingTechnicalRangesTest {
     private fun covered(result: ProgrammingTechnicalRanges.Analysis, start: Int, end: Int) =
         (start until end).all { position -> result.fragments.any { position in it.start until it.endExclusive } }
 
-    @Test fun courseOneLessonThreePageSixColorsOnlyTheInsertionOperatorNotEsOrY() {
+    @Test fun publishedConstructionExplanationAndLegacyProseColorOnlyTheInsertionOperator() {
         val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
         val lessonFile = requireNotNull(resources.absoluteFile.parentFile).resolve(
             "assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json")
@@ -23,19 +23,23 @@ class ProgrammingTechnicalRangesTest {
         val before = lesson.toString()
         val text = lesson.getJSONArray("pages").getJSONObject(5)
             .getJSONArray("blocks").getJSONObject(1).getString("text")
-        val expression = "es << y"
-        val start = text.indexOf(expression)
-        assertTrue(start >= 0)
-        val operator = start + "es ".length
-        val analysis = analysis(text)
-        assertTrue("Only the two insertion characters belong to the technical fragment",
-            analysis.fragments.any { it.start == operator && it.endExclusive == operator + 2 })
-        assertTrue("The preceding es must retain prose styling",
-            analysis.fragments.none { it.start <= start && it.endExclusive > start })
-        val conjunction = operator + 3
-        assertEquals('y', text[conjunction])
-        assertTrue("The following y must retain prose styling",
-            analysis.fragments.none { it.start <= conjunction && it.endExclusive > conjunction })
+        fun assertIsolatedOperator(source: String, before: String, after: String) {
+            val expression = "$before << $after"
+            val start = source.indexOf(expression)
+            assertTrue("The source fixture must contain its asserted neighbors: $expression", start >= 0)
+            val operator = start + before.length + 1
+            val result = analysis(source)
+            assertTrue("Only the two insertion characters belong to the technical fragment",
+                result.fragments.any { it.start == operator && it.endExclusive == operator + 2 })
+            assertTrue("The preceding prose must retain its styling: $before",
+                result.fragments.none { it.start < start + before.length && it.endExclusive > start })
+            val following = operator + 3
+            assertEquals(after, source.substring(following, following + after.length))
+            assertTrue("The following prose must retain its styling: $after",
+                result.fragments.none { it.start < following + after.length && it.endExclusive > following })
+        }
+        assertIsolatedOperator(text, "piezas:", "realiza")
+        assertIsolatedOperator("El operador es << y conserva la secuencia.", "es", "y")
         assertEquals(before, lesson.toString())
         // A real C++ stream expression is still highlighted as a full statement.
         val sourceCode = "std::cout << value;"

@@ -121,7 +121,15 @@ class NarrationWordMappingsTest {
         val cppSegment = selected.keys.single { selected.getValue(it).contains("C++") }
         val cppIndex = Regex("\\p{L}[\\p{L}\\p{M}]*").findAll(selected.getValue(cppSegment)).indexOfFirst { it.value == "C" }
         val cppDisplay = mappings.getValue(cppSegment).displayed[cppIndex]
-        assertEquals("C++. ", visible.substring(cppDisplay.start, cppDisplay.endExclusive))
+        assertEquals("C++: ", visible.substring(cppDisplay.start, cppDisplay.endExclusive))
+        // The revised paragraph uses a colon. Preserve the previously reported
+        // full-stop ownership as a separate fixture rather than silently dropping it.
+        val period = "Lee C++. Después sigue."
+        val periodMap = NarrationWordMappings.forBlock(0, period, linkedMapOf(0 to "Lee C++.", 1 to "Después sigue."))
+        assertEquals("C++. ", periodMap.getValue(0).displayed[1].let { period.substring(it.start, it.endExclusive) })
+        assertEquals(period.indices.toList(), periodMap.values.flatMap { value ->
+            value.displayed.flatMap { it.start until it.endExclusive }
+        })
         assertEquals(original, lesson.toString())
     }
 }

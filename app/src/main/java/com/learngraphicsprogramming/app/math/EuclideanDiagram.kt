@@ -293,16 +293,24 @@ data class EuclideanDrawingSnapshot(
 object EuclideanDiagramLayout {
     fun layout(diagram: EuclideanDiagram, width: Double, height: Double, unit: Double = 1.0, textSize: Double = 15.0,
         measure: (String, Double) -> EuclideanLabelMetrics = { text, maximum -> approximateLabel(text, maximum, textSize) }
+    ): EuclideanDrawingSnapshot = layoutInBounds(diagram, width, height, unit, textSize, null, measure)
+
+    /** Optional fixed world bounds for a movable rigid copy. Legacy reading layout is unchanged. */
+    fun layoutInBounds(diagram: EuclideanDiagram, width: Double, height: Double, unit: Double = 1.0, textSize: Double = 15.0,
+        bounds: EuclideanRect?,
+        measure: (String, Double) -> EuclideanLabelMetrics = { text, maximum -> approximateLabel(text, maximum, textSize) }
     ): EuclideanDrawingSnapshot {
         require(width.isFinite() && height.isFinite() && width > 0 && height > 0 && unit > 0 && unit.isFinite() && textSize > 0 && textSize.isFinite())
+        require(bounds == null || (listOf(bounds.left, bounds.top, bounds.right, bounds.bottom).all { it.isFinite() } &&
+            bounds.width > 0 && bounds.height > 0 && bounds.width.isFinite() && bounds.height.isFinite())) { "Fixed world bounds must be finite and nonempty" }
         val edge = min(12 * unit, min(width, height) * .08)
         val viewport = EuclideanRect(0.0, 0.0, width, height)
         val padding = min(max(30 * unit, textSize * 1.8), min(width, height) * .24)
         val plot = EuclideanRect(padding, padding, width - padding, height - padding)
-        val minX = min(diagram.points.minOf { it.position.x }, diagram.circles.minOfOrNull { it.center.x - it.radius } ?: Double.POSITIVE_INFINITY)
-        val maxX = max(diagram.points.maxOf { it.position.x }, diagram.circles.maxOfOrNull { it.center.x + it.radius } ?: Double.NEGATIVE_INFINITY)
-        val minY = min(diagram.points.minOf { it.position.y }, diagram.circles.minOfOrNull { it.center.y - it.radius } ?: Double.POSITIVE_INFINITY)
-        val maxY = max(diagram.points.maxOf { it.position.y }, diagram.circles.maxOfOrNull { it.center.y + it.radius } ?: Double.NEGATIVE_INFINITY)
+        val minX = bounds?.left ?: min(diagram.points.minOf { it.position.x }, diagram.circles.minOfOrNull { it.center.x - it.radius } ?: Double.POSITIVE_INFINITY)
+        val maxX = bounds?.right ?: max(diagram.points.maxOf { it.position.x }, diagram.circles.maxOfOrNull { it.center.x + it.radius } ?: Double.NEGATIVE_INFINITY)
+        val minY = bounds?.top ?: min(diagram.points.minOf { it.position.y }, diagram.circles.minOfOrNull { it.center.y - it.radius } ?: Double.POSITIVE_INFINITY)
+        val maxY = bounds?.bottom ?: max(diagram.points.maxOf { it.position.y }, diagram.circles.maxOfOrNull { it.center.y + it.radius } ?: Double.NEGATIVE_INFINITY)
         // Retain the established point/line layout exactly. Circular scenes also fit a tiny
         // declared radius instead of silently reducing it to an invisible one-unit scene.
         val minimumSpan = if (diagram.circles.isEmpty()) 1.0 else 1e-9
