@@ -1,0 +1,1021 @@
+{
+  "id": "math_geometria_plana__angulos_y_rectas__partir_y_comparar_angulos",
+  "title": "Partir y comparar ángulos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Introducir lados interiores para formar partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un ángulo puede estudiarse por partes sin cambiar sus lados exteriores. Conserva el vértice y la región interior elegida. Desde ese vértice podemos considerar otra semirrecta cuyos puntos, salvo el propio vértice, queden dentro de la región. Esa semirrecta forma nuevos ángulos con los lados que ya teníamos (Kiselev, 2006, p. 10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamaremos consecutivas a dos semirrectas cuando no haya otra de las consideradas entre ellas dentro de la región elegida. Cada par consecutivo delimita una de las piezas más pequeñas de esta partición. Otras partes pueden agrupar varias piezas: también pertenecen al ángulo completo, pero cumplen una función diferente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, si una semirrecta XZ queda dentro del ángulo YXT, sus lados exteriores siguen siendo XY y XT. Al usar XZ como separación obtenemos las piezas YXZ y ZXT. La nueva dirección es un lado de cada pieza vecina; no reemplaza los dos lados que delimitaban el ángulo completo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconocer_las_piezas_entre_semirrectas_consecutivas",
+          "prompt": "En la región habitual de ARB, las semirrectas aparecen en el orden RA, RD, RE, RB. RD y RE son interiores, salvo R. Usando ambas como separaciones, selecciona todas las piezas entre semirrectas consecutivas. Una pieza seleccionada no debe contener otra de esas semirrectas en su interior. Conserva la región indicada al interpretar cada nombre.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "RA y RB son los lados exteriores. Los puntos de RD y RE distintos de R quedan dentro de la región elegida de ARB. Su orden es RA, RD, RE, RB.",
+              "points": [
+                {
+                  "id": "R",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "R"
+                  ]
+                },
+                {
+                  "id": "A",
+                  "x": 13,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "D",
+                  "x": 12,
+                  "y": 5,
+                  "labels": [
+                    "D"
+                  ]
+                },
+                {
+                  "id": "E",
+                  "x": 5,
+                  "y": 12,
+                  "labels": [
+                    "E"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": -5,
+                  "y": 12,
+                  "labels": [
+                    "B"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "ra",
+                  "kind": "ray",
+                  "through": [
+                    "R",
+                    "A"
+                  ],
+                  "contains": [
+                    "R",
+                    "A"
+                  ]
+                },
+                {
+                  "id": "rd",
+                  "kind": "ray",
+                  "through": [
+                    "R",
+                    "D"
+                  ],
+                  "contains": [
+                    "R",
+                    "D"
+                  ]
+                },
+                {
+                  "id": "re",
+                  "kind": "ray",
+                  "through": [
+                    "R",
+                    "E"
+                  ],
+                  "contains": [
+                    "R",
+                    "E"
+                  ]
+                },
+                {
+                  "id": "rb",
+                  "kind": "ray",
+                  "through": [
+                    "R",
+                    "B"
+                  ],
+                  "contains": [
+                    "R",
+                    "B"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconocer_las_piezas_entre_semirrectas_consecutivas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "ard",
+                  "label": "Ángulo ARD",
+                  "reviewFeedback": "Recorre la región de esta elección y comprueba si otra semirrecta de la partición queda entre sus lados."
+                },
+                {
+                  "id": "are",
+                  "label": "Ángulo ARE",
+                  "reviewFeedback": "Comprueba si los lados elegidos son consecutivos o si la región agrupa más de una pieza."
+                },
+                {
+                  "id": "erb",
+                  "label": "Ángulo ERB",
+                  "reviewFeedback": "Localiza sus dos lados y comprueba qué direcciones quedan entre ellos en la región elegida."
+                },
+                {
+                  "id": "dre",
+                  "label": "Ángulo DRE",
+                  "reviewFeedback": "Revisa si las direcciones que delimitan esta elección son vecinas en el orden dado."
+                },
+                {
+                  "id": "drb",
+                  "label": "Ángulo DRB",
+                  "reviewFeedback": "Sigue la región delimitada por estos dos lados y busca si contiene otra separación de la partición."
+                },
+                {
+                  "id": "arb",
+                  "label": "Ángulo ARB",
+                  "reviewFeedback": "Distingue el ángulo completo de una pieza delimitada por dos direcciones consecutivas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "ard",
+                  "dre",
+                  "erb"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las piezas consecutivas son ARD, DRE y ERB: corresponden a los tres intervalos entre las cuatro semirrectas en su orden. ARE agrupa las dos primeras piezas y DRB las dos últimas. ARB es el ángulo completo. Los interiores de las piezas consecutivas no se superponen; sus fronteras pueden compartir una semirrecta.",
+            "incorrect": "Revisa las direcciones que limitan cada elección. Comprueba la condición de consecutivas dentro de la región indicada."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La clasificación de un punto depende del objeto que estudiamos. Un punto distinto del vértice situado en XZ es interior del ángulo completo YXT, pero pertenece a un lado de cada pieza vecina. Por eso no es interior de esas piezas. El vértice sigue en la frontera, tanto del total como de cada pieza."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "situar_un_punto_en_la_parte_y_en_el_total",
+          "prompt": "Usa la misma figura y la misma región de ARB. D es distinto de R y pertenece a la semirrecta interior RD. Responde cada pregunta respecto del ángulo nombrado; la pieza ARD conserva la región consecutiva entre RA y RD.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "situar_un_punto_en_la_parte_y_en_el_total__lecturas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d_total",
+                  "type": "dropdown",
+                  "label": "¿D es interior del ángulo completo ARB?",
+                  "options": [
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Distingue los lados exteriores del total de las semirrectas añadidas dentro de él."
+                    },
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Distingue los lados exteriores del total de las semirrectas añadidas dentro de él."
+                    }
+                  ]
+                },
+                {
+                  "id": "d_pieza",
+                  "type": "dropdown",
+                  "label": "¿D es interior de la pieza ARD?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Localiza D respecto de los dos lados de esta pieza. Pertenecer a un lado y estar en su interior son relaciones diferentes."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Localiza D respecto de los dos lados de esta pieza. Pertenecer a un lado y estar en su interior son relaciones diferentes."
+                    }
+                  ]
+                },
+                {
+                  "id": "r_total",
+                  "type": "dropdown",
+                  "label": "¿R es interior del ángulo completo ARB?",
+                  "options": [
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Recupera el papel del vértice al distinguir frontera e interior."
+                    },
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Recupera el papel del vértice al distinguir frontera e interior."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d_total": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  },
+                  "d_pieza": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "r_total": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D está dentro de la región de ARB porque RD es interior y D no es el vértice. En la pieza ARD, D pertenece al lado RD: está en la frontera de esa pieza. R es el vértice, así que tampoco es interior del ángulo completo. Cambiar de objeto exige revisar la clasificación, aunque el punto no se mueva.",
+            "incorrect": "Recupera los dos lados y la región del objeto de cada pregunta antes de clasificar el punto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Congruencia: hacer coincidir lados completos y región"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para decidir si dos ángulos tienen la misma forma y extensión podemos imaginar que movemos una copia rígida de uno sobre el otro. Si conseguimos que coincidan el vértice, los dos lados completos y la región interior elegida, los ángulos son congruentes. Mover rígidamente conserva la figura de la copia: no abre ni cierra sus lados (Kiselev, 2006, p. 10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hacer coincidir semirrectas no exige hacer coincidir las marcas usadas para nombrarlas. Si U y V están en el mismo lado con origen P, distintos de P, PU y PV nombran la misma semirrecta aunque los segmentos PU y PV tengan longitudes diferentes. Para comparar el ángulo necesitamos conservar el lado completo y su sentido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conservar la figura al mover una copia y conservar su posición inicial son dos condiciones diferentes. La congruencia permite una colocación distinta; afirmar que las figuras iniciales son el mismo conjunto de puntos exige examinar dónde estaban antes de mover ninguna copia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_angulos_sin_confundir_sus_marcas",
+          "prompt": "KMN y TZW están inicialmente en posiciones distintas, con vértices diferentes M y Z. Se declara una copia rígida que lleva Z a M, la semirrecta ZT a MK y ZW a MN, haciendo coincidir también sus regiones elegidas. En esa colocación T queda más lejos del vértice que K, y W más cerca que N. Interpreta esos datos sin medir la pantalla.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Primer ángulo: vértice M, lados MK y MN. K y N son marcas sobre esos lados.",
+              "points": [
+                {
+                  "id": "M",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "M"
+                  ]
+                },
+                {
+                  "id": "K",
+                  "x": 8,
+                  "y": 0,
+                  "labels": [
+                    "K"
+                  ]
+                },
+                {
+                  "id": "N",
+                  "x": 6,
+                  "y": 8,
+                  "labels": [
+                    "N"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "mk",
+                  "kind": "ray",
+                  "through": [
+                    "M",
+                    "K"
+                  ],
+                  "contains": [
+                    "M",
+                    "K"
+                  ]
+                },
+                {
+                  "id": "mn",
+                  "kind": "ray",
+                  "through": [
+                    "M",
+                    "N"
+                  ],
+                  "contains": [
+                    "M",
+                    "N"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "euclidean_diagram",
+              "description": "Segundo ángulo en otra posición: vértice Z, lados ZT y ZW. Las distancias a T y W no coinciden con las de las marcas del primer ángulo.",
+              "points": [
+                {
+                  "id": "Z",
+                  "x": 30,
+                  "y": -5,
+                  "labels": [
+                    "Z"
+                  ]
+                },
+                {
+                  "id": "T",
+                  "x": 42,
+                  "y": -5,
+                  "labels": [
+                    "T"
+                  ]
+                },
+                {
+                  "id": "W",
+                  "x": 33,
+                  "y": -1,
+                  "labels": [
+                    "W"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "zt",
+                  "kind": "ray",
+                  "through": [
+                    "Z",
+                    "T"
+                  ],
+                  "contains": [
+                    "Z",
+                    "T"
+                  ]
+                },
+                {
+                  "id": "zw",
+                  "kind": "ray",
+                  "through": [
+                    "Z",
+                    "W"
+                  ],
+                  "contains": [
+                    "Z",
+                    "W"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_angulos_sin_confundir_sus_marcas__lecturas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "congruentes",
+                  "type": "dropdown",
+                  "label": "¿Los ángulos son congruentes?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Aplica la condición de coincidencia de los lados completos y la región mediante la copia declarada."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Aplica la condición de coincidencia de los lados completos y la región mediante la copia declarada."
+                    }
+                  ]
+                },
+                {
+                  "id": "mismos_puntos",
+                  "type": "dropdown",
+                  "label": "¿Las figuras iniciales ocupan exactamente los mismos puntos?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Distingue la posición inicial de las figuras de la colocación obtenida al mover una copia."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Distingue la posición inicial de las figuras de la colocación obtenida al mover una copia."
+                    }
+                  ]
+                },
+                {
+                  "id": "marcas",
+                  "type": "dropdown",
+                  "label": "¿La congruencia exige que T coincida con K y W con N?",
+                  "options": [
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Revisa qué determina una semirrecta y qué función cumple el punto utilizado para nombrarla."
+                    },
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Revisa qué determina una semirrecta y qué función cumple el punto utilizado para nombrarla."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "congruentes": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  },
+                  "mismos_puntos": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "marcas": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La copia hace coincidir los lados completos y la región: los ángulos son congruentes. Inicialmente tenían vértices distintos y estaban en posiciones diferentes, por lo que no eran el mismo conjunto de puntos. T y K pueden quedar a distancias distintas sobre una misma semirrecta; lo mismo ocurre con W y N. Esas marcas no son extremos finales de los lados.",
+            "incorrect": "Revisa por separado la coincidencia obtenida con la copia, la posición inicial y el papel de las marcas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Alinear antes de comparar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comparar dos ángulos, coloca una copia de uno de modo que coincidan los vértices y un par de lados completos, con el mismo origen y sentido. Además, sitúa los interiores elegidos al mismo lado de la recta que contiene ese lado común. Estas condiciones preparan la comparación; compartir sólo un vértice o un lado deja información sin comprobar (Kiselev, 2006, p. 10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con esa colocación, observa el otro lado de cada ángulo. Si también coincide, junto con la región elegida, tenemos ángulos congruentes. Si sus puntos distintos del vértice quedan estrictamente dentro de la región de referencia, delimita con el lado común una parte propia del ángulo de referencia. El ángulo de esa parte se llama menor que el de referencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Parte propia significa que se conserva una región adicional del ángulo de referencia fuera de esa pieza. La comparación se justifica por la inclusión después de alinear: cambiar la longitud visible de los trazos o desplazar una marca sobre su lado no sustituye esa condición."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_por_un_segundo_lado_interior",
+          "prompt": "HGL y HGK comparten vértice G y lado GH. Elegimos sus regiones habituales, ambas en el lado superior de la recta GH. Los puntos de GL distintos de G están estrictamente dentro de la región elegida de HGK. ¿Qué relación queda justificada entre HGL y HGK?",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Las direcciones están en el orden GH, GL, GK dentro de la región superior elegida; G es el vértice común.",
+              "points": [
+                {
+                  "id": "G",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "G"
+                  ]
+                },
+                {
+                  "id": "H",
+                  "x": 13,
+                  "y": 0,
+                  "labels": [
+                    "H"
+                  ]
+                },
+                {
+                  "id": "L",
+                  "x": 12,
+                  "y": 5,
+                  "labels": [
+                    "L"
+                  ]
+                },
+                {
+                  "id": "K",
+                  "x": -5,
+                  "y": 12,
+                  "labels": [
+                    "K"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "gh",
+                  "kind": "ray",
+                  "through": [
+                    "G",
+                    "H"
+                  ],
+                  "contains": [
+                    "G",
+                    "H"
+                  ]
+                },
+                {
+                  "id": "gl",
+                  "kind": "ray",
+                  "through": [
+                    "G",
+                    "L"
+                  ],
+                  "contains": [
+                    "G",
+                    "L"
+                  ]
+                },
+                {
+                  "id": "gk",
+                  "kind": "ray",
+                  "through": [
+                    "G",
+                    "K"
+                  ],
+                  "contains": [
+                    "G",
+                    "K"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_por_un_segundo_lado_interior__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "congruentes",
+                  "label": "Son congruentes.",
+                  "reviewFeedback": "Comprueba si coinciden también los segundos lados y la región completa, además del lado común."
+                },
+                {
+                  "id": "mayor",
+                  "label": "HGL es mayor que HGK.",
+                  "reviewFeedback": "Recupera cuál de las dos regiones contiene a la otra después de la alineación indicada."
+                },
+                {
+                  "id": "menor",
+                  "label": "HGL es menor que HGK.",
+                  "reviewFeedback": "Justifica la comparación con la ubicación del segundo lado y la parte que delimita."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "menor"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "HGL es menor: los puntos de su segundo lado GL distintos de G están dentro de la región de HGK y delimitan una parte propia con GH. La región de HGK conserva una parte adicional entre GL y GK. Los vértices, el lado inicial y el lado del plano de los interiores ya estaban alineados; por eso podemos aplicar el criterio. Compartir GH no hace coincidir por sí solo los segundos lados.",
+            "incorrect": "Revisa la inclusión de las regiones y el papel del segundo lado bajo las condiciones de alineación dadas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer el caso exterior bajo las mismas condiciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación también puede verse desde la otra figura. Conserva la coincidencia de vértices y del primer lado y la elección de interiores al mismo lado de su recta. Si el segundo lado de la copia sobrepasa el de referencia por ese lado del plano, el ángulo de referencia queda como parte propia de la copia. Entonces la copia representa un ángulo mayor (Kiselev, 2006, p. 10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso, los puntos del segundo lado de la copia distintos del vértice quedan fuera de la región interior de referencia. La conclusión requiere las condiciones de colocación anteriores. Conviene señalar cuál es la referencia y cuál de las dos regiones contiene a la otra antes de decir mayor o menor."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_por_un_segundo_lado_exterior",
+          "prompt": "Toma GFH como referencia y compara con él GFK. Coinciden F y el lado FG, y las dos regiones habituales elegidas están en el lado superior de la recta FG. FH queda entre FG y FK: los puntos de FK distintos de F están fuera de la región de GFH, por ese mismo lado superior. ¿Qué relación resulta?",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Las direcciones son FG, FH, FK en ese orden dentro de la región superior elegida. F es el vértice.",
+              "points": [
+                {
+                  "id": "F",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "F"
+                  ]
+                },
+                {
+                  "id": "G",
+                  "x": 10,
+                  "y": 0,
+                  "labels": [
+                    "G"
+                  ]
+                },
+                {
+                  "id": "H",
+                  "x": 8,
+                  "y": 6,
+                  "labels": [
+                    "H"
+                  ]
+                },
+                {
+                  "id": "K",
+                  "x": -6,
+                  "y": 8,
+                  "labels": [
+                    "K"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "fg",
+                  "kind": "ray",
+                  "through": [
+                    "F",
+                    "G"
+                  ],
+                  "contains": [
+                    "F",
+                    "G"
+                  ]
+                },
+                {
+                  "id": "fh",
+                  "kind": "ray",
+                  "through": [
+                    "F",
+                    "H"
+                  ],
+                  "contains": [
+                    "F",
+                    "H"
+                  ]
+                },
+                {
+                  "id": "fk",
+                  "kind": "ray",
+                  "through": [
+                    "F",
+                    "K"
+                  ],
+                  "contains": [
+                    "F",
+                    "K"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_por_un_segundo_lado_exterior__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "mayor",
+                  "label": "GFK es mayor que GFH.",
+                  "reviewFeedback": "Justifica la relación indicando cuál de las dos regiones contiene a la otra después de alinear."
+                },
+                {
+                  "id": "menor",
+                  "label": "GFK es menor que GFH.",
+                  "reviewFeedback": "Recorre desde el lado común hasta el otro lado de cada figura y revisa cuál queda como parte propia."
+                },
+                {
+                  "id": "congruentes",
+                  "label": "GFK es congruente con GFH.",
+                  "reviewFeedback": "Comprueba si la colocación dada hace coincidir también los segundos lados y sus regiones completas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "mayor"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "GFK es mayor. El ángulo de referencia GFH queda como parte propia de GFK; hay una región adicional entre FH y FK. Los segundos lados no coinciden. La conclusión usa la posición del segundo lado con ambos interiores al mismo lado de la recta FG, y no el largo aparente de los trazos.",
+            "incorrect": "Identifica la referencia y revisa la inclusión de las regiones bajo las condiciones de colocación dadas."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Explica la misma comparación en los dos sentidos: al decir qué ángulo es menor, indica de cuál es parte propia; al decir cuál es mayor, recupera esa misma inclusión. Cambiar la pregunta no cambia la colocación ni permite omitir sus condiciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir si los datos permiten comparar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de elegir una relación, comprueba si los datos permiten completar el criterio. Conocer la distancia del vértice a una marca no determina la dirección del lado que pasa por ella. Una circunferencia centrada en el vértice puede situar marcas a una misma distancia en direcciones diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, conservar una semirrecta y mover su marca más lejos deja el lado completo intacto. En cambio, cambiar la dirección del lado puede producir otra región aunque conservemos la distancia de la marca. Para comparar ángulos debemos recuperar los lados y las regiones, además de comprobar la colocación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "detectar_una_comparacion_no_determinada",
+          "prompt": "AOB es la referencia. Después de alinear el vértice O y el primer lado OA con los de AOC, las dos regiones habituales elegidas están al mismo lado de la recta OA. Sabes que OB mide 5 unidades y OC mide 10 unidades; B y C son distintos de O. No se da la dirección de OC respecto de OB. ¿Qué relación entre AOC y AOB queda determinada por estos datos?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "detectar_una_comparacion_no_determinada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "mayor",
+                  "label": "AOC es mayor que AOB.",
+                  "reviewFeedback": "Revisa si la distancia a C determina dónde está la dirección OC respecto de OB."
+                },
+                {
+                  "id": "no_determinan",
+                  "label": "Los datos no determinan una relación única.",
+                  "reviewFeedback": "Identifica qué información falta para completar el criterio de comparación."
+                },
+                {
+                  "id": "menor",
+                  "label": "AOC es menor que AOB.",
+                  "reviewFeedback": "Comprueba qué dato permitiría ubicar la dirección OC dentro de la región de referencia."
+                },
+                {
+                  "id": "congruentes",
+                  "label": "AOC es congruente con AOB.",
+                  "reviewFeedback": "Comprueba si los datos hacen coincidir los segundos lados o si sólo comparan distancias a marcas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "no_determinan"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los datos no fijan una relación única. C podría estar en la misma semirrecta OB, en una dirección situada entre OA y OB, o en otra del mismo lado del plano que sobrepase OB. En las tres situaciones se puede conservar OC de 10 unidades. Obtendríamos, respectivamente, un ángulo congruente, menor o mayor. La distancia a la marca no fija la dirección que falta.",
+            "incorrect": "Comprueba si tu elección se deduce de las direcciones y regiones conocidas o de una longitud que no las determina."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una falta de información requiere conservar las posibilidades que siguen abiertas. Después de comparar, formula qué dato adicional permitiría decidir: por ejemplo, la coincidencia de los segundos lados o su ubicación relativa después de alinear. No hace falta inventar una medida angular para completar ese razonamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el lado del plano antes de aplicar la regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "La palabra fuera necesita contexto. Un segundo lado puede quedar fuera de la región de referencia porque está del otro lado de la recta del lado común. Esa colocación no cumple la condición utilizada para comparar por inclusión. Hay que revisar la colocación antes de usar el criterio de mayor o menor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una copia rígida puede aportar otra comprobación: hacemos coincidir un lado de la copia con cualquiera de los lados correspondientes de la otra figura y revisamos el otro lado y la región elegida. Lo decisivo para congruencia es la coincidencia de la figura completa, aunque la colocación inicial no fuera adecuada para el criterio de inclusión."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_el_lado_del_interior_antes_de_comparar",
+          "prompt": "AOB elige la región superior de la recta OA y AOC la inferior. En la colocación inicial comparten O y OA, y OC está fuera de la región elegida de AOB. Como comprobación adicional, se declara una copia rígida de AOC: su lado OC coincide con OA, su lado OA coincide con OB y la región de la copia coincide con la elegida para AOB. Distingue lo que permite la colocación inicial de lo que demuestra esa copia adicional.",
+          "representations": [
+            {
+              "type": "euclidean_diagram",
+              "description": "Tres semirrectas parten de O: OA hacia la derecha, OB al lado superior y OC al inferior de la recta OA. Las regiones elegidas de AOB y AOC quedan a lados opuestos de esa recta.",
+              "points": [
+                {
+                  "id": "O",
+                  "x": 0,
+                  "y": 0,
+                  "labels": [
+                    "O"
+                  ]
+                },
+                {
+                  "id": "A",
+                  "x": 5,
+                  "y": 0,
+                  "labels": [
+                    "A"
+                  ]
+                },
+                {
+                  "id": "B",
+                  "x": 3,
+                  "y": 4,
+                  "labels": [
+                    "B"
+                  ]
+                },
+                {
+                  "id": "C",
+                  "x": 3,
+                  "y": -4,
+                  "labels": [
+                    "C"
+                  ]
+                }
+              ],
+              "objects": [
+                {
+                  "id": "oa",
+                  "kind": "ray",
+                  "through": [
+                    "O",
+                    "A"
+                  ],
+                  "contains": [
+                    "O",
+                    "A"
+                  ]
+                },
+                {
+                  "id": "ob",
+                  "kind": "ray",
+                  "through": [
+                    "O",
+                    "B"
+                  ],
+                  "contains": [
+                    "O",
+                    "B"
+                  ]
+                },
+                {
+                  "id": "oc",
+                  "kind": "ray",
+                  "through": [
+                    "O",
+                    "C"
+                  ],
+                  "contains": [
+                    "O",
+                    "C"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_el_lado_del_interior_antes_de_comparar__lecturas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "colocacion",
+                  "type": "dropdown",
+                  "label": "¿La colocación inicial cumple la condición de interiores al mismo lado de la recta común?",
+                  "options": [
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Revisa el lado de la recta que contiene cada región interior elegida."
+                    },
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Revisa el lado de la recta que contiene cada región interior elegida."
+                    }
+                  ]
+                },
+                {
+                  "id": "fuera_basta",
+                  "type": "dropdown",
+                  "label": "¿Basta que OC esté fuera de esa región para concluir que AOC es mayor?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Antes de aplicar el caso exterior, comprueba las condiciones de colocación de sus interiores."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Antes de aplicar el caso exterior, comprueba las condiciones de colocación de sus interiores."
+                    }
+                  ]
+                },
+                {
+                  "id": "copia",
+                  "type": "dropdown",
+                  "label": "¿La copia adicional declarada demuestra congruencia entre AOC y AOB?",
+                  "options": [
+                    {
+                      "id": "no",
+                      "label": "No",
+                      "reviewFeedback": "Comprueba qué lados completos y qué regiones coinciden después de la correspondencia declarada."
+                    },
+                    {
+                      "id": "si",
+                      "label": "Sí",
+                      "reviewFeedback": "Comprueba qué lados completos y qué regiones coinciden después de la correspondencia declarada."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "colocacion": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "fuera_basta": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "copia": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La colocación inicial tiene interiores a lados opuestos de la recta OA, así que no satisface la condición de la comparación por inclusión. Estar fuera de la región superior no basta para concluir mayor extensión. La copia adicional sí hace coincidir los dos lados completos y la región elegida: demuestra que los ángulos son congruentes. La posición inicial y la congruencia por copia responden a preguntas diferentes.",
+            "incorrect": "Comprueba las hipótesis de cada criterio en la colocación a la que se refiere la pregunta."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el procedimiento con tus palabras: precisa lados y región, alinea una copia y comprueba el lado del plano de los interiores; después decide si el otro lado coincide o delimita una parte propia. Al recomponer partes en el próximo desarrollo conservaremos también qué fronteras comparten y qué regiones quedan a cada lado."
+        }
+      ]
+    }
+  ]
+}
