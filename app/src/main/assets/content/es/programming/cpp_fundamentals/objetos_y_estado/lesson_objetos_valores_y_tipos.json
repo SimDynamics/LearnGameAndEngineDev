@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una estación tiene seis cascos disponibles. Si el programa necesita usar esa cantidad varias veces, puede conservarla en un objeto. Aquí objeto significa una parte de la memoria destinada a un dato; todavía no estamos hablando de clases ni de programación orientada a objetos. El tipo indica qué clase de valores y operaciones admite ese objeto."
+          "text": "Una estación tiene seis cascos disponibles. El programa necesita conservar esa cantidad para utilizarla al preparar distintos mensajes. Un objeto es una zona de memoria que guarda un valor de un tipo determinado; aquí no usamos la palabra objeto para hablar de clases ni de programación orientada a objetos (Stroustrup, 2024, sección 2.1, p. 30; sección 2.7, p. 42).\n\nEl tipo determina qué valores puede guardar el objeto y qué operaciones se pueden realizar con ellos. Para contar los cascos utilizaremos int, un tipo de número entero: representa valores sin parte fraccionaria y tiene un conjunto finito de valores que puede guardar. La cantidad guardada y el texto que la describe cumplen funciones diferentes (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, pp. 42–43)."
         },
         {
           "type": "paragraph",
-          "text": "Una variable da un nombre a ese objeto. En int cascos = 6, int indica el tipo entero, cascos es el nombre y 6 es el valor inicial. Un entero representa una cantidad sin parte fraccionaria dentro de un rango finito. Escribir cascos después permite pedir el valor conservado, sin repetir el número en cada instrucción."
+          "text": "Un objeto que tiene nombre es una variable. En la definición int cascos = 6;, int indica el tipo, cascos es el nombre y 6 es el valor inicial. El inicializador prepara el objeto con ese valor antes de que lo utilicemos (Stroustrup, 2024, sección 2.2, p. 32).\n\nEl nombre nos permite consultar el dato guardado. Al escribir cascos en la instrucción de salida, el programa utiliza su valor; al escribir \"cascos\", utiliza los caracteres de un literal de texto. Las comillas cambian qué dato estamos enviando a std::cout (Stroustrup, 2024, sección 2.1, p. 31)."
         },
         {
           "type": "code",
@@ -23,7 +23,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 6. La instrucción de salida recibe el valor de la variable: no imprime el nombre cascos. El nombre pertenece al código que leemos; el valor es el dato con el que trabaja el programa."
+          "text": "Este programa muestra 6. La definición prepara ese valor y la instrucción siguiente lo envía a std::cout. El nombre cascos identifica la variable en el código; no se convierte por sí solo en texto de salida.\n\nLa diferencia se reconoce mirando el argumento de la salida: cascos consulta la variable, mientras que \"cascos\" mostraría ese nombre como texto fijo."
         }
       ]
     },
@@ -35,7 +35,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Piensa en una caja con una etiqueta. La etiqueta cascos permite identificarla; la indicación int especifica lo que puede contener; 6 es su contenido actual. La comparación ayuda a seguir programas, pero no significa que debamos dibujar el almacenamiento físico exacto. Cada objeto existe según las reglas de su tipo."
+          "text": "Para leer una definición, separa tres preguntas: cómo se llama el objeto, de qué tipo es y con qué valor comienza. En int cascos = 6;, esas respuestas son cascos, int y 6. El nombre identifica el objeto; el tipo establece las reglas de sus valores y operaciones; el valor es el dato guardado en ese momento (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 42).\n\nLa comparación con una caja etiquetada ayuda a distinguir esas funciones: la etiqueta corresponde al nombre y el contenido al valor. Es un apoyo para razonar, no un dibujo del almacenamiento físico de la computadora (Stroustrup, 2024, sección 2.1, p. 30)."
         },
         {
           "type": "multiple_choice",
@@ -81,7 +81,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una misma variable puede aparecer varias veces como dato de salida. Pedir su valor no lo borra ni lo reduce. En el siguiente programa, ninguna instrucción cambia el contenido de botellas."
+          "text": "Consultar una variable para mostrar su valor no consume el dato ni vacía el objeto. Una segunda instrucción puede volver a utilizarlo. En los ejemplos siguientes, leer significa consultar el valor ya guardado; todavía no estamos solicitando datos al usuario (Stroustrup, 2024, sección 2.1, p. 31).\n\nAl seguir cada salida, distingue el texto entre comillas de la variable que aparece fuera de ellas. En el programa de botellas no hay ninguna instrucción que cambie el dato entre sus dos lecturas."
         },
         {
           "type": "output_prediction",
@@ -124,7 +124,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No todos los datos son cantidades enteras. Una longitud de 1.25 metros necesita una representación numérica con fracciones; una etiqueta como Sector 4 es texto, aunque incluya un dígito; una respuesta de sí o no puede representarse mediante un valor lógico. Aprenderemos estas representaciones en las próximas lecciones. Elegir el tipo empieza por comprender qué significa el dato, no por mirar si contiene números."
+          "text": "El significado del dato orienta la elección de su representación. Una cantidad de mesas completas se cuenta con enteros; una longitud como 1.25 metros tiene parte fraccionaria; una etiqueta como Sector 4 es texto aunque incluya un dígito; una respuesta de sí o no puede representarse con un valor lógico. C++ ofrece tipos diferentes para esas clases de valores, que desarrollaremos en las próximas lecciones (Stroustrup, 2024, sección 2.2, p. 32).\n\nConservar símbolos y conservar una cantidad tampoco son el mismo objetivo. El texto \"1.2\" guarda los caracteres que forman una etiqueta; un valor numérico permite realizar operaciones numéricas. Antes de elegir el tipo, identifica qué debe conservar el programa y qué necesita hacer con ello (Stroustrup, 2024, sección 2.7, p. 43)."
         },
         {
           "type": "multiple_choice",
@@ -150,7 +150,7 @@
         },
         {
           "type": "note",
-          "text": "Un tipo restringe operaciones y valores posibles. No verifica por sí solo que el dato describa correctamente el mundo: un entero negativo puede ser legal en C++ y carecer de sentido como número de mesas."
+          "text": "Un tipo delimita valores y operaciones del lenguaje. El conjunto de valores que puede representar int también incluye enteros negativos (Stroustrup, 2024, sección 2.7, p. 42).\n\nEl programa debe respetar además las condiciones de la tarea. Si estamos contando las mesas de una sala, una cantidad negativa no describe una situación válida. Elegir int resuelve cómo representar el dato, y comprobar su significado será otra parte del trabajo."
         }
       ]
     },
@@ -162,7 +162,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el laboratorio, escribe desde la consigna un programa que conserve la cantidad de llaves de un taller y muestre Llaves: 7. Usa una variable llamada llaves con valor 7. Después cambia sólo su valor inicial a 11: el mensaje debe pasar a Llaves: 11 sin cambiar la instrucción de salida. Predice ambos resultados antes de ejecutar."
+          "text": "Usa el Laboratorio para construir un programa que conserve la cantidad de llaves de un taller en una variable llamada llaves, con valor inicial 7. La consola debe mostrar exactamente Llaves: 7, con un espacio después de los dos puntos. La instrucción de salida debe utilizar la variable.\n\nCompila y ejecuta tu programa. Después cambia únicamente su valor inicial a 11, conserva la instrucción de salida y vuelve a ejecutar: la consola debe mostrar Llaves: 11. Compara el texto, el espacio y el número de cada ejecución con el resultado solicitado. Las dos predicciones de la página siguiente permiten comprobar después cómo se lee cada versión del código."
         },
         {
           "type": "cpp_compiler",
@@ -170,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba por separado el texto fijo, el valor y el espacio entre ellos. Si el mensaje no cambia al modificar la variable, revisa si imprimiste un número fijo o el nombre entre comillas. El laboratorio conserva tu último borrador de código al reabrir la lección. Si quieres comparar varias versiones, conserva además una copia de cada una fuera del editor."
+          "text": "Compara las versiones dentro del mismo editor. Ejecuta primero la que comienza con 7 y después la que comienza con 11. Luego reconstruye la primera cambiando otra vez sólo el valor inicial a 7, compila y comprueba que recuperas Llaves: 7. Mantén la misma instrucción de salida durante las tres ejecuciones.\n\nSi el número mostrado no cambia al cambiar el inicializador, revisa si enviaste a std::cout un número fijo o el texto \"llaves\" en lugar de consultar la variable. El Laboratorio conserva el borrador actual al reabrir la lección; la comparación se realiza modificando y ejecutando ese borrador dentro de la aplicación."
         }
       ]
     },
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La variable conserva el dato y la salida lo usa. Cambiar 7 por 11 en su definición cambia el contenido inicial; la misma instrucción de salida sigue expresando el mismo propósito."
+          "text": "En esta solución, int llaves = 7; crea la variable con el valor inicial 7. La instrucción de salida combina el literal \"Llaves: \" con el valor que consulta mediante el nombre llaves. El espacio después de los dos puntos está dentro del literal.\n\nCambiar el inicializador a 11 prepara otro valor al ejecutar de nuevo el programa. La instrucción de salida permanece igual y consulta el valor preparado en esa ejecución. Comprueba las dos lecturas en los puzzles siguientes."
         },
         {
           "type": "output_prediction",
@@ -208,6 +208,30 @@
             "paquetes"
           ],
           "explanation": "El nombre permite acceder al valor del objeto; \"paquetes\" imprimiría texto fijo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u2_lectura_llaves_siete",
+          "language": "cpp",
+          "question": "Después de construir tu programa, predice la salida de esta versión. Escribe únicamente el mensaje producido y conserva su espacio después de los dos puntos.",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n",
+          "answers": [
+            "Llaves: 7"
+          ],
+          "explanation": "El literal aporta Llaves: y el espacio; el nombre llaves consulta el valor inicial 7. La salida combina esas dos partes sin añadir un salto de línea.",
+          "reviewFeedback": "Distingue el texto fijo entre comillas del nombre situado fuera de ellas. Revisa el valor con el que comienza la variable en esta ejecución y conserva los caracteres del literal."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u2_lectura_llaves_once",
+          "language": "cpp",
+          "question": "En esta versión cambió sólo el inicializador. Predice el mensaje que produce la misma instrucción de salida y conserva su espacio después de los dos puntos.",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves = 11;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n",
+          "answers": [
+            "Llaves: 11"
+          ],
+          "explanation": "El literal aporta Llaves: y el espacio; el nombre llaves consulta el valor inicial 11. La salida combina esas dos partes sin añadir un salto de línea.",
+          "reviewFeedback": "Distingue el texto fijo entre comillas del nombre situado fuera de ellas. Revisa el valor con el que comienza la variable en esta ejecución y conserva los caracteres del literal."
         }
       ]
     },
@@ -219,11 +243,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+          "text": "Compara esta referencia después de construir y ejecutar tu intento. Es otra forma de escribir el programa que respeta el mismo objetivo; el resultado solicitado y el uso de la variable permiten comprobarla."
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La variable se llama llaves y conserva el entero 7; la instrucción de salida utiliza esa variable. La salida debe ser Llaves: 7, con un espacio después de los dos puntos. Al cambiar sólo el valor inicial a 11, la misma instrucción debe producir Llaves: 11. Se admiten formas equivalentes de definición y salida que respeten esas condiciones. En esta referencia, int llaves{7}; crea e inicializa el entero llaves con valor 7, igual que int llaves = 7; para este dato."
+          "text": "La variable se llama llaves, comienza con 7 y se utiliza para mostrar el número. La salida es Llaves: 7, con un espacio después de los dos puntos. Al cambiar únicamente el valor inicial a 11, la misma instrucción debe producir Llaves: 11. Son válidas otras formas de definición y salida que cumplan esas condiciones.\n\nEn la referencia siguiente aparece int llaves{7};. Las llaves situadas inmediatamente después del nombre contienen el inicializador: preparan llaves con el valor 7. Para este entero, la definición tiene el mismo efecto que int llaves = 7;. La próxima lección desarrollará esta notación y su protección frente a ciertas conversiones (Stroustrup, 2024, sección 2.9, p. 46).\n\nEstas llaves de inicialización tienen una función diferente de las llaves que rodean todas las instrucciones de main. Las de main delimitan su cuerpo; las de llaves{7} pertenecen a la preparación de esa variable (Stroustrup, 2024, sección 1.2, p. 20; sección 2.9, p. 46)."
         },
         {
           "type": "code",
@@ -232,7 +256,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Llaves: es texto fijo; llaves aporta el valor actual. Cambia {7} por {11} sin cambiar la salida. Imprimir siempre el literal 7 o el texto \"llaves\" no cumple el experimento, aunque una primera salida parezca correcta."
+          "text": "En las dos soluciones, \"Llaves: \" es texto fijo y llaves consulta el valor actual. En esta versión puedes cambiar {7} por {11}, ejecutar y reconstruir después {7}, conservando la instrucción de salida. Imprimir siempre el número fijo 7 o el texto \"llaves\" no satisface esa comparación, aunque una primera ejecución pueda parecer correcta."
         }
       ]
     }

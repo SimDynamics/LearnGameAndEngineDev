@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El texto de C++ que escribimos es código fuente. Un compilador lo analiza y lo traduce a una forma que puede participar en la construcción del programa ejecutable. El enlazador combina las partes necesarias, incluidas las de bibliotecas utilizadas. Después se ejecuta el resultado. Un botón puede coordinar varias etapas; ver un solo botón no significa que escribir, compilar y ejecutar sean una misma operación."
+          "text": "El texto que editamos es código fuente. El compilador analiza ese texto según las reglas de C++ y, si lo acepta, lo traduce a código objeto: una parte preparada para construir el programa. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable. Después podemos ejecutar ese resultado (Stroustrup, 2024, secciones 1.3–1.4, pp. 21–24).\n\nEl botón Compilar y ejecutar coordina esas etapas en el Laboratorio. Aunque usemos un solo botón, editar el texto, construir el programa y ejecutarlo son operaciones diferentes. Un diagnóstico de construcción se interpreta antes de buscar el mensaje del programa en la consola (Stroustrup, 2024, sección 1.5, p. 24)."
         },
         {
           "type": "paragraph",
-          "text": "Un editor ayuda a modificar el texto. El resaltado de colores puede facilitar su lectura, pero no demuestra que sea válido ni que resuelva el problema. Una biblioteca ofrece recursos reutilizables: <iostream> permite usar flujos de entrada y salida como std::cout. Usamos ese recurso ya preparado para mostrar texto, en lugar de construir todos sus mecanismos desde cero."
+          "text": "El editor permite cambiar el texto del programa. Sus colores ayudan a reconocer partes del código, pero no prueban que el programa se pueda construir ni que cumpla el objetivo. Esas comprobaciones requieren las herramientas de construcción y la comparación con el resultado esperado (Stroustrup, 2024, secciones 1.5, p. 24, y 4.7.2, p. 101).\n\nLa biblioteca estándar aporta recursos ya preparados. En nuestros programas usamos #include <iostream> para disponer de los de entrada y salida, como std::cout; no tenemos que construir desde cero el mecanismo que lleva el mensaje a la consola (Stroustrup, 2024, p. 25; sección 7.7.2, pp. 214–215)."
         },
         {
           "type": "multiple_choice",
@@ -50,11 +50,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El compilador utiliza las reglas del lenguaje, no una interpretación aproximada de nuestra intención. std::cout y std::Cout son nombres diferentes. El literal requiere sus comillas de cierre y una instrucción de salida requiere su terminador. Cuando una parte falta, otra marca posterior puede parecer el lugar del fallo. Por eso el diagnóstico ofrece una pista que debemos contrastar con el código cercano."
+          "text": "El compilador aplica las reglas del lenguaje; no corrige el código adivinando nuestra intención. C++ distingue mayúsculas de minúsculas: std::cout y std::Cout no son el mismo nombre. También importan las comillas que cierran el literal y el punto y coma que termina la instrucción (Stroustrup, 2024, sección 2.6, p. 41; sección 4.3.1, p. 86).\n\nEl diagnóstico indica dónde la herramienta detectó un problema y aporta una explicación. Ese lugar no siempre es el comienzo de la causa. Por eso conviene leer el mensaje y revisar también el código cercano, especialmente la instrucción anterior (Stroustrup, 2024, sección 4.3.1, p. 86)."
         },
         {
           "type": "paragraph",
-          "text": "Si se omite el punto y coma antes de return, el compilador puede señalar la línea de return: allí descubre que la instrucción anterior no terminó como esperaba. No conviene cambiar indiscriminadamente la línea indicada ni memorizar un texto de error concreto. Diferentes herramientas pueden expresar el mismo problema de maneras distintas. Buscamos la causa y hacemos una modificación justificada."
+          "text": "Si falta el punto y coma antes de return, el compilador puede señalar return: allí descubre que la instrucción anterior no terminó como esperaba. Cambiar el texto del literal no repararía ese terminador ausente. Primero identifica qué regla no se cumple y modifica la parte relacionada con ella (Stroustrup, 2024, sección 4.3.1, p. 86).\n\nEl texto exacto del diagnóstico puede variar entre herramientas. No necesitas memorizar una frase: necesitas relacionar la indicación con la estructura de tu programa y comprobar la reparación al construirlo de nuevo (Stroustrup, 2024, sección 4.3.1, p. 86)."
         },
         {
           "type": "multiple_choice",
@@ -89,11 +89,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un programa puede ser válido para C++ y producir un resultado distinto del solicitado. Si queríamos mostrar \"Pedido recibido\" y escribimos \"Pedido cancelado\", el compilador reconoce ambos literales como texto válido. Detectar esa diferencia exige comparar la ejecución con el requisito. Esta es una primera forma de error lógico: las operaciones tienen significado, pero no el que resuelve nuestra tarea."
+          "text": "Un programa puede cumplir las reglas de C++ y producir un resultado diferente del solicitado. Compilar correctamente no demuestra que sus operaciones resuelvan nuestra tarea; hay que contrastarlas con el objetivo (Stroustrup, 2024, sección 4.3.2, p. 88).\n\nSi el requisito era mostrar Pedido recibido y el literal contiene Pedido cancelado, ambos textos son válidos para C++. El error está en elegir el mensaje que no corresponde al requisito. Esta diferencia entre una operación válida y una solución adecuada es un error lógico (Stroustrup, 2024, sección 4.7.2, p. 101)."
         },
         {
           "type": "paragraph",
-          "text": "Un error de compilación impide construir correctamente esa versión; un error de enlace aparece al combinar sus partes. Otros problemas sólo se manifiestan al ejecutar o al examinar los resultados. En esta unidad trabajamos sobre todo con sintaxis y mensajes, pero mantendremos esa distinción al aprender entrada, cálculos y decisiones. No necesitamos provocar errores peligrosos para entender que las etapas tienen responsabilidades distintas."
+          "text": "Distingue la etapa en la que aparece el problema. Un error de compilación impide traducir correctamente esa versión del código; uno de enlace impide combinar sus partes. Otros defectos sólo se reconocen al ejecutar el programa o al comparar el resultado con lo solicitado (Stroustrup, 2024, secciones 1.3–1.4, pp. 21–24; sección 4.7.2, p. 101).\n\nEn esta unidad practicamos dos casos concretos: una instrucción que no se puede construir por un signo ausente y una instrucción válida cuyo mensaje no cumple la tarea. Más adelante recuperaremos la misma distinción al trabajar con cálculos y datos."
         },
         {
           "type": "multiple_choice",
@@ -129,11 +129,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Trabajar con una versión pequeña que ya funciona facilita interpretar un fallo. Predice su salida, ejecútala y conserva una copia. Después cambia una sola cosa que tenga un propósito. Si el resultado cambia de manera inesperada, sabes qué modificación investigar. Cuando recuperas la versión correcta, puedes probar otra modificación sin mezclar varias causas."
+          "text": "En esta práctica cambiaremos una sola cosa cada vez. Partir de un programa pequeño que funciona facilita relacionar una modificación con lo que observamos y evita acumular cambios sin comprender sus efectos (Stroustrup, 2024, sección 4.7.2, pp. 101–103).\n\nResponde primero la predicción al final de esta página. Después ejecuta el código inicial del Laboratorio y compara la consola con ella. Todas las modificaciones siguientes se realizan en ese mismo editor; no necesitas guardar copias fuera de la app."
         },
         {
           "type": "paragraph",
-          "text": "Prueba en este laboratorio quitar sólo el ; de la instrucción de salida. Observa el diagnóstico y restaura el carácter. Luego cambia únicamente el mensaje a Revision completa y vuelve a ejecutar. El primer cambio examina una regla de sintaxis; el segundo examina la relación entre un literal y la salida. Son experimentos con preguntas diferentes."
+          "text": "En el Laboratorio, quita sólo el ; de la instrucción de salida y pulsa Compilar y ejecutar. Lee el diagnóstico: esta versión debe ser rechazada al construirla. La consola podría conservar un resultado anterior; ese texto no demuestra que la versión con el error se haya ejecutado.\n\nRestaura el ;, vuelve a construir y comprueba que reaparece el mensaje inicial. Después cambia únicamente el literal para mostrar Revision completa, compila y ejecuta otra vez. El criterio final es ver esas dos palabras con un espacio y sin comillas, tras una construcción correcta.\n\nEl primer experimento estudia una regla de sintaxis y su reparación; el segundo modifica un dato manteniendo la estructura válida. Consulta la referencia posterior después de completar ambos experimentos."
         },
         {
           "type": "cpp_compiler",
@@ -150,6 +150,19 @@
           ],
           "correctIndex": 1,
           "explanation": "Separar cambios ayuda a relacionar una causa con un efecto; no es una prohibición del lenguaje."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prediccion_revision_inicial",
+          "question": "Antes de ejecutar el código inicial del Laboratorio, predice exactamente su mensaje. Conserva el espacio y no añadas comillas ni un salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+          "answers": [
+            "Revision inicial"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inserción envía Revision inicial. Esta es la salida de la versión válida de partida; quitar después el terminador impide construir esa otra versión, no cambia por sí mismo el literal.",
+          "reviewFeedback": "Identifica el contenido que la instrucción envía a std::cout. No incluyas las marcas que delimitan o terminan la instrucción."
         }
       ]
     },
@@ -199,7 +212,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de ambos experimentos, esta es una referencia de la versión reparada. Criterios: la herramienta acepta el fuente y la ejecución muestra Revision completa; main, las comillas y el terminador de la salida conservan su función."
+          "text": "Después de realizar los dos experimentos, compara tu versión reparada con esta referencia. La construcción debe terminar correctamente y la consola debe mostrar Revision completa. El mensaje no lleva comillas, caracteres adicionales ni un cero final.\n\nUna implementación diferente también cumple si conserva los elementos estudiados y produce exactamente el resultado pedido. La referencia muestra una forma de hacerlo, no una corrección automática del Laboratorio."
         },
         {
           "type": "code",
@@ -208,7 +221,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al quitar el punto y coma, lo esperado era un rechazo al construir, no una salida distinta. El diagnóstico concreto puede variar según la herramienta y señalar el elemento siguiente del código. Al restaurarlo se recupera la sintaxis. Cambiar sólo Revision inicial por Revision completa conserva una instrucción válida y modifica el mensaje ejecutado. Estos resultados responden a dos preguntas distintas."
+          "text": "Al quitar el punto y coma esperábamos un rechazo de construcción, no un mensaje de salida diferente. El diagnóstico puede señalar la instrucción siguiente, porque allí se detecta la terminación ausente. Restaurar el signo repara esa causa concreta (Stroustrup, 2024, sección 4.3.1, p. 86).\n\nCambiar Revision inicial por Revision completa conserva la sintaxis y modifica el texto enviado. Compara la consola con lo solicitado: que la herramienta acepte el código y que el mensaje sea el correcto son dos comprobaciones necesarias (Stroustrup, 2024, sección 4.7.2, p. 101; sección 4.7.4, pp. 107–108)."
         }
       ]
     }

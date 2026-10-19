@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una caja contiene siete piezas completas: int piezas = 7; representa esa cantidad. Una barra mide 2.5 metros: double longitud = 2.5; permite representar una parte fraccionaria. El punto del literal numérico forma parte de la escritura del código C++; no se reemplaza por una coma decimal."
+          "text": "Una caja contiene siete piezas completas. Una longitud de una barra puede ser, en cambio, de dos metros y medio. El tipo debe permitir representar la clase de cantidad que necesitamos: `int` guarda enteros; `double` admite valores con parte fraccionaria (Stroustrup, 2024, sección 2.2, p. 32).\n\nEn el programa siguiente, `int piezas = 7;` representa el recuento y `double longitud = 2.5;` representa la medida. Dentro de un literal de C++, el punto separa la parte entera de la fraccionaria: escribimos `2.5`, aunque al hablar usemos «dos coma cinco»."
         },
         {
           "type": "paragraph",
-          "text": "double es un tipo de coma flotante: aproxima números reales dentro de un rango finito y con precisión finita. No guarda todos los reales ni todos los decimales de forma exacta. Ciertas cantidades sencillas, como 2.5, se representan exactamente; muchas otras, como 0.1, se aproximan. El tipo se elige según el dato y las operaciones que necesitan hacerse con él."
+          "text": "`double` es un tipo de coma flotante: una representación que permite aproximar números reales. Sus objetos ocupan una cantidad fija de memoria. Por eso no pueden guardar una cantidad ilimitada de cifras ni distinguir todos los números reales (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).\n\nQue un número tenga pocos dígitos decimales no garantiza que se guarde exactamente. En la representación binaria habitual, basada en mitades, cuartos y fracciones sucesivamente más pequeñas, `2.5` se representa exactamente; `0.1` necesita una aproximación. Cuando un literal no tiene una representación exacta, se utiliza un valor representable vecino, dentro del rango del tipo (Köppe et al., 2023, sección 5.13.4, párr. 3; sección 17.3.5.2, párr. 22).\n\nElegir `double` permite trabajar con partes fraccionarias; no promete exactitud para cualquier cantidad. En los ejercicios que siguen utilizaremos valores pequeños cuyos resultados se pueden comprobar con claridad."
         },
         {
           "type": "code",
@@ -42,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "7 es un literal entero; 7.0 es un literal decimal de tipo double. Aunque describan la misma cantidad matemática, su tipo afecta a las operaciones. La salida usual puede mostrar ambos como 7: el texto impreso no es una etiqueta que revele automáticamente el tipo ni conserva todos los detalles del literal escrito."
+          "text": "Un literal es una forma de escribir un valor directamente en el código. `7` es un literal entero de tipo `int`; `7.0` es un literal de tipo `double`. El punto influye en el tipo aunque, matemáticamente, ambos representen siete unidades. Ese tipo interviene al elegir cómo se realizan las operaciones (Stroustrup, 2024, secciones 2.2 y 2.4, pp. 32, 34–35).\n\nLa escritura del literal y el texto que aparece en la consola son cosas diferentes. Con el formato de salida que utilizamos, `std::cout` puede mostrar tanto `7` como `7.0` mediante los mismos caracteres: `7`. La salida numérica sigue unas reglas de presentación; no reproduce necesariamente todos los caracteres del literal escrito en el programa (Stroustrup, 2024, sección 9.10.2, p. 278).\n\nLa variable conserva el tipo con el que fue definida. Ver un número sin punto en la consola no permite concluir que su objeto sea de tipo `int` (Stroustrup, 2024, sección 2.8, p. 43)."
         },
         {
           "type": "output_prediction",
@@ -85,7 +85,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El operador / realiza una división. Los operandos son los valores con los que trabaja la operación: en 7 / 2 son 7 y 2. Con dos operandos enteros, el cociente es entero: 7 / 2 produce 3 porque no conserva la parte fraccionaria. Si un operando es double, 7.0 / 2 produce 3.5. La distinción aparece durante el cálculo, antes de guardar o imprimir el resultado. En estos ejemplos el divisor es siempre distinto de cero."
+          "text": "El operador `/` realiza una división. Sus operandos son los valores entre los que se hace el cálculo: en `7 / 2`, el primer operando es `7` y el segundo, `2`. El segundo recibe también el nombre de divisor. En esta lección usaremos divisores distintos de cero.\n\nCon dos operandos de tipo `int`, la división produce un cociente entero. Para los valores positivos de estos ejemplos, `7 / 2` produce `3`: conserva las unidades completas del cociente y descarta la parte fraccionaria. No redondea al entero más cercano; siete entre dos no produce cuatro (Stroustrup, 2024, sección 2.4, p. 36).\n\nSi uno de estos operandos es `double`, la división trabaja con valores de coma flotante. Así, `7.0 / 2` produce `3.5`; escribir `7 / 2.0` permite el mismo resultado. Basta con que uno sea `double`, y también pueden serlo ambos. Esta elección ocurre al calcular la expresión, antes de guardar o mostrar su resultado (Stroustrup, 2024, sección 2.4, pp. 34–35; sección 2.9, pp. 44–45).\n\nEl programa siguiente compara ambas operaciones. El salto `\"\\n\"` permite ver cada resultado en una línea diferente."
         },
         {
           "type": "code",
@@ -123,7 +123,7 @@
         },
         {
           "type": "paragraph",
-          "text": "double mitad = 7 / 2; calcula primero una división de enteros, que produce 3. Al guardarlo en double, se conserva ese resultado como un número decimal de valor 3. La conversión posterior no recupera el .5 descartado. Para conservarlo, cambia el tipo de al menos un operando antes de dividir."
+          "text": "En `double mitad = 7 / 2;`, primero se evalúa la expresión que proporciona el valor inicial. Sus dos operandos son enteros, de modo que `7 / 2` produce `3`. Después se utiliza ese resultado para inicializar `mitad`, cuyo tipo es `double` (Stroustrup, 2024, sección 2.4, p. 36; sección 2.5, pp. 37–38).\n\nGuardar ese tres en un `double` permite representarlo como un valor de coma flotante. No reconstruye la mitad de unidad que ya se descartó en la división. Para obtener `3.5`, al menos uno de los operandos debe ser `double` cuando se hace el cálculo; por ejemplo, en `7.0 / 2`. Convertir un resultado y elegir el tipo de una operación son momentos distintos (Stroustrup, 2024, sección 2.9, pp. 44–45).\n\nEn la predicción, sigue esos dos momentos por separado: calcula primero cada expresión de la derecha y después determina qué valor guarda cada variable."
         },
         {
           "type": "output_prediction",
@@ -161,15 +161,15 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Leer la solución sin perder la distinción"
+          "text": "Calcular sin cambiar los operandos"
         },
         {
           "type": "paragraph",
-          "text": "Los tipos anteriores son int y double. La salida es 8 1.5. También podríamos guardar la cantidad ocho en un double, pero int comunica directamente que contamos cajas completas."
+          "text": "Los tipos que completan el programa anterior son `int` y `double`. Al ejecutarlo, la consola muestra:\n\n8 1.5\n\nOcho es también un valor que se puede guardar en un `double`; utilizar `int` para las cajas comunica que el recuento se hace en unidades completas. En cambio, el tipo elegido para los metros debe admitir la fracción que exige el problema."
         },
         {
           "type": "paragraph",
-          "text": "Suma, resta y multiplicación se escriben +, - y *. Una operación puede producir un valor nuevo sin modificar sus operandos: calcular ancho * largo no cambia ancho ni largo. Sólo una asignación u otra actualización explícita modifica el estado. Usa paréntesis cuando necesites expresar qué parte debe calcularse junta."
+          "text": "La suma, la resta y la multiplicación se escriben con `+`, `-` y `*`. Sus operandos pueden ser variables o literales. Una expresión como `ancho * largo` calcula un valor nuevo a partir de las medidas; no sustituye por sí sola el contenido de ninguna de las dos variables (Stroustrup, 2024, sección 2.4, pp. 34–35; sección 2.5, pp. 37–38).\n\nEn el programa siguiente, el resultado se guarda en `area` porque se utiliza para inicializar esa variable. `ancho` sigue conteniendo su medida anterior. Para cambiarla tendría que ejecutarse una asignación u otra actualización dirigida a `ancho`, como las que ya practicaste en la lección de estado y copia.\n\nLos paréntesis sirven para agrupar una parte del cálculo. Si queremos dividir entre dos una longitud junto con un tramo adicional de un metro, `(longitud + 1.0) / 2` suma primero las dos cantidades y divide el total. En cambio, `longitud + 1.0 / 2` divide sólo el metro adicional y después suma esa mitad a `longitud`. Cambiar la agrupación cambia qué operación expresa el programa (Stroustrup, 2024, sección 3.3, pp. 55–56)."
         },
         {
           "type": "output_prediction",
@@ -201,7 +201,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un tipo numérico no conserva por sí solo una unidad física: double distancia = 2.5; no dice si son metros o kilómetros. El nombre y el texto de salida deben comunicar esa interpretación. Un tipo tampoco admite magnitudes sin límite. En los cálculos con int, llamamos desbordamiento a un resultado matemático que queda fuera del rango representable por ese tipo. Para esta etapa trabajaremos con valores pequeños y operaciones cuyo resultado cabe en el tipo, sin experimentar con desbordamientos."
+          "text": "El tipo `double` permite guardar una medida, pero no establece por sí solo su unidad. `double distancia = 2.5;` no indica si hablamos de metros o kilómetros. La interpretación necesita contexto: el nombre `distancia_metros` y una salida con el rótulo `m` ayudan a comunicar qué significa la cantidad. Distinguir el valor de su interpretación evita confundir números iguales que representan medidas diferentes (Stroustrup, 2024, sección 2.7, p. 43).\n\nRango y precisión describen límites diferentes. El rango indica qué magnitudes alcanza la representación; la precisión limita los detalles numéricos que puede conservar. Que `double` admita partes fraccionarias no significa que admita cualquier magnitud ni que todas sus fracciones sean exactas (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43; Köppe et al., 2023, sección 17.3.5.2, párrs. 5 y 9–12).\n\nTambién `int` tiene un rango limitado. Llamamos desbordamiento a una operación cuyo resultado matemático queda fuera del rango representable por ese tipo. En la aritmética de `int`, que el programa compile no garantiza un resultado válido si se sobrepasa ese límite (Köppe et al., 2023, sección 6.8.2, párrs. 1–2). En esta etapa utilizaremos las cantidades pequeñas propuestas y operaciones que caben en el tipo; no hace falta provocar un desbordamiento para resolver las actividades."
         },
         {
           "type": "multiple_choice",
@@ -220,7 +220,7 @@
           "options": [
             "Representa exactamente todo decimal que podamos escribir.",
             "Permite aproximaciones numéricas con una precisión y un rango finitos.",
-            "Sólo almacena números menores que diez."
+            "Admite fracciones y puede guardar magnitudes sin ningún límite."
           ],
           "correctIndex": 1,
           "explanation": "Su utilidad para fracciones no lo convierte en una representación exacta de todos los reales."
@@ -231,11 +231,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Compara dos cálculos por tu cuenta"
+          "text": "Laboratorio: repartir una longitud"
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa que guarde una longitud de 9 metros y calcule la longitud de cada una de dos partes iguales. La salida debe ser Parte: 4.5 m. Después cambia 9.0 a 8.0: debe mostrar Parte: 4 m. Antes de ejecutar cada versión, anota el resultado esperado y explica qué operando permite la división decimal."
+          "text": "Construye en este Laboratorio un programa que guarde una longitud de nueve metros y calcule cuánto mide cada una de dos partes iguales. Debe obtener la longitud de una parte mediante una división y mostrar exactamente:\n\nParte: 4.5 m\n\nCompleta el cuerpo de `main` con las variables y las instrucciones necesarias. Elige los tipos de los datos y calcula el resultado a partir de ellos; escribir directamente el mensaje completo con `4.5` no comprueba el reparto.\n\nCompila y ejecuta el programa. Compara el valor, el rótulo, los espacios y la unidad de la consola con la salida pedida. Si difieren, revisa el cálculo y el mensaje, modifica tu código y vuelve a probarlo. Después cambia solamente la longitud inicial a ocho metros: la nueva salida debe ser:\n\nParte: 4 m\n\nComprueba esa segunda versión en el mismo editor. Los dos casos permiten contrastar qué ocurre cuando el reparto necesita una fracción y cuando el resultado es una cantidad entera."
         },
         {
           "type": "cpp_compiler",
@@ -243,7 +243,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Como exploración separada, usa dos operandos enteros con los valores 9 y 2 y predice el cociente. No cambies el divisor a cero. La comprobación necesita comparar el resultado con la intención, además de comprobar que el código compile."
+          "text": "Cuando hayas construido y comprobado las dos versiones, resuelve los dos últimos puzzles de la página siguiente. En la predicción registrarás la salida de la exploración con los enteros `9` y `2`; en el relleno completarás el tipo y los operandos necesarios para conservar la mitad de metro.\n\nDespués vuelve a este Laboratorio y realiza la exploración con ambos operandos de tipo `int`, usando nueve como longitud y dos como número de partes. Compara la consola con la respuesta que introdujiste en el puzzle y con el objetivo del reparto. Mantén el divisor dos: que una variante compile no demuestra que produzca dos partes iguales cuya suma sea la longitud inicial."
         }
       ]
     },
@@ -251,7 +251,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una solución y dos fotografías"
+          "text": "Comparar la solución y predecir una variante"
         },
         {
           "type": "code",
@@ -260,7 +260,7 @@
         },
         {
           "type": "paragraph",
-          "text": "longitud_metros participa como double antes de dividir. Con 8.0 se obtendría 4, aunque cout no añada .0. La etiqueta m conserva visible la interpretación del resultado."
+          "text": "En esta solución, `longitud_metros` ya es `double` cuando se utiliza en la división. Aunque `partes` sea `int`, uno de los operandos permite calcular el cociente con parte fraccionaria (Stroustrup, 2024, sección 2.9, pp. 44–45).\n\nLa consola muestra `Parte: 4.5 m`. Si cambias únicamente `9.0` por `8.0`, muestra `Parte: 4 m`. La ausencia de `.0` en ese segundo mensaje pertenece al formato de salida y no cambia el tipo de la variable (Stroustrup, 2024, sección 9.10.2, p. 278). El rótulo `m` mantiene visible que estamos interpretando el resultado como una longitud en metros.\n\nLa predicción siguiente recupera otra distinción: una copia guarda el valor recibido en su momento, aunque después cambie la variable de la que se tomó (Stroustrup, 2024, sección 2.5, pp. 37–38)."
         },
         {
           "type": "output_prediction",
@@ -282,6 +282,31 @@
           ],
           "correctIndex": 2,
           "explanation": "Una pérdida de la parte fraccionaria puede ocurrir al calcular la división entera, aunque después se guarde en double."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Después de comprobar tus repartos en el Laboratorio, lee este programa y predice la salida de la variante con operandos enteros. Escribe el mensaje de la consola con sus espacios y sin añadir un salto de línea. La variable que recibe el cociente es double: distingue su tipo del tipo de los operandos de la división.",
+          "code": "#include <iostream>\n\nint main() {\n    int longitud_metros = 9;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n",
+          "answers": [
+            "Parte: 4 m"
+          ],
+          "explanation": "La división utiliza dos valores int y produce el cociente entero 4. Ese resultado se guarda después en longitud_por_parte, de tipo double. El almacenamiento posterior no reconstruye la fracción descartada, y la salida es Parte: 4 m.",
+          "outputComparison": "exact",
+          "reviewFeedback": "Identifica el tipo de los dos operandos que aparecen a ambos lados de /. Calcula la expresión antes de considerar el tipo de la variable que recibe su resultado. Conserva también el rótulo, los espacios y la unidad del mensaje.",
+          "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__prediccion_reparto_entero"
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa el programa para obtener Parte: 4.5 m. En el primer hueco escribe el tipo adecuado entre int y double, conservando partes como int. En los otros dos escribe únicamente los nombres de las variables: primero la longitud que se reparte y después el número de partes. El literal inicial 9 permanece sin punto: decide el tipo que tendrá la variable al participar en la división. Para revisar el reparto, distingue el tipo de cada operando del tipo que recibe el resultado; después comprueba qué cantidad debe dividirse y cuál indica el número de partes.",
+          "language": "cpp",
+          "template": "#include <iostream>\n\nint main() {\n    [] longitud_metros = 9;\n    int partes = 2;\n    double longitud_por_parte = [] / [];\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n",
+          "answers": [
+            "double",
+            "longitud_metros",
+            "partes"
+          ],
+          "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__tipo_y_operandos_reparto"
         }
       ]
     },
@@ -293,11 +318,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+          "text": "Compara estas referencias con el programa que construiste y ejecutaste. Hay varias implementaciones correctas: comprueba qué valor se calcula y qué aparece en la consola, además de la forma concreta de escribir las instrucciones."
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Para 9 metros divididos en dos partes iguales, la salida es Parte: 4.5 m; para 8, Parte: 4 m. La división debe conservar la parte fraccionaria antes de guardar el resultado. La exploración con operandos enteros 9 y 2 produce 4; ese cociente no cumple la intención de dos longitudes iguales que sumen 9 metros. Mantén divisor distinto de cero y los valores pequeños indicados."
+          "text": "Criterios del reparto\n\nCon nueve metros iniciales y dos partes iguales, el programa debe mostrar `Parte: 4.5 m`. Al cambiar únicamente la longitud inicial a ocho metros, debe mostrar `Parte: 4 m`. El cálculo debe utilizar los datos del programa y permitir la fracción antes de guardar el resultado. Ambas versiones deben compilar y ejecutarse.\n\nCriterio de la exploración con enteros\n\nCon los operandos enteros `9` y `2`, la división produce `4`. Guardar después ese cociente en una variable `double` conserva cuatro; no recupera la media unidad descartada durante el cálculo (Stroustrup, 2024, sección 2.4, p. 36; sección 2.9, pp. 44–45). Dos longitudes de cuatro metros suman ocho metros, por lo que ese resultado no satisface el reparto inicial de nueve metros.\n\nRelleno de la página anterior\n\nLos huecos se completan con `double`, `longitud_metros` y `partes`, en ese orden. Aunque el inicializador escrito sea el entero `9`, la variable `longitud_metros` tiene el tipo `double` elegido en su definición. Esa variable aporta su valor como operando antes de dividir; por eso el resultado puede ser `4.5` (Stroustrup, 2024, sección 2.2, p. 32; sección 2.9, pp. 44–45)."
         },
         {
           "type": "code",
@@ -306,7 +331,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los operandos de la referencia permiten división con parte fraccionaria. Cambia 9.0 a 8.0 para el segundo caso. Como exploración separada, sustituye el cálculo por int longitud{9}; int parte{longitud / 2};: el resultado 4 se debe al cociente entero, no a un fallo de cout ni a un cambio de unidad."
+          "text": "Esta referencia usa la inicialización con llaves que ya practicaste. `double longitud{9.0};` proporciona el dato inicial y `double parte{longitud / 2.0};` guarda el resultado de la división. Los dos operandos del cálculo son `double`. No es necesario que ambos lo sean, como muestra la primera solución de referencia.\n\nEn el mismo Laboratorio, sustituye el valor inicial por `8.0` para comprobar el segundo caso. Para contrastar la exploración entera, puedes utilizar `int longitud{9};` e `int parte{longitud / 2};`. La salida `4` procede entonces de la división entera, no de un fallo de `std::cout` ni de un cambio de unidad. Después restablece tu solución del reparto de nueve metros y ejecútala de nuevo para verificar `Parte: 4.5 m`."
         }
       ]
     }

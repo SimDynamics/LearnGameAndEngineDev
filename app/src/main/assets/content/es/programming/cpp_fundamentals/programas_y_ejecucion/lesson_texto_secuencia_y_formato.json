@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada instrucción de salida aporta los caracteres que se le entregan. Si mostramos \"Lado\" y después \"Norte\", los textos quedan unidos: LadoNorte. El hecho de que las instrucciones estén en líneas distintas del archivo no crea líneas distintas en la salida. El código fuente y el resultado visible son representaciones diferentes."
+          "text": "Una instrucción de salida aporta los caracteres que le entregamos; la siguiente continúa a partir de ellos. Escribir las instrucciones en líneas distintas del archivo no introduce saltos en el resultado. Las inserciones se realizan en el orden de las instrucciones (Stroustrup, 2024, sección 1.2, pp. 19–20; sección 2.1, p. 31).\n\nPor ejemplo, mostrar \"Lado\" y después \"Norte\" produce LadoNorte: ningún literal aporta un separador. Distingue las líneas que usamos para leer cómodamente el código de los caracteres que realmente enviamos a la salida."
         },
         {
           "type": "paragraph",
-          "text": "Un espacio escrito dentro de un literal sí forma parte de su contenido. Por ejemplo, separar dos palabras requiere que alguna inserción aporte ese espacio. También puedes encadenar varias inserciones con std::cout << \"Sala\" << \" \" << \"Central\";. La secuencia importa y cada pieza tiene un papel observable."
+          "text": "Un espacio dentro de un literal sí es parte del mensaje. Podemos colocar ese espacio al final de la primera palabra, al principio de la segunda o en un literal separado. En std::cout << \"Sala\" << \" \" << \"Central\";, las inserciones aportan Sala, un espacio y Central, en ese orden. Encadenar las inserciones permite construir el mensaje dentro de una sola instrucción (Stroustrup, 2024, sección 2.1, p. 31)."
         },
         {
           "type": "output_prediction",
@@ -59,7 +59,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La secuencia de escritura \\n representa un salto de línea dentro de un literal de C++. Son dos caracteres en el código, barra inversa y n, que describen un carácter de control en el texto. Un salto de línea en el archivo y un salto de línea enviado a la salida no son la misma cosa. La posición de \\n determina dónde comienza la siguiente línea del mensaje."
+          "text": "Dentro de un literal, \\n representa un salto de línea. Su escritura en el código utiliza una barra inversa y la letra n, pero el texto producido contiene un carácter de control que hace comenzar una línea nueva (Stroustrup, 2024, sección 1.2, p. 19).\n\nLa posición de ese escape determina dónde se divide el mensaje. No equivale a pulsar Enter entre dos instrucciones del archivo: ese Enter organiza el código, mientras que \\n dentro del literal forma parte de los datos que se envían a la salida."
         },
         {
           "type": "code",
@@ -68,7 +68,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este ejemplo hay un salto entre dos partes del literal. La salida tiene dos líneas. El compilador interpreta la secuencia de escape dentro del literal; la salida no contiene los caracteres barra y n. Para estas predicciones escribiremos el contenido visible, con saltos internos cuando existan; el salto final no se exige en el campo de respuesta."
+          "text": "El ejemplo coloca el salto entre Planta baja y Planta alta. La salida tiene dos líneas y no muestra la barra inversa ni la letra n: juntas, dentro del literal, representan el salto (Stroustrup, 2024, sección 1.2, p. 19).\n\nEn las predicciones siguientes, usa Enter en el campo de respuesta para reproducir los saltos entre partes del mensaje. Conserva los espacios que sí forman parte del texto. Estas actividades no exigen un salto al final de la última línea; los saltos internos sí importan."
         },
         {
           "type": "output_prediction",
@@ -114,7 +114,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si necesitas una comilla doble como parte del mensaje, una comilla sin escape terminaría el literal. La escritura \\\" representa una comilla incluida dentro de ese texto. De manera semejante, \\\\ representa una barra inversa del mensaje. El carácter que empieza un escape y el carácter resultante tienen funciones diferentes: uno pertenece a la notación del código, el otro al dato producido."
+          "text": "Una comilla doble sin escape cierra el literal. Para incluir una comilla en el mensaje, escribimos \\\" dentro del literal. De manera semejante, \\\\ representa una sola barra inversa. Son secuencias de escape: su escritura permite representar caracteres que de otro modo cumplirían otra función en el código (Köppe et al., 2023, sección [lex.ccon], párr. 4, tabla 10; sección [lex.string], párr. 10.1).\n\nEn el siguiente ejemplo, unas comillas delimitan todo el literal y las comillas escapadas rodean el nombre Luna como parte del mensaje. Recorre la instrucción distinguiendo esas dos funciones antes de responder."
         },
         {
           "type": "code",
@@ -123,7 +123,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No hay que agregar comillas a toda la respuesta de salida. Sólo se escriben en la respuesta cuando el propio programa las produce como contenido. La precisión aquí permite distinguir la notación que delimita un texto de los caracteres del texto. Leer esas dos capas será útil después con rutas, mensajes y datos."
+          "text": "En una respuesta de salida sólo escribimos las comillas que el programa produce como datos. Las que delimitan el literal sirven para interpretar el código y no se muestran. Los escapes de comilla y barra, en cambio, representan caracteres que sí pueden formar parte del mensaje (Köppe et al., 2023, sección [lex.ccon], párr. 4, tabla 10; sección [lex.string], párr. 10.1).\n\nPor ejemplo, en el código anterior, Luna queda rodeado por comillas en la salida. En los dos ejercicios siguientes tendrás que distinguir esas marcas del código de los caracteres que recibe la consola."
         },
         {
           "type": "output_prediction",
@@ -169,11 +169,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Fuera de un literal, // comienza un comentario que llega hasta el final de esa línea. El comentario comunica algo a quien lee el programa y no es una instrucción de salida. Dentro de un literal, esos mismos dos signos son parte del contenido. La función de una marca depende del contexto en que aparece."
+          "text": "Fuera de un literal, // comienza un comentario que llega hasta el final de la línea. El comentario está destinado a quien lee el programa y no ejecuta una instrucción de salida. Dentro de un literal, esos mismos signos forman parte del texto: su función depende del contexto (Stroustrup, 2024, sección 1.2, p. 19)."
         },
         {
           "type": "paragraph",
-          "text": "Un comentario útil puede explicar la intención o una decisión que no resulte evidente. Repetir «muestra texto» junto a cada salida añade poco. Si el comentario afirma un resultado distinto del código, el compilador no corrige esa contradicción: el programa ejecuta el código. Por eso al modificar un programa también revisamos las explicaciones que dejamos para otras personas."
+          "text": "Un comentario útil aclara una intención o una decisión que no resulta evidente al leer el código. Repetir «muestra texto» junto a una instrucción de salida aporta poco. Además, al modificar el programa hay que revisar sus comentarios: una explicación desactualizada puede confundir a quien intente comprenderlo después (Stroustrup, 2024, sección 6.6.4, pp. 162–163).\n\nSi un comentario promete Norte y la instrucción envía Sur, se mostrará Sur. El comentario no cambia esa acción ni obliga al compilador a comprobar la promesa. En los ejercicios siguientes, decide qué se envía realmente a std::cout."
         },
         {
           "type": "output_prediction",
@@ -255,7 +255,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de responder: el operador que introduce el literal es << y el literal delimitado por comillas aporta Carga lista. En el orden solicitado, la instrucción de Paso uno debe ejecutarse antes que la de Paso dos. Recuerda comprobar la salida, no sólo que el código compile."
+          "text": "Después de responder, contrasta los papeles de las piezas: << realiza la inserción y el literal \"Carga lista\" aporta el mensaje. Las comillas delimitan el texto y no aparecen como parte de él (Stroustrup, 2024, sección 1.2, p. 19).\n\nEn la ordenación, la instrucción de Paso uno se ejecuta primero y aporta también el salto. La de Paso dos continúa en la nueva línea. Si intercambias las instrucciones, cambia el orden del mensaje, aunque sigan siendo instrucciones válidas."
         }
       ]
     },
@@ -267,15 +267,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice la salida del laboratorio y ejecútalo. Modifícalo para producir tres líneas: Informe, Zona Este y Fin. Primero cambia los textos; después decide dónde deben aparecer los saltos. Puedes hacerlo con una inserción que contenga varios escapes o con varias instrucciones. Compara ambas versiones: la organización del código puede variar y la salida requerida debe conservarse."
+          "text": "Antes de ejecutar el código inicial del Laboratorio, escribe su salida en el puzzle situado debajo del editor. Después ejecútalo y compara las dos líneas de la consola con tu predicción.\n\nConstruye después un informe de tres líneas, exactamente en este orden:\nInforme\nZona Este\nFin\n\nEn el mismo editor, crea una versión con un solo literal que contenga los saltos necesarios. Compila y ejecuta. Comprueba el texto, el orden y los saltos entre líneas; no deben aparecer barras ni la letra n como sustitutos del salto. Puedes dejar o no un salto después de Fin.\n\nA continuación, modifica ese programa para repartir la salida entre tres instrucciones, una por línea del informe. Vuelve a compilar y compara la consola con el mismo resultado solicitado. La organización del código cambia, pero los caracteres del informe deben conservarse. Las dos soluciones de referencia están en la página siguiente; consúltalas después de probar tus versiones."
         },
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n    return 0;\n}\n"
         },
         {
-          "type": "note",
-          "text": "Comprueba que cada línea tenga el texto previsto y que no aparezcan los caracteres \\n como parte del mensaje. Anota tu predicción antes de ejecutar; así la observación comprueba una hipótesis."
+          "type": "output_prediction",
+          "id": "prediccion_informe_inicial",
+          "question": "Predice la salida del código inicial del Laboratorio antes de ejecutarlo. Escribe sus dos líneas, con el espacio dentro del segundo renglón. No añadas un salto al final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n    return 0;\n}\n",
+          "answers": [
+            "Resumen\nZona Oeste"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El escape \\n separa Resumen de Zona Oeste. Escribir una sola instrucción no obliga a producir una sola línea: las líneas dependen de los caracteres del literal.",
+          "reviewFeedback": "Distingue el salto indicado dentro del literal de los cambios de línea del archivo. Revisa también cuáles de sus espacios pertenecen al mensaje."
         }
       ]
     },
@@ -301,7 +310,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera versión reúne los caracteres en un literal; la segunda los distribuye entre tres instrucciones. Los caracteres enviados a cout son los mismos. Partir una instrucción en varias líneas del archivo no inserta por sí mismo saltos en el resultado."
+          "text": "En la primera solución, el literal contiene el mensaje completo, con sus dos saltos internos. En la segunda, cada instrucción aporta una parte y las dos primeras añaden un salto. Son construcciones distintas del mismo informe.\n\nLa consola permite comparar el resultado: tres líneas en el orden solicitado. Los cambios de línea que usamos para distribuir el código no añaden por sí mismos caracteres al mensaje (Stroustrup, 2024, sección 1.2, pp. 19–20; sección 2.1, p. 31)."
         }
       ]
     }

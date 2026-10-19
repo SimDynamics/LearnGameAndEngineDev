@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Programar consiste en construir y comprobar una solución que una computadora pueda ejecutar. El código es una parte de ese trabajo: antes de escribirlo necesitamos entender qué resultado se espera, qué información está disponible y qué reglas deben respetarse. Después debemos observar si las instrucciones producen realmente el resultado previsto. Un programa que se ejecuta no queda automáticamente demostrado como correcto."
+          "text": "Programar consiste en expresar una solución mediante instrucciones que una computadora pueda ejecutar y en comprobar cómo se comporta esa solución. Escribir instrucciones y probarlas forman parte del trabajo: necesitamos saber tanto qué le pedimos a la computadora como qué hace cuando sigue esas instrucciones (Stroustrup, 2024, sección 1.1, p. 18).\n\nEl texto del programa que escribimos se llama código fuente (Stroustrup, 2024, sección 1.3, p. 21). Antes de escribirlo, debemos precisar el resultado que necesitamos, la información disponible y las condiciones que se deben cumplir. Esas exigencias son los requisitos de la tarea. Después compararemos lo que produce el programa con esos requisitos; que una ejecución termine no significa, por sí solo, que haya resuelto el problema (Stroustrup, 2024, sección 4.1, p. 84)."
         },
         {
           "type": "paragraph",
-          "text": "Imagina una oficina que necesita identificar sus cajas mediante etiquetas. Si dos cajas son rojas, la computadora puede imprimir exactamente «Caja roja» en ambas, pero esas etiquetas no permiten distinguirlas. El ejemplo muestra por qué ejecutar la impresión no basta para resolver el problema. Diseñar la solución exige elegir un dato que identifique cada caja y definir cómo comprobar el resultado: revisar que dos cajas distintas no reciban la misma identificación. La computadora ejecutará las instrucciones que escribamos, aunque la información elegida no cumpla ese propósito."
+          "text": "Imagina una oficina que necesita distinguir sus cajas mediante etiquetas. Si dos cajas son rojas, un programa puede imprimir «Caja roja» en ambas. La impresión se ha realizado, pero quien recibe las etiquetas sigue sin poder identificar cada caja por separado.\n\nEl requisito no era solamente imprimir algún texto: era obtener una identificación distinta para cada caja. Por eso debemos elegir un dato que permita distinguirlas, en lugar de suponer que un color siempre será suficiente.\n\nLa comprobación también depende del objetivo. En este caso, revisaríamos que dos cajas distintas no recibieran la misma identificación. Así separamos tres decisiones: qué necesitamos conseguir, con qué información podemos conseguirlo y qué resultado debemos examinar para comprobarlo."
         },
         {
           "type": "multiple_choice",
@@ -30,7 +30,7 @@
         },
         {
           "type": "note",
-          "text": "Este curso comienza desde cero. Aprenderás a convertir requisitos en programas C++, explicar sus datos y su ejecución, construir y combinar soluciones propias, comprobarlas con casos previstos y conservar un estado válido ante errores. La práctica avanzará desde salidas sencillas hasta programas que procesen colecciones y texto mediante funciones y tipos propios. Esos cimientos preparan la programación de motores y gráficos en etapas posteriores de la ruta."
+          "text": "Este curso comienza desde cero. Aprenderás a convertir requisitos en programas C++, seguir lo que hacen sus instrucciones, construir y combinar soluciones y comprobar sus resultados. También aprenderás a detectar errores y a evitar que una operación rechazada deje datos incorrectos.\n\nEmpezaremos mostrando mensajes. Después trabajaremos con datos que cambian, decisiones, repeticiones, grupos de datos y texto. Los programas se organizarán en partes con responsabilidades definidas. Estos fundamentos preparan la programación de motores y gráficos en etapas posteriores de la ruta."
         }
       ]
     },
@@ -42,11 +42,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada es la información que recibe la solución; la salida es lo que produce para su propósito. En un conversor, la medida original es un dato de entrada y la medida convertida es un resultado de salida. Una regla de conversión indica cómo relacionarlos. No conviene confundir los datos con el procedimiento que los transforma: cambiar la medida no equivale a cambiar la regla."
+          "text": "La entrada es la información que recibe un programa para realizar su tarea; la salida es el resultado que produce. Esa información puede proceder de una persona, de un archivo o de otra parte de un programa. No toda entrada tiene que escribirse con un teclado ni toda salida tiene que aparecer en una pantalla (Stroustrup, 2024, sección 3.1, pp. 52–53).\n\nEn un conversor de longitudes, la medida original es un dato de entrada y la medida expresada en la nueva unidad es un resultado de salida. La regla de conversión indica cómo obtener una a partir de la otra. Cambiar la medida que se quiere convertir no equivale a cambiar esa regla: los datos y el procedimiento tienen funciones diferentes."
         },
         {
           "type": "paragraph",
-          "text": "Algunos programas de esta primera unidad mostrarán un mensaje fijo. Su texto estará escrito dentro del código y no leerán datos del usuario mientras se ejecutan. Más adelante recibiremos información variable. Por ahora, separar intención, datos e instrucciones ya permite hacer preguntas útiles: ¿qué sabemos?, ¿qué falta?, ¿qué queremos obtener?"
+          "text": "Los primeros programas que construiremos mostrarán un mensaje fijo. El texto ya estará escrito dentro del código y no pediremos al usuario que lo introduzca durante la ejecución. Un programa puede producir una salida sin leer nada del usuario, como ocurre en un primer programa que sólo muestra un saludo (Stroustrup, 2024, sección 2.1, p. 30).\n\nPara estudiar una tarea, separa la información disponible del resultado buscado. Si el resultado depende de un dato que no tenemos ni podemos deducir, todavía falta información para resolverla. En los puzzles siguientes identificarás esos papeles; no necesitas realizar el cálculo del viaje ni escribir todavía un programa."
         },
         {
           "type": "multiple_choice",
@@ -54,7 +54,7 @@
           "question": "Un programa calculará el tiempo de un viaje con distancia y velocidad constante conocidas. ¿Qué son la distancia y la velocidad para esa tarea?",
           "options": [
             "El resultado que todavía hay que calcular.",
-            "Errores de sintaxis.",
+            "Las instrucciones que indican cómo calcular el tiempo.",
             "Datos de entrada."
           ],
           "correctIndex": 2,
@@ -82,11 +82,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una instrucción debe tener un significado que quien la ejecuta pueda reconocer. «Prepara correctamente el informe» expresa una intención, pero no especifica operaciones. Un procedimiento puede decir: recoger los datos, calcular los resultados necesarios y mostrar el informe. Aun así, cada operación necesita un significado concreto. La precisión no exige narrar todo el universo: exige fijar lo que importa para el ejecutor y para la tarea."
+          "text": "Para que un sistema ejecute una instrucción, debe reconocer la acción que le pedimos. Un lenguaje de programación establece un vocabulario de operaciones y reglas para expresarlas con precisión. La computadora no completa nuestras instrucciones recurriendo al sentido común de una persona (Stroustrup, 2024, sección 1.1, p. 18).\n\nUna manera de abordar una tarea es dividirla en otras más pequeñas que podamos comprender y resolver (Stroustrup, 2024, sección 3.2, p. 54). «Prepara correctamente el informe» expresa un objetivo, pero no indica cómo realizarlo. Podemos separar esa tarea en recoger los datos, calcular los resultados y mostrar el informe. Cada paso debe quedar definido con suficiente precisión para que el sistema sepa ejecutarlo.\n\nLa precisión depende también de las acciones disponibles. Si un sistema ya sabe mostrar un mensaje, podemos pedirle esa acción sin describir los mecanismos de la pantalla. Si sólo reconoce unas órdenes de movimiento fijas, debemos construir el recorrido con esas órdenes. No podemos suponer que entenderá una orden nueva porque su significado nos parezca evidente."
         },
         {
           "type": "paragraph",
-          "text": "El orden también forma parte del procedimiento. Si primero se imprime un documento y después se corrige su título, la copia ya impresa conserva el título anterior. La computadora no retrocede para aplicar automáticamente un cambio que llegó después. Una secuencia puede contener operaciones correctas y producir un resultado incorrecto por su orden."
+          "text": "El orden también forma parte del procedimiento. Imagina que primero se imprime un documento y después se corrige el título en el archivo. La copia que ya salió de la impresora conserva el título anterior: cambiar el archivo no cambia el papel que ya se imprimió.\n\nSi necesitamos entregar una copia con el título corregido, la corrección debe realizarse antes de imprimir esa copia. Las dos acciones pueden estar bien definidas y, aun así, no cumplir el requisito cuando se realizan en el orden equivocado. En el siguiente puzzle elegirás una secuencia que respete esa dependencia."
         },
         {
           "type": "multiple_choice",
@@ -122,23 +122,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Un algoritmo describe un procedimiento para resolver una familia de situaciones: qué pasos seguir y bajo qué condiciones. Un programa expresa operaciones en un lenguaje que un sistema puede procesar. Podemos discutir un algoritmo antes de decidir todos los detalles de C++. También podemos escribir un programa que exprese mal el algoritmo o que use un procedimiento inadecuado. Por eso aprenderemos tanto a razonar sobre la solución como a escribir su expresión precisa."
+          "text": "Un algoritmo es un procedimiento formado por pasos que pueden ejecutarse para obtener un resultado buscado (Black, 2020, sección «Definition»). La idea central es indicar cómo conseguir el resultado, en lugar de limitarse a nombrarlo.\n\nEl procedimiento de la tarjeta puede describirse antes de escribir C++: corregir el nombre, producir una copia con ese dato y entregar esa copia. Al escribir un programa, expresamos las operaciones mediante las reglas de un lenguaje de programación, de modo que la computadora pueda ejecutarlas (Stroustrup, 2024, sección 1.1, p. 18).\n\nHay dos preguntas diferentes: ¿el procedimiento sirve para resolver la tarea?, y ¿el programa expresa correctamente ese procedimiento? Si el plan utiliza un dato insuficiente, escribirlo con cuidado no resuelve esa carencia. Si el plan es adecuado pero cambiamos el orden de sus pasos al programarlo, también podemos obtener un resultado distinto del solicitado."
         },
         {
           "type": "paragraph",
-          "text": "Una prueba combina una situación conocida con un resultado esperado. Si necesitamos un mensaje «Listo» y el programa muestra «Pendiente», ya tenemos una diferencia concreta que investigar. Observar que apareció alguna palabra no comprueba el requisito. Un caso que funciona aporta evidencia sobre ese caso; no garantiza que todos los datos posibles funcionen."
+          "text": "Probar un programa consiste en ejecutarlo en situaciones elegidas y comparar sus resultados con lo que se esperaba. Un caso de prueba fija una situación concreta y el resultado que debería producir; no se limita a observar qué sucede sin un criterio de comparación (Stroustrup, 2024, sección 4.7.4, pp. 107–108).\n\nSi necesitamos el mensaje «Listo» y el programa muestra «Pendiente», tenemos una diferencia precisa que investigar. Observar que apareció alguna palabra no comprueba el requisito: hay que comparar la palabra producida con la solicitada.\n\nUn caso que funciona aporta evidencia sobre ese caso. No demuestra que funcionen todos los demás. Por eso las pruebas deben elegirse de manera sistemática, en lugar de repetir únicamente una situación que ya salió bien (Stroustrup, 2024, sección 4.7.4, pp. 107–108). Más adelante ampliaremos los casos cuando los programas reciban datos y tomen decisiones."
         },
         {
           "type": "multiple_choice",
           "id": "prueba_mensaje",
           "question": "El requisito es mostrar «Caja preparada». ¿Qué comprobación responde directamente a él?",
           "options": [
-            "La herramienta termina de compilar sin un diagnóstico de error.",
+            "Se muestra alguna palabra, sin comprobar cuál es.",
             "Aparece exactamente el mensaje requerido al ejecutar.",
-            "El mensaje requerido aparece dentro de un comentario."
+            "Se ha elegido ese mensaje, aunque todavía no se haya observado el resultado."
           ],
           "correctIndex": 1,
-          "explanation": "La prueba observa el resultado que exige la tarea. La apariencia del editor no verifica esa salida."
+          "explanation": "La comprobación observa si el resultado coincide con el requisito. Aquí importa el mensaje exacto, no sólo que aparezca algún texto o que conozcamos la intención."
         },
         {
           "type": "multiple_choice",

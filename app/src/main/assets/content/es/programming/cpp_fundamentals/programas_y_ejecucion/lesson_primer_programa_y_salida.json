@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vamos a escribir un programa pequeño que muestre un mensaje. El texto del programa que escribimos se llama código fuente. Primero observa qué parte contiene el mensaje y qué aparece al ejecutarlo. Después relacionaremos las demás partes con su función."
+          "text": "Vamos a construir un programa que muestre un mensaje. El texto escrito en C++ es su código fuente: describe las acciones que queremos ejecutar (Stroustrup, 2024, sección 1.1, p. 18).\n\nEn el ejemplo, localiza primero el mensaje Inicio confirmado. Después recorreremos las partes que permiten mostrarlo. No necesitas conocer todavía todos los detalles de una biblioteca o de una función para empezar a relacionar cada pieza con una acción concreta."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una biblioteca reúne recursos ya preparados para tareas comunes. C++ incluye una biblioteca estándar. La línea #include <iostream> permite usar sus recursos de entrada y salida. std::cout es el nombre completo del recurso que usamos para enviar texto a la salida; std:: indica que el nombre pertenece a esa biblioteca. main contiene las instrucciones que ejecutaremos, entre las llaves { y }. return 0 termina main y comunica al sistema que el programa finalizó correctamente. Ese cero no se muestra: enviar texto y comunicar cómo terminó el programa son acciones distintas."
+          "text": "Una biblioteca reúne recursos que otros programas pueden utilizar. La biblioteca estándar de C++ incluye los de entrada y salida. La cabecera <iostream> contiene las declaraciones de esos recursos: la información que permite al compilador reconocer nombres como std::cout y cómo utilizarlos. #include <iostream> incorpora esa información al preparar nuestro código; esta es la forma que utilizaremos en el Laboratorio (Stroustrup, 2024, p. 25; sección 7.7.2, pp. 214–215).\n\nstd::cout es el flujo de salida: recibe los datos que vamos a mostrar. El prefijo std:: permite identificar cout entre los nombres de la biblioteca estándar. En la instrucción del ejemplo, el texto situado entre comillas es el mensaje que enviamos a ese flujo (Stroustrup, 2024, sección 1.2, p. 19).\n\nmain contiene las instrucciones de este programa, encerradas entre las llaves { y }. Primero se envía el mensaje; después return 0; termina main y comunica al sistema que el programa finalizó correctamente. Ese cero no se envía a la salida: informar al sistema y mostrar un mensaje son acciones diferentes (Stroustrup, 2024, sección 1.2, p. 20)."
         },
         {
           "type": "multiple_choice",
@@ -43,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las comillas dobles delimitan un literal de texto: una forma de escribir un texto concreto dentro del programa. En \"Puerto listo\", el contenido es Puerto listo; las comillas pertenecen a la escritura del programa y no al mensaje mostrado. El punto y coma que termina la instrucción también pertenece a las reglas de escritura del lenguaje, llamadas sintaxis. Ni las comillas ni ese terminador se agregan automáticamente al texto de salida."
+          "text": "Las comillas dobles delimitan un literal de texto: permiten escribir un texto concreto dentro del código. En \"Puerto listo\", el mensaje es Puerto listo. Las comillas señalan sus límites y no se muestran como parte de ese mensaje (Stroustrup, 2024, sección 1.2, p. 19).\n\nEl punto y coma termina la instrucción de salida. Pertenece a las reglas de escritura del lenguaje, llamadas sintaxis; no se agrega al mensaje. Al leer el código, distingue los caracteres que delimitan o terminan una instrucción de los datos que esa instrucción envía (Stroustrup, 2024, sección 1.3, p. 22)."
         },
         {
           "type": "paragraph",
-          "text": "Aquí, << es el operador: una marca que indica una operación. Junto a std::cout, envía el valor de su derecha a la salida. En este ejemplo envía texto. Ese envío se llama inserción. Usaremos también el nombre flujo de salida para el recurso que recibe esos datos y los lleva hacia la salida. Escribe los dos signos <<: un solo < tiene otro significado en C++."
+          "text": "En std::cout << \"Puerto listo\";, los dos signos << forman un operador: una marca que indica una operación. Aquí la operación consiste en insertar el texto de la derecha en el flujo de salida de la izquierda. Por eso lo llamamos operador de inserción (Stroustrup, 2024, sección 1.2, p. 19).\n\nConserva juntos los dos signos. Un solo < es otro operador de C++ y no expresa esta inserción. Más adelante estudiaremos su uso; ahora necesitamos distinguirlo para escribir y revisar nuestras instrucciones de salida (Stroustrup, 2024, sección 1.3, p. 22)."
         },
         {
           "type": "output_prediction",
@@ -82,11 +82,11 @@
         },
         {
           "type": "paragraph",
-          "text": "main es el punto de entrada de estos programas: allí comienza la ejecución de las instrucciones que escribimos. El nombre se escribe exactamente así. int es una palabra del lenguaje que aquí indica el tipo de resultado de main; estudiaremos los tipos con detalle en la siguiente unidad. Los paréntesis () forman parte de la escritura de main. Las llaves { y } delimitan su cuerpo, es decir, el grupo de instrucciones que contiene."
+          "text": "main es el punto de entrada de estos programas: allí comienza la ejecución de las instrucciones que escribimos. Las llaves { y } delimitan su cuerpo, es decir, el grupo de instrucciones que contiene (Stroustrup, 2024, sección 1.2, p. 20).\n\nEn int main(), int indica que main devuelve un resultado de tipo entero, como el 0 de return 0;. Los paréntesis forman parte de la definición; en esta forma están vacíos. En la siguiente unidad estudiaremos los tipos y después construiremos otras funciones. Por ahora, conserva completa esta estructura y distingue el resultado devuelto del texto mostrado (Stroustrup, 2024, sección 1.2, p. 20)."
         },
         {
           "type": "paragraph",
-          "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. No añadas ; a cualquier línea: #include <iostream> es una directiva, una indicación para preparar el código antes de compilarlo, y no lleva ese terminador. Las llaves delimitan un grupo de instrucciones; tampoco son un mensaje de salida. Al revisar el programa, comprueba qué función tiene cada marca antes de cambiarla."
+          "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. Eso no significa que cada línea del archivo necesite uno. Las marcas se eligen por la función de la construcción, no por su posición al final de una línea (Stroustrup, 2024, sección 1.3, p. 22).\n\n#include <iostream> es una directiva: indica cómo preparar el código antes de compilarlo. No lleva el terminador de una instrucción de salida. Las llaves, por su parte, delimitan el cuerpo de main. El ejemplo completo permite contrastar esas tres escrituras sin añadir signos al azar (Stroustrup, 2024, p. 25; sección 7.7.2, pp. 214–215)."
         },
         {
           "type": "multiple_choice",
@@ -132,7 +132,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora relacionaremos piezas que ya conocemos. #include <iostream> debe aparecer antes de usar std::cout, para que ese recurso esté disponible. La instrucción que muestra el mensaje debe quedar dentro de main. Cerramos el cuerpo con } después de las instrucciones. Recupera la función de cada parte para construir el programa completo."
+          "text": "Ahora combinaremos las piezas conocidas. En estos programas, #include <iostream> aparece antes de usar std::cout para hacer disponibles las declaraciones necesarias. La instrucción que muestra el mensaje queda dentro del cuerpo de main (Stroustrup, 2024, p. 25; sección 7.7.2, pp. 214–215).\n\nEn la actividad siguiente, construye primero la estructura y sitúa después las acciones en el orden solicitado. La llave final cierra el cuerpo; no es un carácter que debamos mostrar en la consola."
         },
         {
           "type": "order_code",
@@ -174,15 +174,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de pulsar Compilar y ejecutar, predice el mensaje. Después observa la salida. Cambia únicamente el texto para que el programa muestre Zona segura y vuelve a ejecutarlo. Finalmente cambia ese mensaje por Caja recibida. Conserva la estructura que ya has comprobado. La comparación de esas versiones permite relacionar una modificación concreta con un cambio concreto del resultado."
+          "text": "Antes de ejecutar, responde la predicción que está debajo del Laboratorio. Después pulsa Compilar y ejecutar y compara el mensaje de la consola con tu respuesta. El programa no solicita datos de teclado.\n\nEn el editor del Laboratorio cambia únicamente el contenido del literal para mostrar Zona segura. Compila y ejecuta de nuevo: la consola debe contener exactamente esas dos palabras, con un espacio y sin comillas. Conserva main, #include <iostream> y los signos de la instrucción.\n\nModifica después el literal para mostrar Caja recibida y repite la comprobación. Para recuperar y comparar una versión anterior, vuelve a escribir Zona segura dentro de las mismas comillas y ejecútala; finalmente deja Caja recibida. Así comparas los cambios dentro de la app. El Laboratorio conserva el borrador actual, no una colección de estas versiones. Consulta la solución de la página siguiente después de realizar las pruebas."
         },
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n"
         },
         {
-          "type": "note",
-          "text": "Esta práctica usa un programa sin entrada de teclado. El laboratorio conserva tu borrador actual. Si quieres comparar varias versiones más adelante, guarda también una copia de cada versión que quieras recuperar."
+          "type": "output_prediction",
+          "id": "prediccion_zona_inicial",
+          "question": "Antes de ejecutar o modificar el Laboratorio, escribe el mensaje que produce su código inicial. Conserva el espacio entre palabras; no añadas comillas ni un salto de línea final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
+          "answers": [
+            "Zona inicial"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El literal contiene Zona inicial. La instrucción lo envía a std::cout; return 0; no añade un cero. Al ejecutar el código inicial del Laboratorio, compara la consola con esta predicción.",
+          "reviewFeedback": "Revisa qué caracteres están dentro del literal y distingue ese contenido de las comillas y de los signos que estructuran la instrucción."
         },
         {
           "type": "multiple_choice",
@@ -206,7 +215,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de modificar y ejecutar tu programa. Una solución cumple la tarea si conserva main y el recurso de salida, se construye sin errores y muestra únicamente el literal solicitado en cada prueba. El número de instrucciones no es el criterio de corrección."
+          "text": "Consulta esta referencia después de modificar, ejecutar y recuperar las versiones en el Laboratorio. La construcción debe terminar sin errores y cada ejecución debe mostrar sólo el mensaje solicitado en esa prueba. Compara palabra por palabra y conserva el espacio entre ellas.\n\nNo exigimos un número concreto de instrucciones ni una única forma de organizar el programa. El criterio es que use los elementos ya estudiados y produzca el resultado pedido."
         },
         {
           "type": "code",
@@ -215,7 +224,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al probar primero Zona segura y después Caja recibida, sólo cambia el literal. return 0 no añade un 0 a la salida. Si aparecen comillas, se añadieron como parte de los datos; las comillas que delimitan el literal no se muestran. Una instrucción diferente que produzca exactamente el mismo texto también es válida."
+          "text": "Al probar Zona segura y después Caja recibida, el cambio está dentro del literal. En la recuperación vuelves a escribir y ejecutar el mensaje anterior; no basta con recordar que alguna vez apareció. Puedes terminar dejando Caja recibida como en la referencia.\n\nLas comillas que delimitan el literal no aparecen en la consola, y return 0; tampoco añade texto. Si tu resultado incluye caracteres adicionales, revisa qué instrucciones los envían antes de volver a comparar (Stroustrup, 2024, sección 1.2, pp. 19–20)."
         }
       ]
     }

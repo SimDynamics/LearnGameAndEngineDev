@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Vamos a construir un aviso para una estación: debe mostrar exactamente las dos líneas Estacion abierta y Acceso por el norte. Primero formula la salida esperada; después decide cómo producirla con las instrucciones conocidas. El programa no necesita leer datos ni realizar cálculos. Una solución pequeña es adecuada porque el problema también es pequeño."
+          "text": "Usa el puzzle de esta página para construir un aviso para una estación. La salida requerida tiene estas dos líneas, en este orden:\n\nEstacion abierta\nAcceso por el norte\n\nEl programa no necesita leer datos ni realizar cálculos. Completa el literal utilizando las instrucciones de salida que ya conoces. En esta actividad no se añade un salto después de norte."
         },
         {
           "type": "paragraph",
-          "text": "Escribir la salida esperada antes del código ayuda a distinguir lo que queremos de lo que terminamos escribiendo. Cuando haya una diferencia, podemos señalarla con precisión: texto equivocado, ausencia de separador o orden distinto. Una impresión vaga de que el programa «se ve bien» no cumple esa función."
+          "text": "Un programa puede ejecutarse y aun así entregar un resultado distinto de lo que se necesita. Por eso hay que definir el comportamiento solicitado con suficiente precisión para reconocer una diferencia (Stroustrup, 2024, secciones 4.1–4.2, pp. 84–85).\n\nEn este aviso, los criterios son concretos: el contenido de cada línea, el salto entre ambas y el orden. Si aparece todo el texto unido, ya puedes señalar qué requisito falta, aunque las palabras sean las correctas."
         },
         {
           "type": "fill_code",
@@ -49,7 +49,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la salida requerida en la página anterior y observa otra manera de producirla. Esta comprobación guiada permite relacionar distintas organizaciones del código con un mismo comportamiento. Después tendrás que construir un aviso nuevo en el laboratorio."
+          "text": "El puzzle siguiente presenta otra organización del aviso: distribuye los caracteres entre varias inserciones. Predice su salida en el campo de respuesta y compárala con las dos líneas requeridas.\n\nEs una comparación guiada de soluciones. Después construirás una tarjeta diferente en el Laboratorio, desde un cuerpo de main sin instrucciones de salida."
         },
         {
           "type": "output_prediction",
@@ -76,7 +76,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Que existan varias soluciones válidas no significa que todas las diferencias sean irrelevantes. Aquí se exige una salida concreta; después podremos comparar también facilidad de lectura, cambio y comprobación. La equivalencia se establece respecto de una propiedad definida, no por el aspecto superficial del código."
+          "text": "Para este aviso, dos programas son equivalentes si producen exactamente los mismos caracteres en el mismo orden. Una versión puede reunir el texto en un literal y otra repartirlo entre varias inserciones. Esa diferencia de organización es admisible; omitir un espacio o intercambiar las líneas incumple el requisito.\n\nComprobar el resultado permite aceptar una solución distinta de la referencia. También conviene que el código sea legible para poder modificar después un mensaje sin alterar los demás."
         }
       ]
     },
@@ -129,7 +129,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el laboratorio para crear una tarjeta de tres líneas: Taller, Turno B y Material preparado. Antes de escribir, piensa cómo debe verse esa salida en la consola. Completa el cuerpo de main; utiliza las partes que has practicado y decide dónde introducir los saltos. Compila, compara la salida con lo esperado y corrige diferencias concretas."
+          "text": "Usa el Laboratorio de esta página para crear un programa que muestre tres líneas, exactamente en este orden:\n\nTaller\nTurno B\nMaterial preparado\n\nCompleta el cuerpo de main con las instrucciones necesarias. Decide cómo repartir los textos entre literales y dónde colocar los saltos de línea. Puedes pensar primero cómo organizarlo; el código se escribe y se prueba en el editor de la app.\n\nCompila y ejecuta. Compara cada línea de la consola con la solicitada: contenido, espacios y orden. Si falta un separador o aparece un texto distinto, modifica la parte responsable y vuelve a comprobar. El carácter de salto después de preparado es opcional; los dos saltos que separan las tres líneas son necesarios."
         },
         {
           "type": "cpp_compiler",
@@ -137,7 +137,7 @@
         },
         {
           "type": "note",
-          "text": "El laboratorio permite escribir varias soluciones. Esta tarea se comprueba observando la salida; no tiene una calificación automática del código. Después de probar una versión correcta, cambia el turno a C sin modificar las otras líneas y comprueba qué se conserva."
+          "text": "Este Laboratorio admite varias implementaciones. La app permite construirlas y observar la consola; esta tarea no califica automáticamente tu código. La solución de referencia aparece después de la práctica.\n\nCuando la primera versión produzca la tarjeta requerida, cambia únicamente el turno de B a C. Compila y ejecuta de nuevo: la primera y la tercera línea, sus espacios y los saltos deben conservarse. Comprueba la consola de esa nueva ejecución."
         },
         {
           "type": "multiple_choice",
@@ -157,7 +157,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Elegir cómo investigar un fallo"
+          "text": "Recuperar funciones e investigar fallos"
         },
         {
           "type": "multiple_choice",
@@ -184,12 +184,72 @@
           "explanation": "El separador debe formar parte de los caracteres insertados; el espacio del código fuera del literal no lo produce."
         },
         {
-          "type": "paragraph",
-          "text": "Antes de continuar, explica con tus palabras qué parte permite usar el recurso de salida, dónde comienza la ejecución, cómo se aporta el mensaje y cómo se comprueba. Si puedes copiar el ejemplo pero no modificarlo para cumplir otra salida, vuelve a las actividades de construcción. En las siguientes unidades recuperaremos estas ideas mientras los programas incorporan datos y decisiones."
+          "type": "multiple_choice",
+          "id": "recuperar_inicio_de_ejecucion",
+          "question": "Un programa tiene #include <iostream> y una instrucción con std::cout dentro de main. ¿Qué descripción relaciona correctamente main y la salida?",
+          "options": [
+            "main inicia la ejecución de las instrucciones de su cuerpo; std::cout recibe los datos de salida.",
+            "std::cout inicia la ejecución de todo el programa; main sólo agrupa el texto que se mostrará.",
+            "#include <iostream> inicia las instrucciones de salida; main se consulta después de mostrarlas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ejecución de las instrucciones escritas comienza en el cuerpo de main. Allí se ejecutan en su orden: una inserción en std::cout puede mostrar texto y return 0 comunica la terminación correcta sin imprimir ese cero (Stroustrup, 2024, sección 1.2, pp. 19–20).",
+          "reviewFeedback": [
+            "Sigue por separado el punto donde comienza la ejecución y la acción que envía los caracteres a la salida.",
+            "Revisa qué significa entrar en el cuerpo de una función y qué operación realiza la instrucción que utiliza el flujo de salida.",
+            "Distingue la preparación del código de las acciones que se ejecutan dentro de las llaves. Revisa a qué etapa estás atribuyendo el inicio de la salida."
+          ]
         },
         {
-          "type": "note",
-          "text": "Fuente principal de esta unidad: construcción y ejecución de programas (Stroustrup, 2024, caps. 0–1). Explicaciones, ejemplos y ejercicios de este curso redactados para esta ruta."
+          "type": "multiple_choice",
+          "id": "recuperar_cabecera_de_salida",
+          "question": "En los programas de esta unidad que usan std::cout, ¿qué función cumple #include <iostream>?",
+          "options": [
+            "Envía el contenido de los literales a la consola antes de entrar en main.",
+            "Transforma los saltos de línea del archivo fuente en saltos de la consola.",
+            "Hace disponibles en este archivo de código los recursos de la cabecera, como std::cout."
+          ],
+          "correctIndex": 2,
+          "explanation": "#include <iostream> permite usar los recursos de entrada y salida de esa cabecera; no muestra por sí misma un mensaje. En estos programas, la salida la producen las instrucciones con std::cout dentro de main (Stroustrup, 2024, pp. 25, 214–215).",
+          "reviewFeedback": [
+            "Localiza si estás atribuyendo una acción de ejecución a una línea que prepara el código. La posición anterior a main no basta para convertirla en una instrucción de impresión.",
+            "Distingue los caracteres que organizan el archivo fuente de los que una instrucción entrega a la consola. Revisa qué operación tendría que producir un salto visible.",
+            "Separa el uso de una cabecera de la ejecución de una instrucción de salida y vuelve a relacionar cada uno con su función."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_flujo_operador_y_literal",
+          "question": "Observa std::cout << \"Plan listo\";. ¿Qué descripción distingue el flujo, la operación y el dato de esta instrucción?",
+          "options": [
+            "El literal contiene el texto de salida; el punto y coma añade un salto al mensaje.",
+            "std::cout es el flujo de salida; << inserta en él el contenido del literal.",
+            "Las comillas y el literal forman la salida; << sólo separa palabras del código."
+          ],
+          "correctIndex": 1,
+          "explanation": "std::cout nombra el flujo de salida. El operador << inserta los caracteres que aporta el literal: Plan listo. Sus comillas delimitan el texto en el código; no se muestran. El punto y coma termina la instrucción y tampoco se envía al flujo (Stroustrup, 2024, pp. 19, 22).",
+          "reviewFeedback": [
+            "Revisa el papel que has atribuido al punto y coma. Distingue el final de una instrucción del carácter que haría comenzar una línea nueva en la consola.",
+            "Sigue el dato desde su escritura en el literal hasta la operación que lo entrega al flujo. Conserva separados esos tres papeles.",
+            "Examina por separado las comillas que delimitan un literal y los caracteres que contiene. Revisa también si el operador realiza una acción o sólo cambia el aspecto del archivo."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_comprobacion_de_la_revision",
+          "question": "Ejecutaste una tarjeta que mostraba Turno B. Después cambiaste el literal a Turno C, pero todavía no has vuelto a compilar ni ejecutar. La consola conserva Turno B. ¿Qué permite comprobar la revisión actual?",
+          "options": [
+            "Compilar y ejecutar la revisión actual; comparar la nueva consola con Turno C y las otras líneas requeridas.",
+            "Comparar la consola anterior con un comentario nuevo que diga Turno C; conservar esa ejecución.",
+            "Comprobar que el editor contiene Turno C; aceptar la consola anterior como resultado de esa modificación."
+          ],
+          "correctIndex": 0,
+          "explanation": "La modificación del fuente debe incorporarse a la versión que se construye y ejecuta (Stroustrup, 2024, sección 1.5, p. 24). Después se compara el resultado de esa ejecución con lo esperado para el caso (Stroustrup, 2024, sección 4.7.4, pp. 107–108). La consola anterior corresponde a la versión que todavía mostraba Turno B.",
+          "reviewFeedback": [
+            "Relaciona la revisión del código con la ejecución que produjo la consola observada. Después comprueba qué partes del requisito deben conservarse.",
+            "Revisa qué versión produjo la consola y qué efecto tiene editar sólo un comentario. Un texto que describe una intención necesita contrastarse con las instrucciones ejecutadas.",
+            "Distingue haber cambiado el texto del editor de haber observado esa revisión en ejecución. Revisa a qué versión pertenece la evidencia que estás usando."
+          ]
         }
       ]
     },
@@ -201,7 +261,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta después de crear y probar tu tarjeta. Criterios: tres líneas con Taller, Turno B y Material preparado; tras cambiar el turno, sólo la segunda línea pasa a Turno C. No deben perderse los saltos ni alterarse las otras dos líneas."
+          "text": "Consulta esta referencia después de construir y ejecutar tu tarjeta. La primera versión debe mostrar estas tres líneas, en este orden:\n\nTaller\nTurno B\nMaterial preparado\n\nLa segunda versión cambia sólo la línea central a Turno C. No deben perderse los saltos entre líneas ni alterarse los otros textos. Ambas pueden terminar con o sin un salto después de preparado."
         },
         {
           "type": "code",
@@ -210,7 +270,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la segunda prueba cambia únicamente B por C dentro del segundo literal. También puedes reunir la tarjeta en un solo literal con dos escapes de salto. El requisito se comprueba por los caracteres de salida; copiar exactamente la organización de esta referencia no es necesario. Si tu versión falla, identifica primero qué línea o separador difiere, y cambia sólo lo que explique esa diferencia."
+          "text": "Para la segunda prueba, cambia únicamente B por C dentro del segundo literal y vuelve a compilar y ejecutar. También puedes reunir la tarjeta en un solo literal con dos escapes de salto; esa organización es válida si respeta los mismos caracteres de salida.\n\nCuando una versión no coincida, compara línea por línea: localiza el primer texto, espacio o salto diferente y revisa la inserción que lo produce. Este criterio permite corregir una diferencia concreta y conservar una solución propia que sí cumpla el resultado."
         }
       ]
     }
