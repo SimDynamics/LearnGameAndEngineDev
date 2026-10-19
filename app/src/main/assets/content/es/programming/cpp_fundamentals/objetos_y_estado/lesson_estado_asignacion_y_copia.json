@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Una variable puede recibir otro valor después de su preparación inicial. La definición `int reservas = 4;` crea el objeto reservas y lo inicializa con 4. Una instrucción posterior `reservas = 7;` utiliza el objeto que ya existe y le asigna el nuevo valor 7. Inicializar y asignar son operaciones distintas: una prepara el primer valor y la otra cambia el valor de un objeto existente (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nEn la asignación no se vuelve a escribir `int` porque no estamos definiendo otra variable. El nombre de la izquierda señala dónde se guardará el valor de la derecha. Al terminar `reservas = 7;`, una lectura posterior de reservas utiliza el valor recién guardado (Stroustrup, 2024, sección 2.5, p. 37)."
+          "text": "Una variable puede recibir otro valor después de su preparación inicial. La definición `int reservas = 4;` crea el objeto reservas y lo inicializa con 4. Una instrucción posterior `reservas = 7;` utiliza el objeto que ya existe y le asigna el nuevo valor 7. Inicializar y asignar son operaciones distintas: una prepara el primer valor y la otra cambia el valor de un objeto existente (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nEn la asignación no se vuelve a escribir `int` porque no estamos definiendo otra variable. El nombre de la izquierda señala dónde se guardará el valor de la derecha. Al terminar `reservas = 7;`, una lectura posterior de reservas utiliza el valor recién guardado (Stroustrup, 2024, sección 2.5, p. 37).",
+          "emphasis": [
+            {
+              "text": "Inicializar y asignar son operaciones distintas"
+            },
+            {
+              "text": "El nombre de la izquierda señala dónde se guardará el valor de la derecha"
+            }
+          ]
         },
         {
           "type": "code",
@@ -74,7 +82,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En `int copia = original;`, se define una segunda variable de tipo `int` y se la inicializa con el valor que tiene `original` en ese momento. Si `original` vale 6, las dos guardan 6 al terminar esa definición (Stroustrup, 2024, sección 2.5, p. 37).\n\nSon dos objetos distintos. Cambiar después el entero `original` no vuelve a ejecutar la inicialización de copia ni mantiene sus valores sincronizados. La nueva variable conserva el valor recibido hasta que alguna instrucción la modifique. Esto es diferente de imprimir dos veces la misma variable (Stroustrup, 2024, sección 2.5, pp. 37–38)."
+          "text": "En `int copia = original;`, se define una segunda variable de tipo `int` y se la inicializa con el valor que tiene `original` en ese momento. Si `original` vale 6, las dos guardan 6 al terminar esa definición (Stroustrup, 2024, sección 2.5, p. 37).\n\nSon dos objetos distintos. Cambiar después el entero `original` no vuelve a ejecutar la inicialización de copia ni mantiene sus valores sincronizados. La nueva variable conserva el valor recibido hasta que alguna instrucción la modifique. Esto es diferente de imprimir dos veces la misma variable (Stroustrup, 2024, sección 2.5, pp. 37–38).",
+          "emphasis": [
+            {
+              "text": "Son dos objetos distintos"
+            },
+            {
+              "text": "conserva el valor recibido"
+            }
+          ]
         },
         {
           "type": "code",
@@ -246,7 +262,9 @@
           "answers": [
             "*",
             "-"
-          ]
+          ],
+          "reviewFeedback": "Sigue las actualizaciones en el orden en que se ejecutan. Relaciona la primera operación con duplicar el valor y la segunda con reducir el resultado ya obtenido; cada asignación utiliza el estado que dejó la anterior.",
+          "explanation": "El primer hueco usa `*`: la expresión `cantidad * 2` duplica el valor inicial de cuatro y la asignación guarda ocho. El segundo usa `-`: ahora lee ese ocho, resta dos y guarda seis. En C++, esos signos representan multiplicación y resta (Stroustrup, 2024, sección 2.4, pp. 34–35).\n\nLa parte derecha se calcula con el valor actual antes de guardar el resultado en la variable de la izquierda. Por eso el segundo cambio utiliza ocho y no vuelve a partir de cuatro (Stroustrup, 2024, sección 2.5, p. 37). La consola muestra `6`."
         }
       ]
     },

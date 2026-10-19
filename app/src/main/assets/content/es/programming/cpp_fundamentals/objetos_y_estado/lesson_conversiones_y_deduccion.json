@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Una conversión permite obtener un valor representado con otro tipo. En `double longitud = 3;`, el inicializador `3` es de tipo `int`, mientras que la variable que lo recibe es `double`. C++ convierte ese tres para guardarlo en la representación del destino. En este caso el valor se conserva exactamente (Stroustrup, 2024, sección 2.9, pp. 44–45).\n\nLa misma idea se aplica al leer otra variable. En el programa siguiente, `medida` recibe el valor de `unidades` convertido a `double`. Esa lectura no cambia el contenido ni el tipo de `unidades`: siguen existiendo dos objetos distintos, como cuando practicaste la copia (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nUna conversión no siempre conserva todos los detalles del valor inicial. Para decidir si sirve, necesitamos conocer el tipo de partida, el tipo de destino y la información que exige el problema."
+          "text": "Una conversión permite obtener un valor representado con otro tipo. En `double longitud = 3;`, el inicializador `3` es de tipo `int`, mientras que la variable que lo recibe es `double`. C++ convierte ese tres para guardarlo en la representación del destino. En este caso el valor se conserva exactamente (Stroustrup, 2024, sección 2.9, pp. 44–45).\n\nLa misma idea se aplica al leer otra variable. En el programa siguiente, `medida` recibe el valor de `unidades` convertido a `double`. Esa lectura no cambia el contenido ni el tipo de `unidades`: siguen existiendo dos objetos distintos, como cuando practicaste la copia (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nUna conversión no siempre conserva todos los detalles del valor inicial. Para decidir si sirve, necesitamos conocer el tipo de partida, el tipo de destino y la información que exige el problema.",
+          "emphasis": [
+            {
+              "text": "Una conversión permite obtener un valor representado con otro tipo"
+            },
+            {
+              "text": "el tipo de partida, el tipo de destino y la información que exige el problema"
+            }
+          ]
         },
         {
           "type": "code",
@@ -42,7 +50,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Truncar hacia cero significa descartar la parte fraccionaria y conservar la parte entera con su signo. Así, `3.75` pasa a `3` y `-3.75` pasa a `-3`. En el caso negativo, elegir siempre un entero menor produciría `-4`, que es otra operación. Tampoco estamos redondeando al entero más cercano (Stroustrup, 2024, sección 2.9, p. 45).\n\nEsta conversión sólo tiene un resultado válido si el entero obtenido al descartar la fracción cabe en el tipo destino. Fuera de ese rango, no se puede suponer que el programa devolverá un entero útil ni que corregirá por sí solo el problema (Köppe et al., 2023, sección 7.3.11, párr. 1). Los valores propuestos en las actividades están dentro del rango de `int`.\n\nPara seguir cada caso, conserva el dato inicial, elimina su fracción y comprueba qué variable recibe ese resultado. No confundas esa operación con la presentación del número en la consola."
+          "text": "Truncar hacia cero significa descartar la parte fraccionaria y conservar la parte entera con su signo. Así, `3.75` pasa a `3` y `-3.75` pasa a `-3`. En el caso negativo, elegir siempre un entero menor produciría `-4`, que es otra operación. Tampoco estamos redondeando al entero más cercano (Stroustrup, 2024, sección 2.9, p. 45).\n\nEsta conversión sólo tiene un resultado válido si el entero obtenido al descartar la fracción cabe en el tipo destino. Fuera de ese rango, no se puede suponer que el programa devolverá un entero útil ni que corregirá por sí solo el problema (Köppe et al., 2023, sección 7.3.11, párr. 1). Los valores propuestos en las actividades están dentro del rango de `int`.\n\nPara seguir cada caso, conserva el dato inicial, elimina su fracción y comprueba qué variable recibe ese resultado. No confundas esa operación con la presentación del número en la consola.",
+          "emphasis": [
+            {
+              "text": "Truncar hacia cero"
+            },
+            {
+              "text": "cabe en el tipo destino"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -97,7 +113,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un estrechamiento es una conversión que puede perder información. Convertir `double` a `int` es un caso importante: el tipo entero no conserva las partes fraccionarias del dato (Stroustrup, 2024, sección 2.9, p. 45).\n\nLa inicialización con llaves añade una protección frente a conversiones implícitas de estrechamiento. Por eso `int cantidad{3.75};` debe producir un diagnóstico y ser rechazado. En cambio, `int cantidad = 3.75;` puede compilar y guardar sólo `3`, aunque el compilador avise de la pérdida (Stroustrup, 2024, sección 2.9, p. 46).\n\nLa regla de las llaves se aplica a la conversión entre esos tipos, no sólo a comprobar si el ejemplo tiene una fracción visible. Incluso `int cantidad{3.0};` se rechaza por convertir de coma flotante a entero (Köppe et al., 2023, sección 9.4.5, párr. 7.1). Si necesitamos guardar tres como entero con llaves, podemos escribir el literal entero `3`; si necesitamos conservar `3.75`, el tipo debe admitir esa fracción.\n\nEl siguiente programa contiene el error intencional. Su resultado esperado es un diagnóstico de compilación, no una salida de consola. Al reparar un caso así, conserva el dato que pide el problema; conseguir que compile cambiando la cantidad no basta."
+          "text": "Un estrechamiento es una conversión que puede perder información. Convertir `double` a `int` es un caso importante: el tipo entero no conserva las partes fraccionarias del dato (Stroustrup, 2024, sección 2.9, p. 45).\n\nLa inicialización con llaves añade una protección frente a conversiones implícitas de estrechamiento. Por eso `int cantidad{3.75};` debe producir un diagnóstico y ser rechazado. En cambio, `int cantidad = 3.75;` puede compilar y guardar sólo `3`, aunque el compilador avise de la pérdida (Stroustrup, 2024, sección 2.9, p. 46).\n\nLa regla de las llaves se aplica a la conversión entre esos tipos, no sólo a comprobar si el ejemplo tiene una fracción visible. Incluso `int cantidad{3.0};` se rechaza por convertir de coma flotante a entero (Köppe et al., 2023, sección 9.4.5, párr. 7.1). Si necesitamos guardar tres como entero con llaves, podemos escribir el literal entero `3`; si necesitamos conservar `3.75`, el tipo debe admitir esa fracción.\n\nEl siguiente programa contiene el error intencional. Su resultado esperado es un diagnóstico de compilación, no una salida de consola. Al reparar un caso así, conserva el dato que pide el problema; conseguir que compile cambiando la cantidad no basta.",
+          "emphasis": [
+            {
+              "text": "protección frente a conversiones implícitas de estrechamiento"
+            },
+            {
+              "text": "conserva el dato que pide el problema"
+            }
+          ]
         },
         {
           "type": "code",
@@ -141,7 +165,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En la lección anterior podías elegir un literal como `11.0` para que la división utilizara un `double`. Ahora partimos de variables que ya son enteras y queremos conservarlas así. Podemos convertir el valor de una de ellas para el cálculo que lo necesita.\n\nLa notación `static_cast<double>(total)` obtiene el valor de `total` convertido a `double`. Dentro de `<double>` se indica el tipo destino; entre paréntesis se escribe la expresión que se convierte (Köppe et al., 2023, sección 7.6.1.9, párr. 1). Aquí no hay una asignación a `total`: su tipo y su contenido se conservan.\n\nEn `static_cast<double>(total) / partes`, la conversión forma parte de un operando antes de realizar la división. El cálculo puede producir una parte fraccionaria aunque `total` y `partes` continúen siendo variables enteras. Convertir un operando antes de dividir permite conservar esa parte del resultado (Stroustrup, 2024, sección 7.4.7, p. 200)."
+          "text": "En la lección anterior podías elegir un literal como `11.0` para que la división utilizara un `double`. Ahora partimos de variables que ya son enteras y queremos conservarlas así. Podemos convertir el valor de una de ellas para el cálculo que lo necesita.\n\nLa notación `static_cast<double>(total)` obtiene el valor de `total` convertido a `double`. Dentro de `<double>` se indica el tipo destino; entre paréntesis se escribe la expresión que se convierte (Köppe et al., 2023, sección 7.6.1.9, párr. 1). Aquí no hay una asignación a `total`: su tipo y su contenido se conservan.\n\nEn `static_cast<double>(total) / partes`, la conversión forma parte de un operando antes de realizar la división. El cálculo puede producir una parte fraccionaria aunque `total` y `partes` continúen siendo variables enteras. Convertir un operando antes de dividir permite conservar esa parte del resultado (Stroustrup, 2024, sección 7.4.7, p. 200).",
+          "emphasis": [
+            {
+              "text": "antes de realizar la división"
+            }
+          ]
         },
         {
           "type": "code",
@@ -177,7 +206,9 @@
               "long double",
               "double long"
             ]
-          ]
+          ],
+          "reviewFeedback": "El hueco indica el tipo destino de una conversión que forma parte de un operando. Revisa si esa representación conserva la fracción que necesita el cociente y en qué momento se obtiene. No confundas convertir un dato antes de dividir con convertir un cociente ya calculado.",
+          "explanation": "Una respuesta válida es double. static_cast<double>(total) obtiene el valor trece convertido a double antes de dividirlo entre dos. La división utiliza así un operando de coma flotante y produce 6.5. La variable total sigue siendo int y conserva trece: convertir el valor leído para una expresión no redefine el objeto (Köppe et al., 2023, sección 7.6.1.9, párr. 1; Stroustrup, 2024, sección 7.4.7, p. 200).\n\nEl momento de la conversión es decisivo. Si se dividieran primero los enteros trece y dos, el cociente sería seis. Convertir después ese seis a un tipo de coma flotante no reconstruiría la media unidad perdida (Stroustrup, 2024, sección 2.4, p. 36; sección 2.9, pp. 44–45).\n\nPara este caso concreto también se admiten float y long double. Esos tipos permiten conservar el resultado propuesto, pero admitirlos aquí no significa que todos tengan el mismo rango o la misma precisión. La escritura double long nombra el mismo tipo que long double; el orden de esas dos palabras no crea otro tipo (Köppe et al., 2023, sección 6.8.2, párr. 12; sección 9.2.9.3, párr. 4 y tabla 17)."
         }
       ]
     },
@@ -197,7 +228,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Deducir significa determinar algo a partir de información disponible. En `auto cantidad = 6;`, pedimos al compilador que determine el tipo de `cantidad` a partir del inicializador. Como el literal `6` es de tipo `int`, la variable también es `int`. En `auto medida = 6.5;`, el literal es `double` y ése es el tipo deducido (Stroustrup, 2024, sección 2.10, p. 47).\n\n`auto` evita repetir un tipo que ya queda claro en el inicializador. La deducción se resuelve al definir la variable; no crea un tipo que cambie según los valores que se asignen después. La variable conserva su tipo, igual que cuando lo escribimos de forma explícita (Stroustrup, 2024, sección 2.8, p. 43)."
+          "text": "Deducir significa determinar algo a partir de información disponible. En `auto cantidad = 6;`, pedimos al compilador que determine el tipo de `cantidad` a partir del inicializador. Como el literal `6` es de tipo `int`, la variable también es `int`. En `auto medida = 6.5;`, el literal es `double` y ése es el tipo deducido (Stroustrup, 2024, sección 2.10, p. 47).\n\n`auto` evita repetir un tipo que ya queda claro en el inicializador. La deducción se resuelve al definir la variable; no crea un tipo que cambie según los valores que se asignen después. La variable conserva su tipo, igual que cuando lo escribimos de forma explícita (Stroustrup, 2024, sección 2.8, p. 43).",
+          "emphasis": [
+            {
+              "text": "La deducción se resuelve al definir la variable"
+            }
+          ]
         },
         {
           "type": "code",
@@ -280,7 +316,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este Laboratorio un programa que comience con `total` igual a quince y `partes` igual a dos, ambas variables de tipo `int`. Debe calcular dos cocientes: uno mediante división entera y otro conservando la fracción mediante una conversión explícita.\n\nLa consola debe mostrar estas dos líneas, en este orden:\n\nEntero: 7\nDecimal: 7.5\n\nCompleta el cuerpo de `main` con los datos, los cálculos y las instrucciones de salida. No escribas directamente los dos mensajes numéricos como resultados fijos: deben proceder de las variables y de las operaciones. Decide dónde necesita ocurrir la conversión para conservar la parte fraccionaria.\n\nCompila y ejecuta tu programa. Compara con lo pedido los valores, el orden, los rótulos, los espacios y la separación en dos líneas. Si encuentras diferencias, revisa el código y vuelve a probarlo.\n\nDespués cambia únicamente el valor inicial de `total` a catorce y ejecuta de nuevo en el mismo editor. Ahora deben aparecer:\n\nEntero: 7\nDecimal: 7\n\nTras comprobar ambos casos, resuelve el último puzzle de la página siguiente para elegir una explicación sobre los tipos de los dos resultados. La comparación razonada está después, en la página final."
+          "text": "Construye en este Laboratorio un programa que comience con `total` igual a quince y `partes` igual a dos, ambas variables de tipo `int`. Debe calcular dos cocientes: uno mediante división entera y otro conservando la fracción mediante una conversión explícita.\n\nLa consola debe mostrar estas dos líneas, en este orden:\n\nEntero: 7\nDecimal: 7.5\n\nCompleta el cuerpo de `main` con los datos, los cálculos y las instrucciones de salida. No escribas directamente los dos mensajes numéricos como resultados fijos: deben proceder de las variables y de las operaciones. Decide dónde necesita ocurrir la conversión para conservar la parte fraccionaria.\n\nCompila y ejecuta tu programa. Compara con lo pedido los valores, el orden, los rótulos, los espacios y la separación en dos líneas. Si encuentras diferencias, revisa el código y vuelve a probarlo.\n\nDespués cambia únicamente el valor inicial de `total` a catorce y ejecuta de nuevo en el mismo editor. Ahora deben aparecer:\n\nEntero: 7\nDecimal: 7\n\nTras comprobar ambos casos, resuelve el último puzzle de la página siguiente para elegir una explicación sobre los tipos de los dos resultados. La comparación razonada está después, en la página final.",
+          "emphasis": [
+            {
+              "text": "Compila y ejecuta tu programa"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",

@@ -10,11 +10,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Hasta ahora definimos los valores en el propio código. Otra posibilidad es leer datos que se entregan al programa. std::cin es el flujo de entrada estándar, disponible con <iostream>. La expresión std::cin >> cantidad; solicita leer un valor y guardarlo en cantidad. El símbolo >> apunta aquí a la extracción desde el flujo hacia la variable; << seguía usándose para la salida."
+          "text": "Hasta ahora escribíamos los valores iniciales dentro del código. Leer una entrada permite utilizar datos que se entregan al ejecutar el programa. Para recibirlos necesitamos variables que ya existan y tengan los tipos adecuados; cada extracción guarda lo leído en el objeto indicado (Stroustrup, 2024, sección 2.1, pp. 30–31).\n\n`std::cin` es el flujo de entrada estándar. Lo utilizamos con la cabecera `<iostream>`, igual que `std::cout`. En `std::cin >> cantidad;`, el operador `>>` extrae un dato del flujo y utiliza `cantidad` como destino. El nombre que va a la derecha debe identificar la variable que recibirá el valor; escribir esa instrucción no define otra variable (Stroustrup, 2024, sección 2.1, p. 31).\n\nDistingue las dos direcciones: con `std::cin >> cantidad;` recibimos un dato en la variable; con `std::cout << cantidad;` enviamos a la salida el valor que guarda. Una operación de lectura y una instrucción que muestra un mensaje cumplen funciones diferentes.",
+          "emphasis": [
+            {
+              "text": "variables que ya existan y tengan los tipos adecuados"
+            },
+            {
+              "text": "extrae un dato del flujo"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "En esta lección analizamos código con una entrada especificada en el enunciado y practicamos la lectura real en el laboratorio. Escribe todo el texto en Entrada preparada antes de ejecutar: cin lee los datos en el orden en que se entregan. Cada ejecución comienza a leer su propia entrada desde el principio. No se escribe durante la ejecución; con una entrada vacía, cin encuentra inmediatamente el final de los datos disponibles, sin esperar el teclado."
+          "text": "En los puzzles, el enunciado especifica qué entrada recibe el programa. En el Laboratorio, escribe todos los datos en Entrada preparada antes de pulsar Compilar y ejecutar. Ese texto se entrega al flujo de entrada; no se escribe como parte del código ni durante la ejecución.\n\nCada ejecución recibe su propia entrada desde el principio. Una entrada vacía ya está al final de sus datos disponibles: el programa no espera a que escribas en la consola. Trabajaremos con las entradas válidas y completas que indique cada actividad."
         },
         {
           "type": "code",
@@ -23,7 +31,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si se entrega el dato 8, la lectura válida reemplaza el cero inicial por ocho y la salida muestra 8. Aquí la cantidad no se calcula a partir del valor anterior: se recibe de la entrada."
+          "text": "Con la entrada `8`, la extracción válida guarda ocho en `cantidad`. El cero sólo era su valor inicial. Después, `std::cout` consulta la misma variable y muestra `8`.\n\nAquí no se suma ocho al cero ni se cambia el tipo del objeto: se recibe un dato y se sustituye el valor que guardaba. Una ejecución con otro entero válido utilizaría ese otro dato sin que tengamos que editar el programa."
         }
       ]
     },
@@ -35,7 +43,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un prompt es un mensaje que indica qué dato se espera. Escribir ese mensaje no lee nada: la lectura la realiza cin. Tampoco imprime automáticamente el dato que se entregó. En nuestras predicciones distinguimos la entrada indicada por el enunciado de los caracteres que el programa envía a cout."
+          "text": "Un prompt es un mensaje que indica qué dato espera un programa. Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad. Es una salida producida por `std::cout`; la extracción posterior de `std::cin` es la que obtiene el dato y lo guarda (Stroustrup, 2024, sección 2.1, pp. 30–31).\n\nRecibir un dato tampoco lo muestra automáticamente. En el programa siguiente, una instrucción produce el aviso y otra muestra el valor leído. Para predecir la salida, recorre únicamente lo que envían las instrucciones de `std::cout`: no añadas una segunda copia de la entrada porque el enunciado la mencione.\n\nEn nuestro Laboratorio, el dato ya estará en Entrada preparada cuando ejecutes. El prompt del programa no abre una conversación ni solicita escribir una respuesta durante la ejecución.",
+          "emphasis": [
+            {
+              "text": "Es una salida producida por `std::cout`"
+            },
+            {
+              "text": "Recibir un dato tampoco lo muestra automáticamente"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -45,7 +61,8 @@
           "answers": [
             "Cantidad: 12"
           ],
-          "explanation": "El primer cout produce el prompt; cin recibe 12; el último cout muestra el valor leído."
+          "explanation": "El primer cout produce el prompt; cin recibe 12; el último cout muestra el valor leído.",
+          "reviewFeedback": "Separa el aviso producido por la primera instrucción de salida del dato recibido por la lectura. Recorre las instrucciones que muestran texto y conserva sus separadores; no dupliques la entrada por estar escrita en el enunciado."
         },
         {
           "type": "fill_code",
@@ -55,7 +72,8 @@
           "answers": [
             ">>"
           ],
-          "explanation": ">> realiza la extracción; << corresponde a la salida."
+          "explanation": ">> realiza la extracción; << corresponde a la salida.",
+          "reviewFeedback": "Relaciona el flujo de entrada con el objeto que debe recibir el dato. El hueco conecta esos dos elementos: no introduce otro tipo ni vuelve a escribir el nombre de la variable."
         }
       ]
     },
@@ -67,7 +85,12 @@
         },
         {
           "type": "paragraph",
-          "text": "La variable que recibe el dato tiene un tipo. Al leer hacia un int, el flujo intenta interpretar un entero. Al leer hacia un double, intenta interpretar un número con posible parte fraccionaria. Al leer hacia std::string, obtiene texto hasta un separador de espacio en blanco. La extracción no adivina cuál era nuestra intención fuera de esas reglas."
+          "text": "La lectura interpreta los caracteres de entrada según el tipo del destino. Una extracción hacia `int` intenta obtener un entero; hacia `double`, un valor de coma flotante; hacia `std::string`, una secuencia de texto delimitada por espacios en blanco. El flujo no decide qué significado queríamos dar a los datos: sigue las operaciones y los tipos que escribimos (Stroustrup, 2024, sección 2.3, p. 33).\n\nSi necesitamos conservar una longitud como `1.75`, elegimos un destino que admita esa parte fraccionaria. Ésta es una decisión sobre la representación del dato, como las que practicaste con los inicializadores. Que todos los datos de entrada se escriban mediante caracteres no convierte sus variables de destino en cadenas.",
+          "emphasis": [
+            {
+              "text": "según el tipo del destino"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -77,7 +100,8 @@
           "answers": [
             "Metros: 2.5"
           ],
-          "explanation": "La lectura guarda un double válido de valor 2.5."
+          "explanation": "La lectura guarda un double válido de valor 2.5.",
+          "reviewFeedback": "Sigue el valor inicial, la extracción y la salida en ese orden. Revisa qué representación admite el tipo destino y qué rótulo añade la instrucción que muestra el dato."
         },
         {
           "type": "multiple_choice",
@@ -88,11 +112,16 @@
             "bool longitud = false;"
           ],
           "correctIndex": 0,
-          "explanation": "El tipo destino double permite interpretar esa longitud decimal."
+          "explanation": "El tipo destino double permite interpretar esa longitud decimal.",
+          "reviewFeedback": [
+            "Relaciona la parte fraccionaria solicitada con la representación que admite el destino.",
+            "Distingue una cantidad entera de la medida cuya parte fraccionaria necesita conservar el problema. Revisa qué puede representar el tipo que elegiste.",
+            "Una condición lógica tiene dos valores posibles. Compara esa clase de dato con la longitud que debe leerse en esta actividad."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "En ejemplos de consola se suele pulsar Enter para entregar la línea escrita. Ese detalle del entorno no significa que el salto se guarde automáticamente como parte del dato leído. Un flujo también puede recibir sus datos de un archivo o de otra fuente."
+          "text": "En una consola interactiva es habitual pulsar Enter para entregar una línea. Eso describe cómo ese entorno proporciona los caracteres al programa; no significa que la extracción guarde automáticamente el salto dentro del dato (Stroustrup, 2024, sección 2.1, p. 31).\n\nEn Entrada preparada, un Enter sirve para colocar un salto dentro de los datos antes de ejecutar. No hace falta escribir un salto final para los ejemplos de esta lección. Lo importante es entregar los valores completos y respetar el orden de las extracciones; el Laboratorio no espera pulsaciones durante la ejecución."
         }
       ]
     },
@@ -104,7 +133,15 @@
         },
         {
           "type": "paragraph",
-          "text": "std::cin >> nombre; lee una palabra hacia una cadena, omitiendo los espacios iniciales. Cada palabra obtenida de esta forma es un token de texto. Espacios, tabulaciones y saltos de línea separan tokens. Con la entrada Ana Maria, una sola extracción hacia std::string recibe Ana; Maria queda disponible para una extracción posterior. Para leer una línea completa con sus espacios hacen falta otras operaciones que estudiaremos después."
+          "text": "En la lectura habitual hacia `std::string`, `>>` omite los espacios en blanco iniciales y recoge caracteres hasta encontrar el siguiente espacio en blanco. Espacios, tabulaciones y saltos de línea pueden separar esas secuencias. A cada fragmento de texto obtenido así lo llamaremos token de entrada en estas actividades (Stroustrup, 2024, sección 2.3, p. 33).\n\nCon `Ana Maria`, una extracción guarda `Ana`; la siguiente puede recoger `Maria`. Los espacios que separan las palabras no se incorporan al valor de esas dos cadenas. Tampoco se añade un espacio al mostrarlas: debemos escribir el separador que queramos en la instrucción de salida.\n\n`std::string` puede conservar un texto con espacios, como ya comprobaste al construir mensajes. La limitación aquí pertenece a esta forma de leer con `>>`, no al tipo de la variable. Para recibir una línea completa conservando sus espacios utilizaremos otra operación cuando corresponda. Por ahora, el formato de cada entrada indica cuántos fragmentos separados necesita el programa.\n\nEn los ejemplos verás definiciones como `std::string nombre;`. Una cadena definida de esa forma se inicializa como una secuencia vacía; después, la extracción válida le proporciona el texto leído. No estamos utilizando un entero sin inicializar (Stroustrup, 2024, sección 2.3, p. 34).",
+          "emphasis": [
+            {
+              "text": "omite los espacios en blanco iniciales"
+            },
+            {
+              "text": "La limitación aquí pertenece a esta forma de leer"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -114,7 +151,8 @@
           "answers": [
             "Ana:Maria"
           ],
-          "explanation": "Dos extracciones reciben dos tokens. El separador de salida : lo añade cout."
+          "explanation": "Dos extracciones reciben dos tokens. El separador de salida : lo añade cout.",
+          "reviewFeedback": "Sigue cada extracción hacia una cadena por separado. Decide dónde se detiene y desde dónde continúa la siguiente; después conserva exactamente el separador que escribe la salida."
         },
         {
           "type": "output_prediction",
@@ -124,7 +162,8 @@
           "answers": [
             "Norte 6"
           ],
-          "explanation": "Los espacios iniciales se omiten; Norte se lee como texto y 6 como entero."
+          "explanation": "Los espacios iniciales se omiten; Norte se lee como texto y 6 como entero.",
+          "reviewFeedback": "Distingue los espacios que la lectura omite antes de recibir datos de los caracteres que las instrucciones de salida escriben después. Aplica la regla a cada destino según su tipo."
         },
         {
           "type": "multiple_choice",
@@ -135,7 +174,12 @@
             "Una cadena vacía porque existe un espacio."
           ],
           "correctIndex": 1,
-          "explanation": "La extracción de string recibe un token; el espacio termina el primero."
+          "explanation": "La extracción de string recibe un token; el espacio termina el primero.",
+          "reviewFeedback": [
+            "Distingue lo que una cadena puede conservar de lo que recibe con esta operación de lectura. Revisa qué sucede al encontrar el primer separador después del texto.",
+            "La lectura corresponde al fragmento continuo que alcanza esta extracción.",
+            "Distingue omitir espacios al comenzar de encontrar un separador después de haber recibido texto. Ese separador no borra el fragmento que ya se recogió."
+          ]
         }
       ]
     },
@@ -147,7 +191,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En std::cin >> zona >> cantidad;, las extracciones se hacen en ese orden: primero el texto, después el entero. Se pueden entregar tokens en la misma línea o en líneas distintas. Con char, la extracción usual omite espacios iniciales y recibe un carácter. Puede servir para leer un código sencillo tras un número."
+          "text": "Podemos encadenar las lecturas: en `std::cin >> zona >> cantidad;`, primero se extrae el texto hacia `zona` y después el entero hacia `cantidad`. El segundo paso continúa desde donde quedó la entrada tras el primero. Para los datos separados de nuestros ejemplos, un espacio y un salto de línea permiten la misma separación (Stroustrup, 2024, sección 2.3, p. 33).\n\nUna extracción hacia `char` recibe una unidad de carácter. En el formato habitual de estos programas también omite los espacios en blanco iniciales. Si se proporciona una letra sencilla, como las que acabamos de estudiar, esa letra queda guardada en el destino (Köppe et al., 2023, sección 31.7.5.3.3, párr. 12; sección 31.7.5.2.4, párr. 2).\n\nNo todas las lecturas separan los datos del mismo modo. En una entrada como `6C`, la extracción de un entero puede leer el seis y detenerse antes de la letra; una extracción posterior hacia `char` puede recoger esa letra. No hace falta un espacio entre ambos en ese caso. En cambio, una extracción hacia `std::string` recogería todo el fragmento `6C` (Köppe et al., 2023, sección 30.4.3.2.3, párr. 3; sección 23.4.4.4, párr. 1). El tipo y el orden de cada destino importan tanto como los caracteres entregados.",
+          "emphasis": [
+            {
+              "text": "el texto hacia `zona` y después el entero hacia `cantidad`"
+            },
+            {
+              "text": "El tipo y el orden de cada destino importan"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -157,7 +209,8 @@
           "answers": [
             "B-4"
           ],
-          "explanation": "Primero se lee 4 como entero; después B como carácter, aunque la entrada no tenga un espacio intermedio."
+          "explanation": "Primero se lee 4 como entero; después B como carácter, aunque la entrada no tenga un espacio intermedio.",
+          "reviewFeedback": "Aplica primero las reglas del destino entero y determina qué caracteres quedan disponibles para el destino de carácter. Después respeta el orden de las variables en la salida, que puede diferir del orden de lectura."
         },
         {
           "type": "output_prediction",
@@ -167,7 +220,8 @@
           "answers": [
             "Lia 7"
           ],
-          "explanation": "La entrada establece cinco unidades y la actualización posterior aumenta ese estado en dos."
+          "explanation": "La entrada establece cinco unidades y la actualización posterior aumenta ese estado en dos.",
+          "reviewFeedback": "Separa los datos de entrada aunque estén en líneas diferentes. Sigue después la actualización de la cantidad y sólo entonces construye el mensaje de salida."
         }
       ]
     },
@@ -179,11 +233,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Si se solicita un entero y llega la palabra muchos, esa extracción no entrega el entero esperado. No debe usarse el resultado como si la lectura hubiera sido válida. Tampoco se debe confiar en que el valor inicial se conserve siempre tras fallar: el flujo tiene un estado que debe comprobarse. Aprenderemos a comprobarlo y decidir cómo responder al introducir control y validación."
+          "text": "Los programas de esta lección presuponen entradas con los datos y los tipos indicados. Si una extracción hacia `int` encuentra la palabra `muchos`, no obtiene el entero que necesita la tarea. Que el programa haya compilado no convierte esa palabra en una cantidad.\n\nUna extracción fallida tampoco permite suponer que la variable conserva siempre su valor inicial. El flujo registra el fallo y una conversión numérica que no obtiene el dato solicitado puede modificar el valor del destino. Por eso el inicializador no sustituye comprobar el resultado de la lectura (Köppe et al., 2023, sección 31.7.5.3.2, párr. 3; sección 30.4.3.2.3, párr. 3).\n\nMás adelante aprenderemos a comprobar ese estado y a elegir cómo responder. Aquí distinguimos el límite y trabajamos en el Laboratorio con las entradas válidas propuestas; todavía no se pide escribir un verificador ni recuperar un flujo después de un error.",
+          "emphasis": [
+            {
+              "text": "el inicializador no sustituye comprobar el resultado de la lectura"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Además, leer un entero no comprueba que toda la entrada sea exactamente un entero. Con 8.5, una extracción hacia int puede recibir 8 y dejar .5 sin consumir. El programa debe especificar qué formato admite y verificar lo que necesita, en lugar de afirmar que interpretó correctamente una medida de ocho y medio."
+          "text": "También hay que distinguir leer un valor de aceptar toda la entrada. Con `8.5`, una extracción hacia `int` puede obtener el prefijo `8` y dejar `.5` disponible. Eso no significa que haya conservado la medida ocho y medio ni que haya consumido todos los caracteres (Köppe et al., 2023, sección 30.4.3.2.3, párr. 3).\n\nUn prefijo es aquí la parte inicial de la entrada que se pudo interpretar. Si la tarea exige exactamente un entero y ningún dato adicional, falta comprobar esa exigencia. El formato completo y sus comprobaciones se estudiarán cuando dispongamos de las instrucciones necesarias."
         },
         {
           "type": "multiple_choice",
@@ -194,18 +253,28 @@
             "cin convierte cualquier palabra a su cantidad equivalente."
           ],
           "correctIndex": 1,
-          "explanation": "El tipo no garantiza que la entrada tenga el formato esperado, y un inicializador no sustituye comprobar el resultado de la lectura."
+          "explanation": "El tipo no garantiza que la entrada tenga el formato esperado, y un inicializador no sustituye comprobar el resultado de la lectura.",
+          "reviewFeedback": [
+            "El valor inicial sólo describe cómo se preparó el objeto. Comprueba si los caracteres entregados permiten obtener el dato que pide la extracción.",
+            "La conclusión distingue el tipo solicitado del formato que realmente se entregó.",
+            "La extracción interpreta caracteres según las reglas del tipo; revisa si la palabra entregada tiene el formato de una cantidad escrita con cifras."
+          ]
         },
         {
           "type": "multiple_choice",
-          "question": "Leer hacia int desde 8.5 obtiene un prefijo entero. ¿Qué evita concluir eso sobre la entrada completa?",
+          "question": "La extracción hacia int recibe 8 de la entrada 8.5. ¿Qué afirmación sobre la entrada completa todavía no hemos demostrado?",
           "options": [
             "Que toda la entrada haya sido consumida y aceptada con el formato que necesitábamos.",
-            "Que el tipo int tenga nombres.",
-            "Que el código pueda incluir iostream."
+            "Que el prefijo 8 se haya podido interpretar como un entero.",
+            "Que el punto y la cifra posterior queden fuera de ese prefijo entero."
           ],
           "correctIndex": 0,
-          "explanation": "Una extracción válida de un prefijo no demuestra que el resto de datos cumpla la especificación."
+          "explanation": "Una extracción válida de un prefijo no demuestra que el resto de datos cumpla la especificación.",
+          "reviewFeedback": [
+            "La pregunta distingue la interpretación de un comienzo de la entrada de su aceptación completa.",
+            "Separa lo que demuestra el prefijo recibido de una conclusión sobre el texto completo que se entregó.",
+            "Revisa si la opción describe únicamente la parte de la entrada que quedó después del prefijo o una propiedad ya comprobada de todos los datos."
+          ]
         }
       ]
     },
@@ -217,7 +286,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, identifica los dos tokens de Entrada preparada: Rita y 4. Predice qué guarda cada extracción, qué cambia cajas += 3 y qué caracteres produce cout. Ejecuta y contrasta Rita: 7. Sin modificar el código, cambia sólo la entrada a Leo 2 y comprueba Leo: 5. Repite con un salto de línea entre el nombre y el número: la extracción de estos dos tokens admite ambas separaciones."
+          "text": "Primero responde el puzzle de seguimiento al final de esta página. Su programa muestra los valores inmediatamente después de leerlos y después de actualizar la cantidad. El campo permite registrar esas dos etapas antes de ejecutar el Laboratorio.\n\nEn el código inicial del Laboratorio, Entrada preparada contiene `Rita 4`. Compila y ejecuta: ese programa presenta sólo el resultado final, que debe ser:\n\nRita: 7\n\nConserva el código y cambia únicamente Entrada preparada a `Leo 2`. Vuelve a ejecutar y comprueba:\n\nLeo: 5\n\nDespués separa `Leo` y `2` mediante un salto de línea en Entrada preparada. Ejecuta de nuevo sin cambiar el código: la salida debe conservarse. Estás cambiando la forma de separar los datos, no la cantidad ni el nombre que se entregan.",
+          "emphasis": [
+            {
+              "text": "Conserva el código y cambia únicamente Entrada preparada"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -226,7 +300,20 @@
         },
         {
           "type": "paragraph",
-          "text": "Repite una ejecución sin cambiar los datos: debe volver a producir la misma salida, porque la entrada se entrega desde el comienzo. El texto de Entrada preparada se envía a cin; no forma parte del código ni aparece automáticamente en la salida. Distingue un diagnóstico de compilación de la salida del programa y de un error de ejecución. Este programa presupone un nombre de una palabra y una cantidad de cajas entre cero y veinte; sumar tres permanece en un int pequeño. Esa es una precondición de la actividad, no una comprobación dentro del programa: probar Rita 4 y Leo 2 no demuestra que se compruebe una entrada vacía o mal formada."
+          "text": "Repite una ejecución sin editar código ni entrada: debe producir la misma salida. Cada ejecución recibe los datos preparados desde el principio. El texto de ese campo no se inserta en el código ni se copia automáticamente a la consola.\n\nDistingue los diagnósticos de compilación del mensaje que genera el programa. Aquí se supone un nombre de una palabra y una cantidad de cajas entre cero y veinte. Sumar tres sigue dando un entero pequeño en todos esos casos. Son condiciones de la actividad; el programa no las comprueba.\n\nProbar `Rita 4` y `Leo 2` comprueba esos casos válidos, no el tratamiento general de una entrada vacía o mal formada. La comprobación del flujo se desarrollará después; no hace falta añadirla para realizar esta práctica."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
+          "language": "cpp",
+          "question": "Para preparar la lectura del Laboratorio, se entrega Rita 4. Este programa de seguimiento muestra primero los datos leídos y después el mensaje calculado. Predice sus dos líneas de salida, sin añadir otra copia de la entrada ni un salto final.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    std::cout << nombre << \" \" << cajas << \"\\n\";\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Rita 4\nRita: 7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La extracción guarda Rita y cuatro. La primera salida consulta esos valores. Después se suma tres a cajas y la segunda salida muestra Rita: 7. El salto entre las dos líneas está escrito en la primera instrucción de salida; no procede de que la entrada tenga uno.",
+          "reviewFeedback": "Distingue los valores inmediatamente después de la lectura de los que existen tras la actualización. Sigue cada instrucción de salida en su momento y conserva el salto que escribe el programa."
         }
       ]
     },
@@ -243,7 +330,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. La referencia final conserva una simulación con valores definidos en el código: en ella las definiciones sustituyen únicamente la etapa de lectura. La siguiente pregunta contrasta esa versión con el laboratorio de cin. El programa mostrado presupone un nombre de una palabra y cajas entre cero y veinte; una versión que acepte otras entradas necesita comprobar el flujo, porque el cero inicial de cajas no acredita una lectura correcta."
+          "text": "Con `Rita 4`, la extracción guarda `Rita` en `nombre` y cuatro en `cajas`. La instrucción `cajas += 3;` actualiza esa cantidad y `std::cout` presenta `Rita: 7`. Leer, procesar y mostrar son etapas distintas: la salida depende de los valores que quedaron después de las anteriores.\n\nLa página siguiente conserva una comparación con datos definidos dentro del código. Esa versión puede reproducir el cálculo y el mensaje para un caso, pero no realiza una extracción. La pregunta de esta página distingue qué se ha comprobado en cada forma de obtener los datos.\n\nSeguimos suponiendo un nombre de una palabra y cajas entre cero y veinte. Un valor inicial conocido no certifica que la extracción posterior haya recibido el dato requerido; ese límite sigue vigente aunque el programa produzca un mensaje."
         },
         {
           "type": "multiple_choice",
@@ -254,7 +341,12 @@
             "Que cualquier entrada inválida está bien manejada."
           ],
           "correctIndex": 1,
-          "explanation": "La simulación tiene datos de partida conocidos; no sustituye la prueba de entrada real ni la validación de errores."
+          "explanation": "La simulación tiene datos de partida conocidos; no sustituye la prueba de entrada real ni la validación de errores.",
+          "reviewFeedback": [
+            "Revisa qué operaciones aparecen realmente en ese programa antes de atribuirle una prueba del flujo de entrada.",
+            "Relaciona lo observado con las etapas que ese programa ejecuta para sus datos conocidos.",
+            "Comprueba si el programa ha analizado alguna entrada entregada o si sus datos ya estaban definidos. Una salida correcta para un caso no comprueba por sí sola el tratamiento de errores."
+          ]
         },
         {
           "type": "output_prediction",
@@ -264,7 +356,8 @@
           "answers": [
             "6 7"
           ],
-          "explanation": "La lectura da seis; la copia conserva seis antes del incremento a siete."
+          "explanation": "La lectura da seis; la copia conserva seis antes del incremento a siete.",
+          "reviewFeedback": "Sigue cuándo se lee el dato, cuándo se crea la copia y qué variable recibe la actualización posterior. Una copia conserva el valor recibido en su momento; no supongas que ambas variables quedan enlazadas."
         }
       ]
     },
@@ -280,7 +373,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección del laboratorio: cin obtiene nombre y cajas de Entrada preparada; con Rita 4 presenta Rita: 7 y con Leo 2 presenta Leo: 5, conservando el procesamiento y el formato. La página anterior muestra su código. La comparación siguiente fija nombre como \"Rita\" y cajas como 4: reproduce el cálculo y la salida, pero no realiza una lectura ni acredita esa parte de la práctica."
+          "text": "Comprobación del Laboratorio guiado\n\nLa lectura utiliza los valores de Entrada preparada. Con `Rita 4` debe producir `Rita: 7`; al cambiar sólo la entrada a `Leo 2`, debe producir `Leo: 5`. Un salto entre el nombre y el número conserva esos resultados porque separa los datos de la lectura habitual.\n\nLa referencia que sigue fija el nombre y la cantidad mediante inicializadores. Reproduce el procesamiento y la salida del primer caso, pero no lee esos valores de `std::cin`. Podemos utilizarla para comparar de dónde procede cada dato sin atribuirle una lectura que no ejecuta."
         },
         {
           "type": "code",
@@ -289,7 +382,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Las definiciones sustituyen aquí sólo la etapa de recibir los datos. Para cambiar el caso en esta simulación debes editar el código; en el laboratorio de lectura mantienes el código y editas Entrada preparada. Compara ambos caminos para Rita 4 y Leo 2 y explica dónde se obtiene cada valor, qué operación lo transforma y qué parte de la salida decide cout."
+          "text": "Realiza también la comparación dentro del Laboratorio guiado. Sustituye su programa por la referencia con datos fijados y comprueba el primer caso. Para obtener `Leo: 5` en esa versión, debes cambiar los inicializadores del nombre y de la cantidad. Cambiar sólo Entrada preparada no cambia esos datos, porque esa versión no los lee.\n\nDespués reconstruye la versión con `std::cin` mostrada en la página anterior. Comprueba otra vez los dos casos variando sólo Entrada preparada. Así contrastas dos programas que pueden mostrar el mismo resultado, aunque obtengan los datos de formas diferentes.\n\nEn el arrastre siguiente, asocia cada comentario con la función de la instrucción a la que acompaña. El programa del puzzle realiza la lectura; compáralo con la referencia de datos fijados que acabas de utilizar.",
+          "emphasis": [
+            {
+              "text": "debes cambiar los inicializadores"
+            },
+            {
+              "text": "variando sólo Entrada preparada"
+            }
+          ]
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__funciones_lectura_procesamiento_presentacion",
+          "language": "cpp",
+          "question": "Tras comparar la lectura con los datos fijados, asocia cada comentario con la función de su instrucción. Este programa recibe Rita 4 y realiza dos extracciones separadas; el cálculo y el mensaje conservan el comportamiento del Laboratorio.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre; // []\n    std::cin >> cajas; // []\n    cajas += 3; // []\n    std::cout << nombre << \": \" << cajas; // []\n    return 0;\n}\n",
+          "choices": [
+            "Aumenta la cantidad que ya se ha leído.",
+            "Presenta el nombre y la cantidad con su separador.",
+            "Obtiene el nombre desde la entrada.",
+            "Obtiene la cantidad de cajas desde la entrada."
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "Las dos extracciones reciben el nombre y la cantidad en ese orden; escribirlas separadas conserva el orden de lectura (Stroustrup, 2024, sección 2.3, p. 33). La actualización modifica la cantidad recibida y la salida decide qué valores y separadores aparecen. Con Rita 4 se muestra Rita: 7. Los comentarios describen esas funciones sin cambiar las operaciones del programa.",
+          "reviewFeedback": "Distingue recibir un dato, cambiar un valor que ya se recibió y construir un mensaje. Lee la instrucción situada antes de cada comentario y comprueba qué objeto utiliza o modifica."
         }
       ]
     },
@@ -301,11 +423,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa que reciba, en este orden, una etiqueta de una palabra, una cantidad de paquetes y una cantidad de piezas sueltas. Cada paquete contiene cinco piezas. La cantidad de paquetes pertenece a 0..20 y la de piezas sueltas a 0..4. Esta actividad presupone exactamente esos tres datos válidos; no es todavía un verificador de entrada. Todas las cuentas caben en int dentro de este dominio."
+          "text": "Ahora construye un programa distinto desde el esqueleto del Laboratorio. Debe recibir tres datos, en este orden: una etiqueta de una palabra, la cantidad de paquetes y la cantidad de piezas sueltas. Cada paquete contiene cinco piezas.\n\nEl formato de esta actividad presupone exactamente esos tres datos válidos: paquetes entre cero y veinte, y piezas sueltas entre cero y cuatro. El programa debe utilizar los datos recibidos; todavía no se pide comprobar entradas incompletas ni rechazar otros formatos. Con esas cantidades, todos los cálculos caben en `int`."
         },
         {
           "type": "paragraph",
-          "text": "Lee los tres datos desde cin; el total debe calcularse a partir de ellos. Presenta ETIQUETA: TOTAL, con dos puntos y un espacio y sin un prompt adicional. Con Entrada preparada Iris 4 2 corresponde Iris: 22. No fijes Iris, cuatro o dos como valores del programa. El editor entrega sólo las cabeceras y main: decide las variables, su tipo, el orden de lectura, el cálculo y la salida."
+          "text": "Lee los tres datos desde `std::cin` y calcula la cantidad total de piezas. Presenta la etiqueta leída, dos puntos, un espacio y el total. No añadas un prompt. Con Entrada preparada `Iris 4 2`, la consola debe mostrar:\n\nIris: 22\n\nEl editor sólo proporciona las cabeceras y el cuerpo mínimo de `main`. Decide las variables, sus tipos, las extracciones en el orden adecuado, el cálculo y la instrucción de salida. Las cantidades cuatro y dos y el nombre `Iris` deben proceder de la entrada, en lugar de quedar fijados como datos de este caso dentro del programa.\n\nCompila y ejecuta. Compara los caracteres de la consola con el resultado solicitado. Si difieren, revisa qué dato recibió cada variable, el cálculo y los separadores del mensaje; modifica tu código y vuelve a comprobarlo.",
+          "emphasis": [
+            {
+              "text": "deben proceder de la entrada"
+            },
+            {
+              "text": "Compila y ejecuta"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -314,7 +444,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, anota qué token irá a cada variable y qué salida esperas. Mantén el código al cambiar la entrada: Leo 0 4 debe dar Leo: 4; Vera 3 1, Vera: 16; Sol 20 4, Sol: 104. Distribuye también los tres tokens entre líneas y repite sin cambiar la entrada. Deben conservarse lectura, cálculo y formato."
+          "text": "Después de construir y comprobar el caso inicial, conserva el código y cambia sólo Entrada preparada. Comprueba estos tres casos:\n\nLeo 0 4 produce Leo: 4.\nVera 3 1 produce Vera: 16.\nSol 20 4 produce Sol: 104.\n\nSepara también los tres datos mediante saltos de línea y vuelve a ejecutar. Repite una ejecución sin editar esa entrada: deben conservarse los datos leídos, el cálculo y el formato.\n\nTras realizar las pruebas, resuelve la predicción de seguimiento al final de la página siguiente. En su campo registrarás qué datos quedaron después de las extracciones y qué total se calculó a partir de ellos."
         },
         {
           "type": "note",
@@ -335,11 +465,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: tres extracciones hacia tipos adecuados y en el orden indicado; ninguna cantidad del caso ni etiqueta fijada en el código; total calculado como cinco piezas por paquete más las sueltas; texto leído conservado; salida con dos puntos y un espacio. La referencia produce Iris: 22 con la entrada inicial. Otra organización que cumpla el mismo contrato es válida."
+          "text": "Criterios de la construcción\n\nEl programa obtiene tres datos de `std::cin`, con los tipos y el orden que exige la actividad. Conserva la etiqueta y calcula el total como cinco piezas por paquete más las piezas sueltas. No fija en el código la etiqueta ni las cantidades particulares de la muestra.\n\nLa salida utiliza dos puntos y un espacio entre la etiqueta y el total. Con `Iris 4 2` debe producir `Iris: 22`; los otros tres casos deben conservar ese mismo formato y utilizar sus propios datos. Otra organización de las instrucciones es válida si cumple esas condiciones."
         },
         {
           "type": "paragraph",
-          "text": "El cinco expresa una regla del problema, no un dato recibido de la muestra. Reemplazar los datos por constantes pierde la lectura aunque imite la primera salida. Para cambiar el caso se edita Entrada preparada y se conserva el programa. La inicialización a cero facilita describir el estado inicial, pero no acredita que una extracción haya sido válida."
+          "text": "El cinco expresa la regla del problema: cada paquete contiene cinco piezas. Ese valor debe conservarse cuando cambian los datos de una ejecución. En cambio, el nombre, los paquetes y las sueltas proceden de Entrada preparada.\n\nCambiar la etiqueta o los datos de un caso requiere editar la entrada y conservar el programa. Sustituirlos por constantes puede imitar una primera salida, pero pierde la lectura que solicita la actividad.\n\nLas inicializaciones numéricas a cero preparan el estado de partida. No comprueban que las extracciones hayan tenido éxito; seguimos trabajando con los tres datos válidos indicados."
         },
         {
           "type": "multiple_choice",
@@ -351,7 +481,25 @@
             "La regla de cinco piezas por paquete y el formato, usando ahora los tres datos nuevos."
           ],
           "correctIndex": 2,
-          "explanation": "La lectura entrega otros datos; el programa conserva la regla y el formato. La salida nueva es Vera: 16."
+          "explanation": "La lectura entrega otros datos; el programa conserva la regla y el formato. La salida nueva es Vera: 16.",
+          "reviewFeedback": [
+            "Distingue los datos particulares de una muestra de la regla que debe aplicar el programa a cualquier caso admitido.",
+            "Revisa si el dato sigue procediendo de la extracción de la ejecución actual o si quedó sustituido por el de una muestra anterior.",
+            "La elección conserva la regla y permite que los datos de la nueva ejecución determinen el resultado."
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__registrar_tres_datos_y_total",
+          "language": "cpp",
+          "question": "Después de construir tu programa, recupera sus etapas con la entrada Iris 4 2. Este seguimiento muestra nombre, paquetes, sueltas y total en ese orden. Predice la línea de salida con los espacios indicados y sin añadir un salto final.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \" \" << paquetes << \" \" << sueltas << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Iris 4 2 22"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las extracciones guardan Iris, cuatro paquetes y dos piezas sueltas. El cálculo utiliza cinco piezas por paquete: veinte más dos son veintidós. La salida del seguimiento conserva los tres datos y añade el total calculado; los espacios los aporta la instrucción de salida.",
+          "reviewFeedback": "Asocia cada fragmento de entrada con su destino según el orden de las extracciones. Distingue los datos recibidos del total que se calcula y conserva los separadores escritos por la salida."
         }
       ]
     },
@@ -370,7 +518,8 @@
           "answers": [
             "Kiro 16 3 4"
           ],
-          "explanation": "El total se calculó con tres paquetes y una pieza suelta. originales conserva tres; después paquetes cambia a cuatro. Ni la copia ni el total calculado se actualizan automáticamente."
+          "explanation": "El total se calculó con tres paquetes y una pieza suelta. originales conserva tres; después paquetes cambia a cuatro. Ni la copia ni el total calculado se actualizan automáticamente.",
+          "reviewFeedback": "Determina el total y la copia en el momento en que se definen. Después aplica la actualización sólo al objeto que recibe la asignación; no vuelvas a calcular automáticamente valores anteriores."
         },
         {
           "type": "multiple_choice",
@@ -382,11 +531,86 @@
             "cout lee la entrada y decide qué valor debe imprimirse."
           ],
           "correctIndex": 0,
-          "explanation": "Las variables locales se construyen de nuevo; la entrada preparada se entrega a cada ejecución desde el principio."
+          "explanation": "Las variables locales se construyen de nuevo; la entrada preparada se entrega a cada ejecución desde el principio.",
+          "reviewFeedback": [
+            "Relaciona el resultado con los datos que recibe cada ejecución y con las operaciones que vuelve a realizar.",
+            "Distingue el borrador que conserva el editor de los objetos que se crean al ejecutar el programa. Comprueba qué datos se entregan a la lectura de esa ejecución.",
+            "Revisa qué flujo recibe los datos y cuál muestra los valores. La instrucción de salida utiliza lo que ya se obtuvo y calculó."
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Recuperación posterior: vuelve al editor mínimo y construye el programa con otra etiqueta antes de mirar la referencia. Transferencia: cambia explícitamente la regla a cuatro piezas por paquete y el dominio de sueltas a 0..3. Diseña un caso que distinga ambas reglas, otro con cero paquetes y otro en el máximo; predice la salida desde sus datos antes de ejecutar."
+          "text": "Reconstruye primero el programa de tres datos en el Laboratorio de construcción, antes de volver a consultar su referencia. Utiliza otra etiqueta de una palabra y cuatro paquetes con dos piezas sueltas. Conservando la regla de cinco piezas por paquete, el mensaje debe utilizar la etiqueta que elegiste y mostrar veintidós después de los dos puntos y el espacio. Compila y compara la consola con ese objetivo.\n\nDespués modifica explícitamente la regla: ahora cada paquete contiene cuatro piezas y las sueltas pertenecen al intervalo de cero a tres. Mantén los paquetes entre cero y veinte. Con los mismos cuatro paquetes y dos sueltas, el total debe ser dieciocho. El programa sigue leyendo los tres datos; cambiar la regla no autoriza a sustituirlos por constantes.\n\nEn Entrada preparada, escribe y ejecuta tres pruebas elegidas para estas funciones:\n\n1. Distinguir las dos reglas. Utiliza al menos un paquete. Con la misma entrada, cambiar temporalmente la regla a cinco debe cambiar el total; restablece después la regla de cuatro y compruébala otra vez.\n\n2. Comprobar cero paquetes. Elige una cantidad admitida de sueltas; el total debe coincidir con esa cantidad, conservando la etiqueta leída.\n\n3. Comprobar el máximo. Utiliza los valores máximos admitidos tanto para paquetes como para sueltas. El total debe corresponder a cuatro piezas por paquete más las sueltas.\n\nRealiza la reconstrucción y esas comprobaciones en el mismo editor. La página siguiente contiene una comparación posterior con tres campos de predicción para registrar y razonar las salidas de otros casos que representan esas mismas funciones.",
+          "emphasis": [
+            {
+              "text": "Reconstruye primero el programa de tres datos"
+            },
+            {
+              "text": "cuatro piezas y las sueltas pertenecen al intervalo de cero a tres"
+            },
+            {
+              "text": "escribe y ejecuta tres pruebas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior: tres pruebas para una regla nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta esta comparación después de reconstruir y variar el programa en el Laboratorio. Los tres casos siguientes representan funciones de prueba distintas: distinguir reglas, comprobar cero paquetes y comprobar el máximo.\n\nEscribe en cada campo de predicción únicamente el mensaje que produce su programa. El nombre y las cantidades siguen llegando de la entrada; la regla de cuatro piezas por paquete y el formato del mensaje permanecen en el código. Puedes contrastar después estos mismos casos en el Laboratorio, sin sustituir las entradas por constantes.",
+          "emphasis": [
+            {
+              "text": "después de reconstruir y variar el programa"
+            },
+            {
+              "text": "cada campo de predicción"
+            }
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__distinguir_regla_cuatro",
+          "language": "cpp",
+          "question": "Se entrega Nora 2 1 a esta variante con cuatro piezas por paquete. Después de reconstruir y comprobar tu programa, predice su salida exacta, sin añadir un salto final.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Nora: 9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Dos paquetes aportan ocho piezas y la suelta añade una: el total es nueve. Con la regla anterior de cinco piezas, esos mismos datos habrían producido once. Este caso permite distinguir las reglas porque la cantidad de paquetes no es cero.",
+          "reviewFeedback": "Distingue los datos leídos de la cantidad de piezas que corresponde a cada paquete. Aplica la regla escrita en este programa antes de añadir las sueltas y conserva el formato del mensaje."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__cero_paquetes_regla_cuatro",
+          "language": "cpp",
+          "question": "La entrada es Vega 0 3. Predice la salida exacta de esta variante y conserva la etiqueta y su separador.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Vega: 3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Con cero paquetes no se añaden piezas procedentes de paquetes. El total queda en tres sueltas y la etiqueta se conserva. Este caso comprueba ese extremo, pero por sí solo no distingue cuatro de cinco piezas por paquete: multiplicar cualquiera de las dos reglas por cero aporta cero.",
+          "reviewFeedback": "Sigue por separado la aportación de los paquetes y la de las piezas sueltas. Revisa qué parte del cálculo depende de la regla y qué dato debe conservar el mensaje."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__maximo_regla_cuatro",
+          "language": "cpp",
+          "question": "La entrada es Orion 20 3: alcanza los máximos admitidos en esta variante, veinte paquetes y tres sueltas. Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(4 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Orion: 83"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Veinte paquetes de cuatro piezas aportan ochenta. Las tres sueltas llevan el total a ochenta y tres. La salida conserva la etiqueta leída y el mismo formato; el programa no sustituye los datos por los del caso inicial.",
+          "reviewFeedback": "Comprueba que utilizas la regla de esta variante y las dos cantidades de la entrada. Calcula primero la aportación de todos los paquetes, añade después las sueltas y conserva los caracteres que produce la salida."
         }
       ]
     }
