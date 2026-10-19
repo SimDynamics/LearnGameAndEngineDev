@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "char permite conservar una unidad de carácter. Usaremos símbolos sencillos como letras latinas sin acento, cifras y signos: char pasillo = 'D'; conserva D. Un literal de carácter lleva comillas simples. El texto \"D\" lleva comillas dobles y puede inicializar una std::string. Pueden verse iguales al imprimirlos, pero cumplen funciones y tipos diferentes."
+          "text": "`char` permite guardar una unidad de carácter. En los ejemplos de esta lección usaremos letras latinas sin acento, cifras y signos sencillos. En `char pasillo = 'D';`, el objeto se llama `pasillo` y su valor inicial representa la letra `D` (Stroustrup, 2024, sección 2.2, p. 32).\n\nLas comillas simples delimitan un literal de carácter: `'D'`. Las dobles delimitan un literal de texto: `\"D\"`, que puede inicializar una variable `std::string`. Las comillas forman parte de la escritura del literal en el código; no se muestran como parte de esa letra al imprimir su valor (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).\n\nEl programa siguiente imprime ambos valores separados por un espacio. La coincidencia de lo que vemos en la consola no convierte sus objetos en el mismo tipo: uno guarda un carácter y el otro, una secuencia de texto."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El símbolo D identifica un pasillo; la cadena puede crecer para describirlo con más texto. char no representa por sí solo cualquier símbolo de cualquier sistema de escritura: ciertos caracteres y emojis requieren varias unidades. Para conservar texto general usamos std::string y estudiaremos más adelante sus detalles de codificación."
+          "text": "El símbolo `D` identifica aquí un pasillo. Una variable `std::string` puede guardar una secuencia más larga, como `Pasillo D`, mientras que los ejemplos con `char` guardan una sola unidad (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).\n\nUna unidad almacenada no equivale siempre a un símbolo visible completo. Una codificación establece cómo se representan los caracteres, y algunos símbolos necesitan varias unidades. No supongas que cualquier letra o emoji cabe en un único `char`; incluso la posibilidad de escribir un carácter en un literal depende de su codificación (Köppe et al., 2023, sección 5.13.3, párrs. 1–3 y tabla 9).\n\nPara los programas de esta lección, utiliza los símbolos sencillos indicados. Para conservar texto de varias unidades seguimos utilizando `std::string`; sus reglas de codificación se desarrollarán más adelante."
         },
         {
           "type": "fill_code",
@@ -29,7 +29,8 @@
           "answers": [
             "'K'"
           ],
-          "explanation": "Las comillas simples delimitan el literal de carácter; no se imprimen."
+          "explanation": "`'K'` es un literal de carácter: las comillas simples delimitan el símbolo que recibe `fila`. La consola muestra la letra sin esas comillas (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).",
+          "reviewFeedback": "Revisa qué delimitadores distinguen un literal de carácter de un literal de texto. El hueco debe aportar el valor inicial, no repetir el nombre de la variable ni la instrucción completa."
         }
       ]
     },
@@ -41,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "char marca = '5'; conserva el símbolo 5, útil para una etiqueta. int cantidad = 5; conserva una cantidad con la que podemos contar. La salida habitual muestra 5 en ambos casos. Elegir la representación requiere saber si queremos conservar un símbolo o realizar cálculo numérico, no sólo ver qué aparece en pantalla."
+          "text": "En `char marca = '5';`, el dato representa el símbolo que podemos colocar en una etiqueta. En `int cantidad = 5;`, representa una cantidad que podemos contar. El primer inicializador es un literal de carácter; el segundo es un literal entero. Sus formas de escritura comunican esa diferencia (Stroustrup, 2024, sección 2.2, p. 32).\n\nCon la salida habitual, los dos pueden verse como `5`. Por eso la consola, por sí sola, no revela qué tipo se utilizó: hay que mirar la definición y el papel que cumple el dato. La elección de tipo da significado a lo que se almacena (Stroustrup, 2024, sección 2.7, p. 43).\n\nSi una cifra identifica una marca, nos interesa conservar ese símbolo. Si representa cuántos elementos hay, nos interesa una cantidad. No elijas el tipo únicamente porque las dos salidas tengan la misma apariencia."
         },
         {
           "type": "output_prediction",
@@ -51,29 +52,40 @@
           "answers": [
             "8 8"
           ],
-          "explanation": "La misma apariencia de salida puede proceder de tipos distintos. marca conserva el carácter y cantidad el entero."
+          "explanation": "La consola muestra `8 8`. La primera cifra procede del carácter guardado en `marca`; la segunda, del entero guardado en `cantidad`. El espacio entre ellas procede del literal `\" \"`. Ver las mismas cifras no significa que los objetos tengan el mismo tipo (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).",
+          "reviewFeedback": "Distingue el valor que se imprime del modo de escribirlo en el código. Comprueba también qué literal de salida separa las dos variables; las comillas no se envían como parte de sus valores."
         },
         {
           "type": "multiple_choice",
           "question": "Una fila se identifica con una sola letra R en estos ejemplos. ¿Qué definición expresa esa representación?",
           "options": [
-            "bool fila = false;",
-            "int fila = 0;",
+            "char fila = \"R\";",
+            "char fila = 'r';",
             "char fila = 'R';"
           ],
           "correctIndex": 2,
-          "explanation": "char conserva el símbolo elegido. Un entero o un valor lógico cumpliría un papel distinto."
+          "explanation": "`char fila = 'R';` utiliza el tipo y el literal de carácter para la letra solicitada. Las comillas simples y la mayúscula forman parte de escribir correctamente ese valor; la consola muestra `R` sin comillas (Stroustrup, 2024, sección 2.2, p. 32).",
+          "reviewFeedback": [
+            "Revisa si el inicializador que elegiste es un literal de carácter o de texto. La forma de delimitarlo debe corresponder al tipo de la variable.",
+            "Comprueba si el carácter del literal coincide en mayúsculas y minúsculas con la identificación solicitada.",
+            "La definición corresponde al carácter solicitado."
+          ]
         },
         {
           "type": "multiple_choice",
           "question": "¿Qué diferencia hay entre '5' y 5?",
           "options": [
             "No pueden distinguirse porque ambos pueden imprimir 5.",
-            "El segundo es siempre texto.",
+            "El primero conserva una cantidad y el segundo una cifra como carácter.",
             "El primero es un literal de carácter y el segundo uno entero."
           ],
           "correctIndex": 2,
-          "explanation": "La sintaxis determina el tipo del literal; la apariencia final no basta para distinguirlo."
+          "explanation": "`'5'` es un literal de carácter; `5` es un literal entero. Ambos pueden producir la cifra `5` en la consola, pero las comillas simples distinguen su clase de literal en el código (Stroustrup, 2024, sección 2.2, p. 32).",
+          "reviewFeedback": [
+            "La apariencia en la consola no basta para determinar el tipo. Revisa cómo está escrito cada literal en el código.",
+            "Comprueba a cuál de las dos escrituras corresponden las comillas simples y qué papel cumplen; no intercambies la identificación de las dos.",
+            "La distinción corresponde a las dos formas de literal."
+          ]
         }
       ]
     },
@@ -85,7 +97,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un espacio puede escribirse ' '; un salto de línea puede escribirse '\\n'. Esos literales contienen una unidad de carácter, aunque el escape del salto se escriba con dos signos en el código. La salida lo interpreta como salto, no como una barra y la letra n. La variable char también puede recibir un nuevo símbolo mediante asignación."
+          "text": "Un separador también puede ser un carácter. El literal `' '` contiene un espacio entre sus comillas simples; `'\\n'` representa un salto de línea mediante una secuencia de escape. Aunque el escape se escriba con una barra inversa y una letra, representa un solo carácter de salto, no esos dos signos por separado (Köppe et al., 2023, sección 5.13.3, párr. 4 y tabla 10).\n\nAl enviar ese valor a `std::cout`, la salida continúa en la línea siguiente. Las comillas delimitan el literal y no aparecen en la consola. Es la misma separación de líneas que ya utilizabas con `\"\\n\"`, ahora escrita como un literal de carácter.\n\nUna variable `char` también puede cambiar de valor mediante asignación. En el programa siguiente, la primera salida utiliza el valor anterior y la segunda utiliza el nuevo; asignar otro carácter no cambia el tipo del objeto (Stroustrup, 2024, sección 2.5, p. 37; sección 2.8, p. 43)."
         },
         {
           "type": "output_prediction",
@@ -95,7 +107,8 @@
           "answers": [
             "A\nB"
           ],
-          "explanation": "La primera salida usa A y un salto de línea. La asignación cambia la marca a B para la segunda salida."
+          "explanation": "La primera instrucción muestra `A` y el carácter de salto `'\\n'`. Después, la asignación sustituye el valor de `marca` por `B`, que se muestra en la segunda línea. El programa no imprime las comillas ni los dos signos del escape (Stroustrup, 2024, sección 2.5, p. 37; Köppe et al., 2023, sección 5.13.3, párr. 4 y tabla 10).",
+          "reviewFeedback": "Sigue las instrucciones en orden: identifica qué valor tiene la variable en cada salida y qué carácter separa las dos. Una asignación posterior no cambia el texto que ya se imprimió."
         },
         {
           "type": "inline_fill_code",
@@ -116,7 +129,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los literales anteriores son 'X' y 'Y'. El espacio de salida aparece explícitamente entre las variables. Podemos añadir un carácter al final de una cadena: mensaje += '!'; conserva la secuencia anterior y el signo nuevo."
+          "text": "Los huecos anteriores se completan con `'X'` y `'Y'`. Cada variable aporta un carácter a la salida. El espacio entre ambos procede del literal `' '` que ya aparecía en la instrucción de salida; no se añade automáticamente.\n\nUna cadena también puede crecer al recibir un carácter al final. En `mensaje += '!';`, se conserva el texto anterior de `mensaje` y se le añade el signo de admiración. El resultado vuelve a quedar guardado en la misma cadena (Köppe et al., 2023, sección 23.4.3.7.1, párr. 5; sección 23.4.3.7.2, párr. 11).\n\nEsto recupera la diferencia entre leer un valor y actualizarlo. El carácter que añadimos procede de un literal o de una variable `char`; el objeto que recibe la actualización sigue siendo la cadena."
         },
         {
           "type": "output_prediction",
@@ -126,7 +139,8 @@
           "answers": [
             "Listo!"
           ],
-          "explanation": "+= añade el carácter a la cadena y guarda el texto resultante en mensaje."
+          "explanation": "`mensaje` empieza con `Listo`. La operación `+= signo` añade el carácter guardado en `signo` y actualiza esa cadena. Por eso se muestra `Listo!`, sin espacio intermedio: la operación no inventa un separador (Köppe et al., 2023, sección 23.4.3.7.1, párr. 5; sección 23.4.3.7.2, párr. 11).",
+          "reviewFeedback": "Distingue la cadena que recibe la actualización del carácter que se añade. Conserva el texto que ya tenía esa cadena y comprueba si hay algún separador escrito entre sus datos."
         },
         {
           "type": "multiple_choice",
@@ -137,7 +151,12 @@
             "int"
           ],
           "correctIndex": 0,
-          "explanation": "std::string representa una secuencia de caracteres. Los ejemplos de char conservan una unidad."
+          "explanation": "`std::string` permite conservar una secuencia con varias palabras y sus espacios. El `char` de estos ejemplos representa una sola unidad; un entero representa una cantidad. Elegir el tipo responde a qué dato necesita conservarse (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).",
+          "reviewFeedback": [
+            "La representación elegida corresponde a una secuencia de texto.",
+            "Revisa si la etiqueta completa necesita una sola unidad o una secuencia de caracteres.",
+            "Distingue una cantidad de la secuencia de palabras y espacios que hay que conservar."
+          ]
         }
       ]
     },
@@ -149,7 +168,7 @@
         },
         {
           "type": "paragraph",
-          "text": "bool es el tipo de valores lógicos. Tiene los valores true y false, que podemos interpretar como verdadero y falso. Son palabras del lenguaje, no texto entre comillas. Por ejemplo, bool disponible = true; conserva un indicador que afirma que algo está disponible. Por ahora asignamos esos valores directamente; en la siguiente unidad aprenderemos a obtenerlos mediante comparaciones y utilizarlos para decidir acciones."
+          "text": "Algunos datos sólo necesitan representar dos posibilidades. El tipo `bool` tiene los valores `true` y `false`, que interpretamos como verdadero y falso. Por ejemplo, `bool disponible = true;` expresa que la disponibilidad está afirmada (Stroustrup, 2024, sección 2.2, p. 32).\n\n`true` y `false` son palabras del lenguaje que escriben valores lógicos. No llevan comillas. En cambio, `\"true\"` es un literal de texto: contiene letras y puede inicializar una cadena. La escritura determina qué clase de literal se ha utilizado (Köppe et al., 2023, sección 5.13.6, párr. 1; Stroustrup, 2024, sección 2.2, p. 32).\n\nEn esta lección asignamos los valores directamente. En la siguiente unidad aprenderemos a producirlos mediante comparaciones y a utilizarlos para decidir qué instrucciones ejecutar. Ahora necesitamos distinguir el significado del dato, el valor que conserva y la forma de mostrarlo."
         },
         {
           "type": "code",
@@ -158,18 +177,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En el formato normal que usamos, cout muestra un bool como 1 para true y 0 para false. Esto no convierte el dato en un contador. Un indicador describe una condición de dos posibilidades; una cantidad de elementos puede tener muchos valores diferentes."
+          "text": "En estos programas, el formato de salida predeterminado muestra `true` mediante `1` y `false` mediante `0`. Es una regla de presentación: al escribir el valor lógico se utiliza su correspondencia numérica en ese formato (Köppe et al., 2023, sección 31.5.4.2, párr. 4 y tabla 124; sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).\n\nPor eso el programa anterior muestra:\n\n1 0\n\nLa primera cifra corresponde a `disponible` y la segunda a `pendiente`. El espacio procede del literal `\" \"`.\n\nMostrar una cifra no transforma el objeto en un contador. «Hay cuatro puertas» expresa una cantidad; «la puerta está disponible» expresa una condición que puede ser verdadera o falsa. El tipo y el contexto permiten distinguir esos significados, aunque ambos utilicen cifras en la consola (Stroustrup, 2024, sección 2.7, p. 43)."
         },
         {
           "type": "multiple_choice",
           "question": "Una marca indica si una revisión está pendiente o no. ¿Qué tipo permite representar directamente esas dos posibilidades?",
           "options": [
-            "std::string con un código de muchas cifras",
-            "Un nombre sin variable",
+            "int",
+            "std::string",
             "bool"
           ],
           "correctIndex": 2,
-          "explanation": "bool tiene true y false. La cantidad de revisiones, si se quisiera contarla, sería un dato distinto."
+          "explanation": "El dato pregunta si hay una revisión pendiente, no cuántas hay ni cómo se escribe una etiqueta. `bool` permite representar directamente las dos posibilidades mediante `true` y `false` (Stroustrup, 2024, sección 2.2, p. 32).",
+          "reviewFeedback": [
+            "Distingue la cantidad de revisiones de la condición que se quiere registrar. La pregunta sólo necesita indicar si esa condición se cumple.",
+            "Revisa si necesitas conservar una secuencia de letras o un valor que exprese una condición de dos posibilidades.",
+            "El tipo elegido expresa directamente el indicador solicitado."
+          ]
         }
       ]
     },
@@ -187,7 +211,8 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "registro copia true antes del cambio. disponible pasa a false y los objetos siguen siendo independientes."
+          "explanation": "`registro` copia `true` cuando se inicializa. Después, la asignación cambia `disponible` a `false`, sin actualizar la copia. La salida predeterminada representa esos valores como `1 0` (Stroustrup, 2024, sección 2.5, p. 37; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
+          "reviewFeedback": "Sigue el momento de la copia y el de la asignación. Decide qué valor conserva cada objeto antes de aplicar el formato de salida de los valores lógicos."
         },
         {
           "type": "fill_code",
@@ -197,7 +222,8 @@
           "answers": [
             "false"
           ],
-          "explanation": "false es el valor lógico falso; con el formato habitual se muestra como 0."
+          "explanation": "`false` indica que la condición «terminada» no se cumple todavía. Es un literal lógico, escrito sin comillas. La salida predeterminada lo presenta como `0` (Stroustrup, 2024, sección 2.2, p. 32; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
+          "reviewFeedback": "Revisa qué afirmación representa el nombre de la variable y si esa afirmación se cumple en la situación descrita. El hueco pide un literal lógico, no el texto de una palabra."
         },
         {
           "type": "multiple_choice",
@@ -208,7 +234,12 @@
             "true es un valor lógico; \"true\" es un literal de texto."
           ],
           "correctIndex": 2,
-          "explanation": "Las comillas cambian qué clase de literal se ha escrito, no sólo su apariencia."
+          "explanation": "`true`, sin comillas, es un literal de tipo `bool`. `\"true\"` contiene las letras de un literal de texto. Que compartan letras no les da el mismo tipo ni el mismo papel (Köppe et al., 2023, sección 5.13.6, párr. 1; Stroustrup, 2024, sección 2.2, p. 32).",
+          "reviewFeedback": [
+            "Revisa el papel de las comillas en la escritura de un literal; conservar las mismas letras no garantiza conservar su tipo.",
+            "Comprueba si las dos formas están delimitadas del mismo modo. Una palabra reservada puede escribir un valor del lenguaje sin ser una cadena.",
+            "La distinción corresponde a la sintaxis de los dos literales."
+          ]
         },
         {
           "type": "output_prediction",
@@ -218,7 +249,8 @@
           "answers": [
             "0"
           ],
-          "explanation": "auto deduce bool a partir de true. La asignación cambia el valor a false sin cambiar el tipo."
+          "explanation": "`auto` deduce el tipo `bool` a partir del inicializador `true`. La asignación posterior cambia el valor a `false`, pero no cambia el tipo deducido. En la consola aparece `0` por el formato predeterminado (Stroustrup, 2024, sección 2.10, p. 47; sección 2.8, p. 43; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
+          "reviewFeedback": "Identifica el tipo a partir del inicializador y sigue después las asignaciones. La deducción no impide que cambie el valor ni vuelve a deducir un tipo en cada instrucción."
         }
       ]
     },
@@ -226,11 +258,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Construye un registro de símbolos e indicadores"
+          "text": "Laboratorio: registrar un símbolo y una condición"
         },
         {
           "type": "paragraph",
-          "text": "En el laboratorio, representa un pasillo con el carácter C y un indicador abierta con valor true. Debe mostrarse Pasillo: C en una línea y Abierta: 1 en la siguiente. Después modifica ambos valores a D y false: la salida debe cambiar a Pasillo: D y Abierta: 0. Explica por qué cada dato utiliza un tipo distinto."
+          "text": "Construye en este Laboratorio un programa que guarde dos datos: un pasillo identificado con el carácter `C` y un indicador llamado `abierta`, cuyo valor inicial sea `true`. Debe mostrar exactamente dos líneas:\n\nPasillo: C\nAbierta: 1\n\nCompleta el cuerpo de `main` con las variables y las instrucciones necesarias. El carácter y el valor lógico deben proceder de esas variables; no escribas directamente todo el resultado como un único mensaje.\n\nCompila y ejecuta. Compara los rótulos, los valores y el salto entre líneas con la salida pedida. Si hay diferencias, modifica tu programa y vuelve a comprobarlo.\n\nDespués cambia únicamente los valores iniciales del pasillo y del indicador por `D` y `false`. En el mismo editor, compila y ejecuta esa segunda versión. Debe mostrar:\n\nPasillo: D\nAbierta: 0\n\nDespués de comprobar las dos versiones, resuelve la actividad posterior sobre la elección de los tipos utilizados."
         },
         {
           "type": "cpp_compiler",
@@ -238,7 +270,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No hace falta una comparación ni una decisión para este experimento: queremos practicar representación y asignación. Escribe los literales correctos y comprueba el formato de la salida, recuperando lo aprendido sobre líneas."
+          "text": "La construcción y su variación se realizan en el mismo Laboratorio. Comprueba que ambas líneas leen los valores de las variables y que el formato lógico permanece como en los ejemplos.\n\nNo necesitas una comparación ni una decisión para este programa: practicas representación, inicialización, salida y cambio de valores. Después de probar las dos versiones, avanza a la siguiente página para contrastarlas con una implementación de referencia y resolver la actividad sobre su significado."
         }
       ]
     },
@@ -255,7 +287,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El carácter conserva una identificación; el bool conserva una de dos posibilidades. La salida comunica sus funciones. Añadir comillas a true lo convertiría en texto, por lo que ya no estaríamos escribiendo el mismo literal lógico."
+          "text": "`pasillo` conserva la identificación mediante un carácter; `abierta` conserva uno de los dos valores de una condición lógica. Los rótulos de salida comunican qué significa cada dato. Las comillas simples escriben el literal de carácter y las palabras `true` y `false`, sin comillas, escriben los valores lógicos (Stroustrup, 2024, sección 2.2, p. 32).\n\nEn esta versión, la primera instrucción muestra el pasillo y un salto de línea. La segunda muestra el indicador usando su presentación numérica predeterminada. Al cambiar los valores iniciales, cambian los valores leídos por esas mismas instrucciones; no hace falta sustituir los rótulos ni convertir la condición en un recuento."
         },
         {
           "type": "multiple_choice",
@@ -266,7 +298,12 @@
             "bool cantidad = true; y char habilitada = '4';"
           ],
           "correctIndex": 1,
-          "explanation": "Cantidad e indicador tienen significados distintos y necesitan representaciones adecuadas."
+          "explanation": "`cantidad` expresa un número de puertas y utiliza `int`. `habilitada` expresa si una condición se cumple y utiliza `bool`. Son datos con funciones diferentes; el nombre, el tipo y el valor inicial deben corresponder a cada función (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).",
+          "reviewFeedback": [
+            "Revisa cuál de los datos debe contar puertas y cuál debe indicar si la entrada está habilitada. La presencia de una cifra en la salida no iguala esas funciones.",
+            "La pareja corresponde a las dos funciones solicitadas.",
+            "Comprueba si cada valor elegido conserva la cantidad o la condición solicitada. Un símbolo no tiene por sí mismo el significado del indicador."
+          ]
         },
         {
           "type": "output_prediction",
@@ -276,7 +313,25 @@
           "answers": [
             "Modulo M 0"
           ],
-          "explanation": "Se combinan una secuencia de texto, un carácter y un valor lógico sin confundir sus tipos."
+          "explanation": "`nombre` aporta la secuencia `Modulo`; `inicial` aporta el carácter `M`; `preparado` conserva `false`, que en este formato se muestra como `0`. Los dos espacios están escritos en las instrucciones de salida. Ninguno de los objetos cambia de tipo por aparecer junto a los otros (Stroustrup, 2024, sección 2.2, p. 32; Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
+          "reviewFeedback": "Lee las variables en el orden de la salida y distingue secuencia, carácter y valor lógico. Después aplica a cada dato su formato y conserva los separadores escritos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos__elegir_tipo_por_funcion",
+          "question": "En el programa del Laboratorio, ¿por qué el pasillo y el indicador abierta utilizan tipos diferentes?",
+          "options": [
+            "El pasillo identifica un símbolo; abierta registra una condición con dos valores.",
+            "Los dos datos son contadores; usamos tipos distintos sólo para mostrar rótulos diferentes.",
+            "El pasillo contiene una secuencia que crece; abierta contiene las letras de la palabra true."
+          ],
+          "correctIndex": 0,
+          "explanation": "La identificación del pasillo se conserva aquí como un carácter. La apertura se conserva como un valor lógico: se cumple o no se cumple. Los rótulos describen esos datos y el formato decide cómo se ven; ninguno sustituye el significado del tipo (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).",
+          "reviewFeedback": [
+            "La justificación corresponde al significado de los dos datos.",
+            "Que un valor lógico aparezca como una cifra no le da la función de un contador. Revisa si el programa cuenta elementos o registra una condición.",
+            "Distingue un literal de carácter de una cadena y un valor lógico del texto entre comillas. La apariencia de las letras no basta para decidir su tipo."
+          ]
         }
       ]
     },
@@ -288,11 +343,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+          "text": "Compara esta referencia con las dos versiones que construiste en el Laboratorio. Es una implementación posible. Los valores deben proceder de variables con los significados solicitados y la consola debe cumplir el formato pedido; no basta con copiar un mensaje fijo."
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. pasillo representa un solo carácter C y abierta representa el valor lógico true. La primera salida tiene dos líneas: Pasillo: C y Abierta: 1. Al cambiar sus valores a D y false, se obtiene Pasillo: D y Abierta: 0. Usa char y bool o una representación equivalente que conserve esos significados; en este experimento conserva la presentación lógica predeterminada: 1 para true y 0 para false."
+          "text": "Criterios del programa inicial\n\n`pasillo` representa el carácter `C` y `abierta` representa el valor lógico `true`. La consola tiene dos líneas, con estos rótulos y separadores:\n\nPasillo: C\nAbierta: 1\n\nCriterios de la variación\n\nAl cambiar los valores iniciales por `D` y `false`, las mismas instrucciones deben producir:\n\nPasillo: D\nAbierta: 0\n\n`char` y `bool` conservan los significados practicados. La salida lógica mantiene el formato predeterminado de los ejemplos. No hace falta introducir decisiones para que las instrucciones lean otros valores."
         },
         {
           "type": "code",
@@ -301,7 +356,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las comillas simples construyen el literal de carácter; true construye el valor lógico. Modifica sólo los valores iniciales a 'D' y false para comprobar la segunda versión. No hace falta una decisión: cout presenta los valores guardados según sus tipos."
+          "text": "Las comillas simples delimitan el literal `'C'`; `true` escribe el valor lógico sin comillas. Las llaves de esta referencia inicializan los objetos con esos valores. Conservar su tipo permite cambiar después el valor que corresponde a cada uno (Stroustrup, 2024, sección 2.2, p. 32; sección 2.8, p. 43).\n\nEn el Laboratorio, sustituye únicamente los valores iniciales por `'D'` y `false` para contrastar la segunda versión. La primera salida sigue leyendo el carácter; la segunda sigue leyendo el indicador. La representación visible `0` corresponde al valor lógico falso en este formato, no a una variable que cuente puertas (Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6)."
         }
       ]
     }
