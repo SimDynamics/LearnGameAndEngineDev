@@ -165,9 +165,9 @@ class CppCurricularLabsDeviceTest {
                 scenario.onActivity { activity ->
                     assertEquals("Reopened source stays byte-exact", code, editor(activity).text.toString())
                     assertEquals(stdin, input(activity).text.toString())
-                    val draft = "$ROUTE/$lessonId/${location.page}/${location.block}/source"
+                    val draft = "$ROUTE/$lessonId/${location.page}/${location.block}"
                     assertEquals("The persisted draft has no added trailing spaces", code,
-                        context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE).getString(draft, null))
+                        CppLessonSourceDraft.read(context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE), draft, "missing"))
                     observations.put(JSONObject().put("iteration", iteration).put("sourceSha256", sha256(code))
                         .put("characters", code.length).put("exactAfterSettlingAndRecreation", true)
                         .put("imeVisibleAfterRecreation", imeVisible(activity)))

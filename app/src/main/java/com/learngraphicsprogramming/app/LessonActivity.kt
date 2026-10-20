@@ -77,7 +77,7 @@ import com.learngraphicsprogramming.app.math.MathDevelopmentMode
 import com.learngraphicsprogramming.app.math.MathExpressionEditor
 import com.google.android.material.button.MaterialButton
 
-class LessonActivity : AppCompatActivity() {
+class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
     private val puzzleEnterShortcut = PuzzleEnterShortcut()
 
@@ -7160,7 +7160,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
         val hasSourceDraft = labDrafts.contains("$draftKey/source")
-        val restoredSource = labDrafts.getString("$draftKey/source", initialCode) ?: initialCode
+        val restoredSource = CppLessonSourceDraft.read(labDrafts, draftKey, initialCode)
         sourceCode.setText(CppIndentationUnits.loadedText(restoredSource,
             if (hasSourceDraft) labDrafts.getString("$draftKey/sourceIndentation_v2", null) else null,
             seedPredefined = !hasSourceDraft))
@@ -7365,15 +7365,13 @@ class LessonActivity : AppCompatActivity() {
                 if (text == null) return
                 CppSyntaxHighlighter.applyTo(text)
                 if (!block.has("projectFiles")) {
-                    labDrafts.edit().putString("$draftKey/source", text.toString())
-                        .putString("$draftKey/sourceIndentation_v2", CppIndentationUnits.snapshot(text)).apply()
+                    CppLessonSourceDraft.write(labDrafts.edit(), draftKey, text).apply()
                 }
             }
         })
 
         if (!block.has("projectFiles")) sourceCode.cppIndentationRestored = {
-            labDrafts.edit().putString("$draftKey/source", sourceCode.text.toString())
-                .putString("$draftKey/sourceIndentation_v2", CppIndentationUnits.snapshot(sourceCode.text ?: "")).apply()
+            CppLessonSourceDraft.write(labDrafts.edit(), draftKey, sourceCode.text ?: "").apply()
         }
 
         resetButton.tag = "cpp_reset"
@@ -8181,6 +8179,10 @@ class LessonActivity : AppCompatActivity() {
                 }
             }.start()
         }
+    }
+
+    override fun onPuzzleKeyboardSubmission(event: KeyEvent?) {
+        lessonAdvanceEnterGate.editorSubmitted(android.os.SystemClock.uptimeMillis(), event?.keyCode)
     }
 
     /** One Enter checks or advances on its first DOWN. UP only closes that action;

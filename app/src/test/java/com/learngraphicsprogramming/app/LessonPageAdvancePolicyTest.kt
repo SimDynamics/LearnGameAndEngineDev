@@ -159,5 +159,61 @@ class LessonPageAdvancePolicyTest {
             canNavigate = false, editorOwnsEnter = false))
     }
 
+    @Test fun imeActionAndItsUnseenPhysicalPressAreOneSubmission() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(1100L)
+        assertEquals(skip, gate.up("lesson/p4", enter, 1000L, 1150L, false,
+            canNavigate = true))
+        assertEquals(skip, gate.up("lesson/p4", enter, 1000L, 1151L, false,
+            canNavigate = true))
+        assertEquals(go, gate.up("lesson/p4", enter, 1200L, 1250L, false,
+            canNavigate = true))
+    }
+
+    @Test fun softImeDoneWithoutAPhysicalReleaseNeverConsumesTheNextNewPress() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(1000L)
+        assertEquals(go, gate.up("lesson/p4", enter, 1001L, 1010L, false,
+            canNavigate = true))
+        gate.editorSubmitted(2000L)
+        assertEquals(go, gate.down("lesson/p4", enter, 2000L, 2000L, 0, true, false))
+        assertEquals(skip, gate.up("lesson/p5", enter, 2000L, 2001L, false,
+            canNavigate = true))
+    }
+
+    @Test fun aNewDownStillActsImmediatelyEvenIfTheImeClockWasReused() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(500L, enter)
+        assertEquals(go, gate.down("lesson/p4", enter, 500L, 500L, 0, true, false))
+        assertEquals(skip, gate.down("lesson/p5", enter, 500L, 501L, 1, true, false))
+        assertEquals(skip, gate.up("lesson/p5", enter, 500L, 510L, false, true))
+    }
+
+    @Test fun theReleaseAfterAnIncorrectImeAnswerCannotCheckAgain() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(1000L)
+        assertEquals(skip, gate.up("lesson/p4", enter, 900L, 1001L, false,
+            canNavigate = false))
+        assertEquals(puzzle, gate.up("lesson/p4", enter, 1100L, 1110L, false,
+            canNavigate = false))
+    }
+
+    @Test fun aLateReleaseFromTheImeCannotSkipAnotherPage() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(1000L)
+        assertEquals(skip, gate.up("lesson/p5", enter, 900L, 1001L, false,
+            canNavigate = true))
+        assertEquals(go, gate.up("lesson/p5", enter, 1100L, 1110L, false,
+            canNavigate = true))
+    }
+
+    @Test fun numpadImeReleaseAndEditorNewlinesRetainTheirOwnership() {
+        val gate = LessonPageAdvanceEnterGate()
+        gate.editorSubmitted(1000L, 160)
+        assertEquals(skip, gate.up("lesson/p4", 160, 900L, 1001L, false, true))
+        assertEquals(edit, gate.down("lesson/p4", enter, 1100L, 1100L, 0, true, true))
+        assertEquals(edit, gate.up("lesson/p4", enter, 1100L, 1110L, false, true, true))
+    }
+
 
 }

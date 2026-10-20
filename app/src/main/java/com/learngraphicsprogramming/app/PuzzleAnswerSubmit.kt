@@ -1,10 +1,16 @@
 package com.learngraphicsprogramming.app
 
 import android.text.InputType
+import android.content.ContextWrapper
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+
+/** A keyboard action reports ownership before grading can enable Continue. */
+interface PuzzleKeyboardSubmissionOwner {
+    fun onPuzzleKeyboardSubmission(event: KeyEvent?)
+}
 
 /** The keyboard submits the existing puzzle action; it never evaluates a second answer. */
 internal object PuzzleAnswerSubmit {
@@ -28,7 +34,10 @@ internal object PuzzleAnswerSubmit {
         input.setOnEditorActionListener { _, action, event ->
             if (event == null) {
                 if (!isSubmitAction(action)) false else {
-                    if (input.isEnabled && input.keyListener != null) submit()
+                    if (input.isEnabled && input.keyListener != null) {
+                        notifyOwner(input, null)
+                        submit()
+                    }
                     true
                 }
             } else if ((event.keyCode == KeyEvent.KEYCODE_ENTER ||
@@ -37,10 +46,26 @@ internal object PuzzleAnswerSubmit {
                 // TextView delivers the physical key twice. Consume both halves so it
                 // cannot navigate focus, and submit once on release (not autorepeat).
                 if (event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
-                    input.isEnabled && input.keyListener != null) submit()
+                    input.isEnabled && input.keyListener != null) {
+                    notifyOwner(input, event)
+                    submit()
+                }
                 true
             } else false
         }
         return true
+    }
+
+    private fun notifyOwner(input: EditText, event: KeyEvent?) {
+        var context = input.context
+        while (true) {
+            if (context is PuzzleKeyboardSubmissionOwner) {
+                context.onPuzzleKeyboardSubmission(event)
+                return
+            }
+            val base = (context as? ContextWrapper)?.baseContext ?: return
+            if (base === context) return
+            context = base
+        }
     }
 }

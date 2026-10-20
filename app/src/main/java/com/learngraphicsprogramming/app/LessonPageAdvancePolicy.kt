@@ -19,6 +19,15 @@ internal class LessonPageAdvanceEnterGate {
     private data class ReleasedKey(val keyCode: Int, val downTime: Long)
     private var pending: Press? = null
     private var lastFinishedRelease: ReleasedKey? = null
+    private data class EditorSubmission(val at: Long, val keyCode: Int?)
+    private var editorSubmission: EditorSubmission? = null
+
+    /** IME actions can check without delivering DOWN to the Activity. A release
+     * whose press already began before that action belongs to that same check.
+     * This is native event ordering, not a delay or a debounce interval. */
+    fun editorSubmitted(at: Long, keyCode: Int? = null) {
+        editorSubmission = EditorSubmission(at, keyCode)
+    }
 
     @Suppress("UNUSED_PARAMETER") // Native timing is diagnostic, never a key identity.
     fun down(
@@ -34,6 +43,7 @@ internal class LessonPageAdvanceEnterGate {
             return if (pending?.route == Route.EDITOR && pending?.keyCode == keyCode) Route.EDITOR
                 else Route.CONSUME
         }
+        editorSubmission = null // A new DOWN is always an independent press.
         // A repeatCount == 0 is a new native key press, even if LDPlayer has
         // consumed the preceding UP or reused identical downTime/eventTime.
         // Never infer "still held" from the virtual keyboard's clock values.
@@ -60,6 +70,7 @@ internal class LessonPageAdvanceEnterGate {
         if (press != null) {
             if (press.keyCode != keyCode) return Route.CONSUME
             pending = null
+            editorSubmission = null
             // The DOWN already checked or navigated. Never execute twice.
             val releaseDownTime = downTime.takeIf { it > 0L } ?: press.downTime
             if (releaseDownTime > 0L) {
@@ -76,6 +87,11 @@ internal class LessonPageAdvanceEnterGate {
         if (lastFinishedRelease == released) return Route.CONSUME
         lastFinishedRelease = released
         if (canceled) return Route.CONSUME
+
+        val submitted = editorSubmission
+        editorSubmission = null
+        if (submitted != null && (submitted.keyCode == null || submitted.keyCode == keyCode) &&
+            downTime <= submitted.at) return Route.CONSUME
 
         // Preserve the native C++ editor; never synthesize a newline here.
         return when {

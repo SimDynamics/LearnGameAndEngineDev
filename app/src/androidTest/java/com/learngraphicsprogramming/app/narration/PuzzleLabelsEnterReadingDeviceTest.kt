@@ -33,6 +33,7 @@ import com.learngraphicsprogramming.app.LessonActivity
 import com.learngraphicsprogramming.app.LessonRepository
 import com.learngraphicsprogramming.app.PremiumRepository
 import com.learngraphicsprogramming.app.ProgressRepository
+import com.learngraphicsprogramming.app.PuzzleAnswerSubmit
 import com.learngraphicsprogramming.app.R
 import com.learngraphicsprogramming.app.UiLanguageSettings
 import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
@@ -363,7 +364,8 @@ class PuzzleLabelsEnterReadingDeviceTest {
             val radio = descendants(content(activity))
                 .filterIsInstance<android.widget.RadioButton>()
                 .single { it.text.toString() == answer }
-            assertTrue(radio.performClick())
+            radio.performClick()
+            assertTrue(radio.isChecked)
         }
         var lastTime = 0L
         fun sendOnlyUp(originalDownTime: Long? = null): Long {
@@ -734,19 +736,37 @@ class PuzzleLabelsEnterReadingDeviceTest {
         assertEquals(6, published.getJSONArray("pages").length())
         // QA preferences are saved and restored around each test.
         ProgressRepository.setLessonCompleted(context, lesson, false)
+        for (block in 3..4) ProgressRepository.saveExerciseState(context, "programming", lesson, 4, block,
+            JSONObject().put("correct", false).put("answer", "").put("selectedIndex", -1))
         val host = openProgramming(lesson, 4, narrate = false)
         host.onActivity { activity ->
             val reset = descendants(content(activity)).single {
                 it.contentDescription == activity.getString(R.string.exercise_reset)
             }
             assertTrue(reset.performClick())
+            // The current curriculum also requires an earlier output prediction.
+            // Answer it through its real UI before testing Enter on the last puzzle.
+            val prediction = published.getJSONArray("pages").getJSONObject(4)
+                .getJSONArray("blocks").getJSONObject(3)
+            assertEquals("output_prediction", prediction.getString("type"))
+            descendants(content(activity)).filterIsInstance<EditText>()
+                .single { it.hint?.toString() == activity.getString(R.string.exercise_expected_output) }
+                .setText(prediction.getJSONArray("answers").getString(0))
+            val predictionCheck = descendants(content(activity)).filterIsInstance<Button>().single {
+                it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
+            }
+            assertTrue(predictionCheck.performClick())
+            assertTrue(ProgressRepository.getExerciseState(context, lesson, 4, 3)?.optBoolean("correct", false) == true)
+            assertFalse("The final choice is still required",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
             val question = published.getJSONArray("pages").getJSONObject(4)
                 .getJSONArray("blocks").getJSONObject(4)
             val selectedAnswer = question.getJSONArray("options")
                 .getString(question.getInt("correctIndex"))
             val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
                 .single { it.text.toString() == selectedAnswer }
-            assertTrue(radio.performClick())
+            radio.performClick()
+            assertTrue(radio.isChecked)
             val readyCheck = descendants(content(activity)).filterIsInstance<Button>().single {
                 it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
             }
@@ -855,6 +875,11 @@ class PuzzleLabelsEnterReadingDeviceTest {
 
     @Test fun pagesWithoutPuzzlesAdvanceButCompilerEditorRetainsLiteralEnter() {
         val lesson = "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato"
+        val prediction = LessonRepository.loadLessonJson(context, "programming", lesson)
+            .getJSONArray("pages").getJSONObject(6).getJSONArray("blocks").getJSONObject(3)
+        assertEquals("output_prediction", prediction.getString("type"))
+        ProgressRepository.saveExerciseState(context, "programming", lesson, 6, 3,
+            JSONObject().put("correct", false).put("answer", ""))
         val host = openProgramming(lesson, 5, narrate = false)
         host.onActivity { activity ->
             val button = activity.findViewById<Button>(R.id.buttonContinue)
@@ -868,9 +893,11 @@ class PuzzleLabelsEnterReadingDeviceTest {
         var before = ""
         host.onActivity { activity ->
             assertEquals("Enter goes to the next page", 6, field<Int>(activity, "currentPage"))
-            assertTrue(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            assertFalse("The current page has a required prediction, unlike page six",
+                activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
             val input = descendants(content(activity)).filterIsInstance<EditText>()
-                .single { it.tag == "cpp_code_input" }
+                .single { it.tag == "cpp_code_input" &&
+                    it.hint?.toString() != activity.getString(R.string.exercise_expected_output) }
             editor = input
             before = input.text.toString()
             assertTrue(input.requestFocus())
@@ -883,8 +910,28 @@ class PuzzleLabelsEnterReadingDeviceTest {
             val actual = requireNotNull(editor).text.toString()
             assertTrue("Enter must insert an actual compiler newline",
                 actual.count { it == '\n' } > before.count { it == '\n' })
+            val neutral = activity.findViewById<View>(android.R.id.content)
+            neutral.isFocusableInTouchMode = true
+            assertTrue("Leave the editor without trying to focus the disabled Continue control",
+                neutral.requestFocus())
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_NUMPAD_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            assertEquals("Outside edit mode Enter still cannot bypass an unanswered prediction", 6,
+                field<Int>(activity, "currentPage"))
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+            val answer = descendants(content(activity)).filterIsInstance<EditText>()
+                .single { it.hint?.toString() == activity.getString(R.string.exercise_expected_output) }
+            answer.setText(prediction.getJSONArray("answers").getString(0))
+            val check = descendants(content(activity)).filterIsInstance<Button>().single {
+                it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
+            }
+            assertTrue(check.performClick())
+            assertTrue("The prediction is solved through its real checking control",
+                ProgressRepository.getExerciseState(context, lesson, 6, 3)?.optBoolean("correct", false) == true)
             val button = activity.findViewById<Button>(R.id.buttonContinue)
-            button.isFocusableInTouchMode = true
+            assertTrue(button.isEnabled)
             assertTrue(button.requestFocus())
         }
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_NUMPAD_ENTER)
@@ -1078,6 +1125,75 @@ class PuzzleLabelsEnterReadingDeviceTest {
             assertEquals(original, field<JSONObject>(activity, "lessonJson").toString())
         }
         assertEquals(original, LessonRepository.loadLessonJson(context, ROUTE, lesson).toString())
+    }
+
+    private val operatorLesson = "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico"
+
+    private fun prepareLastProgrammingOperator(): ActivityScenario<LessonActivity> {
+        // The current authored equivalent has the exact << answer as its last puzzle.
+        // Use its own page/blocks; never move curriculum to fit a historical page number.
+        ProgressRepository.saveExerciseState(context, operatorLesson, 1, 3, JSONObject())
+        ProgressRepository.saveExerciseState(context, operatorLesson, 1, 4, JSONObject())
+        val host = openProgramming(operatorLesson, 1, narrate = false)
+        host.onActivity { activity ->
+            val blocks = field<JSONObject>(activity, "lessonJson").getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+            val first = blocks.getJSONObject(3)
+            val option = first.getJSONArray("options").getString(first.getInt("correctIndex"))
+            val radio = descendants(content(activity)).filterIsInstance<android.widget.RadioButton>()
+                .single { it.text.toString() == option }
+            radio.performClick()
+            assertTrue("The real prerequisite option is selected", radio.isChecked)
+            assertTrue(descendants(content(activity)).filterIsInstance<Button>().single {
+                it.text.toString() == activity.getString(R.string.exercise_check) && it.isEnabled
+            }.performClick())
+            val input = descendants(content(activity)).filterIsInstance<EditText>().single(PuzzleAnswerSubmit::isSingleLine)
+            assertEquals("<<", blocks.getJSONObject(4).getJSONArray("answers").getString(0))
+            input.setText("<<")
+            assertTrue(input.requestFocus())
+            input.setSelection(input.length())
+            assertFalse(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        instrumentation.waitForIdleSync()
+        return host
+    }
+
+    @Test fun physicalEnterChecksTheLastProgrammingOperatorWithoutAdvancing() {
+        val host = prepareLastProgrammingOperator()
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { activity ->
+            writeEvidence("operator-physical-enter", JSONObject().put("page", field<Int>(activity, "currentPage"))
+                .put("saved", ProgressRepository.getExerciseState(context, operatorLesson, 1, 4)))
+            assertEquals("Checking must leave its explanation on the same page", 1, field<Int>(activity, "currentPage"))
+            assertTrue(ProgressRepository.getExerciseState(context, operatorLesson, 1, 4)?.optBoolean("correct") == true)
+            assertTrue(activity.findViewById<Button>(R.id.buttonContinue).isEnabled)
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { assertEquals("The next independent press still advances", 2, field<Int>(it, "currentPage")) }
+    }
+
+    @Test fun imeSubmitAndItsPhysicalReleaseCannotAlsoAdvanceTheLastProgrammingOperator() {
+        val host = prepareLastProgrammingOperator()
+        host.onActivity { activity ->
+            val input = descendants(content(activity)).filterIsInstance<EditText>().single(PuzzleAnswerSubmit::isSingleLine)
+            val pressed = SystemClock.uptimeMillis()
+            // An IME may handle DOWN as an editor action before the Activity ever
+            // receives that physical press's UP (the existing LDPlayer recovery path).
+            assertTrue(requireNotNull(input.onCreateInputConnection(EditorInfo())).performEditorAction(EditorInfo.IME_ACTION_DONE))
+            assertTrue(ProgressRepository.getExerciseState(context, operatorLesson, 1, 4)?.optBoolean("correct") == true)
+            assertEquals(1, field<Int>(activity, "currentPage"))
+            val up = KeyEvent(pressed, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER, 0)
+            activity.dispatchKeyEvent(up)
+            writeEvidence("operator-ime-followed-by-native-release", JSONObject().put("page", field<Int>(activity, "currentPage"))
+                .put("saved", ProgressRepository.getExerciseState(context, operatorLesson, 1, 4)))
+            assertEquals("The IME action and its release are one check, never a page jump", 1, field<Int>(activity, "currentPage"))
+            activity.dispatchKeyEvent(up)
+            assertEquals("A duplicate release must remain harmless", 1, field<Int>(activity, "currentPage"))
+        }
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_ENTER)
+        instrumentation.waitForIdleSync()
+        host.onActivity { assertEquals("A new complete press still advances immediately", 2, field<Int>(it, "currentPage")) }
     }
 
     @Test fun imeDoneSubmitsTheRealSingleLineMathematicsAnswer() {
