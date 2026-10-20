@@ -30,7 +30,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Prepara una tabla propia en comentarios del borrador: valor, inferior, superior, destino inicial, aceptación esperada y destino final esperado. Justifica qué obligación distingue cada fila. Incluye situaciones a ambos lados del intervalo, dentro y en sus extremos; considera un intervalo de un solo valor, los límites admitidos y rechazos por las condiciones del contrato. Elige destinos iniciales que permitan detectar si un rechazo los cambió. No obtengas un esperado llamando al mismo cálculo que quieres comprobar."
+          "text": "Prepara los casos de tu comprobador con estos datos: valor, inferior, superior, destino inicial, aceptación esperada y destino final esperado. Cada caso debe permitir observar una obligación del contrato. Incluye situaciones a ambos lados del intervalo, dentro y en sus extremos; considera un intervalo de un solo valor, los límites admitidos y rechazos por las condiciones del contrato. Elige destinos iniciales que permitan detectar si un rechazo los cambió. No obtengas un esperado llamando al mismo cálculo que quieres comprobar."
         },
         {
           "type": "paragraph",
@@ -58,7 +58,7 @@
         },
         {
           "type": "paragraph",
-          "text": "CMakeLists.txt está vacío a propósito: escribe la descripción con mínimo CMake 3.20, C++ habilitado, esos tres objetivos, sus fuentes, la búsqueda pública de la cabecera y las relaciones de enlace. Exige cxx_std_20 y extensiones desactivadas a lo que compiles. Las fuentes iniciales son borradores PENDIENTES; no cumplen el contrato y sus mensajes no son resultados de una prueba. Completa el componente, el cliente y un comprobador que observe cada caso de tu tabla, compare tanto el bool como el destino y termine con 1 si alguna comparación discrepa. No hagas depender esas llamadas o comparaciones necesarias de assert."
+          "text": "CMakeLists.txt está vacío a propósito: escribe la descripción con mínimo CMake 3.20, C++ habilitado, esos tres objetivos, sus fuentes, la búsqueda pública de la cabecera y las relaciones de enlace. Exige cxx_std_20 y extensiones desactivadas a lo que compiles. Las fuentes iniciales son borradores PENDIENTES; no cumplen el contrato y sus mensajes no son resultados de una prueba. Completa el componente, el cliente y un comprobador que observe cada caso que preparaste, compare tanto el bool como el destino y termine con 1 si alguna comparación discrepa. No hagas depender esas llamadas o comparaciones necesarias de assert."
         },
         {
           "type": "cpp_compiler",
@@ -94,7 +94,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de continuar, conserva tu tabla, tu intento y tus razones en los archivos del proyecto. Configura, construye y ejecuta por separado el cliente y el comprobador seleccionando su objetivo. Registra qué fuente y objetivo produjeron cada observación; mantén separados salida normal, diagnóstico y código final. Mientras la descripción esté vacía no existen esos objetivos: un fallo de esa etapa no acredita ni refuta todavía tu cálculo. Una salida PENDIENTE tampoco constituye una batería que haya comparado algo."
+          "text": "Antes de continuar, implementa tus casos y tu solución en los archivos del proyecto. Configura, construye y ejecuta por separado el cliente y el comprobador seleccionando su objetivo. Identifica qué fuente y objetivo produjeron cada observación; mantén separados salida normal, diagnóstico y código final. Mientras la descripción esté vacía no existen esos objetivos: un fallo de esa etapa no acredita ni refuta todavía tu cálculo. Una salida PENDIENTE tampoco constituye una batería que haya comparado algo."
         }
       ]
     },
@@ -106,7 +106,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de guardar tu tabla y tu intento. No impone una única forma de programar. Compara qué validas, qué escribes al aceptar y qué conservas al rechazar. Mantén la declaración pública en publico/control/ajuste.h:"
+          "text": "Consulta esta referencia después de implementar tus casos y tu intento. No impone una única forma de programar. Compara qué validas, qué escribes al aceptar y qué conservas al rechazar. Mantén la declaración pública en publico/control/ajuste.h:"
         },
         {
           "type": "code",
@@ -183,7 +183,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En pruebas/casos.cpp, contrasta tu tabla con estos casos y justifica las diferencias de selección. Los tres primeros observan debajo, dentro y encima; el cuarto conserva un intervalo de un valor. Los dos siguientes alcanzan los ajustes de magnitud cuarenta con valores admitidos. Los restantes aíslan orden y límites rechazados, usando destinos iniciales distintos. No se pretende imponer once como cuota ni acreditar toda función posible: cada caso tiene una obligación concreta que observar."
+          "text": "En pruebas/casos.cpp, contrasta tus comparaciones con estos casos y comprueba qué obligación observa cada uno. Los tres primeros observan debajo, dentro y encima; el cuarto conserva un intervalo de un valor. Los dos siguientes alcanzan los ajustes de magnitud cuarenta con valores admitidos. Los restantes aíslan orden y límites rechazados, usando destinos iniciales distintos. No se pretende imponer once como cuota ni acreditar toda función posible: cada caso tiene una obligación concreta que observar."
         },
         {
           "type": "code",
@@ -204,7 +204,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de aceptar tu comprobador, propón un cambio localizado del componente que tu tabla deba distinguir y explica qué caso lo detectaría. Conserva las expectativas y los casos anteriores. Como control posterior, puedes sustituir sólo la resta de la rama superior por esta alteración deliberada en src/ajuste.cpp; no cambia la firma, la validación ni los otros archivos:"
+          "text": "Antes de aceptar tu comprobador, elige un cambio localizado del componente y un caso de tu comprobador que permita detectarlo. Conserva las expectativas y los casos anteriores. Como control posterior, puedes sustituir sólo la resta de la rama superior por esta alteración deliberada en src/ajuste.cpp; no cambia la firma, la validación ni los otros archivos:"
         },
         {
           "type": "code",
@@ -234,7 +234,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera más adelante tu tabla y tus comentarios sin abrir primero esta referencia. Añade una terna propia y justifica qué obligación o suposición permite distinguir; elige un destino inicial y deduce la aceptación y el destino final antes de consultar la batería modelo. Explica también una decisión de interfaz, una relación de construcción y una diferencia entre las evidencias de ambos consumidores. Si te proponen cambiar una expectativa o una interpretación, vuelve a la pregunta, al contexto y al requisito que pretendía comprobar; leer con criterio exige examinar el alcance de lo que se afirma (Thomas & Hunt, 2020, pp. 17–18). Conserva lo que tu recorrido sí acredita y formula qué necesitarías investigar para la duda que siga abierta."
+          "text": "En el comprobador de esta práctica, añade una terna propia que observe una obligación del contrato; elige un destino inicial y deduce la aceptación y el destino final antes de consultar la batería modelo. Conserva los casos anteriores y ejecuta la batería ampliada. Comprueba además que la declaración pública corresponde a la implementación, que cada consumidor enlaza con la misma biblioteca y que atribuyes los resultados al objetivo ejecutado. Si te proponen cambiar una expectativa o una interpretación, vuelve a la pregunta, al contexto y al requisito que pretendía comprobar; leer con criterio exige examinar el alcance de lo que se afirma (Thomas & Hunt, 2020, pp. 17–18). Conserva lo que tu recorrido sí acredita y formula qué necesitarías investigar para la duda que siga abierta."
         }
       ]
     }

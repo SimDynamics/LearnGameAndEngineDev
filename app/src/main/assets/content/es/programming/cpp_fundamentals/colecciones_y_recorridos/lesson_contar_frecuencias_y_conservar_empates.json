@@ -224,7 +224,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Además de la tabla, N, Distintas, Suma y Original, muestra Maxima y Mayores: todas las etiquetas cuya frecuencia alcanza la máxima, en el orden de la copia ordenada y una sola vez cada una. En vacío Maxima es cero y no hay candidatos. Si todos los valores aparecen una vez, todos alcanzan la máxima uno y deben figurar. Ésta es la convención de nuestro informe; no presentamos esa decisión de empates como la única definición estadística posible de moda."
+          "text": "Además de la tabla, N, Distintas, Suma y Original, muestra Maxima y Mayores: todas las etiquetas cuya frecuencia alcanza la máxima, en el orden de la copia ordenada y una sola vez cada una. En vacío Maxima es cero y no hay candidatos. Si todos los valores aparecen una vez, todos alcanzan la máxima uno y deben figurar. Ésta es la convención de nuestro informe; esa decisión de empates no es la única definición estadística posible de moda."
         },
         {
           "type": "paragraph",
@@ -331,11 +331,103 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve al laboratorio de la tabla numérica y amplía tu propia tabla con Maxima y todos los candidatos de tipo int, una vez cada uno y en orden ascendente. Reutiliza la decisión por frecuencia aprendida con etiquetas; no selecciones por magnitud del número. Con {4, 1, 4, 2, 1, 2}, predice Maxima:2 y Mayores:[1][2][4]; con {1, 1, 5, 9}, Maxima:2 y Mayores:[1]; con {}, Maxima:0 y Mayores: sin ningún candidato. Si eliges una pasada, el reemplazo vacío corresponde ahora a std::vector<int>{}. Conserva también la tabla, Suma = N y el original. Después, en otra sesión, construye con datos propios sin mirar las referencias e intercala números y texto: explica qué decisiones son las mismas y qué significa cada comparación. Una ejecución de un caso no sustituye comprobar vacío, empate, máximo final y conservación."
+          "text": "Vuelve al editor de código de la tabla numérica y amplía tu propia tabla con Maxima y todos los candidatos de tipo int, una vez cada uno y en orden ascendente. Reutiliza la decisión por frecuencia aprendida con etiquetas; no selecciones por magnitud del número. Con {4, 1, 4, 2, 1, 2}, predice Maxima:2 y Mayores:[1][2][4]; con {1, 1, 5, 9}, Maxima:2 y Mayores:[1]; con {}, Maxima:0 y Mayores: sin ningún candidato. Si eliges una pasada, el reemplazo vacío corresponde ahora a std::vector<int>{}. Conserva también la tabla, Suma = N y el original. Después, al retomar esta lección, construye con datos propios sin consultar las referencias: alterna la práctica numérica y la de etiquetas en sus respectivos editores. Resuelve el puzzle de relaciones al final de esta página para distinguir la función de cada comparación. Una ejecución de un caso no sustituye comprobar vacío, empate, máximo final y conservación."
         },
         {
           "type": "note",
           "text": "La frecuencia máxima en secuencias numéricas y de texto se estudia en los ejercicios de apoyo (Stroustrup, 2024, cap. 3, ejercicios 15–16, p. 81). Los contratos, datos, presentaciones y construcciones de esta lección son propios y hacen explícita su política de empates. La operación de ordenación se contrastó con el borrador HTML vigente (Working Draft: Programming Languages — C++, s. f., sección [alg.sorting], sort), que no es una reproducción literal de C++23. Aquí se usan sort sobre el rango completo, comparaciones y recorridos ya enseñados."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__comparaciones_al_transferir_frecuencias",
+          "prompt": "La referencia de texto usa ordenadas como copia ordenada de las etiquetas. inicio señala el comienzo del grupo y fin, su límite excluido; frecuencia cuenta sus observaciones y maxima conserva la mayor frecuencia encontrada. Relaciona cada comparación con la función que cumple. Al transferir el procedimiento a un vector de enteros, cambian los valores observados, pero estas comparaciones mantienen sus funciones. Usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada elemento con su función. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "acceso",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "fin < ordenadas.size()",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "fin < ordenadas.size()"
+                },
+                {
+                  "id": "mismo_grupo",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "ordenadas[fin] == ordenadas[inicio]",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "ordenadas[fin] == ordenadas[inicio]"
+                },
+                {
+                  "id": "supera_maximo",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "frecuencia > maxima",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "frecuencia > maxima"
+                },
+                {
+                  "id": "iguala_maximo",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "frecuencia == maxima",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "frecuencia == maxima"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "conservar_empate",
+                  "label": "Añadir otro valor cuya cantidad de apariciones alcanza el máximo actual."
+                },
+                {
+                  "id": "agrupar_observaciones",
+                  "label": "Decidir si dos observaciones pertenecen al mismo grupo por tener el mismo valor."
+                },
+                {
+                  "id": "proteger_acceso",
+                  "label": "Comprobar que la posición todavía está dentro del vector antes de consultar su elemento."
+                },
+                {
+                  "id": "reemplazar_candidatos",
+                  "label": "Detectar una frecuencia mayor y reemplazar los candidatos anteriores por el nuevo máximo."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "acceso": "proteger_acceso",
+                  "mismo_grupo": "agrupar_observaciones",
+                  "supera_maximo": "reemplazar_candidatos",
+                  "iguala_maximo": "conservar_empate"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "fin < ordenadas.size() protege el acceso posterior a ordenadas[fin]. La igualdad entre observaciones decide si continúan el mismo grupo, tanto con enteros como con etiquetas. frecuencia > maxima descubre un máximo nuevo y reemplaza los candidatos anteriores; frecuencia == maxima conserva otro valor empatado. El orden de los valores organiza su presentación, pero no sustituye comparar sus cantidades de apariciones.",
+            "incorrect": "Revisa qué magnitudes comparas: una posición del vector, una observación o una cantidad de apariciones. Confundir el orden de los valores con su frecuencia cambia la pregunta que responde el informe."
+          }
         }
       ]
     }

@@ -26,7 +26,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea el tipo, sus operaciones y un main de prueba. Para {\"M\", 4}, solicita en este orden: cambiar a siete; cambiar a cero; enviar; cancelar; cambiar a dos. En cada paso imprime una pareja resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar presenta la comparación estado() == Estado::enviado. Ejecuta la solicitud antes de consultar el objeto. Escribe antes los resultados en papel y justifica por separado cantidad válida, estado válido y condición de cada operación. Construye también casos nuevos con código vacío y con cantidades cero y veintiuna dentro de try/catch."
+          "text": "Crea el tipo, sus operaciones y un main de prueba. Para {\"M\", 4}, solicita en este orden: cambiar a siete; cambiar a cero; enviar; cancelar; cambiar a dos. En cada paso imprime una pareja resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar presenta la comparación estado() == Estado::enviado. Ejecuta la solicitud antes de consultar el objeto. Antes de ejecutar, completa la tabla de resultados y selecciona el motivo de cada aceptación o rechazo en el puzzle del final de esta página. Distingue en él la cantidad, el estado y la condición de cada operación. Construye también casos nuevos con código vacío y con cantidades cero y veintiuna dentro de try/catch."
         },
         {
           "type": "cpp_compiler",
@@ -35,6 +35,330 @@
         {
           "type": "paragraph",
           "text": "Añade pruebas con una y veinte unidades aceptadas, dos llamadas a enviar, cancelar antes de enviar y copias que luego cambien independientemente. Un acierto en una secuencia no demuestra los demás contratos. Puedes construir y comprobar una consulta a la vez antes de reunir la clase completa."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__traza_de_solicitudes",
+          "prompt": "El pedido empieza con código M, cuatro unidades y estado preparado. Aplica las cinco solicitudes en el orden de la tabla; cada una observa el estado que dejó la anterior. En los resultados bool y las comparaciones usa 1 para verdadero y 0 para falso; en unidades() escribe la cantidad entera. Después de cambiar_unidades se consulta unidades(); después de enviar o cancelar se consulta si el estado es enviado. Selecciona además el motivo de cada aceptación o rechazo. Una operación rechazada conserva los miembros del pedido.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "resultado_1",
+                  "type": "numeric",
+                  "label": "Solicitud 1, cambiar_unidades(7): resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "consulta_1",
+                  "type": "numeric",
+                  "label": "Solicitud 1: unidades()",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resultado_2",
+                  "type": "numeric",
+                  "label": "Solicitud 2, cambiar_unidades(0): resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "consulta_2",
+                  "type": "numeric",
+                  "label": "Solicitud 2: unidades()",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resultado_3",
+                  "type": "numeric",
+                  "label": "Solicitud 3, enviar(): resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "consulta_3",
+                  "type": "numeric",
+                  "label": "Solicitud 3: estado() == Estado::enviado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resultado_4",
+                  "type": "numeric",
+                  "label": "Solicitud 4, cancelar(): resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "consulta_4",
+                  "type": "numeric",
+                  "label": "Solicitud 4: estado() == Estado::enviado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resultado_5",
+                  "type": "numeric",
+                  "label": "Solicitud 5, cambiar_unidades(2): resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "consulta_5",
+                  "type": "numeric",
+                  "label": "Solicitud 5: unidades()",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Solicitud",
+                "Resultado",
+                "Consulta posterior"
+              ],
+              "rows": [
+                [
+                  "1. cambiar_unidades(7)",
+                  {
+                    "field": "resultado_1"
+                  },
+                  {
+                    "field": "consulta_1"
+                  }
+                ],
+                [
+                  "2. cambiar_unidades(0)",
+                  {
+                    "field": "resultado_2"
+                  },
+                  {
+                    "field": "consulta_2"
+                  }
+                ],
+                [
+                  "3. enviar()",
+                  {
+                    "field": "resultado_3"
+                  },
+                  {
+                    "field": "consulta_3"
+                  }
+                ],
+                [
+                  "4. cancelar()",
+                  {
+                    "field": "resultado_4"
+                  },
+                  {
+                    "field": "consulta_4"
+                  }
+                ],
+                [
+                  "5. cambiar_unidades(2)",
+                  {
+                    "field": "resultado_5"
+                  },
+                  {
+                    "field": "consulta_5"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "resultado_1": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "consulta_1": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "resultado_2": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "consulta_2": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "resultado_3": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "consulta_3": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "resultado_4": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "consulta_4": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "resultado_5": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "consulta_5": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            },
+            {
+              "id": "motivos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "motivo_1",
+                  "type": "dropdown",
+                  "label": "Motivo de la solicitud 1: cambiar_unidades(7)",
+                  "options": [
+                    {
+                      "id": "cantidad_fuera",
+                      "label": "La cantidad solicitada queda fuera de 1..20."
+                    },
+                    {
+                      "id": "transicion_preparado",
+                      "label": "Se solicita enviar() cuando el pedido está preparado."
+                    },
+                    {
+                      "id": "ya_enviado",
+                      "label": "El pedido ya está enviado y no admite esa operación."
+                    },
+                    {
+                      "id": "cantidad_y_estado",
+                      "label": "cambiar_unidades recibe una cantidad de 1 a 20 mientras el pedido está preparado."
+                    }
+                  ]
+                },
+                {
+                  "id": "motivo_2",
+                  "type": "dropdown",
+                  "label": "Motivo de la solicitud 2: cambiar_unidades(0)",
+                  "options": [
+                    {
+                      "id": "cantidad_fuera",
+                      "label": "La cantidad solicitada queda fuera de 1..20."
+                    },
+                    {
+                      "id": "transicion_preparado",
+                      "label": "Se solicita enviar() cuando el pedido está preparado."
+                    },
+                    {
+                      "id": "ya_enviado",
+                      "label": "El pedido ya está enviado y no admite esa operación."
+                    },
+                    {
+                      "id": "cantidad_y_estado",
+                      "label": "cambiar_unidades recibe una cantidad de 1 a 20 mientras el pedido está preparado."
+                    }
+                  ]
+                },
+                {
+                  "id": "motivo_3",
+                  "type": "dropdown",
+                  "label": "Motivo de la solicitud 3: enviar()",
+                  "options": [
+                    {
+                      "id": "cantidad_fuera",
+                      "label": "La cantidad solicitada queda fuera de 1..20."
+                    },
+                    {
+                      "id": "transicion_preparado",
+                      "label": "Se solicita enviar() cuando el pedido está preparado."
+                    },
+                    {
+                      "id": "ya_enviado",
+                      "label": "El pedido ya está enviado y no admite esa operación."
+                    },
+                    {
+                      "id": "cantidad_y_estado",
+                      "label": "cambiar_unidades recibe una cantidad de 1 a 20 mientras el pedido está preparado."
+                    }
+                  ]
+                },
+                {
+                  "id": "motivo_4",
+                  "type": "dropdown",
+                  "label": "Motivo de la solicitud 4: cancelar()",
+                  "options": [
+                    {
+                      "id": "cantidad_fuera",
+                      "label": "La cantidad solicitada queda fuera de 1..20."
+                    },
+                    {
+                      "id": "transicion_preparado",
+                      "label": "Se solicita enviar() cuando el pedido está preparado."
+                    },
+                    {
+                      "id": "ya_enviado",
+                      "label": "El pedido ya está enviado y no admite esa operación."
+                    },
+                    {
+                      "id": "cantidad_y_estado",
+                      "label": "cambiar_unidades recibe una cantidad de 1 a 20 mientras el pedido está preparado."
+                    }
+                  ]
+                },
+                {
+                  "id": "motivo_5",
+                  "type": "dropdown",
+                  "label": "Motivo de la solicitud 5: cambiar_unidades(2)",
+                  "options": [
+                    {
+                      "id": "cantidad_fuera",
+                      "label": "La cantidad solicitada queda fuera de 1..20."
+                    },
+                    {
+                      "id": "transicion_preparado",
+                      "label": "Se solicita enviar() cuando el pedido está preparado."
+                    },
+                    {
+                      "id": "ya_enviado",
+                      "label": "El pedido ya está enviado y no admite esa operación."
+                    },
+                    {
+                      "id": "cantidad_y_estado",
+                      "label": "cambiar_unidades recibe una cantidad de 1 a 20 mientras el pedido está preparado."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "motivo_1": {
+                    "type": "text",
+                    "expected": "cantidad_y_estado"
+                  },
+                  "motivo_2": {
+                    "type": "text",
+                    "expected": "cantidad_fuera"
+                  },
+                  "motivo_3": {
+                    "type": "text",
+                    "expected": "transicion_preparado"
+                  },
+                  "motivo_4": {
+                    "type": "text",
+                    "expected": "ya_enviado"
+                  },
+                  "motivo_5": {
+                    "type": "text",
+                    "expected": "ya_enviado"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las parejas sucesivas son 1:7, 0:7, 1:1, 0:1 y 0:7. El primer cambio respeta cantidad y estado; cero está fuera del intervalo permitido. Enviar desde preparado cambia el estado a enviado. Después, cancelar y cambiar unidades se rechazan porque el pedido ya fue enviado; esas negativas conservan tanto el estado como las siete unidades.",
+            "incorrect": "Revisa una solicitud cada vez y usa el estado que realmente dejó la anterior. Distingue el resultado de la operación de la consulta posterior. Comprueba por separado el intervalo permitido para la cantidad y el estado necesario para aceptar la solicitud."
+          }
         }
       ]
     },

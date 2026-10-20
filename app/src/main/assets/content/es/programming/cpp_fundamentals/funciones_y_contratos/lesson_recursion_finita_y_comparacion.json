@@ -95,7 +95,7 @@
         },
         {
           "type": "note",
-          "text": "Una llamada recursiva mantiene temporalmente su contexto mientras espera otra. Los detalles de esa implementación se estudian después. Aquí limitamos el dominio para que tanto profundidad como resultados sean pequeños; no usamos recursión sin límite."
+          "text": "Una llamada recursiva mantiene temporalmente su contexto mientras espera otra. Los detalles de esa implementación se estudian después. Aquí el dominio está limitado para que tanto la profundidad como los resultados sean pequeños; no usamos recursión sin límite."
         }
       ]
     },
@@ -176,7 +176,7 @@
         },
         {
           "type": "note",
-          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+          "text": "Compara esta referencia con el programa que construiste y ejecutaste. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
         },
         {
           "type": "paragraph",
@@ -302,7 +302,7 @@
         },
         {
           "type": "paragraph",
-          "text": "main empieza con 8 fichas, valida antes de llamar y muestra Grupos:G;Fichas:F, sin espacios ni salto final. Los inválidos muestran únicamente Fuera del dominio, sin llamada. Construye desde el editor mínimo; puedes recuperar tu organización anterior, pero explica qué decisiones deben cambiar al formar grupos de otro tamaño."
+          "text": "main empieza con 8 fichas, valida antes de llamar y muestra Grupos:G;Fichas:F, sin espacios ni salto final. Los inválidos muestran únicamente Fuera del dominio, sin llamada. Construye desde el editor mínimo; puedes recuperar tu organización anterior y seleccionar, en el puzzle del final de esta página, qué decisiones deben cambiar al formar grupos de otro tamaño."
         },
         {
           "type": "cpp_compiler",
@@ -310,11 +310,343 @@
         },
         {
           "type": "paragraph",
-          "text": "Anota lo esperado para 0, 1, 2, 3, 8, 11 y 12 antes de ejecutar. Rechaza -1 y 13 antes del cálculo. Sigue en papel una cantidad que permita formar grupos y deje fichas sobrantes: cada argumento debe permanecer válido y alcanzar un caso que ya no necesite otra llamada. Comprueba también que main conserva las fichas originales."
+          "text": "Completa antes de ejecutar los campos del puzzle de esta página: los casos 0, 1, 2, 3, 8, 11 y 12, el rechazo de -1 y 13 antes del cálculo y la traza de ocho fichas. En la traza, cada argumento debe permanecer válido y alcanzar un caso que ya no necesite otra llamada. Comprueba también que main conserva las fichas originales."
         },
         {
           "type": "note",
           "text": "Esta transferencia comprueba si sabes adaptar las bases y el progreso al significado del problema. Consulta la referencia después del intento; cambiar mecánicamente una cifra sin revisar los casos alcanzables puede dejar una función incorrecta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__casos_y_traza_de_grupos",
+          "prompt": "Antes de ejecutar, registra cuántos grupos completos de tres corresponden a cada cantidad de la tabla y decide qué debe hacer main con las dos entradas fuera de 0..12. Después completa la traza que empieza con ocho fichas: para esta traza, cada llamada que forma un grupo retira exactamente tres fichas, añade un grupo al resultado de la llamada siguiente y termina directamente con cero grupos cuando quedan menos de tres fichas. Las filas siguen el orden de las llamadas; los resultados vuelven desde la última fila hacia la primera. Por último, elige qué decisiones del diseño cambian al pasar de parejas a grupos de tres. La traza fija este procedimiento para poder comprobar sus valores; tu construcción puede usar otra organización recursiva correcta que cumpla la consigna.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "casos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupos_0",
+                  "type": "numeric",
+                  "label": "Grupos completos con 0 fichas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_1",
+                  "type": "numeric",
+                  "label": "Grupos completos con 1 ficha",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_2",
+                  "type": "numeric",
+                  "label": "Grupos completos con 2 fichas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_3",
+                  "type": "numeric",
+                  "label": "Grupos completos con 3 fichas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_8",
+                  "type": "numeric",
+                  "label": "Grupos completos con 8 fichas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_11",
+                  "type": "numeric",
+                  "label": "Grupos completos con 11 fichas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grupos_12",
+                  "type": "numeric",
+                  "label": "Grupos completos con 12 fichas",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Fichas iniciales",
+                "Grupos completos"
+              ],
+              "rows": [
+                [
+                  "0",
+                  {
+                    "field": "grupos_0"
+                  }
+                ],
+                [
+                  "1",
+                  {
+                    "field": "grupos_1"
+                  }
+                ],
+                [
+                  "2",
+                  {
+                    "field": "grupos_2"
+                  }
+                ],
+                [
+                  "3",
+                  {
+                    "field": "grupos_3"
+                  }
+                ],
+                [
+                  "8",
+                  {
+                    "field": "grupos_8"
+                  }
+                ],
+                [
+                  "11",
+                  {
+                    "field": "grupos_11"
+                  }
+                ],
+                [
+                  "12",
+                  {
+                    "field": "grupos_12"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupos_0": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "grupos_1": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "grupos_2": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "grupos_3": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "grupos_8": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "grupos_11": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "grupos_12": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "dominio",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "dominio_menos_uno",
+                  "type": "dropdown",
+                  "label": "Decisión de main para -1 fichas",
+                  "options": [
+                    {
+                      "id": "calcular",
+                      "label": "Llamar a la función y mostrar el conteo."
+                    },
+                    {
+                      "id": "rechazar",
+                      "label": "Mostrar Fuera del dominio sin llamar a la función."
+                    }
+                  ]
+                },
+                {
+                  "id": "dominio_trece",
+                  "type": "dropdown",
+                  "label": "Decisión de main para 13 fichas",
+                  "options": [
+                    {
+                      "id": "calcular",
+                      "label": "Llamar a la función y mostrar el conteo."
+                    },
+                    {
+                      "id": "rechazar",
+                      "label": "Mostrar Fuera del dominio sin llamar a la función."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "dominio_menos_uno": {
+                    "type": "text",
+                    "expected": "rechazar"
+                  },
+                  "dominio_trece": {
+                    "type": "text",
+                    "expected": "rechazar"
+                  }
+                }
+              }
+            },
+            {
+              "id": "traza",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "argumento_2",
+                  "type": "numeric",
+                  "label": "Segunda llamada: argumento",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "argumento_3",
+                  "type": "numeric",
+                  "label": "Tercera llamada: argumento",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "retorno_3",
+                  "type": "numeric",
+                  "label": "Tercera llamada: resultado devuelto",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "retorno_2",
+                  "type": "numeric",
+                  "label": "Segunda llamada: resultado devuelto",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "retorno_1",
+                  "type": "numeric",
+                  "label": "Primera llamada: resultado devuelto",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Llamada",
+                "Argumento",
+                "Resultado devuelto"
+              ],
+              "rows": [
+                [
+                  "Primera",
+                  "8",
+                  {
+                    "field": "retorno_1"
+                  }
+                ],
+                [
+                  "Segunda",
+                  {
+                    "field": "argumento_2"
+                  },
+                  {
+                    "field": "retorno_2"
+                  }
+                ],
+                [
+                  "Tercera",
+                  {
+                    "field": "argumento_3"
+                  },
+                  {
+                    "field": "retorno_3"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "argumento_2": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "argumento_3": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "retorno_3": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "retorno_2": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "retorno_1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decisiones_de_diseno",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "solo_reduccion",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Mantengo el caso directo de las parejas y adapto sólo la reducción; el nuevo tamaño del grupo basta para terminar.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Contrasta las cantidades sobrantes que ya no forman un grupo. La reducción por sí sola no decide todos los casos directos."
+                },
+                {
+                  "id": "bases_y_progreso",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Adapto el caso directo y la reducción al tamaño del grupo; cada grupo completo sigue aportando una unidad al resultado.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Revisa conjuntamente cuándo deja de haber un grupo y qué trabajo representa cada llamada."
+                },
+                {
+                  "id": "solo_base",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Adapto sólo el caso directo; las llamadas restantes pueden conservar la reducción que se usaba para las parejas.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Comprueba que el trabajo retirado en cada llamada coincide con el tamaño del grupo que estás contando."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "bases_y_progreso"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Para 0, 1, 2, 3, 8, 11 y 12 fichas se obtienen 0, 0, 0, 1, 2, 3 y 4 grupos. Las entradas -1 y 13 se rechazan antes de llamar. En la traza, los argumentos son 8, 5 y 2: el último devuelve cero, el anterior devuelve uno y el primero devuelve dos. Al cambiar el tamaño del grupo hay que revisar juntos el caso directo y la reducción; cada grupo completo contado sigue sumando una unidad. La copia local del argumento permite que main conserve sus fichas originales.",
+            "incorrect": "Comprueba el dominio antes de calcular. En los casos aceptados, cuenta sólo grupos completos. En la traza, distingue el argumento de cada llamada del resultado que devuelve, y recorre la vuelta desde el caso directo. Revisa también si caso directo y reducción corresponden al mismo tamaño de grupo."
+          }
         }
       ]
     },

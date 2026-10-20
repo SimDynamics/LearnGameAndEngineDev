@@ -51,7 +51,7 @@
         },
         {
           "type": "note",
-          "text": "Acotación de los laboratorios: hasta doce líneas físicas, texto ASCII, cantidades numéricas representables por int y final normal del origen. Se admiten líneas mal formadas para comprobar su diagnóstico. Un lote vacío es válido; una línea vacía es una línea recibida que no cumple el formato. La última línea también se analiza si no lleva salto final. No se investigan averías del dispositivo de entrada."
+          "text": "Acotación de estas prácticas: hasta doce líneas físicas, texto ASCII, cantidades numéricas representables por int y final normal del origen. Se admiten líneas mal formadas para comprobar su diagnóstico. Un lote vacío es válido; una línea vacía es una línea recibida que no cumple el formato. La última línea también se analiza si no lleva salto final. No se investigan averías del dispositivo de entrada."
         },
         {
           "type": "multiple_choice",
@@ -84,7 +84,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el primer laboratorio, stdout contendrá una línea por cada registro válido: Linea=n Caso=etiqueta Esperado=e Obtenido=o COINCIDE, o DIFIERE como última palabra. Los campos numéricos se presentan en decimal. stderr contendrá Linea=n:FORMATO por cada línea mal formada. Todos esos textos terminan con salto. Al final, stdout añade Resumen: validos=V;coinciden=C;difieren=D;formato=F. El código final es 1 si hubo alguna diferencia o problema de formato; en caso contrario es 0."
+          "text": "En el primer editor de código, stdout contendrá una línea por cada registro válido: Linea=n Caso=etiqueta Esperado=e Obtenido=o COINCIDE, o DIFIERE como última palabra. Los campos numéricos se presentan en decimal. stderr contendrá Linea=n:FORMATO por cada línea mal formada. Todos esos textos terminan con salto. Al final, stdout añade Resumen: validos=V;coinciden=C;difieren=D;formato=F. El código final es 1 si hubo alguna diferencia o problema de formato; en caso contrario es 0."
         },
         {
           "type": "paragraph",
@@ -121,7 +121,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, clasifica a mano las ocho líneas preparadas. A aparece en las líneas 1, 2, 4 y 8; C;=lote repite exactamente etiqueta y columnas en las líneas 6 y 7. La línea 5, A 1-1, sólo tiene dos palabras y no cumple el formato; la línea 8, A 1 -1, sí tiene tres y permite comparar un obtenido negativo. El resultado exigido conserva siete registros válidos: dos coincidencias y cinco diferencias, además de un problema de formato. Anota los números de las líneas que debe mostrar cada canal. No cambies los datos para esconder una repetición."
+          "text": "Antes de ejecutar, revisa las ocho líneas de la entrada preparada. A aparece en las líneas 1, 2, 4 y 8; C;=lote repite exactamente etiqueta y columnas en las líneas 6 y 7. La línea 5, A 1-1, sólo tiene dos palabras y no cumple el formato; la línea 8, A 1 -1, sí tiene tres y permite comparar un obtenido negativo. El resultado exigido conserva siete registros válidos: dos coincidencias y cinco diferencias, además de un problema de formato. Utiliza los números de línea del informe para comprobar qué registros recibió cada canal. No cambies los datos para esconder una repetición."
         },
         {
           "type": "cpp_compiler",
@@ -131,7 +131,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta primero la versión inicial y explica qué omite, usando sus números de línea. Repara después la causa y compara el informe completo, no sólo su código final: ambas versiones pueden terminar con 1. En la reparación, el resumen debe ser Resumen: validos=7;coinciden=2;difieren=5;formato=1. stderr contiene únicamente Linea=5:FORMATO, seguido de salto. Ningún problema de formato debe impedir revisar las líneas posteriores."
+          "text": "Ejecuta primero la versión inicial y localiza los registros omitidos mediante sus números de línea. Repara después la causa y compara el informe completo, no sólo su código final: ambas versiones pueden terminar con 1. En la reparación, el resumen debe ser Resumen: validos=7;coinciden=2;difieren=5;formato=1. stderr contiene únicamente Linea=5:FORMATO, seguido de salto. Ningún problema de formato debe impedir revisar las líneas posteriores."
         },
         {
           "type": "paragraph",
@@ -196,7 +196,7 @@
             "0:1:1"
           ],
           "outputComparison": "exact",
-          "explanation": "El texto vacío no entrega líneas. Un salto entrega una línea de contenido vacío. El texto 0 0 0 entrega una línea con datos aunque no acabe en salto. En el analizador del laboratorio, sólo la segunda de esas muestras produciría FORMATO.",
+          "explanation": "El texto vacío no entrega líneas. Un salto entrega una línea de contenido vacío. El texto 0 0 0 entrega una línea con datos aunque no acabe en salto. En el analizador que acabas de construir, sólo la segunda de esas muestras produciría FORMATO.",
           "reviewFeedback": "Sigue cada intento de getline y distingue obtener una línea de validar su contenido. No interpretes el valor de un campo como el número de líneas del origen."
         },
         {
@@ -231,7 +231,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba después las dos líneas 0 0 0 y N -2 -2. stdout debe contener sólo el resumen 2/2/0/0: no hay diferencias individuales para mostrar, pero sí dos registros válidos. Con un lote vacío el resumen es 0/0/0/0. En ambos casos stderr queda vacío y el código es 0. Explica qué comparación distingue esos dos orígenes aunque el filtro no presente ninguna línea individual."
+          "text": "Prueba después las dos líneas 0 0 0 y N -2 -2. stdout debe contener sólo el resumen 2/2/0/0: no hay diferencias individuales para mostrar, pero sí dos registros válidos. Con un lote vacío el resumen es 0/0/0/0. En ambos casos stderr queda vacío y el código es 0. Compara el contador de registros válidos de ambos resúmenes: distingue sus orígenes aunque el filtro no presente ninguna línea individual."
         }
       ]
     },
@@ -281,7 +281,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En otra sesión, vuelve a tus dos versiones de la utilidad. Prepara tú un lote que repita una etiqueta en observaciones iguales y distintas, incluya una línea con un cuarto campo y deje otra línea válida después. Clasifica cada ocurrencia a mano antes de ejecutar. Compara las dos vistas con el mismo texto: sus resúmenes, diagnósticos y códigos deben coincidir; las líneas individuales cambian sólo por la selección acordada."
+          "text": "Utiliza los dos editores de código de esta lección con las reparaciones que ya comprobaste. Prepara tú un lote que repita una etiqueta en observaciones iguales y distintas, incluya una línea con un cuarto campo y deje otra línea válida después. Revisa cada ocurrencia en el campo de entrada antes de ejecutar. Compara las dos vistas con el mismo texto: sus resúmenes, diagnósticos y códigos deben coincidir; las líneas individuales cambian sólo por la selección acordada."
         },
         {
           "type": "multiple_choice",

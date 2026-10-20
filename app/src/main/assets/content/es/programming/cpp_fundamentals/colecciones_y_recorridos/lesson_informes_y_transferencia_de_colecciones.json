@@ -248,11 +248,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En una sesión posterior, construye desde una consigna nueva uno de los informes sin mirar las soluciones. Elige datos distintos dentro de los límites del laboratorio, registra tus predicciones y justifica las guardas. Después comprueba el otro proyecto para intercalar valores numéricos, texto, posición y estado. Recupera especialmente auto frente a auto&, copia frente a original, size frente a índice y ausencia frente a cero."
+          "text": "En una sesión posterior, vuelve a los editores de código de las páginas 3 y 7 y recupera ambos proyectos sin consultar las soluciones. Utiliza las consignas ya desarrolladas con datos nuevos: hasta veinte enteros entre cero y cincuenta para el informe numérico y hasta veinte etiquetas para el catálogo. Incluye una colección vacía y otra con repeticiones en cada proyecto. Ejecuta y compara las líneas de la consola con sus criterios: resúmenes y orden de sesión en el primero; primera posición o ausencia y cantidad de etiquetas distintas en el segundo. Comprueba que las transformaciones mediante auto& cambian el original cuando corresponde y que ordenar una copia conserva el orden de llegada."
         },
         {
           "type": "note",
-          "text": "Estos proyectos usan valores definidos en el código para repetir y contrastar casos concretos. El laboratorio también admite entrada preparada y conserva su borrador de código y entrada al reabrir; eso no equivale a mantener automáticamente una colección de versiones o pruebas externas. Conserva las consignas y los casos que quieras recuperar. Todos estos proyectos terminan y acceden únicamente a posiciones existentes."
+          "text": "Estos proyectos usan valores definidos en el código para repetir y contrastar casos concretos. El editor de código también admite entrada preparada y conserva su borrador de código y entrada al reabrir. Para volver al código de partida, utiliza el control para restaurar el código original. Todos estos proyectos terminan y acceden únicamente a posiciones existentes."
         },
         {
           "type": "multiple_choice",
@@ -263,7 +263,24 @@
             "Construir con datos y contexto nuevos, anticipar casos límite y explicar por qué cada acceso y resumen son válidos."
           ],
           "correctIndex": 2,
-          "explanation": "La evidencia se apoya en decisiones explicadas y comprobadas; no calificamos dominio por un recuento de actividades."
+          "explanation": "La evidencia se apoya en decisiones explicadas y comprobadas; un recuento de actividades no demuestra dominio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__informes_y_transferencia_de_colecciones__guardas_media_y_acceso",
+          "question": "El informe numérico usa un vector datos de hasta veinte enteros entre 0 y 50. total es su suma y tamano es su cantidad de elementos, expresada como int; i también es int. ¿Qué razonamiento justifica decidir cuándo calcular la media y cuándo consultar datos.at(i)?",
+          "options": [
+            "Para la media se exige total != 0, porque un total cero indica ausencia de datos; para consultar la posición se exige 0 <= i && i < tamano, porque los índices van de 0 a tamano - 1.",
+            "Para la media se exige tamano > 0, porque es el divisor; para consultar la posición se exige 0 <= i && i < tamano, porque los índices van de 0 a tamano - 1.",
+            "Para la media se exige tamano > 0, porque es el divisor; para consultar la posición se exige 0 <= i && i <= tamano, porque el tamaño también es una posición existente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un vector no vacío tiene una cantidad positiva de observaciones y permite dividir el total entre esa cantidad. Su media puede ser cero: {0} contiene un dato y tiene media cero. Para un acceso individual, las posiciones existentes van de 0 a tamano - 1; i igual a tamano ya queda fuera. Si tamano es cero, ningún i satisface 0 <= i && i < tamano. Son comprobaciones distintas: saber que existe algún elemento no autoriza a consultar cualquier índice.",
+          "reviewFeedback": [
+            "Distingue la suma de los valores de la cantidad de observaciones. Revisa qué información aporta una colección formada por ceros antes de decidir si existe una media.",
+            "Revisa por separado qué condición necesita el divisor y qué valores de i corresponden a posiciones de la colección.",
+            "Distingue la cantidad de elementos de la última posición. Aplica tu límite a una colección de dos elementos y revisa el acceso con i igual a dos."
+          ]
         }
       ]
     }

@@ -50,7 +50,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el laboratorio inicial hay un recorrido de los números del 1 al último. Completa la selección de cajas y los dos resúmenes por tu cuenta. Muestra el resumen después del bucle. Conserva ultimo entre 0 y 8, y evita reutilizar el acumulador de cajas como contador de pedidos. Comprueba los casos que resolviste a mano antes de continuar a los ejercicios de lectura."
+          "text": "En el editor de código hay un recorrido de los números del 1 al último. Completa la selección de cajas y los dos resúmenes por tu cuenta. Muestra el resumen después del bucle. Conserva ultimo entre 0 y 8, y evita reutilizar el acumulador de cajas como contador de pedidos. Comprueba los casos que resolviste a mano antes de continuar a los ejercicios de lectura."
         },
         {
           "type": "cpp_compiler",
@@ -160,7 +160,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una segunda tarea usa otro significado para los mismos recursos: visitar casillas de un tablero de 3 filas y 2 columnas, numeradas desde 0, y contar sólo las casillas con fila distinta de columna. Antes de leer el ejercicio, enumera las parejas en papel. No dependas de reconocer el texto despacho: busca qué se recorre, qué se acepta y qué se resume."
+          "text": "Una segunda tarea usa otro significado para los mismos recursos: visitar casillas de un tablero de 3 filas y 2 columnas, numeradas desde 0, y contar sólo las casillas con fila distinta de columna. Completa primero la tabla de parejas al final de esta página y después el puzzle de predicción del conteo, antes de ejecutar el programa. No dependas de reconocer el texto despacho: busca qué se recorre, qué se acepta y qué se resume."
         },
         {
           "type": "output_prediction",
@@ -186,11 +186,263 @@
         },
         {
           "type": "paragraph",
-          "text": "Para revisar lo aprendido, explica sin mirar ejemplos cómo justificarías inicio, visita de casos, actualización, conservación del resumen y salida. Vuelve a una construcción anterior con un límite distinto y predice antes de ejecutar. La soltura requiere recuperar estas ideas más adelante: las colecciones y las funciones volverán a exigirlas en problemas que ya no presentan los datos como una simple cuenta."
+          "text": "Para revisar lo aprendido, selecciona en el puzzle de esta página la justificación del inicio, las visitas, la actualización, la conservación del contador y el final del recorrido. Vuelve al editor de código del despacho, cambia un límite y comprueba en la consola que las visitas y el resumen siguen ese nuevo límite. La soltura requiere recuperar estas ideas más adelante: las colecciones y las funciones volverán a exigirlas en problemas que ya no presentan los datos como una simple cuenta."
         },
         {
           "type": "note",
           "text": "La base conceptual es el cómputo, la selección y la iteración (Stroustrup, 2024, cap. 3). Esta unidad desarrolla ejemplos propios y recuperación de conceptos previos. La semántica de for, continue, break y switch se contrasta con el borrador público de C++ (Working Draft: Programming Languages — C++, s. f., secciones [stmt.for], [stmt.cont], [stmt.break] y [stmt.switch])."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos__enumerar_y_justificar_el_tablero",
+          "prompt": "Completa las seis parejas (fila, columna) en su orden de visita. El recorrido exterior visita las filas 0, 1 y 2; dentro de cada fila, el recorrido interior visita las columnas 0 y 1 desde el principio. Registra todas las casillas, incluidas las que no se aceptarán en el conteo. Después selecciona la justificación de un contador que resume las visitas con fila distinta de columna. El puzzle de predicción anterior comprueba el conteo; esta tabla comprueba cuáles son las visitas y en qué orden ocurren.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "parejas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fila_1",
+                  "type": "numeric",
+                  "label": "Visita 1: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_1",
+                  "type": "numeric",
+                  "label": "Visita 1: columna",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "fila_2",
+                  "type": "numeric",
+                  "label": "Visita 2: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_2",
+                  "type": "numeric",
+                  "label": "Visita 2: columna",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "fila_3",
+                  "type": "numeric",
+                  "label": "Visita 3: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_3",
+                  "type": "numeric",
+                  "label": "Visita 3: columna",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "fila_4",
+                  "type": "numeric",
+                  "label": "Visita 4: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_4",
+                  "type": "numeric",
+                  "label": "Visita 4: columna",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "fila_5",
+                  "type": "numeric",
+                  "label": "Visita 5: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_5",
+                  "type": "numeric",
+                  "label": "Visita 5: columna",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "fila_6",
+                  "type": "numeric",
+                  "label": "Visita 6: fila",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "columna_6",
+                  "type": "numeric",
+                  "label": "Visita 6: columna",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Visita",
+                "Fila",
+                "Columna"
+              ],
+              "rows": [
+                [
+                  "1",
+                  {
+                    "field": "fila_1"
+                  },
+                  {
+                    "field": "columna_1"
+                  }
+                ],
+                [
+                  "2",
+                  {
+                    "field": "fila_2"
+                  },
+                  {
+                    "field": "columna_2"
+                  }
+                ],
+                [
+                  "3",
+                  {
+                    "field": "fila_3"
+                  },
+                  {
+                    "field": "columna_3"
+                  }
+                ],
+                [
+                  "4",
+                  {
+                    "field": "fila_4"
+                  },
+                  {
+                    "field": "columna_4"
+                  }
+                ],
+                [
+                  "5",
+                  {
+                    "field": "fila_5"
+                  },
+                  {
+                    "field": "columna_5"
+                  }
+                ],
+                [
+                  "6",
+                  {
+                    "field": "fila_6"
+                  },
+                  {
+                    "field": "columna_6"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fila_1": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "columna_1": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fila_2": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "columna_2": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "fila_3": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "columna_3": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fila_4": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "columna_4": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "fila_5": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "columna_5": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fila_6": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "columna_6": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "justificacion_del_recorrido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "reinicio_por_fila",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El contador empieza en cero y se reinicia al abrir cada fila; suma las visitas aceptadas y conserva el resultado de la última fila al salir.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Comprueba qué información se perdería al reiniciar el contador para cada fila. El resultado debe resumir todo el tablero."
+                },
+                {
+                  "id": "suma_por_fila",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El contador empieza en cero, suma una vez al abrir cada fila y conserva ese total; el recorrido interior determina cuándo pasar a la fila siguiente.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Distingue contar filas de contar casillas aceptadas. Revisa en qué visita debe actualizarse el resumen."
+                },
+                {
+                  "id": "acumulacion_por_visita",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "El contador empieza en cero; los límites determinan las visitas, se suma sólo al aceptar una casilla y se conserva lo acumulado hasta terminar ambos recorridos.",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Relaciona el inicio, cada visita y la condición de aceptación con el total conservado al terminar."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "acumulacion_por_visita"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las visitas son (0,0), (0,1), (1,0), (1,1), (2,0) y (2,1). Para cada fila, las columnas vuelven a empezar. El contador se inicia una sola vez y conserva las casillas aceptadas de todas las filas; sólo se incrementa cuando fila y columna son distintas. Las dos casillas con índices iguales se visitan, aunque no aumentan el total.",
+            "incorrect": "Revisa el orden del recorrido exterior y reinicia la visita de columnas al comenzar cada fila. No confundas visitar una casilla con aceptarla. Para justificar el resumen, sigue qué conserva el contador entre una visita y la siguiente y entre dos filas."
+          }
         }
       ]
     },
@@ -211,7 +463,99 @@
         },
         {
           "type": "paragraph",
-          "text": "Para ultimo=0,1,4,8, los resúmenes son respectivamente 0 pedidos y 0 cajas, 1 y 2, 4 y 6, 8 y 12. En el caso 4 los aportes individuales son 2,1,2,1. Comprueba tanto cada línea como el resumen: un total correcto puede ocultar aportes equivocados que se compensan. Conservar sólo el aporte final tampoco sustituye el acumulador. Después de comparar, conserva una copia de tu intento y reconstruye el programa en el editor sin consultar la referencia. Explica por qué cada objeto se declara en ese lugar."
+          "text": "Para ultimo=0,1,4,8, los resúmenes son respectivamente 0 pedidos y 0 cajas, 1 y 2, 4 y 6, 8 y 12. En el caso 4 los aportes individuales son 2,1,2,1. Comprueba tanto cada línea como el resumen: un total correcto puede ocultar aportes equivocados que se compensan. Conservar sólo el aporte final tampoco sustituye el acumulador. Después de comparar, utiliza el control para restaurar el código original y reconstruye el programa sin consultar la referencia. Después de reconstruir, relaciona cada objeto con su función y con el tiempo durante el que necesita conservarse, en la actividad del final de esta página."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos__funcion_y_duracion_de_los_objetos",
+          "prompt": "En la referencia de esta página, ultimo fija cuántos pedidos se atienden, entre cero y ocho. El for visita pedido desde uno hasta ultimo; cada pedido impar aporta dos cajas y cada pedido par, una. pedidos y cajas forman los dos resúmenes finales. Relaciona cada objeto, o grupo con la misma función, con el motivo de su ubicación en el programa. Usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "label": "Relaciona cada elemento con su función. Usa cada destino una sola vez.",
+              "sources": [
+                {
+                  "id": "limite",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "ultimo",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "ultimo"
+                },
+                {
+                  "id": "resumenes",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "pedidos y cajas",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "pedidos y cajas"
+                },
+                {
+                  "id": "control",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "pedido",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "pedido"
+                },
+                {
+                  "id": "aporte_actual",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "aporte",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "label": "aporte"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "temporal_de_la_vuelta",
+                  "label": "Se declara dentro del cuerpo y se calcula de nuevo para el pedido actual, sin conservar el aporte del anterior."
+                },
+                {
+                  "id": "control_del_recorrido",
+                  "label": "Se declara en el encabezado del for y determina qué pedido se visita en cada vuelta."
+                },
+                {
+                  "id": "dato_del_limite",
+                  "label": "Se define antes del for y permanece disponible para comprobar hasta dónde llega el recorrido."
+                },
+                {
+                  "id": "estado_persistente",
+                  "label": "Se inicializan antes del recorrido y conservan las contribuciones de todas las vueltas para el resumen final."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "limite": "dato_del_limite",
+                  "resumenes": "estado_persistente",
+                  "control": "control_del_recorrido",
+                  "aporte_actual": "temporal_de_la_vuelta"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "ultimo aporta el límite de todas las comprobaciones del for. pedidos y cajas se inicializan antes del recorrido porque deben acumular todas las visitas; también existen cuando ultimo vale cero. pedido controla la visita actual desde el encabezado del for. aporte se declara dentro del cuerpo y se calcula de nuevo para cada pedido; no sustituye ninguno de los dos resúmenes.",
+            "incorrect": "Sigue dos pedidos consecutivos y después consulta el resumen. Distingue el estado que debe conservar ambas contribuciones del dato que se prepara de nuevo para una sola vuelta."
+          }
         }
       ]
     }

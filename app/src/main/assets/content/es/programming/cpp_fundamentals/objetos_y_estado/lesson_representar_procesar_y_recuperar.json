@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un informe de preparación debe describir una estación, su número de mesas y la longitud total de dos tramos. Antes de escribir, separa los datos: estación es texto; mesas es una cantidad entera; longitudes pueden tener fracciones. Después decide qué resultados se necesitan: el mensaje completo y la suma de las longitudes. El tipo, el nombre y la unidad ayudan a expresar el problema."
+          "text": "Un informe de preparación debe describir una estación, su número de mesas y la longitud total de dos tramos. Antes de escribir el programa, distingue los datos: la estación es texto; las mesas son una cantidad entera; las longitudes pueden tener fracciones.\n\nDespués decide qué resultados se necesitan: el mensaje completo y la suma de las longitudes. El tipo determina qué valores puede guardar cada objeto y qué operaciones admite; un nombre significativo ayuda a reconocer su función (Stroustrup, 2024). En este informe también debemos conservar la unidad de las medidas.",
+          "emphasis": [
+            {
+              "text": "distingue los datos"
+            },
+            {
+              "text": "El tipo determina qué valores puede guardar cada objeto"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -54,7 +62,7 @@
         },
         {
           "type": "multiple_choice",
-          "question": "Un informe se llama al_inicio, pero copia la cantidad después de modificarla. ¿Qué hay que corregir para conservar el estado inicial?",
+          "question": "Una variable llamada al_inicio recibe una copia de la cantidad después de modificarla. ¿Qué hay que corregir para conservar el estado inicial?",
           "options": [
             "Situar la copia antes de modificar la cantidad.",
             "Renombrar el informe sin cambiar el momento de la copia.",
@@ -112,7 +120,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un programador quiere una longitud de cinco metros repartida entre dos partes iguales. Guarda double mitad = 5 / 2; y muestra 2. No hubo un fallo sintáctico: el cálculo de enteros produjo dos antes de la conversión. La reparación debe responder a la intención de conservar 2.5."
+          "text": "Un programador quiere repartir cinco metros entre dos partes iguales. Escribe `double mitad = 5 / 2;` y la salida muestra `2`. La instrucción tiene una sintaxis válida: el cálculo de enteros produjo dos antes de la conversión al tipo de destino. Guardar ese resultado en `double` no recupera la media unidad descartada (Stroustrup, 2024).\n\nLa reparación debe conseguir que el cálculo conserve `2.5`. No basta con que aparezcan esos caracteres en un mensaje fijo: el resultado también debe responder a otro dato de longitud.",
+          "emphasis": [
+            {
+              "text": "el cálculo de enteros produjo dos antes de la conversión"
+            },
+            {
+              "text": "el resultado también debe responder a otro dato de longitud"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -123,7 +139,7 @@
             "Cambiar el literal del mensaje a \"2.5\" sin corregir el dato."
           ],
           "correctIndex": 1,
-          "explanation": "Un operando double permite realizar la división decimal. Imprimir una respuesta fija ocultaría el cálculo incorrecto."
+          "explanation": "Al intervenir un operando double, la división se realiza en coma flotante y conserva 2.5 en este caso. Cambiar sólo el mensaje ocultaría que el cálculo sigue produciendo otro resultado (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -152,11 +168,19 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio: un informe completo"
+          "text": "Práctica: un informe completo"
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa desde esta consigna. Una estación se llama Puesto 03, tiene 6 mesas y dos tramos de cable de 1.5 y 2.25 metros. Crea variables adecuadas, calcula el cable total y muestra exactamente tres líneas: Puesto 03; Mesas: 6; Cable: 3.75 m. Conserva el cero de la etiqueta y la unidad del resultado. No hace falta leer entrada."
+          "text": "En el editor de código de esta página, construye un programa desde esta consigna. Una estación se llama Puesto 03, tiene 6 mesas y dos tramos de cable de 1.5 y 2.25 metros. Crea variables adecuadas, calcula el cable total y muestra estas tres líneas, en este orden:\n\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nConserva el cero del nombre, los espacios del mensaje y la unidad del resultado. Los saltos entre líneas son necesarios; puedes añadir o no un salto después de la m final. No hace falta leer entrada. El editor proporciona sólo el cuerpo mínimo de main: decide cómo representar los datos, calcular y presentar el informe.",
+          "emphasis": [
+            {
+              "text": "calcula el cable total"
+            },
+            {
+              "text": "estas tres líneas, en este orden"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -164,7 +188,41 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, escribe qué valor conserva cada objeto y cuál es el resultado de la suma. Después comprueba la salida línea por línea. Modifica mesas a 0 y los dos tramos a 2.0 y 3.5: deben cambiar sólo las cantidades a Mesas: 0 y Cable: 5.5 m. Explica por qué los ceros del nombre permanecen."
+          "text": "Antes de ejecutar tu construcción, responde los dos puzzles del final de esta página: el primero registra los datos y el resultado de la suma; el segundo comprueba qué sucede con el nombre al variar las cantidades. Después compila y ejecuta tu programa y compara las tres líneas con la consigna.\n\nEn ese mismo editor cambia sólo los valores iniciales: mesas a 0 y los dos tramos a 2.0 y 3.5. Vuelve a compilar y ejecutar. El nombre debe seguir siendo Puesto 03; las otras dos líneas deben ser Mesas: 0 y Cable: 5.5 m. Si el resultado difiere, revisa las variables que modificaste, el cálculo y los separadores de la salida. La solución aparece después de esta práctica."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__registrar_datos_y_suma_del_informe",
+          "question": "Antes de ejecutar tu construcción del primer informe, elige el registro que mantiene separados los datos originales y la suma calculada. En cada opción aparecen, en este orden, mesas, primer tramo, segundo tramo y cable total; las tres últimas cantidades están en metros.",
+          "options": [
+            "6; 1.5; 2.25; 3.2",
+            "6; 1.5; 2.25; 3.75",
+            "6; 3.75; 2.25; 3.75"
+          ],
+          "correctIndex": 1,
+          "reviewFeedback": [
+            "Revisa la suma de las partes enteras y fraccionarias de las dos medidas. Conserva la misma unidad en el resultado.",
+            "Distingue los dos datos que se consultan del objeto que recibe el resultado calculado.",
+            "Revisa si guardaste la suma sobre uno de los datos que la consigna mantiene. Consultar ambos tramos no requiere reemplazar ninguno."
+          ],
+          "explanation": "Las mesas son seis. Los tramos conservan 1.5 y 2.25 metros; su suma es 3.75 metros. El cálculo lee los datos y guarda el resultado en el objeto destinado al total, sin cambiar las medidas originales (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__conservar_cero_del_nombre_al_variar_cantidades",
+          "question": "En el segundo caso cambias mesas a 0 y los tramos a 2.0 y 3.5. ¿Por qué el nombre del informe debe seguir siendo Puesto 03?",
+          "options": [
+            "El nuevo cero de mesas se copia automáticamente dentro del nombre y reemplaza el texto 03.",
+            "El nombre se vuelve a calcular a partir del número de mesas cada vez que se muestra.",
+            "El nombre conserva su propio texto; modificar esas cantidades no asigna otro texto a ese objeto."
+          ],
+          "correctIndex": 2,
+          "reviewFeedback": [
+            "Identifica qué objeto recibe la modificación y qué instrucción sería necesaria para cambiar un texto.",
+            "Distingue leer un objeto para mostrarlo de ejecutar una nueva operación que construya su contenido.",
+            "Relaciona cada modificación con el objeto al que se aplica y revisa qué dato consulta la salida."
+          ],
+          "explanation": "Puesto 03 es el contenido del objeto que representa el nombre. El cero pertenece a ese texto; no es el valor de mesas. Cambiar las cantidades numéricas no modifica el nombre, del mismo modo que una asignación a un objeto no cambia por sí sola los demás (Stroustrup, 2024)."
         }
       ]
     },
@@ -181,7 +239,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Los nombres de las medidas conservan visible su unidad; la salida también la comunica. La etiqueta es texto, por lo que conserva 03. La suma lee las dos longitudes sin cambiarlas. Hay otras soluciones válidas con el mismo comportamiento: compara el significado, no sólo que tu código coincida carácter por carácter."
+          "text": "Los nombres de las medidas conservan visible su unidad; la salida también la comunica. La etiqueta es texto, por lo que conserva 03. La suma lee las dos longitudes sin cambiarlas; su resultado se guarda en otro objeto (Stroustrup, 2024).\n\nHay otras soluciones válidas con el mismo comportamiento: compara el significado de las instrucciones y la salida de cada caso, no sólo que tu código coincida carácter por carácter con la referencia.",
+          "emphasis": [
+            {
+              "text": "La suma lee las dos longitudes sin cambiarlas"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -233,7 +296,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Sin copiar la solución anterior, construye ahora un registro de biblioteca: nombre = \"Modulo 02\", libros = 7, una copia al_inicio y una devolución de 3 libros que se añade a la cantidad actual. La salida debe tener tres líneas: Modulo 02; Inicio: 7; Ahora: 10. Después prueba libros = 0 y devolución de 2. Decide qué cambiar y qué debe conservarse."
+          "text": "Sin copiar la solución del informe anterior, construye en el editor de código de esta página un registro de biblioteca. El nombre es Modulo 02 y la cantidad inicial es 7 libros. Guarda una copia de esa cantidad en al_inicio antes de añadir una devolución de 3 libros a la cantidad actual. La salida debe tener estas tres líneas:\n\nModulo 02\nInicio: 7\nAhora: 10\n\nConserva el nombre, el orden de las líneas y sus espacios. Puedes terminar con o sin un salto después de la última línea. Después prueba con 0 libros iniciales y una devolución de 2, modificando sólo esos datos. El estado inicial y el actual deben seguir correspondiendo a momentos distintos."
         },
         {
           "type": "cpp_compiler",
@@ -241,7 +304,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el cambio de situación te hace olvidar la copia, dibuja la tabla de estados y reconstruye el orden. Si falla el formato, vuelve a separar literales, valores y saltos. Si el tipo elegido pierde información, revisa el significado del dato. La práctica posterior recuperará estas decisiones al introducir comparaciones, selección y repetición."
+          "text": "Antes de ejecutar, registra los estados de los dos casos en el puzzle del final de esta página. Cada caso distingue el momento de la copia del momento posterior a la devolución. Usa esa comparación para revisar el orden de las instrucciones que construiste en el editor.\n\nDespués compila y ejecuta ambos casos. Si falla el formato, revisa por separado los literales, los valores y los saltos de línea. Si aparece la misma cantidad en Inicio y Ahora, comprueba cuándo guardaste la copia y qué variable modificaste. La práctica posterior recuperará estas decisiones al introducir comparaciones, selección y repetición."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__registrar_estados_de_copia_y_devolucion",
+          "question": "Registra los estados de la construcción de la biblioteca antes de ejecutarla. En cada par, el primer número es libros y el segundo es al_inicio. Para cada caso se muestran dos pares: primero después de guardar la copia y después de sumar la devolución a libros. ¿Qué registro corresponde a los dos casos pedidos?",
+          "options": [
+            "Con 7 libros y devolución de 3: (7, 7) y (10, 7).\nCon 0 libros y devolución de 2: (0, 0) y (2, 0).",
+            "Con 7 libros y devolución de 3: (7, 7) y (10, 10).\nCon 0 libros y devolución de 2: (0, 0) y (2, 2).",
+            "Con 7 libros y devolución de 3: (7, 7) y (7, 10).\nCon 0 libros y devolución de 2: (0, 0) y (0, 2)."
+          ],
+          "correctIndex": 0,
+          "reviewFeedback": [
+            "Relaciona cada momento con la instrucción que se ejecuta y distingue el objeto actualizado del que conserva la copia.",
+            "Una copia guarda el valor del momento en que se realiza. Revisa si hay alguna instrucción posterior que asigne otro valor al objeto que conserva ese dato.",
+            "Revisa a qué variable debe añadirse la devolución y conserva el orden de los dos valores de cada par."
+          ],
+          "explanation": "Después de guardar la copia, ambos objetos contienen el valor inicial. La suma posterior actualiza libros; al_inicio conserva el dato copiado (Stroustrup, 2024). El primer caso pasa de (7, 7) a (10, 7), y el segundo de (0, 0) a (2, 0). La cantidad inicial cero también debe conservarse como un dato válido."
         }
       ]
     },
@@ -258,7 +338,28 @@
         },
         {
           "type": "paragraph",
-          "text": "La copia anterior al aumento distingue el estado inicial del actual. Con libros = 0 y devolucion = 2 se obtienen Inicio: 0 y Ahora: 2; el nombre continúa siendo Modulo 02. Si puedes explicar esa dependencia, escribir una versión propia y probar sus casos, dispones de evidencia de comprensión y de práctica independiente. Más adelante, vuelve a construir el registro con otros datos sin consultar la solución; predice las salidas y explica cuándo se conserva la copia."
+          "text": "La copia anterior al aumento distingue el estado inicial del actual: al_inicio conserva el valor que libros tenía cuando se ejecutó esa definición, y la actualización posterior cambia sólo libros (Stroustrup, 2024). Con 0 libros y una devolución de 2, el resultado es:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nPara recuperar el procedimiento con otros datos, vuelve al editor de la página anterior y cambia los valores iniciales a 4 libros y una devolución de 5. Conserva el nombre y el momento de la copia. Antes de ejecutar esa variante, responde la predicción del final de esta página; después compila y compara su salida con la de tu construcción. Estos casos comprueban comportamientos concretos, sin demostrar por sí solos el dominio de todas las decisiones de la unidad.",
+          "emphasis": [
+            {
+              "text": "La copia anterior al aumento distingue el estado inicial del actual"
+            },
+            {
+              "text": "Conserva el nombre y el momento de la copia"
+            }
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
+          "language": "cpp",
+          "question": "Después de reconstruir y probar los dos casos de la biblioteca, recupera el procedimiento con 4 libros y una devolución de 5. Predice las tres líneas exactas de este programa, con sus espacios y sin añadir un salto final. Después contrástalas con la ejecución de tu variante en el editor de la página anterior.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 4;\n    int al_inicio = libros;\n    int devolucion = 5;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "answers": [
+            "Modulo 02\nInicio: 4\nAhora: 9"
+          ],
+          "outputComparison": "exact",
+          "reviewFeedback": "Sigue la copia antes de sumar la devolución. Distingue el valor que conserva cada objeto y separa las líneas según las inserciones del programa.",
+          "explanation": "al_inicio recibe cuatro antes de la actualización. La devolución suma cinco a libros, que pasa a nueve; la copia conserva cuatro (Stroustrup, 2024). El nombre sigue siendo Modulo 02 y las inserciones separan sus tres líneas. La ejecución de otro caso debe utilizar sus propios datos, no imprimir los resultados de los anteriores."
         }
       ]
     },
@@ -274,7 +375,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La salida debe tener tres líneas: Puesto 03; Mesas: 6; Cable: 3.75 m. El punto y coma de esta enumeración separa líneas y no es un carácter que deba imprimirse. La etiqueta se conserva como texto, las mesas como cantidad entera y los tramos permiten parte fraccionaria. Con mesas=0 y tramos 2.0 y 3.5, sólo cambian la segunda línea a Mesas: 0 y la tercera a Cable: 5.5 m; Puesto 03 se conserva."
+          "text": "En el primer caso, la consola debe mostrar:\n\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nLa etiqueta se conserva como texto, las mesas son una cantidad entera y los tramos admiten una parte fraccionaria. Al cambiar mesas a 0 y los tramos a 2.0 y 3.5, la salida debe ser:\n\nPuesto 03\nMesas: 0\nCable: 5.5 m\n\nConserva los espacios y los dos saltos interiores. El salto después de la última línea es opcional. Comprobar el caso nuevo exige calcular la suma con los nuevos datos; no basta con sustituir el texto impreso por una respuesta fija."
         },
         {
           "type": "code",
@@ -283,7 +384,12 @@
         },
         {
           "type": "paragraph",
-          "text": "La suma de longitudes mantiene la misma unidad: metros. Guardar el identificador como texto conserva su cero. Para la segunda versión cambia sólo los tres valores indicados; el nombre, las unidades y las instrucciones de salida permanecen. Se admiten otros nombres apropiados de variables y otras definiciones válidas que produzcan el informe exigido."
+          "text": "La suma de longitudes mantiene la misma unidad: metros. Guardar el identificador como texto conserva su cero. Para la segunda versión cambia sólo los tres valores indicados; el nombre, las unidades y las instrucciones de salida permanecen. Se admiten otros nombres apropiados de variables y otras definiciones válidas que produzcan el informe exigido.",
+          "emphasis": [
+            {
+              "text": "La suma de longitudes mantiene la misma unidad: metros"
+            }
+          ]
         }
       ]
     },
@@ -299,7 +405,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La salida tiene tres líneas: Modulo 02; Inicio: 7; Ahora: 10. al_inicio copia libros antes de sumar la devolución de 3. Con libros inicialmente 0 y devolución 2, muestra Modulo 02; Inicio: 0; Ahora: 2, conservando las tres líneas y el nombre. Una implementación equivalente es válida si guarda el momento inicial, procesa los datos y no imprime resultados fijos para simular el cálculo."
+          "text": "La salida del caso inicial es:\n\nModulo 02\nInicio: 7\nAhora: 10\n\nal_inicio copia libros antes de sumar la devolución de 3. Con 0 libros iniciales y una devolución de 2, el resultado debe ser:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nConserva los espacios, el nombre y las tres líneas; el salto final es opcional. Una implementación equivalente es válida si conserva el estado inicial, procesa los datos y presenta el resultado calculado. Imprimir resultados fijos no realiza esas operaciones."
         },
         {
           "type": "code",
@@ -308,7 +414,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de la copia, libros y al_inicio valen 7. La devolución cambia sólo libros a 10; al_inicio conserva 7. Para el segundo caso cambia los valores iniciales de libros y devolucion, sin mover la copia ni editar las salidas. Recuperar el orden de estas instrucciones explica el informe, además de comprobar que compile."
+          "text": "Después de la copia, libros y al_inicio valen 7. La devolución cambia sólo libros a 10; al_inicio conserva 7. Para el segundo caso cambia los valores iniciales de libros y devolucion, sin mover la copia ni editar las salidas. Recuperar el orden de estas instrucciones explica el informe, además de comprobar que compile.",
+          "emphasis": [
+            {
+              "text": "La devolución cambia sólo libros a 10; al_inicio conserva 7"
+            }
+          ]
         }
       ]
     }

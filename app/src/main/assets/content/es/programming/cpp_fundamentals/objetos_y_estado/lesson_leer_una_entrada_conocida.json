@@ -22,7 +22,7 @@
         },
         {
           "type": "note",
-          "text": "En los puzzles, el enunciado especifica qué entrada recibe el programa. En el Laboratorio, escribe todos los datos en Entrada preparada antes de pulsar Compilar y ejecutar. Ese texto se entrega al flujo de entrada; no se escribe como parte del código ni durante la ejecución.\n\nCada ejecución recibe su propia entrada desde el principio. Una entrada vacía ya está al final de sus datos disponibles: el programa no espera a que escribas en la consola. Trabajaremos con las entradas válidas y completas que indique cada actividad."
+          "text": "En los puzzles, el enunciado especifica qué entrada recibe el programa. En el editor de código, escribe todos los datos en Entrada preparada antes de pulsar Compilar y ejecutar. Ese texto se entrega al flujo de entrada; no se escribe como parte del código ni durante la ejecución.\n\nCada ejecución recibe su propia entrada desde el principio. Una entrada vacía ya está al final de sus datos disponibles: el programa no espera a que escribas en la consola. Trabajaremos con las entradas válidas y completas que indique cada actividad."
         },
         {
           "type": "code",
@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un prompt es un mensaje que indica qué dato espera un programa. Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad. Es una salida producida por `std::cout`; la extracción posterior de `std::cin` es la que obtiene el dato y lo guarda (Stroustrup, 2024).\n\nRecibir un dato tampoco lo muestra automáticamente. En el programa siguiente, una instrucción produce el aviso y otra muestra el valor leído. Para predecir la salida, recorre únicamente lo que envían las instrucciones de `std::cout`: no añadas una segunda copia de la entrada porque el enunciado la mencione.\n\nEn nuestro Laboratorio, el dato ya estará en Entrada preparada cuando ejecutes. El prompt del programa no abre una conversación ni solicita escribir una respuesta durante la ejecución.",
+          "text": "Un prompt es un mensaje que indica qué dato espera un programa. Por ejemplo, `Cantidad: ` puede avisar de que se recibirá una cantidad. Es una salida producida por `std::cout`; la extracción posterior de `std::cin` es la que obtiene el dato y lo guarda (Stroustrup, 2024).\n\nRecibir un dato tampoco lo muestra automáticamente. En el programa siguiente, una instrucción produce el aviso y otra muestra el valor leído. Para predecir la salida, recorre únicamente lo que envían las instrucciones de `std::cout`: no añadas una segunda copia de la entrada porque el enunciado la mencione.\n\nEn el editor de código, el dato ya estará en Entrada preparada cuando ejecutes. El prompt del programa no abre una conversación ni solicita escribir una respuesta durante la ejecución.",
           "emphasis": [
             {
               "text": "Es una salida producida por `std::cout`"
@@ -121,13 +121,13 @@
         },
         {
           "type": "paragraph",
-          "text": "En una consola interactiva es habitual pulsar Enter para entregar una línea. Eso describe cómo ese entorno proporciona los caracteres al programa; no significa que la extracción guarde automáticamente el salto dentro del dato (Stroustrup, 2024).\n\nEn Entrada preparada, un Enter sirve para colocar un salto dentro de los datos antes de ejecutar. No hace falta escribir un salto final para los ejemplos de esta lección. Lo importante es entregar los valores completos y respetar el orden de las extracciones; el Laboratorio no espera pulsaciones durante la ejecución.",
+          "text": "En una consola interactiva es habitual pulsar Enter para entregar una línea. Eso describe cómo ese entorno proporciona los caracteres al programa; no significa que la extracción guarde automáticamente el salto dentro del dato (Stroustrup, 2024).\n\nEn Entrada preparada, un Enter sirve para colocar un salto dentro de los datos antes de ejecutar. No hace falta escribir un salto final para los ejemplos de esta lección. Lo importante es entregar los valores completos y respetar el orden de las extracciones; el editor de código no espera pulsaciones durante la ejecución.",
           "emphasis": [
             {
               "text": "antes de ejecutar"
             },
             {
-              "text": "el Laboratorio no espera pulsaciones durante la ejecución"
+              "text": "el editor de código no espera pulsaciones durante la ejecución"
             }
           ]
         }
@@ -241,7 +241,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los programas de esta lección presuponen entradas con los datos y los tipos indicados. Si una extracción hacia `int` encuentra la palabra `muchos`, no obtiene el entero que necesita la tarea. Que el programa haya compilado no convierte esa palabra en una cantidad.\n\nUna extracción fallida tampoco permite suponer que la variable conserva siempre su valor inicial. El flujo registra el fallo y una conversión numérica que no obtiene el dato solicitado puede modificar el valor del destino. Por eso el inicializador no sustituye comprobar el resultado de la lectura (Köppe et al., 2023, sección 31.7.5.3.2, párr. 3; sección 30.4.3.2.3, párr. 3).\n\nMás adelante aprenderemos a comprobar ese estado y a elegir cómo responder. Aquí distinguimos el límite y trabajamos en el Laboratorio con las entradas válidas propuestas; todavía no se pide escribir un verificador ni recuperar un flujo después de un error.",
+          "text": "Los programas de esta lección presuponen entradas con los datos y los tipos indicados. Si una extracción hacia `int` encuentra la palabra `muchos`, no obtiene el entero que necesita la tarea. Que el programa haya compilado no convierte esa palabra en una cantidad.\n\nUna extracción fallida tampoco permite suponer que la variable conserva siempre su valor inicial. El flujo registra el fallo y una conversión numérica que no obtiene el dato solicitado puede modificar el valor del destino. Por eso el inicializador no sustituye comprobar el resultado de la lectura (Köppe et al., 2023, sección 31.7.5.3.2, párr. 3; sección 30.4.3.2.3, párr. 3).\n\nMás adelante aprenderemos a comprobar ese estado y a elegir cómo responder. Aquí distinguimos el límite y trabajamos en el editor de código con las entradas válidas propuestas; todavía no se pide escribir un verificador ni recuperar un flujo después de un error.",
           "emphasis": [
             {
               "text": "el inicializador no sustituye comprobar el resultado de la lectura"
@@ -298,11 +298,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio guiado: leer, procesar y presentar"
+          "text": "Práctica guiada: leer, procesar y presentar"
         },
         {
           "type": "paragraph",
-          "text": "Primero responde el puzzle de seguimiento al final de esta página. Su programa muestra los valores inmediatamente después de leerlos y después de actualizar la cantidad. El campo permite registrar esas dos etapas antes de ejecutar el Laboratorio.\n\nEn el código inicial del Laboratorio, Entrada preparada contiene `Rita 4`. Compila y ejecuta: ese programa presenta sólo el resultado final, que debe ser:\n\nRita: 7\n\nConserva el código y cambia únicamente Entrada preparada a `Leo 2`. Vuelve a ejecutar y comprueba:\n\nLeo: 5\n\nDespués separa `Leo` y `2` mediante un salto de línea en Entrada preparada. Ejecuta de nuevo sin cambiar el código: la salida debe conservarse. Estás cambiando la forma de separar los datos, no la cantidad ni el nombre que se entregan.",
+          "text": "Primero responde el puzzle de seguimiento al final de esta página. Su programa muestra los valores inmediatamente después de leerlos y después de actualizar la cantidad. El campo permite registrar esas dos etapas antes de ejecutar el programa.\n\nEntrada preparada contiene inicialmente `Rita 4`. Compila y ejecuta el programa inicial: presenta sólo el resultado final, que debe ser:\n\nRita: 7\n\nConserva el código y cambia únicamente Entrada preparada a `Leo 2`. Vuelve a ejecutar y comprueba:\n\nLeo: 5\n\nDespués separa `Leo` y `2` mediante un salto de línea en Entrada preparada. Ejecuta de nuevo sin cambiar el código: la salida debe conservarse. Estás cambiando la forma de separar los datos, no la cantidad ni el nombre que se entregan.",
           "emphasis": [
             {
               "text": "Conserva el código y cambia únicamente Entrada preparada"
@@ -322,7 +322,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__etapas_lectura_y_actualizacion",
           "language": "cpp",
-          "question": "Para preparar la lectura del Laboratorio, se entrega Rita 4. Este programa de seguimiento muestra primero los datos leídos y después el mensaje calculado. Predice sus dos líneas de salida, sin añadir otra copia de la entrada ni un salto final.",
+          "question": "Este programa recibe Rita 4. Muestra primero los datos leídos y después el mensaje calculado. Predice sus dos líneas de salida, sin añadir otra copia de la entrada ni un salto final.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    std::cout << nombre << \" \" << cajas << \"\\n\";\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
           "answers": [
             "Rita 4\nRita: 7"
@@ -394,10 +394,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprobación del Laboratorio guiado\n\nLa lectura utiliza los valores de Entrada preparada. Con `Rita 4` debe producir `Rita: 7`; al cambiar sólo la entrada a `Leo 2`, debe producir `Leo: 5`. Un salto entre el nombre y el número conserva esos resultados porque separa los datos de la lectura habitual.\n\nLa referencia que sigue fija el nombre y la cantidad mediante inicializadores. Reproduce el procesamiento y la salida del primer caso, pero no lee esos valores de `std::cin`. Podemos utilizarla para comparar de dónde procede cada dato sin atribuirle una lectura que no ejecuta.",
+          "text": "Comprobación de la práctica guiada\n\nLa lectura utiliza los valores de Entrada preparada. Con `Rita 4` debe producir `Rita: 7`; al cambiar sólo la entrada a `Leo 2`, debe producir `Leo: 5`. Un salto entre el nombre y el número conserva esos resultados porque separa los datos de la lectura habitual.\n\nLa referencia que sigue fija el nombre y la cantidad mediante inicializadores. Reproduce el procesamiento y la salida del primer caso, pero no lee esos valores de `std::cin`. Podemos utilizarla para comparar de dónde procede cada dato sin atribuirle una lectura que no ejecuta.",
           "emphasis": [
             {
-              "text": "Comprobación del Laboratorio guiado"
+              "text": "Comprobación de la práctica guiada"
             }
           ]
         },
@@ -408,7 +408,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Realiza también la comparación dentro del Laboratorio guiado. Sustituye su programa por la referencia con datos fijados y comprueba el primer caso. Para obtener `Leo: 5` en esa versión, debes cambiar los inicializadores del nombre y de la cantidad. Cambiar sólo Entrada preparada no cambia esos datos, porque esa versión no los lee.\n\nDespués reconstruye la versión con `std::cin` mostrada en la página anterior. Comprueba otra vez los dos casos variando sólo Entrada preparada. Así contrastas dos programas que pueden mostrar el mismo resultado, aunque obtengan los datos de formas diferentes.\n\nEn el arrastre siguiente, asocia cada comentario con la función de la instrucción a la que acompaña. El programa del puzzle realiza la lectura; compáralo con la referencia de datos fijados que acabas de utilizar.",
+          "text": "Realiza también la comparación en el editor de código de la práctica guiada. Sustituye su programa por la referencia con datos fijados y comprueba el primer caso. Para obtener `Leo: 5` en esa versión, debes cambiar los inicializadores del nombre y de la cantidad. Cambiar sólo Entrada preparada no cambia esos datos, porque esa versión no los lee.\n\nDespués pulsa Reiniciar código para recuperar el programa que lee con `std::cin` y su entrada inicial. Comprueba los dos casos variando sólo Entrada preparada. Así contrastas dos programas que pueden mostrar el mismo resultado, aunque obtengan los datos de formas diferentes.\n\nEn el arrastre siguiente, asocia cada comentario con la función de la instrucción a la que acompaña. El programa del puzzle realiza la lectura; compáralo con la referencia de datos fijados que acabas de utilizar.",
           "emphasis": [
             {
               "text": "debes cambiar los inicializadores"
@@ -422,7 +422,7 @@
           "type": "drag_fill_code",
           "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__funciones_lectura_procesamiento_presentacion",
           "language": "cpp",
-          "question": "Tras comparar la lectura con los datos fijados, asocia cada comentario con la función de su instrucción. Este programa recibe Rita 4 y realiza dos extracciones separadas; el cálculo y el mensaje conservan el comportamiento del Laboratorio.",
+          "question": "Tras comparar la lectura con los datos fijados, asocia cada comentario con la función de su instrucción. Este programa recibe Rita 4 y realiza dos extracciones separadas; el cálculo y el mensaje conservan el comportamiento del programa de lectura.",
           "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre; // []\n    std::cin >> cajas; // []\n    cajas += 3; // []\n    std::cout << nombre << \": \" << cajas; // []\n    return 0;\n}\n",
           "choices": [
             "Aumenta la cantidad que ya se ha leído.",
@@ -449,7 +449,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora construye un programa distinto desde el esqueleto del Laboratorio. Debe recibir tres datos, en este orden: una etiqueta de una palabra, la cantidad de paquetes y la cantidad de piezas sueltas. Cada paquete contiene cinco piezas.\n\nEl formato de esta actividad presupone exactamente esos tres datos válidos: paquetes entre cero y veinte, y piezas sueltas entre cero y cuatro. El programa debe utilizar los datos recibidos; todavía no se pide comprobar entradas incompletas ni rechazar otros formatos. Con esas cantidades, todos los cálculos caben en `int`.",
+          "text": "Ahora construye un programa distinto desde el esqueleto del editor de código. Debe recibir tres datos, en este orden: una etiqueta de una palabra, la cantidad de paquetes y la cantidad de piezas sueltas. Cada paquete contiene cinco piezas.\n\nEl formato de esta actividad presupone exactamente esos tres datos válidos: paquetes entre cero y veinte, y piezas sueltas entre cero y cuatro. El programa debe utilizar los datos recibidos; todavía no se pide comprobar entradas incompletas ni rechazar otros formatos. Con esas cantidades, todos los cálculos caben en `int`.",
           "emphasis": [
             {
               "text": "una etiqueta de una palabra, la cantidad de paquetes y la cantidad de piezas sueltas"
@@ -598,7 +598,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye primero el programa de tres datos en el Laboratorio de construcción, antes de volver a consultar su referencia. Utiliza otra etiqueta de una palabra y cuatro paquetes con dos piezas sueltas. Conservando la regla de cinco piezas por paquete, el mensaje debe utilizar la etiqueta que elegiste y mostrar veintidós después de los dos puntos y el espacio. Compila y compara la consola con ese objetivo.\n\nDespués modifica explícitamente la regla: ahora cada paquete contiene cuatro piezas y las sueltas pertenecen al intervalo de cero a tres. Mantén los paquetes entre cero y veinte. Con los mismos cuatro paquetes y dos sueltas, el total debe ser dieciocho. El programa sigue leyendo los tres datos; cambiar la regla no autoriza a sustituirlos por constantes.\n\nEn Entrada preparada, escribe y ejecuta tres pruebas elegidas para estas funciones:\n\n1. Distinguir las dos reglas. Utiliza al menos un paquete. Con la misma entrada, cambiar temporalmente la regla a cinco debe cambiar el total; restablece después la regla de cuatro y compruébala otra vez.\n\n2. Comprobar cero paquetes. Elige una cantidad admitida de sueltas; el total debe coincidir con esa cantidad, conservando la etiqueta leída.\n\n3. Comprobar el máximo. Utiliza los valores máximos admitidos tanto para paquetes como para sueltas. El total debe corresponder a cuatro piezas por paquete más las sueltas.\n\nRealiza la reconstrucción y esas comprobaciones en el mismo editor. La página siguiente contiene una comparación posterior con tres campos de predicción para registrar y razonar las salidas de otros casos que representan esas mismas funciones.",
+          "text": "Reconstruye primero el programa de tres datos en el editor de código de la actividad de construcción, antes de volver a consultar su referencia. Utiliza otra etiqueta de una palabra y cuatro paquetes con dos piezas sueltas. Conservando la regla de cinco piezas por paquete, el mensaje debe utilizar la etiqueta que elegiste y mostrar veintidós después de los dos puntos y el espacio. Compila y compara la consola con ese objetivo.\n\nDespués modifica explícitamente la regla: ahora cada paquete contiene cuatro piezas y las sueltas pertenecen al intervalo de cero a tres. Mantén los paquetes entre cero y veinte. Con los mismos cuatro paquetes y dos sueltas, el total debe ser dieciocho. El programa sigue leyendo los tres datos; cambiar la regla no autoriza a sustituirlos por constantes.\n\nEn Entrada preparada, escribe y ejecuta tres pruebas elegidas para estas funciones:\n\n1. Distinguir las dos reglas. Utiliza al menos un paquete. Con la misma entrada, cambiar temporalmente la regla a cinco debe cambiar el total; restablece después la regla de cuatro y compruébala otra vez.\n\n2. Comprobar cero paquetes. Elige una cantidad admitida de sueltas; el total debe coincidir con esa cantidad, conservando la etiqueta leída.\n\n3. Comprobar el máximo. Utiliza los valores máximos admitidos tanto para paquetes como para sueltas. El total debe corresponder a cuatro piezas por paquete más las sueltas.\n\nRealiza la reconstrucción y esas comprobaciones en el mismo editor. La página siguiente contiene una comparación posterior con tres campos de predicción para registrar y razonar las salidas de otros casos que representan esas mismas funciones.",
           "emphasis": [
             {
               "text": "Reconstruye primero el programa de tres datos"
@@ -621,7 +621,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta comparación después de reconstruir y variar el programa en el Laboratorio. Los tres casos siguientes representan funciones de prueba distintas: distinguir reglas, comprobar cero paquetes y comprobar el máximo.\n\nEscribe en cada campo de predicción únicamente el mensaje que produce su programa. El nombre y las cantidades siguen llegando de la entrada; la regla de cuatro piezas por paquete y el formato del mensaje permanecen en el código. Puedes contrastar después estos mismos casos en el Laboratorio, sin sustituir las entradas por constantes.",
+          "text": "Consulta esta comparación después de reconstruir y variar el programa en el editor de código. Los tres casos siguientes representan funciones de prueba distintas: distinguir reglas, comprobar cero paquetes y comprobar el máximo.\n\nEscribe en cada campo de predicción únicamente el mensaje que produce su programa. El nombre y las cantidades siguen llegando de la entrada; la regla de cuatro piezas por paquete y el formato del mensaje permanecen en el código. Puedes contrastar después estos mismos casos en el editor de código, sin sustituir las entradas por constantes.",
           "emphasis": [
             {
               "text": "después de reconstruir y variar el programa"

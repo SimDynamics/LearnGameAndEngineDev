@@ -26,7 +26,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe componer_fila(const Registro&) y componer_informe(const vector<Registro>&), que devuelven string sin imprimir ni modificar registros. El informe usa una línea por fila y deja el resumen al final, sin salto final obligatorio. Usa {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375}, {\"Pasillo\", 0, 0.0}. Calcula primero total y media en papel; después predice las representaciones y espacios. main sólo decide mostrar el resultado."
+          "text": "Escribe componer_fila(const Registro&) y componer_informe(const vector<Registro>&), que devuelven string sin imprimir ni modificar registros. El informe usa una línea por fila y deja el resumen al final, sin salto final obligatorio. Usa {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375}, {\"Pasillo\", 0, 0.0}. Antes de ejecutar tu construcción, completa el resumen y elige la presentación de las filas en el puzzle del final de esta página. main sólo decide mostrar el resultado."
         },
         {
           "type": "cpp_compiler",
@@ -35,6 +35,131 @@
         {
           "type": "paragraph",
           "text": "Prueba además colección vacía, una observación de cantidad cero y medida dos, y una etiqueta de seis caracteres con cantidad mil. El recorrido debe conservar orden y asociaciones. Cada composición comienza vacía y el estado de cout no debe decidir el formato interno."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__componer_informes_sin_cambiar_los_datos__prediccion_del_informe",
+          "prompt": "Antes de ejecutar tu construcción, completa el resumen para los registros {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375} y {\"Pasillo\", 0, 0.0}. El total suma cantidades; la media usa las tres medidas originales, antes de redondearlas para mostrarlas. Después selecciona las tres filas que respetan el formato de la consigna: código a la izquierda con anchura mínima seis, cantidad a la derecha con anchura mínima cuatro y medida con dos decimales. Cada espacio entre corchetes cuenta. La selección muestra sólo las filas, sin el resumen final.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resumen",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Total de cantidades",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "suma_medidas",
+                  "type": "numeric",
+                  "label": "Suma de las medidas originales",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "media",
+                  "type": "numeric",
+                  "label": "Media de las tres medidas originales",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Magnitud",
+                "Valor"
+              ],
+              "rows": [
+                [
+                  "Total de cantidades",
+                  {
+                    "field": "total"
+                  }
+                ],
+                [
+                  "Suma de medidas originales",
+                  {
+                    "field": "suma_medidas"
+                  }
+                ],
+                [
+                  "Media de medidas originales",
+                  {
+                    "field": "media"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "suma_medidas": {
+                    "type": "numeric",
+                    "expected": "11.25"
+                  },
+                  "media": {
+                    "type": "numeric",
+                    "expected": "3.75"
+                  }
+                }
+              }
+            },
+            {
+              "id": "filas",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "cantidad_izquierda",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "[A     ]|[5   ]|[4.31]\n[Sala  ]|[7   ]|[6.94]\n[Pasillo]|[0   ]|[0.00]",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Revisa hacia qué lado se alinea la cantidad dentro de su campo. Los espacios forman parte de la representación."
+                },
+                {
+                  "id": "campos_conservados",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Contrasta la anchura mínima de cada campo, su alineación y la precisión de la medida."
+                },
+                {
+                  "id": "codigo_recortado",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasill]|[   0]|[0.00]",
+                      "mathMode": "text"
+                    }
+                  ],
+                  "reviewFeedback": "Distingue una anchura mínima de un límite de longitud. Revisa qué ocurre cuando un código supera la anchura solicitada."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "campos_conservados"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las cantidades suman 12. Las medidas originales suman 11.25 y su media es 3.75. El código queda alineado a la izquierda, la cantidad a la derecha y la medida se muestra con dos decimales. La anchura seis es mínima: Pasillo conserva sus siete caracteres. El resumen final será Total:12;Media:3.75.",
+            "incorrect": "Revisa por separado las cantidades, las medidas originales y el formato. La media se obtiene antes de redondear la presentación. En las filas, comprueba alineación, espacios y anchura mínima; conserva todos los caracteres del código."
+          }
         }
       ]
     },

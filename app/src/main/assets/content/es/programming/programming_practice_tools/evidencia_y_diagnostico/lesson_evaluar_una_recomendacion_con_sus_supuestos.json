@@ -18,7 +18,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe una pregunta concreta en tus propias palabras antes de continuar; podrás conservarla en un comentario del laboratorio. Distingue una duda sobre qué significa const& de otra sobre si este cambio conserva el comportamiento de un programa particular. Un consejo breve puede dejar sin expresar información que necesitas para responder a la segunda."
+          "text": "En el puzzle siguiente elige la pregunta que permite investigar si el cambio conserva el comportamiento. Distingue una duda sobre qué significa const& de otra sobre si este cambio conserva el comportamiento de un programa particular. Un consejo breve puede dejar sin expresar información que necesitas para responder a la segunda."
         },
         {
           "type": "multiple_choice",
@@ -72,7 +72,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Anota qué supones sobre la función y sus llamadas antes de probar el cambio. No necesitas una secuencia única de pasos: puedes volver a la lectura cuando el código plantee otra duda. Lo importante es distinguir lo que ya comprendías, lo que sólo suponías y lo que la nueva evidencia permite aprender."
+          "text": "Antes de probar el cambio, identifica en el código qué objetos reciben los parámetros y qué relaciones permiten sus llamadas. No necesitas una secuencia única de pasos: puedes volver a la lectura cuando el código plantee otra duda. Lo importante es distinguir lo que ya comprendías, lo que sólo suponías y lo que la nueva evidencia permite aprender."
         }
       ]
     },
@@ -84,7 +84,7 @@
         },
         {
           "type": "paragraph",
-          "text": "registrar_y_medir recibe dos vectores, añade 7 mediante el segundo parámetro y devuelve un tamaño consultado mediante el primero. La versión inicial recibe antes por valor. La nota propone cambiar sólo ese primer parámetro por const std::vector<int>&. Antes de hacerlo, escribe tu pregunta y predice si la recomendación conservará las observaciones de main. Examina qué relaciones entre los argumentos permite la firma; no hay una condición que exija objetos distintos."
+          "text": "registrar_y_medir recibe dos vectores, añade 7 mediante el segundo parámetro y devuelve un tamaño consultado mediante el primero. La versión inicial recibe antes por valor. La nota propone cambiar sólo ese primer parámetro por const std::vector<int>&. Antes de hacerlo, examina si la recomendación permite conservar las observaciones de main. Examina qué relaciones entre los argumentos permite la firma; no hay una condición que exija objetos distintos."
         },
         {
           "type": "paragraph",
@@ -102,7 +102,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe junto a tu pregunta qué observación apoya o limita la nota y qué información del código la explica. Distingue los dos objetos entrada y destino del uso de compartido en las dos posiciones. No basta copiar una salida: relaciona el resultado con cuándo se consulta el objeto que nombra cada parámetro. Intenta el contraste y una conclusión provisional antes de consultar la referencia."
+          "text": "Compara las observaciones de ambas ejecuciones con la condición que elegiste investigar en el puzzle. Distingue los dos objetos entrada y destino del uso de compartido en las dos posiciones. No basta copiar una salida: relaciona el resultado con cuándo se consulta el objeto que nombra cada parámetro. Realiza el contraste antes de consultar la referencia y responde después al puzzle sobre el alcance de la recomendación."
         }
       ]
     },
@@ -152,7 +152,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve a la pregunta que escribiste. Una reformulación provisional puede advertir que reemplazar una copia por una referencia requiere revisar si alguna vía modifica el objeto antes de la consulta que debía conservar su resultado. En esta función, actual puede hacerlo cuando comparte objeto con antes. La revisión no se decide sólo por el tamaño del vector o por la presencia de const en una firma."
+          "text": "Revisa la pregunta que seleccionaste en el primer puzzle. Una reformulación provisional puede advertir que reemplazar una copia por una referencia requiere revisar si alguna vía modifica el objeto antes de la consulta que debía conservar su resultado. En esta función, actual puede hacerlo cuando comparte objeto con antes. La revisión no se decide sólo por el tamaño del vector o por la presencia de const en una firma."
         },
         {
           "type": "code",
@@ -178,7 +178,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este fragmento se lee en el contexto del laboratorio y permite razonar sobre el momento de la consulta. La diferencia entre parámetro por valor y referencia describe el modelo de objetos del ejemplo; las salidas contrastadas no miden una mejora de tiempo. Registra una conclusión que responda a tu pregunta, sin extenderla a afirmaciones que esta práctica no examinó."
+          "text": "Este fragmento se lee en el contexto del programa que estás modificando y permite razonar sobre el momento de la consulta. La diferencia entre parámetro por valor y referencia describe el modelo de objetos del ejemplo; las salidas contrastadas no miden una mejora de tiempo. El puzzle de esta página comprueba qué información se conserva antes del añadido; esa observación no permite afirmar que la ejecución sea más rápida."
         }
       ]
     },
@@ -190,11 +190,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Junto a tu pregunta inicial, escribe ahora qué comprendiste, qué evidencia cambió o acotó tu idea y qué duda sigue abierta. Una nota útil podría señalar el papel del otro parámetro y el momento de la consulta, en vez de sustituir la regla inicial por «siempre» o «nunca». Mantén separadas las palabras de la recomendación, el aporte de la fuente y las observaciones de tu programa."
+          "text": "Las comparaciones y los puzzles permiten revisar la pregunta inicial: el otro acceso al objeto puede cambiar el resultado antes de la consulta. Una nota útil podría señalar el papel del otro parámetro y el momento de la consulta, en vez de sustituir la regla inicial por «siempre» o «nunca». Mantén separadas las palabras de la recomendación, el aporte de la fuente y las observaciones de tu programa."
         },
         {
           "type": "paragraph",
-          "text": "En otra sesión, intenta explicar el contraste antes de abrir sus resultados. Prepara para ti otra pregunta sobre el mismo consejo, por ejemplo qué ocurriría con un vector compartido vacío. Deduce el tamaño que conserva cada versión y qué sería necesario observar para revisar esa predicción. Puedes recuperar el mismo laboratorio con los datos que decidiste, manteniendo explícito el límite de tres elementos al entrar."
+          "text": "En el mismo editor de código, utiliza Reiniciar código para recuperar la versión inicial por valor y cambia sólo el vector compartido para que comience vacío. Ejecuta esa variante; después cambia únicamente el primer parámetro a const std::vector<int>& y vuelve a ejecutar. Compara el tamaño devuelto y el tamaño Actual de ese vector en ambas ejecuciones. Conserva las llamadas y el límite de tres elementos al entrar."
         },
         {
           "type": "note",
