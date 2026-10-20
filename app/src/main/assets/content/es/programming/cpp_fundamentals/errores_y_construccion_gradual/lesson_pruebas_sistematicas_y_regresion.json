@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecutar y mirar la pantalla no define por sí solo una prueba. Un caso de prueba especifica datos, comportamiento esperado y una comparación con el comportamiento real. Calcula el resultado esperado desde el requisito, antes de ejecutar. Si lo obtienes copiando la fórmula de la función bajo prueba, puedes repetir el mismo error en la prueba y en el programa."
+          "text": "Ejecutar y mirar la pantalla no define por sí solo una prueba. Un caso de prueba especifica datos, comportamiento esperado y una comparación con el comportamiento real. Calcula el resultado esperado desde el requisito, antes de ejecutar. Si lo obtienes copiando la fórmula de la función bajo prueba, puedes repetir el mismo error en la prueba y en el programa.",
+          "emphasis": [
+            {
+              "text": "caso de prueba"
+            },
+            {
+              "text": "comportamiento esperado"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -151,11 +159,55 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código escribe la función verificar(int piezas, int esperado) que llama a estimar, muestra el resultado real y el esperado con una etiqueta y devuelve si coinciden. Prueba de forma independiente -1,0,1,4,10 y 11 con expectativas -1,0,5,11,23 y -1. Cuenta fallos y muestra el total. Después introduce deliberadamente preparación en el caso cero, comprueba que se detecta y restaura la solución. El defecto modifica resultados; no introduce operaciones peligrosas."
+          "text": "Escribe `verificar(int piezas, int esperado)`: llama a estimar, muestra el resultado real y el esperado y devuelve si coinciden. En main ejecuta de forma independiente las seis pruebas -1, 0, 1, 4, 10 y 11 con expectativas -1, 0, 5, 11, 23 y -1. Cuenta los fallos sin omitir llamadas por cortocircuito.\n\nCada prueba debe mostrar `Piezas=P real=R esperado=E ` y después Correcto o Fallo, con un salto de línea. Al final muestra `Fallos=0`, sin salto final. Pulsa Compilar, ejecutar y comprobar. Esta actividad construye el verificador de la regla correcta; el defecto controlado tiene un editor independiente después.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=0 esperado=0 Correcto\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=0"
+                ],
+                "explanation": "Se ejecutan las seis comparaciones con expectativas independientes. Ningún caso se omite por el resultado de una prueba anterior."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar que el verificador detecta un defecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor contiene deliberadamente un defecto seguro: estimar devuelve 3 para cero piezas. Conserva esa versión durante esta actividad y construye el mismo verificador con las seis expectativas del requisito, incluido cero minutos para cero piezas. No cambies las expectativas para hacerlas coincidir con el defecto.\n\nUsa el mismo formato de líneas y pulsa Compilar, ejecutar y comprobar. La prueba de cero debe mostrar Piezas=0 real=3 esperado=0 Fallo; las otras cinco deben mostrar Correcto y el resumen debe ser Fallos=1, sin salto final. Detectar el desacuerdo es el objetivo de esta actividad; la versión correcta permanece en el editor anterior.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=3 esperado=0 Fallo\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=1"
+                ],
+                "explanation": "El verificador informa un fallo real sin cambiar la expectativa del pedido vacío. Una batería que nunca detecta defectos introducidos necesita revisión."
+              }
+            ]
+          }
         }
       ]
     },
@@ -180,7 +232,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Las llamadas ocupan instrucciones independientes; ninguna se omite por un && anterior. Para comprobar que el verificador detecta el defecto, cambia temporalmente el return 0 del caso piezas==0 por return 3. La comparación de ese caso mostrará real=3, esperado=0 y Fallo. Restaura la regla original y vuelve a ejecutar todo el conjunto."
+          "text": "Las llamadas ocupan instrucciones independientes; ninguna se omite por un && anterior. La actividad del defecto conserva esa regla de ejecución y las mismas expectativas. Sólo cambia el resultado que estimar devuelve para cero: el resumen correcto de esa actividad es un fallo. Las referencias mantienen separados el programa correcto y el programa usado para probar el verificador."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del defecto que debe detectarse"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
         }
       ]
     }

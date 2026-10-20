@@ -240,15 +240,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe un programa con {3, 7, 2}. Si hay elementos, añade cuatro al primero y muestra Primero: 7 y Ultimo: 2 en líneas distintas. Si no hay elementos, muestra Sin datos. Comprueba también {5}, que debe mostrar Primero: 9 y Ultimo: 9: en una colección de un elemento ambas posiciones designan el mismo objeto."
+          "text": "Construye un programa con `{3, 7, 2}`. Si hay elementos, añade cuatro al primero y muestra `Primero: 7` y `Ultimo: 2` en dos líneas. Si no hay elementos, debe mostrar `Sin datos` sin realizar accesos.\n\nPulsa «Compilar, ejecutar y comprobar» para el caso inicial, con salto final opcional. Cambiar un elemento no debe cambiar `size()`."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Primero: 7\nUltimo: 2",
+                  "Primero: 7\nUltimo: 2\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de compilar, anota por qué existe cada posición utilizada. Prueba después el vector vacío, sin ejecutar ningún acceso en esa rama. Cambiar un elemento no debe cambiar size()."
+          "text": "La rama no vacía demuestra que existen el índice cero y el índice `size()-1`. En un solo elemento son la misma posición; por eso modificar el primero también cambia el último. La actividad siguiente permite comprobar ese caso y el vacío sin modificar el programa."
         }
       ]
     },
@@ -287,6 +299,45 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: modificar una posición existente sin aumentar el tamaño; comprobar vacío antes de acceder; tratar primero y último como la misma posición cuando sólo hay un elemento; comparar todas las salidas con los casos de la consigna."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 3 3 7 2 para {3, 7, 2}\n• 1 5 para {5}\n• 0 para el vector vacío\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        datos.at(0) += 4;\n        std::cout << \"Primero: \" << datos.at(0) << \"\\n\";\n        std::cout << \"Ultimo: \" << datos.at(datos.size() - 1);\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 3 7 2",
+                "outputs": [
+                  "Primero: 7\nUltimo: 2",
+                  "Primero: 7\nUltimo: 2\n"
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "Primero: 9\nUltimo: 9",
+                  "Primero: 9\nUltimo: 9\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos",
+                  "Sin datos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3 3 7 2"
         }
       ]
     }

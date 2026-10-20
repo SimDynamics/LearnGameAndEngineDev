@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera fixed, scientific y general como decisiones de presentación. En format las letras correspondientes son f, e y g dentro de cada campo. Una precisión se escribe con punto y número: {:.2f} pide dos cifras tras el punto en notación fija; {:.2e}, dos cifras tras el punto de la parte científica; {:.2g}, dos cifras significativas en total. Cada campo elige su regla sin cambiar otros campos ni el valor recibido."
+          "text": "Recupera fixed, scientific y general como decisiones de presentación. En format las letras correspondientes son f, e y g dentro de cada campo. Una precisión se escribe con punto y número: {:.2f} pide dos cifras tras el punto en notación fija; {:.2e}, dos cifras tras el punto de la parte científica; {:.2g}, dos cifras significativas en total. Cada campo elige su regla sin cambiar otros campos ni el valor recibido (Stroustrup, 2024, sección 9.10.6, pp. 282–283)."
         },
         {
           "type": "code",
@@ -205,6 +205,18 @@
         {
           "type": "paragraph",
           "text": "El contrato de estas actividades usa patrones literales comprobados. Revisa los argumentos y sus tipos al corregir un diagnóstico; no cambies silenciosamente el dato para hacer coincidir un resultado visto. La conversión debe responder a lo que el programa quiere representar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados__secuencia_media_previa",
+          "question": "Una única lectura tiene codigo=\"Pasillos\", cantidad=0 y medida=12.0. Con código de mínimo seis, cantidad decimal de ancho cuatro con ceros y medida fija con dos decimales, ¿qué resultado corresponde?",
+          "options": [
+            "[Pasill]|[0000]|[12.00]\nDatos:1;Total:0;Media:12.00",
+            "[Pasillos]|[0000]|[12.00]\nDatos:0;Total:0;Sin media",
+            "[Pasillos]|[0000]|[12.00]\nDatos:1;Total:0;Media:12.00"
+          ],
+          "correctIndex": 2,
+          "explanation": "El mínimo seis no recorta el código de ocho caracteres. Cantidad cero no elimina la lectura: hay un dato y su medida es la media simple."
         }
       ]
     },
@@ -220,15 +232,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de las filas, añade Datos:N;Total:T;Media:M. N es el número de lecturas; T suma cantidades; M es la media simple de las medidas originales, una por lectura, presentada con dos decimales. Cantidad no es un peso de esa media. Para vacío devuelve Datos:0;Total:0;Sin media, sin dividir. Usa {\"N\", 4, 8.8125} y {\"E\", 9, 4.3125}. Presenta el resultado y comprueba después que la primera medida multiplicada por dieciséis sigue dando ciento cuarenta y uno."
+          "text": "Después de las filas, añade Datos:N;Total:T;Media:M. N es el número de lecturas; T suma cantidades; M es la media simple de las medidas originales, una por lectura, presentada con dos decimales. Cantidad no es un peso de esa media. Para vacío devuelve Datos:0;Total:0;Sin media, sin dividir. Usa {\"N\", 4, 8.8125} y {\"E\", 9, 4.3125}. Presenta el resultado y comprueba después que la primera medida multiplicada por dieciséis sigue dando ciento cuarenta y uno. Construye una sola batería: presenta ese resumen de dos lecturas, el cálculo 141, el resumen vacío y el resumen de una lectura {\"Pasillos\", 0, 12.0}, en ese orden. El resumen no vacío conserva los saltos entre filas; añade un salto después del final de cada resultado presentado. Usa Compilar, ejecutar y comprobar para toda la batería. No cambia el formato ni los datos entre versiones.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[N     ]|[0004]|[8.81]\n[E     ]|[0009]|[4.31]\nDatos:2;Total:13;Media:6.56\n141\nDatos:0;Total:0;Sin media\n[Pasillos]|[0000]|[12.00]\nDatos:1;Total:0;Media:12.00\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice los campos, el total y la media antes de compilar. Prueba también vacío, una lectura de cantidad cero y una etiqueta más larga que seis posiciones. Cada llamada debe comenzar un resultado nuevo. Los límites dados mantienen la suma de cantidades dentro de int."
+          "text": "La batería incluye vacío sin división, cantidad cero y código de ocho caracteres, que se conserva completo. Cada llamada debe comenzar un resultado nuevo; las sumas y la media utilizan los datos originales, no los caracteres ya redondeados. Los límites dados mantienen la suma de cantidades dentro de int."
         }
       ]
     },
@@ -285,8 +313,82 @@
           "explanation": "La representación del número se decide dentro del patrón. El ancho externo trataría la cadena completa."
         },
         {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados__secuencia_resumen_transferencia",
+          "question": "Una medida se presenta con dos decimales y después se requiere otra precisión. ¿Qué organización permite cambiar la presentación sin cambiar la media calculada?",
+          "options": [
+            "Redondear cada medida y guardar ese texto en el registro antes de sumar.",
+            "Sumar medidas originales y aplicar la precisión sólo al componer el resultado.",
+            "Multiplicar cada medida por su cantidad, aunque la media pedida sea simple."
+          ],
+          "correctIndex": 1,
+          "explanation": "La media simple usa cada medida una vez. El formato produce caracteres después del cálculo y deja disponibles los datos originales para otra precisión."
+        },
+        {
           "type": "paragraph",
-          "text": "En una sesión posterior crea un resumen de datos propios dentro del dominio. Antes de programar, escribe qué se calcula, qué se presenta y qué destino recibe la cadena. Recupera vacío, una lectura y varias; cambia la precisión sin cambiar las cuentas, y comprueba los datos además de los caracteres. Consulta la referencia sólo después del intento."
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstruct Lectura {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_resumen(const std::vector<Lectura>& lecturas) {\n    std::string texto;\n    int total = 0;\n    double suma = 0.0;\n    for (const auto& lectura : lecturas) {\n        texto += std::format(\"[{:<6}]|[{:04d}]|[{:.2f}]\\n\", lectura.codigo,\n            lectura.cantidad, lectura.medida);\n        total += lectura.cantidad;\n        suma += lectura.medida;\n    }\n    if (lecturas.empty()) {\n        texto += \"Datos:0;Total:0;Sin media\";\n    } else {\n        double media = suma / static_cast<double>(lecturas.size());\n        texto += std::format(\"Datos:{};Total:{};Media:{:.2f}\", lecturas.size(), total, media);\n    }\n    return texto;\n}\n\nint main() {\n    const std::vector<Lectura> lecturas{{\"N\", 4, 8.8125}, {\"E\", 9, 4.3125}};\n    std::cout << componer_resumen(lecturas) << \"\\n\";\n    std::cout << std::format(\"{}\", lecturas.at(0).medida * 16) << \"\\n\";\n    std::cout << componer_resumen({}) << \"\\n\";\n    std::cout << componer_resumen({{\"Pasillos\", 0, 12.0}}) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir el resumen con otra precisión"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados__secuencia_transferencia_formato",
+          "question": "Las dos medidas son 1.125 y 2.625. ¿Qué media simple debe presentarse con tres decimales?",
+          "options": [
+            "1.875, calculada con las dos medidas originales.",
+            "2.062, ponderando las medidas con las cantidades 3 y 5.",
+            "3.750, sumando sin dividir por el número de lecturas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La suma es 3.75 y hay dos medidas. La cantidad no es un peso de esta media; la presentación no sustituye el cálculo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye resumen_tres(const std::vector<Lectura>&), con el mismo contrato de códigos, cantidades y media simple, pero presenta las medidas y la media con tres decimales. Conserva código de mínimo seis a la izquierda y cantidad decimal de ancho cuatro con ceros. Usa patrones literales; devuelve texto sin imprimir ni modificar registros. main presenta la colección {{\"O\", 3, 1.125}, {\"E\", 5, 2.625}} y después una colección vacía. Mantén Datos:N;Total:T;Media:M y, para vacío, Datos:0;Total:0;Sin media.\n\nConstruye aquí una solución nueva para este objetivo. Toda la batería pertenece al mismo programa; usa Compilar, ejecutar y comprobar cuando esté completa. Cada línea presentada termina con salto. La referencia aparece en la página siguiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstruct Lectura {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nint main() {\n    // Construye el objetivo de transferencia de esta pagina.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[O     ]|[0003]|[1.125]\n[E     ]|[0005]|[2.625]\nDatos:2;Total:8;Media:1.875\nDatos:0;Total:0;Sin media\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la transferencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string resumen_tres(const std::vector<Lectura>& lecturas) {\n    std::string texto;\n    int total = 0;\n    double suma = 0;\n    for (const Lectura& lectura : lecturas) {\n        texto += std::format(\"[{:<6}]|[{:04d}]|[{:.3f}]\\n\", lectura.codigo, lectura.cantidad, lectura.medida);\n        total += lectura.cantidad;\n        suma += lectura.medida;\n    }\n    if (lecturas.empty()) return \"Datos:0;Total:0;Sin media\";\n    return texto + std::format(\"Datos:{};Total:{};Media:{:.3f}\", lecturas.size(), total, suma / static_cast<double>(lecturas.size()));\n}\n\nint main() {\n    const std::vector<Lectura> lecturas{{\"O\", 3, 1.125}, {\"E\", 5, 2.625}};\n    std::cout << resumen_tres(lecturas) << \"\\n\" << resumen_tres({}) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

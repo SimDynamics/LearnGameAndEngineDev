@@ -240,15 +240,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una mediana general con una copia ordenada. Para {6, 1, 4} presenta Mediana: 4. Para {1, 6, 2, 9} presenta Mediana: 4. Para {} muestra Sin datos. Comprueba también {5}, {2, 7}, {-5, -1}, {3, 3, 8} y {4, 4, 4, 4}. Decide antes qué rama corresponde y cuáles serán sus índices."
+          "text": "Construye una mediana general a partir de una copia ordenada de `{6, 1, 4}`. Muestra `Mediana: 4`. En una cantidad impar se consulta una posición central; en una cantidad par se promedian las dos centrales, conservando las fracciones. En vacío debe mostrarse `Sin datos`, sin consultar posiciones.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Guarda una tabla de pruebas con colección, orden resultante, tamaño, índices centrales y mediana prevista. Esa evidencia justifica cada acceso; no se limita a observar que el programa terminó."
+          "text": "El tamaño decide qué rama y qué posiciones existen. La actividad siguiente permite contrastar los casos pares, impares, vacíos y repetidos sin modificar el programa. El original conserva su orden porque sólo se ordena la copia."
         }
       ]
     },
@@ -273,6 +285,73 @@
           ],
           "correctIndex": 1,
           "explanation": "El caso debe poner a prueba la definición que queremos implementar."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 4 1 6 2 9 para {1, 6, 2, 9}\n• 0 para el vector vacío\n• 1 5 para {5}\n• 2 2 7 para {2, 7}\n• 2 -5 -1 para {-5, -1}\n• 3 3 3 8 para {3, 3, 8}\n• 4 4 4 4 4 para {4, 4, 4, 4}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 1 6 2 9",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos",
+                  "Sin datos\n"
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "Mediana: 5",
+                  "Mediana: 5\n"
+                ]
+              },
+              {
+                "standardInput": "2 2 7",
+                "outputs": [
+                  "Mediana: 4.5",
+                  "Mediana: 4.5\n"
+                ]
+              },
+              {
+                "standardInput": "2 -5 -1",
+                "outputs": [
+                  "Mediana: -3",
+                  "Mediana: -3\n"
+                ]
+              },
+              {
+                "standardInput": "3 3 3 8",
+                "outputs": [
+                  "Mediana: 3",
+                  "Mediana: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4 4 4 4 4",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 1 6 2 9"
         }
       ]
     },

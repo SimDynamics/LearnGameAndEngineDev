@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "int puede representar -1 y 11; eso no los convierte en cantidades válidas para el microtaller que acepta de 0 a 10 piezas. La validación comprueba reglas del dominio que el tipo por sí solo no expresa. Hazla antes de las operaciones que dependen de ellas. Una condición escrita después de dividir, acceder o modificar no protege la operación que ya ocurrió."
+          "text": "int puede representar -1 y 11; eso no los convierte en cantidades válidas para el microtaller que acepta de 0 a 10 piezas. La validación comprueba reglas del dominio que el tipo por sí solo no expresa. Hazla antes de las operaciones que dependen de ellas. Una condición escrita después de dividir, acceder o modificar no protege la operación que ya ocurrió.",
+          "emphasis": [
+            {
+              "text": "validación"
+            },
+            {
+              "text": "antes de las operaciones"
+            }
+          ]
         },
         {
           "type": "code",
@@ -158,11 +166,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe en el editor de código una función estimar que devuelva -1 para datos fuera de 0 a 10 y que cumpla la regla anterior para datos válidos. Procesa la colección: muestra Invalido para la señal de error y los minutos para los demás. Conserva un total sólo de estimaciones válidas. Prueba también una colección vacía. Decide los resultados manuales antes de ejecutar."
+          "text": "Construye `estimar` con la señal -1 para datos fuera de 0 a 10 y la regla ya conocida para los válidos. Construye también `procesar(const std::vector<int>& pedidos)`: empieza un total en cero, recorre la colección y muestra `Piezas=dato:` seguido de Invalido o de los minutos, en una línea por dato. Suma únicamente resultados válidos. Al terminar muestra `Total=valor` y un salto de línea.\n\nLlama desde main primero con `{0,2,11,-1,5}` y después con una colección vacía. La salida debe ser:\n\nPiezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0\n\nCada línea, incluida la última, termina con un salto. Pulsa Compilar, ejecutar y comprobar. La misma construcción comprueba la señal de error y el caso vacío sin cambiar los datos entre ejecuciones.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0\n"
+                ],
+                "explanation": "La señal -1 se trata antes de sumar. La sesión vacía crea su propio total cero y no produce líneas de pedidos."
+              }
+            ]
+          }
         }
       ]
     },
@@ -178,7 +202,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La función devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás. En {0,2,11,-1,5}, los resultados válidos son 0,7,13; 11 y -1 muestran Invalido y no entran en el total. El total es 20 minutos. Una colección vacía no visita pedidos y conserva total 0. Son válidas otras etiquetas de salida si permiten comprobar esas decisiones."
+          "text": "Criterios de corrección. La función devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás. En {0,2,11,-1,5}, los resultados válidos son 0,7,13; 11 y -1 muestran Invalido y no entran en el total. El total es 20 minutos. Una colección vacía no visita pedidos y conserva total 0. Son válidas otras implementaciones que permitan comprobar esas decisiones y respeten los rótulos, espacios y saltos solicitados."
         },
         {
           "type": "code",
@@ -187,7 +211,16 @@
         },
         {
           "type": "paragraph",
-          "text": "estimar detecta el dato inválido y main decide cómo presentarlo. La suma está únicamente en el camino válido: ninguna señal -1 se interpreta como tiempo. Sustituye los datos por {} para comprobar el caso vacío; el resumen debe mostrar Total=0."
+          "text": "estimar detecta el dato inválido y el procesamiento decide cómo presentarlo. Ninguna señal -1 se interpreta como tiempo. La referencia siguiente reúne las dos sesiones en llamadas independientes: el total de una sesión no se arrastra a la siguiente."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación conjunta"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 2, 11, -1, 5});\n    procesar({});\n    return 0;\n}\n"
         }
       ]
     }

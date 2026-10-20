@@ -119,11 +119,22 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa recibe sus datos mediante constantes declaradas: total_minutos vale 137 y una hora tiene 60 minutos. Predice el informe y ejecútalo. Después cambia sólo total_minutos a 127; vuelve a predecir. Finalmente prueba 0 y 60. Mantén los minutos entre 0 y 600 y el divisor en 60. El formato solicitado muestra números normales, sin añadir un cero delante de un minuto de una cifra."
+          "text": "El programa utiliza `total_minutos` igual a `137` y `minutos_por_hora` igual a `60`. La división obtiene horas completas y el resto obtiene los minutos que quedan. El formato no añade un cero delante de un minuto de una cifra.\n\nEl objetivo de este editor es comprobar el informe de ese caso mediante «Compilar, ejecutar y comprobar», con salto final opcional. El puzzle posterior trata otro dato; sus variantes tienen editores independientes."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2 h 17 min",
+                  "2 h 17 min\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -139,6 +150,52 @@
         {
           "type": "paragraph",
           "text": "Los casos 0 y 60 ayudan a comprobar el resto 0. Cambiar los datos de uno en uno facilita explicar una diferencia. Para cualquier minuto del dominio elegido, puedes reconstruir el total como horas * 60 + minutos."
+        },
+        {
+          "type": "heading",
+          "text": "Otros minutos, el mismo informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee el total de minutos; conserva sesenta minutos por hora y el mismo cálculo. Utiliza totales entre cero y seiscientos. Comprueba `137` → `2 h 17 min`, `127` → `2 h 7 min`, `0` → `0 h 0 min` y `60` → `1 h 0 min`.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total_minutos{0};\n    std::cin >> total_minutos;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n",
+          "initialStandardInput": "137",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "137",
+                "outputs": [
+                  "2 h 17 min",
+                  "2 h 17 min\n"
+                ]
+              },
+              {
+                "standardInput": "127",
+                "outputs": [
+                  "2 h 7 min",
+                  "2 h 7 min\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0 h 0 min",
+                  "0 h 0 min\n"
+                ]
+              },
+              {
+                "standardInput": "60",
+                "outputs": [
+                  "1 h 0 min",
+                  "1 h 0 min\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -200,7 +257,7 @@
         },
         {
           "type": "note",
-          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
+          "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de stdout no sustituye revisar que el código exprese las reglas del problema."
         }
       ]
     }

@@ -231,11 +231,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye el informe de {2, 7, 4, 1}: suma todos los valores y conserva en otro vector los que sean al menos cuatro. Presenta Total: 14, Elegidos: 2 y Valores:7;4; en tres líneas. Repite con {}, {4}, {1} y {6, 8}. Predice el total, el tamaño del resultado y sus valores para cada caso antes de compilar."
+          "text": "Construye el informe de `{2, 7, 4, 1}`: suma todos sus valores y conserva en otro vector los que sean al menos cuatro. Presenta estas tres líneas:\n\nTotal: 14\nElegidos: 2\nValores:7;4;\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional; el orden de los elegidos conserva el de la colección original."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total: 14\nElegidos: 2\nValores:7;4;",
+                  "Total: 14\nElegidos: 2\nValores:7;4;\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
@@ -278,6 +290,59 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: conservar la suma entre visitas, formar otro vector con todos y sólo los valores elegidos en su orden, mantener intacto el origen y distinguir tamaño del resultado de la suma de sus valores."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 4 para {4}\n• 1 1 para {1}\n• 2 6 8 para {6, 8}\n• 4 2 7 4 1 para {2, 7, 4, 1}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    int total = 0;\n    std::vector<int> elegidos;\n    for (int valor : datos) {\n        total += valor;\n        if (valor >= 4) {\n            elegidos.push_back(valor);\n        }\n    }\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elegidos: \" << elegidos.size() << \"\\nValores:\";\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Total: 0\nElegidos: 0\nValores:",
+                  "Total: 0\nElegidos: 0\nValores:\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Total: 4\nElegidos: 1\nValores:4;",
+                  "Total: 4\nElegidos: 1\nValores:4;\n"
+                ]
+              },
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "Total: 1\nElegidos: 0\nValores:",
+                  "Total: 1\nElegidos: 0\nValores:\n"
+                ]
+              },
+              {
+                "standardInput": "2 6 8",
+                "outputs": [
+                  "Total: 14\nElegidos: 2\nValores:6;8;",
+                  "Total: 14\nElegidos: 2\nValores:6;8;\n"
+                ]
+              },
+              {
+                "standardInput": "4 2 7 4 1",
+                "outputs": [
+                  "Total: 14\nElegidos: 2\nValores:7;4;",
+                  "Total: 14\nElegidos: 2\nValores:7;4;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

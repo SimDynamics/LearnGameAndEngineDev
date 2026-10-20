@@ -132,7 +132,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios tras reparar: la configuración termina correctamente y los mensajes ext_consulta y ext_comprobador muestran OFF. Construye y ejecuta comprobar_cajas: conserva sus siete casos y Bateria: OK con terminación 0. Construye y ejecuta consultar_cajas: conserva 1:2 sin salto final. Como contraprueba, agrupa la lista expandida entre comillas en esa llamada, observa el rechazo de configuración y vuelve a restaurar la reparación. La referencia aparece en la página siguiente."
+          "text": "Criterios tras reparar: la configuración termina correctamente y los mensajes ext_consulta y ext_comprobador muestran OFF. Construye y ejecuta comprobar_cajas: conserva sus siete casos y Bateria: OK con terminación 0. Construye y ejecuta consultar_cajas: conserva 1:2 sin salto final. La referencia aparece en la página siguiente; una actividad independiente contrastará después el efecto de agrupar la expansión entre comillas.",
+          "emphasis": [
+            {
+              "text": "ext_consulta y ext_comprobador muestran OFF"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -206,6 +211,49 @@
             "Piensa qué dato nuevo aporta repetir el mismo mensaje si el comando que lo consume sigue rechazándose.",
             "Atribuye cada observación a la descripción y construcción que realmente la produjeron."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Diagnosticar una lista agrupada como un solo argumento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva la biblioteca y las pruebas, pero agrupa la lista expandida entre comillas al aplicarla a set_target_properties. Configura y localiza qué nombre de objetivo intenta interpretar CMake. Repara únicamente la agrupación para aplicar OFF a los dos consumidores separados. Comprueba los dos mensajes de propiedad y conserva las salidas de ambos consumidores; no necesitas alterar la actividad ya reparada."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset(clientes consultar_cajas comprobar_cajas)\nset_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)\nget_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)\nget_target_property(ext_comprobador comprobar_cajas CXX_EXTENSIONS)\nmessage(STATUS \"clientes=${clientes}\")\nmessage(STATUS \"ext_consulta=${ext_consulta}\")\nmessage(STATUS \"ext_comprobador=${ext_comprobador}\")\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          }
         }
       ]
     },

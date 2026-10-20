@@ -14,7 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La función mover recibe una orden y referencias a x e y. Calcula primero una posición propuesta local; comprueba la orden y los límites antes de modificar las referencias. Tras un movimiento aceptado, copia la propuesta al estado real. La precondición exige que x e y designen dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos pueden contener ambos cero y cumplirla; dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato. El llamador debe preparar ese estado; no se pide detectar referencias compartidas dentro de mover. Todos los valores y cambios de esta práctica son pequeños."
+          "text": "La función mover recibe una orden y referencias a x e y. Calcula primero una posición propuesta local; comprueba la orden y los límites antes de modificar las referencias. Tras un movimiento aceptado, copia la propuesta al estado real. La precondición exige que x e y designen dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos pueden contener ambos cero y cumplirla; dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato. El llamador debe preparar ese estado; no se pide detectar referencias compartidas dentro de mover. Todos los valores y cambios de esta práctica son pequeños.",
+          "emphasis": [
+            {
+              "text": "posición propuesta local"
+            },
+            {
+              "text": "antes de modificar las referencias"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -54,11 +62,55 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa mover con la interfaz void mover(int orden, int& x, int& y). Usa invalid_argument para la orden desconocida y out_of_range para salir del tablero. Procesa {1,3,3,3,9,2} desde (0,0), capturando por orden y mostrando la posición después de cada intento. Traza cada propuesta antes de ejecutar. Conserva también una prueba de orden inválida seguida de una válida. La siguiente página compara otra secuencia; no la consultes para copiar la construcción."
+          "text": "Implementa `void mover(int orden, int& x, int& y)` con las reglas del tablero de 3 por 3. Usa `invalid_argument` para una orden desconocida y `out_of_range` para una propuesta fuera del tablero. Valida la propuesta antes de cambiar x o y. Conserva la precondición de coordenadas iniciales entre 0 y 2 y referencias a objetos distintos.\n\nConstruye una función de prueba que empiece cada sesión en (0,0), procese todas sus órdenes y capture por intento. Presenta A para una aceptación, O para orden desconocida o L para límite; inmediatamente después muestra las coordenadas como x,y y un punto y coma. Termina cada sesión con un salto de línea. Desde main prueba `{1,3,3,3,9,2}` y después `{9,1}`.\n\nPulsa Compilar, ejecutar y comprobar. La primera línea debe ser `A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;` y la segunda, `O0,0;A1,0;`, ambas con salto final. El estado de cada rechazo debe conservar las dos coordenadas anteriores y permitir una orden válida posterior.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Orden=\" << orden << \" Posicion=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Orden=\" << orden << \" Posicion=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\n"
+                ],
+                "explanation": "Las propuestas inválidas se rechazan antes de asignar las coordenadas. Cada sesión conserva el tratamiento por orden y continúa después del rechazo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Aplicar una ampliación explícita del tablero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente corresponde a otro requisito: el tablero tiene 4 por 4 posiciones, con coordenadas de 0 a 3. Construye mover conservando las clases de órdenes, los dos tipos de excepción y la actualización sólo después de validar. Usa la secuencia `{1,1,1,1,9,3}` desde (0,0). Presenta cada intento con el mismo formato A/O/L, x,y y punto y coma, y termina la sesión con un salto de línea.\n\nPulsa Compilar, ejecutar y comprobar. La salida debe ser `A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;` y su salto final. La ampliación admite la coordenada 3 y conserva el rechazo de 4 y de la orden desconocida. El editor anterior mantiene su requisito de 3 por 3.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> ordenes{1, 1, 1, 1, 9, 3};\n    int x{0};\n    int y{0};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\n"
+                ],
+                "explanation": "Cambió la frontera superior, no el significado de las órdenes ni la conservación del estado tras un rechazo."
+              }
+            ]
+          }
         }
       ]
     },
@@ -93,11 +145,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Retoma la función días después con un tablero de 4 por 4. Identifica qué dominio y pruebas cambian; conserva la política de rechazo y las pruebas de orden desconocida. La recuperación no se acredita por mostrar un mensaje: comprueba el estado y una operación válida posterior."
+          "text": "Las dos actividades anteriores corresponden a requisitos separados. En el tablero de 4 por 4 cambia la frontera permitida y se conservan el rechazo de la orden desconocida y la posibilidad de continuar. Los puzzles de esta página recuperan el seguimiento de posiciones sin pedir modificar otra vez esos editores."
         },
         {
           "type": "note",
-          "text": "La base conceptual de errores y recuperación se estudia en la fuente principal (Stroustrup, 2024, secciones 4.5–4.7 y 6.7). Los ejemplos y el proyecto son propios. En los editores de código de estas prácticas usa el compilador predeterminado Clang 23, que admite excepciones; el alternativo Clang 21 no admite esa práctica."
+          "text": "Una función puede detectar un argumento inválido y lanzar una excepción, mientras el llamador decide cómo tratar el fallo. Recuperarse exige además que los datos queden en un estado válido y predecible para la siguiente operación (Stroustrup, 2024, secciones 4.6 y 6.7). En el tablero, validar una propuesta local antes de asignar evita conservar un movimiento rechazado. En estas prácticas usa el compilador predeterminado Clang 23, que admite excepciones; el alternativo Clang 21 no admite esta práctica."
         }
       ]
     },
@@ -113,7 +165,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. La llamada cumple la precondición de posición inicial dentro de 0 a 2 y referencias a objetos distintos. Los valores de x e y pueden ser iguales; lo que debe ser distinto es su objeto de almacenamiento. Las promesas siguientes corresponden a llamadas que cumplen ambas condiciones. Una orden desconocida lanza invalid_argument; una propuesta fuera del tablero lanza out_of_range. Sólo se asignan x e y después de validar. Para {1,3,3,3,9,2}, las posiciones son (1,0),(1,1),(1,2),(1,2),(1,2),(0,2), con estados A,A,A,L,O,A: A aceptado, L límite, O orden desconocida. Desde (0,0), {9,1} debe conservar primero (0,0) y avanzar después a (1,0). Se admiten otras etiquetas que distingan ambos rechazos y muestren cada estado."
+          "text": "Criterios de corrección. La llamada cumple la precondición de posición inicial dentro de 0 a 2 y referencias a objetos distintos. Los valores de x e y pueden ser iguales; lo que debe ser distinto es su objeto de almacenamiento. Las promesas siguientes corresponden a llamadas que cumplen ambas condiciones. Una orden desconocida lanza invalid_argument; una propuesta fuera del tablero lanza out_of_range. Sólo se asignan x e y después de validar. Para {1,3,3,3,9,2}, las posiciones son (1,0),(1,1),(1,2),(1,2),(1,2),(0,2), con estados A,A,A,L,O,A: A aceptado, L límite, O orden desconocida. Desde (0,0), {9,1} debe conservar primero (0,0) y avanzar después a (1,0). Se admiten otras implementaciones que distingan ambos rechazos, conserven cada estado y produzcan el formato solicitado."
         },
         {
           "type": "code",
@@ -122,7 +174,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Las propuestas de las órdenes válidas son (1,0),(1,1),(1,2),(1,3) y, después del rechazo desconocido, (0,2). La propuesta (1,3) se rechaza y nunca se copia al estado real; la orden 9 no tiene propuesta válida. El try está dentro del recorrido para tratar cada intento. Para el tablero de 4 por 4 cambia la frontera superior de 2 a 3, actualiza la precondición y prueba {1,1,1,1,9,3}: A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;. Conserva además pruebas en ambas fronteras y una orden desconocida seguida de otra válida."
+          "text": "Las propuestas de la primera sesión son (1,0),(1,1),(1,2),(1,3) y, después del rechazo desconocido, (0,2). La propuesta (1,3) se rechaza en el tablero de 3 por 3 y nunca se copia al estado real; la orden 9 no tiene una propuesta válida. El try está dentro del recorrido para tratar cada intento. Las referencias siguientes reúnen la comprobación original y la ampliación en programas independientes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del tablero de 4 por 4"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    return 0;\n}\n"
         }
       ]
     }

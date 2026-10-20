@@ -103,15 +103,27 @@
         },
         {
           "type": "paragraph",
-          "text": "En main comienza con origen=-7.0 y destino=42. Llama y presenta Integral: B;Destino: D;Origen: O. Conservando el destino entre llamadas, asigna sucesivamente 6.5, -2.25, 100.0, 100.5 y 0.0 al origen. Presenta respectivamente Fraccion positiva, Fraccion negativa, Frontera, Fuera y Cero con el mismo formato, una línea por llamada. B procede del bool devuelto; D y O son los valores de los objetos después de la llamada. Anota esos estados antes de ejecutar."
+          "text": "Construye en un solo programa la secuencia de llamadas: destino comienza en cuarenta y dos y los orígenes son `-7.0`, `6.5`, `-2.25`, `100.0`, `100.5` y `0.0`, en ese orden. Conserva destino entre llamadas. Presenta las etiquetas `Integral`, `Fraccion positiva`, `Fraccion negativa`, `Frontera`, `Fuera` y `Cero`, con el formato `Etiqueta: B;Destino: D;Origen: O`, una línea por llamada. Los datos deben proceder de los objetos y del bool devuelto."
         },
         {
           "type": "paragraph",
-          "text": "Prueba también -100.0 y -100.5 para la frontera opuesta; 1.0; 0.5 y -0.5, cuya parte entera sería cero; y 99.75. Mantén un destino previo observable en cada rechazo. Cambia ese destino inicial y comprueba que false conserva el valor nuevo, no una constante escogida por la función. Un candidato cero no decide por sí solo si hubo aceptación."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para esa secuencia, con salto final opcional. Los rechazos deben conservar el destino que dejó la llamada anterior; cero debe aceptarse y reemplazarlo. Otros orígenes y destinos previos se comprueban después mediante Entrada, sin cambiar la función."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y observa bool, destino y origen tras cada una.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y observa bool, destino y origen tras cada una.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Integral: 1;Destino: -7;Origen: -7\nFraccion positiva: 0;Destino: -7;Origen: 6.5\nFraccion negativa: 0;Destino: -7;Origen: -2.25\nFrontera: 1;Destino: 100;Origen: 100\nFuera: 0;Destino: 100;Origen: 100.5\nCero: 1;Destino: 0;Origen: 0",
+                  "Integral: 1;Destino: -7;Origen: -7\nFraccion positiva: 0;Destino: -7;Origen: 6.5\nFraccion negativa: 0;Destino: -7;Origen: -2.25\nFrontera: 1;Destino: 100;Origen: 100\nFuera: 0;Destino: 100;Origen: 100.5\nCero: 1;Destino: 0;Origen: 0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -141,6 +153,73 @@
         {
           "type": "paragraph",
           "text": "Criterios: interfaz concordante; finitud e intervalo de origen antes del cast; candidato y vuelta locales; comparación exacta del valor recibido; ninguna asignación al destino ante rechazo; cero y ambos extremos aceptados; fracciones de los dos signos y exceso de los dos límites rechazados; ninguna impresión dentro de la función. El rango pequeño hace segura esta construcción sin convertirla en una solución genérica para todos los tipos o todos los enteros."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar un origen y un destino previo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee un origen finito y un destino entero previo. Comprueba estas parejas: `-100.0 42`, `-100.5 42`, `1.0 42`, `0.5 42`, `-0.5 42`, `99.75 42` y `6.5 -8`. Se muestran aceptación, destino posterior, origen y si el origen se conserva. Un rechazo debe conservar el destino recibido y no una constante interna.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = convertir_entero(origen, destino);\n    std::cout << \"Aceptado: \" << aceptado << \";Destino: \" << destino\n              << \";Origen: \" << origen << \";Conservado: \" << (origen == copia);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "-100.0 42",
+                "outputs": [
+                  "Aceptado: 1;Destino: -100;Origen: -100;Conservado: 1",
+                  "Aceptado: 1;Destino: -100;Origen: -100;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-100.5 42",
+                "outputs": [
+                  "Aceptado: 0;Destino: 42;Origen: -100.5;Conservado: 1",
+                  "Aceptado: 0;Destino: 42;Origen: -100.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1.0 42",
+                "outputs": [
+                  "Aceptado: 1;Destino: 1;Origen: 1;Conservado: 1",
+                  "Aceptado: 1;Destino: 1;Origen: 1;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "0.5 42",
+                "outputs": [
+                  "Aceptado: 0;Destino: 42;Origen: 0.5;Conservado: 1",
+                  "Aceptado: 0;Destino: 42;Origen: 0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-0.5 42",
+                "outputs": [
+                  "Aceptado: 0;Destino: 42;Origen: -0.5;Conservado: 1",
+                  "Aceptado: 0;Destino: 42;Origen: -0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "99.75 42",
+                "outputs": [
+                  "Aceptado: 0;Destino: 42;Origen: 99.75;Conservado: 1",
+                  "Aceptado: 0;Destino: 42;Origen: 99.75;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "6.5 -8",
+                "outputs": [
+                  "Aceptado: 0;Destino: -8;Origen: 6.5;Conservado: 1",
+                  "Aceptado: 0;Destino: -8;Origen: 6.5;Conservado: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "-100.0 42"
         }
       ]
     },
@@ -218,7 +297,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Empieza con {0.0, 2.0, -3.0, 0.5, -0.5, 100.0, 100.5}. Prepara un destino int con valor 17 para cada llamada. Usa el bool devuelto para decidir si ese destino pertenece a la colección de enteros y al conteo de ceros. La función no imprime. Anota los elementos que esperas conservar, los rechazos y los ceros antes de ejecutar; no decidas la aceptación a partir de que el destino sea cero o distinto de cero."
+          "text": "Empieza con `{0.0, 2.0, -3.0, 0.5, -0.5, 100.0, 100.5}`. Prepara un destino diecisiete para cada llamada y utiliza el bool de aceptación para añadir el entero y contar los ceros. Una fracción que no se acepta no debe incorporarse aunque su parte entera sería cero."
         },
         {
           "type": "paragraph",
@@ -226,11 +305,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrasta también {0.0}; {0.5}; {-0.5}; {-100.0,100.0}; {-100.5,100.5}; y {0.0,0.5,0.0,-0.5}. Los casos de una fracción y la mezcla de ceros permiten distinguir rechazo de candidato cero. Las fronteras incluidas y las exteriores permiten detectar una guarda desplazada. Cambia el destino previo de 17 a -8 y verifica que los resultados del informe no dependan de ese valor."
+          "text": "Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. El objetivo es `Enteros:0;2;-3;100;`, `Rechazados: 3`, `Ceros aceptados: 1` y `Datos conservados: 1`, en cuatro líneas. La actividad posterior comprueba otras colecciones con el mismo procedimiento."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Enteros:0;2;-3;100;\nRechazados: 3\nCeros aceptados: 1\nDatos conservados: 1",
+                  "Enteros:0;2;-3;100;\nRechazados: 3\nCeros aceptados: 1\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -270,11 +361,122 @@
         },
         {
           "type": "paragraph",
-          "text": "En una sesión posterior, recupera convertir_entero sin consultar su cuerpo y úsala con una colección propia que combine un entero negativo, un cero, una fracción cercana a cero y un valor exterior. Predice valores aceptados y destino tras los rechazos, ejecuta y justifica cada diferencia. No conviertas el reconocimiento de una salida conocida en criterio de aceptación."
+          "text": "La construcción siguiente recupera la conversión comprobada y su uso con una colección. Los casos incluyen un entero negativo, cero, fracciones cercanas a cero y valores exteriores. El bool de aceptación debe decidir la incorporación de cada resultado y los rechazos deben conservar el destino previo."
         },
         {
           "type": "note",
-          "text": "La lectura de apoyo trata conversión, estrechamiento y conversión comprobada (Stroustrup, 2024, secciones 2.9 y 7.4.7). narrow y round_to del soporte PPP no son funciones de la biblioteca estándar; aquí se usa convertir_entero con el dominio y las condiciones de aceptación de esta lección. N4950 y el borrador HTML precisan truncamiento, representabilidad y conversión entera a punto flotante (Köppe et al., 2023, sección [conv.fpint]; Working Draft: Programming Languages — C++, s. f., sección [conv.fpint]). La finitud se consulta en la interfaz C++ de <cmath> (Working Draft: Programming Languages — C++, s. f., sección [cmath.syn])."
+          "text": "Una conversión comprobada puede detectar una pérdida de información que una conversión implícita no rechaza por sí sola (Stroustrup, 2024, sección 7.4.7). narrow y round_to del soporte PPP no son funciones de la biblioteca estándar; aquí se usa convertir_entero con el dominio y las condiciones de aceptación de esta lección. N4950 y el borrador HTML precisan truncamiento, representabilidad y conversión entera a punto flotante (Köppe et al., 2023, sección [conv.fpint]; Working Draft: Programming Languages — C++, s. f., sección [conv.fpint]). La finitud se consulta en la interfaz C++ de <cmath> (Working Draft: Programming Languages — C++, s. f., sección [cmath.syn]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic",
+              "occurrence": 1
+            },
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic",
+              "occurrence": 2
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Reconstruir la clasificación con el contrato exacto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto `convertir_entero` y un cliente que lea primero la cantidad de valores y después esos `double`. Usa como máximo ocho valores finitos de menos ciento dos a ciento dos. Conserva una copia del vector, prepara destino diecisiete para cada llamada y presenta las cuatro líneas del informe: `Enteros:`, `Rechazados: N`, `Ceros aceptados: N` y `Datos conservados: B`. Cada entero aceptado termina en punto y coma.\n\nComprueba `0`; `1 0.0`; `1 0.5`; `1 -0.5`; `2 -100.0 100.0`; `2 -100.5 100.5`; y `4 0.0 0.5 0.0 -0.5`. Pulsa «Compilar, ejecutar y comprobar» conservando las funciones entre casos; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Recupera convertir_entero antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la clasificacion, los conteos y la prueba de conservacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Enteros:\nRechazados: 0\nCeros aceptados: 0\nDatos conservados: 1",
+                  "Enteros:\nRechazados: 0\nCeros aceptados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Enteros:0;\nRechazados: 0\nCeros aceptados: 1\nDatos conservados: 1",
+                  "Enteros:0;\nRechazados: 0\nCeros aceptados: 1\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.5",
+                "outputs": [
+                  "Enteros:\nRechazados: 1\nCeros aceptados: 0\nDatos conservados: 1",
+                  "Enteros:\nRechazados: 1\nCeros aceptados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 -0.5",
+                "outputs": [
+                  "Enteros:\nRechazados: 1\nCeros aceptados: 0\nDatos conservados: 1",
+                  "Enteros:\nRechazados: 1\nCeros aceptados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 -100.0 100.0",
+                "outputs": [
+                  "Enteros:-100;100;\nRechazados: 0\nCeros aceptados: 0\nDatos conservados: 1",
+                  "Enteros:-100;100;\nRechazados: 0\nCeros aceptados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 -100.5 100.5",
+                "outputs": [
+                  "Enteros:\nRechazados: 2\nCeros aceptados: 0\nDatos conservados: 1",
+                  "Enteros:\nRechazados: 2\nCeros aceptados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "4 0.0 0.5 0.0 -0.5",
+                "outputs": [
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1",
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "La clasificación no depende del destino previo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee cantidad, valores y destino previo para cada llamada. Comprueba `4 0.0 0.5 0.0 -0.5 17` y la misma colección con destino `-8`. Ambos informes deben ser `Enteros:0;0;`, dos rechazos, dos ceros aceptados y conservación verdadera. El bool decide la pertenencia de cada resultado.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        origen.push_back(dato);\n    }\n    int previo{0};\n    std::cin >> previo;\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n    for (const double dato : origen) {\n        int destino{previo};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Enteros:\";\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"\\nRechazados: \" << rechazados\n              << \"\\nCeros aceptados: \" << ceros\n              << \"\\nDatos conservados: \" << conservados << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 0.0 0.5 0.0 -0.5 17",
+                "outputs": [
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1",
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "4 0.0 0.5 0.0 -0.5 -8",
+                "outputs": [
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1",
+                  "Enteros:0;0;\nRechazados: 2\nCeros aceptados: 2\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 0.0 0.5 0.0 -0.5 17"
         }
       ]
     }

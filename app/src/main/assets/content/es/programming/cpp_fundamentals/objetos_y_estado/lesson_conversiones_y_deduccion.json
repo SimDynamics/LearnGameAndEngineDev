@@ -348,25 +348,51 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor de código un programa que comience con `total` igual a quince y `partes` igual a dos, ambas variables de tipo `int`. Debe calcular dos cocientes: uno mediante división entera y otro conservando la fracción mediante una conversión explícita.\n\nLa consola debe mostrar estas dos líneas, en este orden:\n\nEntero: 7\nDecimal: 7.5\n\nCompleta el cuerpo de `main` con los datos, los cálculos y las instrucciones de salida. No escribas directamente los dos mensajes numéricos como resultados fijos: deben proceder de las variables y de las operaciones. Decide dónde necesita ocurrir la conversión para conservar la parte fraccionaria.\n\nCompila y ejecuta tu programa. Compara con lo pedido los valores, el orden, los rótulos, los espacios y la separación en dos líneas. Si encuentras diferencias, revisa el código y vuelve a probarlo.\n\nDespués cambia únicamente el valor inicial de `total` a catorce y ejecuta de nuevo en el mismo editor. Ahora deben aparecer:\n\nEntero: 7\nDecimal: 7\n\nTras comprobar ambos casos, resuelve el último puzzle de la página siguiente para elegir una explicación sobre los tipos de los dos resultados. La comparación razonada está después, en la página final.",
-          "emphasis": [
-            {
-              "text": "Compila y ejecuta tu programa"
-            }
-          ]
+          "text": "Construye un programa que comience con `total` igual a quince y `partes` igual a dos, ambas variables de tipo `int`. Debe calcular dos cocientes: uno mediante división entera y otro conservando la fracción mediante una conversión explícita.\n\nLa consola debe mostrar estas dos líneas:\n\nEntero: 7\nDecimal: 7.5\n\nCompleta los datos, los cálculos y las instrucciones de salida. Los resultados deben proceder de las variables y las operaciones. Decide dónde necesita ocurrir la conversión para conservar la parte fraccionaria.\n\nPulsa «Compilar, ejecutar y comprobar». Se comprueban los valores, el orden, los rótulos, los espacios y las dos líneas; el salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Entero: 7\nDecimal: 7.5",
+                  "Entero: 7\nDecimal: 7.5\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Mantén el divisor dos y compara los casos quince y catorce. El primero obliga a distinguir si se conserva la fracción; el segundo permite observar dos salidas con el mismo valor visible. Necesitamos las dos pruebas para contrastar el cálculo con la intención.\n\nComprueba el programa en la consola del editor de código y compara las dos versiones con los resultados solicitados. En el puzzle posterior, elige la justificación que concuerde con las definiciones y las operaciones del código.",
-          "emphasis": [
-            {
-              "text": "Necesitamos las dos pruebas para contrastar el cálculo con la intención"
-            }
-          ]
+          "text": "Con quince y dos, la diferencia visible permite comprobar si la conversión ocurrió antes de la división. Convertir un cociente entero ya calculado no recupera la fracción perdida.\n\nLa siguiente actividad usa otro editor para observar un caso en que ambos resultados se muestran con los mismos caracteres."
+        },
+        {
+          "type": "heading",
+          "text": "Mismo valor visible, cálculos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia únicamente el valor inicial de `total` a catorce. Conserva `partes` igual a dos y los dos cálculos.\n\nPulsa «Compilar, ejecutar y comprobar». Deben aparecer estas dos líneas, con un salto final opcional:\n\nEntero: 7\nDecimal: 7\n\nLa actividad de justificación de la página siguiente relaciona esa coincidencia visible con los tipos y las operaciones del código."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total = 15;\n    int partes = 2;\n    auto entero = total / partes;\n    double decimal = static_cast<double>(total) / partes;\n    std::cout << \"Entero: \" << entero << \"\\n\";\n    std::cout << \"Decimal: \" << decimal;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Entero: 7\nDecimal: 7",
+                  "Entero: 7\nDecimal: 7\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

@@ -117,7 +117,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con -1 0 21 5 se rechazan las peticiones primera y tercera; cero sí se acepta. Antes de ejecutar, deduce por separado los resultados y los datos que debe conservar cada diagnóstico. stdout debe contener Cajas=0 y Cajas=2, una línea por resultado; el código final es 1. Los dos diagnósticos se escriben en stderr y no deben anunciar falta de material ni una corrección que no se realizó."
+          "text": "Con -1 0 21 5 se rechazan las peticiones primera y tercera; cero sí se acepta. Antes de ejecutar, deduce por separado los resultados y los datos que debe conservar cada diagnóstico. stdout debe contener Cajas=0 y Cajas=2, una línea por resultado; el código final es 1. Los dos diagnósticos se escriben en stderr y no deben anunciar falta de material ni una corrección que no se realizó.\n\nPara comprobar el mismo mensaje sin rechazos, utiliza después la entrada 0 1 20 4 en este editor, sin cambiar el programa: se aceptan las cuatro peticiones, stderr queda vacío y el código es 0. Con una entrada vacía, ambos canales quedan vacíos y el código es 0. Estos controles comprueban que el diagnóstico sólo acompaña un rechazo real."
         },
         {
           "type": "cpp_compiler",
@@ -127,7 +127,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después prueba 0 1 20 4, sin cambiar el programa: se aceptan las cuatro peticiones, stderr queda vacío y el código final es 0. Comprueba también el lote vacío: ambos canales quedan vacíos y el código es 0. Una redacción distinta puede cumplir los criterios; el compilador no decide por sí solo si el mensaje ayuda a su destinatario. Intenta y revisa tu versión antes de abrir la referencia."
+          "text": "Una redacción distinta puede cumplir los criterios. El compilador permite observar la salida y la terminación, pero una construcción correcta no decide por sí sola si un mensaje conserva los datos que necesita su destinatario. La referencia siguiente permite contrastar esos criterios después del intento."
         }
       ]
     },
@@ -213,7 +213,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada preparada contiene cuatro peticiones: (2,3), (10,0), (0,-1), (5,5). stdout debe contener Saldo=-1 y Saldo=0, una línea por resultado. Los rechazos corresponden a las peticiones 2 y 3; el código final es 1. En stderr, identifica la operación, la petición y ambos campos por su nombre, con sus valores reales; indica la condición válida para cada campo y una acción de revisión. No clasifiques como error un saldo negativo ni anuncies un cobro o una devolución que no se realizó."
+          "text": "La entrada preparada contiene cuatro peticiones: (2,3), (10,0), (0,-1), (5,5). stdout debe contener Saldo=-1 y Saldo=0, una línea por resultado. Los rechazos corresponden a las peticiones 2 y 3; el código final es 1. En stderr, identifica la operación, la petición y ambos campos por su nombre, con sus valores reales; indica la condición válida para cada campo y una acción de revisión. No clasifiques como error un saldo negativo ni anuncies un cobro o una devolución que no se realizó.\n\nComprueba también en este editor la entrada 2 3 0 0 9 0 0 9, conservando el programa: las cuatro peticiones son válidas y sus saldos son -1, 0, 9 y -9. No debe aparecer ningún diagnóstico por el signo de un resultado. Con el lote vacío, ambos canales quedan vacíos y el código es 0."
         },
         {
           "type": "cpp_compiler",
@@ -223,7 +223,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva la biblioteca, main y los datos mientras mejoras el mensaje. Después cambia sólo la entrada a 2 3 0 0 9 0 0 9: las cuatro peticiones son válidas. Deduce los cuatro saldos antes de ejecutar y comprueba que no aparezca un diagnóstico por el signo de un resultado. El lote vacío también debe conservar vacíos ambos canales y terminar con 0. Intenta la transferencia antes de consultar su referencia."
+          "text": "El signo del saldo no determina la aceptación: la condición pertenece a cada campo de entrada. Los controles de pares válidos y del lote vacío distinguen ese acuerdo de una decisión basada sólo en el resultado aritmético."
         }
       ]
     },

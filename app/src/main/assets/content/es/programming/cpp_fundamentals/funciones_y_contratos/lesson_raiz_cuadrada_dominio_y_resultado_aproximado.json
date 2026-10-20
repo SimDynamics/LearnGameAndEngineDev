@@ -166,11 +166,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, anota bool, destino y argumento posterior en cada llamada. Prueba además 0.0, 100.0, 16.0, 0.25, 2.0, -1.0 y 100.5, manteniendo un destino previo observable para los rechazos. Para dos usa las propiedades y la tolerancia anteriores, no una cadena de decimales. Comprueba que todo rechazo conserva el destino y que la aceptación de cero sí reemplaza un destino previo distinto de cero."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para las tres llamadas, con salto final opcional. El objetivo conserva cinco en destino después de ambos rechazos. Los otros orígenes se comprueban después; para el área dos se verifican propiedades y cercanía, sin exigir una cadena particular de decimales."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas, conserva sus resultados y observa los objetos.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas, conserva sus resultados y observa los objetos.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Valida: 1;Destino: 5;Area: 25\nNegativa: 0;Destino: 5;Area: -4\nExceso: 0;Destino: 5;Area: 101",
+                  "Valida: 1;Destino: 5;Area: 25\nNegativa: 0;Destino: 5;Area: -4\nExceso: 0;Destino: 5;Area: 101\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -200,6 +212,90 @@
         {
           "type": "paragraph",
           "text": "Criterios para tu construcción: interfaz y tipos concordantes; comprobación de finitud y ambos límites antes del cálculo; std::sqrt sólo con área aceptada; destino intacto en todo rechazo; aceptación que guarda el resultado; ninguna impresión dentro de la función; observación posterior en main. Comprueba frontera cero, frontera cien, fracciones y los rechazos preparados. Otra organización del cuerpo es válida si mantiene esas garantías."
+        },
+        {
+          "type": "heading",
+          "text": "Raíces exactas y destinos conservados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un área finita y prepara destino menos tres. Comprueba `0.0` → `1:0`, `100.0` → `1:10`, `16.0` → `1:4`, `0.25` → `1:0.5`; `-1.0` y `100.5` → `0:-3`. El cero aceptado reemplaza el destino; los rechazos lo conservan.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double area{0.0};\n    double destino{-3.0};\n    std::cin >> area;\n    const bool aceptada = calcular_lado(area, destino);\n    std::cout << aceptada << ':' << destino;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0.0",
+                "outputs": [
+                  "1:0",
+                  "1:0\n"
+                ]
+              },
+              {
+                "standardInput": "100.0",
+                "outputs": [
+                  "1:10",
+                  "1:10\n"
+                ]
+              },
+              {
+                "standardInput": "16.0",
+                "outputs": [
+                  "1:4",
+                  "1:4\n"
+                ]
+              },
+              {
+                "standardInput": "0.25",
+                "outputs": [
+                  "1:0.5",
+                  "1:0.5\n"
+                ]
+              },
+              {
+                "standardInput": "-1.0",
+                "outputs": [
+                  "0:-3",
+                  "0:-3\n"
+                ]
+              },
+              {
+                "standardInput": "100.5",
+                "outputs": [
+                  "0:-3",
+                  "0:-3\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0.0"
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar una raíz aproximada por propiedades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa comprueba el área dos mediante las propiedades ya estudiadas: lado no negativo, estrictamente entre `1.4` y `1.5`, y cuadrado con diferencia menor que `0.000001` en valor absoluto respecto de dos. El objetivo es mostrar `Aceptada: 1`, `No negativo: 1`, `En banda: 1` y `Cuadrado cercano: 1` en cuatro líneas. No se comprueba una cadena decimal de la raíz.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double lado{-3.0};\n    const bool aceptada = calcular_lado(2.0, lado);\n    const double diferencia = lado * lado - 2.0;\n    std::cout << \"Aceptada: \" << aceptada << \"\\nNo negativo: \" << (lado >= 0.0)\n              << \"\\nEn banda: \" << (lado > 1.4 && lado < 1.5)\n              << \"\\nCuadrado cercano: \" << (diferencia > -0.000001 && diferencia < 0.000001);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptada: 1\nNo negativo: 1\nEn banda: 1\nCuadrado cercano: 1",
+                  "Aceptada: 1\nNo negativo: 1\nEn banda: 1\nCuadrado cercano: 1\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -211,7 +307,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El primer argumento puede ser un literal, una expresión o el valor de un objeto: inicializa el parámetro double por valor. El segundo necesita un objeto double modificable porque se vincula con double&. Si un mismo objeto ocupa ambas posiciones, el cálculo lee la copia recibida como area y puede modificar el objeto del llamador por destino. Anota los estados después de cada llamada, no sólo el número de argumentos."
+          "text": "El primer argumento puede ser un literal, una expresión o el valor de un objeto: inicializa el parámetro double por valor. El segundo necesita un objeto double modificable porque se vincula con double&. Si un mismo objeto ocupa ambas posiciones, el cálculo lee la copia recibida como area y puede modificar el objeto del llamador por destino. La predicción siguiente registra los estados después de cada llamada, además de distinguir los objetos y sus permisos."
         },
         {
           "type": "output_prediction",
@@ -269,15 +365,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, anota para cada área si esperas aceptación y si su lado pertenece al grupo hasta 2.5. Escribe después cuatro líneas: Validas: N, Rechazadas: N, Lados hasta 2.5: N y Datos conservados: B. Los tres N son conteos calculados; B compara los datos finales con una copia inicial, incluido tamaño, valores y orden. Esta igualdad compara copias de valores finitos que no has transformado, no el cuadrado de una raíz inexacta."
+          "text": "Presenta cuatro líneas: `Validas: N`, `Rechazadas: N`, `Lados hasta 2.5: N` y `Datos conservados: B`. Los conteos deben proceder de las llamadas y B debe comparar tamaño, valores y orden con una copia inicial. Esa comparación conserva los valores finitos originales; no compara el cuadrado de una raíz aproximada con su área."
         },
         {
           "type": "paragraph",
-          "text": "Prueba además colección vacía; sólo cero; sólo un rechazo negativo; sólo un exceso; {100.0, 6.25, 9.0}; y {2.0, -2.0, 102.0}. Decide los conteos antes de ejecutar cada caso. El vacío debe producir tres conteos cero y conservar sus datos. En los casos mezclados, ninguna llamada rechazada puede aportar un lado al tercer conteo. La frontera 6.25 permite comprobar que el límite 2.5 está incluido; nueve aporta un lado que queda fuera de ese grupo aunque su llamada se acepte."
+          "text": "Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. El caso inicial debe producir cinco válidas, dos rechazadas, cuatro lados hasta `2.5` y conservación verdadera. Las otras colecciones se prueban después sin cambiar la función ni el criterio del grupo."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la coleccion, los conteos y la comprobacion de conservacion.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la coleccion, los conteos y la comprobacion de conservacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Validas: 5\nRechazadas: 2\nLados hasta 2.5: 4\nDatos conservados: 1",
+                  "Validas: 5\nRechazadas: 2\nLados hasta 2.5: 4\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -317,7 +425,73 @@
         },
         {
           "type": "note",
-          "text": "La lectura de apoyo trata operaciones y llamadas de biblioteca, errores y dominio (Stroustrup, 2024, secciones 2.4 y 4.2). La raíz no negativa, la finitud y la exactitud dependiente del entorno se contrastan con el borrador de C (ISO/IEC JTC 1/SC 22/WG 14, 2023, secciones 7.12.7.10, 7.12.3.3 y 5.2.4.2.2); la interfaz C++ de <cmath> se consulta en N4950 y en el borrador HTML (Köppe et al., 2023, secciones [c.math] y [cmath.syn]; Working Draft: Programming Languages — C++, s. f., sección [cmath.syn]). Son referencias de consulta, no requisitos para escribir las pruebas de este problema."
+          "text": "La lectura de apoyo trata operaciones y llamadas de biblioteca, errores y dominio (Stroustrup, 2024, secciones 2.4 y 4.2). La raíz no negativa, la finitud y la exactitud dependiente del entorno se contrastan con el borrador de C (ISO/IEC JTC 1/SC 22/WG 14, 2023, secciones 7.12.7.10, 7.12.3.3 y 5.2.4.2.2); la interfaz C++ de <cmath> se consulta en N4950 y en el borrador HTML (Köppe et al., 2023, secciones [c.math] y [cmath.syn]; Working Draft: Programming Languages — C++, s. f., sección [cmath.syn]). Son referencias de consulta, no requisitos para escribir las pruebas de este problema.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar ceros, fronteras y mezclas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `1 -1.0`; `1 101.0`; `3 100.0 6.25 9.0`; `3 2.0 -2.0 102.0`. Conserva hasta ocho áreas finitas de menos dos a ciento dos. Un rechazo no participa en el conteo de lados y la frontera seis con veinticinco debe incluirse.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    std::vector<double> areas;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        areas.push_back(dato);\n    }\n    const std::vector<double> copia = areas;\n    int validas{0};\n    int rechazadas{0};\n    int hasta_dos_y_medio{0};\n    for (const double area : areas) {\n        double lado{-1.0};\n        const bool aceptada = calcular_lado(area, lado);\n        if (aceptada) {\n            ++validas;\n            if (lado <= 2.5) {\n                ++hasta_dos_y_medio;\n            }\n        } else {\n            ++rechazadas;\n        }\n    }\n    bool conservados = areas.size() == copia.size();\n    // El contrato limita el tamano a ocho: la conversion a int es segura.\n    const int cantidad = static_cast<int>(areas.size());\n    if (conservados) {\n        for (int i{0}; i < cantidad; ++i) {\n            if (areas.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Validas: \" << validas << \"\\n\"\n              << \"Rechazadas: \" << rechazadas << \"\\n\"\n              << \"Lados hasta 2.5: \" << hasta_dos_y_medio << \"\\n\"\n              << \"Datos conservados: \" << conservados << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 0\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Validas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 1\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1.0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 101.0",
+                "outputs": [
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1",
+                  "Validas: 0\nRechazadas: 1\nLados hasta 2.5: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "3 100.0 6.25 9.0",
+                "outputs": [
+                  "Validas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 3\nRechazadas: 0\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "3 2.0 -2.0 102.0",
+                "outputs": [
+                  "Validas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1",
+                  "Validas: 1\nRechazadas: 2\nLados hasta 2.5: 1\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

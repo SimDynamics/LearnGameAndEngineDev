@@ -76,6 +76,18 @@
         {
           "type": "paragraph",
           "text": "getline obtiene también una última línea sin salto final. Esa línea debe validarse. Al terminar el bucle comprobamos bad() y eof(); no tratamos cualquier fallo como final limpio. El llamador entrega aquí un flujo recién abierto o creado, para leer desde su principio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__aceptar_registros_y_detectar_duplicados__secuencia_duplicados_previa",
+          "question": "La muestra contiene primero 3 [2;1] y después 3 [4;0]. La política conserva la primera aparición válida. ¿Qué debe quedar para ID 3?",
+          "options": [
+            "[4;0], porque la última línea reemplaza la anterior.",
+            "[2;1], y la segunda línea cuenta un descarte.",
+            "[6;1], porque las cantidades de un ID se acumulan."
+          ],
+          "correctIndex": 1,
+          "explanation": "Dos líneas válidas pueden entrar en conflicto juntas. Este contrato conserva el primer registro y no suma ni reemplaza sus cantidades."
         }
       ]
     },
@@ -91,15 +103,32 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea y cierra registros_lgp.txt con estas cuatro líneas: 3 [2;1], 3 [4;0], 8 [0;0] y 8 [0;0] extra. Comprueba apertura y escritura. Abre después un ifstream y carga. Muestra primero una línea Guardados=G;Descartados=D, sin punto y coma final. En las siguientes líneas muestra ID:aceptados:rechazados de cada registro admitido. Si no puedes completar la carga, muestra Carga incompleta y termina con código 1."
+          "text": "Crea y cierra registros_lgp.txt con estas cuatro líneas: 3 [2;1], 3 [4;0], 8 [0;0] y 8 [0;0] extra. Comprueba apertura y escritura. Abre después un ifstream y carga. Muestra primero una línea Guardados=G;Descartados=D, sin punto y coma final. En las siguientes líneas muestra ID:aceptados:rechazados de cada registro admitido. Si no puedes completar la carga, muestra Carga incompleta y termina con código 1. Este editor comprueba esa carga inicial de archivo. Usa Compilar, ejecutar y comprobar; el informe termina en 8:0:0, con o sin un salto final. La batería de fronteras y conservación tiene después su propio editor.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\n// Implementa la busqueda y la carga antes de main.\nint main() {\n    // Crea la muestra, comprueba sus operaciones y carga sus registros.\n    return 0;\n}\n"
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\n// Implementa la busqueda y la carga antes de main.\nint main() {\n    // Crea la muestra, comprueba sus operaciones y carga sus registros.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Guardados=2;Descartados=2\n3:2:1\n8:0:0",
+                  "Guardados=2;Descartados=2\n3:2:1\n8:0:0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Predice primero los resultados. El editor incluye el lector de línea ya estudiado; la construcción nueva es la política de colección y su integración con el archivo. Consulta la referencia después de probar."
+          "text": "El editor incluye el lector de línea ya estudiado; la construcción nueva es la política de colección y su integración con el archivo. La función lectora se comprueba después con otra batería independiente, incluidos sus resultados false y la conservación de ambos destinos."
         }
       ]
     },
@@ -120,15 +149,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba también una muestra vacía: Guardados=0;Descartados=0. Una única línea vacía produce Guardados=0;Descartados=1. Repite una línea válida veinte veces: debe conservar un registro y descartar diecinueve. Con veintiuna líneas debe devolver false y conservar los resultados previos; no publica los candidatos parciales."
+          "text": "Vacío, una línea vacía y veinte o veintiuna repeticiones separan las fronteras de la política. Con veinte líneas puede completarse la carga y contar diecinueve descartes; la línea veintiuna devuelve false y debe conservar colección y contador anteriores. La batería posterior hace visibles ambos destinos."
         },
         {
           "type": "paragraph",
-          "text": "Quita el salto final a la última línea válida: el registro debe seguir admitiéndose. Cambia sólo esa línea a un registro truncado: se cuenta como descartada. La política tolera datos inválidos, pero no certifica que todos los datos del archivo eran correctos. Un programa que necesite todos los registros válidos elegirá otra política."
+          "text": "Un registro completo sin salto final todavía puede admitirse. Si esa última línea se trunca se descarta una línea, sin reutilizar campos anteriores. La política tolera datos inválidos para este informe; no certifica que todo el archivo fuera correcto."
         },
         {
           "type": "note",
-          "text": "La lectura de registros se estudia en la fuente principal (Stroustrup, 2024, secciones 9.8–9.9, pp. 268–275). Política, formato y actividades originales de esta ruta."
+          "text": "Un bucle procesa únicamente lecturas completas y, cuando termina, necesita distinguir EOF de un fallo del origen. En una estructura de registros también se comprueban dominio y duplicados: obtener campos no decide por sí solo si el conjunto los admite (Stroustrup, 2024, secciones 9.8–9.9.2, pp. 267–274). Aquí cada línea descartada cuenta una vez y la primera aparición válida conserva su posición."
         }
       ]
     },
@@ -150,8 +179,61 @@
           "explanation": "El primer ID 1 se conserva; la segunda aparición se descarta. ID 2 con cantidades cero se admite. mal se descarta. Guardados cuenta registros, no unidades aceptadas."
         },
         {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__aceptar_registros_y_detectar_duplicados__secuencia_politica_parcial",
+          "question": "¿Qué diferencia una línea duplicada de un fallo del origen en esta carga parcial?",
+          "options": [
+            "Ambos se ignoran y siempre se publica la colección incompleta.",
+            "El duplicado se descarta según la política; una avería impide confirmar que se leyó toda la muestra y protege ambos destinos.",
+            "Una avería sólo borra el contador; los registros pueden publicarse."
+          ],
+          "correctIndex": 1,
+          "explanation": "La política permite descartar datos diagnosticados, pero no convierte una carga incompleta en un resultado completo. Colección y contador deben corresponder a la misma lectura aceptada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la batería de fronteras de carga parcial"
+        },
+        {
           "type": "paragraph",
-          "text": "Esta predicción se presenta después de construir e integrar la política. Justifica por separado por qué se conserva cada registro y por qué se descarta cada línea; una salida correcta sin esa relación no permite distinguir la regla de una coincidencia."
+          "text": "Construye la batería del mismo cargar_lineas usando istringstream para aislar su política. Cada prueba reinicia el destino en {{9,{1,1}}} y descartadas en 7. Prueba, en este orden: texto vacío; un LF; veinte líneas \"4 [0;2]\" terminadas en LF; veintiuna líneas iguales; \"4 [0;2]\" sin LF final; y \"4 [0;\" truncado. Presenta Carga:bool y después el informe Guardados=G;Descartados=D y los registros ID:aceptados:rechazados en orden. Cada línea termina con salto, sin títulos ni líneas vacías adicionales. Un false esperado en la prueba de veintiuna líneas no es una avería del proceso: debe conservar los dos resultados previos y la batería termina con código 0. Usa Compilar, ejecutar y comprobar con todos los casos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    const int max_lineas{20};\n    std::vector<Registro> candidatos;\n    int nuevas_descartadas{0};\n    int lineas{0};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        if (lineas == max_lineas) {\n            return false;\n        }\n        ++lineas;\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            ++nuevas_descartadas;\n        } else {\n            candidatos.push_back(registro);\n        }\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    descartadas = nuevas_descartadas;\n    return true;\n}\n\nvoid escribir_resultado(const std::vector<Registro>& registros,\n                        int descartadas) {\n    std::cout << \"Guardados=\" << registros.size()\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : registros) {\n        std::cout << '\\n' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n}\n\nint main() {\n    // Construye las seis pruebas independientes de la politica.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Carga:1\nGuardados=0;Descartados=0\nCarga:1\nGuardados=0;Descartados=1\nCarga:1\nGuardados=1;Descartados=19\n4:0:2\nCarga:0\nGuardados=1;Descartados=7\n9:1:1\nCarga:1\nGuardados=1;Descartados=0\n4:0:2\nCarga:1\nGuardados=0;Descartados=1\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de las fronteras de carga parcial"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    const int max_lineas{20};\n    std::vector<Registro> candidatos;\n    int nuevas_descartadas{0};\n    int lineas{0};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        if (lineas == max_lineas) {\n            return false;\n        }\n        ++lineas;\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            ++nuevas_descartadas;\n        } else {\n            candidatos.push_back(registro);\n        }\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    descartadas = nuevas_descartadas;\n    return true;\n}\n\nvoid escribir_resultado(const std::vector<Registro>& registros,\n                        int descartadas) {\n    std::cout << \"Guardados=\" << registros.size()\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : registros) {\n        std::cout << '\\n' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    int descartadas = 7;\n    const bool completa = cargar_lineas(origen, destino, descartadas);\n    std::cout << \"Carga:\" << completa << \"\\n\";\n    escribir_resultado(destino, descartadas);\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"\");\n    probar(\"\\n\");\n    std::string veinte;\n    for (int i = 0; i < 20; ++i) veinte += \"4 [0;2]\\n\";\n    probar(veinte);\n    probar(veinte + \"4 [0;2]\\n\");\n    probar(\"4 [0;2]\");\n    probar(\"4 [0;\");\n    return 0;\n}\n"
         }
       ]
     }

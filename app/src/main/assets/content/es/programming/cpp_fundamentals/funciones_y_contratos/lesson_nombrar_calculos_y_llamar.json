@@ -111,11 +111,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Los datos están declarados en main. Una caja de práctica necesita cantidad * 2 + 1 separadores. Predice los dos resultados para cantidades 3 y 5; ejecuta para contrastar. Después cambia sólo el primer argumento a 0 y después a 8. Conserva las cantidades entre 0 y 20. Si cambia la regla común, debe cambiar la función, no cada llamada por separado."
+          "text": "La función calcula los separadores mediante `cantidad * 2 + 1`. El objetivo de este editor es comprobar sus dos llamadas con tres y cinco: debe mostrar `7 11`. Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. La función recibe cada argumento y calcula su propio resultado."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7 11",
+                  "7 11\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -130,7 +142,63 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora modifica el cuerpo a return cantidad * 2 + 2; y predice ambos resultados antes de ejecutar. Esa modificación afecta cada llamada posterior porque cambia la regla definida. Restaura el + 1 y explica qué información necesitó cada llamada para producir su resultado."
+          "text": "Cambiar los argumentos y cambiar la regla son objetivos distintos. Las actividades siguientes permiten comprobar otras cantidades con la misma regla y observar después el efecto de modificar el cuerpo, sin restaurar versiones en este editor."
+        },
+        {
+          "type": "heading",
+          "text": "Conservar la regla con otros argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee el primer argumento, de cero a veinte, y conserva cinco como segundo. Comprueba `0` → `1 11` y `8` → `17 11`. La misma función aplica su regla a cada llamada.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    int cantidad{0};\n    std::cin >> cantidad;\n    const int primera = separadores(cantidad);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "1 11",
+                  "1 11\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "17 11",
+                  "17 11\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Una regla modificada afecta las dos llamadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de este editor utiliza `cantidad * 2 + 2` en el cuerpo. Conserva los argumentos tres y cinco y ejecuta esa regla para contrastarla con la anterior: el objetivo es `8 12`. Esta exploración comprueba la regla modificada, sin sustituir el contrato anterior.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 2;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "8 12",
+                  "8 12\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

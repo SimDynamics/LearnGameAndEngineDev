@@ -107,11 +107,23 @@
         },
         {
           "type": "paragraph",
-          "text": "tope está declarado con 3. Predice ambas respuestas y ejecuta. Después prueba 0, 1 y 8; para cada dato, calcula antes la suma esperada. Finalmente prueba -1 y 9: main debe rechazar ambos sin llamar a las funciones. Conserva la validación y los pasos que acercan cada versión a su final."
+          "text": "El caso inicial utiliza tope tres. El programa debe mostrar el resultado iterativo y el recursivo, separados por un espacio: `6 6`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Conserva la validación y los pasos que acercan cada versión a su caso final. Otros datos y una alteración de la base se observan después en actividades propias."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6 6",
+                  "6 6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -126,7 +138,84 @@
         },
         {
           "type": "paragraph",
-          "text": "Como contraste finito, cambia sólo el return 0 del caso base recursivo por return 1. Predice el caso tope igual a 0 y comprueba la diferencia con la versión iterativa. Restaura 0 después: el cambio permite terminar, pero ya no cumple la suma prometida."
+          "text": "El caso base forma parte del resultado prometido, además de permitir terminar. La exploración posterior conserva la terminación y altera ese resultado para poder comparar ambas responsabilidades."
+        },
+        {
+          "type": "heading",
+          "text": "Bases, interiores y rechazos de la misma suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee tope. Comprueba `0`, `1` y `8`: las dos sumas deben ser cero, uno y treinta y seis, respectivamente. `-1` y `9` deben producir únicamente `Fuera del dominio`, sin llamar a las funciones.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    int tope{0};\n    std::cin >> tope;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0 0",
+                  "0 0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "1 1",
+                  "1 1\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "36 36",
+                  "36 36\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Una base que termina y cuenta de más"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta la variante que devuelve uno en la base recursiva con tope cero. El objetivo de la observación es `0 1`: la suma iterativa sigue siendo cero y la recursiva ya no cumple el resultado prometido.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 1;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 1",
+                  "0 1\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -213,15 +302,26 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion recursiva, la validacion y la salida.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion recursiva, la validacion y la salida.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parejas:3;Fichas:7"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Escribe lo esperado antes de ejecutar para 0 y 1, para el par 4, para el impar 7 y para el extremo 12. Comprueba después -1 y 13 como rechazos sin llamada. En cada caso válido comprueba también F: recibir por valor no debe consumir las fichas del objeto de main. No basta con que el programa termine: tiene que contar las parejas prometidas."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial: `Parejas:3;Fichas:7`, sin salto final. El dato de `main` debe conservarse. Los casos cero, impar, par, extremo y rechazo se prueban después con un mismo programa."
         },
         {
           "type": "note",
-          "text": "Antes de ejecutar tu versión, revisa el argumento de cada posible llamada recursiva: debe seguir dentro del dominio, ser menor en los casos que continúan y alcanzar un caso que regrese sin llamarse otra vez. No ejecutes variantes que repitan indefinidamente la llamada o salgan del dominio. Consulta la referencia después de construir y explicar tu solución."
+          "text": "Antes de ejecutar, revisa el argumento de cada posible llamada recursiva: debe permanecer en el dominio, ser menor cuando se continúa y alcanzar un caso que regrese sin otra llamada. No ejecutes variantes que repitan indefinidamente la llamada. La referencia aparece después del intento."
         }
       ]
     },
@@ -251,6 +351,66 @@
         {
           "type": "paragraph",
           "text": "La salida Fuera del dominio, por sí sola, no demuestra que se haya evitado una llamada anterior. Revisa el camino de main: el retorno del rechazo debe impedir alcanzar el cálculo. Para los datos válidos, comprueba el dato original y el resultado por separado. Aquí el parámetro local permite reducir el problema sin modificar fichas en main."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las parejas sin cambiar su función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee fichas. Comprueba `0`, `1`, `4`, `7` y `12`, que producen cero, cero, dos, tres y seis parejas. `-1` y `13` deben producir sólo `Fuera del dominio`. En cada aceptación, `Fichas:` conserva el argumento original.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. Respeta exactamente el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Parejas:0;Fichas:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Parejas:0;Fichas:1"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Parejas:2;Fichas:4"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "Parejas:3;Fichas:7"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "Parejas:6;Fichas:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -302,15 +462,26 @@
         },
         {
           "type": "paragraph",
-          "text": "main empieza con 8 fichas, valida antes de llamar y muestra Grupos:G;Fichas:F, sin espacios ni salto final. Los inválidos muestran únicamente Fuera del dominio, sin llamada. Construye desde el editor mínimo; puedes recuperar tu organización anterior y seleccionar, en el puzzle del final de esta página, qué decisiones deben cambiar al formar grupos de otro tamaño."
+          "text": "El dato inicial es ocho fichas. `main` debe validar antes de llamar y presentar `Grupos:G;Fichas:F`, sin espacios ni salto final. Los inválidos muestran únicamente `Fuera del dominio`. Construye en este editor mínimo la recursión para grupos de tres; los puzzles posteriores recuperan sus decisiones y su traza."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye el nuevo conteo recursivo y comprueba su contrato.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye el nuevo conteo recursivo y comprueba su contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Grupos:2;Fichas:8"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Completa antes de ejecutar los campos del puzzle de esta página: los casos 0, 1, 2, 3, 8, 11 y 12, el rechazo de -1 y 13 antes del cálculo y la traza de ocho fichas. En la traza, cada argumento debe permanecer válido y alcanzar un caso que ya no necesite otra llamada. Comprueba también que main conserva las fichas originales."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para comprobar el caso inicial, cuyo objetivo es `Grupos:2;Fichas:8`. Después, los campos del puzzle permiten registrar otros casos y seguir los argumentos y retornos de ocho fichas. No hace falta volver a un editor anterior para responderlos."
         },
         {
           "type": "note",
@@ -686,7 +857,125 @@
         },
         {
           "type": "paragraph",
-          "text": "En otra sesión, recupera ambos conteos con 1, 2, 3 y 6 fichas y escribe sus bases y pasos antes de mirar el código. Explica por qué una segunda llamada no recibe las fichas sobrantes de la primera. Para comprobar cada función, compara con lo esperado del problema y con una forma iterativa correcta; no aceptes solamente que dos programas den la misma respuesta."
+          "text": "La actividad de comprobación siguiente conserva las bases y pasos de los grupos de tres. Después, una construcción independiente recupera los dos conteos y permite contrastarlos con el significado del problema: la coincidencia entre dos programas no sustituye una expectativa derivada de parejas o grupos completos."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las bases de grupos de tres"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee fichas. Comprueba `0`, `1`, `2`, `3`, `8`, `11` y `12`, con cero, cero, cero, uno, dos, tres y cuatro grupos. Comprueba también los rechazos `-1` y `13`. La función y los formatos permanecen iguales entre entradas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. Respeta exactamente el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Grupos:0;Fichas:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Grupos:0;Fichas:1"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "Grupos:0;Fichas:2"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "Grupos:1;Fichas:3"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Grupos:2;Fichas:8"
+                ]
+              },
+              {
+                "standardInput": "11",
+                "outputs": [
+                  "Grupos:3;Fichas:11"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "Grupos:4;Fichas:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar dos conteos desde el argumento original"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto las dos funciones recursivas: una cuenta parejas completas y otra grupos de tres. Lee las fichas y valida cero..doce antes de llamar. Muestra `parejas:grupos:fichas`, sin espacios; cada cálculo debe recibir por valor el mismo dato original de main.\n\nComprueba `1` → `0:0:1`, `2` → `1:0:2`, `3` → `1:1:3` y `6` → `3:2:6`. Pulsa «Compilar, ejecutar y comprobar»; el salto final es opcional. Las reducciones internas de la primera llamada no consumen el objeto que recibe la segunda."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion recursiva, la validacion y la salida.\n    return 0;\n}\n",
+          "initialStandardInput": "1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "0:0:1",
+                  "0:0:1\n"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "1:0:2",
+                  "1:0:2\n"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1:1:3",
+                  "1:1:3\n"
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "3:2:6",
+                  "3:2:6\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

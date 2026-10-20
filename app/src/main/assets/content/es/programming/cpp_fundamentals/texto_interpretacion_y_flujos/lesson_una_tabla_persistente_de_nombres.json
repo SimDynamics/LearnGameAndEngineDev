@@ -155,6 +155,18 @@
           ],
           "explanation": "La tabla candidata existe antes de modificarla. El reemplazo queda condicionado al éxito de la validación. Una validación fallida deja intacta tabla.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__secuencia_tabla_previa",
+          "question": "La tabla guarda Zona=5. Una copia candidata cambia Zona a 8 y se descarta. ¿Qué debe devolver consultar(\"Zona\") en la original?",
+          "options": [
+            "8, porque copiar el vector comparte todos los miembros int.",
+            "0, porque descartar una copia borra el vínculo de ambas.",
+            "5, porque la copia contiene registros independientes y no se publicó."
+          ],
+          "correctIndex": 2,
+          "explanation": "Copiar Tabla_nombres copia su vector y registros. Modificar la copia no reemplaza la original; la aceptación debe realizar esa asignación de forma explícita."
         }
       ]
     },
@@ -166,15 +178,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la interfaz y construye un cliente con un vínculo Zona=5. Copia la tabla, cambia Zona a ocho en la copia y descarta ese candidato: al consultar la tabla original debe seguir apareciendo cinco. Construye una segunda copia, cambia Zona a once y acéptala; la tabla original debe pasar a once. Imprime Original: 5, Candidato: 8, Descartado: 5 y Aceptado: 11, una línea por etiqueta."
+          "text": "Recupera la interfaz y construye un cliente con un vínculo Zona=5.\n\nCopia la tabla, cambia Zona a ocho en la copia y descarta ese candidato: al consultar la tabla original debe seguir apareciendo cinco.\n\nConstruye una segunda copia, cambia Zona a once y acéptala; la tabla original debe pasar a once.\n\nImprime Original: 5, Candidato: 8, Descartado: 5 y Aceptado: 11, una línea por etiqueta.\n\nConstruye una sola batería con esas cuatro líneas iniciales y las pruebas siguientes.\n\nEn otra tabla define Cero=0, Min=-100 y Max=100 y muestra Limites: 0:-100:100.\n\nIntenta asignar 101 a Max; captura Error: Resultado fuera de dominio y muestra Conservado: 100.\n\nIntenta consultar Ausente; captura Error: Nombre no definido y muestra Ausente: 0;Tamano: 3 usando contiene y entradas().\n\nEn otra tabla define n0..n7 con sus valores 0..7; intenta añadir n8=8, captura Error: Tabla llena y muestra Tamano: 8.\n\nIntenta redefinir n0=9, captura Error: Nombre ya definido y muestra Duplicado: 8:0 como tamaño y valor conservados.\n\nLas etiquetas llevan los espacios indicados; cada línea termina con salto.\n\nUsa Compilar, ejecutar y comprobar con todo el programa; otros nombres de variables y funciones son válidos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Prueba ausencia, cero, -100 y 100; un valor 101 debe rechazarse sin cambiar el anterior. Completa ocho nombres distintos y comprueba el rechazo del noveno. Repite un nombre y comprueba que tampoco aumenta el tamaño. Criterios: asociaciones íntegras, consulta sin inserción, modificación del original sólo mediante aceptación y estados anteriores conservados en cada rechazo."
+          "text": "Las pruebas de la batería cubren ausencia, cero, extremos, rechazo de 101, capacidad y duplicados. Consultar no añade vínculos; cada rechazo conserva tamaño, asociaciones y valores previos. Las copias sólo reemplazan a la tabla original cuando el cliente acepta explícitamente el candidato."
         }
       ]
     },
@@ -195,7 +223,20 @@
         },
         {
           "type": "note",
-          "text": "La tabla persistente de nombres se estudia en la fuente de apoyo (Stroustrup, 2024, sección 6.8.1 y ejercicio 4 del cap. 6). Tabla_nombres encapsula una búsqueda lineal; sus límites, nombres y ensayos son originales."
+          "text": "Una tabla de nombres conserva asociaciones entre nombre y valor. Una búsqueda lineal puede localizar una asociación para consultarla o modificarla; declarar requiere comprobar antes si el nombre ya existe (Stroustrup, 2024, sección 6.8.1). La interfaz de Tabla_nombres mantiene separadas consulta, modificación e incorporación. Copiar la tabla permite preparar un candidato sin modificar el estado persistente hasta aceptarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de candidatos y límites"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nombre invalido\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nombre ya definido\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Tabla llena\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Zona\", 5);\n    std::cout << \"Original: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres candidata = tabla;\n    candidata.asignar(\"Zona\", 8);\n    std::cout << \"Candidato: \" << candidata.consultar(\"Zona\") << \"\\n\";\n    std::cout << \"Descartado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres segunda = tabla;\n    segunda.asignar(\"Zona\", 11);\n    tabla = segunda;\n    std::cout << \"Aceptado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres limites;\n    limites.definir(\"Cero\", 0);\n    limites.definir(\"Min\", -100);\n    limites.definir(\"Max\", 100);\n    std::cout << \"Limites: \" << limites.consultar(\"Cero\") << ':' << limites.consultar(\"Min\") << ':' << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.asignar(\"Max\", 101); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.consultar(\"Ausente\"); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Ausente: \" << limites.contiene(\"Ausente\") << \";Tamano: \" << limites.entradas().size() << \"\\n\";\n    Tabla_nombres llena;\n    const std::vector<std::string> nombres{\"n0\", \"n1\", \"n2\", \"n3\", \"n4\", \"n5\", \"n6\", \"n7\"};\n    int valor = 0;\n    for (const std::string& n : nombres) { llena.definir(n, valor); ++valor; }\n    try { llena.definir(\"n8\", 8); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Tamano: \" << llena.entradas().size() << \"\\n\";\n    try { llena.definir(\"n0\", 9); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Duplicado: \" << llena.entradas().size() << ':' << llena.consultar(\"n0\") << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

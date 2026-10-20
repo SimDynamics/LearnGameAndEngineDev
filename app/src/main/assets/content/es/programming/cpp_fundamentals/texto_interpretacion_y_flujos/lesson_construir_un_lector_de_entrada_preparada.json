@@ -121,16 +121,140 @@
         },
         {
           "type": "paragraph",
-          "text": "Entrada preparada contiene siete líneas. La segunda contiene un espacio y un tabulador; la última no lleva salto final. Predice todo antes de ejecutar. Para el caso inicial, la salida exacta es:\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1"
+          "text": "Entrada preparada contiene siete líneas. La segunda contiene un espacio y un tabulador; la última no lleva salto final. El caso inicial exige la salida siguiente, con salto también después de la última línea:\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nConserva el mismo programa mientras pruebas aquí entrada vacía; un LF; 0:0 sin LF, con un LF y con dos LF; 2:; q:1; 2;1; 2:1x; 2:1 0; -1:0; 0:4; +2 : 01. Después prueba las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0, cada pareja en líneas distintas. Finalmente prueba 1:0, 1:0 resto y 0:1 en tres líneas, y la pareja 0:0 y 0:4. Usa Compilar, ejecutar y comprobar antes de avanzar; cada ejecución vuelve al estado inicial 3.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
-          "initialStandardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3"
+          "initialStandardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "q:1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2;1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1x",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1 0",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "-1:0",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:4",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "+2 : 01",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n"
+                ]
+              },
+              {
+                "standardInput": "0:3\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "q:2\n1:0",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "1:0\n1:0 resto\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n0:4",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "No fijes los siete movimientos ni sus resultados dentro de la fuente. Conserva el código mientras cambias Entrada preparada. Una implementación que sólo reproduce esta salida no cumple el objetivo de leer, validar, recuperar y conservar estado."
+          "text": "Los movimientos y sus resultados deben proceder de la entrada y del análisis. Una implementación que sólo reproduce el caso inicial no cumple el objetivo de leer, validar, recuperar y conservar estado. La comprobación contrasta stdout de las entradas declaradas; la organización del analizador sigue siendo un criterio de revisión."
         }
       ]
     },
@@ -146,15 +270,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba por separado 2:, q:1 y 2;1: deben producir Formato invalido. 2:1x y 2:1 0 producen Datos adicionales. -1:0 y 0:4 producen Fuera de dominio. Decide el diagnóstico antes de correr cada caso y comprueba que todos conservan la ocupación 3. +2 : 01 sí es una representación permitida y deja la ocupación en 4."
+          "text": "Las líneas 2:, q:1 y 2;1 reciben Formato invalido. 2:1x y 2:1 0 reciben Datos adicionales. -1:0 y 0:4 reciben Fuera de dominio. Todos estos rechazos conservan la ocupación 3 cuando son la primera operación. +2 : 01 es una representación permitida y deja la ocupación en 4."
         },
         {
           "type": "paragraph",
-          "text": "Para verificar fronteras del estado usa 3:0 seguido por 1:0: la primera línea alcanza 6 y la segunda se rechaza con Capacidad invalida conservando 6. Usa después una ejecución nueva con 0:3 seguido por 0:1: se alcanza 0 y se conserva 0 ante el segundo movimiento. No confundas una frontera válida con el primer valor que la rebasa."
+          "text": "En la pareja 3:0 y 1:0, la primera línea alcanza 6 y la segunda se rechaza con Capacidad invalida conservando 6. En una ejecución nueva, la pareja 0:3 y 0:1 alcanza 0 y conserva 0 ante el segundo movimiento. Una frontera válida no es el primer valor que la rebasa."
         },
         {
           "type": "paragraph",
-          "text": "Para verificar recuperación usa q:2 seguido por 1:0, con la última línea sin salto: la línea inválida conserva 3 y la siguiente se acepta, dejando 4. Repite con una línea de datos adicionales entre dos válidas. Comprueba que no se reutiliza el último movimiento válido para rellenar uno incompleto."
+          "text": "En q:2 seguido por 1:0, con la última línea sin salto, el rechazo conserva 3 y la línea siguiente se acepta dejando 4. En 1:0, 1:0 resto y 0:1, el residuo rechaza sólo la línea central: los dos movimientos válidos dejan 3. El lector no reutiliza el último movimiento válido para completar otro incompleto."
         }
       ]
     },
@@ -191,11 +315,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Una solución es correcta si consume la entrada real por líneas, aplica el formato y el orden de diagnósticos establecidos, publica únicamente movimientos completos y válidos, conserva el estado y el contador ante rechazos, analiza las líneas posteriores y presenta exactamente las etiquetas y los totales requeridos. Nombres, organización de funciones y formas equivalentes de comprobar el residuo pueden variar. No se requiere copiar la referencia. El editor permite ejecutar y comparar; no califica automáticamente todos estos criterios."
+          "text": "Una solución es correcta si consume la entrada real por líneas, aplica el formato y el orden de diagnósticos establecidos, publica únicamente movimientos completos y válidos, conserva el estado y el contador ante rechazos, analiza las líneas posteriores y presenta exactamente las etiquetas y los totales requeridos. Nombres, organización de funciones y formas equivalentes de comprobar el residuo pueden variar. No se requiere copiar la referencia. Compilar, ejecutar y comprobar contrasta las salidas de los casos declarados; no inspecciona por sí solo la estructura de las funciones ni demuestra todos los criterios.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Verifica también la función sin cin: comienza con estado 6 y pasa 1:0; debe diagnosticar capacidad y conservar 6. Comienza con 0 y pasa 0:1; conserva 0. Desde 3, comprueba cada familia de rechazo con un caso distinto de los iniciales. Finalmente pasa 0:0: el resultado debe ser aceptación, aunque el argumento conserve el mismo valor. El contador de main aumenta por aceptación, no por observar una diferencia entre los estados."
+          "text": "Una llamada directa al analizador con estado 6 y texto 1:0 diagnostica capacidad y conserva 6; desde 0 con 0:1 también conserva 0. La entrada preparada 3:0 seguida de 1:0 y la pareja 0:3, 0:1 hacen observables esas mismas fronteras desde main. Con 0:0 se acepta una operación aunque el argumento conserve su valor: el contador aumenta por aceptación, no por diferencia de estados."
         },
         {
           "type": "multiple_choice",
@@ -239,7 +369,13 @@
         },
         {
           "type": "note",
-          "text": "El comportamiento de getline se consultó en el borrador de C++ (Working Draft: Programming Languages — C++, s. f., sección [string.io]). getline delimita y obtiene texto; la validación del movimiento y la decisión de conservar el estado pertenecen al programa. Las pruebas de esta lección usan entrada preparada real; no requieren una consola interactiva."
+          "text": "getline obtiene caracteres hasta el delimitador y extrae ese delimitador sin incorporarlo a la cadena. Una línea vacía terminada por su delimitador y un intento sin caracteres al final del origen tienen resultados de lectura distintos (Working Draft: Programming Languages — C++, s. f., sección [string.io]). Obtener una línea no valida el movimiento que describe: esa decisión y la conservación del estado corresponden al programa. Estas pruebas utilizan entrada preparada real dentro de la aplicación.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         }
       ]
     }

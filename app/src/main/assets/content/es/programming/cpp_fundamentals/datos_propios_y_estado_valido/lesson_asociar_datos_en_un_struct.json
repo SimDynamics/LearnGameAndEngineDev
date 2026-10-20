@@ -14,7 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "struct Lectura { std::string sitio; int personas; }; define un tipo llamado Lectura. sitio y personas son miembros de datos. Cada objeto Lectura contiene sus propios miembros. El punto y coma después de la llave final termina la definición del tipo; los puntos y coma interiores terminan sus declaraciones."
+          "text": "struct Lectura { std::string sitio; int personas; }; define un tipo llamado Lectura. sitio y personas son miembros de datos. Cada objeto Lectura contiene sus propios miembros. El punto y coma después de la llave final termina la definición del tipo; los puntos y coma interiores terminan sus declaraciones.",
+          "emphasis": [
+            {
+              "text": "miembros de datos"
+            },
+            {
+              "text": "Cada objeto Lectura"
+            }
+          ]
         },
         {
           "type": "code",
@@ -199,15 +207,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Define un tipo Registro con dos miembros: codigo como string y unidades como int. Construye un objeto con codigo \"R4\" y unidades seis; muestra R4:6. Copia el objeto, aumenta sólo las unidades del original en tres y muestra ambas versiones en líneas distintas: Original R4:9 y Copia R4:6. Usa después otro código y cero unidades para comprobar que el programa lee sus miembros."
+          "text": "Define `Registro` con `codigo` de tipo string y `unidades` de tipo int. Construye una función de prueba que reciba un código y una cantidad, cree un Registro original, lo presente como codigo:unidades y después lo copie. Aumenta sólo las unidades del original en tres y muestra las líneas `Original codigo:unidades` y `Copia codigo:unidades`. Termina cada línea con un salto.\n\nDesde main prueba primero R4 con seis unidades y después S0 con cero. Pulsa Compilar, ejecutar y comprobar. La salida debe ser:\n\nR4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0\n\nConsulta los miembros para formar los mensajes; no escribas los resultados como cadenas fijas. Ambos casos pertenecen a una sola ejecución y comprueban la misma construcción.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "R4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0\n"
+                ],
+                "explanation": "Cada registro conserva sus miembros asociados. Aumentar las unidades del original no cambia la copia, incluso cuando la cantidad inicial era cero."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Escribe antes qué objeto cambia en cada instrucción. La solución no requiere que haya una única etiqueta global ni dos variables sueltas que deban mantenerse sincronizadas. Define el tipo antes de declarar sus objetos."
+          "text": "La copia guarda los valores que tenía el registro en el momento de copiarlo. La actualización posterior se dirige al objeto original y no vuelve a copiar los datos. Define Registro antes de declarar sus objetos; cada objeto mantiene juntos su código y su cantidad."
         }
       ]
     },
@@ -246,6 +270,15 @@
         {
           "type": "paragraph",
           "text": "Criterios: el tipo conserva juntos codigo y unidades; la copia se realiza antes del aumento; sólo cambian las unidades del original; ambos informes leen sus miembros reales; todos los miembros se inicializan antes de usarse. Se aceptan otras implementaciones que cumplan estas condiciones y el formato solicitado."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    Registro original{codigo, unidades};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades << \"\\n\";\n}\n\nint main() {\n    probar(\"R4\", 6);\n    probar(\"S0\", 0);\n    return 0;\n}\n"
         }
       ]
     }

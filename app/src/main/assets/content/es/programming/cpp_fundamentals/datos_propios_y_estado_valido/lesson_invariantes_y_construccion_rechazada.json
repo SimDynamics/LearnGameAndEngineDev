@@ -14,7 +14,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Un invariante es una regla del estado que debe cumplirse cuando un objeto terminó de construirse y antes y después de sus operaciones públicas. La construcción tiene que establecerlo; los datos privados y las operaciones deben preservarlo. Un código no vacío no garantiza que exista realmente en un sistema externo: sólo estamos comprobando la regla que acabamos de especificar."
+          "text": "Un invariante es una regla del estado que debe cumplirse cuando un objeto terminó de construirse y antes y después de sus operaciones públicas. La construcción tiene que establecerlo; los datos privados y las operaciones deben preservarlo. Un código no vacío no garantiza que exista realmente en un sistema externo: sólo estamos comprobando la regla que acabamos de especificar.",
+          "emphasis": [
+            {
+              "text": "invariante"
+            },
+            {
+              "text": "establecerlo"
+            },
+            {
+              "text": "preservarlo"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -197,15 +208,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Define una clase Lote con un código string no vacío y una cantidad int de una a cinco. El constructor debe rechazar los demás argumentos mediante una señal LoteInvalido, sin cambiarlos silenciosamente. Sus consultas codigo() y cantidad() son const y sus datos privados. Prueba {\"L\", 1}, {\"L\", 5}, {\"L\", 0}, {\"L\", 6}, {\"\", 2} y {\"L\", -1}. Muestra el código y cantidad al aceptar, y Rechazado al capturar la señal."
+          "text": "Define Lote con código string no vacío y cantidad int entre una y cinco, ambos privados. El constructor rechaza los demás argumentos mediante LoteInvalido sin sustituirlos silenciosamente. Sus consultas codigo() y cantidad() son const. Construye una función de prueba que intente crear un lote, muestre codigo:cantidad si acepta y Rechazado si captura la señal. La captura queda fuera del constructor. Termina cada prueba con un salto.\n\nEn una misma ejecución prueba {L,1}, {L,5}, {L,0}, {L,6}, {cadena vacía,2} y {L,-1}, en ese orden. Pulsa Compilar, ejecutar y comprobar. Las dos primeras líneas deben ser L:1 y L:5; las otras cuatro, Rechazado. No cambies los casos para ocultar un rechazo y no fabriques otro lote dentro del constructor.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                ],
+                "explanation": "Las fronteras una y cinco producen objetos válidos. Una cantidad exterior o un código vacío impiden completar el objeto y se tratan fuera del constructor."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice cada aceptación o rechazo antes de compilar. La captura debe estar fuera del constructor: si éste atrapara su propia señal para completar un lote con otros datos, no estaría cumpliendo el rechazo solicitado."
+          "text": "Un constructor que termina normalmente debe dejar un Lote válido. Lanzar la señal impide completar ese objeto con argumentos inválidos; atraparla fuera permite continuar con la siguiente prueba. Rechazar la construcción y cambiar los datos para aceptarlos expresan políticas diferentes."
         }
       ]
     },
@@ -233,6 +260,15 @@
             "A Rechazado"
           ],
           "explanation": "La primera construcción y su salida ocurrieron; la segunda lanza y no ejecuta su salida posterior."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las seis construcciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nvoid probar(const std::string& codigo, int cantidad) {\n    try {\n        const Lote lote{codigo, cantidad};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    return 0;\n}\n"
         }
       ]
     }

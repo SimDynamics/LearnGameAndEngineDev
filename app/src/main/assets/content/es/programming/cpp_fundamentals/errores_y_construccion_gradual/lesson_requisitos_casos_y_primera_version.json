@@ -10,7 +10,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El encargo «calcula cuánto tarda un pedido» deja decisiones pendientes. ¿Cuántas piezas puede tener? ¿Qué unidad usa el resultado? ¿Hay preparación inicial? ¿Se acepta un pedido vacío? Si decides esas reglas mientras corriges código, puedes cambiar lo que significaba resolver el problema sin advertirlo. Escribe un requisito que permita a otra persona distinguir un resultado correcto de uno incorrecto."
+          "text": "El encargo «calcula cuánto tarda un pedido» deja decisiones pendientes. ¿Cuántas piezas puede tener? ¿Qué unidad usa el resultado? ¿Hay preparación inicial? ¿Se acepta un pedido vacío? Si decides esas reglas mientras corriges código, puedes cambiar lo que significaba resolver el problema sin advertirlo. Un requisito preciso permite distinguir un resultado correcto de uno incorrecto.",
+          "emphasis": [
+            {
+              "text": "requisito"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -131,7 +136,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora se propone permitir hasta 12 piezas manteniendo los mismos tiempos. La ampliación afecta al dominio y a sus pruebas; no obliga a cambiar la fórmula de los pedidos no vacíos. Otra propuesta, cobrar preparación también por el pedido vacío, sí cambia una salida que antes era correcta. Escribe cuál de las promesas cambia antes de editar."
+          "text": "Ahora se propone permitir hasta 12 piezas manteniendo los mismos tiempos. La ampliación afecta al dominio y a sus pruebas; no obliga a cambiar la fórmula de los pedidos no vacíos. Otra propuesta, cobrar preparación también por el pedido vacío, sí cambia una salida que antes era correcta. El puzzle siguiente distingue el cambio de dominio del cambio en la estimación del pedido vacío."
         },
         {
           "type": "multiple_choice",
@@ -147,11 +152,55 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código reconstruye estimar para el requisito original, sin consultar el prototipo. main debe mostrar los casos 0,2,7 y 10. Comprueba sus resultados manuales. Después cambia sólo la preparación a 4 para pedidos no vacíos: predice qué resultados cambian y cuál se conserva. Mantén las llamadas dentro de 0 a 10; la validación de datos se desarrolla más adelante en esta unidad."
+          "text": "Reconstruye `estimar` para el requisito original: recibe piezas entre 0 y 10, devuelve 0 para el pedido vacío y usa 3 minutos de preparación más 2 por pieza en los demás casos. Mantén el cálculo separado de la salida. En main muestra los casos 0, 2, 7 y 10, en ese orden, con el formato `piezas=minutos` y un salto de línea por caso.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser `0=0`, `2=7`, `7=17` y `10=23`, sin espacios y con salto final en las cuatro. Esta actividad conserva un único requisito. La variante de preparación utiliza su propio editor después de este intento. La validación de datos se desarrolla más adelante; aquí todas las llamadas cumplen el dominio.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0=0\n2=7\n7=17\n10=23\n"
+                ],
+                "explanation": "El pedido vacío conserva cero minutos. Los demás incluyen una sola preparación de tres minutos y dos minutos por pieza."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Cambiar una regla en una actividad independiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye en este editor la variante que usa 4 minutos de preparación para pedidos no vacíos y 2 por pieza. El dominio sigue siendo 0 a 10 y el pedido vacío sigue tardando 0. Muestra los mismos cuatro casos, en el mismo formato piezas=minutos, una línea por caso.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas esperadas son 0=0, 2=8, 7=18 y 10=24, con salto al final de cada una. Cambia la regla de cálculo, no escribas esos resultados como mensajes fijos. El editor anterior conserva la estimación original.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0=0\n2=8\n7=18\n10=24\n"
+                ],
+                "explanation": "Cambió la preparación de los pedidos no vacíos. El caso cero no recibe ese coste y conserva su resultado."
+              }
+            ]
+          }
         }
       ]
     },
@@ -167,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Una solución correcta devuelve 0 para el pedido vacío y 3+2*piezas para los pedidos no vacíos del dominio 0 a 10. Para 0,2,7,10, los resultados son 0,7,17,23 minutos. Al cambiar únicamente la preparación de 3 a 4, deben ser 0,8,18,24: el cero se conserva. Se admiten otras organizaciones y etiquetas si muestran esos cuatro casos y mantienen cálculo separado de presentación."
+          "text": "Criterios de corrección. Una solución correcta devuelve 0 para el pedido vacío y 3+2*piezas para los pedidos no vacíos del dominio 0 a 10. Para 0,2,7,10, los resultados son 0,7,17,23 minutos. Al cambiar únicamente la preparación de 3 a 4, deben ser 0,8,18,24: el cero se conserva. Se admiten otras implementaciones que mantengan el cálculo separado de la presentación y produzcan el formato solicitado en cada actividad."
         },
         {
           "type": "code",
@@ -176,7 +225,16 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso vacío se decide antes de añadir preparación. Para comprobar la segunda versión cambia sólo preparacion a 4, conserva las cuatro llamadas y compara con las expectativas nuevas. Esta solución sigue siendo un prototipo para datos válidos; no atribuye validación a una función que aún no la implementa."
+          "text": "El caso vacío se decide antes de añadir preparación. Las cuatro llamadas de cada actividad permiten comparar qué resultados dependen de ese coste y cuál se conserva. Ambas versiones son prototipos para datos válidos: no se atribuye validación a una función que todavía no la implementa."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la variante de preparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{4};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

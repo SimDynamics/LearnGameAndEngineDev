@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El constructor de uniform_int_distribution<int> exige minimo <= maximo. No debemos construir una distribución con límites invertidos para comprobar después si falla: ya habríamos incumplido su precondición. No hay que prometer una excepción automática de ese constructor. Valida los datos antes de construirlo."
+          "text": "El constructor de uniform_int_distribution<int> exige minimo <= maximo. No debemos construir una distribución con límites invertidos para comprobar después si falla: ya habríamos incumplido su precondición. No hay que prometer una excepción automática de ese constructor. Valida los datos antes de construirlo.",
+          "emphasis": [
+            {
+              "text": "minimo <= maximo"
+            },
+            {
+              "text": "precondición"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -127,11 +135,27 @@
         },
         {
           "type": "paragraph",
-          "text": "En main, con semilla 191, genera cuatro datos de -2..5 y copia entonces el motor. Desde el original y desde esa copia genera otros tres de -2..5. Muestra Continuacion:1 si esos dos lotes posteriores coinciden. La copia debe ocurrir después de la primera muestra: queremos conservar ese punto de continuación. Prueba además cantidad cero y una configuración inválida con minimo=5, maximo=2: muestra Vacio:0:1 y Rechazo:1, donde cada último uno compara el motor antes y después. Ninguna prueba debe construir el intervalo invertido."
+          "text": "Construye probar(cantidad,minimo,maximo). Cada llamada crea motor con semilla 191 y conserva una copia antes de generar. Si acepta, obtiene la primera muestra con esos argumentos, copia el motor alcanzado y compara sendas continuaciones de tres datos desde el original y la copia, con los mismos límites. Comprueba además cantidad y rango de los vectores. Después prueba cero obtenciones sin consumo y el rechazo del intervalo 5..2 sin consumir; no construyas esa distribución inválida.\n\nPara una configuración válida muestra en una línea Cantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B. Si los argumentos iniciales son inválidos, captura antes de producir datos y muestra Configuracion rechazada:B, comparando el motor con su copia previa. Termina cada prueba con salto. En main usa (4,-2,5), (0,-12,12), (1,-12,12), (20,-12,12), (3,-12,-12), (3,12,12), (3,5,2), (3,-13,12), (3,-12,13), (-1,-12,12) y (21,-12,12), en ese orden. Pulsa Compilar, ejecutar y comprobar: las seis primeras configuraciones son válidas y las cinco últimas se rechazan. Todos los bools de las propiedades pedidas deben ser uno.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad:4;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:20;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\nConfiguracion rechazada:1\n"
+                ],
+                "explanation": "La validación precede al uso del motor. Las continuaciones se comparan desde el mismo estado; vacío y argumentos rechazados conservan ese estado sin exigir valores distribuidos concretos."
+              }
+            ]
+          }
         }
       ]
     },
@@ -152,7 +176,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba límites -12 y 12, intervalos -12..-12 y 12..12, cantidades cero, uno y veinte, límites invertidos, extremos -13 o 13 y cantidades -1 o 21. El intervalo degenerado obliga a un valor; no exige una cierta cantidad de avances internos. La función no garantiza la conservación del motor ante cualquier fallo posible posterior a una obtención: la garantía que construimos se refiere al rechazo previo de argumentos."
+          "text": "La batería reúne las fronteras -12 y 12, intervalos de un único valor, cantidades cero, uno y veinte y vecinos inválidos. Un intervalo degenerado fija el valor obtenido, pero no un número de avances internos del motor. La conservación comprobada se refiere al rechazo previo de argumentos; no promete restauración automática ante cualquier fallo posterior a una obtención."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la batería de configuraciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar(int cantidad,int minimo,int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes=motor;\n    try {\n        const std::vector<int> primero=generar(motor,cantidad,minimo,maximo);\n        std::mt19937 copia=motor;\n        const std::vector<int> segundo=generar(motor,3,minimo,maximo);\n        const std::vector<int> repetido=generar(copia,3,minimo,maximo);\n        bool rango=true;\n        for(int dato:primero) { rango=rango && dato>=minimo && dato<=maximo; }\n        for(int dato:segundo) { rango=rango && dato>=minimo && dato<=maximo; }\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=generar(motor,0,minimo,maximo);\n        std::cout<<\"Cantidad:\"<<primero.size()<<\";Rango:\"<<rango\n                 <<\";Continuacion:\"<<(segundo==repetido && motor==copia)\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalido=generar(motor,3,5,2);\n            std::cout<<\";Aceptado:\"<<invalido.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==antes)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar(4,-2,5);\n    probar(0,-12,12);\n    probar(1,-12,12);\n    probar(20,-12,12);\n    probar(3,-12,-12);\n    probar(3,12,12);\n    probar(3,5,2);\n    probar(3,-13,12);\n    probar(3,-12,13);\n    probar(-1,-12,12);\n    probar(21,-12,12);\n    return 0;\n}\n"
         }
       ]
     },
@@ -174,12 +207,86 @@
           "explanation": "Ausencia de llamadas conserva el estado actual; no equivale a reiniciarlo."
         },
         {
-          "type": "paragraph",
-          "text": "Transferencia: copia un motor después de consumir una primera muestra. Continúa desde la copia y desde el original con iguales llamadas y compara sus siguientes muestras. Luego decide cuál de los dos debe recibir una obtención adicional. Explica qué objetos se comparten, cuáles se copiaron y qué configuración se validó. No esperes desigualdad obligatoria de muestras para demostrar que elegiste procedimientos distintos."
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__validar_la_generacion_y_compartir_el_motor__decisiones_sobre_el_estado",
+          "prompt": "Relaciona cada decisión con el comportamiento que necesita la comprobación. Distingue configuración, copia, continuación y validación; usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decisiones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "copiar",
+                  "label": "Copiar el motor después de la primera muestra"
+                },
+                {
+                  "id": "continuar",
+                  "label": "Generar desde el motor original por referencia"
+                },
+                {
+                  "id": "repetir",
+                  "label": "Generar con las mismas llamadas desde la copia de ese punto"
+                },
+                {
+                  "id": "vacio",
+                  "label": "Solicitar cantidad cero válida"
+                },
+                {
+                  "id": "rechazar",
+                  "label": "Detectar argumentos inválidos antes de obtener datos"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "sin_consumo",
+                  "label": "Conservar el estado porque no se realiza ninguna obtención."
+                },
+                {
+                  "id": "punto",
+                  "label": "Guardar un punto de continuación que ya incluye las obtenciones previas."
+                },
+                {
+                  "id": "comparar",
+                  "label": "Comparar las siguientes muestras y estados en el mismo entorno."
+                },
+                {
+                  "id": "avanzar",
+                  "label": "Permitir que el llamador conserve el estado alcanzado por las obtenciones."
+                },
+                {
+                  "id": "validar",
+                  "label": "Informar el rechazo sin usar el motor ni construir un intervalo inválido."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "copiar": "punto",
+                  "continuar": "avanzar",
+                  "repetir": "comparar",
+                  "vacio": "sin_consumo",
+                  "rechazar": "validar"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La copia conserva el punto alcanzado, la referencia permite continuar sobre el objeto del llamador y las llamadas iguales desde copias comparan el mismo procedimiento. Vacío y rechazo previo no necesitan ninguna obtención.",
+            "incorrect": "Identifica qué objeto se conserva, cuál se copia y en qué momento ocurre cada decisión. La validez se establece antes de usar el motor."
+          }
         },
         {
           "type": "note",
-          "text": "La generación aleatoria se estudia en la fuente principal (Stroustrup, 2024, sección 4.7.5, pp. 108–110). Requisitos de intervalo, copia, estado y generación estándar consultados en el borrador de C++ (Working Draft: Programming Languages — C++, s. f., secciones [rand.dist.uni.int] y [rand.req.eng]). Las políticas de dominio y rechazo de esta lección son propias."
+          "text": "La distribución entera requiere límites válidos; la copia del motor conserva su estado para comparar continuaciones en el mismo entorno (Stroustrup, 2024, sección 4.7.5; Working Draft: Programming Languages — C++, s. f., secciones [rand.dist.uni.int] y [rand.req.eng]). La comparación de muestras no exige que procedimientos diferentes produzcan siempre valores distintos.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         }
       ]
     }

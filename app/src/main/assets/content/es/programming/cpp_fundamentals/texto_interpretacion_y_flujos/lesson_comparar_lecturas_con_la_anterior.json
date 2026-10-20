@@ -99,16 +99,82 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada inicial preparada es \"tiza tiza muro tiza muro muro\", sin salto final. Antes de ejecutar prepara una traza con posición, anterior antes de comparar, actual, decisión y anterior después de actualizar. Decide qué estado debe sobrevivir entre vueltas y qué se actualiza sólo tras una lectura válida. La entrada se prepara completa antes de ejecutar; no se pide una conversación interactiva."
+          "text": "La entrada inicial preparada es \"tiza tiza muro tiza muro muro\", sin salto final. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, sólo espacios y tabuladores, \"lago\", \"lago lago lago\", \"lago sol lago\", \"a b b\" y \"Eco eco eco.\". Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Prepara también expectativas para texto vacío, sólo espacios y tabuladores, \"lago\", \"lago lago lago\", \"lago sol lago\", \"a b b\" y \"Eco eco eco.\". Separa repetir un vecino de reaparecer tras otra palabra. Explica qué sucede en el intento de lectura final: no incrementa el contador ni vuelve a comparar el último valor del destino. Puedes usar una copia anterior inicialmente vacía por el dominio de palabras, o un bool que indique su presencia."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__secuencia_vecinos_3",
+          "question": "Antes de ejecutar, ¿qué ocurre con el último intento de lectura cuando no obtiene una nueva palabra?",
+          "options": [
+            "Se vuelve a procesar el último destino y se aumenta el total.",
+            "No entra al cuerpo de la repetición: no compara ni aumenta el total.",
+            "Se convierte automáticamente en una observación vacía válida."
+          ],
+          "correctIndex": 1,
+          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo."
         },
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el estado anterior y el informe del contrato.\n    return 0;\n}\n",
-          "initialStandardInput": "tiza tiza muro tiza muro muro"
+          "initialStandardInput": "tiza tiza muro tiza muro muro",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "tiza tiza muro tiza muro muro",
+                "outputs": [
+                  "Repetida: 2\nRepetida: 6\nPalabras: 6\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Palabras: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": " \t ",
+                "outputs": [
+                  "Palabras: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "lago",
+                "outputs": [
+                  "Palabras: 1\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "lago lago lago",
+                "outputs": [
+                  "Repetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "lago sol lago",
+                "outputs": [
+                  "Palabras: 3\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "a b b",
+                "outputs": [
+                  "Repetida: 3\nPalabras: 3\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "Eco eco eco.",
+                "outputs": [
+                  "Palabras: 3\nRepeticiones: 0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -124,7 +190,7 @@
         },
         {
           "type": "note",
-          "text": "Entrada preparada de esta referencia, distinta del intento: \"  faro\tpuente puente\npuente faro  \". En el editor pega este texto como entrada y el programa como fuente. El tabulador, el salto y los espacios separan palabras; no se presentan como observaciones."
+          "text": "Entrada preparada de esta referencia, distinta del intento: \"  faro\\tpuente puente\\npuente faro  \". El tabulador, el salto y los espacios separan palabras; no se presentan como observaciones. El código siguiente permite contrastar el orden de comparación y actualización después de construir el lector."
         },
         {
           "type": "code",
@@ -177,7 +243,7 @@
         {
           "type": "output_prediction",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__copiar_demasiado_pronto_cambia_la_pregunta",
-          "question": "Esta versión es incorrecta para el contrato. Predice lo que imprime tal como está escrita, antes de explicar qué orden repararías.",
+          "question": "Esta versión es incorrecta para el contrato. Predice lo que imprime tal como está escrita, teniendo en cuenta cuándo copia actual en anterior.",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"sal roca sal\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
           "answers": [
@@ -187,7 +253,7 @@
         },
         {
           "type": "note",
-          "text": "Después de localizar ese orden incorrecto, vuelve al caso de una sola palabra y al de tres iguales. Los dos distinguen reparar realmente el estado de ocultar únicamente una línea de salida. El dominio pequeño mantiene los contadores representables."
+          "text": "Una sola palabra y tres palabras iguales distinguen reparar el orden del estado de ocultar únicamente una línea de salida: la primera no marca ninguna repetición; las tres iguales marcan las posiciones dos y tres. El dominio pequeño mantiene los contadores representables."
         }
       ]
     },
@@ -207,16 +273,88 @@
         },
         {
           "type": "paragraph",
-          "text": "Muestra Repetida: P por cada línea igual a la inmediatamente anterior; P numera la nueva línea desde uno. Termina con Lineas: N y Repeticiones: R. Conserva los espacios de las etiquetas y los saltos del informe de palabras. La entrada inicial es \"patio\\n\\n\\npatio\\n patio\\n patio\", sin LF final; en esta escritura \\n representa cada salto real del texto preparado. Prepara primero una traza con presencia, anterior, actual, posición y decisión; no imprimas el contenido de la línea para sustituir esa comparación."
+          "text": "La entrada inicial es \"patio\\n\\n\\npatio\\n patio\\n patio\", sin LF final; \\n representa cada salto real. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, \"\\n\", \"\\n\\n\", \"A\\nA\", \"A\\nA\\n\", \"A\\nB\\nA\", \"A\\n A\" y \"\\nA\\nA\". Cada \\n representa LF. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Prueba texto vacío, \"\\n\", \"\\n\\n\", \"A\\nA\", \"A\\nA\\n\", \"A\\nB\\nA\", \"A\\n A\" y \"\\nA\\nA\". Distingue no obtener ninguna línea de obtener una línea vacía. La última línea sin LF puede obtenerse válidamente; un LF final no crea por sí solo otra línea. Una lectura fallida no vuelve a procesar el valor anterior del destino. Decide todas las posiciones y los resúmenes antes de ejecutar."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__secuencia_vecinos_6",
+          "question": "Antes de ejecutar, ¿qué ocurre con el último intento de lectura cuando no obtiene una nueva línea?",
+          "options": [
+            "Se vuelve a procesar el último destino y se aumenta el total.",
+            "No entra al cuerpo de la repetición: no compara ni aumenta el total.",
+            "Se convierte automáticamente en una observación vacía válida."
+          ],
+          "correctIndex": 1,
+          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo."
         },
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye el lector de lineas, la presencia previa y el informe.\n    return 0;\n}\n",
-          "initialStandardInput": "patio\n\n\npatio\n patio\n patio"
+          "initialStandardInput": "patio\n\n\npatio\n patio\n patio",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "patio\n\n\npatio\n patio\n patio",
+                "outputs": [
+                  "Repetida: 3\nRepetida: 6\nLineas: 6\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Lineas: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Lineas: 1\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\n\n",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nA",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nA\n",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nB\nA",
+                "outputs": [
+                  "Lineas: 3\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "A\n A",
+                "outputs": [
+                  "Lineas: 2\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\nA\nA",
+                "outputs": [
+                  "Repetida: 3\nLineas: 3\nRepeticiones: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -232,7 +370,7 @@
         },
         {
           "type": "note",
-          "text": "Entrada preparada de esta referencia: \"\\npuerta\\npuerta\\n\\n\\npuerta\", donde cada \\n representa un LF. Empieza con una línea vacía y termina con una línea sin LF. Es distinta de la entrada del intento; compara el programa con ambas trazas."
+          "text": "Entrada preparada de esta referencia: \"\\npuerta\\npuerta\\n\\n\\npuerta\", donde cada \\n representa un LF. Empieza con una línea vacía y termina con una línea sin LF. Es distinta de la entrada del intento; el código muestra cómo la presencia previa se distingue del contenido vacío."
         },
         {
           "type": "code",
@@ -307,7 +445,7 @@
         },
         {
           "type": "note",
-          "text": "La copia del valor anterior y las posiciones de palabras repetidas se estudian en la lectura de apoyo (Stroustrup, 2024, secciones 2.5.1 y 2.5.3, pp. 38–40). Los contratos, textos, informes, contrastes y transferencia a líneas de esta lección son propios. Recupera las lecciones anteriores de palabras y líneas para el significado de >>, getline y fin del origen; no se requieren colecciones, búsqueda global ni una nueva API."
+          "text": "Comparar lecturas vecinas exige conservar el dato anterior hasta haber comparado el actual. Sólo después se actualiza esa copia; contar las lecturas permite situar una repetición (Stroustrup, 2024, secciones 2.5.1 y 2.5.3). La primera lectura no tiene vecina anterior. Para líneas, una línea vacía sí es un dato válido: la marca de existencia de una lectura anterior debe distinguirse de su contenido. La comparación usa el mismo significado de >>, getline y fin del origen que ya se practicó."
         }
       ]
     }

@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de programar, resuelve a mano los casos ultimo=0, ultimo=1 y ultimo=4. Determina qué objetos representan el pedido actual, cantidad atendida y cajas reunidas. Identifica qué se reinicia por pedido y qué debe conservarse durante todo el procedimiento. El caso cero debe producir un resumen válido sin inventar un pedido."
+          "text": "El caso sin pedidos debe producir un resumen válido sin inventar una visita. En la construcción, distingue el pedido actual, la cantidad atendida y las cajas reunidas. El aporte corresponde a un pedido; los dos resúmenes deben conservarse durante todo el recorrido. Los ejercicios posteriores permiten registrar y relacionar esas funciones."
         },
         {
           "type": "multiple_choice",
@@ -50,11 +50,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código hay un recorrido de los números del 1 al último. Completa la selección de cajas y los dos resúmenes por tu cuenta. Muestra el resumen después del bucle. Conserva ultimo entre 0 y 8, y evita reutilizar el acumulador de cajas como contador de pedidos. Comprueba los casos que resolviste a mano antes de continuar a los ejercicios de lectura."
+          "text": "Completa el recorrido de este editor para el último pedido cuatro: los impares requieren dos cajas y los pares, una. Muestra cada línea como `Pedido N: C cajas` y, después del bucle, `Pedidos=4;Cajas=6`. Conserva el espacio y los separadores.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Distingue el acumulador de cajas del contador de pedidos."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -160,7 +172,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una segunda tarea usa otro significado para los mismos recursos: visitar casillas de un tablero de 3 filas y 2 columnas, numeradas desde 0, y contar sólo las casillas con fila distinta de columna. Completa primero la tabla de parejas al final de esta página y después el puzzle de predicción del conteo, antes de ejecutar el programa. No dependas de reconocer el texto despacho: busca qué se recorre, qué se acepta y qué se resume."
+          "text": "Una segunda tarea visita casillas de tres filas y dos columnas, numeradas desde cero, y cuenta sólo las casillas con fila distinta de columna. Los puzzles siguientes separan el conteo, el recorrido y la justificación del estado. Se resuelven dentro de sus propios campos, sin volver al editor del despacho."
         },
         {
           "type": "output_prediction",
@@ -186,11 +198,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Para revisar lo aprendido, selecciona en el puzzle de esta página la justificación del inicio, las visitas, la actualización, la conservación del contador y el final del recorrido. Vuelve al editor de código del despacho, cambia un límite y comprueba en la consola que las visitas y el resumen siguen ese nuevo límite. La soltura requiere recuperar estas ideas más adelante: las colecciones y las funciones volverán a exigirlas en problemas que ya no presentan los datos como una simple cuenta."
+          "text": "La tabla de esta página registra las parejas consideradas y su orden; la predicción registra el conteo. Busca qué se recorre, qué se acepta y qué se conserva. Las colecciones y las funciones recuperarán esas mismas decisiones con otros datos."
         },
         {
           "type": "note",
-          "text": "La base conceptual es el cómputo, la selección y la iteración (Stroustrup, 2024, cap. 3). Esta unidad desarrolla ejemplos propios y recuperación de conceptos previos. La semántica de for, continue, break y switch se contrasta con el borrador público de C++ (Working Draft: Programming Languages — C++, s. f., secciones [stmt.for], [stmt.cont], [stmt.break] y [stmt.switch])."
+          "text": "`for` delimita la iteración, `continue` omite el resto de una vuelta y `break` termina el bucle o `switch` más interno que lo contiene (Working Draft: Programming Languages — C++, s. f., secciones [stmt.for], [stmt.cont], [stmt.break] y [stmt.switch]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "math_puzzle",
@@ -463,7 +481,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para ultimo=0,1,4,8, los resúmenes son respectivamente 0 pedidos y 0 cajas, 1 y 2, 4 y 6, 8 y 12. En el caso 4 los aportes individuales son 2,1,2,1. Comprueba tanto cada línea como el resumen: un total correcto puede ocultar aportes equivocados que se compensan. Conservar sólo el aporte final tampoco sustituye el acumulador. Después de comparar, utiliza el control para restaurar el código original y reconstruye el programa sin consultar la referencia. Después de reconstruir, relaciona cada objeto con su función y con el tiempo durante el que necesita conservarse, en la actividad del final de esta página."
+          "text": "Para último cero, uno, cuatro y ocho, los resúmenes son respectivamente cero pedidos y cero cajas; uno y dos; cuatro y seis; ocho y doce. Comprueba también cada línea: un total correcto puede ocultar aportes equivocados que se compensan. Conservar sólo el aporte final tampoco sustituye el acumulador.\n\nLa actividad siguiente relaciona cada objeto con su función y con el tiempo durante el que debe conservarse. Después podrás probar varios límites con un mismo programa."
         },
         {
           "type": "math_puzzle",
@@ -556,6 +574,52 @@
             "correct": "ultimo aporta el límite de todas las comprobaciones del for. pedidos y cajas se inicializan antes del recorrido porque deben acumular todas las visitas; también existen cuando ultimo vale cero. pedido controla la visita actual desde el encabezado del for. aporte se declara dentro del cuerpo y se calcula de nuevo para cada pedido; no sustituye ninguno de los dos resúmenes.",
             "incorrect": "Sigue dos pedidos consecutivos y después consulta el resumen. Distingue el estado que debe conservar ambas contribuciones del dato que se prepara de nuevo para una sola vuelta."
           }
+        },
+        {
+          "type": "heading",
+          "text": "El mismo despacho con otros límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee el último pedido, entre cero y ocho. Comprueba cero, uno, cuatro y ocho: las líneas de cada pedido deben seguir su aporte par o impar y terminar con el resumen indicado arriba. Con cero, sólo debe aparecer `Pedidos=0;Cajas=0`.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    std::cin >> ultimo;\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Pedidos=0;Cajas=0",
+                  "Pedidos=0;Cajas=0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedidos=1;Cajas=2",
+                  "Pedido 1: 2 cajas\nPedidos=1;Cajas=2\n"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedido 5: 2 cajas\nPedido 6: 1 cajas\nPedido 7: 2 cajas\nPedido 8: 1 cajas\nPedidos=8;Cajas=12",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedido 5: 2 cajas\nPedido 6: 1 cajas\nPedido 7: 2 cajas\nPedido 8: 1 cajas\nPedidos=8;Cajas=12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

@@ -73,6 +73,18 @@
         {
           "type": "paragraph",
           "text": "Antes de probar el cambio, identifica en el código qué objetos reciben los parámetros y qué relaciones permiten sus llamadas. No necesitas una secuencia única de pasos: puedes volver a la lectura cuando el código plantee otra duda. Lo importante es distinguir lo que ya comprendías, lo que sólo suponías y lo que la nueva evidencia permite aprender."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recomendacion_predecir_por_valor",
+          "question": "Antes de ejecutar el editor siguiente, predice las dos líneas de la versión por valor, incluido el salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Separados=2;Entrada=2;Actual=2\nCompartido=2;Actual=3\n"
+          ],
+          "explanation": "El primer parámetro conserva su copia anterior al push_back. En la llamada con el mismo vector en ambas posiciones, el resultado mide la copia y Actual mide el objeto que sí recibió el elemento.",
+          "reviewFeedback": "Sigue las instrucciones en su orden y distingue el resultado guardado del estado actual. Conserva exactamente los separadores y saltos de línea del programa."
         }
       ]
     },
@@ -88,21 +100,73 @@
         },
         {
           "type": "paragraph",
-          "text": "Las llamadas están separadas de la salida para observar después los resultados y los tamaños. Cada ejecución comienza con sus objetos nuevos. Se usan vectores de cero a tres enteros al entrar; el único push_back deja como máximo cuatro elementos. Por ese límite, static_cast<int>(antes.size()) representa exactamente el tamaño conocido. Las referencias del programa se vinculan a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Recuperas estas operaciones de C++ 1."
+          "text": "Las llamadas están separadas de la salida para observar después los resultados y los tamaños. Cada ejecución comienza con sus objetos nuevos. Se usan vectores de cero a tres enteros al entrar; el único push_back deja como máximo cuatro elementos. Por ese límite, static_cast<int>(antes.size()) representa exactamente el tamaño conocido. Las referencias del programa se vinculan a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Recuperas estas operaciones de C++ 1. En esta primera actividad conserva la versión por valor y comprueba sus dos líneas de salida."
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    // Escribe tu pregunta y tus predicciones antes de ejecutar.\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
-          "initialStandardInput": ""
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=2;Actual=3\n"
+                ],
+                "explanation": "La copia conserva dos elementos; el vector compartido original pasa a tres. El retorno 0 describe la terminación y no compara por sí mismo los dos estados."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Primero predice y ejecuta la versión por valor, conservando su salida completa. Cambia después únicamente la declaración del primer parámetro a const std::vector<int>& antes; deja iguales el cuerpo, las llamadas y los datos. Predice otra vez antes de construir y ejecutar. Compara por separado Separados, Entrada, Compartido y los dos campos Actual. Ambas ejecuciones terminan con código 0; ese código no compara las dos versiones."
+          "text": "El primer resultado mide una copia del vector de entrada. En la llamada compartida, Actual permite observar por separado el tamaño del objeto al que se añadió el elemento. Con esta ejecución queda comprobada la versión por valor; la recomendación se contrasta a continuación en otra actividad.",
+          "emphasis": [
+            {
+              "text": "una copia del vector de entrada"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Compara las observaciones de ambas ejecuciones con la condición que elegiste investigar en el puzzle. Distingue los dos objetos entrada y destino del uso de compartido en las dos posiciones. No basta copiar una salida: relaciona el resultado con cuándo se consulta el objeto que nombra cada parámetro. Realiza el contraste antes de consultar la referencia y responde después al puzzle sobre el alcance de la recomendación."
+          "text": "Ahora considera la misma secuencia con el primer parámetro por referencia const. Predice antes de ejecutar: la modificación por el segundo parámetro ocurre antes de consultar el tamaño por el primero. El siguiente editor conserva sus propios archivos y las mismas llamadas; cambia sólo ese primer parámetro como propone la nota.",
+          "emphasis": [
+            {
+              "text": "la modificación por el segundo parámetro ocurre antes de consultar el tamaño"
+            }
+          ]
+        },
+        {
+          "type": "output_prediction",
+          "id": "recomendacion_predecir_por_referencia",
+          "question": "Predice las dos líneas de esta revisión por referencia const antes de modificar y ejecutar el siguiente editor. Incluye el salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Separados=2;Entrada=2;Actual=2\nCompartido=3;Actual=3\n"
+          ],
+          "explanation": "La referencia consulta el objeto después de que el otro parámetro lo modificó. La llamada compartida devuelve tres, mientras que la copia del experimento anterior conservaba dos.",
+          "reviewFeedback": "Sigue las instrucciones en su orden y distingue el resultado guardado del estado actual. Conserva exactamente los separadores y saltos de línea del programa."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{2, 5};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=3;Actual=3\n"
+                ],
+                "explanation": "Con argumentos distintos se conserva el resultado anterior. Al compartir el mismo objeto, la consulta por referencia observa los tres elementos después de push_back; const no impide el cambio por el otro parámetro."
+              }
+            ]
+          }
         }
       ]
     },
@@ -194,11 +258,87 @@
         },
         {
           "type": "paragraph",
-          "text": "En el mismo editor de código, utiliza Reiniciar código para recuperar la versión inicial por valor y cambia sólo el vector compartido para que comience vacío. Ejecuta esa variante; después cambia únicamente el primer parámetro a const std::vector<int>& y vuelve a ejecutar. Compara el tamaño devuelto y el tamaño Actual de ese vector en ambas ejecuciones. Conserva las llamadas y el límite de tres elementos al entrar."
+          "text": "Comprueba ahora el alcance de la recomendación cuando el vector compartido comienza vacío. Las dos actividades siguientes conservan las llamadas y el límite de tres elementos al entrar; cada una dispone de su propio editor. Predice primero y ejecuta después, sin regresar a un programa anterior."
         },
         {
           "type": "note",
           "text": "Incorporar conocimiento a tu trabajo requiere poder volver a justificarlo. Elegir una pregunta concreta, consultar información pertinente y revisar su alcance puede ocurrir en varios recorridos, con vueltas entre lectura y código. El propósito es mejorar lo que comprendes y puedes aplicar, sin convertir ese trabajo en una lista de lecturas o de pasos cumplidos."
+        },
+        {
+          "type": "heading",
+          "text": "Vector compartido vacío: parámetro por valor"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recomendacion_predecir_vacio_por_valor",
+          "question": "Predice las dos líneas y el salto final de esta versión por valor antes de ejecutarla.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Separados=2;Entrada=2;Actual=2\nCompartido=0;Actual=1\n"
+          ],
+          "explanation": "La copia se crea antes de añadir el elemento. Por eso el resultado de la consulta compartida es cero y el tamaño Actual es uno.",
+          "reviewFeedback": "Sigue las instrucciones en su orden y distingue el resultado guardado del estado actual. Conserva exactamente los separadores y saltos de línea del programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva este programa y comprueba la predicción ejecutándolo en su editor."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(std::vector<int> antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=0;Actual=1\n"
+                ],
+                "explanation": "La copia del vector vacío tiene tamaño cero. El argumento original recibe el elemento y termina con tamaño uno."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Vector compartido vacío: referencia const"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recomendacion_predecir_vacio_por_referencia",
+          "question": "Predice las dos líneas y el salto final de esta versión por referencia const antes de ejecutarla.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Separados=2;Entrada=2;Actual=2\nCompartido=1;Actual=1\n"
+          ],
+          "explanation": "La referencia consulta después de push_back el mismo objeto que recibió el elemento. Resultado y tamaño Actual son uno.",
+          "reviewFeedback": "Sigue las instrucciones en su orden y distingue el resultado guardado del estado actual. Conserva exactamente los separadores y saltos de línea del programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta y comprueba esta revisión. Compara su observación con la de la actividad anterior: el mismo estado final no obliga a que la consulta intermedia haya devuelto el mismo valor."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint registrar_y_medir(const std::vector<int>& antes, std::vector<int>& actual) {\n    actual.push_back(7);\n    return static_cast<int>(antes.size());\n}\n\nint main() {\n    std::vector<int> entrada{2, 5};\n    std::vector<int> destino{9};\n    const int separados = registrar_y_medir(entrada, destino);\n    std::cout << \"Separados=\" << separados << \";Entrada=\" << entrada.size()\n              << \";Actual=\" << destino.size() << '\\n';\n\n    std::vector<int> compartido{};\n    const int juntos = registrar_y_medir(compartido, compartido);\n    std::cout << \"Compartido=\" << juntos << \";Actual=\" << compartido.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Separados=2;Entrada=2;Actual=2\nCompartido=1;Actual=1\n"
+                ],
+                "explanation": "La referencia observa el vector compartido después de añadirle un elemento. El estado final coincide con el experimento por valor, pero el tamaño devuelto difiere."
+              }
+            ]
+          }
         }
       ]
     }

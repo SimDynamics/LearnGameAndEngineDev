@@ -187,7 +187,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa las tres comprobaciones en main. Cada una debe comparar debe_reponer con su esperado y mostrar qué caso falló. Si alguna falla, el programa de comprobación debe terminar con un código distinto de cero; si las tres pasan, con cero. Puedes usar condicionales, un bool acumulado o una estructura de casos que ya conozcas. Primero usa la revisión A sin modificarla para comprobar que tu prueba detecta la discrepancia; después cambia sólo la comparación y repite los mismos casos."
+          "text": "Implementa las tres comprobaciones en main. Cada una debe comparar debe_reponer con su esperado y mostrar qué caso falló. Si alguna falla, el programa de comprobación debe terminar con un código distinto de cero; si las tres pasan, con cero. Puedes usar condicionales, un bool acumulado o una estructura de casos que ya conozcas. Conserva la revisión A sin modificar: esta actividad debe acreditar que tu comprobador detecta su discrepancia, no reparar todavía la función.",
+          "emphasis": [
+            {
+              "text": "tu comprobador detecta su discrepancia"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -213,6 +218,31 @@
             "Revisa que cada esperado proceda del requisito y que la prueba lo compare con una observación identificada. Así podrás explicar qué desacuerdo detectaría.",
             "Imprimir muestra lo que ocurrió. Reconsidera de dónde obtendrías un criterio independiente para decidir si ese resultado satisface el contrato."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Reparar la función con una batería conservada"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente editor tiene su propio comprobador completo de los mismos tres casos. Modifica únicamente la comparación de debe_reponer para cumplir el requisito inclusivo. Conserva datos, esperados y las tres comparaciones: después de reparar, no debe haber diagnósticos de discrepancia y el programa de prueba debe terminar con 0. Los intentos de esta reparación no sustituyen el comprobador que construiste en la actividad anterior. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Corrige solo esta comparacion para cumplir el requisito.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  ""
+                ],
+                "explanation": "Las tres comparaciones conservadas coinciden y no producen diagnósticos de discrepancia. La salida vacía se comprueba después de una ejecución terminada con cero; un fallo de construcción o ejecución no se trata como respuesta incorrecta."
+              }
+            ]
+          }
         }
       ]
     },
@@ -237,7 +267,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada comprobación se ejecuta aunque una anterior falle. Una expresión con && puede omitir llamadas posteriores por cortocircuito; que el resultado final sea false no demuestra que se hayan observado todos los casos. Después de corregir A, conserva los controles que funcionaban y añade otra frontera, (8,8), con un caso a cada lado. Estos nuevos datos ponen a prueba la regla y no sólo la muestra 4,5,6."
+          "text": "Cada comprobación se ejecuta aunque una anterior falle. Una expresión con && puede omitir llamadas posteriores por cortocircuito; que el resultado final sea false no demuestra que se hayan observado todos los casos. La siguiente variación recupera esa independencia al ampliar la batería a otra frontera."
         },
         {
           "type": "multiple_choice",
@@ -259,6 +289,19 @@
         {
           "type": "paragraph",
           "text": "Al continuar, usaremos la identificación del programa, los datos y los esperados para contrastar causas. Mantén separadas la observación, la construcción y el cumplimiento del requisito: cuando alguno cambia, debes saber qué comparación sigue siendo válida."
+        },
+        {
+          "type": "heading",
+          "text": "Ampliar la batería a otra frontera"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva la función corregida y las tres comprobaciones anteriores. Añade en main las llamadas (7,8), (8,8) y (9,8), comparadas por separado con sus esperados obtenidos de la regla. Conserva los tres controles de mínimo cinco y la ejecución de todos los casos aunque uno falle. La actividad queda comprobada cuando las seis comparaciones coinciden, no se omite ninguna y el retorno final es 0."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
         }
       ]
     }

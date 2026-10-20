@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "std::format, declarado en <format>, compone y devuelve std::string. El primer argumento describe el texto y los lugares donde insertar los valores siguientes. Un par de llaves {} es un campo: reserva un lugar para un argumento. Los caracteres ordinarios se conservan. Componer la cadena no imprime; main puede guardarla, mostrarla o pasarla a otra función."
+          "text": "std::format, declarado en <format>, compone y devuelve std::string. El primer argumento describe el texto y los lugares donde insertar los valores siguientes. Un par de llaves {} es un campo: reserva un lugar para un argumento. Los caracteres ordinarios se conservan. Componer la cadena no imprime; main puede guardarla, mostrarla o pasarla a otra función (Stroustrup, 2024, sección 9.10.6, pp. 281–283)."
         },
         {
           "type": "code",
@@ -224,6 +224,18 @@
         {
           "type": "note",
           "text": "La biblioteca estándar también tiene mecanismos para patrones conocidos durante la ejecución. Aquí el contrato es más pequeño: patrones literales y datos como argumentos. Una variable string con un patrón no se intercambia sin más con el literal de estas llamadas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales__secuencia_llaves_previa",
+          "question": "La composición exige pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. Con codigo=\"{X}\" y unidades=6, ¿qué cadena resulta?",
+          "options": [
+            "pedido {{X}}: 6 unidades; copia={X}",
+            "pedido {X}: 6 unidades; copia=X",
+            "pedido {}: 6 unidades; copia="
+          ],
+          "correctIndex": 0,
+          "explanation": "Las llaves exteriores pertenecen al mensaje; las interiores forman parte del código. El dato se copia literalmente en ambos lugares."
         }
       ]
     },
@@ -235,15 +247,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe resumen(const string& codigo, int unidades), que devuelve pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. El código puede ser una cadena ASCII de cero a ocho caracteres y unidades está entre cero y mil. Usa un patrón literal con índices: el mismo argumento codigo debe servir en sus dos lugares. Las llaves visibles que rodean el código son parte del resultado. La función no imprime ni modifica los argumentos. En main compón mensajes para \"B\", 4 y para \"\", 0 en líneas separadas."
+          "text": "Escribe resumen(const string& codigo, int unidades), que devuelve pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. El código puede ser una cadena ASCII de cero a ocho caracteres y unidades está entre cero y mil. Usa un patrón literal con índices: el mismo argumento codigo debe servir en sus dos lugares. Las llaves visibles que rodean el código son parte del resultado. La función no imprime ni modifica los argumentos. En main compón mensajes para \"B\", 4 y para \"\", 0 en líneas separadas. En la misma ejecución guarda el primer mensaje, cambia después unidades de 4 a 9 y presenta la cadena ya guardada. Presenta después el caso vacío y resumen(\"{X}\", 6). Esas son las tres líneas de la batería, cada una terminada con salto. Las llaves del dato son caracteres del argumento, no otro patrón. Usa Compilar, ejecutar y comprobar con todo el programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "pedido {B}: 4 unidades; copia=B\npedido {}: 0 unidades; copia=\npedido {{X}}: 6 unidades; copia={X}\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice cada cadena antes de compilar. Comprueba después un código que contenga llaves, por ejemplo \"{X}\", con seis unidades. Ese dato no debe convertirse en otro patrón. Guarda un mensaje, cambia una variable original y verifica que la cadena guardada conserva el texto ya compuesto."
+          "text": "El primer mensaje debe conservar la cantidad que había al componerse. La batería contrasta dato vacío, cero y llaves dentro del argumento sin cambiar el patrón ni la implementación entre llamadas."
         }
       ]
     },
@@ -273,8 +301,82 @@
           "explanation": "El argumento se copia en dos campos y permanece intacto. Sus llaves no se interpretan de nuevo."
         },
         {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales__secuencia_mensaje_propio",
+          "question": "Quieres crear un mensaje con un código repetido y una llave literal. ¿Qué decisión conserva el contrato entre patrón y datos?",
+          "options": [
+            "Construir el patrón pegando el código dentro de sus llaves de formato.",
+            "Mantener un patrón literal con campos e índices y pasar el código como argumento, aunque contenga llaves.",
+            "Cambiar el código del llamador al texto completo de la salida."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los campos pertenecen al patrón y los caracteres del código al argumento. Reutilizar su índice conserva la relación sin interpretar las llaves del dato como campos nuevos."
+        },
+        {
           "type": "paragraph",
-          "text": "En otra sesión recupera primero el significado de devolver string y el de los índices. Crea un mensaje de una tarea propia con dos tipos de datos, una repetición y una llave literal. Comprueba cadena vacía y cero antes de consultar esta referencia."
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    const std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear otro mensaje con datos y llaves"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales__secuencia_transferencia_formato",
+          "question": "Con código vacío y seis cajas, ¿qué separadores deben conservarse?",
+          "options": [
+            "envio: 6 cajas",
+            "envio {}: 6 cajas; codigo=",
+            "envio {0}: 6 cajas; codigo=0"
+          ],
+          "correctIndex": 1,
+          "explanation": "El argumento vacío no elimina los textos literales del patrón: se conservan llaves, dos puntos y la segunda etiqueta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe envio(const std::string& codigo, int cajas), que devuelve envio {CODIGO}: CAJAS cajas; codigo=CODIGO. Usa un patrón literal con índices para repetir el código; las llaves exteriores forman parte del mensaje. El código contiene de cero a ocho caracteres ASCII y cajas está entre cero y mil. main presenta envio(\"Z\", 0) y envio(\"\", 6). La función devuelve string sin imprimir ni modificar sus argumentos.\n\nConstruye aquí una solución nueva para este objetivo. Toda la batería pertenece al mismo programa; usa Compilar, ejecutar y comprobar cuando esté completa. Cada línea presentada termina con salto. La referencia aparece en la página siguiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    // Construye el objetivo de transferencia de esta pagina.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "envio {Z}: 0 cajas; codigo=Z\nenvio {}: 6 cajas; codigo=\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la transferencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\" << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

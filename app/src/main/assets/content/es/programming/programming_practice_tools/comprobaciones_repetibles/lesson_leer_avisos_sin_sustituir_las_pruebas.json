@@ -89,7 +89,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta la batería inicial y distingue lo observado al construir y al ejecutar: qué casos discrepan, sus esperados y obtenidos, y el estado de cada fase. Repara únicamente la expresión devuelta en cantidad.cpp para respetar el contrato. Construye y ejecuta de nuevo; compara el aviso y los cuatro casos. No cambies cantidad.hpp, comprobar.cpp, los esperados, las opciones ni el contrato para conseguir un panel vacío. La referencia de la página siguiente se consulta después de tu intento."
+          "text": "Ejecuta la batería inicial y distingue lo observado al construir y al ejecutar: qué casos discrepan, sus esperados y obtenidos, y el estado de cada fase. Repara únicamente la expresión devuelta en cantidad.cpp para respetar el contrato. Construye y ejecuta de nuevo; compara el aviso y los cuatro casos. No cambies cantidad.hpp, comprobar.cpp, los esperados, las opciones ni el contrato para conseguir un panel vacío. La referencia de la página siguiente se consulta después de tu intento. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
         },
         {
           "type": "cpp_compiler",
@@ -116,7 +116,19 @@
             "buildType": "Debug"
           },
           "language": "cpp",
-          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n"
+          "initialCode": "#include \"cantidad.hpp\"\n#include <iostream>\n\nint main() {\n    const int datos[] = {-1, 0, 20, 21};\n    const bool esperados[] = {false, true, true, false};\n    bool todo_bien = true;\n    for (int i = 0; i < 4; ++i) {\n        const bool obtenido = cantidad_admitida(datos[i]);\n        const bool coincide = obtenido == esperados[i];\n        std::cout << \"dato=\" << datos[i]\n                  << \" esperado=\" << esperados[i]\n                  << \" obtenido=\" << obtenido\n                  << (coincide ? \" OK\\n\" : \" ERROR\\n\");\n        todo_bien = todo_bien && coincide;\n    }\n    std::cout << (todo_bien ? \"Bateria: OK\\n\" : \"Bateria: ERROR\\n\");\n    return todo_bien ? 0 : 1;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "dato=-1 esperado=0 obtenido=0 OK\ndato=0 esperado=1 obtenido=1 OK\ndato=20 esperado=1 obtenido=1 OK\ndato=21 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los cuatro casos conservados respetan el intervalo inclusivo de cero a veinte. Revisar los avisos de construcción y comprobar estos resultados son evidencias distintas."
+              }
+            ]
+          }
         }
       ]
     },

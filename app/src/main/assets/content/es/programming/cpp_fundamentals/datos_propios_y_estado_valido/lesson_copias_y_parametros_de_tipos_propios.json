@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Para nuestro Pedido, la copia por defecto copia cada miembro: código, unidades y estado. Una copia de un pedido válido conserva ese valor en otro objeto. Enviar el original después no actualiza la copia. Que los datos sean privados no impide copiar el valor del objeto mediante sus operaciones de copia proporcionadas por el lenguaje."
+          "text": "Para nuestro Pedido, la copia por defecto copia cada miembro: código, unidades y estado. Una copia de un pedido válido conserva ese valor en otro objeto. Enviar el original después no actualiza la copia. Que los datos sean privados no impide copiar el valor del objeto mediante sus operaciones de copia proporcionadas por el lenguaje.",
+          "emphasis": [
+            {
+              "text": "copia por defecto"
+            },
+            {
+              "text": "otro objeto"
+            }
+          ]
         },
         {
           "type": "code",
@@ -182,15 +190,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea dos funciones: cancelar_copia(Pedido) y cancelar_original(Pedido&), ambas devuelven el resultado de cancelar. Construye un pedido preparado, llama primero a la versión por valor y muestra que el original sigue preparado. Después llama a la versión por referencia y muestra que el original queda cancelado. Comprueba también un pedido ya enviado: ambas solicitudes deben rechazarse sin cambiarlo."
+          "text": "Construye cancelar_copia(Pedido) y cancelar_original(Pedido&), ambas devuelven el resultado de cancelar. Crea K con cuatro unidades, preparado. Llama a la versión por valor y muestra si aceptó y si K sigue preparado; llama después a la versión por referencia y muestra si aceptó y si K quedó cancelado. En otra prueba crea J con cinco unidades, envíalo y aplica ambas funciones: deben devolver false y conservar el estado enviado. Ejecuta cada llamada antes de consultar el objeto.\n\nPresenta las dos líneas como Preparado=1:1 1:1 y Enviado=0:1 0:1. Construye también presentar(const Pedido&), que muestre codigo:unidades preparado:B, sin modificar el objeto ni acceder a miembros privados. Úsala para K, J y un objeto const P con dos unidades recién construido, una línea por objeto. Las tres líneas deben ser K:4 preparado:0, J:5 preparado:0 y P:2 preparado:1. No añadas salto después de la última. Pulsa Compilar, ejecutar y comprobar.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Preparado=1:1 1:1\nEnviado=0:1 0:1\nK:4 preparado:0\nJ:5 preparado:0\nP:2 preparado:1"
+                ],
+                "explanation": "La copia por valor y la referencia modificable tienen efectos distintos sobre un pedido preparado. Un pedido enviado rechaza ambas cancelaciones; las consultas const conservan los objetos."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Añade una función de presentación que reciba const Pedido&. Define sus consultas a través de la interfaz, sin acceder directamente a miembros privados. Predice por separado resultado y efecto de cada llamada."
+          "text": "Pasar por valor crea otro Pedido; cancelar esa copia no cambia K. La referencia permite solicitar la operación sobre K. Una referencia const de presentación sólo consulta por esa vía. La prueba de J añade un estado que rechaza ambas solicitudes: el modo de parámetro no elimina las condiciones de la operación."
         }
       ]
     },
@@ -228,6 +252,15 @@
         {
           "type": "paragraph",
           "text": "La función de presentación recibe const Pedido& y utiliza sólo consultas públicas. Presenta T:5 preparado:1 y, después de enviar, T:5 preparado:0 en otra línea; no cambia el objeto para imprimirlo."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de llamadas y consultas con ambos estados"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    const bool preparado = pedido.estado() == Estado::preparado;\n    bool b = cancelar_original(pedido);\n    std::cout << \"Preparado=\" << a << \":\" << preparado << \" \" << b << \":\"\n              << (pedido.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"J\", 5};\n    enviado.enviar();\n    a = cancelar_copia(enviado);\n    const bool conserva_tras_copia = enviado.estado() == Estado::enviado;\n    b = cancelar_original(enviado);\n    std::cout << \"Enviado=\" << a << \":\" << conserva_tras_copia << \" \" << b << \":\"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    presentar(pedido);\n    std::cout << \"\\n\";\n    presentar(enviado);\n    std::cout << \"\\n\";\n    const Pedido fijo{\"P\", 2};\n    presentar(fijo);\n    return 0;\n}\n"
         }
       ]
     }

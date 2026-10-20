@@ -194,11 +194,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice la salida y luego ejecuta. Añade un salto de línea después de cada fila y conserva un marcador Fin fuera de ambos recorridos. Cambia dimensiones a 3 filas y 2 columnas, y después a 2 filas y 0 columnas. Explica por qué en el último caso aún existen dos acciones de final de fila. Mantén dimensiones entre 0 y 4; no necesitas dibujar una interfaz gráfica para comprobar el orden de las parejas."
+          "text": "Añade al programa un salto de línea después de terminar cada fila, conservando dos filas y tres columnas. `Fin` debe quedar fuera de ambos recorridos.\n\nPulsa «Compilar, ejecutar y comprobar». Deben aparecer `(0,0)(0,1)(0,2)`, `(1,0)(1,1)(1,2)` y `Fin` en tres líneas, con salto final opcional. El objetivo es comprobar el orden de las parejas y el cierre de cada fila."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "(0,0)(0,1)(0,2)\n(1,0)(1,1)(1,2)\nFin",
+                  "(0,0)(0,1)(0,2)\n(1,0)(1,1)(1,2)\nFin\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -220,6 +232,45 @@
         {
           "type": "paragraph",
           "text": "Con tres filas y dos columnas se obtienen las líneas (0,0)(0,1), (1,0)(1,1), (2,0)(2,1) y luego Fin. Con dos filas y cero columnas, cada cuerpo exterior aporta su salto: hay dos líneas vacías antes de Fin. Con cero filas no se ejecuta ningún final de fila y sólo aparece Fin. Las líneas vacías tienen una causa en el código; no son parejas inexistentes."
+        },
+        {
+          "type": "heading",
+          "text": "Dimensiones distintas con el mismo recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee filas y columnas, ambas entre cero y cuatro. Comprueba `3 2`, que produce tres filas de parejas; `2 0`, que produce dos líneas vacías antes de `Fin`; y `0 2`, que produce sólo `Fin`. Los cierres de fila pertenecen al recorrido exterior, incluso cuando no hay columnas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int filas{0};\n    int columnas{0};\n    std::cin >> filas >> columnas;\n    for (int fila{0}; fila < filas; ++fila) {\n        for (int columna{0}; columna < columnas; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n        std::cout << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 2",
+                "outputs": [
+                  "(0,0)(0,1)\n(1,0)(1,1)\n(2,0)(2,1)\nFin",
+                  "(0,0)(0,1)\n(1,0)(1,1)\n(2,0)(2,1)\nFin\n"
+                ]
+              },
+              {
+                "standardInput": "2 0",
+                "outputs": [
+                  "\n\nFin",
+                  "\n\nFin\n"
+                ]
+              },
+              {
+                "standardInput": "0 2",
+                "outputs": [
+                  "Fin",
+                  "Fin\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3 2"
         }
       ]
     },
@@ -239,15 +290,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Empieza con 3 equipos y 2 herramientas. Antes de ejecutar, prepara una traza con equipo, herramienta considerada, decisión, revisiones de ese equipo y total. Decide dónde crear o reiniciar cada estado: uno debe describir el equipo actual y otro conservar lo reunido por todos. Escribe el programa desde este editor mínimo. Comprueba también (equipos,herramientas) iguales a (0,2), (2,0), (1,1) y (3,4); calcula primero sus salidas completas. Justifica por qué ambos recorridos terminan incluso cuando una herramienta no se revisa."
+          "text": "Construye la primera política con tres equipos y dos herramientas. Decide dónde conservar el total y dónde reiniciar el contador del equipo. El objetivo consiste en las revisiones y cierres definidos arriba: cada herramienta se considera en orden y sólo se revisa si no supera el número de equipo.\n\nPulsa «Compilar, ejecutar y comprobar». No añadas un salto después de `Total`. Los puzzles posteriores recuperan las visitas, los contadores y la diferencia entre considerar y aceptar una pareja."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nRevision=2:1\nRevision=2:2\nEquipo=2;Revisadas=2\nRevision=3:1\nRevision=3:2\nEquipo=3;Revisadas=2\nTotal=5"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Construye y prueba antes de continuar. La referencia posterior utiliza otros datos para comparar requisitos y ubicación del estado. El editor de código no califica automáticamente tu programa."
+          "text": "Construye y comprueba este objetivo antes de consultar la referencia. La comparación utiliza otros datos y permite revisar cada línea; una organización diferente es válida si conserva revisiones, cierres y total."
         }
       ]
     },
@@ -277,6 +339,54 @@
         {
           "type": "paragraph",
           "text": "Cada contador de recorrido empieza en 1, aumenta en 1 y abandona su condición tras superar un límite fijo. El interior tiene como máximo cuatro visitas por equipo y el exterior como máximo tres equipos. Incluso si la selección es falsa, el avance ocurre. Se consideran como máximo doce parejas; ningún contador de revisiones ni suma de números se acerca a un límite de representación de int. La ausencia de equipos impide alcanzar el interior; la ausencia de herramientas conserva los cierres de los equipos existentes."
+        },
+        {
+          "type": "heading",
+          "text": "Casos de la primera política"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee equipos y herramientas, dentro de los dominios cero a tres y cero a cuatro. Comprueba `0 2`, `2 0`, `1 1`, `3 4` y `2 4`. Conserva la selección herramienta no mayor que equipo. Contrasta todas las revisiones y cierres con los criterios anteriores; no basta el total.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. No añadas un salto después de la última línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int equipos{0};\n    int herramientas{0};\n    std::cin >> equipos >> herramientas;\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 2",
+                "outputs": [
+                  "Total=0"
+                ]
+              },
+              {
+                "standardInput": "2 0",
+                "outputs": [
+                  "Equipo=1;Revisadas=0\nEquipo=2;Revisadas=0\nTotal=0"
+                ]
+              },
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nTotal=1"
+                ]
+              },
+              {
+                "standardInput": "3 4",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nRevision=2:1\nRevision=2:2\nEquipo=2;Revisadas=2\nRevision=3:1\nRevision=3:2\nRevision=3:3\nEquipo=3;Revisadas=3\nTotal=6"
+                ]
+              },
+              {
+                "standardInput": "2 4",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nRevision=2:1\nRevision=2:2\nEquipo=2;Revisadas=2\nTotal=3"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 2"
         }
       ]
     },
@@ -288,7 +398,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa pretende cumplir la primera política, con 2 equipos y 2 herramientas. Antes de ejecutar, traza sus cambios y predice lo que realmente imprime; no sustituyas su salida por la que desearías. Después comprueba cada cierre contra las revisiones de ese equipo. Si encuentras un incumplimiento, formula una hipótesis sobre la duración del estado y una sola modificación que lo repare; anótalas en comentarios de tu editor anterior y prueba la modificación con varios equipos."
+          "text": "El programa siguiente pretende cumplir la primera política con dos equipos y dos herramientas. Predice lo que realmente imprime, sin sustituirlo por la salida deseada. El puzzle posterior permite comparar las visitas con las revisiones. Después encontrarás una actividad propia para reparar la duración del contador, sin volver a otro editor."
         },
         {
           "type": "output_prediction",
@@ -317,6 +427,29 @@
         {
           "type": "paragraph",
           "text": "El caso de un solo equipo no permite detectar un contador local que nunca se reinicia entre equipos. Conserva al menos una prueba con varios equipos, y otra con herramientas pero con alguna selección falsa. Repite también el caso sin herramientas: sus cierres siguen existiendo, pero ambos contadores de revisiones deben conservar cero."
+        },
+        {
+          "type": "heading",
+          "text": "Reparar el contador del equipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de este editor deja `revisadas` fuera del recorrido de equipos. Corrige únicamente la duración de ese estado para que cada cierre cuente las revisiones de su equipo. Conserva dos equipos, dos herramientas, la primera política y el total global.\n\nPulsa «Compilar, ejecutar y comprobar». No añadas un salto después de la última línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{2};\n    int total{0};\n    int revisadas{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nRevision=2:1\nRevision=2:2\nEquipo=2;Revisadas=2\nTotal=3"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -332,15 +465,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye esta versión desde otro editor mínimo, sin copiar el programa anterior. Empieza con 2 equipos y 4 herramientas. Decide cómo expresar la nueva selección con las operaciones ya estudiadas. Prepara primero una traza que separe parejas consideradas y revisiones; elige al menos una pareja cuya aceptación cambie respecto de la primera política. Justifica la colocación de los dos contadores y el avance cuando se descarta una herramienta."
+          "text": "Construye esta segunda política desde el editor mínimo, con dos equipos y cuatro herramientas. La selección debe aceptar una pareja si la suma de sus números es par. Conserva los dos contadores y los cierres que se definieron antes; los avances no dependen de aceptar la herramienta."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba (0,3), (2,0), (1,1), (1,4), (2,4) y el máximo (3,4). Escribe antes de ejecutar las líneas de revisión, cada cierre y el total. Si dos ejecuciones tienen el mismo total, compara también las parejas y los resúmenes por equipo: no bastará conservar un número final que coincida por casualidad."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Se comprueban todas las revisiones en su orden, el cierre de cada equipo y el total final. No añadas un salto después de `Total`. Si el total coincide, revisa también cada línea: dos políticas pueden reunir la misma cantidad aceptando parejas distintas."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision=1:1\nRevision=1:3\nEquipo=1;Revisadas=2\nRevision=2:2\nRevision=2:4\nEquipo=2;Revisadas=2\nTotal=4"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -385,11 +529,65 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de comparar, vuelve más adelante al editor mínimo y reconstruye una de las políticas con otro caso válido elegido por ti. Antes de ejecutar, explica qué estado cambia por pareja, cuál se reinicia por equipo y cuál sólo se inicializa una vez. Si tu resultado difiere, usa la primera línea distinta para decidir si fallaron el recorrido, la selección, el contador local o el total; no cambies todas esas partes a la vez."
+          "text": "La siguiente actividad comprueba la política de suma par con el mismo procedimiento y distintos datos. El contador local debe reiniciarse por equipo y el total, una sola vez antes de todos. Si una salida difiere, utiliza la primera línea distinta para localizar el recorrido, la selección o el estado responsable."
         },
         {
           "type": "paragraph",
-          "text": "La base conceptual de esta ampliación es la selección y la iteración, incluidos while, bloques y for (Stroustrup, 2024, secciones 3.4.1–3.4.2). Las consignas, los dominios, los programas y los casos de prueba son originales; combinan esos recursos para construir y comprobar recorridos anidados."
+          "text": "Los bloques de los bucles delimitan la duración de sus objetos locales. Un contador definido dentro del cuerpo exterior se prepara cada vez que se entra en ese bloque; otro definido antes de ambos recorridos conserva las actualizaciones de todos ellos (Stroustrup, 2024, secciones 3.4.1–3.4.2)."
+        },
+        {
+          "type": "heading",
+          "text": "Fronteras de la política de suma par"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee equipos y herramientas en los dominios ya definidos. Comprueba `0 3`, `2 0`, `1 1`, `1 4`, `2 4` y `3 4`. Los cierres de equipos sin revisiones deben seguir apareciendo. La igualdad de los totales de dos casos no sustituye comparar las parejas y los cierres.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. No añadas un salto después de la última línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int equipos{0};\n    int herramientas{0};\n    std::cin >> equipos >> herramientas;\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 3",
+                "outputs": [
+                  "Total=0"
+                ]
+              },
+              {
+                "standardInput": "2 0",
+                "outputs": [
+                  "Equipo=1;Revisadas=0\nEquipo=2;Revisadas=0\nTotal=0"
+                ]
+              },
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "Revision=1:1\nEquipo=1;Revisadas=1\nTotal=1"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Revision=1:1\nRevision=1:3\nEquipo=1;Revisadas=2\nTotal=2"
+                ]
+              },
+              {
+                "standardInput": "2 4",
+                "outputs": [
+                  "Revision=1:1\nRevision=1:3\nEquipo=1;Revisadas=2\nRevision=2:2\nRevision=2:4\nEquipo=2;Revisadas=2\nTotal=4"
+                ]
+              },
+              {
+                "standardInput": "3 4",
+                "outputs": [
+                  "Revision=1:1\nRevision=1:3\nEquipo=1;Revisadas=2\nRevision=2:2\nRevision=2:4\nEquipo=2;Revisadas=2\nRevision=3:1\nRevision=3:3\nEquipo=3;Revisadas=2\nTotal=6"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 3"
         }
       ]
     }

@@ -201,11 +201,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código modifica el límite a 1 y después a 5. Antes de ejecutar, predice cuántos aportes habrá y cuál será la suma. Después añade un contador independiente antes del recorrido, auméntalo una vez en cada vuelta y amplía la salida para mostrar también la cantidad de casos. No uses el total de piezas como si fuera cantidad de pedidos."
+          "text": "Añade al programa del editor un contador `pedidos`, inicializado antes del recorrido y aumentado una vez por vuelta. Conserva el límite cuatro. Amplía la salida posterior para mostrar las piezas reunidas y la cantidad de aportes, con este formato: `Piezas=10;Pedidos=4`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. El total de piezas y la cantidad de pedidos representan magnitudes diferentes."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 4; ++n) {\n        total += n;\n    }\n    std::cout << \"Piezas=\" << total;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 4; ++n) {\n        total += n;\n    }\n    std::cout << \"Piezas=\" << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=10;Pedidos=4",
+                  "Piezas=10;Pedidos=4\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -226,7 +238,39 @@
         },
         {
           "type": "paragraph",
-          "text": "Para límite 1, el resumen de esta versión es Piezas=1;Pedidos=1. Para límite 5 es Piezas=15;Pedidos=5. Los cinco aportes son 1,2,3,4,5. Un total correcto con contador 15 no cumple el requisito: confunde piezas con pedidos. Puedes elegir otras etiquetas claras si conservas y compruebas esas dos cantidades."
+          "text": "Para límite uno, el resumen es `Piezas=1;Pedidos=1`; para cinco, `Piezas=15;Pedidos=5`. Los cinco aportes son uno, dos, tres, cuatro y cinco. Un total correcto con contador quince confunde piezas con pedidos. Los editores utilizan rótulos definidos para comprobar esas dos magnitudes por separado."
+        },
+        {
+          "type": "heading",
+          "text": "El mismo resumen con distintos límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un límite entre cero y cinco. Comprueba `1` → `Piezas=1;Pedidos=1` y `5` → `Piezas=15;Pedidos=5`. Los valores se obtienen del acumulador y del contador, no de mensajes fijados para cada caso.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int limite{0};\n    std::cin >> limite;\n    int total{0};\n    int pedidos{0};\n    for (int n{1}; n <= limite; ++n) {\n        total += n;\n        ++pedidos;\n    }\n    std::cout << \"Piezas=\" << total << \";Pedidos=\" << pedidos;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Piezas=1;Pedidos=1",
+                  "Piezas=1;Pedidos=1\n"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "Piezas=15;Pedidos=5",
+                  "Piezas=15;Pedidos=5\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "1"
         }
       ]
     }

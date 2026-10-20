@@ -111,11 +111,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Los datos están declarados: nivel vale 4 y limite vale 4. Antes de ejecutar, predice el texto y la marca. Después prueba nivel igual a 3 y a 5, conservando limite. El requisito es mostrar Alerta desde el límite, incluida la igualdad, y guardar 1 en marca sólo cuando se muestra esa alerta. La salida posterior permite observar también una asignación dentro de la rama."
+          "text": "El programa contiene `nivel` igual a cuatro y `limite` igual a cuatro. El requisito pide `Alerta` desde el límite, incluida la igualdad, y una `marca` de uno sólo cuando aparece esa alerta. La salida posterior permite observar la asignación que ocurre dentro de la rama.\n\nEl objetivo del editor es comprobar ese caso con «Compilar, ejecutar y comprobar»; el salto final es opcional. La actividad de salida permite razonar primero sobre el mensaje y la marca."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -130,7 +141,69 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora cambia >= por > sin modificar los datos. El programa sigue compilando, pero observa el caso nivel igual a limite. Explica la diferencia con la salida esperada y restaura la condición del requisito. Una prueba descubre un error cuando combina datos adecuados con un resultado esperado definido por adelantado."
+          "text": "Una prueba descubre un error cuando combina datos que distinguen dos reglas con un resultado esperado definido por el requisito. Los editores siguientes separan los casos a ambos lados del límite y una reparación de la condición en la igualdad."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar los tres lados de la frontera"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un nivel entre cero y ocho y conserva el límite cuatro. Comprueba `3` → `Normal` y `Marca: 0`; `4` y `5` → `Alerta` y `Marca: 1`, siempre en dos líneas. Conserva el mismo programa: las entradas separan estar debajo, en el límite o encima de él.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int nivel{0};\n    std::cin >> nivel;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n",
+          "initialStandardInput": "3",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "Normal\nMarca: 0",
+                  "Normal\nMarca: 0\n"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Reparar una frontera excluida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa usa `>` y no cumple el requisito de alertar desde el límite, incluida la igualdad. Con los dos datos iguales a cuatro, corrige sólo la condición para recuperar el requisito; conserva las asignaciones y los mensajes.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es:\n\nAlerta\nMarca: 1\n\nEl salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel > limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Alerta\nMarca: 1",
+                  "Alerta\nMarca: 1\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -228,11 +301,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba el mensaje y la marca juntos: 1 debe aparecer exactamente en los casos que muestran Alerta. La marca empieza en 0 y sólo se asigna en esa rama. Restaurar >= debe recuperar el resultado de la frontera sin cambiar los de 3 y 5."
+          "text": "El mensaje y la marca se comprueban juntos: uno debe aparecer exactamente en los casos que muestran `Alerta`. La marca comienza en cero y sólo cambia en esa rama. La condición inclusiva admite la igualdad y conserva los resultados correspondientes a tres y cinco."
         },
         {
           "type": "note",
-          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
+          "text": "La referencia conserva la regla inclusiva. Los objetivos se comprueban en los editores de sus actividades; si una salida difiere, localiza la decisión o actualización responsable y reintenta allí."
         }
       ]
     }

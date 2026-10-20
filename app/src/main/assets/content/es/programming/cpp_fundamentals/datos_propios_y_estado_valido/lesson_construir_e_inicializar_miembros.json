@@ -10,11 +10,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Un punto necesita coordenadas iniciales. En lugar de crear el objeto y recordar después una función de preparación, definimos un constructor. Tiene el mismo nombre que el tipo y no declara un tipo de retorno. Punto(int x, int y) recibe los datos que usamos para establecer sus miembros antes del cuerpo del constructor."
+          "text": "Un punto necesita coordenadas iniciales. En lugar de crear el objeto y recordar después una función de preparación, definimos un constructor. Tiene el mismo nombre que el tipo y no declara un tipo de retorno. Punto(int x, int y) recibe los datos que usamos para establecer sus miembros antes del cuerpo del constructor.",
+          "emphasis": [
+            {
+              "text": "constructor",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La notación : x_{x}, y_{y} es una lista de inicializadores de miembros. Lo que precede a cada llave nombra el miembro; lo que aparece dentro es el valor recibido. En estos puntos aceptamos coordenadas int sin otra restricción de dominio: aquí el objetivo es aprender la construcción, antes de añadir reglas de validez."
+          "text": "La notación : x_{x}, y_{y} es una lista de inicializadores de miembros. Lo que precede a cada llave nombra el miembro; lo que aparece dentro es el valor recibido. En estos puntos aceptamos coordenadas int sin otra restricción de dominio: aquí el objetivo es aprender la construcción, antes de añadir reglas de validez.",
+          "emphasis": [
+            {
+              "text": "lista de inicializadores de miembros"
+            }
+          ]
         },
         {
           "type": "code",
@@ -186,15 +197,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Define una clase Dimension con dos miembros privados filas_ y columnas_. Su constructor recibe dos int e inicializa ambos mediante lista de miembros; las consultas filas() y columnas() permiten leerlos. Para este primer modelo sólo trabajamos con cantidades de cero a diez definidas en el código; todavía no se pide rechazar argumentos. Construye {2, 4} y muestra 2x4; después prueba {0, 3} y {1, 1}."
+          "text": "Define Dimension con filas_ y columnas_ privados. Su constructor recibe dos int y los inicializa mediante la lista de miembros; filas() y columnas() permiten consultarlos. Define al menos una consulta fuera de la clase para practicar su calificación. Para este modelo, las cantidades preparadas en el código están entre cero y diez; todavía no se pide rechazarlas.\n\nEn main construye tres objetos distintos: {2,4}, {0,3} y {1,1}. Presenta las consultas de cada objeto como filasxcolumnas, una línea por objeto y con salto final en las tres. Pulsa Compilar, ejecutar y comprobar. Las líneas deben ser 2x4, 0x3 y 1x1.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2x4\n0x3\n1x1\n"
+                ],
+                "explanation": "El constructor inicializa los miembros de cada objeto y las consultas leen ese objeto. La dimensión con cero se conserva como un dato permitido de este modelo."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Define al menos una consulta fuera de la clase para practicar su calificación. Construye dos objetos y demuestra que cada consulta lee el objeto de su propia llamada."
+          "text": "Cada llamada de consulta lee el objeto sobre el que se invoca. Los tres objetos existen con sus propios miembros: construir otra dimensión no reemplaza los valores de la anterior. Los resultados deben proceder de esas consultas, no de mensajes fijados de antemano."
         }
       ]
     },
@@ -223,6 +250,15 @@
           ],
           "correctIndex": 2,
           "explanation": "Alinear la escritura con ese orden evita una expectativa equivocada."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension primera{2, 4};\n    Dimension segunda{0, 3};\n    Dimension tercera{1, 1};\n    std::cout << primera.filas() << \"x\" << primera.columnas() << \"\\n\";\n    std::cout << segunda.filas() << \"x\" << segunda.columnas() << \"\\n\";\n    std::cout << tercera.filas() << \"x\" << tercera.columnas() << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

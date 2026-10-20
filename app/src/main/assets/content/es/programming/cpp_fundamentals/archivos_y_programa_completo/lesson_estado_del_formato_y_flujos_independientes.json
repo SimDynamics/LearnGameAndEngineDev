@@ -185,6 +185,18 @@
           ],
           "correctIndex": 2,
           "explanation": "No confundas la regla de un literal del código C++ con la base que se seleccionó para esta lectura."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__estado_del_formato_y_flujos_independientes__secuencia_flujos_previa",
+          "question": "cout está en hexadecimal. Una función usa un ostringstream local para devolver dec=10;hex=a;oct=12. Después se inserta el entero 26 directamente en cout. ¿Cómo aparece ese entero final?",
+          "options": [
+            "26, porque el flujo local restauró cout.",
+            "12, porque el último campo local fue octal.",
+            "1a, porque cout conserva su configuración hexadecimal."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada objeto flujo conserva su propio estado. Insertar una string ya compuesta no transfiere al destino la configuración de su flujo local."
         }
       ]
     },
@@ -196,15 +208,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe una función que recibe una cantidad int entre cero y mil y devuelve dec=D;hex=H;oct=O sin prefijos. Debe construir un flujo local y no imprimir. En main cambia cout a hexadecimal, llama con 10 y después con 20, presenta ambas cadenas y por último el entero 26. Predice qué campos son decimales y qué último entero queda afectado por cout."
+          "text": "Escribe una función que recibe una cantidad int entre cero y mil y devuelve dec=D;hex=H;oct=O sin prefijos. Debe construir un flujo local y no imprimir. En main cambia cout a hexadecimal, llama con 10 y después con 20, presenta ambas cadenas y por último el entero 26. Predice qué campos son decimales y qué último entero queda afectado por cout. En esa misma batería presenta también las cadenas de cero y 31, antes del entero final 26. El orden completo es 10, 20, 0, 31 y el entero directo 26. Cada resultado ocupa una línea y termina con salto. Resuelve primero el puzzle previo y usa Compilar, ejecutar y comprobar con el programa completo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "La función elige sus bases deliberadamente. Comprueba cero y otro valor permitido; el resultado de una llamada no debe acumular el anterior ni cambiar la configuración del llamador. Usa etiquetas y delimitadores claros."
+          "text": "Las cuatro llamadas deben comenzar composiciones independientes y configurar cada base deliberadamente. Como devuelven texto, presentarlo no cambia el estado hexadecimal que cout conserva para su entero final."
         }
       ]
     },
@@ -232,6 +260,15 @@
             "0|0"
           ],
           "explanation": "La representación de cero no añade un prefijo duplicado en estos formatos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nstd::string representar(int cantidad) {\n    std::ostringstream texto;\n    texto << \"dec=\" << std::dec << cantidad << \";hex=\" << std::hex << cantidad\n        << \";oct=\" << std::oct << cantidad;\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    std::cout << representar(10) << \"\\n\" << representar(20) << \"\\n\"\n              << representar(0) << \"\\n\" << representar(31) << \"\\n\" << 26 << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

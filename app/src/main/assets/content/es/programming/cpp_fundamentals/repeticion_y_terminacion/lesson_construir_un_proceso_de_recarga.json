@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construirás el programa completo con las herramientas ya estudiadas. Los datos estarán definidos en el código, sin lectura por cin. Decide qué estado dura durante todo el procedimiento, qué dato corresponde sólo a una ronda y cuándo comprobar que el proceso ha terminado. Resuelve a mano los casos iniciales 0,1,8 y 9 antes de abrir el editor de código."
+          "text": "Construirás el programa completo con las herramientas ya estudiadas. El primer intento fija la energía en el código; otro editor permitirá comprobar varios datos sin modificar el procedimiento. Decide qué estado dura durante toda la recarga y qué dato corresponde sólo a una ronda. Los puzzles posteriores recuperan el seguimiento y la ubicación de esas acciones."
         },
         {
           "type": "multiple_choice",
@@ -54,15 +54,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección: validación antes del recorrido, ningún estado de final de ronda superior a 9, aporte positivo en toda ronda realizada, cuenta exacta y ausencia de rondas cuando el objetivo ya está cumplido. Comprueba también -1 y 10. Antes de ejecutar cada caso, predice la secuencia y el resumen; explica qué cantidad disminuye hasta que deja de ser necesario actuar."
+          "text": "Criterios de corrección: validar antes del recorrido, no superar nueve al final de ninguna ronda, aportar una cantidad positiva en cada ronda realizada y contar las rondas exactamente.\n\nPara el inicio uno, el objetivo es mostrar `Ronda 1: 4`, `Ronda 2: 7`, `Ronda 3: 9` y `Estado=9;Rondas=3` en cuatro líneas. Pulsa «Compilar, ejecutar y comprobar»; el salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Prueba primero tu construcción. La referencia aparece después para contrastar el comportamiento y el razonamiento; varias organizaciones correctas son posibles. El editor de código no califica automáticamente el programa."
+          "text": "Construye y comprueba el intento antes de consultar la referencia. Otras organizaciones del programa son válidas si conservan las líneas de cada ronda y el resumen solicitado."
         }
       ]
     },
@@ -88,6 +100,66 @@
         {
           "type": "paragraph",
           "text": "La cantidad que falta, 9-energia, empieza entre 0 y 9. Cuando es positiva, el aporte es al menos 1 y como máximo lo que falta; por eso la cantidad pendiente disminuye y sigue no negativa. La condición se vuelve falsa al llegar a cero pendiente. Los valores usados quedan dentro de un dominio pequeño y representable. Un for con una condición y avance equivalentes también puede cumplir la tarea; no es obligatorio copiar este while."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el dominio sin reescribir la recarga"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee la energía inicial. Comprueba cero, uno, ocho y nueve con las energías y resúmenes de control anteriores; comprueba también `-1` y `10`, que deben producir sólo `Dato invalido`. Conserva la misma validación y el mismo procedimiento en todos los casos.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int energia{0};\n    std::cin >> energia;\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Ronda 1: 3\nRonda 2: 6\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 3\nRonda 2: 6\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Ronda 1: 9\nEstado=9;Rondas=1",
+                  "Ronda 1: 9\nEstado=9;Rondas=1\n"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "Estado=9;Rondas=0",
+                  "Estado=9;Rondas=0\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Dato invalido",
+                  "Dato invalido\n"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "Dato invalido",
+                  "Dato invalido\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -133,7 +205,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el nuevo programa debe aceptar cualquier energía de 0 a meta, también debes adaptar la validación y comprobar el caso igual a meta y el primer rechazo meta+1. Esta variante sólo calcula con el dato válido fijado: no demuestra esa validación general. Después de comparar, restaura el código original con el control del editor y reconstruye tu solución sin mirar la referencia. Después de reconstruir, resuelve la actividad de relaciones al final de esta página para comprobar dónde se valida la entrada, dónde cambia el estado y dónde se publica el resumen."
+          "text": "Si una versión debe aceptar cualquier energía de cero a una meta nueva, también debe adaptar la validación y comprobar la igualdad y el primer rechazo. El puzzle de meta diez sólo utiliza un dato válido fijado: no demuestra esa validación general.\n\nLa actividad siguiente relaciona cada acción de la recarga original con su ubicación. Después podrás recuperar su construcción en otro editor mínimo, conservando un objetivo propio."
         },
         {
           "type": "math_puzzle",
@@ -209,6 +281,30 @@
           "feedback": {
             "correct": "El dominio se comprueba antes de iniciar las rondas: un dato rechazado sigue su propia salida. energia y rondas se actualizan dentro del while después de limitar el aporte. El resumen se publica después del bucle y dentro de la rama válida; así aparece una sola vez y también informa correctamente cuando energia ya era nueve y no hubo rondas.",
             "incorrect": "Sigue por separado una entrada inválida y otra que ya alcanza nueve. Comprueba qué acciones deben evitarse, cuáles se repiten y cuáles se realizan una sola vez."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la recarga desde el esqueleto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye la recarga original para una energía inicial de ocho. Conserva el dominio de cero a nueve, el aporte máximo tres y los formatos enseñados. El objetivo es `Ronda 1: 9` y `Estado=9;Rondas=1`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Ronda 1: 9\nEstado=9;Rondas=1",
+                  "Ronda 1: 9\nEstado=9;Rondas=1\n"
+                ]
+              }
+            ]
           }
         }
       ]

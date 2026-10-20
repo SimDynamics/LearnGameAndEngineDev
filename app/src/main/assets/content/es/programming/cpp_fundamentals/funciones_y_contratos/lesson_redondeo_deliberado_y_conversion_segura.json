@@ -110,15 +110,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Empieza en main con destino=37 y origen=1.75. Después, conservando el destino entre llamadas, prueba -1.25, 2.5, -2.5, -100.0, -100.25 y 0.0 en ese orden. Presenta cada bool y destino como B:D en su propia línea. Prepara primero la traza origen, decisión y destino posterior; distingue conservar un destino de asignar la marca cero."
+          "text": "Construye un único programa con destino inicial treinta y siete y llamadas para `1.75`, `-1.25`, `2.5`, `-2.5`, `-100.0`, `-100.25` y `0.0`, en ese orden. Conserva el destino entre llamadas. Presenta cada bool y destino como `B:D`, una línea por llamada. Los empates se alejan de cero; el rechazo conserva el destino previo."
         },
         {
           "type": "paragraph",
-          "text": "Prueba también 0.5, -0.5, 99.5, -99.5, 100.0 y 100.25. Observa ambos lados de cero y las dos fronteras. Repite los rechazos comenzando con otro destino, por ejemplo -8, para comprobar que conserva ese valor previo. El argumento original no cambia: contrástalo con una copia previa. No llames a un cast fuera del dominio para investigar su salida."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para la secuencia, con salto final opcional. Los demás empates y fronteras se comprueban después sin cambiar la función. El origen no debe modificarse y el cast sólo puede alcanzarse después de validar su dominio."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:2\n1:-1\n1:3\n1:-3\n1:-100\n0:-100\n1:0",
+                  "1:2\n1:-1\n1:3\n1:-3\n1:-100\n0:-100\n1:0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -164,6 +176,73 @@
         {
           "type": "note",
           "text": "Otros nombres de candidatos o retornos tempranos son válidos. El contrato deliberado exige el entero más cercano; no hay una tolerancia para aceptar otra marca. Las pruebas juzgan el valor double que recibió la función, no reconstruyen una escritura decimal o una operación anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar cercanía, empates y rechazo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee origen finito y destino entero previo. Comprueba `0.5 37`, `-0.5 37`, `99.5 37`, `-99.5 37`, `100.0 37`, `100.25 37` y `-100.25 -8`. La salida muestra bool y destino, seguido de origen y conservación. Un rechazo debe mantener el destino que se entregó.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0.5 37",
+                "outputs": [
+                  "1:1;Origen: 0.5;Conservado: 1",
+                  "1:1;Origen: 0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-0.5 37",
+                "outputs": [
+                  "1:-1;Origen: -0.5;Conservado: 1",
+                  "1:-1;Origen: -0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "99.5 37",
+                "outputs": [
+                  "1:100;Origen: 99.5;Conservado: 1",
+                  "1:100;Origen: 99.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-99.5 37",
+                "outputs": [
+                  "1:-100;Origen: -99.5;Conservado: 1",
+                  "1:-100;Origen: -99.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "100.0 37",
+                "outputs": [
+                  "1:100;Origen: 100;Conservado: 1",
+                  "1:100;Origen: 100;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "100.25 37",
+                "outputs": [
+                  "0:37;Origen: 100.25;Conservado: 1",
+                  "0:37;Origen: 100.25;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-100.25 -8",
+                "outputs": [
+                  "0:-8;Origen: -100.25;Conservado: 1",
+                  "0:-8;Origen: -100.25;Conservado: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0.5 37"
         }
       ]
     },
@@ -233,15 +312,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Empieza con {0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}. Prepara una traza por observación: bool, marca sólo cuando hay aceptación, si ya apareció y nuevos contadores. Muestra Marcas: seguida de cada marca precedida por un espacio; después Colisiones: C, Rechazados: R y Datos conservados: B, cada parte en su línea. B compara el vector completo con una copia previa. Si no hay marcas, la primera línea contiene sólo Marcas:. No uses un cero o el valor previo del destino como señal de rechazo. La biblioteca permite comparar vectores con ==: son iguales si tienen el mismo tamaño y los elementos de cada posición son iguales; por eso importan el orden y los repetidos. Para estos double finitos comprobamos igualdad numérica exacta con su copia, sin tolerancia ni promesa sobre representación. También puedes contrastar tamaño y posiciones mediante un recorrido conocido."
+          "text": "Empieza con `{0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}`. Construye el recorrido completo en un solo programa. Presenta `Marcas:` y cada marca precedida de espacio; después `Colisiones: C`, `Rechazados: R` y `Datos conservados: B`, en cuatro líneas. Usa el bool de cada llamada: una marca cero es válida y un rechazo no produce marca ni colisión. Compara el vector completo con su copia previa para obtener B."
         },
         {
           "type": "paragraph",
-          "text": "Construye además tus expectativas para {}, {0.0}, {101.0,-101.0}, {0.25,-0.25}, {3.0,3.0,3.0} y {-100.0,100.0,99.5,-99.5}. Distingue repetir una observación de colisionar observaciones distintas. Una búsqueda lineal en las marcas ya reunidas basta para este dominio pequeño. Puedes organizar la clasificación en main o en funciones con interfaces ya enseñadas; el editor no entrega su algoritmo."
+          "text": "Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. Para el caso inicial, las marcas son cero, tres y menos tres en ese orden; hay cuatro colisiones y un rechazo. Las otras colecciones se comprueban después conservando las mismas funciones y la política de primera aparición."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Marcas: 0 3 -3\nColisiones: 4\nRechazados: 1\nDatos conservados: 1",
+                  "Marcas: 0 3 -3\nColisiones: 4\nRechazados: 1\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -279,6 +370,66 @@
         {
           "type": "note",
           "text": "Son válidas otras búsquedas o descomposiciones que cumplan esos criterios con los prerrequisitos ya enseñados. Recibir true y una marca cero es una aceptación completa; recibir false no autoriza a inspeccionar el destino conservado para clasificar la observación."
+        },
+        {
+          "type": "heading",
+          "text": "Colisiones y fronteras sin cambiar la política"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `2 101.0 -101.0`; `2 0.25 -0.25`; `3 3.0 3.0 3.0`; `4 -100.0 100.0 99.5 -99.5`. El dominio de preparación conserva hasta ocho valores finitos de menos ciento dos a ciento dos.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 101.0 -101.0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 0.25 -0.25",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "3 3.0 3.0 3.0",
+                "outputs": [
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "4 -100.0 100.0 99.5 -99.5",
+                "outputs": [
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -328,7 +479,13 @@
         },
         {
           "type": "note",
-          "text": "La lectura de apoyo distingue la conversión comprobada del redondeo deliberado (Stroustrup, 2024, sección 7.4.7, p. 200). round_to pertenece al soporte PPP; aquí usamos std::round con el dominio -100..100 y conservación del destino ante rechazo. N3096 define el entero cercano y el empate alejado de cero (ISO/IEC JTC 1/SC 22/WG 14, 2023, sección 7.12.9.6); N4950 y el borrador HTML identifican la interfaz C++ de <cmath> (Köppe et al., 2023, secciones [c.math] y [cmath.syn]; Working Draft: Programming Languages — C++, s. f., sección [cmath.syn]). Explicaciones, contratos y actividades originales de esta ruta."
+          "text": "La conversión comprobada y el redondeo tienen objetivos diferentes: la primera puede rechazar una pérdida de información y el segundo elige deliberadamente una cantidad cercana (Stroustrup, 2024, sección 7.4.7). `round_to` pertenece al soporte PPP; en estos programas se utiliza `std::round`, que obtiene el entero más cercano y aleja de cero los casos a mitad de camino (ISO/IEC JTC 1/SC 22/WG 14, 2023, sección 7.12.9.6; Köppe et al., 2023, secciones [c.math] y [cmath.syn]; Working Draft: Programming Languages — C++, s. f., sección [cmath.syn]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         }
       ]
     }

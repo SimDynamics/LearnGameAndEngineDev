@@ -320,28 +320,51 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor de código un programa que guarde dos datos: un pasillo identificado con el carácter `C` y un indicador llamado `abierta`, cuyo valor inicial sea `true`. Debe mostrar exactamente dos líneas:\n\nPasillo: C\nAbierta: 1\n\nCompleta el cuerpo de `main` con las variables y las instrucciones necesarias. El carácter y el valor lógico deben proceder de esas variables; no escribas directamente todo el resultado como un único mensaje.\n\nCompila y ejecuta. Compara los rótulos, los valores y el salto entre líneas con la salida pedida. Si hay diferencias, modifica tu programa y vuelve a comprobarlo.\n\nDespués cambia únicamente los valores iniciales del pasillo y del indicador por `D` y `false`. En el mismo editor, compila y ejecuta esa segunda versión. Debe mostrar:\n\nPasillo: D\nAbierta: 0\n\nDespués de comprobar las dos versiones, resuelve la actividad posterior sobre la elección de los tipos utilizados.",
-          "emphasis": [
-            {
-              "text": "Compila y ejecuta"
-            },
-            {
-              "text": "Después cambia únicamente los valores iniciales"
-            }
-          ]
+          "text": "Construye un programa que guarde un pasillo identificado con el carácter `C` y un indicador llamado `abierta` con valor inicial `true`. Debe mostrar estas dos líneas:\n\nPasillo: C\nAbierta: 1\n\nEl carácter y el valor lógico deben proceder de sus variables, en lugar de escribir todo el resultado como un mensaje fijo.\n\nPulsa «Compilar, ejecutar y comprobar». Se comprueban los rótulos, los valores y el salto entre líneas; el salto final es opcional. Si hay diferencias, corrige el mismo programa y vuelve a comprobarlo."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Pasillo: C\nAbierta: 1",
+                  "Pasillo: C\nAbierta: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "La construcción y su variación se realizan en el mismo editor de código. Comprueba que ambas líneas leen los valores de las variables y que el formato lógico permanece como en los ejemplos.\n\nNo necesitas una comparación ni una decisión para este programa: practicas representación, inicialización, salida y cambio de valores. Después de probar las dos versiones, avanza a la siguiente página para contrastarlas con una implementación de referencia y resolver la actividad sobre su significado.",
-          "emphasis": [
-            {
-              "text": "practicas representación, inicialización, salida y cambio de valores"
-            }
-          ]
+          "text": "No necesitas una comparación ni una decisión: practicas representación, inicialización y salida. La siguiente actividad conserva las instrucciones de salida con otros valores iniciales."
+        },
+        {
+          "type": "heading",
+          "text": "Otro pasillo y otra condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa de este editor, cambia únicamente los valores iniciales a `D` y `false`. Conserva los tipos y las instrucciones de salida.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer:\n\nPasillo: D\nAbierta: 0\n\nEl salto final es opcional. Después, la página siguiente recupera por qué ambos datos utilizan tipos diferentes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    char pasillo = 'C';\n    bool abierta = true;\n    std::cout << \"Pasillo: \" << pasillo << '\\n';\n    std::cout << \"Abierta: \" << abierta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Pasillo: D\nAbierta: 0",
+                  "Pasillo: D\nAbierta: 0\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -443,7 +466,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las comillas simples delimitan el literal `'C'`; `true` escribe el valor lógico sin comillas. Las llaves de esta referencia inicializan los objetos con esos valores. Conservar su tipo permite cambiar después el valor que corresponde a cada uno (Stroustrup, 2024).\n\nEn el editor de código, sustituye únicamente los valores iniciales por `'D'` y `false` para contrastar la segunda versión. La primera salida sigue leyendo el carácter; la segunda sigue leyendo el indicador. La representación visible `0` corresponde al valor lógico falso en este formato, no a una variable que cuente puertas (Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
+          "text": "Las comillas simples delimitan el literal `'C'`; `true` escribe el valor lógico sin comillas. Las llaves de esta referencia inicializan los objetos con esos valores. Conservar su tipo permite preparar después otro valor que corresponda a cada uno (Stroustrup, 2024).\n\nEn la variación, la primera salida sigue leyendo el carácter y la segunda, el indicador. La representación visible `0` corresponde al valor lógico falso en este formato, no a una variable que cuente puertas (Köppe et al., 2023, sección 30.4.3.3.3, párr. 5; sección 7.3.7, párr. 6).",
           "emphasis": [
             {
               "text": "Las comillas simples delimitan el literal `'C'`"

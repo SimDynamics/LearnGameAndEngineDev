@@ -252,15 +252,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa cuatro y nueve como caso inicial. Predice después los pares (-4,3), (-10,-10) y(10,10). La suma usada para media está entre -20 y 20. Las funciones calculan sin imprimir; la presentación se hace en main. No sustituyas las llamadas por constantes que coincidan sólo con el caso inicial."
+          "text": "Usa cuatro y nueve como datos del intento. La suma de los argumentos queda entre menos veinte y veinte para el dominio indicado. Las funciones calculan sin imprimir; `main` debe mostrar `Media:6.5;Mayor:9`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Los otros pares se comprueban después sin cambiar las funciones."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Media:6.5;Mayor:9",
+                  "Media:6.5;Mayor:9\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como contraste finito, cambia sólo la división real de media por división entera. Comprueba si su tipo explícito double evita por sí solo perder la fracción. Restaura el cálculo que cumple el contrato antes de pasar a la referencia."
+          "text": "Una división entera puede perder la fracción antes de entregar un resultado `double`. La exploración posterior observa ese cambio en otro editor, sin sustituir el cálculo correcto de tu intento."
         }
       ]
     },
@@ -292,6 +304,69 @@
         {
           "type": "paragraph",
           "text": "Escribir un tipo explícito fija la interfaz, pero no obliga al cuerpo a calcular bien. Escribir auto sin flecha tampoco valida el significado del cálculo. Mantén separados tipo prometido, expresión retornada y casos que deben cumplir el problema."
+        },
+        {
+          "type": "heading",
+          "text": "Tipos de retorno con otros argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee dos enteros del dominio menos diez a diez. Comprueba `-4 3` → `Media:-0.5;Mayor:3`; `-10 -10` → `Media:-10;Mayor:-10`; `10 10` → `Media:10;Mayor:10`. La presentación no determina el tipo de cada resultado.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nauto media(int primero, int segundo) -> double {\n    return (primero + segundo) / 2.0;\n}\n\nauto mayor(int primero, int segundo) {\n    if (primero > segundo) {\n        return primero;\n    }\n    return segundo;\n}\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    std::cin >> primero >> segundo;\n    std::cout << \"Media:\" << media(primero, segundo) << \";Mayor:\" << mayor(primero, segundo);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "-4 3",
+                "outputs": [
+                  "Media:-0.5;Mayor:3",
+                  "Media:-0.5;Mayor:3\n"
+                ]
+              },
+              {
+                "standardInput": "-10 -10",
+                "outputs": [
+                  "Media:-10;Mayor:-10",
+                  "Media:-10;Mayor:-10\n"
+                ]
+              },
+              {
+                "standardInput": "10 10",
+                "outputs": [
+                  "Media:10;Mayor:10",
+                  "Media:10;Mayor:10\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "-4 3"
+        },
+        {
+          "type": "heading",
+          "text": "Observar la división entera antes del retorno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa sustituye la división real de `media` por una división entera, conservando cuatro y nueve. Ejecuta para observar `Media:6;Mayor:9`. La función sigue devolviendo `double`, pero la fracción ya se perdió dentro del cálculo.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nauto media(int primero, int segundo) -> double {\n    return (primero + segundo) / 2;\n}\n\nauto mayor(int primero, int segundo) {\n    if (primero > segundo) {\n        return primero;\n    }\n    return segundo;\n}\n\nint main() {\n    const int primero = 4;\n    const int segundo = 9;\n    std::cout << \"Media:\" << media(primero, segundo) << \";Mayor:\" << mayor(primero, segundo);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Media:6;Mayor:9",
+                  "Media:6;Mayor:9\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -311,11 +386,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad:2;Total:14\nSeleccion:[7][7]\nOriginal:4",
+                  "Cantidad:2;Total:14\nSeleccion:[7][7]\nOriginal:4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice el caso inicial y prueba vacío, ninguno seleccionado, todos seleccionados, igualdad con el límite y repetidos. Un valor -1 o21, nueve elementos o un límite -1 o21 se rechazan antes del cálculo. No amplíes silenciosamente el dominio para hacer pasar una prueba. La suma máxima permitida es ciento sesenta."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Con `{2,7,4,7}` y límite cuatro, deben aparecer `Cantidad:2;Total:14`, `Seleccion:[7][7]` y `Original:4`, en tres líneas, con salto final opcional. Los casos posteriores comprueban vacío, igualdad, repetidos y rechazo con el mismo conjunto de funciones."
         }
       ]
     },
@@ -341,6 +428,87 @@
         {
           "type": "note",
           "text": "La entrada se consulta por referencia const; la selección se devuelve como un valor vector<int>. Lee cada parte de la interfaz según su función: permiso de acceso a la entrada y tipo del resultado son decisiones diferentes."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar selección, igualdad y dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee cantidad, elementos y límite. Comprueba `0 4`; `2 1 2 4`; `2 6 7 4`; `4 4 7 4 7 4`; y los rechazos `1 -1 4`, `1 21 4`, nueve ceros con límite cuatro, `1 2 -1` y `1 2 21`. La selección conserva orden y repetidos y utiliza estrictamente mayor; la igualdad no se selecciona.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nauto datos_validos(const std::vector<int>& datos, int limite) -> bool;\nauto seleccionar(const std::vector<int>& datos, int limite) -> std::vector<int>;\nauto total(const std::vector<int>& datos) -> int;\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    int limite{0};\n    std::cin >> limite;\n    if (!datos_validos(datos, limite)) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    const std::vector<int> elegidos = seleccionar(datos, limite);\n    std::cout << \"Cantidad:\" << elegidos.size() << \";Total:\" << total(elegidos) << \"\\n\";\n    std::cout << \"Seleccion:\";\n    for (int valor : elegidos) {\n        std::cout << \"[\" << valor << \"]\";\n    }\n    std::cout << \"\\nOriginal:\" << datos.size();\n    return 0;\n}\n\nauto datos_validos(const std::vector<int>& datos, int limite) -> bool {\n    if (datos.size() > 8 || limite < 0 || limite > 20) {\n        return false;\n    }\n    for (int valor : datos) {\n        if (valor < 0 || valor > 20) {\n            return false;\n        }\n    }\n    return true;\n}\n\nauto seleccionar(const std::vector<int>& datos, int limite) -> std::vector<int> {\n    std::vector<int> resultado;\n    for (int valor : datos) {\n        if (valor > limite) {\n            resultado.push_back(valor);\n        }\n    }\n    return resultado;\n}\n\nauto total(const std::vector<int>& datos) -> int {\n    int resultado = 0;\n    for (int valor : datos) {\n        resultado += valor;\n    }\n    return resultado;\n}\n\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4",
+                "outputs": [
+                  "Cantidad:0;Total:0\nSeleccion:\nOriginal:0",
+                  "Cantidad:0;Total:0\nSeleccion:\nOriginal:0\n"
+                ]
+              },
+              {
+                "standardInput": "2 1 2 4",
+                "outputs": [
+                  "Cantidad:0;Total:0\nSeleccion:\nOriginal:2",
+                  "Cantidad:0;Total:0\nSeleccion:\nOriginal:2\n"
+                ]
+              },
+              {
+                "standardInput": "2 6 7 4",
+                "outputs": [
+                  "Cantidad:2;Total:13\nSeleccion:[6][7]\nOriginal:2",
+                  "Cantidad:2;Total:13\nSeleccion:[6][7]\nOriginal:2\n"
+                ]
+              },
+              {
+                "standardInput": "4 4 7 4 7 4",
+                "outputs": [
+                  "Cantidad:2;Total:14\nSeleccion:[7][7]\nOriginal:4",
+                  "Cantidad:2;Total:14\nSeleccion:[7][7]\nOriginal:4\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1 4",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 21 4",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "9 0 0 0 0 0 0 0 0 0 4",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 2 -1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 2 21",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 4"
         }
       ]
     },
@@ -363,11 +531,46 @@
         },
         {
           "type": "paragraph",
-          "text": "En otra sesión escribe primero una interfaz tradicional y luego la misma con retorno al final, sin cambiar el contrato. Después elige una función pequeña con auto deducido y explica qué expresiones determinan su tipo. Cambia una expresión deliberadamente y revisa si también cambia la interfaz; no confundas pasar las pruebas de un dato con conservar el contrato."
+          "text": "El relleno siguiente transforma una interfaz tradicional en una con retorno explícito al final. Después, el puzzle de deducción distingue qué tipo resulta de cada expresión. Cambiar un cálculo puede modificar también la interfaz deducida, aunque la función conserve su nombre."
         },
         {
           "type": "note",
-          "text": "El tipo de retorno se estudia en la fuente principal (Stroustrup, 2024, sección 7.4.10, pp. 205–206). La precisión de deducción y redeclaración se contrastó con el borrador de C++ (Working Draft: Programming Languages — C++, s. f., sección [dcl.spec.auto]). Ejemplos, dominios, fallos intencionales y actividades originales de esta ruta."
+          "text": "Una declaración con retorno explícito comunica ese tipo antes de estudiar el cuerpo. Con `auto` deducido, el tipo se obtiene de las expresiones de retorno conforme a las reglas de deducción (Stroustrup, 2024; Working Draft: Programming Languages — C++, s. f., sección [dcl.spec.auto]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "fill_code",
+          "id": "cpp_fundamentals__funciones_y_contratos__tipo_de_retorno_explicito_y_deducido__conservar_interfaz_con_retorno_al_final",
+          "language": "cpp",
+          "question": "La interfaz tradicional es double media(int primero, int segundo);. Completa sólo el tipo que conserva esa misma interfaz al escribir el retorno explícito al final.",
+          "code": "auto media(int primero, int segundo) -> ___;",
+          "answers": [
+            "double"
+          ],
+          "explanation": "La flecha sitúa el tipo de resultado después de los parámetros. El retorno sigue siendo double: no se ha delegado su deducción al cuerpo.",
+          "reviewFeedback": "Conserva el tipo prometido por la interfaz original. La posición del tipo cambia, pero no su significado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__tipo_de_retorno_explicito_y_deducido__deducir_desde_la_expresion_de_retorno",
+          "question": "Compara auto mitad(int dato) { return dato / 2; } con auto mitad(int dato) { return dato / 2.0; }. ¿Qué ocurre con el tipo deducido?",
+          "options": [
+            "Ambas devuelven int porque el parámetro es int.",
+            "Ambas devuelven double porque una función de nombre mitad conserva fracciones.",
+            "La primera devuelve int y la segunda double, según el tipo de su expresión de retorno."
+          ],
+          "correctIndex": 2,
+          "explanation": "El tipo se deduce desde la expresión retornada. La primera divide enteros y produce int; la segunda realiza la división con un operando double y produce double. El nombre de la función no decide ese tipo.",
+          "reviewFeedback": [
+            "El parámetro aporta un operando, pero el retorno se deduce desde la expresión completa.",
+            "El nombre describe una intención; revisa los tipos que participan en cada división.",
+            "Distingue el tipo del argumento del tipo que produce el cálculo."
+          ]
         }
       ]
     }

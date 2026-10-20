@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Una sesión contiene cantidades de piezas ya disponibles en una colección. Acepta cada cantidad de 0 a 10. Cada pedido válido se cuenta una vez, incluido el vacío; los minutos usan la regla de preparación ya establecida. Los datos inválidos se informan y no contribuyen a cantidad válida ni a minutos. El procesamiento continúa con el dato siguiente. Al final muestra cantidad válida, cantidad rechazada y minutos totales. Limita las sesiones de práctica a seis datos para mantener seguro el resumen entero."
+          "text": "Una sesión contiene cantidades de piezas ya disponibles en una colección. Acepta cada cantidad de 0 a 10. Cada pedido válido se cuenta una vez, incluido el vacío; los minutos usan la regla de preparación ya establecida. Los datos inválidos se informan y no contribuyen a cantidad válida ni a minutos. El procesamiento continúa con el dato siguiente. Al final muestra cantidad válida, cantidad rechazada y minutos totales. Limita las sesiones de práctica a seis datos para mantener seguro el resumen entero.",
+          "emphasis": [
+            {
+              "text": "Cada pedido válido se cuenta una vez"
+            },
+            {
+              "text": "Los datos inválidos se informan"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -50,11 +58,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de escribir, calcula los tres resúmenes para {2,11,0,3,-1}. Diseña funciones para validez y estimación, usando el contrato -1 para error. En main, registra cada decisión y conserva los resúmenes. No mires la siguiente página hasta haber construido y comprobado una primera versión. Prueba después una sesión vacía, una de sólo rechazos y una de frontera {10}. Cada registro debe dejar claro qué dato produjo el diagnóstico."
+          "text": "Construye funciones para validar y estimar con la señal -1 de error, y `procesar(const std::vector<int>& piezas)` para una sesión. La sesión crea contadores nuevos de válidos, rechazados y minutos. Por cada dato muestra `Dato=valor:` seguido de Invalido o del tiempo estimado y un salto de línea; al final muestra `validos:rechazados:minutos` y otro salto. Los rechazos no entran en el total y no detienen el recorrido.\n\nEn una misma ejecución prueba `{2,11,0,3,-1}`, `{}`, `{11,-1}` y `{10}`, en ese orden. La primera sesión tiene tres pedidos válidos, dos rechazados y 16 minutos; la vacía conserva 0:0:0; sólo rechazos termina en 0:2:0 y la frontera termina en 1:0:23. Cada registro identifica el dato que produjo la decisión.\n\nPulsa Compilar, ejecutar y comprobar. Compara también las líneas individuales, no sólo el resumen. Construye y reintenta aquí esa batería completa antes de consultar la referencia. La ampliación del dominio utiliza después un editor independiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Dato=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"Fin de sesion\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Dato=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"Fin de sesion\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato=2:7\nDato=11:Invalido\nDato=0:0\nDato=3:9\nDato=-1:Invalido\n3:2:16\n0:0:0\nDato=11:Invalido\nDato=-1:Invalido\n0:2:0\nDato=10:23\n1:0:23\n"
+                ],
+                "explanation": "El pedido vacío cuenta como válido y aporta cero minutos. Los datos inválidos aumentan sólo los rechazos; cada sesión comienza un resumen nuevo."
+              }
+            ]
+          }
         }
       ]
     },
@@ -134,12 +158,53 @@
           "explanation": "antes es una copia del estado inicial; el acumulador cambia de forma independiente."
         },
         {
-          "type": "paragraph",
-          "text": "Para cerrar esta etapa, explica por qué cada dato inválido se excluye antes de actualizar, por qué un fallo no destruye el resumen anterior y qué pruebas protegen la ampliación. La programación con excepciones añade otra política de detección y tratamiento; para practicarla usa el compilador predeterminado Clang 23, que admite excepciones, en lugar del alternativo Clang 21."
+          "type": "multiple_choice",
+          "id": "u7_sesion_preservar_resumen_tras_rechazo",
+          "question": "Una sesión ya reunió 7 minutos de un pedido válido y recibe ahora 11 piezas, fuera del dominio original. ¿Qué actualización conserva el contrato y permite continuar?",
+          "options": [
+            "Sumar la señal -1 al tiempo y aumentar rechazados.",
+            "Aumentar rechazados, conservar válidos y minutos, e intentar el dato siguiente.",
+            "Borrar el resumen porque una operación de la sesión fue inválida."
+          ],
+          "correctIndex": 1,
+          "explanation": "El rechazo informa sobre ese dato y no anula los pedidos válidos anteriores. Se excluye antes de sumar o aumentar válidos; el recorrido puede continuar con el resumen conservado.",
+          "reviewFeedback": [
+            "La señal -1 informa de un rechazo; revisa si representa minutos que puedan incorporarse al tiempo válido.",
+            "Contrasta la decisión con los tres campos que debe conservar una sesión al rechazar un solo dato.",
+            "Distingue el rechazo de un dato de la pérdida de resultados válidos ya reunidos."
+          ]
         },
         {
           "type": "note",
-          "text": "La base conceptual de errores, desarrollo y pruebas se estudia en la fuente principal (Stroustrup, 2024, caps. 4–6). Ejemplos propios, sin biblioteca de apoyo PPP. La comprobación del dominio ocurre antes de operaciones dependientes; no se usa desbordamiento como prueba de error."
+          "text": "La comprobación del dominio precede a las operaciones que dependen de él. Un rechazo se trata sin utilizar desbordamientos ni accesos inválidos como experimento. Separar la detección del error y su tratamiento permite conservar resultados válidos y continuar con otra operación (Stroustrup, 2024)."
+        },
+        {
+          "type": "heading",
+          "text": "Construir la ampliación sin reemplazar la sesión original"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor independiente el dominio cambia a 0..12. Conserva cero minutos para el pedido vacío, 3 de preparación más 2 por pieza para los demás y la señal -1 para los datos inválidos. Conserva también el registro Dato=valor:resultado y los resúmenes validos:rechazados:minutos, una línea por registro o resumen y con salto final.\n\nLlama a procesar para `{1,12,4,0}`, `{13}` y `{11,2}`, en ese orden, sin editar el programa entre casos. Sus resúmenes deben ser 4:0:43, 0:1:0 y 2:0:32. El dato 11 ahora aporta 25 minutos; 13 sigue siendo rechazado. Pulsa Compilar, ejecutar y comprobar. Las reglas que no cambiaron deben conservarse, incluido el tratamiento de un pedido válido después de ampliar la frontera.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Dato=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"Fin de sesion\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43\nDato=13:Invalido\n0:1:0\nDato=11:25\nDato=2:7\n2:0:32\n"
+                ],
+                "explanation": "La nueva frontera acepta 11 y 12, pero conserva el cero, los tiempos anteriores y el rechazo de 13. Cada sesión conserva su resumen independiente."
+              }
+            ]
+          }
         }
       ]
     },
@@ -164,7 +229,25 @@
         },
         {
           "type": "paragraph",
-          "text": "Se decide qué significa resultado antes de incorporarlo. El pedido vacío añade un pedido válido y cero minutos; los inválidos añaden sólo un rechazo. Cambiar la colección a los casos indicados comprueba vacío, rechazo y frontera. Para la ampliación modifica sólo la frontera superior a 12 y conserva las pruebas de continuación después de un dato inválido."
+          "text": "Se decide qué significa el resultado antes de incorporarlo. El pedido vacío añade un pedido válido y cero minutos; cada inválido añade sólo un rechazo. Las referencias siguientes reúnen primero la batería original y después la ampliación como programas independientes, sin exigir reemplazar un borrador anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las cuatro sesiones originales"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& piezas) {\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Dato=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalido\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos << \"\\n\";\n}\n\nint main() {\n    procesar({2, 11, 0, 3, -1});\n    procesar({});\n    procesar({11, -1});\n    procesar({10});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la ampliación a doce"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& piezas) {\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Dato=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalido\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos << \"\\n\";\n}\n\nint main() {\n    procesar({1, 12, 4, 0});\n    procesar({13});\n    procesar({11, 2});\n    return 0;\n}\n"
         }
       ]
     }

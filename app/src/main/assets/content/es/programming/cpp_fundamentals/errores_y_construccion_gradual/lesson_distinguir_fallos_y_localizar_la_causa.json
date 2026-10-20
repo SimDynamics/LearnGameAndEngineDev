@@ -10,7 +10,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Un error de compilación impide construir esa versión del programa hasta corregir los problemas de la fuente. Un error de enlace puede aparecer cuando una llamada tiene declaración pero falta la definición requerida en el programa. Un fallo detectado durante la ejecución ocurre después de construir el ejecutable. Un error lógico produce un comportamiento que incumple el requisito, aunque el programa compile y termine. La clasificación ayuda a elegir evidencia; no hace que todos los fallos tengan una única causa evidente."
+          "text": "Un error de compilación impide construir esa versión del programa hasta corregir los problemas de la fuente. Un error de enlace puede aparecer cuando una llamada tiene declaración pero falta la definición requerida en el programa. Un fallo detectado durante la ejecución ocurre después de construir el ejecutable. Un error lógico produce un comportamiento que incumple el requisito, aunque el programa compile y termine. La clasificación ayuda a elegir evidencia; no hace que todos los fallos tengan una única causa evidente.",
+          "emphasis": [
+            {
+              "text": "error de compilación"
+            },
+            {
+              "text": "error de enlace"
+            },
+            {
+              "text": "fallo detectado durante la ejecución"
+            },
+            {
+              "text": "error lógico"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -144,11 +158,27 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa inicial del editor de código reúne 2,3,4 pero muestra un resultado incorrecto para la suma total. Relaciona su salida con la predicción de seguimiento y la reparación que completaste en la página anterior; después compara la consola con la suma exigida. Repara una sola causa y comprueba también un único aporte y cero aportes. El código inicial termina y usa valores pequeños; el fallo es lógico y puede investigarse con seguridad."
+          "text": "El programa inicial reúne 2, 3 y 4, pero reemplaza el total en vez de conservar lo acumulado. La predicción y el relleno de la página anterior ya permitieron investigar esa causa. Construye `sumar(int primero, int ultimo)`: empieza el total en cero, recorre los enteros desde primero hasta ultimo, incluidos, y devuelve la suma. Si primero supera a ultimo, el recorrido no debe ejecutarse. Usa sólo los casos pequeños indicados.\n\nEn main muestra las llamadas sumar(2,4), sumar(3,3) y sumar(2,1), separadas por dos puntos. Pulsa Compilar, ejecutar y comprobar. La salida debe ser `9:3:0`, sin espacios ni salto final. La misma construcción comprueba la acumulación, un único aporte y cero aportes, sin modificar versiones sucesivas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "9:3:0"
+                ],
+                "explanation": "Acumular conserva el total anterior. Sin aportes, el cuerpo no se ejecuta y el resultado conserva su cero inicial."
+              }
+            ]
+          }
         }
       ]
     },
@@ -173,7 +203,12 @@
         },
         {
           "type": "paragraph",
-          "text": "La única reparación aquí es sustituir total = aporte por total += aporte. Para comprobar un único aporte, usa aporte{3} y aporte <= 3. Para comprobar ninguno, usa aporte{2} y aporte <= 1; el cuerpo no se ejecuta y el total conserva el cero. Restaurar el recorrido 2 a 4 debe volver a producir 9."
+          "text": "La reparación del ejemplo aislado sustituye total = aporte por total += aporte. La siguiente referencia aplica la misma regla mediante una función y reúne las tres pruebas en una sola ejecución. Los límites de cada llamada determinan cuántos aportes se visitan; no se añade un elemento fuera del recorrido para corregir el resultado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint sumar(int primero, int ultimo) {\n    int total{0};\n    for (int aporte{primero}; aporte <= ultimo; ++aporte) {\n        total += aporte;\n    }\n    return total;\n}\n\nint main() {\n    std::cout << sumar(2, 4) << \":\" << sumar(3, 3) << \":\" << sumar(2, 1);\n    return 0;\n}\n"
         }
       ]
     },
@@ -189,19 +224,202 @@
         },
         {
           "type": "paragraph",
-          "text": "La fuente inicial contiene un fallo lógico: trabaja con datos del dominio y termina, pero no cumple todo el encargo. La colección inicial es {2,4,6,8,9,4}, con intervalo 3..8. Antes de ejecutar, cuenta manualmente lo que exige el requisito. main debe mostrar Dentro:C;Datos:N, sin espacios ni salto final: C es el resultado del conteo y N el tamaño original. No cambies el requisito para justificar una salida distinta."
+          "text": "La fuente inicial contiene un fallo lógico: termina dentro del dominio, pero no cumple todo el requisito. La colección inicial es `{2,4,6,8,9,4}`, con intervalo cerrado 3..8. La tabla siguiente registra la traza de la condición escrita y la expectativa del requisito antes de reparar.\n\nDespués repara contar_en_intervalo y reúne estas ocho pruebas en una misma ejecución: la colección inicial, `{8}`, `{}`, `{3}`, `{3,8}`, `{8,8}`, `{2,9}` y `{4,6}`, siempre con límites 3 y 8. Para cada prueba muestra `Dentro:C;Datos:N` y un salto de línea, donde C es el contador devuelto y N el tamaño original. El criterio es incluir ambos extremos, contar cada aparición y conservar los datos. Pulsa Compilar, ejecutar y comprobar. Si difiere, corrige esa misma construcción y repite la batería; no cambies el requisito ni los casos para justificar el resultado.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Compara la salida observada con tu expectativa. Busca después una colección tan pequeña como puedas que todavía reproduzca la diferencia, con los mismos límites. Formula una hipótesis sobre la causa antes de editar. Traza cada elemento: su valor, el resultado de la condición y el contador antes y después. Propón un cambio respaldado por esa evidencia, modifica una causa y vuelve a comprobar tanto el caso reducido como la colección inicial. Conserva también algún caso que ya funcionaba antes."
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__traza_antes_de_reparar",
+          "prompt": "La función inicial empieza dentro en cero y aumenta una unidad sólo cuando se cumple `valor >= inferior && valor < superior`. Con inferior=3, superior=8 y los datos 2,4,6,8,9,4, completa el contador después de cada elemento. Después registra la cantidad que exige el intervalo cerrado y elige la hipótesis respaldada por esa comparación. La tabla sigue el código defectuoso; no cambies sus reglas mientras realizas la traza.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "traza",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paso_1",
+                  "type": "numeric",
+                  "label": "Contador después del dato 1: valor 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "paso_2",
+                  "type": "numeric",
+                  "label": "Contador después del dato 2: valor 4",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "paso_3",
+                  "type": "numeric",
+                  "label": "Contador después del dato 3: valor 6",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "paso_4",
+                  "type": "numeric",
+                  "label": "Contador después del dato 4: valor 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "paso_5",
+                  "type": "numeric",
+                  "label": "Contador después del dato 5: valor 9",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "paso_6",
+                  "type": "numeric",
+                  "label": "Contador después del dato 6: valor 4",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "requisito",
+                  "type": "numeric",
+                  "label": "Cantidad exigida por el intervalo cerrado",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Etapa",
+                "Contador"
+              ],
+              "rows": [
+                [
+                  "1: valor 2",
+                  {
+                    "field": "paso_1"
+                  }
+                ],
+                [
+                  "2: valor 4",
+                  {
+                    "field": "paso_2"
+                  }
+                ],
+                [
+                  "3: valor 6",
+                  {
+                    "field": "paso_3"
+                  }
+                ],
+                [
+                  "4: valor 8",
+                  {
+                    "field": "paso_4"
+                  }
+                ],
+                [
+                  "5: valor 9",
+                  {
+                    "field": "paso_5"
+                  }
+                ],
+                [
+                  "6: valor 4",
+                  {
+                    "field": "paso_6"
+                  }
+                ],
+                [
+                  "Cantidad que exige el requisito",
+                  {
+                    "field": "requisito"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paso_1": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "paso_2": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "paso_3": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "paso_4": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "paso_5": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "paso_6": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "requisito": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "hipotesis",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "reinicio",
+                  "text": "El contador vuelve a cero dentro de cada vuelta.",
+                  "reviewFeedback": "Sigue qué operación puede cambiar el contador y en qué momento se le asignó su valor inicial."
+                },
+                {
+                  "id": "frontera",
+                  "text": "La condición deja fuera una aparición situada exactamente en el extremo superior.",
+                  "reviewFeedback": "Contrasta la pertenencia al intervalo cerrado con el resultado de la condición para el dato que investigas."
+                },
+                {
+                  "id": "repetidos",
+                  "text": "El recorrido elimina la segunda aparición de cada valor repetido.",
+                  "reviewFeedback": "Sigue por separado cada aparición y comprueba si el código conserva una lista de valores ya visitados."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "frontera"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La traza del código termina en tres y el requisito exige cuatro. La aparición de ocho no aumenta el contador porque la condición escrita excluye ese extremo. La reparación del editor debe resolver esa diferencia y conservar los demás casos.",
+            "incorrect": "Aplica la condición escrita a cada dato y actualiza sólo desde el contador anterior. Distingue el resultado de esa traza de la cantidad que exige el intervalo cerrado."
+          }
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dentro:4;Datos:6\nDentro:1;Datos:1\nDentro:0;Datos:0\nDentro:1;Datos:1\nDentro:2;Datos:2\nDentro:2;Datos:2\nDentro:0;Datos:2\nDentro:2;Datos:2\n"
+                ],
+                "explanation": "La reparación incluye los dos extremos sin alterar contadores, repeticiones ni tamaño de las colecciones. Los casos anteriormente correctos conservan su respuesta."
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Los comentarios del editor son espacio para tu investigación: escribe después de //, conserva la hipótesis inicial y anota si la traza la confirmó o la refutó. Guarda allí tus casos y la justificación del cambio. Consulta la referencia sólo después de investigar y probar una reparación; no basta con sustituir el programa por otro que coincida con una salida."
+          "text": "La investigación queda registrada en la tabla y la hipótesis elegida antes del editor. La reparación debe corregir la discrepancia observada y conservar los resultados de los otros casos. La batería incluye un contraejemplo de un elemento, ausencia de datos, fronteras, repetidos, valores exteriores y valores interiores; coincidir sólo en la colección inicial no comprueba todo ese conjunto."
         }
       ]
     },
@@ -213,7 +431,7 @@
         },
         {
           "type": "note",
-          "text": "Compara después de anotar tu hipótesis, trazar un caso que falla y comprobar tu cambio. Esta versión utiliza otros datos; conserva también el caso inicial para evaluar tu propia reparación."
+          "text": "Consulta después de resolver la traza, elegir una hipótesis respaldada y comprobar tu reparación. El primer ejemplo utiliza otros datos; la batería posterior conserva el caso inicial y los casos de regresión."
         },
         {
           "type": "code",
@@ -234,7 +452,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: incluir ambos extremos del intervalo y excluir los valores exteriores; contar cada aparición una vez; vacío devuelve cero; resultado entre cero y el tamaño de la colección; datos conservados y cálculo separado de la salida; llamadas dentro de las precondiciones. La investigación debe conservar expectativa, contraejemplo, hipótesis, traza y resultados antes/después. Una expresión equivalente también puede reparar la causa: explica qué discrepancia resuelve, en lugar de cambiar varias reglas sin distinguir sus efectos."
+          "text": "Criterios: incluir ambos extremos del intervalo y excluir los valores exteriores; contar cada aparición una vez; vacío devuelve cero; resultado entre cero y el tamaño de la colección; datos conservados y cálculo separado de la salida; llamadas dentro de las precondiciones. La tabla conserva la traza y la hipótesis; la batería comprueba la reparación. Una expresión equivalente también es válida si resuelve la discrepancia y mantiene las demás promesas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({2, 4, 6, 8, 9, 4}, 3, 8);\n    probar({8}, 3, 8);\n    probar({}, 3, 8);\n    probar({3}, 3, 8);\n    probar({3, 8}, 3, 8);\n    probar({8, 8}, 3, 8);\n    probar({2, 9}, 3, 8);\n    probar({4, 6}, 3, 8);\n    return 0;\n}\n"
         }
       ]
     },
@@ -276,8 +499,117 @@
           "text": "La reparación no establece que <= sea siempre preferible a <. Para pertenencia a este intervalo, el último valor se incluye; para recorrer por índice, el tamaño es un extremo exclusivo. Recupera el requisito de cada comparación antes de editar. La actividad anterior exige elegir condiciones; no ejecuta un acceso con un índice fuera de rango."
         },
         {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__contraejemplo_otro_intervalo",
+          "prompt": "Ahora el requisito admite el intervalo cerrado 4..7. Una versión defectuosa sigue usando valor >= inferior && valor < superior. Elige una colección de un solo elemento que distinga ese programa del requisito. Después completa los resultados exigidos para repetidos y vacío.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "interior",
+                  "text": "{5}",
+                  "reviewFeedback": "Comprueba si ese valor recibe respuestas distintas en la condición escrita y en el intervalo cerrado."
+                },
+                {
+                  "id": "superior",
+                  "text": "{7}",
+                  "reviewFeedback": "Compara la igualdad con el extremo y la pertenencia pedida por el requisito."
+                },
+                {
+                  "id": "exterior",
+                  "text": "{8}",
+                  "reviewFeedback": "Distingue un valor exterior de una frontera que el requisito sí incluye."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "superior"
+                ]
+              }
+            },
+            {
+              "id": "regresion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "repetidos",
+                  "type": "numeric",
+                  "label": "Resultado requerido para {7,7}",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "vacio",
+                  "type": "numeric",
+                  "label": "Resultado requerido para {}",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "repetidos": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "vacio": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Siete pertenece al intervalo cerrado y la comparación defectuosa lo excluye. Dos apariciones cuentan dos veces; vacío no aporta ninguna. El siguiente editor recupera esos requisitos con límites nuevos.",
+            "incorrect": "Un contraejemplo debe producir resultados distintos según el código defectuoso y el requisito. Para el conteo, conserva cada aparición y distingue ausencia de datos de un valor válido."
+          }
+        },
+        {
           "type": "paragraph",
-          "text": "En otra sesión cambia los límites a 4..7 y construye tu propio contraejemplo de una versión que excluya indebidamente un extremo. Escribe la expectativa y la hipótesis antes de mirar el código. Prueba después un caso interior, uno exterior, repetidos y vacío con la versión reparada. Explica qué evidencia identifica la causa y qué casos muestran que la reparación conservó el comportamiento anterior."
+          "text": "Construye en este editor independiente el conteo para las cinco colecciones `{7}`, `{5}`, `{3,8}`, `{7,7}` y `{}`, con intervalo cerrado 4..7. Conserva contar_en_intervalo sin imprimir ni modificar datos; main puede coordinar una función de prueba para mostrar Dentro:C;Datos:N y un salto de línea por colección.\n\nPulsa Compilar, ejecutar y comprobar. Los contadores deben ser 1, 1, 0, 2 y 0; los tamaños originales, 1, 1, 2, 2 y 0. No cambies los casos entre ejecuciones. Las correcciones y reintentos pertenecen a esta misma comprobación; el editor anterior conserva sus pruebas 3..8.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dentro:1;Datos:1\nDentro:1;Datos:1\nDentro:0;Datos:2\nDentro:2;Datos:2\nDentro:0;Datos:0\n"
+                ],
+                "explanation": "El mismo contrato se conserva con otros límites: incluye ambos extremos, cuenta repetidos y distingue una colección vacía de un valor permitido."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de recuperación con límites 4..7"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta implementación después de construir y comprobar el último editor. Otras implementaciones son válidas si respetan el mismo contrato y formato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({7}, 4, 7);\n    probar({5}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({7, 7}, 4, 7);\n    probar({}, 4, 7);\n    return 0;\n}\n"
         }
       ]
     }

@@ -159,19 +159,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un lector de enteros para \"2 7 x 4\". Presenta cada entero obtenido válidamente en una línea Dato: N. Al detenerse, muestra una única etiqueta final: Fallo del flujo si bad() es verdadero; en otro caso Fin si eof() es verdadero; en otro caso Formato invalido. No uses el destino después del intento fallido ni intentes saltar todavía el texto inválido. En este informe, Fin sólo comunica que se observó eof(); no certifica que toda la representación de entrada fuera correcta. Por ejemplo, \"2 -\" presenta Dato: 2 y Fin porque el intento de convertir el signo aislado termina con eof y fail. Esta política de observación es limitada: la siguiente lección analizará una línea completa y rechazará también las representaciones incompletas."
+          "text": "Construye un lector de enteros para \"2 7 x 4\".\n\nPresenta cada entero obtenido válidamente en una línea Dato: N.\n\nAl detenerse, muestra una única etiqueta final: Fallo del flujo si bad() es verdadero; en otro caso Fin si eof() es verdadero; en otro caso Formato invalido.\n\nNo uses el destino después del intento fallido ni intentes saltar todavía el texto inválido.\n\nEn este informe, Fin sólo comunica que se observó eof(); no certifica que toda la representación de entrada fuera correcta.\n\nPor ejemplo, \"2 -\" presenta Dato: 2 y Fin porque el intento de convertir el signo aislado termina con eof y fail.\n\nEsta política de observación es limitada: la siguiente lección analizará una línea completa y rechazará también las representaciones incompletas.\n\nConstruye una batería mediante probar(const std::string& texto, bool grave): crea un flujo local y, sólo si grave es true, activa badbit antes de leer. main llama con (\"2 7 x 4\", false), (\"3 8\", false), (\"\", false), (\"5 \", false), (\"9z\", false), (\"x 6\", false), (\"2 -\", false) y (\"3\", true), en ese orden.\n\nCada Dato y etiqueta final ocupa una línea con salto, sin títulos ni separaciones adicionales.\n\nEs una única implementación del informe; la última llamada observa un indicador activado deliberadamente y no simula una avería física.\n\nUsa Compilar, ejecutar y comprobar con la batería completa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "En estas pruebas el texto tiene hasta 8 unidades pequeñas separadas por espacio; los enteros escritos están entre -20 y 99, y los residuos son letras o signos cortos. El caso inicial produce Dato: 2, Dato: 7 y Formato invalido. \"3 8\" produce ambos datos y Fin. La cadena vacía produce sólo Fin. \"5 \" produce Dato: 5 y Fin. \"9z\" produce Dato: 9 y Formato invalido. Establece también lo esperado para \"x 6\" antes de ejecutar."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__estados_del_flujo_y_datos_validos__secuencia_flujo_previa",
+          "question": "El texto preparado es \"x 6\". Con el contrato de detenerse al fallar la primera extracción, ¿qué se presenta?",
+          "options": [
+            "Dato: 6 y Fin.",
+            "Sólo Formato invalido.",
+            "Dato: 0 y Formato invalido, porque el destino estaba inicializado."
+          ],
+          "correctIndex": 1,
+          "explanation": "No se obtiene el primer entero ni se recupera todavía el texto inválido. La variable inicializada no representa una extracción nueva y 6 queda sin procesar."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato: 2\nDato: 7\nFormato invalido\nDato: 3\nDato: 8\nFin\nFin\nDato: 5\nFin\nDato: 9\nFormato invalido\nFormato invalido\nDato: 2\nFin\nFallo del flujo\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Para comprobar la rama grave, puedes añadir setstate(std::ios::badbit) antes de leer, con <ios> incluido. Debe aparecer sólo Fallo del flujo. Es una prueba deliberada del indicador, no una entrada del usuario. Comprueba los criterios y explica por qué el intento final no añade un Dato a la salida."
+          "text": "La última llamada activa badbit antes de leer: debe producir sólo Fallo del flujo. Las lecturas fallidas no añaden Dato; esa línea se presenta únicamente dentro del cuerpo controlado por una extracción válida. La coexistencia de eof y fail en \"2 -\" sigue la política limitada de observación descrita, sin certificar que el signo aislado sea una representación válida."
         }
       ]
     },
@@ -220,6 +244,19 @@
         {
           "type": "note",
           "text": "En los programas mostrados no se cambió la máscara de excepciones del flujo: un formato incorrecto comunica su resultado mediante el estado y la condición. El tratamiento de excepciones enseñado en la unidad de excepciones sigue siendo útil para otros contratos; aquí no hay que suponer que cada fail() lanza automáticamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\n#include <string>\n#include <ios>\n\nvoid probar(const std::string& texto, bool grave) {\n    std::istringstream entrada{texto};\n    if (grave) entrada.setstate(std::ios::badbit);\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2 7 x 4\", false);\n    probar(\"3 8\", false);\n    probar(\"\", false);\n    probar(\"5 \", false);\n    probar(\"9z\", false);\n    probar(\"x 6\", false);\n    probar(\"2 -\", false);\n    probar(\"3\", true);\n    return 0;\n}\n"
         }
       ]
     }

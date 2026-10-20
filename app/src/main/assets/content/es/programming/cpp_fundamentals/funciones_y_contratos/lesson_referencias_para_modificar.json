@@ -109,11 +109,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La colección declarada es {-2, 4, -1, 6}. Predice sus elementos después de quitar_negativos y ejecuta. Después prueba un vector vacío, uno sin valores negativos y {-12, 0, 12}. Usa hasta 8 elementos entre -12 y 12. El requisito es cambiar cada valor negativo a cero sin modificar los no negativos ni el número de elementos."
+          "text": "La colección inicial es `{-2, 4, -1, 6}`. La función debe convertir cada negativo en cero sin modificar los otros valores ni la cantidad de elementos. La salida debe mostrar `Elementos: 4` y, en cuatro líneas posteriores, `0`, `4`, `0` y `6`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Elementos: 4\n0\n4\n0\n6",
+                  "Elementos: 4\n0\n4\n0\n6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -128,7 +140,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Como variante, cambia el recorrido de for (int& valor : datos) a for (int valor : datos). Comprueba la salida con los datos iniciales y restaura int&. El programa de la variante tiene un comportamiento definido; su salida permite detectar que ya no cumple el requisito de modificación."
+          "text": "La actividad posterior comprueba otros datos del mismo contrato. Otra exploración usa copias en el recorrido para observar qué actualización deja de conservarse; utiliza un editor propio y no requiere restaurar este intento."
         }
       ]
     },
@@ -187,6 +199,69 @@
         {
           "type": "paragraph",
           "text": "El parámetro enlaza con el vector original y cada int& valor enlaza con su elemento actual. Se asigna cero sólo a los valores negativos; no se elimina ni reordena ningún elemento. La variante con int valor modifica una copia local, de modo que {-2,4,-1,6} sigue mostrando esos cuatro valores iniciales. Usa hasta ocho elementos entre -12 y 12 y compara estado, orden y tamaño."
+        },
+        {
+          "type": "heading",
+          "text": "Conservar los valores no negativos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `2 2 4`; `3 -12 0 12`. El dominio sigue siendo hasta ocho enteros entre menos doce y doce.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Elementos: 0",
+                  "Elementos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "2 2 4",
+                "outputs": [
+                  "Elementos: 2\n2\n4",
+                  "Elementos: 2\n2\n4\n"
+                ]
+              },
+              {
+                "standardInput": "3 -12 0 12",
+                "outputs": [
+                  "Elementos: 3\n0\n0\n12",
+                  "Elementos: 3\n0\n0\n12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "El recorrido modifica una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa recorre por valor dentro de `quitar_negativos`. Ejecútalo sin corregirlo: el objetivo de la observación es `Elementos: 4` seguido por `-2`, `4`, `-1` y `6` en líneas distintas. La salida final permite detectar que las actualizaciones no alcanzaron el vector.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Elementos: 4\n-2\n4\n-1\n6",
+                  "Elementos: 4\n-2\n4\n-1\n6\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -239,11 +314,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Antes: 8 -3\nDespues: -3 8",
+                  "Antes: 8 -3\nDespues: -3 8\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, escribe los estados esperados para (7, 2), (4, 4), (-5, -1), (0, 6) y (-12, 12). Añade una llamada con el mismo objeto dos veces y dos llamadas consecutivas con dos objetos distintos. Anota el estado después de cada llamada; los dos argumentos se escriben como nombres de objetos, sin incrementos ni otras operaciones dentro de la llamada."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el par inicial ocho y menos tres; el salto final es opcional. El editor posterior prueba otros pares, una llamada compartida y dos llamadas consecutivas con la misma función, sin modificar su contrato."
         },
         {
           "type": "paragraph",
@@ -251,7 +338,7 @@
         },
         {
           "type": "note",
-          "text": "El editor no suministra firma ni cuerpo del intercambio. Construye y prueba antes de leer la referencia. Conserva el intento y explica qué información dejaría de estar disponible después de la primera modificación."
+          "text": "El editor no suministra firma ni cuerpo. Construye y comprueba el intercambio antes de leer la referencia. Debe conservarse el valor que se necesita para completar la segunda asignación; los puzzles posteriores recuperan ese razonamiento."
         }
       ]
     },
@@ -281,6 +368,59 @@
         {
           "type": "paragraph",
           "text": "Para revisar los casos del intento, (7, 2) termina en (2, 7); (4, 4) en (4, 4); (-5, -1) en (-1, -5); (0, 6) en (6, 0); y (-12, 12) en (12, -12). Comprueba además el mismo objeto y la restauración tras dos llamadas. No sustituyas tu implementación si cumple los contratos y las mismas pruebas."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar intercambio, identidad y restauración"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee dos enteros del dominio menos doce a doce y usa siempre la misma función. En cada ejecución realiza un intercambio, una llamada con el mismo objeto en ambas posiciones y otro intercambio. Comprueba `7 2`, `4 4`, `-5 -1`, `0 6` y `-12 12`. La línea `Una:` muestra los valores intercambiados, `Compartido:` conserva esos dos valores y `Dos:` recupera los iniciales.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    std::cin >> primero >> segundo;\n    intercambiar(primero, segundo);\n    std::cout << \"Una: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, primero);\n    std::cout << \"Compartido: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, segundo);\n    std::cout << \"Dos: \" << primero << ' ' << segundo;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 2",
+                "outputs": [
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2",
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4",
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4\n"
+                ]
+              },
+              {
+                "standardInput": "-5 -1",
+                "outputs": [
+                  "Una: -1 -5\nCompartido: -1 -5\nDos: -5 -1",
+                  "Una: -1 -5\nCompartido: -1 -5\nDos: -5 -1\n"
+                ]
+              },
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6",
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "-12 12",
+                "outputs": [
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12",
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "7 2"
         }
       ]
     },
@@ -319,7 +459,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve a tu función y explica qué lectura necesita un valor anterior y qué lectura puede utilizar un valor actual. En la referencia, anterior es un objeto local que mantiene una copia durante esta llamada. No es una variable global ni un dato persistente entre llamadas."
+          "text": "En la referencia, `anterior` es un objeto local que mantiene durante esta llamada una copia del primer valor. La segunda asignación necesita ese valor previo, porque la primera ya modificó el objeto. No es un dato global ni persistente entre llamadas. El puzzle anterior permite elegir un caso que revela la pérdida de esa información."
         }
       ]
     },
@@ -428,15 +568,27 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Distintos: -4 10\nCompartido: -4 10\nRestaurado: 10 -4",
+                  "Distintos: -4 10\nCompartido: -4 10\nRestaurado: 10 -4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Criterios: las vistas deben nombrar los objetos iniciales, sin copiarlos; la llamada compartida conserva su único objeto y no modifica usado; las otras dos llamadas restauran los valores anteriores; ninguna asignación cambia la vinculación de una referencia. Mantén los valores iniciales entre -12 y 12. Elige después otros datos, incluidos cero o dos valores iguales, y calcula lo esperado antes de ejecutar."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». El objetivo es `Distintos: -4 10`, `Compartido: -4 10` y `Restaurado: 10 -4` en tres líneas, con salto final opcional. Revisa además que las vistas sean referencias a los objetos originales; coincidir con la salida no demuestra por sí solo esa vinculación."
         },
         {
           "type": "note",
-          "text": "Intenta y comprueba antes de consultar la referencia siguiente. Dibuja, si te ayuda, los dos objetos y escribe a su lado todos los nombres que los designan. Cuenta los objetos, no sólo los nombres ni los valores que coinciden."
+          "text": "Intenta y comprueba antes de consultar la referencia. Las tres vistas deben designar los dos objetos existentes, sin crear copias. Los nombres y la cantidad de objetos son conceptos distintos."
         }
       ]
     },
@@ -462,6 +614,38 @@
         {
           "type": "paragraph",
           "text": "Compara identidad, estado tras cada llamada y conservación de los dos valores, además del texto mostrado. Una implementación equivalente es válida si respeta los permisos, no imprime desde intercambiar y cumple tanto los casos de dos objetos como el de uno compartido. No es obligatorio usar el mismo nombre anterior para el objeto local que conserva el dato."
+        },
+        {
+          "type": "heading",
+          "text": "Conservar las vinculaciones con otros valores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee los valores de reserva y usado y construye las mismas tres referencias. Comprueba `0 6` y `4 4`. Las dos llamadas entre objetos distintos se anulan; la llamada que usa dos referencias al mismo objeto conserva ese objeto.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva{0};\n    int usado{0};\n    std::cin >> reserva >> usado;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Distintos: 6 0\nCompartido: 6 0\nRestaurado: 0 6",
+                  "Distintos: 6 0\nCompartido: 6 0\nRestaurado: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Distintos: 4 4\nCompartido: 4 4\nRestaurado: 4 4",
+                  "Distintos: 4 4\nCompartido: 4 4\nRestaurado: 4 4\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 6"
         }
       ]
     },
@@ -485,7 +669,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En otra sesión, reconstruye el intercambio sin mirar el cuerpo y elige tus casos antes de ejecutarlo. Incluye dos valores distintos, dos objetos con valores iguales, un mismo objeto escrito dos veces y dos llamadas que restauran el estado. Explica qué caso detecta la pérdida del valor anterior y por qué los otros casos siguen siendo necesarios para el contrato completo."
+          "text": "La construcción siguiente recupera el intercambio desde el esqueleto. Sus pruebas incluyen objetos distintos, objetos de igual valor, una llamada que designa el mismo objeto dos veces y dos llamadas que restauran el estado. El intento directo de la página de errores permite observar por qué sólo probar valores iguales no descubre toda pérdida del valor anterior."
         },
         {
           "type": "paragraph",
@@ -494,6 +678,52 @@
         {
           "type": "note",
           "text": "La lectura de apoyo trata el paso por referencia y su comparación con el paso por valor (Stroustrup, 2024, secciones 7.4.5–7.4.6). La implementación del intercambio con una copia local adapta el ejemplo de paso por referencia del libro a int y al dominio de estas actividades. Los casos de identidad, alias y recuperación permiten contrastar ese contrato y seguir los cambios de cada objeto."
+        },
+        {
+          "type": "heading",
+          "text": "Reconstruir el intercambio y sus comprobaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto `intercambiar` y un programa que lea dos enteros del dominio menos doce a doce. Muestra `Una:` después de intercambiar los dos objetos; `Compartido:` después de llamar con el primer objeto en ambas posiciones; y `Dos:` tras volver a intercambiar los dos objetos. Cada línea muestra ambos valores separados por un espacio, con otro espacio después de los dos puntos.\n\nComprueba `7 2`, `4 4`, `0 6` y `-12 12`. La primera línea intercambia los datos, la segunda conserva ese estado y la tercera recupera los iniciales. Pulsa «Compilar, ejecutar y comprobar»; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "initialStandardInput": "7 2",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 2",
+                "outputs": [
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2",
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4",
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4\n"
+                ]
+              },
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6",
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "-12 12",
+                "outputs": [
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12",
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -532,7 +762,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al recuperar el intercambio, anota por separado qué nombres son copias, qué nombres designan el mismo objeto y cuáles permiten modificarlo. El permiso de lectura y la conservación de un valor anterior son decisiones distintas: en el cuerpo de intercambiar se necesita una copia local para conservar ese valor, no una referencia const que siga viendo el objeto después de cambiar."
+          "text": "El permiso de lectura y la conservación de un valor anterior son decisiones distintas. Una copia guarda el valor recibido al inicializarse; una referencia de lectura sigue designando el objeto y observa los cambios permitidos por otras vías. La predicción anterior registra esa diferencia después del intercambio."
         }
       ]
     }

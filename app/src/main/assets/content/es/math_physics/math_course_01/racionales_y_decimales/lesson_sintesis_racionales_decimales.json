@@ -341,7 +341,58 @@
         },
         {
           "type": "note",
-          "text": "Al terminar, revisa una respuesta que te haya costado y formula qué la hace válida: conservar una unidad, multiplicar por el inverso, mantener la igualdad o cumplir una precisión. Esa razón será útil en los problemas de tasas y proporcionalidad."
+          "text": "Comprueba ahora una respuesta mediante la operación que define el cociente. Selecciona el control que realmente recupera el dato inicial, en lugar de aceptar una fracción sólo por su apariencia.",
+          "emphasis": [
+            {
+              "text": "operación que define el cociente"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_un_control_que_recupera_el_dividendo",
+          "prompt": "Se propone que (−5/6) ÷ (5/4) = −2/3. ¿Qué comprobación confirma ese cociente usando la relación entre dividendo, divisor y resultado?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_un_control_que_recupera_el_dividendo__control",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "otra_relacion",
+                  "label": "Multiplicar −2/3 por −5/6 y obtener 5/4.",
+                  "reviewFeedback": "Conserva el papel del divisor al reconstruir el dividendo a partir del cociente."
+                },
+                {
+                  "id": "apariencia",
+                  "label": "Aceptar −2/3 porque tiene denominador positivo y signo negativo.",
+                  "reviewFeedback": "Una forma y un signo plausibles no determinan si el valor satisface la división concreta."
+                },
+                {
+                  "id": "producto",
+                  "label": "Multiplicar −2/3 por 5/4 y obtener −5/6.",
+                  "reviewFeedback": "Comprueba qué producto recupera el número que se dividió."
+                },
+                {
+                  "id": "suma",
+                  "label": "Sumar −2/3 y 5/4 y obtener −5/6.",
+                  "reviewFeedback": "Relaciona la división con su operación inversa y revisa si esta suma expresa esa relación."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "producto"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar el cociente por el divisor debe recuperar el dividendo: (−2/3) × (5/4) = −10/12 = −5/6. El divisor 5/4 no es cero, así que esta relación comprueba el cociente. Es una comprobación del valor, más fuerte que observar su signo o el aspecto de la fracción.",
+            "incorrect": "Identifica qué número es el dividendo y cuál es el divisor; la operación inversa debe recuperar el primero."
+          }
         }
       ]
     },

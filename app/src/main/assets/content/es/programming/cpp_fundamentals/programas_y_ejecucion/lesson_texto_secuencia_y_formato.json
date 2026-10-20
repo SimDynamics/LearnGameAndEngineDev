@@ -338,22 +338,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar el programa inicial del editor de código, escribe su salida en el puzzle situado debajo del editor. Después ejecútalo y compara las dos líneas de la consola con tu predicción.\n\nConstruye después un informe de tres líneas, exactamente en este orden:\nInforme\nZona Este\nFin\n\nEn el mismo editor, crea una versión con un solo literal que contenga los saltos necesarios. Compila y ejecuta. Comprueba el texto, el orden y los saltos entre líneas; no deben aparecer barras ni la letra n como sustitutos del salto. Puedes dejar o no un salto después de Fin.\n\nA continuación, modifica ese programa para repartir la salida entre tres instrucciones, una por línea del informe. Vuelve a compilar y compara la consola con el mismo resultado solicitado. La organización del código cambia, pero los caracteres del informe deben conservarse. Las dos soluciones de referencia están en la página siguiente; consúltalas después de probar tus versiones.",
+          "text": "Construye en el editor de código un informe con estas tres líneas, exactamente en este orden:\n\nInforme\nZona Este\nFin\n\nEn esta actividad utiliza un solo literal para el informe completo. Incluye los dos saltos que separan sus líneas. Puedes terminar con o sin un salto después de Fin; no añadas espacios, barras invertidas visibles ni letras n en lugar de los saltos.\n\nPulsa Compilar, ejecutar y comprobar. Si el veredicto es Incorrecto, localiza la primera diferencia de texto o separación y corrige ese mismo programa antes de volver a ejecutar. La comprobación compara los caracteres de la salida; la organización con un solo literal forma parte de la práctica solicitada.",
           "emphasis": [
             {
-              "text": "escribe su salida en el puzzle"
+              "text": "un solo literal",
+              "occurrence": 1
             },
             {
-              "text": "un solo literal"
+              "text": "los dos saltos"
             },
             {
-              "text": "tres instrucciones"
+              "text": "Compilar, ejecutar y comprobar"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Informe\nZona Este\nFin",
+                  "Informe\nZona Este\nFin\n"
+                ],
+                "explanation": "Los dos saltos interiores separan las tres líneas. El salto posterior a Fin es opcional en esta actividad."
+              }
+            ]
+          }
         },
         {
           "type": "output_prediction",
@@ -367,6 +381,38 @@
           "outputComparison": "exact",
           "explanation": "El escape \\n separa Resumen de Zona Oeste. Escribir una sola instrucción no obliga a producir una sola línea: las líneas dependen de los caracteres del literal.",
           "reviewFeedback": "Distingue el salto indicado dentro del literal de los cambios de línea del archivo. Revisa también cuáles de sus espacios pertenecen al mensaje."
+        },
+        {
+          "type": "heading",
+          "text": "Construir el mismo informe con varias inserciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente editor crea otra implementación del informe. Escribe tres instrucciones de salida: una aporta Informe y un salto; otra aporta Zona Este y un salto; la última aporta Fin. El resultado solicitado sigue siendo el mismo informe de tres líneas. Pulsa Compilar, ejecutar y comprobar; un salto final continúa siendo opcional. Las soluciones se muestran después de estos intentos.",
+          "emphasis": [
+            {
+              "text": "tres instrucciones de salida"
+            },
+            {
+              "text": "el mismo informe de tres líneas"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye el informe con tres instrucciones de salida.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Informe\nZona Este\nFin",
+                  "Informe\nZona Este\nFin\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -378,13 +424,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrasta después de construir tus dos versiones. Ambas deben mostrar Informe, Zona Este y Fin en ese orden, en tres líneas, sin barras invertidas visibles ni espacios adicionales. Puedes dejar o no un salto después de Fin: la consigna no fija ese carácter final. Un salto entre líneas sí es obligatorio.",
+          "text": "Estas dos referencias corresponden a las dos actividades de construcción: un literal completo y tres instrucciones de salida. Ambas muestran Informe, Zona Este y Fin en tres líneas, sin barras invertidas visibles ni espacios adicionales. El salto después de Fin es opcional; los dos separadores interiores son necesarios.",
           "emphasis": [
             {
-              "text": "después de construir tus dos versiones"
+              "text": "un literal completo y tres instrucciones de salida"
             },
             {
-              "text": "Un salto entre líneas sí es obligatorio"
+              "text": "los dos separadores interiores son necesarios"
             }
           ]
         },

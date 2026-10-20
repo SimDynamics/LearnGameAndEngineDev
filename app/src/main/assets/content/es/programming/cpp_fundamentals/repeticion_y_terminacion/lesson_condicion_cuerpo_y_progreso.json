@@ -185,15 +185,59 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice la salida del programa del editor de código y compruébala. Cambia sólo el valor inicial a 0 y después a 5, manteniendo el límite 5. Compara cuándo el cuerpo se omite y cuántas veces actúa. Después restaura el valor inicial a 0, cambia el avance a dos unidades y vuelve a trazar antes de ejecutar. Usa valores iniciales entre 0 y 5 y avances positivos pequeños."
+          "text": "El programa comprueba `puesto < 5` antes de mostrar cada puesto y aumenta en una unidad dentro del cuerpo. El objetivo de este editor es observar el recorrido que comienza en uno: `1:2:3:4:Fin`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. La actividad posterior permitirá comprobar otros inicios conservando ese mismo avance."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{1};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{1};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:2:3:4:Fin",
+                  "1:2:3:4:Fin\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Registra el valor comprobado, el valor mostrado y el valor después de actualizar en cada vuelta. Esa traza permite localizar la causa de una diferencia; ejecutar repetidamente sin una predicción aporta menos información."
+          "text": "El valor que se comprueba en la condición, el que se muestra y el que queda después de actualizar pertenecen a momentos distintos. Una condición falsa impide entrar al cuerpo; la salida `Fin` está fuera del bucle y se produce una sola vez."
+        },
+        {
+          "type": "heading",
+          "text": "Otros inicios con avance uno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee el puesto inicial, entre cero y cinco. Comprueba `0` → `0:1:2:3:4:Fin` y `5` → `Fin`. El límite sigue siendo cinco: la entrada cambia el inicio, no la condición ni el avance.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{0};\n    std::cin >> puesto;\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:1:2:3:4:Fin",
+                  "0:1:2:3:4:Fin\n"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "Fin",
+                  "Fin\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -215,6 +259,30 @@
         {
           "type": "paragraph",
           "text": "Con inicio 0 y avance 1 se obtiene 0:1:2:3:4:Fin; con inicio 5 no hay cuerpo y se obtiene Fin. Con inicio 0 y avance 2, esta referencia produce 0:2:4:Fin y termina con puesto igual a 6. Llegar exactamente a 5 no es necesario: 6 ya hace falsa la condición. Una actualización fuera del cuerpo no cumple el progreso requerido."
+        },
+        {
+          "type": "heading",
+          "text": "Avanzar de dos en dos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa empieza en cero y utiliza un avance de dos. La actividad tiene un objetivo distinto del avance anterior: comprobar `0:2:4:Fin`. La condición puede terminar aunque el siguiente valor sea seis y no cinco.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{0};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 2;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:2:4:Fin",
+                  "0:2:4:Fin\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

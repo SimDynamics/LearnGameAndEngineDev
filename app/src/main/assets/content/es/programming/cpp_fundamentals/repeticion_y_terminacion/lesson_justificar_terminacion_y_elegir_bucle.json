@@ -195,11 +195,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código añade un contador de pasos y muestra cantidad después de cada actualización. Prueba 0,1,8 y 13, prediciendo primero. No cambies el divisor 2. Compara la cantidad de pasos de 8 y 13: tener datos diferentes no implica necesariamente un número diferente de pasos. Conserva cantidades iniciales entre 0 y 20."
+          "text": "Añade al programa un contador de pasos, inicializado antes del bucle y aumentado exactamente una vez por actualización. Conserva el inicio trece y el divisor dos. Muestra cada nueva cantidad seguida de punto y coma y, al terminar, `Fin;Pasos=` con el contador.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es `6;3;1;0;Fin;Pasos=4`, con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6;3;1;0;Fin;Pasos=4",
+                  "6;3;1;0;Fin;Pasos=4\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -221,6 +233,52 @@
         {
           "type": "paragraph",
           "text": "Salidas de esta referencia: inicio 0 → Fin;Pasos=0; inicio 1 → 0;Fin;Pasos=1; inicio 8 → 4;2;1;0;Fin;Pasos=4; inicio 13 → 6;3;1;0;Fin;Pasos=4. El divisor fijo nunca es cero. Con enteros positivos, cada nueva cantidad es menor que la anterior y permanece no negativa; esa reducción y la comprobación antes del cuerpo justifican la terminación en el dominio dado."
+        },
+        {
+          "type": "heading",
+          "text": "La misma reducción desde otros estados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee una cantidad de cero a veinte y conserva la división por dos. Comprueba `0` → `Fin;Pasos=0`; `1` → `0;Fin;Pasos=1`; `8` → `4;2;1;0;Fin;Pasos=4`; y `13` → `6;3;1;0;Fin;Pasos=4`. Ocho y trece tienen datos diferentes y la misma cantidad de actualizaciones.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    std::cin >> cantidad;\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin;Pasos=\" << pasos;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Fin;Pasos=0",
+                  "Fin;Pasos=0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "0;Fin;Pasos=1",
+                  "0;Fin;Pasos=1\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "4;2;1;0;Fin;Pasos=4",
+                  "4;2;1;0;Fin;Pasos=4\n"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "6;3;1;0;Fin;Pasos=4",
+                  "6;3;1;0;Fin;Pasos=4\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

@@ -198,31 +198,61 @@
         },
         {
           "type": "paragraph",
-          "text": "El relleno anterior define `sobres_recibidos` y consulta ese mismo nombre en la salida. Ahora usa el editor de código para mejorar los nombres de un programa completo. Primero compila y ejecuta el código inicial: la consola debe mostrar 7.\n\nRenombra las variables para comunicar su función: `a` pasa a llamarse `cajas_iniciales`; `b`, `cajas_agregadas`; y `c`, `cajas_finales`. Actualiza cada definición y todas las apariciones que utilizan ese objeto. Conserva los valores 4 y 3, la suma y la instrucción que muestra el resultado.\n\nCompila y ejecuta el programa renombrado. Debe seguir mostrando 7: mejorar los nombres facilita leer qué se calcula y conserva el comportamiento de este caso. Comprueba también en el editor que la suma utiliza las dos variables correspondientes y que la salida consulta el resultado calculado.",
+          "text": "Mejora los nombres del programa de este editor conservando su cálculo. `a` pasa a llamarse `cajas_iniciales`; `b`, `cajas_agregadas`; y `c`, `cajas_finales`. Actualiza cada definición y todas las apariciones que utilizan ese objeto. Conserva los valores `4` y `3`, la suma y la instrucción que muestra el resultado.\n\nPulsa «Compilar, ejecutar y comprobar». El programa renombrado debe mostrar `7`, con un salto final opcional. Revisa también que la suma utilice las dos variables correspondientes y que la salida consulte el resultado calculado: la comprobación de la consola no evalúa los nombres elegidos.",
           "emphasis": [
             {
               "text": "Actualiza cada definición y todas las apariciones"
-            },
-            {
-              "text": "conserva el comportamiento de este caso"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int a = 4;\n    int b = 3;\n    int c = a + b;\n    std::cout << c;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int a = 4;\n    int b = 3;\n    int c = a + b;\n    std::cout << c;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7",
+                  "7\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Si olvidaste renombrar una aparición, localiza el nombre señalado por el diagnóstico y relaciónalo con su definición. Actualiza ese uso en vez de crear otra variable únicamente para hacer desaparecer el error.\n\nDespués comprueba el cálculo con otros datos en el mismo editor de código: cambia las cantidades iniciales a 6 y 2, compila y verifica que la consola muestra 8. Conserva los nombres nuevos y la operación durante esta variación.\n\nTras realizar el renombrado, resuelve el puzzle de comentarios de la página siguiente. Allí asociarás cada nombre nuevo con la función de su variable.",
+          "text": "Si olvidaste renombrar una aparición, localiza el nombre señalado por el diagnóstico y relaciónalo con su definición. Actualiza ese uso en vez de crear otra variable únicamente para hacer desaparecer el error.\n\nUna vez comprobado el renombrado, continúa con otro caso del mismo cálculo en el editor siguiente.",
           "emphasis": [
             {
               "text": "Actualiza ese uso en vez de crear otra variable"
-            },
-            {
-              "text": "cambia las cantidades iniciales a 6 y 2"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Conservar los nombres con otros datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor contiene el programa con los nombres descriptivos. Cambia sólo las cantidades iniciales a `6` y `2`; conserva los nombres, la suma y la instrucción de salida.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar `8`, con un salto final opcional. La página siguiente permite asociar cada nombre con la función de su variable."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cajas_iniciales = 4;\n    int cajas_agregadas = 3;\n    int cajas_finales = cajas_iniciales + cajas_agregadas;\n    std::cout << cajas_finales;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "8",
+                  "8\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -317,7 +347,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`cajas_iniciales` conserva lo que había y `cajas_agregadas`, lo que se incorpora. Al definir `cajas_finales`, se calcula la suma de sus valores y se guarda el resultado. El nombre permite reconocer qué representa ese objeto; no convierte la variable en una fórmula que vuelva a calcularse por sí sola si cambian después otros datos (Stroustrup, 2024).\n\nLa salida 7 comprueba el caso con 4 y 3. La variación a 6 y 2 comprueba otro caso del cálculo; ninguna de las dos sustituye revisar que cada uso corresponda al nombre del objeto adecuado. Puedes reconstruir ambas versiones dentro del editor conservando los nombres nuevos."
+          "text": "`cajas_iniciales` conserva lo que había y `cajas_agregadas`, lo que se incorpora. Al definir `cajas_finales`, se calcula la suma de sus valores y se guarda el resultado. El nombre permite reconocer qué representa ese objeto; no convierte la variable en una fórmula que vuelva a calcularse por sí sola si cambian después otros datos (Stroustrup, 2024).\n\nLa salida `7` comprueba el caso con `4` y `3`; la salida `8`, el caso con `6` y `2`. Ninguna sustituye revisar que cada uso corresponda al nombre del objeto adecuado."
         }
       ]
     }

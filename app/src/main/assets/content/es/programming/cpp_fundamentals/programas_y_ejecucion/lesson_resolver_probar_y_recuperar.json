@@ -161,23 +161,38 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el editor de código de esta página para crear un programa que muestre tres líneas, exactamente en este orden:\n\nTaller\nTurno B\nMaterial preparado\n\nCompleta el cuerpo de main con las instrucciones necesarias. Decide cómo repartir los textos entre literales y dónde colocar los saltos de línea. Puedes pensar primero cómo organizarlo; el código se escribe y se prueba en el editor de la app.\n\nCompila y ejecuta. Compara cada línea de la consola con la solicitada: contenido, espacios y orden. Si falta un separador o aparece un texto distinto, modifica la parte responsable y vuelve a comprobar. El carácter de salto después de preparado es opcional; los dos saltos que separan las tres líneas son necesarios.",
+          "text": "Construye en el editor de código una tarjeta con estas tres líneas, exactamente en este orden:\n\nTaller\nTurno B\nMaterial preparado\n\nCompleta el cuerpo de main. Decide cómo repartir los textos entre literales y dónde colocar los saltos. El salto después de preparado es opcional; los dos separadores interiores son necesarios.\n\nPulsa Compilar, ejecutar y comprobar. Compara la salida nueva con el objetivo y corrige el mismo intento si falta un texto, espacio o salto. La comprobación admite distintos programas que produzcan los caracteres solicitados.",
           "emphasis": [
             {
-              "text": "Compila y ejecuta"
+              "text": "Completa el cuerpo de main"
             },
             {
-              "text": "contenido, espacios y orden"
+              "text": "los dos separadores interiores son necesarios"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui las instrucciones de la tarjeta.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui las instrucciones de la tarjeta.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Taller\nTurno B\nMaterial preparado",
+                  "Taller\nTurno B\nMaterial preparado\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "Este editor de código admite varias implementaciones. La app permite construirlas y observar la consola; esta tarea no califica automáticamente tu código. La solución de referencia aparece después de la práctica.\n\nCuando la primera versión produzca la tarjeta requerida, cambia únicamente el turno de B a C. Compila y ejecuta de nuevo: la primera y la tercera línea, sus espacios y los saltos deben conservarse. Comprueba la consola de esa nueva ejecución."
+          "text": "La comprobación contrasta la salida, no impone una única implementación. Puedes usar los elementos estudiados para construir la tarjeta y revisar los intentos de esta misma actividad. La referencia aparece después de los ejercicios de recuperación."
         },
         {
           "type": "multiple_choice",
@@ -301,13 +316,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de construir y ejecutar tu tarjeta. La primera versión debe mostrar estas tres líneas, en este orden:\n\nTaller\nTurno B\nMaterial preparado\n\nLa segunda versión cambia sólo la línea central a Turno C. No deben perderse los saltos entre líneas ni alterarse los otros textos. Ambas pueden terminar con o sin un salto después de preparado.",
+          "text": "Esta referencia muestra una implementación de la tarjeta construida: Taller, Turno B y Material preparado en tres líneas. Las dos separaciones interiores forman parte del resultado; el salto final es opcional.",
           "emphasis": [
             {
-              "text": "después de construir y ejecutar tu tarjeta"
-            },
-            {
-              "text": "cambia sólo la línea central a Turno C"
+              "text": "Las dos separaciones interiores forman parte del resultado"
             }
           ]
         },
@@ -318,15 +330,53 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la segunda prueba, cambia únicamente B por C dentro del segundo literal y vuelve a compilar y ejecutar. También puedes reunir la tarjeta en un solo literal con dos escapes de salto; esa organización es válida si respeta los mismos caracteres de salida.\n\nCuando una versión no coincida, compara línea por línea: localiza el primer texto, espacio o salto diferente y revisa la inserción que lo produce. Este criterio permite corregir una diferencia concreta y conservar una solución propia que sí cumpla el resultado.",
+          "text": "La referencia utiliza varias inserciones. También es válida una solución que reúna la tarjeta en un solo literal con sus saltos. El criterio de salida permite localizar el primer carácter diferente y corregir la instrucción que lo produce.\n\nEn la siguiente actividad cambiarás un dato conservando el formato de la tarjeta.",
           "emphasis": [
             {
-              "text": "vuelve a compilar y ejecutar"
-            },
-            {
-              "text": "localiza el primer texto, espacio o salto diferente"
+              "text": "localizar el primer carácter diferente"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Cambiar el turno y conservar el formato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente parte de una tarjeta con Turno B. Modifica sólo la letra del turno para mostrar Turno C. Conserva Taller, Material preparado, los espacios y los dos saltos interiores. Pulsa Compilar, ejecutar y comprobar; se admite el salto final opcional.",
+          "emphasis": [
+            {
+              "text": "editor independiente"
+            },
+            {
+              "text": "Conserva Taller, Material preparado"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Taller\\n\";\n    std::cout << \"Turno B\\n\";\n    std::cout << \"Material preparado\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Taller\nTurno C\nMaterial preparado",
+                  "Taller\nTurno C\nMaterial preparado\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La variación cambia únicamente la letra del turno en el literal correspondiente. Los otros caracteres de la tarjeta permanecen iguales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Taller\\n\";\n    std::cout << \"Turno C\\n\";\n    std::cout << \"Material preparado\";\n    return 0;\n}\n"
         }
       ]
     }

@@ -186,11 +186,47 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código, primero omite el caso 3 sin terminar el recorrido. Después crea otra versión que termine antes del caso 3. Predice y compara ambas salidas. Conserva el límite pequeño; la comparación debe mostrar la diferencia entre omitir una vuelta y terminar el recorrido, no en probar cuántas iteraciones soporta el dispositivo."
+          "text": "En el editor siguiente, añade una selección que omita el caso tres sin terminar el recorrido de uno a cinco. Cada número aceptado debe ocupar una línea: uno, dos, cuatro y cinco.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. La actividad posterior utiliza otro editor para terminar el recorrido antes del tres."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1\n2\n4\n5",
+                  "1\n2\n4\n5\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Terminar antes del caso tres"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este segundo editor, añade una selección que abandone por completo el recorrido antes de mostrar tres. El objetivo es mostrar únicamente uno y dos en líneas separadas. Conserva el límite cinco: la diferencia debe proceder de terminar el recorrido.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1\n2",
+                  "1\n2\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

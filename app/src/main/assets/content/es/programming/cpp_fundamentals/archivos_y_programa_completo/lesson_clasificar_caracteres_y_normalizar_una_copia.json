@@ -226,6 +226,18 @@
         {
           "type": "paragraph",
           "text": "Esta conversión no se incorpora al intérprete ni a los lectores ya construidos. También sería incorrecto afirmar que un string UTF-8 se transforma por completo recorriendo char uno a uno: una letra puede ocupar varias unidades y las reglas lingüísticas pueden ser más complejas. La conversión a unsigned char protege el argumento, pero no descodifica Unicode."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia__secuencia_cctype_previa",
+          "question": "Para \"aZ09_\" en el locale C, ¿qué debe conservar el resumen y las dos copias?",
+          "options": [
+            "2 letras, 2 dígitos y 1 otro; az09_ y AZ09_, con el origen intacto.",
+            "3 letras y 2 dígitos; az09 y AZ09, quitando el guion bajo.",
+            "Cinco letras, porque la conversión de caja convierte todos los caracteres."
+          ],
+          "correctIndex": 0,
+          "explanation": "La normalización cambia la caja de las letras básicas, sin eliminar signos ni convertir dígitos. El guion bajo sigue en otros y se conserva en ambas copias."
         }
       ]
     },
@@ -245,15 +257,31 @@
         },
         {
           "type": "paragraph",
-          "text": "main conserva una copia previa de la entrada, valida todo y sólo después llama a las funciones. Usa \"NoDo 7!\" inicialmente. Muestra Original:<texto>, Minusculas:<copia>, Mayusculas:<copia>, Letras:L;Digitos:D;Blancos:B;Otros:O y Entrada conservada:V, cada informe en su línea. V es el bool de comparar entrada con la copia previa. Para un rechazo muestra únicamente Texto rechazado."
+          "text": "main conserva una copia previa de la entrada, valida todo y sólo después llama a las funciones.\n\nUsa \"NoDo 7!\" inicialmente.\n\nMuestra Original:<texto>, Minusculas:<copia>, Mayusculas:<copia>, Letras:L;Digitos:D;Blancos:B;Otros:O y Entrada conservada:V, cada informe en su línea.\n\nV es el bool de comparar entrada con la copia previa.\n\nPara un rechazo muestra únicamente Texto rechazado.\n\nConstruye una sola batería mediante probar(const std::string& entrada), con copia previa, validación y resultados locales en cada llamada. main usa \"NoDo 7!\", \"\", \"aZ09_\", cuarenta letras a, cuarenta y una letras a, la cadena de seis caracteres \" \\t\\n\\r\\f\\v\" y una cadena de una unidad construida como std::string(1, static_cast<char>(-1)), en ese orden.\n\nLas escrituras con barra representan caracteres de control reales.\n\nAnte cada prueba presenta Caso N, numerado desde 1.\n\nLas válidas conservan los cinco informes originales y añaden Unidades:N con la longitud; cada informe termina con salto, sin líneas vacías añadidas.\n\nLos rechazos sólo muestran Texto rechazado después de su cabecera.\n\nEl último argumento, convertido a unsigned char, supera 127 y debe rechazarse antes de llamar a <cctype>.\n\nUsa Compilar, ejecutar y comprobar para toda la batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\n// Construye el modelo, las funciones y las pruebas desde los requisitos.\nint main() {\n    return 0;\n}\n"
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\n// Construye el modelo, las funciones y las pruebas desde los requisitos.\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nOriginal:<NoDo 7!>\nMinusculas:<nodo 7!>\nMayusculas:<NODO 7!>\nLetras:4;Digitos:1;Blancos:1;Otros:1\nEntrada conservada:1\nUnidades:7\nCaso 2\nOriginal:<>\nMinusculas:<>\nMayusculas:<>\nLetras:0;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:0\nCaso 3\nOriginal:<aZ09_>\nMinusculas:<az09_>\nMayusculas:<AZ09_>\nLetras:2;Digitos:2;Blancos:0;Otros:1\nEntrada conservada:1\nUnidades:5\nCaso 4\nOriginal:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMinusculas:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMayusculas:<AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>\nLetras:40;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:40\nCaso 5\nTexto rechazado\nCaso 6\nOriginal:< \t\n\r\f\u000b>\nMinusculas:< \t\n\r\f\u000b>\nMayusculas:< \t\n\r\f\u000b>\nLetras:0;Digitos:0;Blancos:6;Otros:0\nEntrada conservada:1\nUnidades:6\nCaso 7\nTexto rechazado\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, predice el caso inicial. Prueba después vacío, \"aZ09_\", cuarenta letras y cuarenta y una. El límite hace que cada contador y su suma no excedan 40. Para \" \\t\\n\\r\\f\\v\", contrasta los seis blancos y la conservación de las copias; esos controles pueden producir saltos o movimientos al mostrarse, así que observa también los recuentos, el tamaño y la comparación de las unidades."
+          "text": "La batería comprueba vacío, letras ya convertidas, dígitos, signos, límites de cuarenta y cuarenta y una unidades, seis clases de blanco y una unidad fuera de ASCII. Los controles pueden mover el cursor al presentar sus copias: la comprobación conserva literalmente esas unidades y observa también Unidades y los recuentos. Cada contador y su suma no exceden 40 en los textos admitidos."
         },
         {
           "type": "note",
@@ -315,15 +343,87 @@
         },
         {
           "type": "paragraph",
-          "text": "Recuperación: reconstruye una de las funciones de copia sin mirar la referencia y prueba letras ya convertidas, dígitos y signos. Después explica por qué un contador con get podía observar blancos que una extracción formateada de char omitía. La biblioteca clasifica el dato entregado; no recupera caracteres que una lectura anterior ya descartó."
+          "text": "La recuperación de las funciones de copia continúa en un editor independiente posterior, con letras ya convertidas, dígitos y signos. get conserva blancos; una extracción formateada de char puede omitirlos antes de que la biblioteca los clasifique. El clasificador no recupera caracteres que la operación de lectura ya descartó."
         },
         {
-          "type": "paragraph",
-          "text": "Transferencia: antes de hacer una búsqueda de etiquetas decide si los nombres se comparan exactamente o ignorando caja. Escribe un caso que distinga ambas políticas y otro con un signo no permitido. Normalizar no elimina ese signo ni acredita la validez del nombre. Una política nueva debe quedar en sus requisitos y pruebas, además del código."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia__secuencia_normalizar_politica",
+          "question": "Las etiquetas permitidas son lago y sol. Se decide ignorar caja, pero rechazar signos ajenos. ¿Qué caso distingue normalizar de validar?",
+          "options": [
+            "LaGo se normaliza a lago; LaGo! conserva ! y sigue sin ser una etiqueta válida.",
+            "LaGo! se convierte automáticamente en lago y debe aceptarse.",
+            "Todos los nombres que contienen letras pasan la validación después de tolower."
+          ],
+          "correctIndex": 0,
+          "explanation": "La normalización sólo cambia caja. La política de nombres debe comprobar por separado si quedan signos no admitidos; convertir no elimina ni valida esos caracteres."
         },
         {
           "type": "note",
-          "text": "La clasificación y conversión de caracteres se estudian en la fuente principal (Stroustrup, 2024, sección 9.10.4, pp. 280–281). Dominio y resultados contrastados con el borrador C++, que remite a la biblioteca de C (Working Draft: Programming Languages — C++, s. f., sección [cctype.syn]), y con el borrador de C (ISO/IEC JTC 1/SC 22/WG 14, 2023, secciones 7.4, 7.4.1, 7.4.2 y 7.11.1.1). Ejemplos, políticas, límites y práctica originales de esta ruta."
+          "text": "Leer un carácter y clasificarlo son acciones distintas: get conserva los blancos que una extracción formateada de char puede omitir. Convertir cada letra de una copia permite conservar el texto recibido y elegir una comparación que ignore caja (Stroustrup, 2024, sección 9.10.4, pp. 279–281). El dominio de los argumentos de <cctype> exige un valor representable como unsigned char o EOF; preparar un char como unsigned char evita pasar un negativo ajeno a esa marca. Esta condición de seguridad no descodifica Unicode ni amplía la política de separadores del intérprete (Working Draft: Programming Languages — C++, s. f., sección [cctype.syn]; ISO/IEC JTC 1/SC 22/WG 14, 2023, secciones 7.4, 7.4.1, 7.4.2 y 7.11.1.1).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de clasificación y copias"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid probar(const std::string& entrada) {\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\\n\";\n        return;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo)\n              << \"\\nUnidades:\" << entrada.size() << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\"; probar(\"NoDo 7!\");\n    std::cout << \"Caso 2\\n\"; probar(\"\");\n    std::cout << \"Caso 3\\n\"; probar(\"aZ09_\");\n    std::cout << \"Caso 4\\n\"; probar(std::string(40, 'a'));\n    std::cout << \"Caso 5\\n\"; probar(std::string(41, 'a'));\n    std::cout << \"Caso 6\\n\"; probar(\" \\t\\n\\r\\f\\v\");\n    std::cout << \"Caso 7\\n\"; probar(std::string(1, static_cast<char>(-1)));\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir una copia sin cambiar el origen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye copiar_en_minusculas(const std::string&) desde este editor. El llamador garantiza hasta cuarenta caracteres ASCII y el locale C inicial; la función devuelve otra string, conserva longitud, orden, dígitos y signos y no imprime. Prepara una sola batería con \"ABC9_\", \"abc9_\" y \"--7\". Presenta sus copias en tres líneas y después el primer argumento original en una cuarta, todas con salto final. Usa Compilar, ejecutar y comprobar; no vuelvas al editor de clasificación.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la copia y la bateria de recuperacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "abc9_\nabc9_\n--7\nABC9_\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la copia recuperada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

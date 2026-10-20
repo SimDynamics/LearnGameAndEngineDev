@@ -762,7 +762,118 @@
         },
         {
           "type": "paragraph",
-          "text": "Explica la misma comparación en los dos sentidos: al decir qué ángulo es menor, indica de cuál es parte propia; al decir cuál es mayor, recupera esa misma inclusión. Cambiar la pregunta no cambia la colocación ni permite omitir sus condiciones."
+          "text": "La actividad siguiente expresa una comparación en los dos sentidos y relaciona cada conclusión con la inclusión que la justifica. Cambiar cuál es la referencia no cambia la colocación de las figuras.",
+          "emphasis": [
+            {
+              "text": "dos sentidos"
+            },
+            {
+              "text": "inclusión"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresar_una_inclusion_angular_en_dos_sentidos",
+          "prompt": "Las semirrectas PQ, PS y PR tienen origen P y aparecen en ese orden dentro de la región habitual de QPR. PS es interior, salvo el vértice. Compara QPS con QPR y luego QPR con QPS. En la última elección, identifica la inclusión que justifica ambas respuestas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresar_una_inclusion_angular_en_dos_sentidos__relaciones",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pieza",
+                  "type": "dropdown",
+                  "label": "QPS, comparado con QPR",
+                  "options": [
+                    {
+                      "id": "congruente",
+                      "label": "Es congruente.",
+                      "reviewFeedback": "Comprueba si las regiones coinciden por completo o si queda una parte adicional."
+                    },
+                    {
+                      "id": "menor",
+                      "label": "Es menor.",
+                      "reviewFeedback": "Identifica cuál de las dos regiones es una parte propia de la otra."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "Es mayor.",
+                      "reviewFeedback": "Conserva el orden de los ángulos nombrados en la pregunta y revisa cuál contiene al otro."
+                    }
+                  ]
+                },
+                {
+                  "id": "total",
+                  "type": "dropdown",
+                  "label": "QPR, comparado con QPS",
+                  "options": [
+                    {
+                      "id": "congruente",
+                      "label": "Es congruente.",
+                      "reviewFeedback": "Comprueba si las regiones coinciden por completo o si queda una parte adicional."
+                    },
+                    {
+                      "id": "menor",
+                      "label": "Es menor.",
+                      "reviewFeedback": "Identifica cuál de las dos regiones es una parte propia de la otra."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "Es mayor.",
+                      "reviewFeedback": "Conserva el orden de los ángulos nombrados en la pregunta y revisa cuál contiene al otro."
+                    }
+                  ]
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Relación que justifica las dos comparaciones",
+                  "options": [
+                    {
+                      "id": "total_en_pieza",
+                      "label": "QPR es una parte propia de QPS.",
+                      "reviewFeedback": "Recorre cada región desde PQ y revisa hasta qué segundo lado se extiende."
+                    },
+                    {
+                      "id": "pieza_en_total",
+                      "label": "QPS es una parte propia de QPR.",
+                      "reviewFeedback": "Relaciona el lado interior PS con la región adicional que queda hasta PR."
+                    },
+                    {
+                      "id": "mismo_lado",
+                      "label": "Compartir PQ hace que las regiones sean iguales.",
+                      "reviewFeedback": "Revisa si el lado común fija por sí solo el segundo lado y toda la región."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pieza": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "total": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "pieza_en_total"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "QPS es menor que QPR y QPR es mayor que QPS. Las dos frases expresan la misma inclusión: QPS es una parte propia de QPR. La región adicional queda entre PS y PR. Cambiar el orden de la comparación invierte las palabras menor y mayor; conserva la relación entre las regiones.",
+            "incorrect": "Conserva el ángulo de referencia de cada campo y sigue la región delimitada por sus dos lados."
+          }
         }
       ]
     },
@@ -828,7 +939,59 @@
         },
         {
           "type": "paragraph",
-          "text": "Una falta de información requiere conservar las posibilidades que siguen abiertas. Después de comparar, formula qué dato adicional permitiría decidir: por ejemplo, la coincidencia de los segundos lados o su ubicación relativa después de alinear. No hace falta inventar una medida angular para completar ese razonamiento."
+          "text": "Cuando falta información, también interesa decidir qué dato permitiría resolver la comparación. La siguiente selección comprueba qué información fija la relación entre los segundos lados, sin introducir una medida angular.",
+          "emphasis": [
+            {
+              "text": "qué dato permitiría resolver la comparación"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_datos_que_completan_la_comparacion_angular",
+          "prompt": "En otra comparación, AOB y AOC comparten O y la semirrecta OA, y sus regiones habituales están al mismo lado de la recta OA. No se conoce la dirección de OC respecto de OB. Selecciona cada dato adicional que, por sí solo, determinaría una relación única de congruencia, menor o mayor. Evalúa los datos por separado; no se reúnen entre sí.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "elegir_datos_que_completan_la_comparacion_angular__datos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "distancias",
+                  "label": "Los segmentos OB y OC tienen la misma longitud.",
+                  "reviewFeedback": "Comprueba si fijar una distancia al vértice fija también la dirección del lado."
+                },
+                {
+                  "id": "coincidencia",
+                  "label": "OB y OC son la misma semirrecta.",
+                  "reviewFeedback": "Revisa qué queda fijado para los dos lados completos y sus regiones habituales."
+                },
+                {
+                  "id": "mismo_semiplano",
+                  "label": "B y C están al mismo lado de la recta OA.",
+                  "reviewFeedback": "Comprueba si esta información distingue una dirección interior, coincidente o exterior respecto de OB."
+                },
+                {
+                  "id": "interior",
+                  "label": "Los puntos de OC distintos de O están estrictamente dentro de la región de AOB.",
+                  "reviewFeedback": "Relaciona esta ubicación con el criterio de parte propia después de la alineación declarada."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "coincidencia",
+                  "interior"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si OB y OC son la misma semirrecta, coinciden los dos lados y las regiones habituales: los ángulos son congruentes. Si OC queda estrictamente dentro de AOB, AOC es menor. La misma distancia al vértice puede darse en direcciones diferentes; pertenecer al mismo lado de la recta OA tampoco fija la dirección respecto de OB.",
+            "incorrect": "Distingue un dato que fija la relación de los segundos lados de otro que todavía permite varias direcciones."
+          }
         }
       ]
     },
@@ -1013,7 +1176,65 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el procedimiento con tus palabras: precisa lados y región, alinea una copia y comprueba el lado del plano de los interiores; después decide si el otro lado coincide o delimita una parte propia. Al recomponer partes en el próximo desarrollo conservaremos también qué fronteras comparten y qué regiones quedan a cada lado."
+          "text": "Recupera el procedimiento relacionando cada momento de la comparación con la comprobación que le corresponde. Las condiciones de preparación permiten interpretar después la coincidencia o la inclusión de las regiones."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_las_comprobaciones_de_una_comparacion_angular",
+          "prompt": "Relaciona cada momento del procedimiento con la comprobación que realiza. Cada destino se usa una vez. El procedimiento compara por inclusión dos ángulos con sus regiones habituales, utilizando una copia rígida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_las_comprobaciones_de_una_comparacion_angular__procedimiento",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "definir",
+                  "label": "Precisar las figuras que se van a comparar."
+                },
+                {
+                  "id": "alinear",
+                  "label": "Preparar la colocación de una copia."
+                },
+                {
+                  "id": "concluir",
+                  "label": "Decidir la relación en la colocación preparada."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "segundo_lado",
+                  "label": "Revisar el segundo lado y la región: coincidencia completa o parte propia."
+                },
+                {
+                  "id": "figuras",
+                  "label": "Identificar el vértice, los dos lados completos y la región elegida de cada ángulo."
+                },
+                {
+                  "id": "colocacion",
+                  "label": "Hacer coincidir vértices y un lado con el mismo sentido, con interiores al mismo lado de su recta."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "definir": "figuras",
+                  "alinear": "colocacion",
+                  "concluir": "segundo_lado"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Primero se precisa qué figuras y regiones se comparan. Después se comprueba la colocación que exige el criterio: vértices y un lado coincidentes, con los interiores al mismo lado de su recta. En esa colocación, el segundo lado y la región permiten decidir coincidencia o parte propia. Una comprobación aislada no sustituye las otras.",
+            "incorrect": "Distingue identificar una figura, preparar su colocación y obtener una conclusión. Cada comprobación tiene una función diferente."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Al recomponer partes en el próximo desarrollo conservaremos también qué fronteras comparten y qué regiones quedan a cada lado."
         }
       ]
     }

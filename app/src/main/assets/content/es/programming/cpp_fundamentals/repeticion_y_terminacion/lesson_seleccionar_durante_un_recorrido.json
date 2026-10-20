@@ -168,11 +168,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa visita piezas de peso entre 1 y 6. Añade dos resúmenes: cantidad de piezas cuyo peso es al menos 4 y suma de sus pesos. Muestra ambos después del recorrido. Antes de ejecutarlo, escribe tus resultados esperados. Repite con límite final 3: tiene casos visitados y cero aceptados. Conserva el avance del recorrido fuera de la rama."
+          "text": "El programa visita pesos de uno a seis y muestra los aceptados desde cuatro. Añade dos resúmenes después del recorrido: cantidad de aceptaciones y suma de sus pesos. Deben aparecer las líneas `Aceptada 4`, `Aceptada 5`, `Aceptada 6` y después `Cantidad=3;Peso=15`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Conserva el avance fuera de la rama para visitar también los pesos rechazados."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptada 4\nAceptada 5\nAceptada 6\nCantidad=3;Peso=15",
+                  "Aceptada 4\nAceptada 5\nAceptada 6\nCantidad=3;Peso=15\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -194,6 +206,38 @@
         {
           "type": "paragraph",
           "text": "Con límite 6 se muestran 4,5,6 y el resumen Cantidad=3;Peso=15. Con límite 3 se visitan tres pesos, pero no se imprime ninguna línea de aceptación y el resumen es Cantidad=0;Peso=0. Este caso distingue contar visitas de contar aceptaciones. El estado cero no representa un peso inventado: es el resumen de no haber aceptado datos."
+        },
+        {
+          "type": "heading",
+          "text": "Visitas sin aceptaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un límite entre cero y seis. Comprueba `6` con las tres aceptaciones y el resumen anterior; después `3`, cuyo único mensaje debe ser `Cantidad=0;Peso=0`. Se visitan tres pesos, pero ninguno cumple la selección.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int limite{0};\n    std::cin >> limite;\n    int cantidad{0};\n    int suma{0};\n    for (int peso{1}; peso <= limite; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n            ++cantidad;\n            suma += peso;\n        }\n    }\n    std::cout << \"Cantidad=\" << cantidad << \";Peso=\" << suma;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "Aceptada 4\nAceptada 5\nAceptada 6\nCantidad=3;Peso=15",
+                  "Aceptada 4\nAceptada 5\nAceptada 6\nCantidad=3;Peso=15\n"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "Cantidad=0;Peso=0",
+                  "Cantidad=0;Peso=0\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "6"
         }
       ]
     }

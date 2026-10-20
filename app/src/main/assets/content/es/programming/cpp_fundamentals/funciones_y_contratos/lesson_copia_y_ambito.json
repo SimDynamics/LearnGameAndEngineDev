@@ -121,11 +121,23 @@
         },
         {
           "type": "paragraph",
-          "text": "estado está declarado en main con 3. La primera llamada calcula una propuesta; la segunda se usa en una asignación que actualiza estado. Predice ambas líneas antes de ejecutar. Después prueba estado inicial igual a 0 y a 8. Mantén el estado inicial entre 0 y 20. Explica en qué instrucción se cambia realmente el objeto de main."
+          "text": "El estado de `main` comienza en tres. La primera llamada calcula una propuesta; la asignación posterior utiliza una segunda llamada para actualizar el objeto de `main`. El objetivo del editor es mostrar `3 4` y después `4`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. La actualización del objeto se produce en la asignación de `main`, no por recibir una copia como parámetro."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3 4\n4",
+                  "3 4\n4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -140,7 +152,63 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade una segunda instrucción estado = siguiente(estado); antes de la última salida. Predice el nuevo estado final y ejecuta. Cada llamada recibe el estado que existe en ese momento, no necesariamente el de la primera llamada. Después utiliza el control para restaurar el código original."
+          "text": "Las siguientes actividades separan otros valores iniciales y una secuencia con dos actualizaciones explícitas. Cada editor conserva su objetivo; las correcciones del mismo intento pueden reintentarse sin restaurar otro ejercicio."
+        },
+        {
+          "type": "heading",
+          "text": "Otros estados con una actualización"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee un estado entre cero y veinte. Comprueba `0` → primera línea `0 1` y segunda `1`; `8` → `8 9` y `9`. La propuesta conserva el estado anterior hasta la asignación explícita.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado{0};\n    std::cin >> estado;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0 1\n1",
+                  "0 1\n1\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "8 9\n9",
+                  "8 9\n9\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Construir dos actualizaciones explícitas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade en el programa de este editor otra instrucción `estado = siguiente(estado);` antes de la última salida. Conserva el inicio tres y la salida de la propuesta. El objetivo es `3 4` y después `5`, en dos líneas: la segunda actualización recibe el valor que dejó la primera.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3 4\n5",
+                  "3 4\n5\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

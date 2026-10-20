@@ -10,7 +10,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera una prueba completa: datos, expectativa y comparación. Generar datos sólo resuelve la primera parte. Para decidir si el programa responde correctamente necesitas una expectativa obtenida desde el requisito o una propiedad que deba cumplirse. Mirar números distintos en pantalla no sustituye esa comparación."
+          "text": "Recupera una prueba completa: datos, expectativa y comparación. Generar datos sólo resuelve la primera parte. Para decidir si el programa responde correctamente necesitas una expectativa obtenida desde el requisito o una propiedad que deba cumplirse. Mirar números distintos en pantalla no sustituye esa comparación.",
+          "emphasis": [
+            {
+              "text": "expectativa",
+              "occurrence": 1
+            },
+            {
+              "text": "comparación",
+              "occurrence": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -125,11 +135,55 @@
         },
         {
           "type": "paragraph",
-          "text": "Con una implementación correcta ambos totales son cero. Después cambia deliberadamente >= por > en contar_desde. Los casos manuales de igualdad deben detectarlo; no se exige un número concreto de fallos generados. Restaura el requisito y vuelve a ejecutar ambos grupos. La modificación es un error lógico definido, sin acceso inválido."
+          "text": "Con una implementación correcta ambos resúmenes deben ser cero. Pulsa Compilar, ejecutar y comprobar para revisar esta batería completa: stdout debe contener Fallos elegidos:0 y Fallos generados:0 en dos líneas, sin salto final. La detección de un defecto deliberado tiene el editor independiente siguiente; no cambia la versión correcta de esta actividad.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fallos elegidos:0\nFallos generados:0"
+                ],
+                "explanation": "Los casos elegidos comprueban vacío, frontera e igualdad; los ensayos generados contrastan con el conteo complementario. Cero fallos respalda esas comprobaciones y no acredita cobertura completa."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar que las pruebas detectan la frontera omitida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor contiene deliberadamente contar_desde con >. Conserva ese defecto seguro y reconstruye los cuatro verificadores elegidos con sus expectativas originales, sin cambiarlas para aceptar el fallo. stdout debe mostrar únicamente Fallos elegidos:2 y un salto final. Pulsa Compilar, ejecutar y comprobar: el objetivo es detectar los dos desacuerdos de igualdad.\n\nConstruye también los cuarenta ensayos acotados. Presenta sus diferencias, vectores y mínimo en std::cerr, junto con el resumen Fallos generados:N, para inspeccionarlos dentro de la app. No se exige un N concreto entre bibliotecas. La comparación automática de esta actividad revisa las pruebas elegidas; el canal de errores permite investigar las muestras que hayan fallado.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos,int minimo) {\n    int cantidad=0;\n    for(int dato:datos) { if(dato>minimo) { ++cantidad; } }\n    return cantidad;\n}\n\nint main() {\n    // Construye las comparaciones sin reparar el defecto de esta actividad.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fallos elegidos:2\n"
+                ],
+                "explanation": "Las expectativas independientes detectan dos casos de igualdad que la condición defectuosa excluye. La cantidad de diferencias generadas se observa aparte y no se convierte en una respuesta fija entre bibliotecas."
+              }
+            ]
+          }
         }
       ]
     },
@@ -150,7 +204,53 @@
         },
         {
           "type": "paragraph",
-          "text": "No se trata de fabricar un verificador que reconozca sólo cuatro soluciones impresas: las funciones calculan sobre los argumentos y los ensayos agregan combinaciones nuevas. Como ampliación elegida, prueba mínimo cero, mínimo nueve y doce valores iguales. Predice sus expectativas desde la consigna, antes de ejecutar."
+          "text": "La función se comprueba sobre sus argumentos, sin reconocer sólo mensajes impresos. El editor independiente siguiente amplía la batería a mínimos de frontera y valores repetidos. El contraste complementario y los casos elegidos comprueban aspectos distintos del mismo requisito."
+        },
+        {
+          "type": "heading",
+          "text": "Ampliar la batería sin sustituir otra actividad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde este editor reconstruye contar_desde y verificar para cuatro casos: {0,4,9} con mínimo cero espera tres; la misma colección con mínimo nueve espera uno; doce valores cinco con mínimo cinco esperan doce; esos mismos datos con mínimo seis esperan cero. Ejecuta todas las llamadas y muestra Fronteras:N, donde N cuenta los desacuerdos. No añadas salto final. Pulsa Compilar, ejecutar y comprobar: se espera Fronteras:0.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fronteras:0"
+                ],
+                "explanation": "Las fronteras y los valores repetidos se comprueban con expectativas elegidas. Cada aparición que cumple el criterio cuenta una vez."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del defecto controlado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cerr << '[' << dato << ']'; }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las fronteras adicionales"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos=0;\n    if(!verificar({0,4,9},0,3)) { ++fallos; }\n    if(!verificar({0,4,9},9,1)) { ++fallos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(!verificar(iguales,5,12)) { ++fallos; }\n    if(!verificar(iguales,6,0)) { ++fallos; }\n    std::cout<<\"Fronteras:\"<<fallos;\n    return 0;\n}\n"
         }
       ]
     },
@@ -172,11 +272,48 @@
         },
         {
           "type": "paragraph",
-          "text": "Transferencia: elige otra operación pequeña, como seleccionar los elementos que cumplen una condición. Prepara casos manuales de vacío, igualdad, todos y ninguno. Después produce muestras acotadas y comprueba conservación del original, orden y criterio de selección. Guarda los datos de cualquier fallo para convertirlo en un caso fijo de regresión."
+          "text": "Construye seleccionar_desde(const vector<int>& datos,int minimo), que devuelve los valores >= minimo en su orden, conserva repetidos y no modifica datos. Comprueba los cuatro casos manuales del conteo y las fronteras mínimo cero, mínimo nueve y doce valores iguales. Reúne sus diferencias en Fallos elegidos:N.\n\nProduce después cuarenta muestras con los mismos dominios acotados y orden de obtenciones ya practicados. La cantidad seleccionada debe coincidir con esperado_por_descartes; cada valor seleccionado cumple el umbral y el resultado debe ser una subsecuencia del original en el mismo orden. Para comprobar esto, avanza una posición de búsqueda en el original por cada elegido y rechaza si no lo encuentras sin retroceder. Compara además el original con una copia anterior. Muestra Fallos generados:N y Conservacion:B.\n\nPulsa Compilar, ejecutar y comprobar. stdout debe contener Fallos elegidos:0, Fallos generados:0 y Conservacion:1, cada uno terminado con salto. Si aparece una diferencia, presenta datos y mínimo en std::cerr para investigarlos dentro de la app y añádelos a las pruebas fijas al corregir el mismo objetivo. No se exige ninguna muestra aleatoria concreta.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "La combinación de pruebas y ensayos generados se estudia en la fuente principal (Stroustrup, 2024, secciones 4.7.4–4.7.5, pp. 107–110). Las pruebas y el conteo de esta lección son originales. Los ensayos generados complementan fronteras elegidas y no certifican cobertura completa por su cantidad."
+          "text": "Combinar casos elegidos y ensayos generados ayuda a comprobar aspectos distintos del requisito (Stroustrup, 2024, secciones 4.7.4–4.7.5). La cantidad de ensayos no certifica cobertura completa; los datos de una diferencia permiten formular después un caso fijo que la reproduzca."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Fallos elegidos:0\nFallos generados:0\nConservacion:1\n"
+                ],
+                "explanation": "Cantidad, pertenencia, orden y conservación se comprueban por separado. Los casos fijos complementan los ensayos generados sin exigir muestras particulares."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la selección y sus comprobaciones"
+        },
+        {
+          "type": "note",
+          "text": "Consulta después de construir y comprobar el último editor. Las expectativas de salida son propiedades del contrato, no listas aleatorias de otra biblioteca."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos,int minimo) {\n    std::vector<int> resultado;\n    for(int dato:datos) { if(dato>=minimo) { resultado.push_back(dato); } }\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos,int minimo) {\n    int descartados=0;\n    for(int dato:datos) { if(dato<minimo) { ++descartados; } }\n    return static_cast<int>(datos.size())-descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,const std::vector<int>& elegidos,int minimo) {\n    if(static_cast<int>(elegidos.size())!=esperado_por_descartes(datos,minimo)) { return false; }\n    std::size_t posicion=0;\n    for(int elegido:elegidos) {\n        if(elegido<minimo) { return false; }\n        while(posicion<datos.size() && datos.at(posicion)!=elegido) { ++posicion; }\n        if(posicion==datos.size()) { return false; }\n        ++posicion;\n    }\n    return true;\n}\n\nint main() {\n    int fijos=0;\n    if(seleccionar_desde({},4)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({1,2},3)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({4,4},4)!=std::vector<int>{4,4}) { ++fijos; }\n    if(seleccionar_desde({3,4,4,5},4)!=std::vector<int>{4,4,5}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},0)!=std::vector<int>{0,4,9}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},9)!=std::vector<int>{9}) { ++fijos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(seleccionar_desde(iguales,5)!=iguales) { ++fijos; }\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},minimos{0,9},valores{0,9};\n    int fallos=0;\n    bool conservado=true;\n    for(int intento=0;intento<40;++intento) {\n        const int cantidad=tamanos(motor);\n        const int minimo=minimos(motor);\n        std::vector<int> datos;\n        for(int i=0;i<cantidad;++i) { datos.push_back(valores(motor)); }\n        const std::vector<int> original=datos;\n        const std::vector<int> elegidos=seleccionar_desde(datos,minimo);\n        conservado=conservado && datos==original;\n        if(!propiedades(datos,elegidos,minimo)) {\n            ++fallos;\n            std::cerr<<\"Minimo:\"<<minimo<<\";Datos:\";\n            for(int dato:datos) { std::cerr<<'['<<dato<<']'; }\n            std::cerr<<'\\n';\n        }\n    }\n    std::cout<<\"Fallos elegidos:\"<<fijos<<\"\\nFallos generados:\"<<fallos\n             <<\"\\nConservacion:\"<<conservado<<\"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

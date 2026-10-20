@@ -62,6 +62,18 @@
           ],
           "correctIndex": 1,
           "explanation": "La tabla conserva la asociación entre ID y recuento, pero no el orden de llegada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__representar_presencia_y_cambiar_la_organizacion__secuencia_presencia_previa",
+          "question": "Una celda de ID 7 está presente con Recuento{0,0}. ¿Debe aceptar insertar otro ID 7 con Recuento{1,1}?",
+          "options": [
+            "Sí: los ceros indican ausencia.",
+            "No: presente y valor son datos distintos; debe conservar {0,0}.",
+            "Sí, siempre que la nueva cantidad sea distinta de cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El bool de presencia decide si ese ID ya está ocupado. Cero es una cantidad válida y no habilita reemplazar un registro repetido."
         }
       ]
     },
@@ -81,11 +93,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea una tabla ausente. Intenta insertar {7,{0,0}}, después {7,{1,1}} y después {10,{1,1}}. Muestra los tres bool separados por dos puntos. Consulta ID 7 con destino {9,9} y muestra bool:aceptados:rechazados. Reinicia ese destino a {9,9}, consulta ID 3 y muestra la misma forma. Predice las tres líneas antes de ejecutar."
+          "text": "Construye una sola batería. Con tabla ausente de diez celdas, inserta {7,{0,0}}, {7,{1,1}} y {10,{1,1}} y muestra los tres bool separados por dos puntos. Consulta ID 7 y después ID 3, reiniciando el destino en {9,9}; cada consulta muestra bool:aceptados:rechazados. En otra tabla ausente inserta {0,{1,2}} y {9,{10,10}}; intenta además ID -1, ID 10 y cantidades {-1,0} y {0,11} en ID 4. Muestra Fronteras: seguido de esos seis bool separados por dos puntos. Consulta -1 y 10 con destino {9,9}, una línea bool:aceptados:rechazados por consulta. Finalmente crea una tabla de nueve celdas, intenta insertar ID 0 y consultar ID 0 con destino {9,9}, y muestra Tamano:insertado:consultado:aceptados:rechazados. Cada línea termina con salto. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\n// Implementa insertar y consultar antes de main.\nint main() {\n    // Construye la tabla y las pruebas, sin modificar las celdas directamente.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\n// Implementa insertar y consultar antes de main.\nint main() {\n    // Construye la tabla y las pruebas, sin modificar las celdas directamente.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0:0\n1:0:0\n0:9:9\nFronteras:1:1:0:0:0:0\n0:9:9\n0:9:9\nTamano:0:0:9:9\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -110,7 +138,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validar tamaño y dominios antes de indexar, conservar las demás celdas, rechazar repetidos sin reemplazar, mantener independiente la presencia de los valores y consultar sin modificar la tabla. Prueba los ID 0 y 9 válidos, -1 y 10 inválidos, cantidades -1 y 11 y una tabla con nueve celdas. No uses un acceso inválido para comprobar si un ID era permitido."
+          "text": "La batería comprueba antes de indexar tamaño, ID y cantidades. Las inserciones repetidas no reemplazan los ceros presentes; las consultas fallidas conservan el destino. No se provoca un acceso inválido para averiguar si el ID era permitido."
         }
       ]
     },
@@ -126,11 +154,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa primero registros en este orden: {7,{0,0}} y {2,{3,1}}. Recorre luego los ID 0..9 y muestra únicamente los presentes como ID:aceptados:rechazados, una línea por registro. La representación ha cambiado el orden de recorrido, pero debe conservar los valores asociados. Prueba después un duplicado y una colección vacía."
+          "text": "Construye otra batería para la conversión completa: comienza con destino vacío y convierte {{7,{0,0}},{2,{3,1}}}; muestra Conversion:bool y luego cada registro presente recorriendo ID 0..9 como ID:aceptados:rechazados. Sobre el mismo destino intenta convertir {{4,{1,1}},{4,{2,2}}}; debe conservar lo anterior. Intenta después {{1,{11,0}}}; también conserva la tabla. Por último convierte una colección vacía: acepta diez celdas ausentes. Usa esa misma presentación después de las cuatro llamadas, cada línea con salto. Las consultas no cambian la tabla. Usa Compilar, ejecutar y comprobar con la batería completa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\n// Implementa convertir antes de main.\nint main() {\n    // Construye pruebas de conversion y de conservacion ante false.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\n// Implementa convertir antes de main.\nint main() {\n    // Construye pruebas de conversion y de conservacion ante false.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Conversion:1\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -151,7 +195,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida tiene dos líneas: 2:3:1 y 7:0:0. El registro de ID 7 no desaparece por tener ceros. Con colección vacía la conversión acepta diez celdas ausentes. Con dos registros de igual ID devuelve false y conserva toda la tabla anterior: prueba esa condición con un registro previo distinto."
+          "text": "La primera conversión cambia el recorrido a orden de ID y muestra 2:3:1 antes de 7:0:0. El duplicado y el dato inválido devuelven false y conservan ambos registros. La colección vacía devuelve true y reemplaza la tabla por diez celdas ausentes; no imprime registros."
         },
         {
           "type": "paragraph",
@@ -163,7 +207,33 @@
         },
         {
           "type": "note",
-          "text": "La representación y su cambio se estudian en la fuente principal (Stroustrup, 2024, secciones 9.9.1 y 9.9.3, pp. 270–275). Dominio, representación y actividades originales de esta ruta."
+          "text": "La representación en memoria se elige según las consultas que debe permitir, y puede diferir de la forma de los datos recibidos. Si una posición puede carecer de dato, la ausencia necesita una representación que no se confunda con un valor válido (Stroustrup, 2024, sección 9.9.1, pp. 270–271). Aquí la marca de presencia permite conservar recuentos cero; organizar por ID facilita consultar, pero no reconstruye por sí solo el orden de llegada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nint main() {\n    std::vector<Celda> tabla(10, Celda{false, {0, 0}});\n    bool primero = insertar(tabla, Registro{7, {0, 0}});\n    bool repetido = insertar(tabla, Registro{7, {1, 1}});\n    bool fuera = insertar(tabla, Registro{10, {1, 1}});\n    std::cout << primero << ':' << repetido << ':' << fuera << '\\n';\n    Recuento resultado{9, 9};\n    bool encontrado = consultar(tabla, 7, resultado);\n    std::cout << encontrado << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << '\\n';\n    resultado = Recuento{9, 9};\n    bool ausente = consultar(tabla, 3, resultado);\n    std::cout << ausente << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> limites(10, Celda{false, {0, 0}});\n    const bool minimo = insertar(limites, {0, {1, 2}});\n    const bool maximo = insertar(limites, {9, {10, 10}});\n    const bool negativo = insertar(limites, {-1, {1, 1}});\n    const bool diez = insertar(limites, {10, {1, 1}});\n    const bool bajo = insertar(limites, {4, {-1, 0}});\n    const bool alto = insertar(limites, {4, {0, 11}});\n    std::cout << \"Fronteras:\" << minimo << ':' << maximo << ':' << negativo << ':' << diez << ':' << bajo << ':' << alto << \"\\n\";\n    resultado = {9, 9};\n    bool valido = consultar(limites, -1, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    resultado = {9, 9};\n    valido = consultar(limites, 10, resultado);\n    std::cout << valido << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    std::vector<Celda> corta(9, Celda{false, {0, 0}});\n    const bool insertado = insertar(corta, {0, {1, 1}});\n    resultado = {9, 9};\n    const bool consultado = consultar(corta, 0, resultado);\n    std::cout << \"Tamano:\" << insertado << ':' << consultado << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nvoid probar(const std::vector<Registro>& registros, std::vector<Celda>& tabla) {\n    const bool convertido = convertir(registros, tabla);\n    std::cout << \"Conversion:\" << convertido << \"\\n\";\n    for (int id = 0; id < 10; ++id) {\n        Recuento recuento{0, 0};\n        if (consultar(tabla, id, recuento))\n            std::cout << id << ':' << recuento.aceptados << ':' << recuento.rechazados << \"\\n\";\n    }\n}\n\nint main() {\n    std::vector<Celda> tabla;\n    probar({{7, {0, 0}}, {2, {3, 1}}}, tabla);\n    probar({{4, {1, 1}}, {4, {2, 2}}}, tabla);\n    probar({{1, {11, 0}}}, tabla);\n    probar({}, tabla);\n    return 0;\n}\n"
         }
       ]
     }

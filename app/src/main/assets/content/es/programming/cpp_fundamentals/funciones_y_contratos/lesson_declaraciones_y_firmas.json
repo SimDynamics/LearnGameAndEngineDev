@@ -146,11 +146,23 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa declara dias_completos antes de main y lo define después. horas está declarado con 53 y una jornada de práctica tiene 8 horas. Predice el resultado, ejecuta y prueba horas igual a 0, 8 y 16. Mantén horas entre 0 y 120. Después mueve la definición completa a la zona anterior a main y elimina la declaración aislada; comprueba que la misma llamada produce el mismo resultado."
+          "text": "El programa declara `dias_completos` antes de `main` y lo define después. Con cincuenta y tres horas y jornadas de ocho horas, el objetivo es mostrar `6`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Las actividades siguientes separan el cambio de datos de la reorganización del texto de la función."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n"
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6",
+                  "6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -166,6 +178,30 @@
         {
           "type": "note",
           "text": "Puedes organizar el texto mediante declaraciones previas o definiciones anteriores a las llamadas. Una interfaz clara permite leer lo necesario para usar una función sin estudiar todos los detalles de su cuerpo cada vez."
+        },
+        {
+          "type": "heading",
+          "text": "Definir antes de llamar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reorganiza el programa de este editor: mueve la definición completa de `dias_completos` antes de `main` y elimina la declaración aislada que ya queda cubierta por esa definición. Conserva nombre, tipos, cálculo y argumento cincuenta y tres. El objetivo sigue siendo `6`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6",
+                  "6\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -202,7 +238,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora separa el ejemplo de diferencia de la primera página. Selecciona cada archivo y reconoce su responsabilidad: diferencia.h declara la interfaz, diferencia.cpp aporta la definición y main.cpp la utiliza. Predice el resultado de diferencia(9, 2) y ejecuta el proyecto con ambos .cpp seleccionados. La cabecera se incluye desde las fuentes; no se selecciona como un tercer archivo fuente. Debes observar 7."
+          "text": "Este proyecto separa la interfaz en `diferencia.h`, la definición en `diferencia.cpp` y el cliente en `main.cpp`. Conserva ambos `.cpp` seleccionados; la cabecera se incluye desde las fuentes y no se compila como una tercera fuente.\n\nPulsa «Compilar, ejecutar y comprobar». La llamada `diferencia(9, 2)` debe producir `7`, con salto final opcional. Seleccionar pestañas permite leer cada responsabilidad sin modificar este objetivo."
         },
         {
           "type": "cpp_compiler",
@@ -224,19 +260,31 @@
           "sourceFiles": [
             "diferencia.cpp",
             "main.cpp"
-          ]
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7",
+                  "7\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Modifica sólo el cuerpo en diferencia.cpp: cambia la resta por suma, sin tocar la interfaz ni la llamada. Predice y comprueba 11. Cambia de archivo y vuelve a la implementación: tu edición debe conservarse. Ejecutar otra vez debe usar el cuerpo actual. Restablece la resta para las siguientes pruebas."
+          "text": "Cambiar la operación del cuerpo es otra actividad. El primer editor conserva la resta; la recuperación de cambio de cuerpo utiliza un proyecto independiente para pasar a suma sin tocar la interfaz ni la llamada."
         },
         {
           "type": "paragraph",
-          "text": "Haz una modificación por prueba y restáurala después. Primero deja seleccionada sólo main.cpp: la cabecera sigue visible y la llamada puede compilar, pero el enlace falla porque falta la definición aportada por diferencia.cpp. Recupera las dos fuentes. Después cambia sólo el tipo de resultado de la definición a double, conservando int en diferencia.h: como la implementación incluye la interfaz, el compilador diagnostica esa incoherencia en diferencia.cpp. No se llega a ejecutar un resultado válido."
+          "text": "Las actividades de diagnóstico siguientes también son independientes: una omite la definición durante el enlace, otra conserva una definición incompatible con la cabecera y otra intenta incluir un archivo ausente. En cada caso, observa la primera etapa que falla. No se trata de una salida incorrecta del programa: la construcción no llegó a ejecutarse."
         },
         {
           "type": "paragraph",
-          "text": "Añade otra vez #include \"diferencia.h\" en main.cpp y ejecuta con la resta restaurada: la guarda evita repetir su contenido dentro de esa fuente y el resultado sigue siendo 7. Para contrastar un fallo anterior al enlace, cambia temporalmente el nombre de la cabecera en un #include: la lectura de ese archivo falla durante la compilación. Relaciona cada diagnóstico con su archivo, línea y etapa; una declaración visible no garantiza una definición enlazada."
+          "text": "Una inclusión repetida de una cabecera protegida y una cabecera ausente son situaciones diferentes. La guarda actúa dentro del procesamiento de cada fuente; no proporciona definiciones que no se enlazaron. Cada proyecto posterior conserva únicamente el cambio que se pretende observar."
         },
         {
           "type": "note",
@@ -264,11 +312,22 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las declaraciones, las llamadas y las definiciones.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las declaraciones, las llamadas y las definiciones.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas: 1\nMetros: 1.75\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, prepara los resultados para 0 piezas y 0.0 metros; 3 y 3.0; 4 y 4.0; 20 y 20.0. Comprueba también 0.5 metros y una sola pieza. Para cada llamada anota tipo del argumento, función prevista y parte esperada. Explica por qué un reparto puede dejar piezas sobrantes y el otro conserva una fracción. Mantén los datos dentro del dominio: estas funciones no son validadores de entradas arbitrarias."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para los datos del intento. Cada línea termina con salto. El programa posterior comprueba otros argumentos de tipos exactos sin cambiar las dos funciones: la cantidad de piezas sigue siendo `int` y la longitud, `double`."
         },
         {
           "type": "note",
@@ -302,6 +361,54 @@
         {
           "type": "paragraph",
           "text": "La división entera usa cantidades no negativas pequeñas y un divisor distinto de cero. En las medidas elegidas, dividir por cuatro conserva fracciones representables exactamente en double; estos casos no afirman que toda medida decimal sea exacta. Los argumentos del llamador conservan su valor. Cambiar los datos de prueba no cambia la regla de cuatro personas."
+        },
+        {
+          "type": "heading",
+          "text": "Los dos repartos para cuatro personas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee piezas enteras y metros, con los dominios ya definidos. Comprueba `0 0.0`, `3 3.0`, `4 4.0`, `20 20.0` y `1 0.5`. Las piezas conservan división entera y la medida conserva su fracción; cada línea debe terminar con salto.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa y cambia sólo Entrada para cada caso. Conserva el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    int piezas{0};\n    double metros{0.0};\n    std::cin >> piezas >> metros;\n    std::cout << \"Piezas: \" << por_persona(piezas) << '\\n';\n    std::cout << \"Metros: \" << por_persona(metros) << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 0.0",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0\n"
+                ]
+              },
+              {
+                "standardInput": "3 3.0",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0.75\n"
+                ]
+              },
+              {
+                "standardInput": "4 4.0",
+                "outputs": [
+                  "Piezas: 1\nMetros: 1\n"
+                ]
+              },
+              {
+                "standardInput": "20 20.0",
+                "outputs": [
+                  "Piezas: 5\nMetros: 5\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.5",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0.125\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 0.0"
         }
       ]
     },
@@ -340,7 +447,40 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve a tu programa con siete piezas: conserva int el argumento y cambia sólo a double el objeto que recibe su resultado. Predice antes de ejecutar qué se conserva. Después crea otra llamada con una medida double de 7.0. Anota por separado argumento, parámetro, resultado de la función y tipo del receptor; no cambies ambos pasos a la vez."
+          "text": "El editor siguiente separa los tipos de los argumentos de los tipos de los objetos receptores. Las dos llamadas pertenecen a un mismo programa: ambas guardan su resultado en `double`, pero una recibe un argumento `int` y la otra, un argumento `double`. No es necesario volver al editor de otra actividad."
+        },
+        {
+          "type": "heading",
+          "text": "Argumentos diferentes con receptores del mismo tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva las dos funciones de reparto para cuatro personas que entrega este editor y construye sus llamadas. Declara siete piezas en un objeto `int` y siete metros en un objeto `double`; entrega cada objeto a `por_persona`. Guarda ambos resultados en objetos `double` y presenta `Piezas: 1` y `Metros: 1.75` en dos líneas. Los números deben proceder de las llamadas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. El objetivo es contrastar qué se calcula antes de inicializar cada receptor."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    // Construye los argumentos, las dos llamadas y sus receptores double.\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas: 1\nMetros: 1.75",
+                  "Piezas: 1\nMetros: 1.75\n"
+                ],
+                "explanation": "Los receptores son double, pero la llamada con piezas conserva el reparto entero de su argumento int. La llamada con metros conserva la fracción de su argumento double. El tipo del receptor no elige otra sobrecarga.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Piezas: 1\nMetros: 1",
+                      "Piezas: 1\nMetros: 1\n"
+                    ],
+                    "text": "Revisa el tipo del argumento de la segunda llamada y el cálculo que realiza su función. Guardar un cociente entero en double no recupera una fracción ya descartada."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -360,11 +500,22 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las interfaces, los dos repartos y sus pruebas.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las interfaces, los dos repartos y sus pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas: 1\nMetros: 1.375\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Diseña y predice los pares 0 y 0.0; 7 y 7.0; 8 y 8.0; 20 y 20.0. Añade una pieza y 0.5 metros. Para distinguir esta versión de la anterior, conserva al menos un caso cuya parte cambie al pasar de cuatro a ocho personas. Comprueba también que los argumentos mantienen su valor después de llamar."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el intento con once piezas y once metros; termina cada línea con salto. Los otros datos se comprueban después en un editor propio sin alternar las reglas de cuatro y ocho personas."
         },
         {
           "type": "paragraph",
@@ -412,7 +563,308 @@
         },
         {
           "type": "paragraph",
-          "text": "Recuperación posterior: sin consultar los cuerpos, explica qué parte comunica cómo se llama, cuál realiza el reparto y por qué la elección sigue el tipo del argumento. Reconstruye una de las versiones desde el editor mínimo y elige datos distintos que separen resultado coincidente de reparto con fracción. Comprueba primero lo esperado desde el problema y después compáralo con tu programa."
+          "text": "La actividad siguiente recupera desde el esqueleto las dos interfaces y sus cuerpos para ocho personas. Los campos de Entrada permiten variar los argumentos conservando el programa; los tipos de esos argumentos deciden qué función se llama. Los resultados visibles no determinan por sí solos los tipos de los objetos."
+        },
+        {
+          "type": "heading",
+          "text": "Conservar la regla de ocho personas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye desde el esqueleto las dos declaraciones de `por_persona`, sus definiciones para ocho personas y un cliente que lea piezas como `int` y metros como `double`. Guarda ambos resultados en objetos `double`, conserva los argumentos y presenta `Piezas: R` y `Metros: R` en dos líneas, cada una terminada con salto.\n\nComprueba `0 0.0`, `7 7.0`, `8 8.0`, `20 20.0` y `1 0.5`. Los objetivos están en la comparación de esta página: las piezas conservan unidades completas y los metros pueden conservar una fracción. Pulsa «Compilar, ejecutar y comprobar» sin cambiar la regla entre entradas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las interfaces, los dos repartos y sus pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 0.0",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0\n"
+                ]
+              },
+              {
+                "standardInput": "7 7.0",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0.875\n"
+                ]
+              },
+              {
+                "standardInput": "8 8.0",
+                "outputs": [
+                  "Piezas: 1\nMetros: 1\n"
+                ]
+              },
+              {
+                "standardInput": "20 20.0",
+                "outputs": [
+                  "Piezas: 2\nMetros: 2.5\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.5",
+                "outputs": [
+                  "Piezas: 0\nMetros: 0.0625\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 0.0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La misma interfaz con distintas horas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee horas entre cero y ciento veinte. Comprueba `0` → `0`, `8` → `1` y `16` → `2`. La declaración y el cálculo se conservan entre entradas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa y cambia sólo Entrada para cada caso. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    int horas{0};\n    std::cin >> horas;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0",
+                  "0\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "1",
+                  "1\n"
+                ]
+              },
+              {
+                "standardInput": "16",
+                "outputs": [
+                  "2",
+                  "2\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar el cuerpo conservando la interfaz"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este proyecto, cambia sólo la resta de `diferencia.cpp` por suma. Conserva el nombre, los tipos, la cabecera y la llamada. Pulsa «Compilar, ejecutar y comprobar»: debe producir `11`, con salto final opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "11",
+                  "11\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar una definición que no se enlazó"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto conserva los tres archivos, pero sólo selecciona `main.cpp` como fuente. Pulsa «Compilar y ejecutar». El objetivo es observar que el cliente reconoce la declaración y que el enlace no encuentra la definición de `diferencia`. No hay una nueva salida evaluable. Responde después el puzzle sobre la etapa y la causa."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__definicion_ausente_durante_el_enlace",
+          "question": "El cliente incluye diferencia.h y compila, pero sólo se seleccionó main.cpp. ¿Qué responsabilidad falta al construir el programa?",
+          "options": [
+            "El enlace necesita la definición de diferencia.cpp, que no se reunió con el cliente.",
+            "El cliente necesita copiar todo el cuerpo dentro de la llamada.",
+            "La cabecera debe seleccionarse como si fuera una tercera fuente."
+          ],
+          "correctIndex": 0,
+          "explanation": "La declaración permite comprobar la llamada, pero la definición debe reunirse al enlazar. Seleccionar diferencia.cpp aporta ese cuerpo sin convertir la cabecera en una fuente.",
+          "reviewFeedback": [
+            "Separa lo que comunica una declaración de lo que aporta una definición.",
+            "Una llamada utiliza una interfaz; no contiene una copia textual del cuerpo.",
+            "Una cabecera incluida no sustituye la definición de la implementación."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar una definición incompatible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto conserva `int` en la cabecera y define la misma función con resultado `double` en la implementación, que incluye esa cabecera. Pulsa «Compilar y ejecutar». El objetivo es observar el diagnóstico de compilación de `diferencia.cpp`, antes de cualquier ejecución; no se comprueba stdout."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\ndouble diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar una inclusión repetida protegida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto incluye dos veces `diferencia.h` desde el cliente. Conserva la guarda y ambos `.cpp`. Pulsa «Compilar, ejecutar y comprobar»: el objetivo sigue siendo `7`, con salto final opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7",
+                  "7\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar una cabecera ausente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto pide una cabecera que no está entre sus archivos. Pulsa «Compilar y ejecutar». El objetivo es observar el fallo de inclusión durante la compilación de `main.cpp`; todavía no se alcanza el enlace ni hay stdout nuevo que comprobar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia_ausente.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia_ausente.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ]
         }
       ]
     }

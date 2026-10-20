@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vamos a integrar la unidad en dos tareas distintas. En ambas, comienza por decidir qué representa cada dato, qué resúmenes existen en vacío y qué orden debes conservar. Después elige entre recorrido por valor, referencia e índice. Una salida correcta para un ejemplo no sustituye explicar esas decisiones ni comprobar otros casos."
+          "text": "Integra la unidad en dos tareas distintas. En cada una, identifica el significado de los datos, qué resúmenes existen en vacío y qué orden debe conservarse. Los puzzles de la lección y las comprobaciones de sus construcciones permiten contrastar esas decisiones. Una salida de un solo caso no comprueba todas las fronteras."
         },
         {
           "type": "paragraph",
@@ -60,15 +60,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe el programa completo desde la especificación, sin consultar la solución posterior. Comprueba {2, 8, 3, 3}, {}, {0}, {5}, {1, 2} y {6, 6, 6}. Para cada caso escribe de antemano N, total, existencia de resúmenes, posiciones centrales y orden original. Conserva los valores acotados para que la suma entera quede dentro de un rango pequeño."
+          "text": "Construye el informe numérico desde la especificación con `{2, 8, 3, 3}`, sin consultar la solución posterior. Debe conservar el orden de sesión y mostrar las tres líneas definidas antes: tamaño y total; extremos, media y mediana; orden original.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Los valores acotados mantienen la suma entera dentro de un rango pequeño."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "N=4 Total=16\nMin=2 Max=8 Media=4 Mediana=3\nOrden:2;8;3;3;",
+                  "N=4 Total=16\nMin=2 Max=8 Media=4 Mediana=3\nOrden:2;8;3;3;\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como variante, aumenta en uno los elementos del vector mediante auto& antes de calcular el informe. Predice qué resúmenes cambian y verifica que el orden de sesión permanece. Para recuperar el estado anterior, realiza una copia antes de la transformación y presenta ambas versiones."
+          "text": "La transformación del vector antes de informar es otro objetivo. Después del intento y la referencia tendrás un editor propio para conservar una copia, aumentar mediante `auto&` y comparar ambos estados sin sobrescribir esta construcción."
         }
       ]
     },
@@ -90,6 +102,59 @@
         {
           "type": "paragraph",
           "text": "Criterios del informe numérico: obtener tamaño y total para cualquier colección; calcular extremos, media y mediana sólo cuando existen datos; conservar el orden original; respetar la convención de centro par y el formato solicitado. No se exige que todas las líneas de tu implementación coincidan con la referencia."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 0 para {0}\n• 1 5 para {5}\n• 2 1 2 para {1, 2}\n• 3 6 6 6 para {6, 6, 6}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    int total = 0;\n    for (int valor : datos) { total += valor; }\n    std::cout << \"N=\" << datos.size() << \" Total=\" << total << \"\\n\";\n    if (datos.empty()) {\n        std::cout << \"Sin sesiones\\n\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        double media = static_cast<double>(total) / static_cast<double>(datos.size());\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Min=\" << menor << \" Max=\" << mayor << \" Media=\" << media << \" Mediana=\" << mediana << \"\\n\";\n    }\n    std::cout << \"Orden:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "N=0 Total=0\nSin sesiones\nOrden:",
+                  "N=0 Total=0\nSin sesiones\nOrden:\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "N=1 Total=0\nMin=0 Max=0 Media=0 Mediana=0\nOrden:0;",
+                  "N=1 Total=0\nMin=0 Max=0 Media=0 Mediana=0\nOrden:0;\n"
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "N=1 Total=5\nMin=5 Max=5 Media=5 Mediana=5\nOrden:5;",
+                  "N=1 Total=5\nMin=5 Max=5 Media=5 Mediana=5\nOrden:5;\n"
+                ]
+              },
+              {
+                "standardInput": "2 1 2",
+                "outputs": [
+                  "N=2 Total=3\nMin=1 Max=2 Media=1.5 Mediana=1.5\nOrden:1;2;",
+                  "N=2 Total=3\nMin=1 Max=2 Media=1.5 Mediana=1.5\nOrden:1;2;\n"
+                ]
+              },
+              {
+                "standardInput": "3 6 6 6",
+                "outputs": [
+                  "N=3 Total=18\nMin=6 Max=6 Media=6 Mediana=6\nOrden:6;6;6;",
+                  "N=3 Total=18\nMin=6 Max=6 Media=6 Mediana=6\nOrden:6;6;6;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -167,15 +232,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye el catálogo sin huecos y verifica los tres casos especificados. Añade {\"sala\"}, {\"Taller\", \"taller\"} y {\"taller\", \"patio\", \"taller\"}. Explica cuáles son las diferencias frente al proyecto de asistentes: no tiene sentido sumar etiquetas, pero sí buscar por igualdad, conservar orden y contar valores distintos."
+          "text": "Construye desde el esqueleto el catálogo con `{\"patio\", \"taller\", \"patio\", \"sala\"}`. Debe encontrar la primera posición de `taller` y contar etiquetas distintas sin modificar el orden original. El objetivo es `Primera:1` y `Distintas:3` en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Aquí no se suman etiquetas: se comparan por igualdad y se cuentan valores distintos."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Primera:1\nDistintas:3",
+                  "Primera:1\nDistintas:3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como variante, selecciona las etiquetas iguales a \"patio\" en otro vector, preservando su orden. No añadas al vector que estás recorriendo. Comprueba un caso sin coincidencias y uno con varias."
+          "text": "Seleccionar sólo las etiquetas iguales a `patio` es otra tarea. Tendrá su editor propio después de los casos del catálogo. No añadas elementos al mismo vector que estás recorriendo."
         }
       ]
     },
@@ -197,6 +274,66 @@
         {
           "type": "paragraph",
           "text": "Criterios del catálogo: buscar en la secuencia original con igualdad exacta, informar la primera posición o ausencia y contar etiquetas distintas mediante la copia ordenada; conservar la cantidad de observaciones y proteger todos los accesos a vecinos."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de etiquetas de una palabra. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Para representar una etiqueta vacía en Entrada se utiliza `~`; el bucle la sustituye por `\"\"` antes de añadirla. Esa marca pertenece sólo al formato de prueba y no a la colección. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 2 patio sala para {'patio', 'sala'}\n• 1 sala para {'sala'}\n• 2 Taller taller para {'Taller', 'taller'}\n• 3 taller patio taller para {'taller', 'patio', 'taller'}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> etiquetas;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        etiquetas.push_back(dato);\n    }\n    std::size_t posicion = etiquetas.size();\n    for (std::size_t i = 0; i < etiquetas.size() && posicion == etiquetas.size(); ++i) {\n        if (etiquetas[i] == \"taller\") { posicion = i; }\n    }\n    if (posicion < etiquetas.size()) { std::cout << \"Primera:\" << posicion; }\n    else { std::cout << \"No encontrado\"; }\n    auto ordenadas = etiquetas;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    int distintas = 0;\n    for (std::size_t i = 0; i < ordenadas.size(); ++i) {\n        if (i == 0 || ordenadas[i] != ordenadas[i - 1]) { ++distintas; }\n    }\n    std::cout << \"\\nDistintas:\" << distintas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "No encontrado\nDistintas:0",
+                  "No encontrado\nDistintas:0\n"
+                ]
+              },
+              {
+                "standardInput": "2 patio sala",
+                "outputs": [
+                  "No encontrado\nDistintas:2",
+                  "No encontrado\nDistintas:2\n"
+                ]
+              },
+              {
+                "standardInput": "1 sala",
+                "outputs": [
+                  "No encontrado\nDistintas:1",
+                  "No encontrado\nDistintas:1\n"
+                ]
+              },
+              {
+                "standardInput": "2 Taller taller",
+                "outputs": [
+                  "Primera:1\nDistintas:2",
+                  "Primera:1\nDistintas:2\n"
+                ]
+              },
+              {
+                "standardInput": "3 taller patio taller",
+                "outputs": [
+                  "Primera:0\nDistintas:2",
+                  "Primera:0\nDistintas:2\n"
+                ]
+              },
+              {
+                "standardInput": "2 taller taller",
+                "outputs": [
+                  "Primera:0\nDistintas:1",
+                  "Primera:0\nDistintas:1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -248,11 +385,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En una sesión posterior, vuelve a los editores de código de las páginas 3 y 7 y recupera ambos proyectos sin consultar las soluciones. Utiliza las consignas ya desarrolladas con datos nuevos: hasta veinte enteros entre cero y cincuenta para el informe numérico y hasta veinte etiquetas para el catálogo. Incluye una colección vacía y otra con repeticiones en cada proyecto. Ejecuta y compara las líneas de la consola con sus criterios: resúmenes y orden de sesión en el primero; primera posición o ausencia y cantidad de etiquetas distintas en el segundo. Comprueba que las transformaciones mediante auto& cambian el original cuando corresponde y que ordenar una copia conserva el orden de llegada."
+          "text": "Las dos actividades siguientes recuperan objetivos diferentes sin regresar a los editores anteriores: transformar cantidades conservando su estado previo y seleccionar etiquetas en otro vector. Los datos de prueba se reciben mediante Entrada; el procedimiento debe conservarse entre casos. El vacío y las repeticiones siguen siendo condiciones relevantes."
         },
         {
           "type": "note",
-          "text": "Estos proyectos usan valores definidos en el código para repetir y contrastar casos concretos. El editor de código también admite entrada preparada y conserva su borrador de código y entrada al reabrir. Para volver al código de partida, utiliza el control para restaurar el código original. Todos estos proyectos terminan y acceden únicamente a posiciones existentes."
+          "text": "Los dos proyectos conservan el orden de llegada mientras calculan otros resultados. El recorrido por referencia puede modificar los elementos; ordenar una copia conserva el original. Las actividades siguientes permiten comprobar ambas decisiones sin sustituir las construcciones anteriores."
         },
         {
           "type": "multiple_choice",
@@ -281,6 +418,77 @@
             "Revisa por separado qué condición necesita el divisor y qué valores de i corresponden a posiciones de la colección.",
             "Distingue la cantidad de elementos de la última posición. Aplica tu límite a una colección de dos elementos y revisa el acceso con i igual a dos."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Transformar y conservar el estado previo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto la lectura de cantidad y enteros, guarda una copia anterior y aumenta cada elemento en uno mediante `auto&` antes de calcular el informe. Conserva tamaño y orden. Muestra las tres líneas del informe numérico —tamaño y total; extremos, media y mediana; orden actual— y añade una cuarta línea `Antes:` con la copia previa, cada valor seguido de punto y coma.\n\nCon `4 2 8 3 3`, el informe tiene total veinte, mínimo tres, máximo nueve, media cinco y mediana cuatro; el orden actual es `3;9;4;4;` y el anterior `2;8;3;3;`. Con `0`, los conteos son cero, se muestra `Sin sesiones` y ambas listas quedan vacías. Pulsa «Compilar, ejecutar y comprobar» sin cambiar el programa entre esas entradas; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 2 8 3 3",
+                "outputs": [
+                  "N=4 Total=20\nMin=3 Max=9 Media=5 Mediana=4\nOrden:3;9;4;4;\nAntes:2;8;3;3;",
+                  "N=4 Total=20\nMin=3 Max=9 Media=5 Mediana=4\nOrden:3;9;4;4;\nAntes:2;8;3;3;\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "N=0 Total=0\nSin sesiones\nOrden:\nAntes:",
+                  "N=0 Total=0\nSin sesiones\nOrden:\nAntes:\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 2 8 3 3"
+        },
+        {
+          "type": "heading",
+          "text": "Seleccionar sin modificar la colección recorrida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto la lectura de cantidad y etiquetas y selecciona en otro vector sólo las iguales a `patio`. Presenta `Elegidas:` y cada etiqueta entre corchetes, conservando su orden. Comprueba `3 patio sala patio` → `Elegidas:[patio][patio]`; `1 sala` y `0` → `Elegidas:`. No añadas al vector que se está recorriendo.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 patio sala patio",
+                "outputs": [
+                  "Elegidas:[patio][patio]",
+                  "Elegidas:[patio][patio]\n"
+                ]
+              },
+              {
+                "standardInput": "1 sala",
+                "outputs": [
+                  "Elegidas:",
+                  "Elegidas:\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Elegidas:",
+                  "Elegidas:\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3 patio sala patio"
         }
       ]
     }

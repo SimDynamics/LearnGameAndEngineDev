@@ -554,7 +554,7 @@ def without_review_feedback(block):
 def validate_math_puzzle_contract(block, where):
     """Check the shared composition used in C++; Android remains the math evaluator.
 
-    These are the three response families currently authored in this course.
+    Only explicitly checked response families are accepted in this course.
     Additional families require extending this checker and their own native QA;
     recognizing math_puzzle must not silently accept arbitrary nested answers.
     """
@@ -598,12 +598,8 @@ def validate_math_puzzle_contract(block, where):
         if not isinstance(validator, dict):
             continue
         validate_math_tolerance(validator, where)
-        if kind == "math_multiple_choice_single":
-            option_ids = math_item_ids(response.get("options"), where, "options")
-            expected = validator.get("expected")
-            require(validator.get("type") == "choice" and isinstance(expected, list)
-                    and len(expected) == 1 and isinstance(expected[0], str) and expected[0] in option_ids,
-                    where, "selección única requiere una opción correcta existente")
+        if kind in ("math_multiple_choice_single", "math_multiple_choice_multi"):
+            validate_math_choice_contract(response, where)
         elif kind == "math_matching_drag":
             sources = math_item_ids(response.get("sources"), where, "sources")
             targets = math_item_ids(response.get("targets"), where, "targets")
@@ -658,6 +654,33 @@ def validate_math_puzzle_contract(block, where):
                         require(isinstance(answer, str) and answer in choices, where, "respuesta dropdown no existe")
         else:
             require(False, where, f"tipo de respuesta matemática no comprobado: {kind}")
+
+
+def validate_math_choice_contract(response, where):
+    """Match native choice IDs and cardinality without guessing any answers.
+
+    MathValidators.stringList rejects non-text, blank and duplicate expected IDs;
+    MathPuzzleParser requires those IDs to exist and limits only single choice to
+    one. Multi choice therefore allows one, several or all declared options.
+    """
+    options = response.get("options")
+    option_ids = math_item_ids(options, where, "options")
+    if isinstance(options, list):
+        for option in options:
+            if isinstance(option, dict) and "reviewFeedback" in option:
+                review = option["reviewFeedback"]
+                require(isinstance(review, str) and bool(review.strip()), where,
+                        "reviewFeedback de opción requiere texto no vacío")
+    validator = response["validator"]
+    expected = validator.get("expected")
+    valid_ids = (isinstance(expected, list) and bool(expected)
+                 and all(isinstance(value, str) and bool(value.strip()) for value in expected))
+    require(validator.get("type") == "choice" and valid_ids
+            and len(set(expected)) == len(expected) and all(value in option_ids for value in expected),
+            where, "selección requiere opciones correctas existentes, no vacías ni repetidas")
+    if response.get("type") == "math_multiple_choice_single":
+        require(valid_ids and len(expected) == 1, where,
+                "selección única requiere exactamente una opción correcta")
 
 
 def math_item_ids(values, where, name):
@@ -962,9 +985,35 @@ def validate_cmake(config, where):
                 where, "valor de opción CMake debe ser texto sin controles, hasta 4096 unidades UTF-16")
 
 
+# Correcciones de recorrido revisadas contra dd6787d. Sólo cambian las
+# instrucciones de navegación; conservan código, respuestas y posición.
+SEQUENCE_EDITORIAL_REVISIONS = {
+    ('texto_interpretacion_y_flujos/lesson_comparar_lecturas_con_la_anterior.json', 5, 5, 'output_prediction', 'question'): ('db190e8e9342ec467defcf9183c2a538f3b14b735847c6a6244286dc0cef8885', '95088c79fc6a905cd70ad8c13c062969064c32098d5115aea368cc2c4488471e'),
+    ('funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json', 7, 2, 'output_prediction', 'question'): ('af98f6fc02c3aa4db2b2137d5ea5c54d59e711fe9271c2a8edc2877109fcbb66', 'e42d814afe1c9984ecdd50a435cc33ab2e2a1bb2709cb2826148e97f7f2b50ea'),
+    ('funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json', 11, 2, 'output_prediction', 'question'): ('3df63566bcee3902219b6128819d624e79af14436c01530b3b403ffcdb6678e0', 'd9ae7a16ab87332db2709232cbbfae584b3b2a1d075da24eeac2feeb6ef8051a'),
+    ('objetos_y_estado/lesson_cadenas_y_texto.json', 8, 6, 'output_prediction', 'question'): ('ffd2567e4d964854df7fe1cda0bed34a2cc6179a4a6c9b3b58a52cafe26be492', '3094cccef7d145a3b6005f88c790ada0fbbd5f79f7a6df7f14c6e5ea4d28d62b'),
+    ('objetos_y_estado/lesson_enteros_y_aproximaciones.json', 8, 6, 'output_prediction', 'question'): ('7322b70b9362e5e4c98c4046b45aafba681ee27792e6697955559ea4a80e68c7', 'cb57217b66e47ab26d44f2054bda9c44eec1340f9f402a9ab377d16a4299d890'),
+    ('objetos_y_estado/lesson_representar_procesar_y_recuperar.json', 9, 4, 'output_prediction', 'question'): ('936e0b42f3571984e0c8273a5479bde496ca2df302bc9c6c5d8cb6ec60955bfa', 'f41a56d2ec85672ad01b19976c28ff8125660e7f5ebe2272395e10fc0b0787d3'),
+    ('programas_y_ejecucion/lesson_primer_programa_y_salida.json', 5, 4, 'output_prediction', 'explanation'): ('2406d5a896fb0e0e871515a0456c6dc4762a02a78b26905184384763e5e35fd1', '8397553636b05c72a59949a90221785f4f29315bc2222e72e1e7329d9bb3bd33'),
+}
+
+
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
     base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
+    if (relative, pn, bn) == (
+        'app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json', 4, 2
+    ) and 'outputCheck' in old and 'outputCheck' in current:
+        # La guía de Zona segura ya no remite a una «segunda modificación».
+        # Contrato completo exacto: no licencia cambios de entrada ni salida.
+        def digest_contract(value):
+            return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                             separators=(',', ':')).encode('utf-8')).hexdigest()
+        if (digest_contract(old['outputCheck']), digest_contract(current['outputCheck'])) == (
+            'b4aecf68cd24b98e11a063ab4522d1bc72e026122b15718938cf33a9f0cda20d',
+            'fa139154bb8c6ed05b663b3da212137c1d42302c7a6ac4e664e74802689ccb7f'
+        ):
+            base = dict(base, outputCheck=old['outputCheck'])
     if relative == STDIN_LESSON and (pn, bn) == (6, 2):
         # Única sustitución autorizada: p7 b3 pasa del esqueleto a p8 b2 existente.
         expected = dict(old)
@@ -986,13 +1035,14 @@ def restore_approved_editorial_fields(location, old, current):
     """
     result = current
     for field in ("question", "explanation"):
-        transition = APPROVED_EDITORIAL_REVISIONS.get(location + (old.get("type"), field))
+        key = location + (old.get("type"), field)
+        transitions = (APPROVED_EDITORIAL_REVISIONS.get(key), SEQUENCE_EDITORIAL_REVISIONS.get(key))
         before, after = old.get(field), current.get(field)
-        if transition is None or not isinstance(before, str) or not isinstance(after, str):
+        if not isinstance(before, str) or not isinstance(after, str):
             continue
         digests = (hashlib.sha256(before.encode("utf-8")).hexdigest(),
                    hashlib.sha256(after.encode("utf-8")).hexdigest())
-        if digests == transition:
+        if digests in transitions:
             result = dict(result, **{field: before})
     return result
 

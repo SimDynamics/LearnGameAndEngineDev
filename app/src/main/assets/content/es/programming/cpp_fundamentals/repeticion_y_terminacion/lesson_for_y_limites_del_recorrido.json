@@ -244,11 +244,47 @@
         },
         {
           "type": "paragraph",
-          "text": "La predicción del contador externo de la página anterior registra los valores recorridos y el estado al terminar para el mismo intervalo que acabas de completar. Usa esa comparación al construir en el editor un for y un while que muestren 2,3,4. Conserva el inicio, la condición, el avance y el orden de las acciones; compara ambas consolas con los valores pedidos y contrasta la condición de salida con la predicción ya resuelta."
+          "text": "El relleno acaba de construir el intervalo dos, tres y cuatro. Modifica el `for` de este editor para visitar esos mismos valores; conserva el formato `Puesto N`, una línea por puesto.\n\nPulsa «Compilar, ejecutar y comprobar». Deben aparecer `Puesto 2`, `Puesto 3` y `Puesto 4` en tres líneas, con salto final opcional. La condición falsa comprueba cinco sin mostrarlo."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 4; ++i) {\n        std::cout << \"Puesto \" << i << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 4; ++i) {\n        std::cout << \"Puesto \" << i << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto 2\nPuesto 3\nPuesto 4",
+                  "Puesto 2\nPuesto 3\nPuesto 4\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Conservar el recorrido al usar while"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor, transforma el `for` que visita dos, tres y cuatro en un `while`. Conserva la inicialización antes de la comprobación y el avance después de mostrar el puesto. La consola debe conservar las tres líneas `Puesto 2`, `Puesto 3` y `Puesto 4`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int i{2}; i < 5; ++i) {\n        std::cout << \"Puesto \" << i << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto 2\nPuesto 3\nPuesto 4",
+                  "Puesto 2\nPuesto 3\nPuesto 4\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -272,7 +308,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrasta después de convertir el recorrido. Criterios: mostrar Puesto 1 hasta Puesto 4, una línea por puesto y sin una visita a 0 o 5. En while debes conservar explícitamente la inicialización, la comprobación antes del cuerpo y el avance después de la salida."
+          "text": "La referencia siguiente usa los puestos uno a cuatro para mostrar otra ejecución de la misma transformación. En el intento anterior se pidieron dos a cuatro. En ambos casos, el `while` debe conservar la inicialización, la comprobación antes del cuerpo y el avance después de la salida."
         },
         {
           "type": "code",

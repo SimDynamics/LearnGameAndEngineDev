@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un contador de cero a cinco puede empezar en cero cuando no se proporciona un valor. Ese valor representa una situación válida y concreta. Nuestro Pedido necesita un código no vacío y una cantidad: no hay un código que podamos inventar para satisfacer cualquier solicitud. La posibilidad de construir sin argumentos es una decisión de la interfaz, no una obligación de todas las clases (Stroustrup, 2024, sección 8.7.3)."
+          "text": "Un contador de cero a cinco puede empezar en cero cuando no se proporciona un valor. Ese valor representa una situación válida y concreta. Nuestro Pedido necesita un código no vacío y una cantidad: no hay un código que podamos inventar para satisfacer cualquier solicitud. La posibilidad de construir sin argumentos es una decisión de la interfaz, no una obligación de todas las clases (Stroustrup, 2024, sección 8.7.3).",
+          "emphasis": [
+            {
+              "text": "construir sin argumentos"
+            },
+            {
+              "text": "decisión de la interfaz"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -164,15 +172,44 @@
         },
         {
           "type": "paragraph",
-          "text": "Diseña Nivel con un valor entero de cero a tres. Sin argumentos empieza en cero; con un argumento acepta solamente ese dominio y conserva el valor recibido. Usa datos privados, consulta valor() const y señal NivelInvalido para rechazar. Prueba sin argumentos y los valores cero, tres, menos uno y cuatro. Después construye un vector de dos niveles por defecto y presenta ambos valores."
+          "text": "Diseña Nivel con representación privada y consulta valor() const. Sin argumentos empieza en cero; con un int acepta sólo de cero a tres y conserva ese valor. Rechaza los demás con NivelInvalido. En main construye un nivel por defecto y muestra Defecto:0 consultándolo. Usa una función de prueba para 0, 3, -1 y 4: muestra Valor:valor si acepta y Rechazado:argumento si captura la señal fuera del constructor. Cada una de esas líneas termina con un salto.\n\nDespués construye un vector de dos niveles por defecto y muestra Vector:0:0, consultando ambos, sin salto final. Pulsa Compilar, ejecutar y comprobar. La salida completa debe ser:\n\nDefecto:0\nValor:0\nValor:3\nRechazado:-1\nRechazado:4\nVector:0:0\n\nLa última línea no lleva salto. Todos los casos forman una única comprobación y conservan el rechazo, sin convertir argumentos inválidos en cero.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Defecto:0\nValor:0\nValor:3\nRechazado:-1\nRechazado:4\nVector:0:0"
+                ],
+                "explanation": "El estado predeterminado cero pertenece al dominio y permite construir cada elemento del vector. Los argumentos -1 y 4 siguen siendo rechazados, sin transformarse en cero."
+              }
+            ]
+          }
         },
         {
-          "type": "paragraph",
-          "text": "Antes de compilar explica por qué el vector de dos niveles sí tiene sentido aquí, mientras nuestro vector de dos pedidos sin argumentos no podía construirse. No uses un constructor que cambie los argumentos inválidos por cero."
+          "type": "multiple_choice",
+          "id": "u9_nivel_predeterminado_y_vector",
+          "question": "¿Por qué vector<Nivel>(2) tiene sentido en este modelo, mientras vector<Pedido>(2) no podía construirse con el Pedido estudiado?",
+          "options": [
+            "Un vector inventa un código y una cantidad válidos para cualquier clase que contenga.",
+            "Nivel ofrece una construcción sin argumentos que produce cero válido; Pedido exige código y unidades y no ofrece esa construcción.",
+            "El vector deja los objetos sin construir hasta la primera consulta."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada elemento del vector debe construirse. Nivel define un estado cero válido sin argumentos. El Pedido estudiado necesita los datos de su constructor y no dispone de una construcción sin argumentos.",
+          "reviewFeedback": [
+            "Comprueba qué constructor y qué datos aporta cada tipo: el contenedor no puede decidir las reglas del dominio.",
+            "Relaciona la construcción de cada elemento con las interfaces que ofrecen Nivel y Pedido.",
+            "Distingue reservar una colección de disponer de objetos válidamente construidos dentro de ella."
+          ]
         }
       ]
     },
@@ -200,6 +237,15 @@
             "5"
           ],
           "explanation": "Copiar un valor existente no solicita el constructor sin argumentos. La copia conserva sus miembros."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las construcciones y del vector"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct NivelInvalido {};\nclass Nivel {\npublic:\n    Nivel() {}\n    Nivel(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 3) { throw NivelInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nvoid probar(int valor) {\n    try {\n        const Nivel nivel{valor};\n        std::cout << \"Valor:\" << nivel.valor() << \"\\n\";\n    } catch (const NivelInvalido&) {\n        std::cout << \"Rechazado:\" << valor << \"\\n\";\n    }\n}\n\nint main() {\n    const Nivel inicio;\n    std::cout << \"Defecto:\" << inicio.valor() << \"\\n\";\n    probar(0);\n    probar(3);\n    probar(-1);\n    probar(4);\n    const std::vector<Nivel> niveles(2);\n    std::cout << \"Vector:\" << niveles.at(0).valor() << \":\" << niveles.at(1).valor();\n    return 0;\n}\n"
         }
       ]
     },
@@ -244,7 +290,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Si la interfaz exige que el cliente escriba cuándo crea un Contador a partir de un entero, marcamos ese constructor como explicit: explicit Contador(int inicial). Conservamos Contador() y todas las comprobaciones. La palabra no cambia el dominio ni el valor inicial; evita que ese constructor se utilice para las conversiones implícitas anteriores (Stroustrup, 2024, sección 17.5.1). Contador directo{3} sigue siendo una construcción directa válida (Working Draft: Programming Languages — C++, s. f., sección [class.conv.ctor])."
+          "text": "Si la interfaz exige que el cliente escriba cuándo crea un Contador a partir de un entero, marcamos ese constructor como explicit: explicit Contador(int inicial). Conservamos Contador() y todas las comprobaciones. La palabra no cambia el dominio ni el valor inicial; evita que ese constructor se utilice para las conversiones implícitas anteriores (Stroustrup, 2024, sección 17.5.1). Contador directo{3} sigue siendo una construcción directa válida (Working Draft: Programming Languages — C++, s. f., sección [class.conv.ctor]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -398,19 +450,115 @@
         },
         {
           "type": "paragraph",
-          "text": "En main declara un contador sin argumentos, otro construido directamente con cuatro y una copia del segundo mediante Contador copia = directo;. Presenta cuatro líneas: Predeterminado:0, Directo:4, Argumento:2 y Copia:4. Argumento procede de leer(Contador{2}); las otras líneas consultan los objetos correspondientes. En dos pruebas posteriores, construye directamente con -1 y con 6 dentro de try/catch separados y muestra Rechazado:-1 y Rechazado:6. No imprimas las respuestas como constantes en lugar de consultar o comprobar los objetos."
+          "text": "En main declara un contador sin argumentos, otro construido directamente con cuatro y una copia del segundo mediante Contador copia = directo;. Presenta Predeterminado:0, Directo:4, Argumento:2 y Copia:4, una línea cada uno; Argumento procede de leer(Contador{2}). En dos bloques try/catch independientes intenta construir con -1 y con 6, y muestra Rechazado:-1 y Rechazado:6 al capturar ContadorInvalido. Termina las seis líneas con un salto.\n\nPulsa Compilar, ejecutar y comprobar. Consulta los objetos y ejecuta sus comprobaciones: no escribas los resultados como mensajes constantes. La construcción válida y los dos rechazos de dominio forman el objetivo de esta ejecución.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Predeterminado:0\nDirecto:4\nArgumento:2\nCopia:4\nRechazado:-1\nRechazado:6\n"
+                ],
+                "explanation": "explicit conserva la construcción directa y las copias entre Contador. Los argumentos numéricos inválidos llegan al constructor y son rechazados durante la ejecución."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Después de comprobar el programa válido, añade sólo Contador no_permitido = 3; y solicita una construcción: debe fallar al compilar por la conversión implícita. Retira esa línea y comprueba de forma separada leer(3);, que también debe rechazarse al compilar. Repara esta llamada con leer(Contador{3}) y vuelve a ejecutar. Conserva explicit y las comprobaciones; no cambies la firma de leer para aceptar int. Distingue cada diagnóstico de la salida y de ContadorInvalido. El compilador puede redactar los diagnósticos de formas distintas."
+          "text": "Una conversión implícita rechazada impide compilar; no es ContadorInvalido capturada durante la ejecución. Las dos actividades de diagnóstico siguientes conservan esa diferencia y usan borradores independientes. No retires explicit ni cambies la firma de leer para evitar el diagnóstico."
         },
         {
           "type": "paragraph",
-          "text": "Varía cuatro por cero o cinco, y dos por otro dato válido. Predice las líneas antes de ejecutar y confirma que la copia conserva el valor elegido. Criterios: la construcción directa sigue disponible; el valor por defecto sigue siendo cero; ambos usos implícitos se rechazan por separado; las copias entre Contador siguen permitidas; los argumentos numéricos inválidos se rechazan sin fabricar un contador alternativo."
+          "text": "Después de los diagnósticos, otras dos actividades comprueban una llamada con construcción deliberada y las fronteras válidas. Cada editor tiene su propio objetivo; corregir y reintentar no exige reemplazar otra versión ya comprobada. La construcción directa, el valor por defecto, las copias y el rechazo del dominio conservan sus funciones diferentes."
+        },
+        {
+          "type": "heading",
+          "text": "Diagnosticar una inicialización implícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor del modelo conocido añade dentro de main únicamente Contador no_permitido = 3;. Pulsa Compilar y ejecutar. La compilación debe rechazar la conversión implícita desde int, sin ejecutar un programa ni producir un veredicto de salida. Lee el diagnóstico junto con esa declaración; su redacción puede variar. Conserva el constructor explicit. Este editor mantiene el caso rechazado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la declaración indicada.\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Diagnosticar un argumento que pide una conversión implícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor independiente añade leer(3); dentro de main y pulsa Compilar y ejecutar. La función recibe const Contador&, pero el argumento tiene tipo int y exigiría una conversión implícita que explicit impide. Debe fallar la compilación; no se espera una excepción ni salida. Conserva la firma de leer y el constructor mientras observas este diagnóstico."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Añade la llamada indicada.\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Aportar deliberadamente el objeto que necesita la llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye una llamada a leer cuyo argumento sea un Contador creado directamente con tres. Muestra el valor devuelto, sin espacios ni salto final. Pulsa Compilar, ejecutar y comprobar: la salida debe ser 3. Conserva explicit, la firma const Contador& y la comprobación del dominio. La reparación consiste en aportar el objeto adecuado, no en cambiar la función para que acepte int.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye el argumento y muestra la consulta.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3"
+                ],
+                "explanation": "Contador{3} solicita una construcción directa válida. leer recibe ese objeto sin necesitar una conversión implícita desde int."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las dos fronteras sin cambiar el programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye probar(int valor_directo, int valor_argumento). Dentro crea un Contador directamente desde valor_directo y una copia de ese objeto. Muestra valor del directo, leer(Contador{valor_argumento}) y valor de la copia, separados por dos puntos y con salto final. En main llama probar(0,5) y probar(5,0). Pulsa Compilar, ejecutar y comprobar: las líneas deben ser 0:5:0 y 5:0:5. No añadas conversiones implícitas ni cambies el requisito entre las dos llamadas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Construye las dos pruebas de frontera.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:0\n5:0:5\n"
+                ],
+                "explanation": "Cero y cinco son construcciones directas válidas. La copia recibe el valor del Contador existente, mientras cada argumento explícito conserva su propio dato."
+              }
+            ]
+          }
         }
       ]
     },
@@ -422,7 +570,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia usa cinco para el objeto directo y uno para el argumento construido. Compárala con tu programa por sus reglas y por las pruebas de compilación, además de la salida de un caso. Las líneas intencionalmente incorrectas están comentadas: descomenta sólo una cada vez para comprobar su diagnóstico y vuelve a retirarla antes de ejecutar."
+          "text": "La referencia inicial usa cinco para el objeto directo y uno para el argumento construido. Las siguientes muestran los datos de las actividades nuevas. Las líneas intencionalmente incorrectas del primer ejemplo permanecen comentadas como comparación; los diagnósticos tienen sus propios editores y no requieren modificar este programa válido."
         },
         {
           "type": "code",
@@ -446,12 +594,98 @@
           "explanation": "Forma de construcción, dominio numérico y permiso de consulta son decisiones distintas. Conservar una no sustituye a las otras. El constructor explicit tampoco prohíbe la copia de un Contador existente ni modifica el valor por defecto."
         },
         {
-          "type": "paragraph",
-          "text": "En otra sesión, antes de consultar los ejemplos, clasifica Contador a;, Contador b{2};, Contador c = 2;, Contador d = b;, leer(2); y leer(Contador{2});. Explica cuáles piden una conversión implícita y repara sólo esas formas. Al construir después un lector desde texto, recupera esta decisión: exigir que el cliente nombre expresamente el lector permite distinguir el texto de entrada del objeto que lo procesa."
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__clasificar_conversiones_implicitas",
+          "prompt": "Con el Contador explicit y leer(const Contador&) estudiados, selecciona únicamente las formas que piden una conversión implícita desde int y por eso no compilan. En Contador d = b, b ya es un Contador válido.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "formas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "defecto",
+                  "text": "Contador a;",
+                  "reviewFeedback": "Comprueba si esta declaración aporta un int o solicita la construcción sin argumentos."
+                },
+                {
+                  "id": "directa",
+                  "text": "Contador b{2};",
+                  "reviewFeedback": "Distingue inicialización directa y conversión implícita desde un argumento numérico."
+                },
+                {
+                  "id": "copia_numero",
+                  "text": "Contador c = 2;",
+                  "reviewFeedback": "Compara el tipo del inicializador con el tipo del objeto que se está declarando."
+                },
+                {
+                  "id": "copia_objeto",
+                  "text": "Contador d = b;",
+                  "reviewFeedback": "Identifica si el inicializador ya tiene tipo Contador."
+                },
+                {
+                  "id": "argumento_numero",
+                  "text": "leer(2);",
+                  "reviewFeedback": "Comprueba el tipo que recibe leer y el tipo que aporta esta llamada."
+                },
+                {
+                  "id": "argumento_objeto",
+                  "text": "leer(Contador{2});",
+                  "reviewFeedback": "Sigue primero la construcción explícita que forma el argumento."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "copia_numero",
+                  "argumento_numero"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Contador c = 2 y leer(2) piden convertir implícitamente int a Contador. La construcción por defecto, la directa con llaves, la copia desde un Contador y el argumento Contador{2} no piden esa conversión implícita.",
+            "incorrect": "Distingue el tipo que aporta cada forma y el modo de construcción que solicita. explicit afecta a la conversión implícita; no elimina toda construcción ni toda copia."
+          }
         },
         {
           "type": "note",
-          "text": "La relación entre construcción y valor por defecto se apoya en las secciones 8.4.2 y 8.7.3; la conversión por constructor y explicit, en la sección 17.5.1, pp. 497–498 (Stroustrup, 2024). Esta conexión recupera únicamente la decisión de construcción. Se contrastaron las formas permitidas con la sección [class.conv.ctor] del borrador público (Working Draft: Programming Languages — C++, s. f.). Las explicaciones, el modelo y las actividades son originales de esta ruta; las referencias completas están reunidas al final del curso."
+          "text": "Un valor por defecto debe dejar un objeto que cumpla su significado y sus reglas (Stroustrup, 2024, secciones 8.4.2 y 8.7.3). Un constructor explicit permite exigir que se nombre deliberadamente la construcción cuando partir de otro tipo podría confundir sus funciones (Stroustrup, 2024, sección 17.5.1; Working Draft: Programming Languages — C++, s. f., sección [class.conv.ctor]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del programa válido con los datos de la actividad"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador inicio;\n    const Contador directo{4};\n    const Contador copia = directo;\n    std::cout << \"Predeterminado:\" << leer(inicio) << '\\n';\n    std::cout << \"Directo:\" << leer(directo) << '\\n';\n    std::cout << \"Argumento:\" << leer(Contador{2}) << '\\n';\n    std::cout << \"Copia:\" << leer(copia) << '\\n';\n    try {\n        const Contador fuera{-1};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:-1\\n\";\n    }\n    try {\n        const Contador fuera{6};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:6\\n\";\n    }\n    // Error intencional para probar por separado:\n    // Contador no_permitido = 3;\n    // leer(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del argumento construido deliberadamente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    std::cout << leer(Contador{3});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las fronteras válidas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nvoid probar(int valor_directo, int valor_argumento) {\n    const Contador directo{valor_directo};\n    const Contador copia = directo;\n    std::cout << directo.valor() << \":\" << leer(Contador{valor_argumento})\n              << \":\" << copia.valor() << \"\\n\";\n}\n\nint main() {\n    probar(0, 5);\n    probar(5, 0);\n    return 0;\n}\n"
         }
       ]
     },
@@ -472,7 +706,13 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida es 2:4:4. La asignación sustituye el valor anterior de destino por el valor de origen, que ya tiene tipo Contador. No convierte un entero ni modifica el origen. explicit Contador(int) no suprime esta asignación entre objetos del mismo tipo (Working Draft: Programming Languages — C++, s. f., secciones [class.conv.ctor] y [class.copy.assign])."
+          "text": "La salida es 2:4:4. La asignación sustituye el valor anterior de destino por el valor de origen, que ya tiene tipo Contador. No convierte un entero ni modifica el origen. explicit Contador(int) no suprime esta asignación entre objetos del mismo tipo (Working Draft: Programming Languages — C++, s. f., secciones [class.conv.ctor] y [class.copy.assign]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -492,15 +732,71 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde el editor mínimo, escribe el Contador conocido y prueba esta secuencia. Crea destino con dos y origen const con cuatro. Muestra Inicio:2 consultando destino. Asigna el objeto origen a destino y muestra Desde objeto:4. Después sustituye destino por un Contador que construyas directamente con uno y muestra Desde construccion:1. Intenta sustituirlo por un Contador construido con seis dentro de try/catch: muestra Rechazado:6 al capturar ContadorInvalido y, después del catch, Conservado:1 consultando destino. Cada texto debe ocupar su propia línea. Predice primero por qué el intento rechazado no sustituirá el último valor válido."
+          "text": "Desde el editor mínimo, construye Contador y una única secuencia de sustituciones sobre el mismo destino. Crea destino con dos y origen const con cuatro; muestra Inicio:2 consultando destino. Asigna origen y muestra Desde objeto:4. Después asigna un Contador construido directamente con uno y muestra Desde construccion:1. Intenta asignar un Contador construido con seis dentro de try/catch; al capturar ContadorInvalido, muestra Rechazado:6. Después del catch consulta destino y muestra Conservado:1.\n\nCada texto ocupa una línea terminada con un salto, incluida la última. Pulsa Compilar, ejecutar y comprobar. No restaures el uno dentro del catch: el rechazo debe impedir que se sustituya el último valor válido. Los resultados proceden de consultas a los objetos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe Contador y recupera las pruebas de asignacion.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe Contador y recupera las pruebas de asignacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:2\nDesde objeto:4\nDesde construccion:1\nRechazado:6\nConservado:1\n"
+                ],
+                "explanation": "La construcción de Contador{6} lanza antes de proporcionar el nuevo valor. La asignación no llega a sustituir el uno que ya tenía destino."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba por separado destino = 3;: debe impedir construir el programa. Repara sólo el valor aportado a la derecha de =, conservando el destino existente, explicit y la comprobación del dominio; no redeclares destino. En las pruebas válidas, consulta los objetos en lugar de imprimir sus valores como constantes. Criterios: asignar desde origen conserva cuatro en ambos; asignar el objeto construido con uno cambia sólo destino; el rechazo de seis deja uno en destino; ningún diagnóstico de compilación se presenta como una excepción capturada."
+          "text": "Asignar desde otro Contador, construir un argumento numérico válido y rechazar uno inválido son operaciones distintas. Las actividades siguientes aíslan la conversión implícita al asignar y la construcción deliberada que permite aportar el nuevo valor. Conserva destino como objeto existente y explicit como parte de la interfaz; no lo redeclares para evitar el diagnóstico."
+        },
+        {
+          "type": "heading",
+          "text": "Diagnosticar una conversión implícita al asignar"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor independiente añade destino = 3; después de crear destino y pulsa Compilar y ejecutar. La compilación debe rechazar la conversión implícita necesaria desde int a Contador. No se espera ejecución ni ContadorInvalido capturada. Conserva el constructor explicit, el objeto existente y la comprobación del dominio mientras observas el diagnóstico."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Añade la asignación indicada.\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Asignar un objeto construido deliberadamente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva el destino creado con dos. Sustituye su valor usando a la derecha de = un Contador construido directamente con tres; no declares un nuevo destino. Muestra su consulta valor(), sin espacios ni salto final, y pulsa Compilar, ejecutar y comprobar. La salida debe ser 3. Conserva explicit y el dominio de cero a cinco.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    // Asigna un objeto y muestra la consulta.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3"
+                ],
+                "explanation": "La construcción directa produce un Contador válido y después su valor se asigna al objeto existente. No se solicita una conversión implícita desde int."
+              }
+            ]
+          }
         }
       ]
     },
@@ -512,7 +808,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta después de construir y explicar tu intento. Esta referencia conserva el mismo objeto destino durante toda la secuencia. El objeto construido a la derecha proporciona el nuevo valor; no es una nueva declaración de destino."
+          "text": "Consulta después de construir y comprobar tu intento. Esta referencia conserva el mismo objeto destino durante la secuencia. El objeto construido a la derecha proporciona el nuevo valor; no declara de nuevo destino."
         },
         {
           "type": "code",
@@ -521,7 +817,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Se muestran Inicio:2, Desde objeto:4, Desde construccion:1, Rechazado:6 y Conservado:1, una línea cada una. Construir Contador{6} lanza antes de que la asignación pueda recibir ese nuevo valor, por lo que destino conserva uno en esta prueba. No se restaura uno desde el catch ni se fabrica un contador con cero. La reparación del diagnóstico anterior es destino = Contador{3};: solicita directamente un objeto válido y después lo asigna al destino existente. Cambiar sólo tres por cero en destino = 0; seguiría pidiendo una conversión implícita (Stroustrup, 2024, sección 17.5.1; Working Draft: Programming Languages — C++, s. f., sección [class.conv.ctor])."
+          "text": "Se muestran Inicio:2, Desde objeto:4, Desde construccion:1, Rechazado:6 y Conservado:1, una línea cada una. Construir Contador{6} lanza antes de que la asignación pueda recibir ese nuevo valor, por lo que destino conserva uno en esta prueba. No se restaura uno desde el catch ni se fabrica un contador con cero. La reparación del diagnóstico anterior es destino = Contador{3};: solicita directamente un objeto válido y después lo asigna al destino existente. Cambiar sólo tres por cero en destino = 0; seguiría pidiendo una conversión implícita (Stroustrup, 2024, sección 17.5.1; Working Draft: Programming Languages — C++, s. f., sección [class.conv.ctor]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -535,8 +837,30 @@
           "explanation": "La asignación desde origen pone dos en destino y deja dos en origen. La siguiente asignación recibe el Contador construido con tres. La construcción con menos uno lanza antes de aportar un valor a la asignación; por eso tanto la consulta del catch como la final observan tres en destino."
         },
         {
-          "type": "paragraph",
-          "text": "Al recuperar esta lección en otra sesión, clasifica también destino = origen;, destino = 4; y destino = Contador{4}; después de declarar los objetos. Explica cuáles asignan, cuál necesita una conversión implícita y cómo cambia el diagnóstico si intentas construir con seis. Contrasta tus razones con esta referencia y con el ejercicio de diagnóstico anterior antes de volver a ejecutar."
+          "type": "multiple_choice",
+          "id": "u9_contador_conversion_implicita_al_asignar",
+          "question": "destino y origen ya son objetos Contador válidos. ¿Cuál de estas asignaciones necesita la conversión implícita que el constructor explicit impide?",
+          "options": [
+            "destino = origen;",
+            "destino = Contador{4};",
+            "destino = 4;"
+          ],
+          "correctIndex": 2,
+          "explanation": "El entero de destino = 4 necesita convertirse implícitamente a Contador. origen ya tiene el tipo requerido; Contador{4} solicita una construcción directa antes de asignar. Si esa construcción directa usara seis, se compilaría pero el constructor rechazaría el dominio durante la ejecución.",
+          "reviewFeedback": [
+            "Identifica el tipo que ya tiene origen antes de decidir si hace falta convertirlo desde int.",
+            "Distingue la construcción directa escrita en la expresión de una conversión que tendría que introducirse implícitamente.",
+            "Revisa qué tipo tiene el valor escrito a la derecha de = y cómo llegaría a tener tipo Contador."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la asignación con construcción deliberada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    destino = Contador{3};\n    std::cout << destino.valor();\n    return 0;\n}\n"
         }
       ]
     }

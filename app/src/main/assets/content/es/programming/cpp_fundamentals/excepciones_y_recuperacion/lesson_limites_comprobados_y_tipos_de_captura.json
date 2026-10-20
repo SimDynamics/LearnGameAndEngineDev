@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "std::vector::at comprueba el índice y, en un entorno estándar con soporte de excepciones, lanza std::out_of_range si el índice no está dentro del tamaño. El acceso con [] exige que el índice sea válido; no ofrece esa misma promesa de excepción recuperable. No ejecutes [] fuera del rango para intentar predecir su salida. Las guardas previas siguen siendo útiles cuando un dato externo puede rechazarse de forma normal."
+          "text": "std::vector::at comprueba el índice y, en un entorno estándar con soporte de excepciones, lanza std::out_of_range si el índice no está dentro del tamaño. El acceso con [] exige que el índice sea válido; no ofrece esa misma promesa de excepción recuperable. No ejecutes [] fuera del rango para intentar predecir su salida. Las guardas previas siguen siendo útiles cuando un dato externo puede rechazarse de forma normal.",
+          "emphasis": [
+            {
+              "text": "std::vector::at"
+            },
+            {
+              "text": "índice sea válido"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -56,7 +64,12 @@
         },
         {
           "type": "paragraph",
-          "text": "std::invalid_argument y std::out_of_range son tipos distintos. Un catch de uno no captura automáticamente el otro. La biblioteca también ofrece std::exception, un tipo más general que permite tratar esas excepciones estándar. Incluye <exception> cuando lo uses. Si tienes tratamientos específico y general, escribe el específico primero; un tratamiento general anterior puede recibir los fallos que querías distinguir."
+          "text": "std::invalid_argument y std::out_of_range son tipos distintos. Un catch de uno no captura automáticamente el otro. La biblioteca también ofrece std::exception, un tipo más general que permite tratar esas excepciones estándar. Incluye <exception> cuando lo uses. Si tienes tratamientos específico y general, escribe el específico primero; un tratamiento general anterior puede recibir los fallos que querías distinguir.",
+          "emphasis": [
+            {
+              "text": "específico primero"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -122,11 +135,55 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código, prueba índice 0,1 y 2 con un vector de dos elementos. Muestra Indice invalido en el catch de out_of_range y Fin después del try/catch. Predice cada salida antes de ejecutar. Después consulta error.what() como diagnóstico adicional, observando que ese texto no forma parte de la expectativa portable. Conserva at; no sustituyas la práctica de error por [] fuera de rango."
+          "text": "Construye una prueba que recorra los índices 0, 1 y 2 de un vector con los datos `{2,9}`. Para cada índice, el `try` obtiene el dato mediante `at` y lo muestra; el `catch` de `out_of_range` muestra `Indice invalido`. Después del tratamiento de cada intento, muestra `:Fin` y un salto de línea. El mismo programa debe comprobar las dos posiciones válidas y la posición que queda fuera del vector.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser `2:Fin`, `9:Fin` e `Indice invalido:Fin`, en ese orden, sin espacios añadidos y con salto al final de cada una. Conserva `at`: no sustituyas el acceso comprobado por `[]` fuera de rango. El diagnóstico adicional de biblioteca tiene su propia actividad después de este intento.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2:Fin\n9:Fin\nIndice invalido:Fin\n"
+                ],
+                "explanation": "El índice 2 se rechaza porque el vector tiene dos elementos. La captura conserva la continuación que muestra Fin en cada intento."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Consultar el diagnóstico sin cambiar el mensaje de dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente prepara el índice 2 y conserva una bandera para el diagnóstico adicional. Cambia sólo `mostrarDiagnostico` a `true` para consultar `error.what()` en `std::cerr`. Pulsa Compilar, ejecutar y comprobar. La salida estable debe seguir siendo `Indice invalido:Fin`, sin salto final.\n\nAbre la consola de errores de ejecución y comprueba que contiene un diagnóstico adicional. No compares esa frase con un texto fijo: puede cambiar entre bibliotecas. La comprobación automática revisa únicamente la salida estable; para esta actividad también debes observar por separado el canal de errores. No modifiques el índice ni el vector durante este intento.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Indice invalido:Fin"
+                ],
+                "explanation": "La salida de dominio se conserva. La comprobación no evalúa el texto de what(): observa también su diagnóstico en el canal de errores de ejecución."
+              }
+            ]
+          }
         }
       ]
     },
@@ -151,7 +208,21 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba cada índice cambiando indice. Con mostrarDiagnostico=false, la salida de dominio se compara de forma exacta. Después cambia esa bandera a true y consulta el diagnóstico adicional del índice 2 en stderr; no exijas una frase específica de biblioteca para considerar correcta la captura."
+          "text": "La referencia anterior muestra el acceso a un índice con el diagnóstico adicional desactivado. La siguiente reúne las tres posiciones en una sola ejecución. La captura se selecciona por el tipo out_of_range, sin clasificar las palabras de what(). En la actividad independiente de diagnóstico, std::cerr conserva ese detalle y std::cout mantiene el mensaje de dominio."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    for (int indice : std::vector<int>{0, 1, 2}) {\n        try {\n            std::cout << datos.at(indice);\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido\";\n        }\n        std::cout << \":Fin\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del diagnóstico adicional"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{true};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
         }
       ]
     }

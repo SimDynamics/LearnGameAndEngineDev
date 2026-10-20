@@ -131,7 +131,15 @@
         },
         {
           "type": "note",
-          "text": "Antes de elegir MCD o mcm, explica qué debe ser común: un divisor que permita agrupar, o un múltiplo que permita coincidir. No decidas solo por palabras sueltas."
+          "text": "El MCD y el mcm responden a relaciones distintas entre los números. Después del cálculo siguiente, relaciona dos objetivos con la condición que debe cumplir su respuesta; no decidas sólo por la palabra común.",
+          "emphasis": [
+            {
+              "text": "MCD"
+            },
+            {
+              "text": "mcm"
+            }
+          ]
         },
         {
           "type": "math_puzzle",
@@ -155,6 +163,51 @@
           "feedback": {
             "correct": "9 = 3² y 12 = 2² × 3. Se necesitan dos doses y dos treses: 36.",
             "incorrect": "El 3 es el MCD, pero no es múltiplo de 9 ni de 12. El 108 es un múltiplo común, aunque no el menor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_la_condicion_de_divisor_y_multiplo",
+          "prompt": "Relaciona cada objetivo con la condición que debe satisfacer el número buscado. Usa cada condición una vez. No hace falta calcular los resultados para reconocer esas condiciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_la_condicion_de_divisor_y_multiplo__condiciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "grupos",
+                  "label": "Formar el mayor número de paquetes idénticos usando todas las 15 fichas claras y las 20 oscuras."
+                },
+                {
+                  "id": "ciclos",
+                  "label": "Encontrar la primera nueva coincidencia de dos señales que comienzan juntas y repiten cada 15 y 20 minutos."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "multiplo",
+                  "label": "Ser el menor positivo que contiene una cantidad entera de ciclos de cada duración."
+                },
+                {
+                  "id": "divisor",
+                  "label": "Ser el mayor entero positivo que divide sin sobrantes las dos cantidades de fichas."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "grupos": "divisor",
+                  "ciclos": "multiplo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El número de paquetes debe dividir las dos cantidades para repartir cada tipo de ficha por igual sin sobrantes: se busca el MCD. El tiempo de coincidencia debe contener ciclos completos de ambas señales y ser el primero positivo: se busca el mcm. Los mismos datos numéricos no imponen la misma operación cuando cambia el objetivo.",
+            "incorrect": "Revisa qué representa el número buscado. En un caso reparte cada cantidad disponible; en el otro debe contener ciclos completos."
           }
         }
       ]

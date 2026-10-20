@@ -208,15 +208,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe para {4, 9, 2}: muestra Minimo: 2 y Maximo: 9 en dos líneas. En vacío muestra Sin datos. Repite con {0}, {-6}, {-7, -3, -5}, {5, 5} y {8, 2, 8}. Escribe los resultados antes de ejecutar y justifica cómo se preparan los extremos sin asumir que cero pertenece a los datos."
+          "text": "Construye un informe de `{4, 9, 2}`: muestra `Minimo: 2` y `Maximo: 9` en dos líneas. En vacío debe mostrar `Sin datos`. Prepara los extremos desde un dato existente, sin suponer que cero pertenece a la colección.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo: 2\nMaximo: 9",
+                  "Minimo: 2\nMaximo: 9\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como transferencia, añade la primera posición del mínimo sólo en la rama no vacía. Usa una colección con el mínimo repetido para comprobar tu regla de empate. No cambiaremos el orden de los datos para resolver este laboratorio."
+          "text": "La posición de la primera aparición del mínimo es otro resultado. Después de comprobar varios datos del informe de extremos, encontrarás una actividad propia para construirla sin cambiar el orden original."
         }
       ]
     },
@@ -255,6 +267,90 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: iniciar los extremos con un dato real dentro de la rama no vacía, conservar el origen y obtener ambos extremos para positivos, negativos e iguales; la variante de posición debe respetar su regla de empate."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 1 0 para {0}\n• 1 -6 para {-6}\n• 3 -7 -3 -5 para {-7, -3, -5}\n• 2 5 5 para {5, 5}\n• 3 8 2 8 para {8, 2, 8}\n• 0 para el vector vacío\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        std::cout << \"Minimo: \" << menor << \"\\nMaximo: \" << mayor;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Minimo: 0\nMaximo: 0",
+                  "Minimo: 0\nMaximo: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 -6",
+                "outputs": [
+                  "Minimo: -6\nMaximo: -6",
+                  "Minimo: -6\nMaximo: -6\n"
+                ]
+              },
+              {
+                "standardInput": "3 -7 -3 -5",
+                "outputs": [
+                  "Minimo: -7\nMaximo: -3",
+                  "Minimo: -7\nMaximo: -3\n"
+                ]
+              },
+              {
+                "standardInput": "2 5 5",
+                "outputs": [
+                  "Minimo: 5\nMaximo: 5",
+                  "Minimo: 5\nMaximo: 5\n"
+                ]
+              },
+              {
+                "standardInput": "3 8 2 8",
+                "outputs": [
+                  "Minimo: 2\nMaximo: 8",
+                  "Minimo: 2\nMaximo: 8\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos",
+                  "Sin datos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "1 0"
+        },
+        {
+          "type": "heading",
+          "text": "Conservar la primera posición del mínimo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto un informe de `{4, 2, 2, 9}`. Debe mostrar el mínimo y su primera posición: `Minimo: 2` e `Indice: 1`, en dos líneas. El empate posterior no debe reemplazar esa primera posición. Sin datos sólo debe mostrarse `Sin datos`, sin accesos.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo: 2\nIndice: 1",
+                  "Minimo: 2\nIndice: 1\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

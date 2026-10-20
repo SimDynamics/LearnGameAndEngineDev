@@ -315,23 +315,52 @@
         },
         {
           "type": "paragraph",
-          "text": "El relleno anterior utiliza * para multiplicar y - para restar. La variable cantidad pasa de 4 a 8 y después a 6. Cada actualización utiliza el resultado que dejó la anterior.\n\nAhora usa el editor de código para construir un registro de entradas a una sala. La variable aforo debe comenzar con 5; anterior debe recibir una copia de ese valor; después, aforo debe aumentar en 3. La consola debe mostrar estas dos líneas:\n\nAntes: 5\nAhora: 8\n\nCompila y ejecuta tu programa. Compara los números, los espacios después de los dos puntos y el salto entre los mensajes con la salida solicitada. La primera línea debe consultar anterior y la segunda, aforo.\n\nEn una segunda versión, cambia el orden para que anterior reciba su copia después del aumento. Conserva las instrucciones de salida y vuelve a ejecutar. En esta versión, la consola debe mostrar:\n\nAntes: 8\nAhora: 8",
-          "emphasis": [
-            {
-              "text": "anterior debe recibir una copia de ese valor"
-            },
-            {
-              "text": "debe consultar anterior y la segunda, aforo"
-            }
-          ]
+          "text": "El relleno anterior utiliza `*` para multiplicar y `-` para restar. La variable `cantidad` pasa de `4` a `8` y después a `6`: cada actualización utiliza el resultado que dejó la anterior.\n\nAhora construye un registro de entradas a una sala. `aforo` debe comenzar con `5`; `anterior` debe recibir una copia de ese valor; después, `aforo` debe aumentar en `3`. La primera salida debe consultar `anterior` y la segunda, `aforo`. Deben aparecer estas dos líneas:\n\nAntes: 5\nAhora: 8\n\nPulsa «Compilar, ejecutar y comprobar». Conserva los espacios después de los dos puntos y el salto entre los mensajes; el salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Antes: 5\nAhora: 8",
+                  "Antes: 5\nAhora: 8\n"
+                ],
+                "explanation": "La primera línea muestra el dato copiado antes del aumento; la segunda muestra el estado actualizado."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Compara las dos versiones dentro del editor de código. Cambia el momento de la copia, compila y observa qué valor se muestra después de Antes:. El nombre anterior permanece igual durante la comparación.\n\nDespués de construir y comprobar tu intento, resuelve los dos puzzles de seguimiento y el de justificación al final de la página siguiente. Sus campos permiten registrar los estados de ambas versiones y elegir el razonamiento que explica la copia. Cada programa de seguimiento muestra los valores después de sus etapas para que puedas comprobarlos dentro de la aplicación."
+          "text": "Si aparecen dos ochos, localiza el momento en que se define `anterior`: para conservar el estado inicial, la copia debe ocurrir antes del aumento. Cambiar el texto de un rótulo no modifica el dato consultado.\n\nLa siguiente actividad utiliza su propio editor para comparar otro orden de las instrucciones."
+        },
+        {
+          "type": "heading",
+          "text": "Copiar después del cambio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa inicial de este editor copia el estado antes del aumento. Mueve sólo la definición de `anterior` para que reciba su valor después de aumentar `aforo`; conserva las dos instrucciones de salida.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo ahora es:\n\nAntes: 8\nAhora: 8\n\nEl salto final es opcional. Observa que conservar el rótulo `Antes:` no obliga a la variable a recuperar un valor pasado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int aforo = 5;\n    int anterior = aforo;\n    aforo += 3;\n    std::cout << \"Antes: \" << anterior << \"\\n\";\n    std::cout << \"Ahora: \" << aforo;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Antes: 8\nAhora: 8",
+                  "Antes: 8\nAhora: 8\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

@@ -115,15 +115,51 @@
         },
         {
           "type": "paragraph",
-          "text": "Muestra resultado:marca. Debe producir 9:27. Cambia sólo el orden de las dos llamadas de registro: la salida debe pasar a 9:72. Restaura el orden inicial y cambia los dígitos a 9 y 1, conservando ese orden explícito: espera 10:91. La traza debe proceder de las llamadas y no de escribir una constante final."
+          "text": "Muestra `resultado:marca`. El objetivo del primer intento es `9:27`, con las dos llamadas de registro en instrucciones sucesivas: primero dos y después siete. Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. La marca debe proceder de esas llamadas y no de una constante final."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Define una funcion de suma sin efectos sobre marca.\nint main() {\n    // Construye y comprueba las secuencias solicitadas.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Define una funcion de suma sin efectos sobre marca.\nint main() {\n    // Construye y comprueba las secuencias solicitadas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "9:27",
+                  "9:27\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
           "text": "La ampliación exige separar la obtención de los argumentos de la llamada que los combina. Consulta la referencia después de intentarlo."
+        },
+        {
+          "type": "heading",
+          "text": "Construir el orden contrario"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye la secuencia contraria en este editor: registra primero siete y después dos, guarda cada retorno y pásalos por valor a `sumar`. Conserva la función de suma sin efectos sobre marca. El objetivo es `9:72`.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Define una funcion de suma sin efectos sobre marca.\nint main() {\n    // Construye y comprueba las secuencias solicitadas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "9:72",
+                  "9:72\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -152,7 +188,39 @@
         },
         {
           "type": "note",
-          "text": "El orden de evaluación se estudia en la fuente principal (Stroustrup, 2024, sección 7.5.1, p. 207) y se contrastó con las reglas de ejecución y de expresiones del borrador fijo de C++23 (Köppe et al., 2023, sección 6.9.1 [intro.execution]). Ejemplos y actividades originales de esta ruta."
+          "text": "Cuando el orden de dos llamadas afecta un estado compartido, separarlas en instrucciones sucesivas permite expresar cuál debe completarse primero. La suma de sus resultados y el registro de sus efectos son preguntas distintas: la asociatividad de los operadores no fija por sí sola el orden general de evaluación de sus operandos (Stroustrup, 2024, sección 7.5.1; Köppe et al., 2023, sección 6.9.1 [intro.execution])."
+        },
+        {
+          "type": "heading",
+          "text": "Conservar el orden con otros dígitos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee dos dígitos entre uno y nueve y los registra en el orden de lectura, mediante instrucciones sucesivas. Comprueba `2 7` → `9:27` y `9 1` → `10:91`. Los datos cambian; el orden explícito y la suma permanecen.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int digito_uno{0};\n    int digito_dos{0};\n    std::cin >> digito_uno >> digito_dos;\n    int primero = registrar(marca, digito_uno);\n    int segundo = registrar(marca, digito_dos);\n    int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 7",
+                "outputs": [
+                  "9:27",
+                  "9:27\n"
+                ]
+              },
+              {
+                "standardInput": "9 1",
+                "outputs": [
+                  "10:91",
+                  "10:91\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "2 7"
         }
       ]
     }

@@ -290,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Primero pulsa Configurar / generar y lee su resultado. Después solicita Construir objetivo y, sólo cuando termine correctamente, Ejecutar objetivo. Contrasta la salida y el código de terminación con tu esperado anterior. El proyecto no necesita entrada estándar. Guarda qué fase produjo cada registro: los éxitos tienen alcances distintos."
+          "text": "Primero pulsa Configurar / generar y lee su resultado. Después solicita Construir objetivo y, sólo cuando termine correctamente, Ejecutar objetivo. Contrasta la salida y el código de terminación con tu esperado anterior. El proyecto no necesita entrada estándar. Guarda qué fase produjo cada registro: los éxitos tienen alcances distintos. El programa debe mostrar 1:1:0 y terminar con 0; «Compilar, ejecutar y comprobar» contrasta la salida de una ejecución nueva. Si no coincide, revisa archivos, objetivo, perfil y registros antes de repetir el intento."
         },
         {
           "type": "cpp_compiler",
@@ -309,6 +309,18 @@
           "cmake": {
             "target": "consulta",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La ejecución conserva la frontera inclusiva: se repone por debajo y en la igualdad, pero no cuando ya hay más unidades."
+              }
+            ]
           }
         },
         {
@@ -330,7 +342,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para este programa de referencia, la ejecución debe mostrar 1:1:0 y terminar con código 0. Si no coincide, compara primero los archivos conservados, el objetivo, el perfil y los registros; una observación sólo puede atribuirse al proyecto que realmente se construyó y ejecutó."
+          "text": "La salida y la terminación pertenecen al proyecto realmente construido y ejecutado. Conservar un nombre de archivo o un resultado anterior no identifica por sí solo esa revisión."
         }
       ]
     },
@@ -358,7 +370,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa del editor de código empieza con esa revisión estricta. Configura, construye y ejecuta para observarla. Luego cambia sólo la comparación en main.cpp para que cumpla el contrato y vuelve a construir y ejecutar. Con este proyecto simple, cambiar el texto de una fuente C++ conservando sus rutas y la descripción permite reconstruir con las reglas vigentes. Cambiar CMakeLists.txt o el perfil sí requiere volver a configurar. No atribuyas el resultado anterior al borrador nuevo."
+          "text": "El programa del editor de código empieza con la revisión estricta que acabas de predecir. Repara sólo la comparación de main.cpp para cumplir el contrato inclusivo y usa «Compilar, ejecutar y comprobar». Con este proyecto simple, el cuerpo de la función puede cambiar sin modificar rutas ni CMakeLists.txt; conserva esas decisiones y las tres llamadas. Un intento incorrecto puede corregirse y volver a comprobarse en esta misma actividad."
         },
         {
           "type": "cpp_compiler",
@@ -377,6 +389,18 @@
           "cmake": {
             "target": "consulta",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La reparación incluye la igualdad sin cambiar el requisito, las llamadas ni las herramientas de construcción."
+              }
+            ]
           }
         },
         {
@@ -406,7 +430,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación debe conservar la frontera inclusiva del contrato. No modifica el requisito, el orden de los tres casos ni las herramientas para hacer coincidir una salida. Completa primero la función y, después de reconstruir esa revisión, comprueba que los casos iniciales vuelven a producir 1:1:0. Una vez obtenido ese resultado, varía las llamadas para examinar la reparación fuera del caso inicial."
+          "text": "La reparación debe conservar la frontera inclusiva del contrato. No modifica el requisito, el orden de los tres casos ni las herramientas para hacer coincidir una salida. El puzzle siguiente recupera la comparación que expresa esa regla."
         },
         {
           "type": "fill_code",
@@ -423,6 +447,45 @@
         {
           "type": "paragraph",
           "text": "En tu programa reparado, sustituye después las tres parejas por (12,7), (7,7) y (3,7), manteniendo la comparación correcta. Calcula primero sus resultados desde el contrato; construye otra vez y contrasta tu observación. Puedes restaurar luego los datos iniciales. Cada revisión necesita su propia evidencia: no conserves un resultado viejo como si perteneciera a fuentes nuevas."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperación con extremos del dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente ya conserva la regla inclusiva y examina (0,1), (1,1) y (40,1). Configura y construye el proyecto, ejecuta y comprueba la relación entre esos datos y el requisito. No necesitas modificar un programa anterior ni sustituir su borrador."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(0, 1);\n    const bool justo = debe_reponer(1, 1);\n    const bool mas = debe_reponer(40, 1);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "El mismo requisito incluye la igualdad con mínimo uno; cero está por debajo y cuarenta está por encima."
+              }
+            ]
+          }
         }
       ]
     },
@@ -438,7 +501,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice hasta dónde debería llegar este proyecto. Configura y genera; después solicita construir consulta y lee el diagnóstico de la construcción. Localiza el punto y coma ausente en la sentencia de retorno de main. Corrige sólo ese detalle, conserva los demás archivos y reconstruye antes de intentar ejecutar. El diagnóstico concreto puede variar entre compiladores; su archivo y contexto importan más que memorizar una frase."
+          "text": "Predice hasta dónde debería llegar este proyecto. Configura y genera; después solicita construir consulta y lee el diagnóstico de la construcción. Localiza el punto y coma ausente en la sentencia de retorno de main. Corrige sólo ese detalle, conserva los demás archivos y reconstruye antes de intentar ejecutar. El diagnóstico concreto puede variar entre compiladores; su archivo y contexto importan más que memorizar una frase. Tras reparar, ejecuta y comprueba las tres llamadas conservadas: 1:1:0, sin salto final y con retorno 0."
         },
         {
           "type": "cpp_compiler",
@@ -457,6 +520,18 @@
           "cmake": {
             "target": "consulta",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "Tras reparar la sintaxis se construye esta revisión y se comprueban sus tres llamadas; una configuración válida por sí sola no habría acreditado esa ejecución."
+              }
+            ]
           }
         },
         {
@@ -478,7 +553,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación de referencia es return 0; al final de main. Después de construir correctamente, ejecuta y comprueba de nuevo 1:1:0 y código 0. Si una construcción falla, no presentes la ejecución de un artefacto anterior como resultado del intento fallido. Un archivo que permanece en una carpeta no demuestra que se haya actualizado."
+          "text": "La reparación de referencia es return 0; al final de main. Una construcción satisfactoria permite ejecutar esa revisión; un fallo previo no produce evidencia sobre su comportamiento. Que un archivo anterior permanezca en una carpeta tampoco demuestra que se haya actualizado."
         }
       ]
     },
@@ -513,6 +588,18 @@
           "cmake": {
             "target": "comprobar",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:1"
+                ],
+                "explanation": "La descripción construye comprobar desde inventario.cpp; sus tres decisiones pertenecen a esta ejecución del programa conservado."
+              }
+            ]
           }
         },
         {

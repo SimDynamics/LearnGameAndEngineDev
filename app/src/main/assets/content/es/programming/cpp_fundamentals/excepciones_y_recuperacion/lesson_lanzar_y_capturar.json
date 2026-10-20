@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Una señal como -1 permite separar error de resultado válido si todos los llamadores la comprueban. Otra política usa excepciones: cuando una función detecta que no puede cumplir su contrato, lanza un objeto con throw en lugar de retornar normalmente. El código que conoce cómo tratar el fallo puede capturarlo en un catch asociado a un bloque try. El mecanismo separa detección y tratamiento, pero todavía tenemos que decidir qué significa recuperar."
+          "text": "Una señal como -1 permite separar error de resultado válido si todos los llamadores la comprueban. Otra política usa excepciones: cuando una función detecta que no puede cumplir su contrato, lanza un objeto con throw en lugar de retornar normalmente. El código que conoce cómo tratar el fallo puede capturarlo en un catch asociado a un bloque try. El mecanismo separa detección y tratamiento, pero todavía tenemos que decidir qué significa recuperar.",
+          "emphasis": [
+            {
+              "text": "excepciones"
+            },
+            {
+              "text": "detección y tratamiento"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -127,11 +135,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice y ejecuta con piezas 0,3 y 11. Añade un texto Antes antes de la llamada y Despues después de la llamada dentro del try. Conserva Fin fuera del try/catch. Explica qué salidas faltan cuando el dato es inválido y cuáles se conservan. No intentes provocar errores por división entre cero, acceso inválido con [] ni desbordamiento."
+          "text": "Construye una única prueba que recorra los dos caminos de `estimar`. Añade una función `probar(int piezas)`: dentro de su `try`, muestra `Antes`, llama a `estimar` y, sólo si vuelve normalmente, muestra los minutos y `Despues`. El `catch` de `invalid_argument` muestra `Invalido`. Después del `try/catch`, muestra `:Fin` y un salto de línea. Llama a `probar` desde `main` para 0, 3 y 11, en ese orden. No cambies los datos entre ejecuciones: los tres casos pertenecen a esta misma comprobación.\n\nPulsa Compilar, ejecutar y comprobar. La salida debe tener tres líneas, sin espacios: `Antes0Despues:Fin`, `Antes9Despues:Fin` y `AntesInvalido:Fin`, cada una terminada con un salto de línea. Si difiere, revisa qué instrucciones se alcanzan antes de la llamada, después de ella y después del tratamiento. No provoques división entre cero, accesos inválidos con `[]` ni desbordamientos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int piezas{3};\n    try {\n        int minutos{estimar(piezas)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int piezas{3};\n    try {\n        int minutos{estimar(piezas)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Antes0Despues:Fin\nAntes9Despues:Fin\nAntesInvalido:Fin\n"
+                ],
+                "explanation": "El lanzamiento interrumpe el resto del try. El tratamiento permite continuar después del try/catch: Fin aparece en los tres casos."
+              }
+            ]
+          }
         }
       ]
     },
@@ -147,7 +171,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Con los mensajes concatenados de esta referencia, 0 produce Antes0Despues:Fin, 3 produce Antes9Despues:Fin y 11 produce AntesInvalido:Fin. Antes se conserva porque se escribió antes de la llamada; Despues y el resultado normal faltan si la llamada lanza. Fin se conserva fuera del try/catch. Otro formato de separadores es válido si permite identificar esas mismas etapas y no oculta el camino excepcional."
+          "text": "Criterios de corrección. Con los mensajes concatenados de esta referencia, 0 produce Antes0Despues:Fin, 3 produce Antes9Despues:Fin y 11 produce AntesInvalido:Fin. Antes se conserva porque se escribió antes de la llamada; Despues y el resultado normal faltan si la llamada lanza. Fin se conserva fuera del try/catch. Otras implementaciones son válidas si conservan esas etapas y producen el formato solicitado por la actividad."
         },
         {
           "type": "code",
@@ -156,7 +180,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Cambia sólo piezas para comparar los tres caminos. Capturar permite alcanzar Fin; no reintenta la llamada ni vuelve a la instrucción siguiente del try abandonado. La función rechaza antes de calcular y todos los fallos provocados deliberadamente tienen un tratamiento compatible."
+          "text": "El ejemplo anterior desarrolla una llamada con tres piezas. La construcción de la actividad reúne los tres casos en llamadas independientes a probar, como muestra la referencia siguiente. Capturar permite alcanzar Fin; no reintenta la llamada ni vuelve al interior del try abandonado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid probar(int piezas) {\n    try {\n        std::cout << \"Antes\";\n        int minutos{estimar(piezas)};\n        std::cout << minutos << \"Despues\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Invalido\";\n    }\n    std::cout << \":Fin\\n\";\n}\n\nint main() {\n    probar(0);\n    probar(3);\n    probar(11);\n    return 0;\n}\n"
         }
       ]
     }

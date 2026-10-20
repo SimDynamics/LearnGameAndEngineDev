@@ -14,7 +14,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada operación devuelve bool: true cuando aplicó el cambio pedido y false cuando rechazó la solicitud sin modificar ningún miembro. Aquí una solicitud no permitida es un resultado normal del contrato. La construcción inválida sigue lanzando una excepción: no la sustituimos por un pedido de reserva."
+          "text": "Cada operación devuelve bool: true cuando aplicó el cambio pedido y false cuando rechazó la solicitud sin modificar ningún miembro. Aquí una solicitud no permitida es un resultado normal del contrato. La construcción inválida sigue lanzando una excepción: no la sustituimos por un pedido de reserva.",
+          "emphasis": [
+            {
+              "text": "true"
+            },
+            {
+              "text": "false"
+            },
+            {
+              "text": "sin modificar ningún miembro"
+            }
+          ]
         },
         {
           "type": "code",
@@ -176,6 +187,198 @@
         {
           "type": "paragraph",
           "text": "La operación devuelve un resultado en todos sus caminos. No ignoramos false si la tarea necesita informar del rechazo. El llamador decide qué mensaje presentar; la clase mantiene la regla y comunica si aplicó el cambio."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__operaciones_y_transiciones_validas__estados_de_las_variantes",
+          "prompt": "Antes del editor, registra los estados previstos. C, R y L son pedidos nuevos preparados con cuatro unidades. C cancela, intenta enviar e intenta cambiar a uno; R intenta enviar dos veces; L intenta cambiar a 1,20,0,21 en ese orden. Los bools se representan como 0 o 1. Cada operación consulta el estado que dejó la anterior.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cancelar",
+                  "type": "numeric",
+                  "label": "C: resultado de cancelar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "enviar_cancelado",
+                  "type": "numeric",
+                  "label": "C: resultado de enviar después",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cancelado",
+                  "type": "numeric",
+                  "label": "C: sigue cancelado (0 o 1)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "enviar_primero",
+                  "type": "numeric",
+                  "label": "R: primera solicitud de enviar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "enviar_segundo",
+                  "type": "numeric",
+                  "label": "R: segunda solicitud de enviar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "enviado",
+                  "type": "numeric",
+                  "label": "R: sigue enviado (0 o 1)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cantidad_uno",
+                  "type": "numeric",
+                  "label": "L: cantidad tras aceptar 1",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cantidad_veinte",
+                  "type": "numeric",
+                  "label": "L: cantidad tras aceptar 20",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cantidad_cero",
+                  "type": "numeric",
+                  "label": "L: cantidad tras intentar 0",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cantidad_veintiuno",
+                  "type": "numeric",
+                  "label": "L: cantidad tras intentar 21",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Observación",
+                "Valor"
+              ],
+              "rows": [
+                [
+                  "C: resultado de cancelar",
+                  {
+                    "field": "cancelar"
+                  }
+                ],
+                [
+                  "C: resultado de enviar después",
+                  {
+                    "field": "enviar_cancelado"
+                  }
+                ],
+                [
+                  "C: sigue cancelado (0 o 1)",
+                  {
+                    "field": "cancelado"
+                  }
+                ],
+                [
+                  "R: primera solicitud de enviar",
+                  {
+                    "field": "enviar_primero"
+                  }
+                ],
+                [
+                  "R: segunda solicitud de enviar",
+                  {
+                    "field": "enviar_segundo"
+                  }
+                ],
+                [
+                  "R: sigue enviado (0 o 1)",
+                  {
+                    "field": "enviado"
+                  }
+                ],
+                [
+                  "L: cantidad tras aceptar 1",
+                  {
+                    "field": "cantidad_uno"
+                  }
+                ],
+                [
+                  "L: cantidad tras aceptar 20",
+                  {
+                    "field": "cantidad_veinte"
+                  }
+                ],
+                [
+                  "L: cantidad tras intentar 0",
+                  {
+                    "field": "cantidad_cero"
+                  }
+                ],
+                [
+                  "L: cantidad tras intentar 21",
+                  {
+                    "field": "cantidad_veintiuno"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cancelar": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "enviar_cancelado": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "cancelado": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "enviar_primero": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "enviar_segundo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "enviado": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "cantidad_uno": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "cantidad_veinte": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "cantidad_cero": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "cantidad_veintiuno": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cancelar impide las transiciones posteriores que requieren preparado. Enviar de nuevo se rechaza. Las cantidades uno y veinte se aceptan; los vecinos cero y veintiuno conservan el último valor válido.",
+            "incorrect": "Sigue cada objeto desde su propio estado inicial. Aplica la condición de preparado y el dominio de unidades antes de actualizar; un rechazo conserva los miembros."
+          }
         }
       ]
     },
@@ -187,15 +390,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa el modelo de Pedido con las tres operaciones descritas. Construye {\"Q\", 4}; cambia a seis; envía; intenta cambiar a siete; intenta cancelar. Presenta los resultados de esas cuatro solicitudes como 1 1 0 0 y la cantidad final seis. Comprueba también cancelar antes de enviar, repetir enviar y cambiar a cada frontera y a sus valores vecinos."
+          "text": "Construye Pedido con las tres operaciones y reúne estas pruebas independientes en una ejecución. Para Q con cuatro unidades: cambia a seis, envía, intenta cambiar a siete e intenta cancelar. Muestra los resultados como 1 1 0 0 y, en otra línea, Q:6 1, donde el último bool consulta si está enviado.\n\nPara C con cuatro unidades, cancela, intenta enviar e intenta cambiar a uno. Muestra Cancelado:1:0:0;Estado:1;Unidades:4, donde Estado comprueba cancelado. Para R con cuatro, intenta enviar dos veces y muestra Enviados:1:0;Estado:1, donde Estado comprueba enviado.\n\nPor último crea L con cuatro y prueba cambios a 1, 20, 0 y 21, en ese orden. Muestra Limites: seguido de resultado:unidades; por intento. La línea debe ser Limites:1:1;1:20;0:20;0:20;. Después muestra Conservado:L:1, consultando el código y si sigue preparado. Cada línea termina con salto salvo la última. Pulsa Compilar, ejecutar y comprobar. Conserva objetos nuevos para cada prueba y ejecuta cada solicitud antes de consultar su resultado.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1 1 0 0\nQ:6 1\nCancelado:1:0:0;Estado:1;Unidades:4\nEnviados:1:0;Estado:1\nLimites:1:1;1:20;0:20;0:20;\nConservado:L:1"
+                ],
+                "explanation": "Cada transición respeta su estado previo y los rechazos conservan los miembros. Los objetos separados comprueban cancelación, repetición de envío y fronteras sin contaminar otras pruebas."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Escribe una tabla de estados para las variantes. El criterio no es sólo terminar con un número dentro del rango: los rechazos deben conservar también el código y el estado, y cada transición debe respetar la condición de preparado."
+          "text": "La tabla anterior conserva los estados previstos para esas variantes antes de construir el programa. Un rechazo debe conservar cantidad, código y estado; terminar con una cantidad dentro del rango no basta para verificar una transición. Las correcciones y reintentos pertenecen a esta misma batería."
         }
       ]
     },
@@ -224,6 +443,15 @@
           ],
           "correctIndex": 1,
           "explanation": "El resultado declarado y el efecto real deben satisfacer el mismo contrato."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las pruebas de transición y fronteras"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"Q\", 4};\n    bool a = pedido.cambiar_unidades(6);\n    bool b = pedido.enviar();\n    bool c = pedido.cambiar_unidades(7);\n    bool d = pedido.cancelar();\n    std::cout << a << \" \" << b << \" \" << c << \" \" << d << \"\\n\";\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \"\n              << (pedido.estado() == Estado::enviado) << \"\\n\";\n    Pedido cancelado{\"C\", 4};\n    a = cancelado.cancelar();\n    b = cancelado.enviar();\n    c = cancelado.cambiar_unidades(1);\n    std::cout << \"Cancelado:\" << a << \":\" << b << \":\" << c\n              << \";Estado:\" << (cancelado.estado() == Estado::cancelado)\n              << \";Unidades:\" << cancelado.unidades() << \"\\n\";\n    Pedido repetido{\"R\", 4};\n    a = repetido.enviar();\n    b = repetido.enviar();\n    std::cout << \"Enviados:\" << a << \":\" << b << \";Estado:\"\n              << (repetido.estado() == Estado::enviado) << \"\\n\";\n    Pedido limites{\"L\", 4};\n    std::cout << \"Limites:\";\n    for (int cantidad : std::vector<int>{1, 20, 0, 21}) {\n        a = limites.cambiar_unidades(cantidad);\n        std::cout << a << \":\" << limites.unidades() << \";\";\n    }\n    std::cout << \"\\nConservado:\" << limites.codigo() << \":\"\n              << (limites.estado() == Estado::preparado);\n    return 0;\n}\n"
         }
       ]
     }

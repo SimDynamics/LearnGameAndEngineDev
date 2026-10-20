@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Estas tandas mezclan conocimientos de todo el curso. Resuelve antes de consultar los mensajes de solución. Los rótulos indican qué cantidad debes dar, pero no anuncian el procedimiento. Puedes repartir las tandas entre sesiones y anotar qué decisiones todavía requieren esfuerzo."
+          "text": "Estas tandas mezclan conocimientos de todo el curso. Resuelve antes de consultar los mensajes de solución. Los rótulos indican qué cantidad debes dar, pero no anuncian el procedimiento. Puedes repartir las tandas entre sesiones; los puzzles y sus reintentos permiten revisar las decisiones que todavía requieren esfuerzo."
         }
       ]
     },
@@ -1195,7 +1195,48 @@
       "blocks": [
         {
           "type": "note",
-          "text": "Después de comprobar, explica qué dato o condición decidió tu procedimiento. Si tu respuesta dependió de copiar una solución, vuelve a resolver una actividad distinta del mismo tema y regresa a esta tanda en otra sesión."
+          "text": "La actividad siguiente comprueba qué relación de los datos decide un procedimiento. Selecciona el criterio que lo justifica y revisa su retroalimentación antes de continuar; los reintentos se realizan en este mismo puzzle."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cierre_numerico_comprobar_un_cociente",
+          "prompt": "Para comprobar que −42 dividido entre 7 es −6, ¿qué operación recupera la relación que define ese cociente?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cierre_numerico_comprobar_un_cociente__criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Comprobar que 7 por −6 da −42.",
+                  "reviewFeedback": "Relaciona divisor, cociente y dividendo para revisar la igualdad propuesta."
+                },
+                {
+                  "id": "b",
+                  "label": "Comprobar sólo que 42 es mayor que 7.",
+                  "reviewFeedback": "El tamaño de dos cifras no comprueba el signo ni el valor del cociente."
+                },
+                {
+                  "id": "c",
+                  "label": "Restar 7 a −42 y exigir que dé −6.",
+                  "reviewFeedback": "Reconsidera qué operación invierte la división y qué papel conserva cada dato."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cociente debe multiplicarse por el divisor para recuperar el dividendo: 7 por −6 da −42. Esa comprobación examina a la vez el signo y el valor del resultado.",
+            "incorrect": "Reconsidera qué relación de los datos justifica el procedimiento elegido. Puedes corregir la selección en esta misma actividad."
+          }
         }
       ]
     }

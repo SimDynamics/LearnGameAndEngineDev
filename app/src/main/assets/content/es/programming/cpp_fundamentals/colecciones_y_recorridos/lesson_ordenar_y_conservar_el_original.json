@@ -250,15 +250,27 @@
         },
         {
           "type": "paragraph",
-          "text": "La solución del relleno usa begin y end. Construye ahora una copia ordenada de {6, 2, 6, 1}. Presenta Original:6;2;6;1; y Ordenados:1;2;6;6; en dos líneas. Añade una tercera línea Distintos:3. Repite con {}, {4} y {5, 5}: deben conservar respectivamente cero, uno y dos observaciones, pero contar cero, uno y un valor distinto."
+          "text": "Construye una copia ordenada de `{6, 2, 6, 1}`. Presenta `Original:6;2;6;1;`, `Ordenados:1;2;6;6;` y `Distintos:3` en tres líneas. La copia conserva todas las observaciones, incluidas las repetidas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original:6;2;6;1;\nOrdenados:1;2;6;6;\nDistintos:3",
+                  "Original:6;2;6;1;\nOrdenados:1;2;6;6;\nDistintos:3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como transferencia, usa etiquetas {\"b2\", \"a1\", \"b2\"} con <string>. Explica qué información conserva el original y por qué la presentación de valores distintos no modifica su tamaño."
+          "text": "El original conserva el orden de llegada; la copia permite presentar el orden ascendente y contar cambios de valor. Después de comprobar otros datos, un editor independiente transferirá esa misma organización a etiquetas."
         }
       ]
     },
@@ -297,6 +309,69 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: ordenar una copia por valor, conservar la secuencia original y todas sus observaciones repetidas, contar distintos sin borrarlas y proteger el acceso al vecino anterior; los mismos criterios deben mantenerse con etiquetas."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 4 para {4}\n• 2 5 5 para {5, 5}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::cout << \"Original:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\nOrdenados:\";\n    for (int valor : ordenados) { std::cout << valor << \";\"; }\n    int distintos = 0;\n    for (std::size_t i = 0; i < ordenados.size(); ++i) {\n        if (i == 0 || ordenados[i] != ordenados[i - 1]) { ++distintos; }\n    }\n    std::cout << \"\\nDistintos:\" << distintos;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Original:\nOrdenados:\nDistintos:0",
+                  "Original:\nOrdenados:\nDistintos:0\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Original:4;\nOrdenados:4;\nDistintos:1",
+                  "Original:4;\nOrdenados:4;\nDistintos:1\n"
+                ]
+              },
+              {
+                "standardInput": "2 5 5",
+                "outputs": [
+                  "Original:5;5;\nOrdenados:5;5;\nDistintos:1",
+                  "Original:5;5;\nOrdenados:5;5;\nDistintos:1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Orden y observaciones de texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto la transferencia a etiquetas `{\"b2\", \"a1\", \"b2\"}`. Presenta `Original:b2;a1;b2;`, `Ordenados:a1;b2;b2;` y `Distintos:2` en tres líneas. Incluye `<string>` y conserva los tres registros del original.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original:b2;a1;b2;\nOrdenados:a1;b2;b2;\nDistintos:2",
+                  "Original:b2;a1;b2;\nOrdenados:a1;b2;b2;\nDistintos:2\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

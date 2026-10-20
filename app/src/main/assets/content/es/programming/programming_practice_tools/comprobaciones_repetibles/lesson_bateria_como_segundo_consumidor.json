@@ -198,7 +198,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de editar, calcula del requisito los esperados para 1,5,17. Añade esas tres llamadas sin borrar las cuatro anteriores. Reconstruye comprobar_cajas y contrasta cada línea y el código final. Después repara sólo src/cajas.cpp para que cumpla la capacidad, conservando intactos los siete casos. Reconstruye y vuelve a ejecutar el mismo comprobador. Una solución válida necesita el mínimo de cajas para todo el dominio; no basta ajustar retornos a las siete entradas."
+          "text": "Antes de editar, calcula del requisito los esperados para 1,5,17. Añade esas tres llamadas al comprobador sin borrar las cuatro anteriores ni modificar src/cajas.cpp. Construye comprobar_cajas y contrasta las siete líneas y el código final: tu objetivo aquí es que la batería distinga la implementación defectuosa. La reparación del componente se realiza después en otro editor."
         },
         {
           "type": "cpp_compiler",
@@ -294,6 +294,57 @@
             "Distingue lo que imprime un aviso y lo que significa la comparación. Renombrar el resultado no cambia la discrepancia.",
             "Relaciona el cuerpo reparado con la biblioteca y con el consumidor que obtendrá su nueva construcción."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Reparar el componente manteniendo una batería completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente conserva siete casos ya escritos y la implementación que redondea hacia abajo. Repara sólo src/cajas.cpp para cumplir el mínimo de cajas de cuatro plazas. Compila, ejecuta y comprueba comprobar_cajas; conserva todos los datos y esperados. El cliente sigue utilizando esa misma biblioteca."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las siete comparaciones conservadas pasan con el mínimo número de cajas exigido por el contrato, incluidos los datos que no son múltiplos de cuatro."
+              }
+            ]
+          }
         }
       ]
     },
@@ -400,7 +451,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después realiza una contraprueba controlada: conserva los esperados ya justificados, cambia temporalmente sólo src/cajas.cpp a piezas/4, reconstruye y exige que el comprobador observe las discrepancias y termine con código 1. Recupera la implementación correcta y vuelve a construir/ejecutar con la batería intacta. Relaciona cada resultado con la implementación que acabas de construir; no dejes la deliberadamente defectuosa como reparación."
+          "text": "Los esperados se revisan desde el requisito. Una vez corregidos en esta actividad, conserva los siete casos y comprueba la batería completa. El control deliberado de la implementación se realiza después en un proyecto independiente, sin sustituir este borrador ya revisado. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
         },
         {
           "type": "cpp_compiler",
@@ -431,6 +482,18 @@
           "cmake": {
             "target": "comprobar_cajas",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los siete casos conservados coinciden con sus esperados. El resumen de la batería y el retorno cero acreditan esta ejecución; los esperados proceden del requisito, no de copiar la implementación."
+              }
+            ]
           }
         },
         {
@@ -506,6 +569,57 @@
             "Relaciona la afirmación con los casos que se ejecutaron y con el dominio del componente.",
             "Reconsidera qué comportamientos seguirán observándose cuando cambie de nuevo el componente."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Contrastar la sensibilidad de una batería conservada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto prepara la batería de siete esperados correctos y una biblioteca que usa piezas/4. Construye el comprobador y observa las discrepancias de 1, 5 y 17, con retorno 1; esos fallos deben proceder del componente. Recupera después la regla correcta modificando sólo su cuerpo y comprueba las siete líneas OK. Este control no cambia las expectativas ni la actividad anterior."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(envios PRIVATE cxx_std_20)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(envios consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las siete comparaciones conservadas pasan con el mínimo número de cajas exigido por el contrato, incluidos los datos que no son múltiplos de cuatro."
+              }
+            ]
+          }
         }
       ]
     },
@@ -521,7 +635,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, calcula los esperados para 0,6,7,18 desde la nueva capacidad. Escribe las cuatro comparaciones en pruebas/lotes_casos.cpp, con diagnóstico por caso y retorno final 0 si todas coinciden o 1 si hay alguna discrepancia. No copies la fórmula al comprobador para fabricar esperados. Conserva las cuatro llamadas al hacer el control deliberado de piezas/6 y recuperar después la referencia correcta. Puedes organizar tu solución con los recursos ya conocidos; no existe un único texto válido."
+          "text": "Antes de ejecutar, calcula los esperados para 0,6,7,18 desde la nueva capacidad. Escribe las cuatro comparaciones en pruebas/lotes_casos.cpp, con diagnóstico por caso y retorno final 0 si todas coinciden o 1 si hay alguna discrepancia. No copies la fórmula al comprobador para fabricar esperados. Puedes organizar tu solución con los recursos ya conocidos; no existe un único texto válido. El control de una implementación alterada se trabaja después en otra actividad."
         },
         {
           "type": "cpp_compiler",
@@ -625,6 +739,57 @@
             "Conservar evidencia requiere saber a qué contrato corresponde. Revisa si las cantidades de una capacidad siguen siendo válidas para la nueva.",
             "Distingue una actualización justificada del acuerdo y adaptar la prueba a cualquier resultado que produzca el cuerpo."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la regla de lotes ante un control deliberado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor tiene el comprobador completo y una implementación de piezas/6. La primera ejecución debe permitir observar qué caso de la batería la distingue. Recupera después el mínimo de lotes de seis plazas modificando sólo el componente. Compila, ejecuta y comprueba con los cuatro casos conservados."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(LotesLocales LANGUAGES CXX)\nadd_library(lotes STATIC motor/cantidad.cpp)\ntarget_include_directories(lotes PUBLIC publico)\nadd_executable(consultar_lotes programa/consulta.cpp)\nadd_executable(verificar_lotes pruebas/lotes_casos.cpp)\ntarget_link_libraries(consultar_lotes PRIVATE lotes)\ntarget_link_libraries(verificar_lotes PRIVATE lotes)\ntarget_compile_features(lotes PRIVATE cxx_std_20)\ntarget_compile_features(consultar_lotes PRIVATE cxx_std_20)\ntarget_compile_features(verificar_lotes PRIVATE cxx_std_20)\nset_target_properties(lotes consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "publico/lotes/cantidad.h",
+              "initialCode": "#ifndef PRACTICA_LOTES_CANTIDAD_H\n#define PRACTICA_LOTES_CANTIDAD_H\n\n// Dominio: 0 <= piezas <= 18.\n// Minimo numero de lotes de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero lotes.\nint lotes_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "motor/cantidad.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n\nint lotes_para(int piezas) {\n    return piezas / 6;\n}\n"
+            },
+            {
+              "path": "programa/consulta.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nint main() {\n    std::cout << lotes_para(6) << \":\" << lotes_para(12);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/lotes_casos.cpp",
+              "initialCode": "#include \"lotes/cantidad.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{lotes_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar(18, 3)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "verificar_lotes",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\npiezas=18 esperado=3 obtenido=3 OK\nBateria: OK\n"
+                ],
+                "explanation": "El caso de siete piezas detecta el truncamiento a una sola caja; la reparación conserva las cuatro comparaciones independientes."
+              }
+            ]
+          }
         }
       ]
     }

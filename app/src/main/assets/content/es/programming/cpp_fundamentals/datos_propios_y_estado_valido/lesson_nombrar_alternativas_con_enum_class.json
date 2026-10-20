@@ -14,7 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito del tipo Estado. Los dos puntos dobles califican un nombre del tipo; no acceden a un miembro de un objeto mediante punto. enum class no es una clase con constructores y métodos: es una enumeración con ámbito."
+          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito del tipo Estado. Los dos puntos dobles califican un nombre del tipo; no acceden a un miembro de un objeto mediante punto. enum class no es una clase con constructores y métodos: es una enumeración con ámbito.",
+          "emphasis": [
+            {
+              "text": "ámbito del tipo Estado"
+            },
+            {
+              "text": "enumeración con ámbito"
+            }
+          ]
         },
         {
           "type": "code",
@@ -201,15 +209,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Define enum class Prioridad con normal, urgente y aplazada. Construye un objeto de prioridad urgente y una función nombre_prioridad que devuelva el texto Normal, Urgente o Aplazada según la alternativa, y No reconocida para otro valor convertido. Muestra Urgente. Comprueba las tres alternativas y una conversión explícita desde nueve."
+          "text": "Define enum class Prioridad con normal, urgente y aplazada. Construye nombre_prioridad para devolver Normal, Urgente o Aplazada según la alternativa, y No reconocida ante el valor convertido desde nueve. En main presenta urgente, normal, aplazada y ese valor convertido, una línea por resultado y con salto final en las cuatro.\n\nDefine también Registro con codigo string y prioridad de tipo Prioridad. Prepara un vector con A normal, B urgente y C aplazada. Recorre los registros y muestra codigo:nombre; para cada uno, sin espacios ni salto final. Pulsa Compilar, ejecutar y comprobar. Las cuatro líneas son Urgente, Normal, Aplazada y No reconocida; la última es `A:Normal;B:Urgente;C:Aplazada;`.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Urgente\nNormal\nAplazada\nNo reconocida\nA:Normal;B:Urgente;C:Aplazada;"
+                ],
+                "explanation": "Las alternativas conservan su tipo dentro de cada registro. Presentarlas como texto es una operación separada; el valor convertido desde nueve usa el camino no reconocido."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "No asignamos prioridades mediante números sueltos ni cadenas. Como variante, define un Registro que contenga codigo y Prioridad, y presenta la prioridad de cada registro de un vector usando tu función."
+          "text": "Los miembros de Registro conservan alternativas del tipo Prioridad, no números sueltos ni cadenas. La función de presentación traduce esa alternativa al rótulo que verá el usuario. La conversión explícita desde nueve sirve para comprobar el camino de valor no reconocido; no define una nueva prioridad."
         }
       ]
     },
@@ -257,6 +281,15 @@
         {
           "type": "paragraph",
           "text": "Esta variante produce R:Urgente;S:Normal;. Mantiene juntos el código y la prioridad y no necesita convertir la enumeración en un entero para presentarla."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n    const std::vector<Registro> registros{{\"A\", Prioridad::normal}, {\"B\", Prioridad::urgente}, {\"C\", Prioridad::aplazada}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
         }
       ]
     }

@@ -117,15 +117,39 @@
         },
         {
           "type": "paragraph",
-          "text": "En main crea Recuento{3, 2}. Insértalo en un ostringstream seguido de ;fin y, por separado, en el archivo relativo recuento_lgp.txt. Comprueba la apertura y la escritura después del cierre. main muestra Memoria=[3;2];fin|Guardado; el archivo debe contener únicamente [3;2]. El operador no usa cout por dentro ni añade ;fin."
+          "text": "En main crea Recuento{3, 2}. Insértalo en un ostringstream seguido de ;fin y, por separado, en el archivo relativo recuento_lgp.txt. Comprueba la apertura y la escritura después del cierre. main muestra Memoria=[3;2];fin|Guardado; el archivo debe contener únicamente [3;2]. El operador no usa cout por dentro ni añade ;fin. Construye una sola batería mediante probar(const Recuento&). Cada llamada compone en un ostringstream nuevo y crea su propia muestra relativa con el mismo nombre, sin reutilizar una conexión abierta. main prueba {3,2}, {0,0} y {10,10}, en ese orden, y termina con código 1 ante cualquier fallo. Cada informe Memoria=...|Guardado termina con salto. Usa Compilar, ejecutar y comprobar con las tres llamadas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Prueba también Recuento{0, 0} y Recuento{10, 10}. Comprueba que cambian los campos en ambos destinos, que la cadena conserva ;fin y que el archivo no lo recibe. Una coincidencia del mensaje final sin usar el registro no satisface el contrato."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__insertar_un_tipo_y_encadenar_la_salida__secuencia_escritor_previa",
+          "question": "¿A qué operación pertenece el sufijo ;fin de la cadena Memoria=[3;2];fin?",
+          "options": [
+            "Al operator<< de Recuento, por lo que también debe ir al archivo.",
+            "A main, después de insertar el registro en la captura; el operador sólo escribe [3;2].",
+            "A close, que añade automáticamente un final de archivo visible."
+          ],
+          "correctIndex": 1,
+          "explanation": "La inserción del tipo termina en ]. El llamador encadena otro literal para la captura, mientras al archivo sólo envía el registro."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    return 0;\n}\n"
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Memoria=[3;2];fin|Guardado\nMemoria=[0;0];fin|Guardado\nMemoria=[10;10];fin|Guardado\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -166,7 +190,20 @@
         },
         {
           "type": "note",
-          "text": "La inserción y los tipos de flujos se estudian en la fuente principal (Stroustrup, 2024, sección 9.6, p. 266, y secciones 9.7–9.8). Modelo, formato y actividades originales de esta ruta."
+          "text": "El operador << recibe el flujo por referencia y devuelve ese mismo flujo. Así una cadena como destino << primero << segundo continúa sobre el resultado de la primera inserción; no exige que el destino sea cout ni copia el objeto flujo (Stroustrup, 2024, sección 9.6, p. 266). El parámetro const del dato permite consultar sus miembros sin modificarlos durante la presentación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint probar(const Recuento& resumen) {\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar({3, 2}) != 0) return 1;\n    if (probar({0, 0}) != 0) return 1;\n    if (probar({10, 10}) != 0) return 1;\n    return 0;\n}\n"
         }
       ]
     }

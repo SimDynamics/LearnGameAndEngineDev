@@ -108,11 +108,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La colección está declarada: {5, 0, 3}. Predice el total y el número de elementos, y ejecuta. Después prueba {} y {2, 4, 6, 8}. Mantén hasta 8 elementos de 0 a 20. Observa que main puede usar la colección después de la llamada: el cálculo no la modifica. Para probar el máximo permitido, usa ocho elementos iguales a 20 y calcula el total esperado antes de ejecutar."
+          "text": "La colección de este editor contiene `{5, 0, 3}`. La función debe sumar sin modificarla y `main` debe poder consultar después su tamaño. El objetivo es `Total: 8` y `Elementos: 3`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Los demás casos conservan la misma función en otro editor."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total: 8\nElementos: 3",
+                  "Total: 8\nElementos: 3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -186,6 +198,45 @@
         {
           "type": "paragraph",
           "text": "El total comienza en cero, también cuando no hay cuerpo de recorrido. const en el parámetro comunica permiso de lectura; no demuestra por sí solo que los datos cumplan el dominio. Comprueba el vector después de llamar, además de su suma y tamaño. Otras formas de sumar son válidas si conservan la colección y el contrato."
+        },
+        {
+          "type": "heading",
+          "text": "Lectura de la colección sin modificarla"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `4 2 4 6 8`; `8 20 20 20 20 20 20 20 20`. Conserva hasta ocho cantidades de cero a veinte; el caso máximo debe sumar ciento sesenta.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Total: 0\nElementos: 0",
+                  "Total: 0\nElementos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "4 2 4 6 8",
+                "outputs": [
+                  "Total: 20\nElementos: 4",
+                  "Total: 20\nElementos: 4\n"
+                ]
+              },
+              {
+                "standardInput": "8 20 20 20 20 20 20 20 20",
+                "outputs": [
+                  "Total: 160\nElementos: 8",
+                  "Total: 160\nElementos: 8\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

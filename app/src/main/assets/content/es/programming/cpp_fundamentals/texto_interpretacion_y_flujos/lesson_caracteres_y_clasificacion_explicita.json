@@ -121,19 +121,49 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe del texto \"7 +\\n3\". Clasifica cada carácter válido en exactamente una categoría: dígito de 0 a 9; separador de los tres tipos definidos; u otro carácter. Presenta Digitos: N, Separadores: N y Otros: N, una etiqueta por línea y un espacio antes de cada cantidad. El dominio de cada prueba es un texto de hasta 40 caracteres ASCII; ningún contador debe superar 40."
+          "text": "Construye una sola batería que clasifique los textos \"7 +\\n3\", \"\", \"12\", \" \", \"()\" y \"001\\t-\", en ese orden. En esta escritura \\n y \\t representan los caracteres salto y tabulador. Define una función probar(const std::string& texto) que cree un flujo local nuevo y clasifique cada carácter en exactamente una categoría: dígito de 0 a 9, separador de los tres tipos definidos u otro. Cada texto tiene hasta 40 caracteres ASCII. main llama a esa misma función para los seis textos, sin cambiar la implementación entre casos.\n\nCada llamada presenta Digitos: N, Separadores: N y Otros: N, una etiqueta por línea, un espacio antes de cada cantidad y salto al final de cada línea. No añadas títulos ni líneas vacías entre casos. Usa Compilar, ejecutar y comprobar para ejecutar toda la batería de una vez.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "El caso inicial debe producir Digitos: 2, Separadores: 2 y Otros: 1. La cadena vacía produce tres ceros. \"12\" tiene dos dígitos y no contiene separadores; \" \" contiene un separador; \"()\" contiene dos caracteres de la categoría otros. Escribe lo esperado para \"001\\t-\" antes de ejecutar. No elimines el espacio en blanco antes de clasificarlo."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__caracteres_y_clasificacion_explicita__secuencia_clasificacion_previa",
+          "question": "Antes de construir la batería, ¿qué tres recuentos corresponden a \"001\\t-\" (\\t representa un tabulador)?",
+          "options": [
+            "3 dígitos, 1 separador y 1 otro.",
+            "1 dígito, 1 separador y 1 otro, porque 001 representa un número.",
+            "3 dígitos, 0 separadores y 1 otro, porque el lector omite el tabulador."
+          ],
+          "correctIndex": 0,
+          "explanation": "Se clasifican caracteres: los tres dígitos cuentan por separado; get conserva el tabulador y el guion pertenece a otros."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Elige la operación que conserva todos los caracteres, los contadores y las condiciones que hacen exclusivas las categorías. Comprueba que la suma de los tres recuentos coincide con la cantidad de caracteres de cada prueba. El editor no valida ese criterio por ti; úsalo para localizar omisiones o duplicados antes de comparar con la referencia."
+          "text": "Cada llamada presenta Digitos: N, Separadores: N y Otros: N, una etiqueta por línea y un espacio antes de cada cantidad. Termina las tres líneas con salto y no añadas líneas vacías ni títulos entre casos. Usa Compilar, ejecutar y comprobar para verificar toda la batería de una vez. La suma de los tres contadores debe ser la longitud del texto; la comprobación de stdout no demuestra por sí sola que las categorías se hayan calculado mediante get.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -165,6 +195,15 @@
             "Digitos: 2\nSeparadores: 2\nOtros: 1"
           ],
           "explanation": "El tabulador y el espacio son separadores; 0 y 9 son dígitos incluidos en las fronteras; el guion pertenece a otros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de la batería: la misma función analiza cada texto con contadores y flujo nuevos. Esta versión ejecuta todos los casos en una sola llamada a main."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') ++digitos;\n        else if (actual == ' ' || actual == '\\t' || actual == '\\n') ++separadores;\n        else ++otros;\n    }\n    std::cout << \"Digitos: \" << digitos << \"\\nSeparadores: \" << separadores\n              << \"\\nOtros: \" << otros << \"\\n\";\n}\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    return 0;\n}\n"
         }
       ]
     },

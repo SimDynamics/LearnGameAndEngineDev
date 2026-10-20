@@ -109,11 +109,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade static_assert para comprobar los casos 0→0 y 4→10. En main inicializa un objeto constexpr con suma_hasta(5) y llama también con una variable ordinaria que contiene 3. Muestra los dos resultados separados por dos puntos: 15:6. Prueba después 10: la suma es 55 y cabe en int."
+          "text": "Añade `static_assert` para comprobar cero → cero y cuatro → diez. En `main`, inicializa un objeto `constexpr` con `suma_hasta(5)` y llama también con una variable ordinaria que contiene tres. Muestra los dos resultados separados por dos puntos: `15:6`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. La comprobación de diez se realiza después en otro editor sin cambiar la función."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Construye suma_hasta y las comprobaciones antes de main.\nint main() {\n    // Usa la misma funcion en los dos contextos solicitados.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\n// Construye suma_hasta y las comprobaciones antes de main.\nint main() {\n    // Usa la misma funcion en los dos contextos solicitados.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -139,6 +151,38 @@
         {
           "type": "paragraph",
           "text": "Cambia temporalmente el caso de main a 10: debe producir 15:55. Una static_assert de un solo caso no certifica todos los demás; prueba los once valores permitidos y relaciona la diferencia entre sumas consecutivas con el último número añadido. No ejecutes cálculos fuera del dominio para deducir una garantía que no hemos establecido."
+        },
+        {
+          "type": "heading",
+          "text": "La misma función con un argumento de ejecución"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa conserva el objeto constante calculado con cinco y lee otro argumento entre cero y diez. Comprueba `3` → `15:6` y `10` → `15:55`. La lectura es un argumento de ejecución; no se exige que proceda de una expresión constante.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "15:55",
+                  "15:55\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3"
         }
       ]
     },
@@ -175,7 +219,7 @@
         },
         {
           "type": "note",
-          "text": "El cálculo en compilación se estudia en la fuente principal (Stroustrup, 2024, sección 7.4.9, pp. 204–205). Explicaciones, dominios y actividades originales de esta ruta."
+          "text": "Una función `constexpr` puede utilizarse en un cálculo de ejecución o en un contexto que requiere una expresión constante. En ese contexto, sus argumentos deben permitir la evaluación constante; los bucles finitos y las variables locales pueden formar parte del cálculo. `consteval` exige evaluación en compilación para sus llamadas, en lugar de permitir ambas modalidades (Stroustrup, 2024, sección 7.4.9)."
         }
       ]
     }

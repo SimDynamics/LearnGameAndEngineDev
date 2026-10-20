@@ -172,6 +172,18 @@
             1
           ],
           "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo__secuencia_extraccion_previa",
+          "question": "El operador recibe \"[2;1]resto\" y sólo promete extraer un Recuento. ¿Qué conducta corresponde?",
+          "options": [
+            "Aceptar [2;1] y dejar resto pendiente.",
+            "Rechazar y borrar resto automáticamente.",
+            "Aceptar todo el texto como parte del campo rechazados."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cierre termina ese objeto; exigir que no quede texto pertenece a otro contrato de línea o archivo completo."
         }
       ]
     },
@@ -195,11 +207,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba también [ 1 ; 3 ] y [2;1]resto. El primero admite los espacios habituales; el segundo obtiene un registro y deja resto pendiente. Este operador no exige el fin de toda la cadena después del cierre. No confundas aceptar el registro inicial con validar un archivo completo."
+          "text": "Prueba también [ 1 ; 3 ] y [2;1]resto. El primero admite los espacios habituales; el segundo obtiene un registro y deja resto pendiente. Este operador no exige el fin de toda la cadena después del cierre. No confundas aceptar el registro inicial con validar un archivo completo. La misma batería añade al final la cadena vacía y \"[3;4}\". Mantén exactamente el orden de los trece casos de esta página. Todas las líneas terminan con salto y no hay títulos ni líneas vacías. Usa Compilar, ejecutar y comprobar con el programa completo; cada llamada crea un origen y un Recuento{6,2} nuevos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "OK [2;1]\nOK [0;0]\nOK [10;10]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nFallo [6;2]\nOK [1;3]\nOK [2;1]\nFallo [6;2]\nFallo [6;2]\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -228,11 +256,30 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade una cadena vacía y un cierre incorrecto [3;4}: ambas lecturas fallan sin modificar el destino. Después de un fallo, una nueva extracción sobre ese mismo origen no es una estrategia de recuperación mientras conserve failbit. Crear un origen independiente para cada prueba evita mezclar sus estados."
+          "text": "La cadena vacía y el cierre incorrecto [3;4} completan la batería con dos lecturas fallidas que conservan [6;2]. Una nueva extracción sobre un mismo origen que conserve failbit no realiza una recuperación. Cada prueba independiente evita confundir ese estado con el contrato del operador."
         },
         {
           "type": "note",
-          "text": "La extracción y los bucles de lectura se estudian en la fuente principal (Stroustrup, 2024, secciones 9.7–9.8, pp. 266–269). Modelo y actividades originales. Los estados se contrastaron con el borrador del estándar C++: setstate conserva los indicadores existentes (Working Draft: Programming Languages — C++, s. f., sección [iostate.flags])."
+          "text": "Un operador de extracción debe comprobar campos y delimitadores antes de reemplazar el objeto recibido; conservar el destino después de un fallo simplifica el código que lo usa. Esa garantía no promete devolver todos los caracteres ya consumidos (Stroustrup, 2024, sección 9.7, pp. 266–267). Para señalar un formato incorrecto usamos setstate(failbit), que añade el indicador sin borrar otros que ya estuvieran activos (Working Draft: Programming Languages — C++, s. f., sección [iostate.flags]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\", \"\", \"[3;4}\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
         }
       ]
     }

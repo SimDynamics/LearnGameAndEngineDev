@@ -121,23 +121,47 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un inspector con el contrato anterior y añade % a los signos admitidos. El texto inicial es \"7%2;\". Cada número produce Numero: N; cada signo produce Signo: C; el final produce Fin. Usa una línea por token y deja Fin al final. Un carácter no admitido debe producir Error: Caracter no admitido y detener el intento, sin presentar Fin. El inspector reconoce %, todavía no calcula su resto."
+          "text": "Construye un inspector con el contrato anterior y añade % a los signos admitidos. El texto inicial es \"7%2;\". Cada número produce Numero: N; cada signo produce Signo: C; el final produce Fin. Usa una línea por token y deja Fin al final. Un carácter no admitido debe producir Error: Caracter no admitido y detener el intento, sin presentar Fin. El inspector reconoce %, todavía no calcula su resto. Agrupa las pruebas en una sola batería: define probar(const std::string& texto), con flujo nuevo y un inspector por llamada; main llama con \"7%2;\", \"\", \" \\t\\n\", \"0;\", \"9+1;\", \"f\" y \"1 2\", en ese orden. \\t y \\n representan tabulador y LF reales. Fin y el diagnóstico también terminan con salto; no añadas títulos ni líneas vacías entre informes. Usa Compilar, ejecutar y comprobar cuando estén todas las llamadas del mismo programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
           "text": "Define la función que consume una unidad del flujo por llamada y devuelve Token. Conserva el struct del editor y sus etiquetas n y f; inicializa valor también para signos y final. El texto de cada prueba tiene hasta 64 caracteres ASCII y los números siguen siendo dígitos aislados. Elige las condiciones de reconocimiento y la repetición del inspector."
         },
         {
-          "type": "paragraph",
-          "text": "El caso inicial debe entregar 7, %, 2, ; y final en ese orden, con las etiquetas indicadas. La cadena vacía y \" \\t\\n\" producen sólo Fin. \"0;\" comprueba la frontera numérica inferior. \"9+1;\" comprueba otra operación reconocible. \"f\" debe rechazarse: la etiqueta interna no autoriza esa letra en la entrada. \"1 2\" debe entregar dos números, aunque una gramática posterior pudiera rechazar esa secuencia."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor__secuencia_etiqueta_final_previa",
+          "question": "¿Qué debe entregar el inspector si la entrada contiene el carácter literal f?",
+          "options": [
+            "El token final, porque su etiqueta interna es f.",
+            "Un número de valor cero, porque no hay dígitos.",
+            "Error: Caracter no admitido, sin presentar Fin."
+          ],
+          "correctIndex": 2,
+          "explanation": "La etiqueta interna f es el resultado que construye el lector al agotar el origen. No autoriza la letra f como carácter del lenguaje."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba la salida completa y que cada llamada válida haya avanzado. Un struct con una combinación incoherente de clase y valor incumple el contrato aunque compile. El editor no valida automáticamente ni la clasificación ni el final: compara tus observaciones con estos criterios antes de abrir la referencia."
+          "text": "La comprobación contrasta todos los informes de la batería. Cada llamada válida al lector debe avanzar y cada Token debe conservar la combinación de categoría y valor; coincidir con stdout no comprueba por sí solo esa representación interna."
         }
       ]
     },
@@ -175,12 +199,33 @@
           "text": "Recuperar el contrato de las unidades"
         },
         {
-          "type": "paragraph",
-          "text": "Explica por separado estas tres situaciones: un carácter no pertenece al lenguaje; los tokens pertenecen pero aparecen en un orden inválido; o la operación válida pide un cálculo fuera de su dominio. Por ejemplo, ? falla al reconocer; 2**3 falla por estructura; y 4/0 puede tener estructura válida pero necesita rechazar el divisor antes de calcular."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor__secuencia_fronteras_errores",
+          "question": "¿Qué relación distingue ?; 2**3; y 4/0; en un intérprete que ya admita esos operadores?",
+          "options": [
+            "Los tres fallan al reconocer el primer carácter.",
+            "? falla al reconocer; 2**3, al combinar tokens; 4/0 exige rechazar cero antes del cálculo.",
+            "El inspector de tokens calcula los tres resultados y los convierte en cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Reconocer unidades, verificar su estructura y validar el dominio del cálculo son responsabilidades diferentes. Este inspector todavía no ejecuta división ni resto."
         },
         {
           "type": "note",
-          "text": "Ninguno de los programas de este inspector ejecuta / ni %. Los signos se reconocen como datos. La próxima interfaz conservará un token leído por adelantado; después construiremos las reglas de expresión y sus comprobaciones de cálculo. La representación mediante categoría y valor adapta el tipo Token de la lectura de apoyo (Stroustrup, 2024, secciones 5.3.2–5.3.3). Las etiquetas, el dominio entero, el reconocimiento por caracteres y las actividades son propios de esta ruta."
+          "text": "Un token asocia una categoría con los datos necesarios para interpretarla. Un número necesita su valor; un operador puede identificarse por su categoría sin utilizar un valor numérico (Stroustrup, 2024, secciones 5.3.2–5.3.3). En este inspector / y % se reconocen como datos: ninguno de sus programas ejecuta esas operaciones. La próxima interfaz conservará un token leído por adelantado y las reglas de cálculo se construirán después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    return 0;\n}\n"
         }
       ]
     }

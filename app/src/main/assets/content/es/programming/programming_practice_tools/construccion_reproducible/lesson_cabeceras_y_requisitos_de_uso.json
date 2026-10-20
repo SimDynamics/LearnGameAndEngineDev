@@ -241,7 +241,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor de código la ruta de include se aplica sólo a preparacion. main.cpp incluye \"paquetes/entrega.h\" y no recibe ninguna otra ruta de búsqueda del proyecto. Antes de ejecutar, predice qué fuente necesita esa información. Conserva los archivos y el objetivo medir; configura y construye para contrastar tu predicción."
+          "text": "En este editor de código la ruta de include se aplica sólo a preparacion. main.cpp incluye \"paquetes/entrega.h\" y no recibe ninguna otra ruta de búsqueda del proyecto. Antes de ejecutar, predice qué fuente necesita esa información. Conserva los archivos y el objetivo medir; configura y construye para contrastar tu predicción.\n\nExamina el diagnóstico de main.cpp y repara sólo el alcance de la ruta que necesita el cliente, conservando cabecera, función, llamadas y objetivo. Vuelve a configurar y utiliza «Compilar, ejecutar y comprobar». La salida debe conservar 0:5:13, sin salto final.",
+          "emphasis": [
+            {
+              "text": "repara sólo el alcance de la ruta"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -268,11 +273,23 @@
           "cmake": {
             "target": "medir",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La búsqueda pública permite construir el cliente y la salida conserva el contrato de preparación; publicar una ruta no cambia el cálculo."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "La configuración puede terminar correctamente aunque falte una ruta al compilar main.cpp. Examina el diagnóstico de la construcción: debe referirse a la búsqueda de la cabecera. No confundas ese caso con una definición ausente durante el enlace. Cambia sólo el alcance de la ruta que debe llegar al cliente, configura y construye de nuevo; después ejecuta y contrasta con el oráculo anterior."
+          "text": "La configuración puede terminar correctamente aunque main.cpp no encuentre una cabecera al compilar. Ese diagnóstico pertenece a la búsqueda de la declaración, mientras que una definición ausente se manifestaría después durante el enlace. La reparación de alcance conserva el contrato de la función."
         },
         {
           "type": "multiple_choice",
@@ -310,7 +327,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tras la reparación, contrasta las llamadas originales. Después cambia sólo las llamadas a los extremos y al caso interior que aparecen en esta predicción. Reconstruye el programa que contiene ese nuevo cliente antes de atribuirle una salida; el nombre de su cabecera puede seguir igual aunque el ejecutable necesite actualizarse."
+          "text": "La reparación de referencia conserva las llamadas originales y su contrato. El puzzle siguiente utiliza cero, el extremo superior y un caso interior; calcula esa revisión antes de construirla en la actividad independiente que sigue."
         },
         {
           "type": "output_prediction",
@@ -327,7 +344,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba también una revisión deliberadamente defectuosa: elimina en src/entrega.cpp el caso especial de cero, dejando sólo return 3 + 2 * unidades;. Una búsqueda de cabecera y un enlace correctos pueden construirla. El caso cero debe detectar que ya no respeta el contrato. Restituye la implementación y reconstruye; conservar una configuración correcta no acredita por sí solo la reparación del comportamiento."
+          "text": "La búsqueda de cabecera y el enlace pueden ser correctos aunque el cálculo incumpla su contrato. Después de comprobar la variación de llamadas, otra actividad aislará precisamente el caso de cero, sin sustituir tu reparación de rutas."
         },
         {
           "type": "multiple_choice",
@@ -345,6 +362,100 @@
             "Una firma conserva tipos y nombre. Revisa si también determina el comportamiento de su cuerpo para ese argumento.",
             "Elige una observación vinculada a la diferencia introducida y contrástala con un esperado independiente."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Ejecutar la variación de llamadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto conserva la reparación pública y prepara las mismas llamadas de la predicción. Compila, ejecuta y comprueba; su borrador es independiente del editor donde reparaste la ruta."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "La nueva ejecución conserva la regla de cero y aplica 3 + 2 * unidades en los casos positivos, independientemente de las rutas de cabeceras."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Reparar un incumplimiento que la construcción no detecta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva la descripción correcta y las llamadas de frontera, pero la implementación perdió el caso especial de cero. Repara sólo esa obligación del cálculo; conserva las rutas y los otros casos. Compila, ejecuta y comprueba."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion PUBLIC include)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n\nint minutos_preparacion(int unidades) {\n    return 3 + 2 * unidades;\n}\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(12) << ':'\n              << minutos_preparacion(2);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:27:7"
+                ],
+                "explanation": "El caso cero vuelve a devolver cero. La reparación corresponde al cálculo; la búsqueda pública ya era correcta y debe conservarse."
+              }
+            ]
+          }
         }
       ]
     },
@@ -420,7 +531,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código conserva el contrato y las llamadas iniciales, pero utiliza ajuste.h. Configura, construye medir y ejecuta; la separación de carpetas debe conservar el mismo comportamiento. Después retira únicamente PRIVATE interno de target_include_directories, manteniendo PUBLIC include y los archivos. Configura y construye otra vez. La implementación debe diagnosticar la cabecera ajuste.h ausente; vuelve a añadir su ruta para recuperar la construcción."
+          "text": "Este editor de código conserva el contrato y las llamadas iniciales, pero utiliza ajuste.h sólo dentro de la implementación. Configura, construye medir y comprueba la salida. La separación de carpetas y las dos clases de ruta deben conservar el comportamiento 0:5:13, sin salto final."
         },
         {
           "type": "cpp_compiler",
@@ -451,11 +562,31 @@
           "cmake": {
             "target": "medir",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La biblioteca usa su ruta interna y el cliente recibe la pública. Las mismas cantidades conservan el mismo comportamiento."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "Para comprobar qué recibió el cliente, añade temporalmente #include \"ajuste.h\" a app/main.cpp. La cabecera sigue existiendo y la biblioteca conserva su ruta interna, pero esa ruta no se publicó a medir. El diagnóstico debe corresponder a la compilación de ese cliente. Retira la inclusión experimental y reconstruye. No añadas una ruta al cliente sólo para ocultar este resultado: aquí queremos contrastar la separación acordada."
+          "text": "La ruta interna y la pública sirven a fuentes distintas. Las actividades que siguen aíslan una dependencia de la implementación, una inclusión indebida del cliente y un cambio deliberado de contrato. Cada una dispone de su propio editor; no necesitas modificar y restaurar sucesivamente este proyecto ya comprobado.",
+          "emphasis": [
+            {
+              "text": "una dependencia de la implementación"
+            },
+            {
+              "text": "un cambio deliberado de contrato"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -476,7 +607,160 @@
         },
         {
           "type": "paragraph",
-          "text": "Un siguiente cambio deliberado del contrato permite comprobar otro dato: para cantidades positivas se quieren ahora 4 minutos iniciales, conservando 2 por unidad y cero minutos para cero unidades. Actualiza el contrato de entrega.h y minutos_base en interno/ajuste.h. Antes de reconstruir, calcula otra vez las tres llamadas originales; después contrasta 0:6:14, sin salto final. Este cambio de comportamiento es un requisito nuevo, no una consecuencia automática de publicar una ruta. Conservar el programa anterior como si fuera la revisión nueva repetiría el error de procedencia ya estudiado."
+          "text": "Un cambio deliberado del contrato es distinto de corregir rutas: para cantidades positivas se pedirán cuatro minutos iniciales, manteniendo dos por unidad y cero para cero. La última actividad de esta página separa esa decisión de comportamiento de los dos diagnósticos de cabeceras."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la ruta que necesita la implementación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto conserva ajuste.h y su uso en src/entrega.cpp, pero la biblioteca perdió su búsqueda interna. Configura y construye medir; localiza la cabecera y la fuente del diagnóstico. Repara sólo la ruta interna de preparacion, sin publicarla al cliente. La actividad termina cuando la implementación vuelve a construir y el cliente conserva 0:5:13 y retorno 0. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "La implementación recupera su búsqueda privada y las llamadas conservadas producen los mismos resultados. El cliente sigue usando la interfaz pública."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Detectar un uso indebido desde el cliente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta revisión añade #include \"ajuste.h\" a app/main.cpp, que no utiliza ningún nombre de esa cabecera. Conserva la búsqueda privada de la biblioteca. Construye y localiza el diagnóstico del cliente; retira únicamente la inclusión experimental para recuperar la separación acordada. No publiques interno para esconder ese uso indebido. Tras reparar, el cliente debe construir, ejecutar 0:5:13 y terminar con 0. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"ajuste.h\"\n#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:5:13"
+                ],
+                "explanation": "Retirar la inclusión experimental recupera el cliente que sólo utiliza la interfaz pública. El resultado conserva las tres llamadas sin publicar la ruta interna."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Aplicar un cambio de contrato sin alterar las rutas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor independiente actualiza el comentario del contrato en entrega.h y minutos_base en interno/ajuste.h: cuatro minutos iniciales si la cantidad es positiva, dos por unidad y cero para cero. Conserva el cliente y las rutas pública y privada. Compila, ejecuta y comprueba las mismas tres llamadas."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Tiempos LANGUAGES CXX)\nadd_library(preparacion STATIC src/entrega.cpp)\nadd_executable(medir app/main.cpp)\ntarget_compile_features(preparacion PRIVATE cxx_std_20)\ntarget_compile_features(medir PRIVATE cxx_std_20)\nset_target_properties(preparacion medir PROPERTIES CXX_EXTENSIONS OFF)\ntarget_include_directories(preparacion\n    PUBLIC include\n    PRIVATE interno\n)\ntarget_link_libraries(medir PRIVATE preparacion)\n"
+            },
+            {
+              "path": "include/paquetes/entrega.h",
+              "initialCode": "#ifndef PRACTICA_PAQUETES_ENTREGA_H\n#define PRACTICA_PAQUETES_ENTREGA_H\n\n// Dominio: 0 <= unidades <= 12.\n// Cero unidades: cero minutos. Si hay unidades: 3 + 2 * unidades.\nint minutos_preparacion(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "src/entrega.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include \"ajuste.h\"\n\nint minutos_preparacion(int unidades) {\n    if (unidades == 0) {\n        return 0;\n    }\n    return minutos_base + minutos_por_unidad * unidades;\n}\n"
+            },
+            {
+              "path": "interno/ajuste.h",
+              "initialCode": "#ifndef PRACTICA_AJUSTE_INTERNO_H\n#define PRACTICA_AJUSTE_INTERNO_H\n\nconstexpr int minutos_base = 3;\nconstexpr int minutos_por_unidad = 2;\n\n#endif\n"
+            },
+            {
+              "path": "app/main.cpp",
+              "initialCode": "#include \"paquetes/entrega.h\"\n#include <iostream>\n\nint main() {\n    std::cout << minutos_preparacion(0) << ':'\n              << minutos_preparacion(1) << ':'\n              << minutos_preparacion(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "medir",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:6:14"
+                ],
+                "explanation": "La revisión cumple el requisito nuevo de cuatro minutos iniciales para cantidades positivas, conservando dos por unidad y cero para cero."
+              }
+            ]
+          }
         }
       ]
     },
@@ -581,11 +865,23 @@
           "cmake": {
             "target": "consultar_aforo",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:0:0"
+                ],
+                "explanation": "La biblioteca y el cliente se construyen con la raíz pública que completa sala/cupo.h; las llamadas conservan el contrato de plazas libres."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "Criterios de la construcción: la descripción debe configurar y generar, construir el objetivo solicitado, enlazar la implementación y ejecutar las llamadas originales con el comportamiento acordado. Puede haber otras descripciones válidas; la referencia posterior no impone un orden textual único a instrucciones independientes. Prueba también capacidad cero, ocupación completa y un caso interior del dominio. No uses argumentos fuera de la precondición para exigir una validación que la función no promete."
+          "text": "Criterios de la construcción: la descripción debe configurar y generar, construir el objetivo solicitado, enlazar la implementación y ejecutar las llamadas originales con el comportamiento acordado. Puede haber otras descripciones válidas; la referencia posterior no impone un orden textual único. Los tres casos ya examinan un interior del dominio, ocupación completa y capacidad cero. No uses argumentos fuera de la precondición para exigir una validación que la función no promete."
         }
       ]
     },

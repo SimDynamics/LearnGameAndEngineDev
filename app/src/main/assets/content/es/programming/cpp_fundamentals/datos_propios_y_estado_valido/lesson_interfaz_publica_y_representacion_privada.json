@@ -14,7 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "public: identifica los miembros accesibles al código que usa el objeto. private: identifica los detalles a los que acceden las funciones de esa clase. En class los miembros son privados por defecto; en struct son públicos por defecto. Ambos pueden definir datos, funciones y constructores. La elección expresa cómo queremos presentar el tipo."
+          "text": "public: identifica los miembros accesibles al código que usa el objeto. private: identifica los detalles a los que acceden las funciones de esa clase. En class los miembros son privados por defecto; en struct son públicos por defecto. Ambos pueden definir datos, funciones y constructores. La elección expresa cómo queremos presentar el tipo.",
+          "emphasis": [
+            {
+              "text": "public:"
+            },
+            {
+              "text": "private:"
+            }
+          ]
         },
         {
           "type": "code",
@@ -191,11 +199,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Define una clase RegistroVisitas con dato privado visitas_ inicialmente cero, consulta visitas() y operación registrar(). La operación admite como máximo tres visitas: devuelve true al añadir una y false si ya hay tres, sin cambiar el estado. Ejecuta cuatro solicitudes y muestra 1:1;1:2;1:3;0:3;. Comprueba también un objeto recién creado y dos objetos que reciban cantidades diferentes de solicitudes."
+          "text": "Define RegistroVisitas con visitas_ privado que empiece en cero, consulta visitas() y operación registrar(). La operación devuelve true y aumenta una visita si todavía hay menos de tres; con tres devuelve false sin cambiar el estado.\n\nEn main crea un registro y muestra Inicio:0 consultándolo. Después ejecuta cuatro solicitudes y presenta cada resultado y su consulta como bool:visitas;, sin espacios. Añade un salto al terminar esa línea. Crea otro objeto, regístrale una visita y muestra Independientes:3:1 consultando el primer objeto y el nuevo. No añadas un salto tras esa última línea.\n\nPulsa Compilar, ejecutar y comprobar. Las tres líneas deben ser Inicio:0, 1:1;1:2;1:3;0:3; e Independientes:3:1. Una única ejecución comprueba el estado inicial, el rechazo y la independencia de objetos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:0\n1:1;1:2;1:3;0:3;\nIndependientes:3:1"
+                ],
+                "explanation": "La cuarta solicitud se rechaza sin reiniciar ni aumentar el primer contador. Registrar una visita en otro objeto no modifica las tres del primero."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
@@ -228,6 +252,15 @@
           ],
           "correctIndex": 2,
           "explanation": "La separación de acceso ayuda a controlar la representación; no sustituye su corrección."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    std::cout << \"Inicio:\" << registro.visitas() << \"\\n\";\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    RegistroVisitas otro;\n    otro.registrar();\n    std::cout << \"\\nIndependientes:\" << registro.visitas() << \":\" << otro.visitas();\n    return 0;\n}\n"
         }
       ]
     }

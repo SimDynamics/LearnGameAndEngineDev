@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Podemos guardar sitios y cantidades en dos vectores paralelos. Eso exige mantener sus tamaños y sus correspondencias por índice. Si se ordena sólo el de sitios, los índices pueden seguir existiendo y el programa puede compilar, pero cada etiqueta queda asociada a la cantidad equivocada. Un vector de Lectura conserva cada pareja dentro de un elemento."
+          "text": "Podemos guardar sitios y cantidades en dos vectores paralelos. Eso exige mantener sus tamaños y sus correspondencias por índice. Si se ordena sólo el de sitios, los índices pueden seguir existiendo y el programa puede compilar, pero cada etiqueta queda asociada a la cantidad equivocada. Un vector de Lectura conserva cada pareja dentro de un elemento.",
+          "emphasis": [
+            {
+              "text": "vectores paralelos"
+            },
+            {
+              "text": "vector de Lectura"
+            }
+          ]
         },
         {
           "type": "code",
@@ -193,15 +201,147 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un vector de Registro con codigo y unidades. Usa {\"A\", 2}, {\"B\", 7}, {\"A\", 4}. Presenta los tres registros en orden y el total trece. Forma otro vector con los registros de al menos cuatro unidades: B:7;A:4;. Comprueba vacío, un registro con cero y dos registros con el mismo código pero cantidades diferentes. No se pide eliminar códigos repetidos."
+          "text": "Construye Registro con codigo string y unidades int. Define procesar(const vector<Registro>&): recorre todos los registros en su orden, suma unidades y forma otro vector con los que tengan al menos cuatro unidades. No elimines códigos repetidos. Presenta tres líneas por llamada: Datos: seguido de codigo:unidades; por registro, Total: seguido de la suma, y Elegidos: seguido de los registros seleccionados con el mismo formato. Termina las tres líneas con un salto.\n\nEn una misma ejecución prueba {{A,2},{B,7},{A,4}}, una colección vacía, {{Z,0}} y {{R,1},{R,5}}, en ese orden. En vacío conserva las líneas Datos: y Elegidos: sin registros y Total:0. Los totales de las cuatro sesiones son 13, 0, 0 y 6. Pulsa Compilar, ejecutar y comprobar. Los elementos seleccionados son B:7;A:4; en la primera sesión, ninguno en las dos siguientes y R:5; en la última.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\n"
+                ],
+                "explanation": "Cada registro conserva su asociación y su posición, aunque otro repita el código. El filtrado selecciona registros completos y el caso vacío conserva un total cero."
+              }
+            ]
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__colecciones_de_registros_asociados__copia_del_vector_antes_de_modificar",
+          "prompt": "Para una recuperación independiente, original contiene {{C,2},{D,1}} y se copia completo a copia. Después original.at(0).unidades += 3. Predice las cuatro cantidades antes de ejecutar el siguiente editor. No se modifica ningún código ni el segundo registro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original_c",
+                  "type": "numeric",
+                  "label": "Original, registro C",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "original_d",
+                  "type": "numeric",
+                  "label": "Original, registro D",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "copia_c",
+                  "type": "numeric",
+                  "label": "Copia, registro C",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "copia_d",
+                  "type": "numeric",
+                  "label": "Copia, registro D",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "layout": "table",
+              "headers": [
+                "Observación",
+                "Valor"
+              ],
+              "rows": [
+                [
+                  "Original, registro C",
+                  {
+                    "field": "original_c"
+                  }
+                ],
+                [
+                  "Original, registro D",
+                  {
+                    "field": "original_d"
+                  }
+                ],
+                [
+                  "Copia, registro C",
+                  {
+                    "field": "copia_c"
+                  }
+                ],
+                [
+                  "Copia, registro D",
+                  {
+                    "field": "copia_d"
+                  }
+                ]
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original_c": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "original_d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "copia_c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "copia_d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El original pasa a C:5 y conserva D:1. La copia mantiene C:2 y D:1: reúne otros registros con los valores recibidos al copiar el vector.",
+            "incorrect": "Identifica qué vector recibe la actualización y qué registro ocupa la posición cero. Copiar el vector no vincula los miembros de los nuevos registros con los anteriores."
+          }
         },
         {
           "type": "paragraph",
-          "text": "Como recuperación, copia el vector completo y aumenta una cantidad en el original. Predice la salida de ambos. Explica por qué una colección de structs reduce la tarea de mantener asociaciones frente a dos vectores paralelos."
+          "text": "Construye ahora esa recuperación en este editor independiente. Crea original con C:2 y D:1, cópialo y aumenta sólo las unidades del primer registro del original en tres. Muestra Original: seguido de sus registros como codigo:unidades;, un salto de línea y Copia: con los suyos. No añadas espacios ni salto final. Pulsa Compilar, ejecutar y comprobar. La salida debe coincidir con los valores que acabas de registrar en el puzzle; consulta los miembros de cada vector para obtenerla.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    // Construye y compara las dos colecciones.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original:C:5;D:1;\nCopia:C:2;D:1;"
+                ],
+                "explanation": "La copia mantiene los dos registros anteriores y sus asociaciones. La actualización posterior pertenece sólo al primer registro del vector original."
+              }
+            ]
+          }
         }
       ]
     },
@@ -240,6 +380,24 @@
         {
           "type": "paragraph",
           "text": "Criterios: cada código mantiene su cantidad al recorrer, copiar y seleccionar; el total incluye todas las observaciones, también códigos repetidos; el filtro conserva el orden; la colección vacía produce total cero sin accesos a un elemento inexistente; modificar el original no modifica la copia."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las cuatro colecciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(const std::vector<Registro>& registros) {\n    int total = 0;\n    std::vector<Registro> elegidos;\n    std::cout << \"Datos:\";\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la copia independiente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid presentar(const std::vector<Registro>& registros) {\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n}\n\nint main() {\n    std::vector<Registro> original{{\"C\", 2}, {\"D\", 1}};\n    const std::vector<Registro> copia = original;\n    original.at(0).unidades += 3;\n    std::cout << \"Original:\";\n    presentar(original);\n    std::cout << \"\\nCopia:\";\n    presentar(copia);\n    return 0;\n}\n"
         }
       ]
     }

@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el try rodea toda una sesión, un fallo dentro de un pedido puede abandonar el recorrido completo. Si el try está dentro del recorrido y rodea el pedido actual, un catch puede tratar ese fallo y luego dejar que el bucle visite el pedido siguiente. Ninguna de esas políticas es automática ni siempre correcta: decide qué unidad de trabajo se puede abandonar según el requisito."
+          "text": "Si el try rodea toda una sesión, un fallo dentro de un pedido puede abandonar el recorrido completo. Si el try está dentro del recorrido y rodea el pedido actual, un catch puede tratar ese fallo y luego dejar que el bucle visite el pedido siguiente. Ninguna de esas políticas es automática ni siempre correcta: decide qué unidad de trabajo se puede abandonar según el requisito.",
+          "emphasis": [
+            {
+              "text": "try rodea toda una sesión"
+            },
+            {
+              "text": "try está dentro del recorrido"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -126,11 +134,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sesión que continúe después de cada pedido inválido. Usa estimar con excepciones y los datos {0,11,2,-1,5}. Muestra el dato rechazado, cantidad aceptada, cantidad rechazada y total de minutos. Predice primero. Comprueba sesión vacía, sólo rechazos y un rechazo seguido de un pedido válido. El total incorpora únicamente resultados válidos y la sesión tiene como máximo seis datos."
+          "text": "Construye `procesar(const std::vector<int>& pedidos)`, que conserva contadores nuevos de aceptados, rechazados y minutos para cada sesión. Dentro del recorrido, usa `try/catch` por pedido: incorpora el tiempo sólo después de obtenerlo; ante `invalid_argument`, muestra `Rechazado=`, el dato rechazado y `;`, y continúa con el siguiente. Al terminar la sesión, muestra `aceptados:rechazados:minutos` y un salto de línea.\n\nEn una misma ejecución llama a procesar con `{0,11,2,-1,5}`, `{}`, `{11,-1}` y `{11,2}`, en ese orden. Así compruebas una mezcla de caminos, la ausencia de datos, sólo rechazos y un rechazo seguido de un dato válido sin editar sucesivas versiones del programa. Las líneas esperadas son:\n\nRechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7\n\nNo añadas espacios; termina también la última línea con un salto. Pulsa Compilar, ejecutar y comprobar. Una coincidencia respalda estas sesiones; no comprueba por sí sola todos los datos posibles del dominio.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Dato=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Dato=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Rechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7\n"
+                ],
+                "explanation": "Cada rechazo conserva el resumen válido y permite procesar el dato siguiente. La sesión vacía no inventa pedidos ni minutos."
+              }
+            ]
+          }
         }
       ]
     },
@@ -146,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Para {0,11,2,-1,5}, se aceptan tres pedidos, se rechazan dos y se reúnen 20 minutos. Los datos rechazados 11 y -1 se identifican. En la referencia, el resumen final es 3:2:20. {} produce 0:0:0; {11,-1}, 0:2:0; {11,2}, 1:1:7. El orden de campos es aceptados:rechazados:minutos; otro formato etiquetado es válido. El caso rechazo seguido de válido debe comprobar la continuación y la conservación del resumen."
+          "text": "Criterios de corrección. Para {0,11,2,-1,5}, se aceptan tres pedidos, se rechazan dos y se reúnen 20 minutos. Los datos rechazados 11 y -1 se identifican. En la referencia, el resumen final es 3:2:20. {} produce 0:0:0; {11,-1}, 0:2:0; {11,2}, 1:1:7. El orden de campos es aceptados:rechazados:minutos; otras implementaciones son válidas cuando respetan el formato solicitado en la actividad. El caso rechazo seguido de válido debe comprobar la continuación y la conservación del resumen."
         },
         {
           "type": "code",
@@ -155,7 +179,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El try/catch corresponde a un pedido dentro del recorrido. El éxito se incorpora sólo después de obtener minutos; el rechazo no añade ningún resultado normal. Cambia la colección por los otros casos y conserva como máximo seis datos. Mostrar un mensaje de error no basta: compara también el contador, el total y el pedido válido posterior."
+          "text": "El ejemplo anterior desarrolla la primera sesión. En la siguiente referencia, procesar crea un resumen nuevo por llamada y conserva el try/catch dentro del recorrido. Las cuatro sesiones se comprueban juntas: mostrar un error no basta si se pierde el contador, el total o el pedido válido posterior."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument&) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 11, 2, -1, 5});\n    procesar({});\n    procesar({11, -1});\n    procesar({11, 2});\n    return 0;\n}\n"
         }
       ]
     }

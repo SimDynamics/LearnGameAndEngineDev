@@ -125,15 +125,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice primero el caso inicial: solicitadas vale 6, disponibles vale 4 y permiso es true. Ejecuta para contrastar. Cambia sólo solicitadas para probar 0, 1, 4, 5, 12 y 13. Mantén disponibles en 4. Antes de cada ejecución, escribe la salida esperada a partir de las reglas, incluida la cantidad pendiente cuando corresponda."
+          "text": "El caso inicial contiene seis piezas solicitadas, cuatro disponibles y permiso válido. El editor comprueba el resultado de esa solicitud mediante «Compilar, ejecutar y comprobar», con salto final opcional.\n\nLas actividades siguientes conservan las reglas y utilizan otros datos, cada una con su objetivo y su editor. La comparación con los requisitos permite separar un resultado equivocado de un fallo de compilación."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Pendiente: 2",
+                  "Pendiente: 2\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Después restaura solicitadas igual a 6 y cambia permiso a false. Finalmente combina solicitadas igual a 0 con permiso false: la prioridad declarada exige informar primero Cantidad invalida. Observa que faltantes sólo existe y se calcula en la rama donde la cantidad es válida, hay permiso y solicitadas supera disponibles."
+          "text": "La cantidad inválida tiene prioridad sobre la falta de permiso. El puzzle siguiente elige qué resultado corresponde cuando se cumplen ambos motivos de rechazo. `faltantes` sólo existe y se calcula en la rama de cantidad válida, con permiso y solicitadas superior a disponibles."
         },
         {
           "type": "multiple_choice",
@@ -145,6 +156,87 @@
           ],
           "correctIndex": 2,
           "explanation": "La validación de cantidad precede a la revisión de permiso. Se informa el primer motivo aplicable."
+        },
+        {
+          "type": "heading",
+          "text": "Probar fronteras y prioridad sin editar la regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee la cantidad solicitada y un indicador de permiso, cero o uno; conserva cuatro disponibles. `codigo_permiso != 0` obtiene el valor lógico. Comprueba `6 1` → `Pendiente: 2`; `0 1` y `13 1` → `Cantidad invalida`; `1 1` y `4 1` → `Completo`; `5 1` → `Pendiente: 1`; `12 1` → `Pendiente: 8`; `6 0` → `Sin permiso`; `0 0` → `Cantidad invalida`. Cada entrada examina una frontera o una prioridad del mismo programa.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int solicitadas{0};\n    int codigo_permiso{0};\n    std::cin >> solicitadas >> codigo_permiso;\n    const int disponibles = 4;\n    const bool permiso = codigo_permiso != 0;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "6 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 1",
+                "outputs": [
+                  "Pendiente: 2",
+                  "Pendiente: 2\n"
+                ]
+              },
+              {
+                "standardInput": "0 1",
+                "outputs": [
+                  "Cantidad invalida",
+                  "Cantidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "Completo",
+                  "Completo\n"
+                ]
+              },
+              {
+                "standardInput": "4 1",
+                "outputs": [
+                  "Completo",
+                  "Completo\n"
+                ]
+              },
+              {
+                "standardInput": "5 1",
+                "outputs": [
+                  "Pendiente: 1",
+                  "Pendiente: 1\n"
+                ]
+              },
+              {
+                "standardInput": "12 1",
+                "outputs": [
+                  "Pendiente: 8",
+                  "Pendiente: 8\n"
+                ]
+              },
+              {
+                "standardInput": "13 1",
+                "outputs": [
+                  "Cantidad invalida",
+                  "Cantidad invalida\n"
+                ]
+              },
+              {
+                "standardInput": "6 0",
+                "outputs": [
+                  "Sin permiso",
+                  "Sin permiso\n"
+                ]
+              },
+              {
+                "standardInput": "0 0",
+                "outputs": [
+                  "Cantidad invalida",
+                  "Cantidad invalida\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -252,7 +344,7 @@
         },
         {
           "type": "note",
-          "text": "Antes de avanzar, explica una decisión con sus datos, condiciones, ramas y salida esperada. Ya puedes construir programas finitos que calculan y eligen. La repetición se estudiará después, con su propia condición de terminación."
+          "text": "La decisión ya puede relacionarse con datos, condiciones, ramas y salida mediante los puzzles y las construcciones de esta unidad. La repetición se estudiará después, con su propia condición de terminación."
         }
       ]
     },
@@ -277,7 +369,7 @@
         },
         {
           "type": "note",
-          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
+          "text": "Cada editor comprueba el objetivo de su actividad. La referencia permite contrastar las reglas y los mensajes; otras organizaciones son válidas si conservan el comportamiento exigido. Si hay diferencias, revisa la primera decisión o actualización que las produce."
         }
       ]
     }

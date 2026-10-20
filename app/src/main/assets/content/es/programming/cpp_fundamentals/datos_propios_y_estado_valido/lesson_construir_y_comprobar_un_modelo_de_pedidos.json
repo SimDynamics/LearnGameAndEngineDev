@@ -10,7 +10,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye Pedido desde una consigna, sin consultar primero el código de referencia. Cada objeto contiene código no vacío, unidades de una a veinte y Estado preparado, enviado o cancelado. La construcción recibe código y unidades, conserva los argumentos válidos y empieza preparado. Los argumentos inválidos deben interrumpir la construcción mediante PedidoInvalido. No existe construcción sin argumentos."
+          "text": "Construye Pedido desde una consigna, sin consultar primero el código de referencia. Cada objeto contiene código no vacío, unidades de una a veinte y Estado preparado, enviado o cancelado. La construcción recibe código y unidades, conserva los argumentos válidos y empieza preparado. Los argumentos inválidos deben interrumpir la construcción mediante PedidoInvalido. No existe construcción sin argumentos.",
+          "emphasis": [
+            {
+              "text": "preparado",
+              "occurrence": 1
+            },
+            {
+              "text": "construcción sin argumentos"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -26,15 +35,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea el tipo, sus operaciones y un main de prueba. Para {\"M\", 4}, solicita en este orden: cambiar a siete; cambiar a cero; enviar; cancelar; cambiar a dos. En cada paso imprime una pareja resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar presenta la comparación estado() == Estado::enviado. Ejecuta la solicitud antes de consultar el objeto. Antes de ejecutar, completa la tabla de resultados y selecciona el motivo de cada aceptación o rechazo en el puzzle del final de esta página. Distingue en él la cantidad, el estado y la condición de cada operación. Construye también casos nuevos con código vacío y con cantidades cero y veintiuna dentro de try/catch."
+          "text": "Crea el tipo, sus operaciones y un main de prueba. Para {\"M\", 4}, solicita en este orden: cambiar a siete; cambiar a cero; enviar; cancelar; cambiar a dos. En cada paso imprime una pareja resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar presenta la comparación estado() == Estado::enviado. Ejecuta la solicitud antes de consultar el objeto. Antes de ejecutar, completa la tabla de resultados y selecciona el motivo de cada aceptación o rechazo en el puzzle del final de esta página. Distingue en él la cantidad, el estado y la condición de cada operación."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:7\n0:7\n1:1\n0:1\n0:7",
+                  "1:7\n0:7\n1:1\n0:1\n0:7\n"
+                ],
+                "explanation": "Cambiar a siete acepta; cero se rechaza conservando siete. Enviar deja el pedido enviado; cancelar y cambiar cantidades después se rechazan sin modificar ese estado."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Añade pruebas con una y veinte unidades aceptadas, dos llamadas a enviar, cancelar antes de enviar y copias que luego cambien independientemente. Un acierto en una secuencia no demuestra los demás contratos. Puedes construir y comprobar una consulta a la vez antes de reunir la clase completa."
+          "text": "La traza de la actividad inicial no comprueba por sí sola todos los contratos de Pedido. Después de la tabla, otra actividad comprueba construcciones válidas e inválidas. Las pruebas posteriores de transición y copia tienen sus propios editores; no requieren reemplazar sucesivamente esta primera secuencia."
         },
         {
           "type": "math_puzzle",
@@ -359,6 +380,34 @@
             "correct": "Las parejas sucesivas son 1:7, 0:7, 1:1, 0:1 y 0:7. El primer cambio respeta cantidad y estado; cero está fuera del intervalo permitido. Enviar desde preparado cambia el estado a enviado. Después, cancelar y cambiar unidades se rechazan porque el pedido ya fue enviado; esas negativas conservan tanto el estado como las siete unidades.",
             "incorrect": "Revisa una solicitud cada vez y usa el estado que realmente dejó la anterior. Distingue el resultado de la operación de la consulta posterior. Comprueba por separado el intervalo permitido para la cantidad y el estado necesario para aceptar la solicitud."
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el dominio de construcción en una sola batería"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye Pedido y una función de prueba que intente crear un objeto desde código y unidades. Si acepta, muestra codigo:unidades; si captura PedidoInvalido fuera del constructor, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn main prueba M con una unidad, M con veinte, código vacío con cuatro, M con cero y M con veintiuna. Pulsa Compilar, ejecutar y comprobar. Las líneas deben ser M:1, M:20 y tres veces Rechazado. Conserva los datos inválidos para comprobar el rechazo; no los cambies silenciosamente ni completes un pedido alternativo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "M:1\nM:20\nRechazado\nRechazado\nRechazado\n"
+                ],
+                "explanation": "Las dos fronteras válidas conservan sus argumentos. Código vacío, cero y veintiuna impiden completar el Pedido y se tratan fuera del constructor."
+              }
+            ]
+          }
         }
       ]
     },
@@ -390,6 +439,15 @@
             "1 0 3"
           ],
           "explanation": "a y b son valores independientes. b cancelado conserva tres y no puede enviarse."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la batería de construcción"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    try {\n        const Pedido pedido{codigo, unidades};\n        std::cout << pedido.codigo() << \":\" << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"M\", 1);\n    probar(\"M\", 20);\n    probar(\"\", 4);\n    probar(\"M\", 0);\n    probar(\"M\", 21);\n    return 0;\n}\n"
         }
       ]
     },
@@ -428,15 +486,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Con tu Pedido construye A con dos unidades, B con cinco y C con una. Envía B antes de procesar solicitudes. Define un struct Solicitud con codigo string y unidades int. Recorre {\"A\", 6}, {\"B\", 3}, {\"X\", 4}, {\"A\", 21}, {\"C\", 20}, buscando cada código. Presenta por solicitud su código y Aplicada, Rechazada o Ausente. Después presenta los pedidos en orden y el total de sus cantidades actuales."
+          "text": "Construye procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes). Solicitud contiene codigo string y unidades int. Busca cada código sin acceder al índice que representa ausencia. Presenta codigo:Aplicada, codigo:Rechazada o codigo:Ausente, una línea por solicitud. Después muestra Pedidos: seguido de codigo:unidades; por pedido en orden, un espacio y Total:suma. Termina también esa línea con un salto. El procesamiento no añade pedidos ni cambia su orden.\n\nEn main reúne cinco sesiones, mostrando primero su nombre en una línea. Base tiene A:2, B:5 y C:1; envía B y solicita A:6, B:3, X:4, A:21 y C:20. Vacio no tiene pedidos y solicita X:4. Ausente tiene D:3 y solicita X:4. Valida e invalida tiene E:2 y solicita E:5 y E:0. Cancelado tiene F:4 previamente cancelado y solicita F:3.\n\nPulsa Compilar, ejecutar y comprobar. Los totales de las cinco sesiones deben ser 31, 0, 3, 5 y 4. Las solicitudes conservan su orden y cada una utiliza el estado que dejó la anterior. La colección vacía conserva el rótulo Pedidos: y el espacio anterior a Total:0.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Base\nA:Aplicada\nB:Rechazada\nX:Ausente\nA:Rechazada\nC:Aplicada\nPedidos:A:6;B:5;C:20; Total:31\nVacio\nX:Ausente\nPedidos: Total:0\nAusente\nX:Ausente\nPedidos:D:3; Total:3\nValida e invalida\nE:Aplicada\nE:Rechazada\nPedidos:E:5; Total:5\nCancelado\nF:Rechazada\nPedidos:F:4; Total:4\n"
+                ],
+                "explanation": "La búsqueda comprueba ausencia antes de acceder. Los rechazos conservan pedidos existentes y el informe usa los valores reales después de todas las solicitudes."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Distingue ausencia del código de rechazo por parte de un objeto existente. Usa un índice de ausencia que nunca accedas. Comprueba después colección vacía, una solicitud ausente, una solicitud válida y una inválida al mismo pedido, y solicitudes a un pedido cancelado. Antes de ejecutar cada variante, escribe qué miembros deben conservarse."
+          "text": "Ausente significa que no existe un pedido con ese código; Rechazada significa que existe y su operación no puede aceptar la solicitud. En Base, A conserva seis al rechazar veintiuna y B conserva cinco por estar enviado. La sesión Valida e invalida conserva el cinco aceptado antes de rechazar cero. Cancelado conserva su código, cantidad y estado. No conviertas la ausencia en un acceso ni fabriques un pedido nuevo para responderla."
         }
       ]
     },
@@ -469,6 +543,15 @@
           ],
           "correctIndex": 1,
           "explanation": "La ausencia es un resultado del recorrido, no una posición de elemento."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del informe con las cinco sesiones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud { std::string codigo; int unidades; };\n\nvoid procesar(std::vector<Pedido>& pedidos, const std::vector<Solicitud>& solicitudes) {\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) { posicion = i; break; }\n        }\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n    int total = 0;\n    std::cout << \"Pedidos:\";\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\" << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n    std::cout << \" Total:\" << total << \"\\n\";\n}\n\nint main() {\n    std::vector<Pedido> base{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};\n    base.at(1).enviar();\n    std::cout << \"Base\\n\";\n    procesar(base, {{\"A\",6},{\"B\",3},{\"X\",4},{\"A\",21},{\"C\",20}});\n    std::vector<Pedido> vacio;\n    std::cout << \"Vacio\\n\";\n    procesar(vacio, {{\"X\",4}});\n    std::vector<Pedido> ausente{{\"D\",3}};\n    std::cout << \"Ausente\\n\";\n    procesar(ausente, {{\"X\",4}});\n    std::vector<Pedido> valido{{\"E\",2}};\n    std::cout << \"Valida e invalida\\n\";\n    procesar(valido, {{\"E\",5},{\"E\",0}});\n    std::vector<Pedido> cancelado{{\"F\",4}};\n    cancelado.at(0).cancelar();\n    std::cout << \"Cancelado\\n\";\n    procesar(cancelado, {{\"F\",3}});\n    return 0;\n}\n"
         }
       ]
     },
@@ -501,7 +584,63 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otra secuencia que termine cancelada y vuelva a recibir cambiar_unidades. No repitas solamente los mismos datos: el objetivo es comprobar las reglas que separan aceptación y rechazo."
+          "text": "Las siguientes recuperaciones tienen borradores independientes. La primera distingue cancelar antes de otras solicitudes y repetir un envío; la segunda comprueba que una copia recibe un valor propio. Cada programa conserva una batería fija y permite corregir y reintentar sin cambiar de requisito."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar el rechazo después de cancelar y enviar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye Pedido desde sus requisitos. Crea V con nueve unidades; cancela, intenta cambiar a tres, enviar y cancelar otra vez. Muestra las líneas Cancelar:1, Cambiar:0, Enviar:0, Cancelar de nuevo:0 y Conservado:V:9:1, donde el último bool consulta si sigue cancelado. Crea otro Pedido R con tres unidades e intenta enviar dos veces; muestra Envios:1:0:1, con el estado enviado al final. Ejecuta cada solicitud antes de consultar.\n\nTermina cada línea con salto salvo la última. Pulsa Compilar, ejecutar y comprobar. Los rechazos no pueden cambiar los miembros ni reiniciar el modelo a preparado.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cancelar:1\nCambiar:0\nEnviar:0\nCancelar de nuevo:0\nConservado:V:9:1\nEnvios:1:0:1"
+                ],
+                "explanation": "Cancelar o enviar acepta una transición desde preparado. Las solicitudes posteriores respetan ese estado y conservan los miembros cuando se rechazan."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Reconstruir y comprobar dos valores independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor reconstruye Pedido, crea original con código C y dos unidades y cópialo. Cambia únicamente las unidades del original a cinco y envía sólo la copia. Muestra Original:C:5:1 y Copia:C:2:1 en líneas distintas, sin salto final. En la primera línea el bool consulta preparado; en la segunda, enviado. Pulsa Compilar, ejecutar y comprobar. Consulta ambos objetos: modificar uno no debe mantener sus miembros sincronizados con el otro.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original:C:5:1\nCopia:C:2:1"
+                ],
+                "explanation": "La copia conserva dos unidades y puede enviarse sin enviar el original. Cada objeto cambia según las operaciones que se solicitan sobre él."
+              }
+            ]
+          }
         }
       ]
     },
@@ -512,8 +651,94 @@
           "text": "Justificar antes de dar por terminado el modelo"
         },
         {
-          "type": "paragraph",
-          "text": "Vuelve al constructor y a cada operación pública. Para cada camino, explica qué regla establece o conserva. Señala dónde se asegura cantidad de una a veinte, por qué enviar() y cancelar() respetan sus condiciones de transición y por qué consultar no modifica. Distingue los diagnósticos de tipos de los rechazos de valores y de operaciones. Rehaz después el modelo desde sus requisitos usando otros códigos y cantidades, sin abrir la referencia. La copia y la asignación completa pertenecen a este modelo de valor; la asignación puede sustituir un pedido por otro valor válido y no promete conservar una identidad histórica."
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__reglas_de_los_caminos_publicos",
+          "prompt": "Relaciona cada camino del modelo con la regla que lo establece o conserva. Distingue diagnóstico de tipos, rechazo de construcción y rechazo de operación. Usa cada destino una sola vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "contratos",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "construccion",
+                  "label": "Construcción que termina normalmente"
+                },
+                {
+                  "id": "valor_invalido",
+                  "label": "Argumento de dominio inválido al construir"
+                },
+                {
+                  "id": "transicion",
+                  "label": "Enviar o cancelar desde preparado"
+                },
+                {
+                  "id": "operacion_rechazada",
+                  "label": "Cantidad o estado que rechaza una operación"
+                },
+                {
+                  "id": "consulta",
+                  "label": "Consulta const"
+                },
+                {
+                  "id": "tipo_incorrecto",
+                  "label": "Argumento cuyo tipo no admite la llamada"
+                },
+                {
+                  "id": "asignacion",
+                  "label": "Asignación desde otro Pedido válido"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "sin_cambios",
+                  "label": "Devuelve false sin modificar código, unidades ni estado."
+                },
+                {
+                  "id": "tipo",
+                  "label": "Impide compilar esa llamada; no es un rechazo capturado durante la ejecución."
+                },
+                {
+                  "id": "valor_completo",
+                  "label": "Puede sustituir el valor completo del destino; no promete conservar una identidad histórica."
+                },
+                {
+                  "id": "consulta_lectura",
+                  "label": "Lee el objeto sin modificarlo por esa vía."
+                },
+                {
+                  "id": "objeto_valido",
+                  "label": "Deja código no vacío, unidades en 1..20 y estado preparado."
+                },
+                {
+                  "id": "rechazo_construccion",
+                  "label": "Lanza PedidoInvalido y no completa un pedido alternativo."
+                },
+                {
+                  "id": "nuevo_estado",
+                  "label": "Devuelve true y cambia al estado solicitado una sola vez."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "construccion": "objeto_valido",
+                  "valor_invalido": "rechazo_construccion",
+                  "transicion": "nuevo_estado",
+                  "operacion_rechazada": "sin_cambios",
+                  "consulta": "consulta_lectura",
+                  "tipo_incorrecto": "tipo",
+                  "asignacion": "valor_completo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada aceptación y cada rechazo tiene un contrato propio. Un error de tipos impide compilar; una construcción inválida lanza; una operación rechazada conserva el objeto y devuelve false. Las consultas leen y la asignación entre valores puede sustituir el valor completo.",
+            "incorrect": "Distingue la fase en la que se toma la decisión y si ya existe un objeto válido. Relaciona cada camino con su resultado y con los cambios que permite o impide."
+          }
         },
         {
           "type": "multiple_choice",
@@ -529,6 +754,20 @@
         {
           "type": "paragraph",
           "text": "El modelo queda abierto a requisitos nuevos, que necesitarán decisiones y pruebas nuevas. No añadimos herencia ni memoria manual para representar estos objetos concretos: la asociación, construcción y operaciones bastan para el problema planteado."
+        },
+        {
+          "type": "heading",
+          "text": "Referencias de recuperación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido cancelado{\"V\", 9};\n    bool resultado = cancelado.cancelar();\n    std::cout << \"Cancelar:\" << resultado << \"\\n\";\n    resultado = cancelado.cambiar_unidades(3);\n    std::cout << \"Cambiar:\" << resultado << \"\\n\";\n    resultado = cancelado.enviar();\n    std::cout << \"Enviar:\" << resultado << \"\\n\";\n    resultado = cancelado.cancelar();\n    std::cout << \"Cancelar de nuevo:\" << resultado << \"\\n\";\n    std::cout << \"Conservado:\" << cancelado.codigo() << \":\" << cancelado.unidades()\n              << \":\" << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"R\", 3};\n    const bool primero = enviado.enviar();\n    const bool segundo = enviado.enviar();\n    std::cout << \"Envios:\" << primero << \":\" << segundo << \":\"\n              << (enviado.estado() == Estado::enviado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"C\", 2};\n    Pedido copia = original;\n    original.cambiar_unidades(5);\n    copia.enviar();\n    std::cout << \"Original:\" << original.codigo() << \":\" << original.unidades()\n              << \":\" << (original.estado() == Estado::preparado) << \"\\n\";\n    std::cout << \"Copia:\" << copia.codigo() << \":\" << copia.unidades()\n              << \":\" << (copia.estado() == Estado::enviado);\n    return 0;\n}\n"
         }
       ]
     }

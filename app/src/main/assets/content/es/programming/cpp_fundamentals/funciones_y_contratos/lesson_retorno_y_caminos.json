@@ -152,11 +152,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La función limita un nivel a la banda de 2 a 6: por debajo entrega 2, por encima entrega 6 y dentro conserva el dato. Los datos de prueba están declarados. Predice el caso inicial con nivel igual a 7; ejecuta y prueba 1, 2, 4 y 6. Cada caso debe devolver un resultado, incluida la igualdad en cada extremo. Mantén nivel entre -10 y 10."
+          "text": "La función limita un nivel a la banda de dos a seis: por debajo devuelve dos, por encima seis y dentro conserva el dato. Con el inicio siete de este editor, el objetivo es mostrar `6`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Todos los caminos deben devolver un resultado; los otros datos se prueban después sin cambiar el programa."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    const int nivel = 7;\n    std::cout << limitar(nivel);\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    const int nivel = 7;\n    std::cout << limitar(nivel);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6",
+                  "6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -197,6 +209,59 @@
         {
           "type": "paragraph",
           "text": "El primer if cubre datos menores que 2; el segundo cubre mayores que 6; el último return cubre la banda completa, incluidas sus igualdades. Son posibles otras organizaciones correctas, pero no deben omitir un retorno ni convertir un extremo válido en otro resultado. Una lista de casos ayuda a distinguir caminos del texto de la función."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar extremos y datos interiores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un nivel entre menos diez y diez. Comprueba `1` → `2`; `2` → `2`; `4` → `4`; `6` → `6`; `7` → `6`. Los datos de igualdad pueden compartir el retorno con los interiores y deben conservarse.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    int nivel{0};\n    std::cin >> nivel;\n    std::cout << limitar(nivel);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "2",
+                  "2\n"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "2",
+                  "2\n"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "4",
+                  "4\n"
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "6",
+                  "6\n"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "6",
+                  "6\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "1"
         }
       ]
     }

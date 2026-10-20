@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Un experimento reproducible necesita más que obtener números. Debe conservar su configuración, construir una muestra, comprobar propiedades y poder repetir el procedimiento. Recuperaremos struct para asociar semilla, cantidad y límites. Estos cuatro enteros tienen funciones distintas aunque compartan tipo."
+          "text": "Un experimento reproducible necesita más que obtener números. Debe conservar su configuración, construir una muestra, comprobar propiedades y poder repetir el procedimiento. Recuperaremos struct para asociar semilla, cantidad y límites. Estos cuatro enteros tienen funciones distintas aunque compartan tipo.",
+          "emphasis": [
+            {
+              "text": "configuración"
+            },
+            {
+              "text": "comprobar propiedades"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -76,15 +84,31 @@
         },
         {
           "type": "paragraph",
-          "text": "En main prepara dos muestras independientes con Plan{271,12,1,7}. Resume una con umbral cuatro. Muestra Cantidad:12, Rango:1, Conteo:1 y Repeticion:1, cada etiqueta en su línea. Cantidad procede del informe; Rango de su indicador; Conteo comprueba menores+desde==cantidad; Repeticion compara las dos muestras completas. No imprimas los unos como constantes ni ordenes antes de comparar. Guarda también el plan y los datos concretos si quieres llevar el experimento a otro entorno."
+          "text": "Construye probar(const Plan& plan). Dentro de try prepara dos muestras independientes con ese mismo plan y resume la primera con umbral cuatro. En una línea muestra Cantidad:N;Rango:B;Conteo:B;Repeticion:B. N procede del informe; Rango de su indicador; Conteo compara menores+desde con cantidad; Repeticion compara las dos muestras completas, con su orden. Si captura invalid_argument, muestra Configuracion rechazada. Termina cada prueba con un salto de línea. Calcula los indicadores: no los escribas como constantes."
         },
         {
           "type": "paragraph",
-          "text": "Antes de consultar la referencia, prueba un plan vacío, uno con un único dato y otro con seis datos en 4..4. Prueba después semilla -1 y 1001, cantidad -1 y 21, límites -1 y 10 y límites invertidos. El rechazo debe ocurrir antes de construir una distribución inválida. Las muestras normales pueden variar entre bibliotecas; sus relaciones y dominios son el criterio."
+          "text": "Reúne en main una sola batería con Plan{271,12,1,7}, {0,0,2,7}, {317,1,9,9}, {1000,6,4,4}, {-1,3,0,9}, {1001,3,0,9}, {271,-1,0,9}, {271,21,0,9}, {271,3,-1,9}, {271,3,0,10} y {271,0,7,2}, en ese orden. Pulsa Compilar, ejecutar y comprobar. Las cuatro primeras pruebas producen cantidades 12, 0, 1 y 6, con sus tres indicadores verdaderos; las siete restantes se rechazan. El plan de cantidad cero con límites invertidos sigue siendo inválido. No se exige una lista de números aleatorios concreta: las relaciones y los dominios son el criterio.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad:12;Rango:1;Conteo:1;Repeticion:1\nCantidad:0;Rango:1;Conteo:1;Repeticion:1\nCantidad:1;Rango:1;Conteo:1;Repeticion:1\nCantidad:6;Rango:1;Conteo:1;Repeticion:1\nConfiguracion rechazada\nConfiguracion rechazada\nConfiguracion rechazada\nConfiguracion rechazada\nConfiguracion rechazada\nConfiguracion rechazada\nConfiguracion rechazada\n"
+                ],
+                "explanation": "Cada plan válido inicia dos veces el mismo procedimiento y conserva las propiedades; los dominios inválidos se rechazan antes de construir la distribución."
+              }
+            ]
+          }
         }
       ]
     },
@@ -101,11 +125,20 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: configuración asociada y validada; semilla convertida sólo tras aceptar su dominio; muestra nueva en cada llamada; retorno por valor; plan y datos conservados; partición completa por el umbral; rango comprobado sin exigir números concretos; comparación en orden y del mismo tamaño. La referencia produce las cuatro líneas exigidas. En vacío Cantidad es cero y las tres comprobaciones son verdaderas. Un plan inválido produce Configuracion rechazada, sin comenzar una obtención."
+          "text": "La referencia inicial muestra una sola configuración válida. La batería siguiente reúne el dominio completo solicitado sin cambiar de programa entre pruebas: conserva las cuatro cantidades y distingue los siete rechazos. En la muestra vacía no hay observaciones, pero el rango y la partición se cumplen. Comparar las dos muestras completas comprueba reproducción en el mismo entorno; no certifica frecuencias uniformes."
         },
         {
           "type": "paragraph",
           "text": "La suma de los dos conteos llega como máximo a veinte. Cada elemento entra exactamente en una categoría. Si permites cualquier int en los datos del resumen, compararlo no exige restarlo ni multiplicarlo: la comprobación del rango puede señalar false sin realizar aritmética peligrosa."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la batería de planes"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nvoid probar(const Plan& plan) {\n    try {\n        const std::vector<int> primera=preparar(plan);\n        const std::vector<int> segunda=preparar(plan);\n        const Informe informe=resumir(primera,plan.minimo,plan.maximo,4);\n        std::cout<<\"Cantidad:\"<<informe.cantidad<<\";Rango:\"<<informe.en_rango\n                 <<\";Conteo:\"<<(informe.menores+informe.desde==informe.cantidad)\n                 <<\";Repeticion:\"<<(primera==segunda)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada\\n\";\n    }\n}\n\nint main() {\n    probar({271,12,1,7});\n    probar({0,0,2,7});\n    probar({317,1,9,9});\n    probar({1000,6,4,4});\n    probar({-1,3,0,9});\n    probar({1001,3,0,9});\n    probar({271,-1,0,9});\n    probar({271,21,0,9});\n    probar({271,3,-1,9});\n    probar({271,3,0,10});\n    probar({271,0,7,2});\n    return 0;\n}\n"
         }
       ]
     },
@@ -156,19 +189,85 @@
         },
         {
           "type": "paragraph",
-          "text": "Un histograma de estos enteros conserva cuántas veces aparece cada valor. En una tabla de diez conteos, el índice cero corresponde al dato cero y el índice nueve al dato nueve. La cantidad de casillas es diez, no nueve; todos los conteos empiezan en cero. Los repetidos aumentan el mismo conteo y no se borran de la muestra original. Recupera el constructor por cantidad: std::vector<int> tabla(10); crea diez elementos int inicializados a cero. En cambio, std::vector<int> tabla{10}; crea un solo elemento de valor diez. Los paréntesis expresan aquí cantidad; las llaves expresan la lista de valores. Para el histograma necesitamos diez casillas cuyos conteos comiencen en cero."
+          "text": "Un histograma de estos enteros conserva cuántas veces aparece cada valor. En una tabla de diez conteos, el índice cero corresponde al dato cero y el índice nueve al dato nueve. La cantidad de casillas es diez, no nueve; todos los conteos empiezan en cero. Los repetidos aumentan el mismo conteo y no se borran de la muestra original. Recupera el constructor por cantidad: std::vector<int> tabla(10); crea diez elementos int inicializados a cero. En cambio, std::vector<int> tabla{10}; crea un solo elemento de valor diez. Los paréntesis expresan aquí cantidad; las llaves expresan la lista de valores. Para el histograma necesitamos diez casillas cuyos conteos comiencen en cero.",
+          "emphasis": [
+            {
+              "text": "histograma",
+              "occurrence": 1
+            },
+            {
+              "text": "diez conteos"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Construye frecuencias(const vector<int>&): acepta hasta veinte datos 0..9, rechaza otros argumentos con invalid_argument y devuelve diez conteos. Valida cada valor antes de usarlo como índice. En main prueba {2,0,2,9}, conserva una copia original y muestra sólo los conteos no nulos como VALOR:CANTIDAD, en orden de valor, una línea cada uno. Después muestra Total:4 y Conservado:1, calculados desde tabla y comparación. No sustituyas la construcción por esas respuestas."
+          "text": "Construye frecuencias(const vector<int>&): acepta hasta veinte datos 0..9, rechaza otros argumentos con invalid_argument y devuelve diez conteos. Valida cada valor antes de usarlo como índice. Construye probar(datos), que conserva una copia original. Si acepta, muestra Conteos: seguido de VALOR:CANTIDAD; por cada conteo no nulo, en orden de valor; añade Total:N;Conservado:B. El total se obtiene sumando la tabla y B comparando datos con su copia. Si rechaza, muestra Datos rechazados;Conservado:B. Termina cada prueba con un salto.\n\nEn main reúne {2,0,2,9}, vacío, {0}, {9}, {3,3,3}, {-1}, {10} y veintiún ceros, en ese orden. Resuelve el puzzle y pulsa Compilar, ejecutar y comprobar. Las cinco primeras pruebas conservan totales 4, 0, 1, 1 y 3; las tres últimas se rechazan sin modificar datos. El rótulo Conteos: permanece incluso sin filas no nulas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Repite con vacío, {0}, {9}, {3,3,3} y un dato -1 o 10. Después usa una muestra producida por Plan{313,20,0,9}: su total debe ser veinte, pero no se requieren conteos particulares ni que las diez casillas sean distintas de cero. Antes de ejecutar, justifica el rango de cada índice y qué propiedad del total puedes esperar."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__experimento__indice_y_total_del_histograma",
+          "question": "frecuencias recibe datos válidos 0..9 y crea diez conteos en cero. ¿Qué razonamiento justifica los accesos y el total?",
+          "options": [
+            "Cada dato es un índice 0..9 y aumenta una casilla: el total final es la cantidad de observaciones, incluidas las repetidas.",
+            "El tamaño diez autoriza también el índice diez; el total cuenta sólo valores diferentes.",
+            "Los valores repetidos ocupan índices nuevos, por lo que deben borrarse antes de contar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Diez elementos tienen índices de cero a nueve. Cada observación válida suma uno, aunque su valor ya se haya contado.",
+          "reviewFeedback": [
+            "Relaciona cada observación con el índice que recibe su aumento y con el total acumulado.",
+            "Reconsidera el último índice de una colección de diez elementos y qué representa cada aumento.",
+            "Distingue el valor observado de una posición nueva: las observaciones repetidas también forman parte de la muestra."
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Conteos:0:1;2:2;9:1;Total:4;Conservado:1\nConteos:Total:0;Conservado:1\nConteos:0:1;Total:1;Conservado:1\nConteos:9:1;Total:1;Conservado:1\nConteos:3:3;Total:3;Conservado:1\nDatos rechazados;Conservado:1\nDatos rechazados;Conservado:1\nDatos rechazados;Conservado:1\n"
+                ],
+                "explanation": "Cada observación válida aumenta exactamente una casilla. Vacío conserva diez ceros; los argumentos inválidos se rechazan sin cambiar el vector original."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Transferir una muestra generada al histograma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente reúne preparar y frecuencias con sus contratos. Usa Plan{313,20,0,9}, conserva la muestra y construye su histograma. Suma sus conteos y compara la muestra con una copia previa. Muestra Casillas:10, Total:20 y Conservado:1, una línea por resultado y un salto al final. Calcula los tres resultados desde los objetos. Pulsa Compilar, ejecutar y comprobar. No se exige una frecuencia concreta por valor: la muestra puede variar entre bibliotecas y las tres propiedades se conservan.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Casillas:10\nTotal:20\nConservado:1\n"
+                ],
+                "explanation": "El histograma conserva diez casillas y veinte observaciones, sin modificar el vector ni imponer frecuencias particulares a una muestra aleatoria."
+              }
+            ]
+          }
         }
       ]
     },
@@ -185,11 +284,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: diez casillas inicializadas a cero, un aumento por cada observación válida, repetidos acumulados, índices justificados, rechazo previo de -1 o 10 y original conservado. La muestra fija produce 0:1, 2:2, 9:1, Total:4 y Conservado:1 en cinco líneas. En vacío no hay filas de conteo y el total es cero; {9} produce 9:1 y total uno; {3,3,3} produce 3:3 y total tres. La muestra generada conserva total veinte sin una expectativa de frecuencias exactas. El recorrido usa los índices 0..9: frecuencias siempre devuelve exactamente diez casillas, por lo que i<10 deja fuera la posición que ya no existe."
+          "text": "El ejemplo inicial presenta un histograma de una sola muestra fija; la batería siguiente conserva los mismos cálculos en un formato de una línea por caso. El conteo de tres aparece tres veces acumulado en su propia casilla. Cero y nueve prueban los dos extremos. Los rechazos de -1, 10 y veintiuna observaciones ocurren antes de construir un resultado aceptado."
         },
         {
           "type": "paragraph",
-          "text": "at() ofrece comprobación adicional, pero nuestra función valida antes el dominio de cada dato. No probamos un índice inválido como técnica para descubrir límites; el rechazo de argumentos evita ese acceso. Para transferir a la muestra generada, llama a preparar y entrega su vector a frecuencias. Mantén la muestra disponible para investigar cualquier diferencia."
+          "text": "at() ofrece comprobación adicional, pero frecuencias valida antes el dominio de cada dato. La suma de los diez conteos reconstruye la cantidad de observaciones sin reconstruir su orden. Ese orden sigue disponible en el vector original: el histograma y la muestra conservan información diferente."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de los casos fijos del histograma"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nvoid probar(const std::vector<int>& datos) {\n    const std::vector<int> original=datos;\n    try {\n        const std::vector<int> tabla=frecuencias(datos);\n        int total{0};\n        std::cout<<\"Conteos:\";\n        for(int i{0};i<10;++i) {\n            total+=tabla.at(i);\n            if(tabla.at(i)!=0) { std::cout<<i<<\":\"<<tabla.at(i)<<\";\"; }\n        }\n        std::cout<<\"Total:\"<<total<<\";Conservado:\"<<(datos==original)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Datos rechazados;Conservado:\"<<(datos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({2,0,2,9});\n    probar({});\n    probar({0});\n    probar({9});\n    probar({3,3,3});\n    probar({-1});\n    probar({10});\n    probar({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la transferencia al histograma"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const Plan plan{313,20,0,9};\n    const std::vector<int> datos=preparar(plan);\n    const std::vector<int> original=datos;\n    const std::vector<int> tabla=frecuencias(datos);\n    int total{0};\n    for(int conteo:tabla) { total+=conteo; }\n    std::cout<<\"Casillas:\"<<tabla.size()<<\"\\nTotal:\"<<total\n             <<\"\\nConservado:\"<<(datos==original)<<\"\\n\";\n    return 0;\n}\n"
         }
       ]
     },
@@ -211,12 +328,66 @@
           "explanation": "La configuración explica el experimento y el caso concreto permite investigarlo sin depender de una transformación idéntica entre bibliotecas."
         },
         {
-          "type": "paragraph",
-          "text": "En una sesión posterior reconstruye un experimento con datos propios, después una continuación con motor compartido y finalmente un caso de regresión fijo. Explica qué se reinicia, qué estado se copia, qué dominio se valida y qué evidencia aportó cada comprobación. Puedes extender el informe con una búsqueda o selección ya aprendida; diseña primero los casos que distinguen sus fronteras."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__experimento__reiniciar_continuar_y_fijar",
+          "question": "¿Qué organización permite recuperar reinicio, continuación y un caso fijo de regresión sin confundir su evidencia?",
+          "options": [
+            "Reiniciar en cada llamada, llamar continuación al segundo resultado y borrar los casos fijos que ya acertaron.",
+            "Ordenar todas las muestras antes de compararlas, porque el contrato de reproducción no conserva su orden.",
+            "Repetir preparar con el mismo Plan; continuar un motor compartido comparándolo con una copia del mismo punto; conservar una muestra fija con su expectativa."
+          ],
+          "correctIndex": 2,
+          "explanation": "Reiniciar recupera un comienzo; continuar usa el estado alcanzado. Una muestra fija permite repetir la pregunta concreta sin exigir una transformación idéntica entre bibliotecas.",
+          "reviewFeedback": [
+            "Identifica qué estado sobrevive a una llamada y qué evidencia aporta conservar una prueba que ya pasó.",
+            "Reconsidera si ordenar conserva la misma secuencia de observaciones que el contrato pide comparar.",
+            "Distingue qué objeto se crea desde el comienzo y cuál conserva el estado alcanzado."
+          ]
         },
         {
           "type": "note",
-          "text": "El experimento toma como apoyo la generación aleatoria de la fuente principal (Stroustrup, 2024, sección 4.7.5, pp. 108–110). Proyecto, contratos e histograma originales. Se conserva la distinción entre reproducción en el mismo entorno, relaciones portables y observación de muestras."
+          "text": "Un motor y una distribución cumplen funciones diferentes: el motor avanza su estado y la distribución convierte sus valores al dominio solicitado. Reiniciar un motor con la misma configuración permite repetir un procedimiento en el mismo entorno, una propiedad útil para investigar errores y hacer pruebas repetibles (Stroustrup, 2024, sección 4.7.5). Comparar propiedades del experimento no exige que dos bibliotecas transformen de forma idéntica la secuencia del motor."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar el experimento con tres comprobaciones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye en este editor Plan, preparar e Informe con resumir, y una función continuar(motor,cantidad,minimo,maximo) que recibe mt19937 por referencia y produce la cantidad sin reiniciarlo. continuar acepta cantidades 0..20 y límites 0..9 no invertidos; rechaza argumentos inválidos antes de generar.\n\nCon Plan{83,6,2,6}, compara dos llamadas a preparar y muestra Reinicio:B. Con otro motor de semilla 83, obtén dos datos en 2..6, copia el estado alcanzado y produce cuatro datos desde cada copia. Muestra Continuacion:B comprobando tamaño del primer lote, igualdad de las continuaciones y estados finales. Resume después {0,2,4,7,9} con límites 2..7 y umbral cuatro; muestra Fijo:cantidad:menores:desde:en_rango. Termina cada línea con salto. Pulsa Compilar, ejecutar y comprobar: se esperan Reinicio:1, Continuacion:1 y Fijo:5:2:3:0. Esta última muestra conserva un conteo completo aunque haya datos fuera de rango.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Reinicio:1\nContinuacion:1\nFijo:5:2:3:0\n"
+                ],
+                "explanation": "Reinicio y continuación comparan estados de comienzo diferentes. El caso fijo conserva cinco observaciones, separa dos menores y tres desde cuatro, y detecta los extremos fuera de 2..7."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la recuperación del experimento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nint main() {\n    const Plan plan{83,6,2,6};\n    const std::vector<int> primera=preparar(plan);\n    const std::vector<int> reiniciada=preparar(plan);\n    std::cout<<\"Reinicio:\"<<(primera==reiniciada)<<\"\\n\";\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote=continuar(motor,2,2,6);\n    std::mt19937 copia=motor;\n    const std::vector<int> siguiente=continuar(motor,4,2,6);\n    const std::vector<int> reproducida=continuar(copia,4,2,6);\n    std::cout<<\"Continuacion:\"<<(primer_lote.size()==2 && siguiente==reproducida && motor==copia)<<\"\\n\";\n    const Informe fijo=resumir({0,2,4,7,9},2,7,4);\n    std::cout<<\"Fijo:\"<<fijo.cantidad<<\":\"<<fijo.menores<<\":\"<<fijo.desde<<\":\"<<fijo.en_rango<<\"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

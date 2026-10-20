@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la representación decimal, hexadecimal y octal. Dentro de un campo de format, los dos puntos introducen una especificación: {:d} pide decimal, {:x} hexadecimal con letras minúsculas y {:o} octal. El valor sigue siendo el mismo entero. Un campo sin especificación, {}, presenta int decimal. El formato pertenece a ese campo, no a los que aparecen después."
+          "text": "Recupera la representación decimal, hexadecimal y octal. Dentro de un campo de format, los dos puntos introducen una especificación: {:d} pide decimal, {:x} hexadecimal con letras minúsculas y {:o} octal. El valor sigue siendo el mismo entero. Un campo sin especificación, {}, presenta int decimal. El formato pertenece a ese campo, no a los que aparecen después (Stroustrup, 2024, sección 9.10.6, pp. 281–283)."
         },
         {
           "type": "code",
@@ -248,6 +248,18 @@
             "d"
           ],
           "explanation": "La especificación 04d separa relleno y ancho de la elección de base."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo__secuencia_bases_previa",
+          "question": "Para cantidad=10, un campo decimal de ancho cuatro con ceros y otro hexadecimal minúsculo sin prefijo dan, respectivamente:",
+          "options": [
+            "0010 y a.",
+            "0010 y 0xa.",
+            "0012 y a."
+          ],
+          "correctIndex": 0,
+          "explanation": "El primer campo conserva la base decimal y rellena hasta cuatro. El segundo representa el mismo diez con a y no solicita prefijo."
         }
       ]
     },
@@ -259,15 +271,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe etiqueta(const string& codigo, int cantidad), que devuelve [CODIGO]|[DECIMAL]|[HEX]. codigo contiene de cero a ocho caracteres ASCII y cantidad está entre cero y mil. El código se alinea a la izquierda con mínimo seis posiciones y espacios; DECIMAL usa mínimo cuatro con ceros; HEX usa minúsculas sin prefijo ni ancho pedido. Usa un patrón literal con índices para presentar cantidad de las dos formas. No imprimas dentro de la función. En main compón \"Sur\", 10 y \"Pasillo\", 31 en líneas separadas."
+          "text": "Escribe etiqueta(const string& codigo, int cantidad), que devuelve [CODIGO]|[DECIMAL]|[HEX]. codigo contiene de cero a ocho caracteres ASCII y cantidad está entre cero y mil. El código se alinea a la izquierda con mínimo seis posiciones y espacios; DECIMAL usa mínimo cuatro con ceros; HEX usa minúsculas sin prefijo ni ancho pedido. Usa un patrón literal con índices para presentar cantidad de las dos formas. No imprimas dentro de la función. En main compón \"Sur\", 10 y \"Pasillo\", 31 en líneas separadas. En la misma ejecución añade etiqueta(\"\", 0) y etiqueta(\"Taller\", 1000). Conserva cantidad=10 en una variable para la primera llamada y, después de las cuatro filas, presenta cantidad+1 como quinta línea. Termina cada línea con salto. El programa completo se comprueba con Compilar, ejecutar y comprobar; no cambia de versión entre casos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[Sur   ]|[0010]|[a]\n[Pasillo]|[0031]|[1f]\n[      ]|[0000]|[0]\n[Taller]|[1000]|[3e8]\n11\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de compilar, predice qué etiquetas requieren relleno y cuál supera su mínimo. Añade código vacío con cantidad cero y un código de seis caracteres con cantidad mil. Comprueba que las dos representaciones proceden de un solo dato, y que ese dato sigue disponible para sumar uno después."
+          "text": "El puzzle previo separa la base de presentación del valor entero. La batería comprueba código vacío, ancho exacto, código más largo y conservación de la cantidad original; todas las llamadas componen cadenas independientes."
         }
       ]
     },
@@ -297,8 +325,82 @@
           "explanation": "El patrón presenta decimal con ceros; cout conserva hexadecimal para el entero insertado directamente."
         },
         {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo__secuencia_dato_y_patron",
+          "question": "Para distinguir cambiar datos de cambiar el patrón, ¿qué comparación mantiene una única decisión a la vez?",
+          "options": [
+            "Cambiar cantidad 10 por 31 con el mismo patrón, y luego mantener 31 al cambiar sólo x por X.",
+            "Cambiar cantidad y todas las especificaciones en cada ejecución.",
+            "Sustituir el entero por la cadena de su salida y quitar el patrón."
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera comparación mantiene el formato y varía el dato. La segunda mantiene el dato y varía únicamente las letras hexadecimales; así se identifica la contribución de cada decisión."
+        },
+        {
           "type": "paragraph",
-          "text": "En una sesión posterior reconstruye una etiqueta con otros datos sin mirar el patrón de referencia. Justifica primero base, ancho mínimo y lado del relleno de cada campo. Cambia un dato manteniendo el patrón y luego cambia una especificación manteniendo el dato para separar ambas decisiones."
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:x}]\", codigo, cantidad);\n}\n\nint main() {\n    int cantidad = 10;\n    std::cout << etiqueta(\"Sur\", cantidad) << \"\\n\" << etiqueta(\"Pasillo\", 31) << \"\\n\"\n        << etiqueta(\"\", 0) << \"\\n\" << etiqueta(\"Taller\", 1000) << \"\\n\" << cantidad + 1 << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir una etiqueta con prefijo"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo__secuencia_transferencia_formato",
+          "question": "¿Qué diferencia hay entre el dato 8 y pedir {:04d} o {:#x}?",
+          "options": [
+            "La primera opción convierte el dato a octal y la segunda a string antes de llamar.",
+            "Son dos presentaciones del mismo entero; una rellena decimal y la otra añade el prefijo hexadecimal.",
+            "Las dos opciones cambian el valor guardado en cantidad."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las especificaciones determinan caracteres de salida. Las operaciones numéricas posteriores siguen usando el entero original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe nueva_etiqueta(const std::string& codigo, int cantidad), que devuelve [CODIGO]|[DECIMAL]|[HEX]. Usa un patrón literal con índices: código a la izquierda con mínimo seis y espacios, cantidad decimal con mínimo cuatro y ceros, y la misma cantidad en hexadecimal minúsculo con prefijo 0x. El dominio conserva códigos ASCII de cero a ocho caracteres y cantidades 0..1000. main presenta (\"Norte\", 8) y (\"\", 0). La función no imprime ni modifica argumentos.\n\nConstruye aquí una solución nueva para este objetivo. Toda la batería pertenece al mismo programa; usa Compilar, ejecutar y comprobar cuando esté completa. Cada línea presentada termina con salto. La referencia aparece en la página siguiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    // Construye el objetivo de transferencia de esta pagina.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la transferencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string nueva_etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:#x}]\", codigo, cantidad);\n}\n\nint main() {\n    std::cout << nueva_etiqueta(\"Norte\", 8) << \"\\n\" << nueva_etiqueta(\"\", 0) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

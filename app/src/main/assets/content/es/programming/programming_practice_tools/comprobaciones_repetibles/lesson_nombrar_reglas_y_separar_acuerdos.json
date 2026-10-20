@@ -97,7 +97,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Modifica sólo el cuerpo de cajas_para: declara una const int local con un nombre de propósito para la capacidad y deriva desde ella la cantidad sumada. Puedes elegir otro nombre claro y una expresión equivalente. No lleves esa constante al comprobador ni fabriques sus esperados con la función que evalúa. Reconstruye y ejecuta el comprobador, y después consultar_cajas. La solución de referencia está en la página siguiente."
+          "text": "Modifica sólo el cuerpo de cajas_para: declara una const int local con un nombre de propósito para la capacidad y deriva desde ella la cantidad sumada. Puedes elegir otro nombre claro y una expresión equivalente. No lleves esa constante al comprobador ni fabriques sus esperados con la función evaluada. Conserva comprobar_cajas como objetivo al compilar, ejecutar y comprobar. La referencia está en la página siguiente."
         },
         {
           "type": "paragraph",
@@ -136,6 +136,18 @@
           "cmake": {
             "target": "comprobar_cajas",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los nombres de propósito conservan las siete decisiones de la regla de cuatro plazas; los casos siguen siendo independientes de la fórmula de la biblioteca."
+              }
+            ]
           }
         },
         {
@@ -266,7 +278,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de editar el cuerpo, calcula los nuevos esperados de las siete entradas conservadas y añade las dos nuevas fronteras 6 y 7. Mantén las comprobaciones de días 4 y 5. Puedes actualizar los esperados porque cambió el requisito de capacidad; no porque una ejecución haya producido otros valores. Actualiza los esperados en el comprobador y ejecuta aún la biblioteca anterior para observar qué casos la distinguen."
+          "text": "Antes de editar el cuerpo, calcula los nuevos esperados de las siete entradas conservadas y añade las dos nuevas fronteras 6 y 7. Mantén las comprobaciones de días 4 y 5. Puedes actualizar los esperados porque cambió el requisito de capacidad; no porque una ejecución haya producido otros valores. El mismo intento debe actualizar el comprobador y la implementación para ese nuevo acuerdo."
         },
         {
           "type": "fill_code",
@@ -283,7 +295,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después modifica la implementación para expresar los dos acuerdos con constantes locales de propósito. Actualiza el comentario de capacidad de la cabecera, pero conserva las firmas, el cliente y las descripciones CMake. Reconstruye y ejecuta la batería completa y el cliente. Como contraprueba temporal, prueba qué ocurre si usas seis también como límite de días; vuelve después a separar las reglas y repite la comprobación. Las referencias aparecen después del intento."
+          "text": "Modifica la implementación para expresar los dos acuerdos con constantes locales de propósito. Actualiza el comentario de capacidad de la cabecera, pero conserva las firmas, el cliente y las descripciones CMake. Reconstruye y comprueba la batería completa: nueve casos de piezas y dos de plazo. El control deliberado que mezcla acuerdos se trabaja después en otro editor."
         },
         {
           "type": "paragraph",
@@ -322,6 +334,18 @@
           "cmake": {
             "target": "comprobar_cajas",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las cajas cumplen ahora seis plazas y el plazo permanece en cuatro días. Cada conjunto conserva sus datos y sus propias expectativas."
+              }
+            ]
           }
         }
       ]
@@ -378,6 +402,61 @@
             "Calcula qué resultados corresponden a las llamadas del cliente bajo cada uno de los acuerdos.",
             "Relaciona cada resultado con su entrada y contrástalo con un dato que distinga ambas capacidades."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Reparar una mezcla de acuerdos con pruebas conservadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva los nueve esperados de piezas para seis plazas y los dos esperados de plazo para cuatro días. La biblioteca usa por error seis también como límite de días. Observa qué caso distingue esa alteración y repara sólo la regla de plazo. Compila, ejecuta y comprueba la batería completa sin cambiar expectativas."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 6 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n// Dominio: 0 <= dias <= 7. Cumple el plazo si tarda como maximo 4 dias.\nbool llega_a_tiempo(int dias);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{6};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool llega_a_tiempo(int dias) {\n    const int dias_maximos{6};\n    return dias <= dias_maximos;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8)\n              << \":\" << llega_a_tiempo(4) << \":\" << llega_a_tiempo(5);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool comprobar_plazo(int dias, bool esperado) {\n    const bool obtenido{llega_a_tiempo(dias)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"dias=\" << dias << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 4)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 1)) { correcto = false; }\n    if (!comprobar(17, 3)) { correcto = false; }\n    if (!comprobar(6, 1)) { correcto = false; }\n    if (!comprobar(7, 2)) { correcto = false; }\n    if (!comprobar_plazo(4, true)) { correcto = false; }\n    if (!comprobar_plazo(5, false)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=4 obtenido=4 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=1 obtenido=1 OK\npiezas=17 esperado=3 obtenido=3 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\ndias=4 esperado=1 obtenido=1 OK\ndias=5 esperado=0 obtenido=0 OK\nBateria: OK\n"
+                ],
+                "explanation": "La reparación mantiene la capacidad de seis plazas y devuelve al plazo su acuerdo independiente de cuatro días."
+              }
+            ]
+          }
         }
       ]
     },
@@ -397,12 +476,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Contraprueba: unificar ambos acuerdos en una constante que vale siete puede acertar los totales y rechazar indebidamente cantidades que aún alcanzan el mínimo. Comprueba que la batería lo detecta; después restaura la solución con reglas independientes. Criterios finales: coinciden los cinco totales y los cinco resultados de mínimo, sin omitir llamadas, Bateria: OK y terminación 0. Una implementación equivalente es válida; la referencia está en la página siguiente."
+          "text": "Criterios finales: coinciden los cinco totales y los cinco resultados de mínimo, no se omiten llamadas, el resumen es Bateria: OK y la terminación es 0. La contraprueba que acopla ambos acuerdos dispone después de otro editor, para conservar esta implementación correcta. Una solución equivalente es válida; la referencia está en la página siguiente."
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nconst int limite{5};\n\nint precio_total(int articulos) {\n    return articulos * limite;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= limite;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 20, false)) { correcto = false; }\n    if (!comprobar(5, 25, true)) { correcto = false; }\n    if (!comprobar(6, 30, true)) { correcto = false; }\n    if (!comprobar(10, 50, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Cambió el precio a siete créditos por artículo; alcanzar el mínimo sigue dependiendo de cinco artículos, con independencia de ese precio."
+              }
+            ]
+          }
         }
       ]
     },
@@ -455,6 +546,31 @@
             "Piensa si esas observaciones descartan dos requisitos distintos que hoy tengan el mismo valor.",
             "Relaciona cada constante con quién establece su valor y qué cambio obligaría a revisarla."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Separar dos reglas que se acoplaron por error"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor contiene los cinco casos completos y una revisión que comparte acuerdo=7 entre precio y mínimo. Los totales pueden coincidir y, aun así, fallar las peticiones que alcanzan el mínimo acordado. Conserva los casos y separa los dos nombres y sus usos: siete créditos por artículo y cinco artículos de mínimo. Compila, ejecuta y comprueba sin regresar al editor anterior."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nconst int acuerdo{7};\n\nint precio_total(int articulos) {\n    return articulos * acuerdo;\n}\n\nbool alcanza_minimo(int articulos) {\n    return articulos >= acuerdo;\n}\n\nbool comprobar(int articulos, int total_esperado, bool minimo_esperado) {\n    const int total{precio_total(articulos)};\n    const bool alcanza{alcanza_minimo(articulos)};\n    const bool coincide{total == total_esperado && alcanza == minimo_esperado};\n    std::cout << \"articulos=\" << articulos << \" total=\" << total\n              << \" esperado=\" << total_esperado << \" minimo=\" << alcanza\n              << \" esperado_minimo=\" << minimo_esperado << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0, false)) { correcto = false; }\n    if (!comprobar(4, 28, false)) { correcto = false; }\n    if (!comprobar(5, 35, true)) { correcto = false; }\n    if (!comprobar(6, 42, true)) { correcto = false; }\n    if (!comprobar(10, 70, true)) { correcto = false; }\n    if (!correcto) { std::cout << \"Bateria: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "articulos=0 total=0 esperado=0 minimo=0 esperado_minimo=0 OK\narticulos=4 total=28 esperado=28 minimo=0 esperado_minimo=0 OK\narticulos=5 total=35 esperado=35 minimo=1 esperado_minimo=1 OK\narticulos=6 total=42 esperado=42 minimo=1 esperado_minimo=1 OK\narticulos=10 total=70 esperado=70 minimo=1 esperado_minimo=1 OK\nBateria: OK\n"
+                ],
+                "explanation": "Las dos cantidades vuelven a representar acuerdos independientes; los controles de cinco y seis artículos observan el mínimo conservado."
+              }
+            ]
+          }
         }
       ]
     },

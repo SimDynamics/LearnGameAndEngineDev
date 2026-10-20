@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "std::setw(n), de <iomanip>, solicita un mínimo de n posiciones de caracteres para el siguiente campo. Si la representación ocupa menos, se completa con relleno; si ocupa más, se presenta completa. No convierte el valor, no recorta el texto y no limita cuántas cifras puede tener un entero. Comenzaremos con relleno de espacios y alineación a la derecha."
+          "text": "std::setw(n), de <iomanip>, solicita un mínimo de n posiciones de caracteres para el siguiente campo. Si la representación ocupa menos, se completa con relleno; si ocupa más, se presenta completa. No convierte el valor, no recorta el texto y no limita cuántas cifras puede tener un entero. Comenzaremos con relleno de espacios y alineación a la derecha (Stroustrup, 2024, sección 9.10.2, p. 279)."
         },
         {
           "type": "code",
@@ -174,6 +174,18 @@
         {
           "type": "note",
           "text": "Las tablas usan caracteres ASCII para contar posiciones de forma sencilla. setw mide posiciones de caracteres en estos campos; no es una herramienta para decidir el ancho visual de cualquier texto Unicode en una pantalla."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos__secuencia_anchos_previa",
+          "question": "Una fila exige etiqueta a la izquierda con mínimo seis y cantidad a la derecha con mínimo tres, usando espacios. ¿Qué resultado corresponde a \"Taller\" y 6?",
+          "options": [
+            "[Taller]|[6  ]",
+            "[Taller ]|[  6]",
+            "[Taller]|[  6]"
+          ],
+          "correctIndex": 2,
+          "explanation": "Taller ya ocupa seis posiciones: no se añade relleno. El entero de una cifra recibe dos espacios delante para llegar a tres."
         }
       ]
     },
@@ -185,15 +197,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe una función que recibe una etiqueta ASCII de hasta ocho caracteres y una cantidad int de cero a mil. Devuelve [ETIQUETA]|[CANTIDAD]. El primer campo solicita mínimo seis posiciones, alineado a la izquierda; el segundo solicita mínimo tres, a la derecha. Usa espacios de relleno, sin recortar los campos que excedan esos mínimos. Presenta filas de \"Sol\" y 4 y de \"Pasillo\" y 1000. Comprueba también etiqueta vacía y cantidad cero."
+          "text": "Escribe una función que recibe una etiqueta ASCII de hasta ocho caracteres y una cantidad int de cero a mil. Devuelve [ETIQUETA]|[CANTIDAD]. El primer campo solicita mínimo seis posiciones, alineado a la izquierda; el segundo solicita mínimo tres, a la derecha. Usa espacios de relleno, sin recortar los campos que excedan esos mínimos. Presenta filas de \"Sol\" y 4 y de \"Pasillo\" y 1000. Comprueba también etiqueta vacía y cantidad cero. La batería de main presenta también fila(\"Taller\", 6) como cuarta línea. Termina cada fila con salto. Resuelve primero el puzzle de la página anterior y, en este editor, construye la función y todas las llamadas antes de usar Compilar, ejecutar y comprobar. Cada llamada debe componer en un flujo local, devolver su fila sin imprimir y conservar el formato del llamador.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[Sol   ]|[  4]\n[Pasillo]|[1000]\n[      ]|[  0]\n[Taller]|[  6]\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice el número de espacios interiores de cada campo. La función compone con un flujo local, no imprime y no cambia el formato del llamador. No se exige una única escritura del cuerpo; se evalúa el contrato observado."
+          "text": "La comprobación contrasta las cuatro filas de una sola ejecución. La composición local y el uso real de los argumentos siguen siendo criterios del programa; una salida copiada como constante no demuestra esos criterios."
         }
       ]
     },
@@ -210,7 +238,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las líneas de referencia son [Sol   ]|[  4], [Pasillo]|[1000] y [      ]|[  0]. Criterios: las etiquetas quedan a la izquierda, las cantidades a la derecha; cada campo recibe su propio ancho; el relleno es espacio; los contenidos largos se conservan completos; los argumentos se usan sin sustituirlos por cadenas fijas; cada llamada devuelve sólo su fila. Comprueba el límite exacto de seis caracteres con \"Taller\"."
+          "text": "Las líneas de referencia son [Sol   ]|[  4], [Pasillo]|[1000] y [      ]|[  0]. Criterios: las etiquetas quedan a la izquierda, las cantidades a la derecha; cada campo recibe su propio ancho; el relleno es espacio; los contenidos largos se conservan completos; los argumentos se usan sin sustituirlos por cadenas fijas; cada llamada devuelve sólo su fila. La etiqueta \"Taller\" ocupa exactamente seis caracteres y no requiere relleno; con cantidad 6 su fila es [Taller]|[  6]."
         },
         {
           "type": "paragraph",
@@ -235,8 +263,82 @@
           "explanation": "3.50 tiene cuatro caracteres y recibe tres puntos; el entero siguiente no tiene ancho y no adquiere dos decimales."
         },
         {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos__secuencia_controles",
+          "question": "¿Qué diferencia explica que setfill pueda escribirse una vez, pero debas repetir setw ante cada campo?",
+          "options": [
+            "Ambos se consumen al insertar el primer entero.",
+            "setfill persiste en el flujo; el ancho se consume con los campos usados aquí.",
+            "setw recorta las etiquetas largas; setfill modifica sus caracteres."
+          ],
+          "correctIndex": 1,
+          "explanation": "El relleno es estado persistente. El ancho de estas inserciones vuelve a cero tras el campo; repetirlo expresa el mínimo del campo siguiente."
+        },
+        {
           "type": "paragraph",
-          "text": "En una sesión posterior explica qué controla cada petición: base para enteros, modo y precisión para double, ancho mínimo para un campo, carácter y lado del relleno. Prepara otro ejemplo que distinga un control persistente de uno consumido por el siguiente campo. Comprueba la predicción después de justificarla."
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string fila(const std::string& etiqueta, int cantidad) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << etiqueta\n        << \"]|[\" << std::right << std::setw(3) << cantidad << \"]\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << fila(\"Sol\", 4) << \"\\n\" << fila(\"Pasillo\", 1000) << \"\\n\"\n              << fila(\"\", 0) << \"\\n\" << fila(\"Taller\", 6) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una comparación de ancho y relleno"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos__secuencia_transferencia_formato",
+          "question": "El primer campo ya se insertó con setw(4) y setfill('0'). ¿Qué necesita el segundo para conservar el mismo mínimo?",
+          "options": [
+            "Repetir setw(4), pues el relleno sigue configurado.",
+            "Repetir sólo setfill('0'), porque el ancho sigue pendiente.",
+            "Nada: ambos controles persisten tras el entero."
+          ],
+          "correctIndex": 0,
+          "explanation": "El entero consume el ancho, pero no el relleno. El segundo campo necesita una nueva solicitud de ancho."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe pareja(int a, int b), que devuelve [AAAA]|[BBBB]. Cada entero no negativo usa un ancho mínimo de cuatro y relleno cero, alineado a la derecha. El relleno se configura una vez en el flujo local, pero el ancho debe aplicarse a los dos campos. No recortes valores de más de cuatro cifras. main presenta pareja(7, 12) y pareja(0, 12345), en ese orden. La función devuelve su texto sin imprimir ni cambiar cout.\n\nConstruye aquí una solución nueva para este objetivo. Toda la batería pertenece al mismo programa; usa Compilar, ejecutar y comprobar cuando esté completa. Cada línea presentada termina con salto. La referencia aparece en la página siguiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    // Construye el objetivo de transferencia de esta pagina.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[0007]|[0012]\n[0000]|[12345]\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la transferencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nstd::string pareja(int a, int b) {\n    std::ostringstream texto;\n    texto << std::setfill('0') << std::right << '[' << std::setw(4) << a\n          << \"]|[\" << std::setw(4) << b << ']';\n    return texto.str();\n}\n\nint main() {\n    std::cout << pareja(7, 12) << \"\\n\" << pareja(0, 12345) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

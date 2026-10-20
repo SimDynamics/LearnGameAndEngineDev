@@ -242,7 +242,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el perfil del editor de código, CMake prepara reglas para Ninja y el compilador C++ seleccionado. Conserva el diagnóstico real: su redacción puede variar. Busca la fase de construcción y la referencia a faltan_unidades; no memorices un número de línea ni una frase exacta de un compilador."
+          "text": "En el perfil del editor de código, CMake prepara reglas para Ninja y el compilador C++ seleccionado. Conserva el diagnóstico real: su redacción puede variar. Busca la fase de construcción y la referencia a faltan_unidades; no memorices un número de línea ni una frase exacta de un compilador.\n\nRepara sólo la relación de construcción, conservando cabecera, implementación, llamadas y C++20. Configura de nuevo porque cambió CMakeLists.txt y usa «Compilar, ejecutar y comprobar» para revisar las tres llamadas: 3:0:0, sin salto final. La reparación debe aportar faltantes al enlace mediante la dependencia del objetivo, sin incluir el .cpp en main ni copiar allí la función."
         },
         {
           "type": "cpp_compiler",
@@ -269,11 +269,23 @@
           "cmake": {
             "target": "revisar",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:0:0"
+                ],
+                "explanation": "La relación de enlace aporta la implementación de faltan_unidades. La ejecución conserva las tres llamadas del cliente y su contrato."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "Repara sólo la relación de construcción, conservando cabecera, implementación, llamadas y perfil C++20. Vuelve a configurar porque cambió CMakeLists.txt, construye revisar y ejecuta. Contrasta toda la salida con el oráculo de la primera página. Una solución válida aporta faltantes al enlace mediante la dependencia del objetivo; incluir el .cpp en main o copiar allí la función no responde a este ejercicio."
+          "text": "La relación entre objetivos aporta el producto de la biblioteca al enlace del cliente. Incluir el .cpp dentro de main o copiar la función modificaría la organización que este ejercicio debía conservar; coincidir en stdout no bastaría para acreditar ese criterio."
         },
         {
           "type": "paragraph",
@@ -293,7 +305,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora investiga un cambio diferente. Conserva las declaraciones, las llamadas y la relación de construcción. Cambia únicamente la última expresión de faltantes.cpp: devuelve necesarias - disponibles + 1 cuando la rama de cero no haya retornado. Antes de reconstruir, predice el comportamiento de esta revisión. El siguiente listado reúne otra vez la función y el cliente sólo para razonar sobre esa revisión."
+          "text": "Ahora investiga un cambio diferente. El proyecto independiente que aparece después del puzzle conserva las declaraciones, las llamadas y la relación de construcción. Su última expresión de faltantes.cpp devuelve necesarias - disponibles + 1 cuando la rama de cero no retorna. Predice el comportamiento antes de construir esa revisión."
         },
         {
           "type": "output_prediction",
@@ -310,7 +322,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve al editor de código de la página 5 después de reparar su dependencia. Aplica el cambio a faltantes.cpp y conserva main.cpp. Construye de nuevo revisar y ejecuta. El proceso debe incorporar la implementación actualizada y enlazar el cliente que la utiliza. No hace falta cambiar la descripción CMake por esta edición del cuerpo; tampoco basta con construir sólo faltantes y atribuir al cliente antiguo la nueva revisión."
+          "text": "Después de responder la predicción, utiliza el nuevo editor de esta página para construir revisar y ejecutar la revisión alterada. La descripción ya conserva la dependencia correcta; el cuerpo de la biblioteca es la única diferencia respecto del proyecto de referencia. No necesitas regresar al editor de la página anterior."
         },
         {
           "type": "multiple_choice",
@@ -331,7 +343,101 @@
         },
         {
           "type": "paragraph",
-          "text": "Restaura la implementación original, construye revisar y ejecuta nuevamente. Conserva las evidencias de las dos revisiones y de la restauración. La herramienta puede actualizar sólo los productos afectados; no necesitamos que recompile siempre todos los archivos ni que emita siempre la misma lista de tareas para acreditar la revisión ejecutada."
+          "text": "La herramienta puede actualizar sólo los productos afectados; no necesita recompilar siempre todos los archivos. La revisión alterada y la reparación siguiente tienen cada una su propio proyecto: atribuye la salida a las fuentes y al objetivo que acabas de construir."
+        },
+        {
+          "type": "heading",
+          "text": "Construir la revisión cuya salida predijiste"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva los archivos de esta revisión y usa «Compilar, ejecutar y comprobar». Identifica qué resultado cambió por la expresión de faltantes.cpp y qué llamadas conservan la rama de cero."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Preparacion LANGUAGES CXX)\nadd_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\ntarget_compile_features(faltantes PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(faltantes revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE faltantes)\n"
+            },
+            {
+              "path": "faltantes.h",
+              "initialCode": "#ifndef PRACTICA_FALTANTES_H\n#define PRACTICA_FALTANTES_H\n\n// Dominio: 0 <= disponibles <= 30 y 0 <= necesarias <= 30.\nint faltan_unidades(int disponibles, int necesarias);\n\n#endif\n"
+            },
+            {
+              "path": "faltantes.cpp",
+              "initialCode": "#include \"faltantes.h\"\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles + 1;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"faltantes.h\"\n#include <iostream>\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "4:0:0"
+                ],
+                "explanation": "La comprobación acredita la predicción de esta revisión alterada, no el cumplimiento del contrato original: el resultado positivo incorpora una unidad adicional."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar el contrato en otro intento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor empieza con la misma alteración de la biblioteca. Repara sólo esa expresión para cumplir el contrato original, conservando cabecera, llamadas y descripción. Compila, ejecuta y comprueba la reparación; no es necesario deshacer la actividad ya comprobada."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Preparacion LANGUAGES CXX)\nadd_library(faltantes STATIC faltantes.cpp)\nadd_executable(revisar main.cpp)\ntarget_compile_features(faltantes PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(faltantes revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE faltantes)\n"
+            },
+            {
+              "path": "faltantes.h",
+              "initialCode": "#ifndef PRACTICA_FALTANTES_H\n#define PRACTICA_FALTANTES_H\n\n// Dominio: 0 <= disponibles <= 30 y 0 <= necesarias <= 30.\nint faltan_unidades(int disponibles, int necesarias);\n\n#endif\n"
+            },
+            {
+              "path": "faltantes.cpp",
+              "initialCode": "#include \"faltantes.h\"\n\nint faltan_unidades(int disponibles, int necesarias) {\n    if (disponibles >= necesarias) {\n        return 0;\n    }\n    return necesarias - disponibles + 1;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"faltantes.h\"\n#include <iostream>\n\nint main() {\n    std::cout << faltan_unidades(4, 7) << ':'\n              << faltan_unidades(7, 7) << ':'\n              << faltan_unidades(9, 7);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:0:0"
+                ],
+                "explanation": "La reparación restaura el cálculo requerido en esta biblioteca y la construcción del cliente incorpora esa implementación."
+              }
+            ]
+          }
         }
       ]
     },
@@ -343,7 +449,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente editor de código ya conserva la dependencia correcta. Esta vez faltantes.cpp contiene un error sintáctico intencional. Configura y construye revisar sin editar primero. Identifica qué archivo y qué fase explican el fallo; compáralo con la dependencia ausente de la página 5."
+          "text": "El siguiente editor de código ya conserva la dependencia correcta. Esta vez faltantes.cpp contiene un error sintáctico intencional. Configura y construye revisar sin editar primero. Identifica qué archivo y qué fase explican el fallo; compáralo con la dependencia ausente de la página 5.\n\nRepara únicamente la sintaxis, conservando función, llamadas y cantidades. Construye revisar, ejecuta y comprueba 3:0:0, sin salto final y con retorno 0."
         },
         {
           "type": "cpp_compiler",
@@ -370,6 +476,18 @@
           "cmake": {
             "target": "revisar",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:0:0"
+                ],
+                "explanation": "La implementación ya puede compilar y el cliente recibe su producto mediante la dependencia conservada; sus resultados coinciden con el contrato."
+              }
+            ]
           }
         },
         {
@@ -391,7 +509,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Repara únicamente la sintaxis, conservando la función, las llamadas y las cantidades. Construye revisar, ejecuta y contrasta con el primer oráculo. Una vez terminado tu intento, la implementación de referencia de la página 2 permite comprobar la reparación. Configurar una descripción válida no garantiza que cada fuente C++ compile; enlazar tampoco demuestra por sí solo la corrección del comportamiento."
+          "text": "Configurar una descripción válida no garantiza que cada fuente C++ compile; enlazar tampoco demuestra por sí solo la corrección del comportamiento. La dependencia ya era correcta en este proyecto: el nuevo fallo procede del texto de la implementación."
         }
       ]
     },
@@ -435,7 +553,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe CMakeLists.txt desde el espacio vacío. Define la biblioteca estática regla con regla.cpp y el ejecutable portero con acceso.cpp, relaciona portero con regla y conserva el perfil C++20 sin extensiones en ambos objetivos. Declara CMake mínimo 3.20 y C++ habilitado mediante CXX. El editor de código pide portero como objetivo; el proyecto Pases y el archivo acceso.cpp cumplen otros papeles."
+          "text": "Escribe CMakeLists.txt desde el espacio vacío. Define la biblioteca estática regla con regla.cpp y el ejecutable portero con acceso.cpp, relaciona portero con regla y conserva el perfil C++20 sin extensiones en ambos objetivos. Declara CMake mínimo 3.20 y C++ habilitado mediante CXX. El editor de código pide portero como objetivo; el proyecto Pases y el archivo acceso.cpp cumplen otros papeles. Configura, construye portero y comprueba las tres llamadas conservadas. Si falla una fase, identifica el archivo u objetivo del diagnóstico y corrige sólo lo necesario dentro del mismo intento."
         },
         {
           "type": "cpp_compiler",
@@ -462,11 +580,23 @@
           "cmake": {
             "target": "portero",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "La biblioteca regla y el cliente portero conservan la política inclusiva y las tres llamadas del proyecto Pases."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "Configura, construye portero y ejecuta. Una solución válida describe y usa la biblioteca pedida, conserva las fuentes y sus interfaces y produce el comportamiento acordado. No exige copiar un orden superficial único de instrucciones. Si falla, identifica primero la fase, el archivo o el objetivo mencionado; cambia sólo lo necesario y conserva la versión del intento. La referencia se encuentra en la página siguiente, después de tu trabajo."
+          "text": "Una solución válida describe y usa la biblioteca pedida, conserva las fuentes y sus interfaces y cumple el comportamiento acordado. No exige copiar un orden superficial único de instrucciones. La referencia de la siguiente página se interpreta después del intento."
         }
       ]
     },
@@ -491,7 +621,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cambia sólo >= por > en regla.cpp. El proyecto y la declaración conservan sus nombres y tipos. Predice la revisión antes de construirla y utiliza especialmente el caso de igualdad para distinguir las reglas."
+          "text": "Considera ahora una revisión que cambia sólo >= por > en regla.cpp. El proyecto y la declaración conservan sus nombres y tipos. Predice esa revisión en el puzzle siguiente; la actividad independiente que viene después permite construirla."
         },
         {
           "type": "output_prediction",
@@ -508,7 +638,101 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve al editor de código de Pases, aplica esa única edición y solicita construir portero antes de ejecutar. Después restaura >=, vuelve a construir y contrasta el comportamiento original. Contrasta lo que observaste en la variante y en la restauración. La función del proyecto de unidades faltantes no participa en este proyecto: no mezcles sus contratos ni sus productos."
+          "text": "Las dos actividades siguientes conservan las fuentes de Pases y su propia descripción. La revisión estricta y la recuperación inclusiva se comprueban por separado, sin regresar al editor donde construiste la descripción. La función del proyecto de unidades faltantes no participa en este proyecto: no mezcles sus contratos ni sus productos."
+        },
+        {
+          "type": "heading",
+          "text": "Observar la revisión estricta de Pases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye portero y comprueba la salida de las mismas tres llamadas con la implementación estricta ya preparada."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Pases LANGUAGES CXX)\nadd_library(regla STATIC regla.cpp)\nadd_executable(portero acceso.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(portero PRIVATE cxx_std_20)\nset_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(portero PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef PRACTICA_REGLA_H\n#define PRACTICA_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "regla.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "acceso.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(12, 8) << ':'\n              << admitir(8, 8) << ':'\n              << admitir(5, 8);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "portero",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0:0"
+                ],
+                "explanation": "La salida confirma la predicción de la política estricta: la igualdad se rechaza en esta revisión. No acredita el contrato inclusivo del proyecto original."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la regla inclusiva"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor independiente cambia sólo la comparación de regla.cpp para recuperar el contrato inclusivo. Compila, ejecuta y comprueba la nueva revisión."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Pases LANGUAGES CXX)\nadd_library(regla STATIC regla.cpp)\nadd_executable(portero acceso.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(portero PRIVATE cxx_std_20)\nset_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(portero PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef PRACTICA_REGLA_H\n#define PRACTICA_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "regla.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "acceso.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(12, 8) << ':'\n              << admitir(8, 8) << ':'\n              << admitir(5, 8);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "portero",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:1:0"
+                ],
+                "explanation": "El cambio incluye otra vez la igualdad manteniendo los otros dos casos y la relación entre el cliente y la biblioteca."
+              }
+            ]
+          }
         }
       ]
     },
@@ -520,7 +744,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Regresa a la regla original de unidades faltantes después de trabajar con Pases. Este listado completo conserva la implementación original y cambia las llamadas por casos extremos de su dominio. Calcula el resultado sin copiar las observaciones del otro proyecto."
+          "text": "Recupera la regla original de unidades faltantes después de trabajar con Pases. Este listado completo conserva la implementación original y cambia las llamadas por casos extremos de su dominio. Calcula el resultado sin copiar las observaciones del otro proyecto."
         },
         {
           "type": "output_prediction",

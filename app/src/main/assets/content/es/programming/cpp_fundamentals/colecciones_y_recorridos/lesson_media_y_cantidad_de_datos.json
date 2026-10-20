@@ -212,15 +212,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe de media para {1, 4, 7}: debe mostrar Media: 4. Para {} muestra Sin datos. Comprueba también {5}, {1, 2}, {-3, -1} y {0, 0}: sus medias son cinco, 1.5, -2 y cero. Añade como segunda pregunta la media de valores mayores que dos y prueba un caso donde ninguno sea elegido."
+          "text": "Construye el informe de media de `{1, 4, 7}`: debe mostrar `Media: 4`. En vacío debe mostrar `Sin datos`. El cociente debe conservar las fracciones; una división entera anterior a la conversión puede ocultarse en este primer caso.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Media: 4",
+                  "Media: 4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Escribe qué representa cada denominador. Una media que parece correcta en un caso divisible no demuestra que conserves las fracciones; el caso {1, 2} pone a prueba esa parte."
+          "text": "El denominador cuenta los valores incluidos en esa media. La actividad posterior utiliza otros datos para comprobar las fracciones; calcular la media de un subconjunto es un objetivo diferente y tiene su propio editor."
         }
       ]
     },
@@ -259,6 +271,98 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: comprobar que el conjunto cuyo promedio se pide no esté vacío, usar su cantidad de observaciones como denominador y conservar las fracciones mediante conversión anterior al cociente; no confundir la selección con el origen."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 5 para {5}\n• 2 1 2 para {1, 2}\n• 2 -3 -1 para {-3, -1}\n• 2 0 0 para {0, 0}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << \"Media: \" << media;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos",
+                  "Sin datos\n"
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "Media: 5",
+                  "Media: 5\n"
+                ]
+              },
+              {
+                "standardInput": "2 1 2",
+                "outputs": [
+                  "Media: 1.5",
+                  "Media: 1.5\n"
+                ]
+              },
+              {
+                "standardInput": "2 -3 -1",
+                "outputs": [
+                  "Media: -2",
+                  "Media: -2\n"
+                ]
+              },
+              {
+                "standardInput": "2 0 0",
+                "outputs": [
+                  "Media: 0",
+                  "Media: 0\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "La media de los valores elegidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye el informe de la media sólo de los valores mayores que dos. Lee la cantidad y después los enteros de la colección, como en la actividad anterior. Con `3 1 4 7`, muestra `Media elegidos: 5.5`; con `2 0 2` o `0`, muestra `Sin elegidos`. El denominador debe contar sólo los elegidos y no puede usarse si vale cero.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 1 4 7",
+                "outputs": [
+                  "Media elegidos: 5.5",
+                  "Media elegidos: 5.5\n"
+                ]
+              },
+              {
+                "standardInput": "2 0 2",
+                "outputs": [
+                  "Sin elegidos",
+                  "Sin elegidos\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin elegidos",
+                  "Sin elegidos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3 1 4 7"
         }
       ]
     }

@@ -121,7 +121,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, revisa las ocho líneas de la entrada preparada. A aparece en las líneas 1, 2, 4 y 8; C;=lote repite exactamente etiqueta y columnas en las líneas 6 y 7. La línea 5, A 1-1, sólo tiene dos palabras y no cumple el formato; la línea 8, A 1 -1, sí tiene tres y permite comparar un obtenido negativo. El resultado exigido conserva siete registros válidos: dos coincidencias y cinco diferencias, además de un problema de formato. Utiliza los números de línea del informe para comprobar qué registros recibió cada canal. No cambies los datos para esconder una repetición."
+          "text": "Antes de ejecutar, revisa las ocho líneas de la entrada preparada. A aparece en las líneas 1, 2, 4 y 8; C;=lote repite exactamente etiqueta y columnas en las líneas 6 y 7. La línea 5, A 1-1, sólo tiene dos palabras y no cumple el formato; la línea 8, A 1 -1, sí tiene tres y permite comparar un obtenido negativo. El resultado exigido conserva siete registros válidos: dos coincidencias y cinco diferencias, además de un problema de formato. Utiliza los números de línea del informe para comprobar qué registros recibió cada canal. No cambies los datos para esconder una repetición.\n\nRepara el filtro y contrasta el informe completo de esas ocho líneas: el resumen debe ser Resumen: validos=7;coinciden=2;difieren=5;formato=1 y stderr debe contener sólo Linea=5:FORMATO, seguido de salto. El código final es 1; tanto una omisión defectuosa como la reparación pueden terminar con ese mismo código.\n\nVerifica el mismo objetivo con dos entradas más, sin cambiar el programa reparado: con las líneas 0 0 0 y N -2 -2, sin salto final, deben aparecer ambas coincidencias y el resumen 2/2/0/0, con stderr vacío y código 0. Con un lote vacío sólo aparece el resumen de cuatro ceros y el código es 0. Todas estas pruebas se realizan en el editor que sigue.",
+          "emphasis": [
+            {
+              "text": "el mismo objetivo con dos entradas más"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -131,11 +136,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta primero la versión inicial y localiza los registros omitidos mediante sus números de línea. Repara después la causa y compara el informe completo, no sólo su código final: ambas versiones pueden terminar con 1. En la reparación, el resumen debe ser Resumen: validos=7;coinciden=2;difieren=5;formato=1. stderr contiene únicamente Linea=5:FORMATO, seguido de salto. Ningún problema de formato debe impedir revisar las líneas posteriores."
+          "text": "El informe completo permite reconocer ocurrencias omitidas por sus números de línea. El retorno 1 no distingue por sí solo el filtro defectuoso del reparado: hace falta contrastar qué registros se revisaron y qué contadores produjo cada entrada."
         },
         {
           "type": "paragraph",
-          "text": "Con el programa reparado, cambia sólo la entrada a dos líneas: 0 0 0 y N -2 -2, sin salto tras la segunda. Debe informar ambas coincidencias, resumen 2/2/0/0, stderr vacío y código 0. Después prueba un lote completamente vacío: se imprime sólo el resumen con cuatro ceros y el código es 0. La etiqueta 0 y las columnas cero son datos presentes; no equivalen a ausencia de líneas. Intenta estas comparaciones antes de consultar la referencia."
+          "text": "La etiqueta 0 y las columnas cero son datos presentes, mientras que un lote vacío no tiene registros. Conservar ambas situaciones permite comprobar que el programa no confunde un valor numérico con la ausencia de una línea."
         }
       ]
     },
@@ -217,7 +222,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa de abajo ya conserva etiquetas repetidas, pero omite coincidencias antes de actualizar la contabilidad. Corrige esa separación sin tocar leer_registro, los datos ni el significado de los contadores. Decide qué trabajo debe suceder por cada registro válido y qué trabajo depende de que vayas a mostrarlo. Esta práctica no pide volver a la salida extensa ni cambiar el contrato para que coincida con el defecto."
+          "text": "El programa de abajo ya conserva etiquetas repetidas, pero omite coincidencias antes de actualizar la contabilidad. Corrige esa separación sin tocar leer_registro, los datos ni el significado de los contadores. Decide qué trabajo debe suceder por cada registro válido y qué trabajo depende de que vayas a mostrarlo. Esta práctica no pide volver a la salida extensa ni cambiar el contrato para que coincida con el defecto.\n\nPara la entrada preparada hay seis líneas: cinco válidas y una mal formada. stdout debe mostrar sólo las diferencias de las líneas 3 y 5, ambas R con esperado 0 y obtenido -1, y después Resumen: validos=5;coinciden=3;difieren=2;formato=1. stderr debe conservar Linea=4:FORMATO y el código es 1.\n\nComprueba el mismo filtro con las dos líneas 0 0 0 y N -2 -2: sólo se muestra el resumen 2/2/0/0, sin diagnósticos y con retorno 0. Con un lote vacío, el resumen es 0/0/0/0, también sin diagnósticos y con retorno 0. Conserva el programa durante estas variaciones de entrada.",
+          "emphasis": [
+            {
+              "text": "conserva etiquetas repetidas"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -227,11 +237,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Deduce antes de ejecutar: hay seis líneas, una mal formada y cinco válidas; tres coinciden y dos difieren. stdout debe mostrar individualmente sólo las líneas 3 y 5, ambas del caso R con esperado 0 y obtenido -1; añade después Resumen: validos=5;coinciden=3;difieren=2;formato=1. stderr conserva Linea=4:FORMATO y el código es 1. El registro R de la línea 2 también se revisa, aunque no tenga línea individual en stdout."
+          "text": "El registro R de la línea 2 también cuenta como revisado aunque no tenga línea individual. La selección de lo mostrado no cambia qué ocurrencias se procesan ni qué significa el contador de coincidencias."
         },
         {
           "type": "paragraph",
-          "text": "Prueba después las dos líneas 0 0 0 y N -2 -2. stdout debe contener sólo el resumen 2/2/0/0: no hay diferencias individuales para mostrar, pero sí dos registros válidos. Con un lote vacío el resumen es 0/0/0/0. En ambos casos stderr queda vacío y el código es 0. Compara el contador de registros válidos de ambos resúmenes: distingue sus orígenes aunque el filtro no presente ninguna línea individual."
+          "text": "Un lote con dos coincidencias y un lote vacío pueden carecer de diferencias individuales, pero sus contadores de válidos son distintos. El resumen conserva esa información aun cuando la presentación filtre líneas."
         }
       ]
     },

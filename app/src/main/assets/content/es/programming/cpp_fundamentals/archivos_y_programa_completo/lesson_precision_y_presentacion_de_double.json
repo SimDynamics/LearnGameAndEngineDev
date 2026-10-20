@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una medida double tiene un valor almacenado. El flujo elige qué caracteres mostrar de ese valor. Una salida más corta puede omitir detalle; una salida más larga puede mostrar más dígitos. Ninguna cambia por sí sola la variable ni hace más exacto el cálculo que la produjo. Vamos a elegir formatos y a comprobar también el valor que permanece disponible."
+          "text": "Una medida double tiene un valor almacenado. El flujo elige qué caracteres mostrar de ese valor. Una salida más corta puede omitir detalle; una salida más larga puede mostrar más dígitos. Ninguna cambia por sí sola la variable ni hace más exacto el cálculo que la produjo. Vamos a elegir formatos y a comprobar también el valor que permanece disponible (Stroustrup, 2024, sección 9.10.2, pp. 278–279)."
         },
         {
           "type": "paragraph",
@@ -191,6 +191,18 @@
         {
           "type": "note",
           "text": "Estos programas no cambian la configuración regional: usan el punto decimal y los nombres de formato del C++ estándar. Una tabla de salida es texto producido, no una modificación del tipo de los datos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__precision_y_presentacion_de_double__secuencia_precision_previa",
+          "question": "Para el dato doce, ¿qué cadena respeta fixed con dos decimales, scientific con dos decimales y general con dos cifras significativas?",
+          "options": [
+            "F=12.00;S=1.20e+01;G=12",
+            "F=12.00;S=1.2e+01;G=12.00",
+            "F=12;S=12.00e+00;G=1.2"
+          ],
+          "correctIndex": 0,
+          "explanation": "Fixed cuenta posiciones tras el punto; scientific presenta una cifra antes del punto y dos después; general cuenta cifras significativas y no fuerza esos ceros finales."
         }
       ]
     },
@@ -202,15 +214,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una función que reciba un double conocido entre cero y veinte y devuelva F=valor;S=valor;G=valor. F usa fixed con dos cifras tras el punto; S usa scientific con dos cifras tras el punto; G usa general con dos cifras significativas. La función no imprime ni modifica el dato del llamador. En main presenta las composiciones de 8.8125 y 6.9375 en líneas distintas, y comprueba luego que el primer dato multiplicado por dieciséis sigue dando ciento cuarenta y uno."
+          "text": "Construye una función que reciba un double conocido entre cero y veinte y devuelva F=valor;S=valor;G=valor. F usa fixed con dos cifras tras el punto; S usa scientific con dos cifras tras el punto; G usa general con dos cifras significativas. La función no imprime ni modifica el dato del llamador. En main presenta las composiciones de 8.8125 y 6.9375 en líneas distintas, y comprueba luego que el primer dato multiplicado por dieciséis sigue dando ciento cuarenta y uno. Construye una sola batería: presenta primero 8.8125, después 6.9375, cero y doce mediante esa misma función. A continuación presenta el primer dato multiplicado por dieciséis, en formato general con precisión seis. Termina las cinco líneas con salto. Usa Compilar, ejecutar y comprobar cuando el programa contenga toda la batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice todos los campos antes de compilar. Prueba también cero y doce, que permiten distinguir ceros de relleno decimal y el exponente. Cada llamada debe empezar una composición nueva, sin depender del formato de cout."
+          "text": "Cada llamada compone en un flujo nuevo: el formato previo de cout no determina los campos internos. La batería incluye cero y doce para separar cifras decimales, cifras significativas y exponente; después observa el valor original en un cálculo independiente."
         }
       ]
     },
@@ -238,6 +266,15 @@
             "2.00|2.00e+00|2"
           ],
           "explanation": "La parte general no exige dos ceros decimales; el valor dos es el mismo en las tres representaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

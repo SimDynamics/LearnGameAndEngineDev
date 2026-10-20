@@ -10,7 +10,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes del cálculo exacto, identifica propiedades que un resultado válido debe cumplir. Si reúnes cantidades no negativas pequeñas, la suma no debe ser menor que una de sus contribuciones; si calculas una media de datos dentro de un intervalo, la media también debe estar entre el menor y el mayor. Estas propiedades detectan ciertos errores, pero no sustituyen la comprobación exacta del requisito."
+          "text": "Antes del cálculo exacto, identifica propiedades que un resultado válido debe cumplir. Si reúnes cantidades no negativas pequeñas, la suma no debe ser menor que una de sus contribuciones; si calculas una media de datos dentro de un intervalo, la media también debe estar entre el menor y el mayor. Estas propiedades detectan ciertos errores, pero no sustituyen la comprobación exacta del requisito.",
+          "emphasis": [
+            {
+              "text": "propiedades",
+              "occurrence": 1
+            },
+            {
+              "text": "comprobación exacta"
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -146,11 +155,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la colección inicial, calcula a mano suma, media, mínimo y máximo. Completa la media usando conversión antes de dividir, y muestra si está dentro del rango. Después prueba {1,2}, un dato {5} y la colección vacía: la última debe informar Sin datos antes de cualquier cálculo de media o acceso a un elemento. Mantén como máximo cinco datos y valores entre 0 y 10. Una comprobación de plausibilidad complementa la expectativa exacta, no la reemplaza."
+          "text": "Construye `informar(const std::vector<int>& datos)` para mostrar suma, media, mínimo, máximo y si la media queda dentro del rango. Mantén como máximo cinco enteros de 0 a 10. Ante una colección vacía, muestra Sin datos y termina esa llamada antes de dividir o acceder a un elemento. En los demás casos, usa el formato `Suma=S Media=M Minimo=N Maximo=X Dentro=B`, con un espacio entre campos. La media debe conservar la fracción; B es el bool de la propiedad mostrado como 0 o 1. Termina cada llamada con un salto de línea.\n\nEn una misma ejecución llama con `{1,4,7}`, `{1,2}`, `{5}` y `{}`. Las líneas esperadas son:\n\nSuma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\n\nPulsa Compilar, ejecutar y comprobar. La comparación exacta y la propiedad de rango comprueban cosas distintas: una media plausible todavía puede ser incorrecta.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\n"
+                ],
+                "explanation": "La guarda vacía protege tanto el acceso inicial como la división. La conversión ocurre antes de dividir y la media también coincide con la expectativa exacta."
+              }
+            ]
+          }
         }
       ]
     },
@@ -166,7 +191,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Para {1,4,7}, suma=12, media=4, mínimo=1 y máximo=7. La media debe quedar dentro del rango y también coincidir con la expectativa exacta. Para {1,2}, suma=3, media=1.5, mínimo=1 y máximo=2; para {5}, los cuatro valores son 5. Con {}, debe mostrarse Sin datos antes de dividir o consultar un elemento. Usa como máximo cinco datos entre 0 y 10; otras formas de presentar estos resultados son válidas."
+          "text": "Criterios de corrección. Para {1,4,7}, suma=12, media=4, mínimo=1 y máximo=7. La media debe quedar dentro del rango y también coincidir con la expectativa exacta. Para {1,2}, suma=3, media=1.5, mínimo=1 y máximo=2; para {5}, los cuatro valores son 5. Con {}, debe mostrarse Sin datos antes de dividir o consultar un elemento. Usa como máximo cinco datos entre 0 y 10; otras implementaciones son válidas cuando conservan los cálculos y el formato de la actividad."
         },
         {
           "type": "code",
@@ -175,7 +200,16 @@
         },
         {
           "type": "paragraph",
-          "text": "La guarda vacía precede tanto al acceso datos[0] como al cociente. La conversión de suma ocurre antes de dividir. Dentro=1 informa que se cumple la propiedad de rango, pero todavía compara media con el cálculo manual exacto. Cambia sólo la colección para comprobar los otros tres casos; el dominio pequeño también mantiene representable la suma."
+          "text": "La guarda vacía precede al acceso datos[0] y al cociente. La conversión de suma ocurre antes de dividir. Dentro=1 informa de la propiedad de rango; la comprobación exacta verifica además el valor de la media. La referencia siguiente reúne los cuatro casos en llamadas independientes, conservando el dominio pequeño que mantiene representable la suma."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las cuatro colecciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid informar(const std::vector<int>& datos) {\n    if (datos.empty()) {\n        std::cout << \"Sin datos\\n\";\n        return;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro << \"\\n\";\n}\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    return 0;\n}\n"
         }
       ]
     }

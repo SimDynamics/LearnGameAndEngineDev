@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La interfaz de Pedido ya permite consultar código, unidades y estado. Si necesitamos saber si dos pedidos tienen el mismo valor completo, podemos escribir una función libre que use esas consultas. No necesitamos abrir los miembros privados ni añadir una operación que los devuelva para modificarlos. Una interfaz pequeña debe ser suficiente para las acciones que promete."
+          "text": "La interfaz de Pedido ya permite consultar código, unidades y estado. Si necesitamos saber si dos pedidos tienen el mismo valor completo, podemos escribir una función libre que use esas consultas. No necesitamos abrir los miembros privados ni añadir una operación que los devuelva para modificarlos. Una interfaz pequeña debe ser suficiente para las acciones que promete.",
+          "emphasis": [
+            {
+              "text": "mismo valor completo"
+            },
+            {
+              "text": "función libre"
+            }
+          ]
         },
         {
           "type": "code",
@@ -157,11 +165,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Define un struct Medida con etiqueta string y cantidad int. La igualdad completa debe comparar ambos miembros. Escribe una función mismo_valor y operaciones == y != coherentes. Predice y comprueba los pares {\"A\", 2}/{\"A\", 2}, {\"A\", 2}/{\"A\", 3} y {\"A\", 2}/{\"B\", 2}. Recorre después un vector y cuenta las medidas iguales a {\"A\", 2}, sin alterar ni eliminar registros."
+          "text": "Define Medida con etiqueta string y cantidad int. Construye mismo_valor y los operadores == y != para comparar ambos miembros de forma coherente. En main compara los pares A,2/A,2; A,2/A,3 y A,2/B,2, en ese orden. Por cada par muestra igualdad:desigualdad como bools 0 o 1 y termina la línea con un salto.\n\nDespués recorre {{A,2},{A,3},{A,2},{B,2}} y cuenta los registros iguales a {A,2}, sin alterar ni eliminar ninguno. Muestra Coincidencias:2, sin salto final. Pulsa Compilar, ejecutar y comprobar. Las líneas anteriores deben ser 1:0, 0:1 y 0:1. Las comparaciones y el conteo forman una sola batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0\n0:1\n0:1\nCoincidencias:2"
+                ],
+                "explanation": "Igualdad completa requiere la misma etiqueta y cantidad. Desigualdad niega esa misma comparación; los registros repetidos siguen contando por separado."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
@@ -193,6 +217,15 @@
             "1"
           ],
           "explanation": "La solicitud de cero unidades falla sin cambiar b; los valores completos siguen iguales."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) {\n        if (medida == buscada) { ++cantidad; }\n    }\n    std::cout << \"Coincidencias:\" << cantidad;\n    return 0;\n}\n"
         }
       ]
     }

@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Una función puede llamar a otra que lance una excepción. Si no la captura, tampoco continúa normalmente después de esa llamada: la excepción sigue buscando un tratamiento en las funciones llamadoras. No necesitamos duplicar el mismo catch en cada función intermedia. Detectar puede pertenecer a una función pequeña; decidir abandonar o continuar una operación puede pertenecer al coordinador."
+          "text": "Una función puede llamar a otra que lance una excepción. Si no la captura, tampoco continúa normalmente después de esa llamada: la excepción sigue buscando un tratamiento en las funciones llamadoras. No necesitamos duplicar el mismo catch en cada función intermedia. Detectar puede pertenecer a una función pequeña; decidir abandonar o continuar una operación puede pertenecer al coordinador.",
+          "emphasis": [
+            {
+              "text": "funciones llamadoras"
+            },
+            {
+              "text": "coordinador"
+            }
+          ]
         },
         {
           "type": "code",
@@ -127,11 +135,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade una función estimacion_doble que llame a estimar y devuelva el doble. El catch debe estar sólo en main. Prueba 2 y 12. Conserva el contador de operaciones aceptadas que ya incluye el código inicial: sólo debe aumentar después de obtener una estimación válida. Comprueba que una entrada inválida no cambia el contador. Usa los límites originales de estimar."
+          "text": "Añade `estimacion_doble(int piezas)`, que llama a `estimar` y devuelve el doble del resultado válido. No captures dentro de esa función. En `main`, recorre los datos 2 y 12. Para cada dato, crea un contador `aceptadas` que empiece en cero; dentro del `try`, obtén la estimación doble y sólo después aumenta ese contador. El único `catch`, situado en `main`, muestra `Rechazado:`. Presenta el resultado válido seguido de dos puntos, o el rótulo de rechazo, y después el contador de ese intento. Termina cada caso con un salto de línea.\n\nPulsa Compilar, ejecutar y comprobar. Las dos líneas deben ser `14:1` y `Rechazado:0`, sin espacios y con salto al final de cada una. El mismo programa comprueba éxito y rechazo; los reintentos sirven para corregir esa construcción. Conserva el dominio original de `estimar`.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "14:1\nRechazado:0\n"
+                ],
+                "explanation": "La llamada intermedia no fabrica un resultado cuando estimar lanza. El contador sólo aumenta después de recibir un resultado válido."
+              }
+            ]
+          }
         }
       ]
     },
@@ -147,7 +171,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. estimacion_doble debe llamar a estimar y devolver dos veces el resultado válido; no captura ni fabrica un cero para ocultar errores. El único catch está en main. Para 2, la estimación doble es 14 y el contador pasa de 0 a 1; para 12, se informa Rechazado y el contador conserva 0. En esta referencia las salidas son 14:1 y Rechazado:0. Son válidas otras etiquetas que muestren resultado y estado del contador."
+          "text": "Criterios de corrección. estimacion_doble debe llamar a estimar y devolver dos veces el resultado válido; no captura ni fabrica un cero para ocultar errores. El único catch está en main. Para 2, la estimación doble es 14 y el contador pasa de 0 a 1; para 12, se informa Rechazado y el contador conserva 0. En esta referencia las salidas son 14:1 y Rechazado:0. Son válidas otras implementaciones que conserven el resultado, el estado del contador y el formato solicitado."
         },
         {
           "type": "code",
@@ -156,7 +180,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Cambia piezas de 2 a 12 sin cambiar las funciones ni mover el incremento. Cuando estimar lanza, la función intermedia no obtiene un resultado normal; la propagación llega al coordinador y evita el incremento. El contador del código inicial ya estaba presente: la tarea consiste en conservar su posición después del éxito y comprobarlo con la nueva llamada intermedia."
+          "text": "La referencia anterior presenta el caso válido aislado. La siguiente reúne ambos datos sin cambiar las funciones entre ejecuciones. Cuando estimar lanza, la función intermedia no obtiene un resultado normal; la propagación llega a main y evita el incremento. El contador pertenece a cada intento y empieza en cero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <vector>\n#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    for (int piezas : std::vector<int>{2, 12}) {\n        int aceptadas{0};\n        try {\n            int minutos{estimacion_doble(piezas)};\n            ++aceptadas;\n            std::cout << minutos << \":\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Rechazado:\";\n        }\n        std::cout << aceptadas << \"\\n\";\n    }\n    return 0;\n}\n"
         }
       ]
     }

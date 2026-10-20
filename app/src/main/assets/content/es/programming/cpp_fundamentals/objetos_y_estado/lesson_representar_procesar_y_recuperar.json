@@ -172,7 +172,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código de esta página, construye un programa desde esta consigna. Una estación se llama Puesto 03, tiene 6 mesas y dos tramos de cable de 1.5 y 2.25 metros. Crea variables adecuadas, calcula el cable total y muestra estas tres líneas, en este orden:\n\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nConserva el cero del nombre, los espacios del mensaje y la unidad del resultado. Los saltos entre líneas son necesarios; puedes añadir o no un salto después de la m final. No hace falta leer entrada. El editor proporciona sólo el cuerpo mínimo de main: decide cómo representar los datos, calcular y presentar el informe.",
+          "text": "En el editor de código de esta página, construye un programa desde esta consigna. Una estación se llama Puesto 03, tiene 6 mesas y dos tramos de cable de 1.5 y 2.25 metros. Crea variables adecuadas, calcula el cable total y muestra estas tres líneas, en este orden:\n\nPuesto 03\nMesas: 6\nCable: 3.75 m\n\nConserva el cero del nombre, los espacios del mensaje y la unidad del resultado. Los saltos entre líneas son necesarios; puedes añadir o no un salto después de la m final. No hace falta leer entrada. El editor proporciona sólo el cuerpo mínimo de main: decide cómo representar los datos, calcular y presentar el informe.\n\nPulsa «Compilar, ejecutar y comprobar» para contrastar tu informe con esa salida. La coincidencia de la consola no sustituye comprobar que las instrucciones utilizan las variables y realizan la suma.",
           "emphasis": [
             {
               "text": "calcula el cable total"
@@ -184,11 +184,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto 03\nMesas: 6\nCable: 3.75 m",
+                  "Puesto 03\nMesas: 6\nCable: 3.75 m\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar tu construcción, responde los dos puzzles del final de esta página: el primero registra los datos y el resultado de la suma; el segundo comprueba qué sucede con el nombre al variar las cantidades. Después compila y ejecuta tu programa y compara las tres líneas con la consigna.\n\nEn ese mismo editor cambia sólo los valores iniciales: mesas a 0 y los dos tramos a 2.0 y 3.5. Vuelve a compilar y ejecutar. El nombre debe seguir siendo Puesto 03; las otras dos líneas deben ser Mesas: 0 y Cable: 5.5 m. Si el resultado difiere, revisa las variables que modificaste, el cálculo y los separadores de la salida. La solución aparece después de esta práctica."
+          "text": "Los dos puzzles siguientes preparan la comprobación de esta construcción. El primero registra los datos originales y el resultado previsto de la suma antes de ejecutar; el segundo permite razonar sobre una variación de cantidades. El registro previo sirve para contrastar lo previsto con lo observado, sin confundir los valores de partida con el resultado calculado. La variación dispone de su propio editor después de los puzzles."
         },
         {
           "type": "multiple_choice",
@@ -223,6 +235,30 @@
             "Relaciona cada modificación con el objeto al que se aplica y revisa qué dato consulta la salida."
           ],
           "explanation": "Puesto 03 es el contenido del objeto que representa el nombre. El cero pertenece a ese texto; no es el valor de mesas. Cambiar las cantidades numéricas no modifica el nombre, del mismo modo que una asignación a un objeto no cambia por sí sola los demás (Stroustrup, 2024)."
+        },
+        {
+          "type": "heading",
+          "text": "El informe con otras cantidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor parte del primer informe. Cambia sólo mesas a cero y los tramos a `2.0` y `3.5` metros. Conserva el nombre, el cálculo, la unidad y las instrucciones de salida.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es:\n\nPuesto 03\nMesas: 0\nCable: 5.5 m\n\nEl salto final es opcional. Si difiere, revisa los datos modificados, la suma y los separadores."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estacion = \"Puesto 03\";\n    int mesas = 6;\n    double primer_tramo_metros = 1.5;\n    double segundo_tramo_metros = 2.25;\n    double cable_total_metros = primer_tramo_metros + segundo_tramo_metros;\n    std::cout << estacion << \"\\n\";\n    std::cout << \"Mesas: \" << mesas << \"\\n\";\n    std::cout << \"Cable: \" << cable_total_metros << \" m\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Puesto 03\nMesas: 0\nCable: 5.5 m",
+                  "Puesto 03\nMesas: 0\nCable: 5.5 m\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -296,15 +332,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Sin copiar la solución del informe anterior, construye en el editor de código de esta página un registro de biblioteca. El nombre es Modulo 02 y la cantidad inicial es 7 libros. Guarda una copia de esa cantidad en al_inicio antes de añadir una devolución de 3 libros a la cantidad actual. La salida debe tener estas tres líneas:\n\nModulo 02\nInicio: 7\nAhora: 10\n\nConserva el nombre, el orden de las líneas y sus espacios. Puedes terminar con o sin un salto después de la última línea. Después prueba con 0 libros iniciales y una devolución de 2, modificando sólo esos datos. El estado inicial y el actual deben seguir correspondiendo a momentos distintos."
+          "text": "Sin copiar la solución del informe anterior, construye en el editor de código de esta página un registro de biblioteca. El nombre es Modulo 02 y la cantidad inicial es 7 libros. Guarda una copia de esa cantidad en al_inicio antes de añadir una devolución de 3 libros a la cantidad actual. La salida debe tener estas tres líneas:\n\nModulo 02\nInicio: 7\nAhora: 10\n\nConserva el nombre, el orden de las líneas y sus espacios. Puedes terminar con o sin un salto después de la última línea. El estado inicial y el actual deben corresponder a momentos distintos.\n\nPulsa «Compilar, ejecutar y comprobar». La salida debe utilizar las variables; coincidir con el texto esperado no demuestra por sí solo que se haya realizado la copia."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Modulo 02\nInicio: 7\nAhora: 10",
+                  "Modulo 02\nInicio: 7\nAhora: 10\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, registra los estados de los dos casos en el puzzle del final de esta página. Cada caso distingue el momento de la copia del momento posterior a la devolución. Usa esa comparación para revisar el orden de las instrucciones que construiste en el editor.\n\nDespués compila y ejecuta ambos casos. Si falla el formato, revisa por separado los literales, los valores y los saltos de línea. Si aparece la misma cantidad en Inicio y Ahora, comprueba cuándo guardaste la copia y qué variable modificaste. La práctica posterior recuperará estas decisiones al introducir comparaciones, selección y repetición."
+          "text": "El puzzle siguiente registra los estados previstos de los dos casos antes de ejecutar la construcción de la biblioteca. En cada caso distingue el momento de la copia del momento posterior a la devolución. Ese registro permite anticipar qué objeto conserva el estado inicial y cuál cambia. La variación a cero libros tiene su propio editor después del puzzle."
         },
         {
           "type": "multiple_choice",
@@ -322,6 +370,30 @@
             "Revisa a qué variable debe añadirse la devolución y conserva el orden de los dos valores de cada par."
           ],
           "explanation": "Después de guardar la copia, ambos objetos contienen el valor inicial. La suma posterior actualiza libros; al_inicio conserva el dato copiado (Stroustrup, 2024). El primer caso pasa de (7, 7) a (10, 7), y el segundo de (0, 0) a (2, 0). La cantidad inicial cero también debe conservarse como un dato válido."
+        },
+        {
+          "type": "heading",
+          "text": "Una biblioteca que comienza vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor, cambia sólo la cantidad inicial a cero libros y la devolución a dos. Conserva el nombre y guarda la copia antes del aumento.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nEl salto final es opcional. Que el valor inicial sea cero no cambia el momento en que debe conservarse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 7;\n    int al_inicio = libros;\n    int devolucion = 3;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Modulo 02\nInicio: 0\nAhora: 2",
+                  "Modulo 02\nInicio: 0\nAhora: 2\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -338,13 +410,10 @@
         },
         {
           "type": "paragraph",
-          "text": "La copia anterior al aumento distingue el estado inicial del actual: al_inicio conserva el valor que libros tenía cuando se ejecutó esa definición, y la actualización posterior cambia sólo libros (Stroustrup, 2024). Con 0 libros y una devolución de 2, el resultado es:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nPara recuperar el procedimiento con otros datos, vuelve al editor de la página anterior y cambia los valores iniciales a 4 libros y una devolución de 5. Conserva el nombre y el momento de la copia. Antes de ejecutar esa variante, responde la predicción del final de esta página; después compila y compara su salida con la de tu construcción. Estos casos comprueban comportamientos concretos, sin demostrar por sí solos el dominio de todas las decisiones de la unidad.",
+          "text": "La copia anterior al aumento distingue el estado inicial del actual: `al_inicio` conserva el valor que `libros` tenía cuando se ejecutó esa definición, y la actualización posterior cambia sólo `libros` (Stroustrup, 2024). Con cero libros y una devolución de dos, el resultado es:\n\nModulo 02\nInicio: 0\nAhora: 2\n\nLa predicción siguiente utiliza cuatro libros y una devolución de cinco. Sigue primero el programa del puzzle; después podrás recuperar la construcción en el editor que aparece a continuación. Cada actividad conserva un objetivo y sus reintentos.",
           "emphasis": [
             {
               "text": "La copia anterior al aumento distingue el estado inicial del actual"
-            },
-            {
-              "text": "Conserva el nombre y el momento de la copia"
             }
           ]
         },
@@ -352,7 +421,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar__recuperar_registro_con_otra_devolucion",
           "language": "cpp",
-          "question": "Después de reconstruir y probar los dos casos de la biblioteca, recupera el procedimiento con 4 libros y una devolución de 5. Predice las tres líneas exactas de este programa, con sus espacios y sin añadir un salto final. Después contrástalas con la ejecución de tu variante en el editor de la página anterior.",
+          "question": "Recupera el procedimiento con 4 libros y una devolución de 5. Predice las tres líneas exactas de este programa, con sus espacios y sin añadir un salto final. Después podrás contrastar este caso en el editor situado a continuación.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 4;\n    int al_inicio = libros;\n    int devolucion = 5;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n",
           "answers": [
             "Modulo 02\nInicio: 4\nAhora: 9"
@@ -360,6 +429,30 @@
           "outputComparison": "exact",
           "reviewFeedback": "Sigue la copia antes de sumar la devolución. Distingue el valor que conserva cada objeto y separa las líneas según las inserciones del programa.",
           "explanation": "al_inicio recibe cuatro antes de la actualización. La devolución suma cinco a libros, que pasa a nueve; la copia conserva cuatro (Stroustrup, 2024). El nombre sigue siendo Modulo 02 y las inserciones separan sus tres líneas. La ejecución de otro caso debe utilizar sus propios datos, no imprimir los resultados de los anteriores."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la construcción con otro estado inicial"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye en este editor un registro para `Modulo 02` con cuatro libros iniciales y una devolución de cinco. Guarda el estado inicial antes del aumento y muestra el nombre, `Inicio:` y `Ahora:` en tres líneas, con los mismos espacios practicados.\n\nPulsa «Compilar, ejecutar y comprobar». Contrasta el resultado con la predicción anterior; el salto final es opcional. El esqueleto no entrega la organización de los datos ni las actualizaciones."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Modulo 02\nInicio: 4\nAhora: 9",
+                  "Modulo 02\nInicio: 4\nAhora: 9\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

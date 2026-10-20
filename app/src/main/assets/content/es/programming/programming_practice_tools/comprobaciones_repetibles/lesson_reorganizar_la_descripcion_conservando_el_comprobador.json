@@ -179,7 +179,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de cambiar la descripción, vuelve a configurar; construye y ejecuta el comprobador y la aplicación. Compara sus resultados con los anteriores. Como control separado, cambia temporalmente el retorno de componente/src/cajas.cpp a piezas / 4, reconstruye el comprobador y observa qué casos lo rechazan. Recupera el cuerpo original, reconstruye y vuelve a ejecutar los mismos siete casos. El estado final debe conservar todos los archivos C++ originales. La contraprueba controla la sensibilidad de la batería, no forma parte de la reorganización (Kernighan & Pike, 1999, pp. 149–150)."
+          "text": "Después de cambiar la descripción, vuelve a configurar; construye y ejecuta el comprobador y la aplicación. Compara sus resultados con los anteriores: el objetivo es repartir la descripción conservando comportamiento y requisitos. Todos los archivos C++ deben permanecer intactos. La contraprueba que controla la sensibilidad de la batería se realiza después en otro editor (Kernighan & Pike, 1999, pp. 149–150)."
         },
         {
           "type": "cpp_compiler",
@@ -306,6 +306,61 @@
             "Distingue el directorio donde está una fuente y el nombre declarado para el ejecutable. Revisa qué clase de dato pide el selector.",
             "La carpeta de la biblioteca no renombra a sus consumidores. Revisa el nombre declarado para el ejecutable que quieres construir."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Controlar la batería con las descripciones conservadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente tiene la organización distribuida completa, los siete casos y una alteración del componente a piezas/4. Construye comprobar_cajas y observa los casos que la distinguen; repara sólo el cuerpo de cajas_para y comprueba las siete comparaciones. Conserva ambos CMakeLists.txt, los esperados y los otros archivos."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(EnviosComprobables LANGUAGES CXX)\nmessage(STATUS \"raiz_antes\")\nadd_subdirectory(componente)\nmessage(STATUS \"raiz_despues\")\nadd_executable(consultar_cajas app/consulta.cpp)\nadd_executable(comprobar_cajas pruebas/cajas_casos.cpp)\ntarget_link_libraries(consultar_cajas PRIVATE envios)\ntarget_link_libraries(comprobar_cajas PRIVATE envios)\ntarget_compile_features(consultar_cajas PRIVATE cxx_std_20)\ntarget_compile_features(comprobar_cajas PRIVATE cxx_std_20)\nset_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/CMakeLists.txt",
+              "initialCode": "message(STATUS \"componente\")\nadd_library(envios STATIC src/cajas.cpp)\ntarget_include_directories(envios PUBLIC publico)\ntarget_compile_features(envios PRIVATE cxx_std_20)\nset_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "componente/publico/envio/cajas.h",
+              "initialCode": "#ifndef PRACTICA_ENVIO_CAJAS_H\n#define PRACTICA_ENVIO_CAJAS_H\n\n// Dominio: 0 <= piezas <= 20.\n// Minimo numero de cajas de 4 plazas que basta para todas las piezas.\n// Cero piezas requiere cero cajas.\nint cajas_para(int piezas);\n\n#endif\n"
+            },
+            {
+              "path": "componente/src/cajas.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n\nint cajas_para(int piezas) {\n    return piezas / 4;\n}\n"
+            },
+            {
+              "path": "app/consulta.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cajas_para(4) << \":\" << cajas_para(8);\n    return 0;\n}\n"
+            },
+            {
+              "path": "pruebas/cajas_casos.cpp",
+              "initialCode": "#include \"envio/cajas.h\"\n#include <iostream>\n\nbool comprobar(int piezas, int esperado) {\n    const int obtenido{cajas_para(piezas)};\n    const bool coincide{obtenido == esperado};\n    std::cout << \"piezas=\" << piezas << \" esperado=\" << esperado\n              << \" obtenido=\" << obtenido << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(0, 0)) { correcto = false; }\n    if (!comprobar(4, 1)) { correcto = false; }\n    if (!comprobar(8, 2)) { correcto = false; }\n    if (!comprobar(20, 5)) { correcto = false; }\n    if (!comprobar(1, 1)) { correcto = false; }\n    if (!comprobar(5, 2)) { correcto = false; }\n    if (!comprobar(17, 5)) { correcto = false; }\n    if (!correcto) {\n        std::cout << \"Bateria: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Bateria: OK\\n\";\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar_cajas",
+            "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "La batería completa conserva los casos parciales que detectan el truncamiento. Reparar el cuerpo recupera sus siete comparaciones sin alterar las descripciones distribuidas."
+              }
+            ]
+          }
         }
       ]
     },
@@ -605,11 +660,19 @@
         },
         {
           "type": "paragraph",
-          "text": "El historial local del editor de código permite registrar deliberadamente una revisión de sus archivos, compararla con el borrador y recuperar después un archivo concreto. El borrador conserva lo que estás editando; una revisión registrada mantiene el punto que decidiste guardar. Editar después el borrador no actualiza automáticamente ese punto. La fuente destaca conservar cambios identificables y consultar diferencias para poder recuperar trabajo anterior (Thomas & Hunt, 2020, pp. 84–85). Aquí practicarás esas operaciones locales con el proyecto que ya comprendes."
+          "text": "El historial local del editor de código permite registrar deliberadamente una revisión de sus archivos, compararla con el borrador y recuperar después un archivo concreto. El borrador conserva lo que estás editando; una revisión registrada mantiene el punto que decidiste guardar. Editar después el borrador no actualiza automáticamente ese punto. La fuente destaca conservar cambios identificables y consultar diferencias para poder recuperar trabajo anterior (Thomas & Hunt, 2020, pp. 84–85). Aquí practicarás esas operaciones locales con el proyecto que ya comprendes.\n\nAl elegir una revisión, Archivos de la revisión muestra el estado de cada ruta respecto de ese punto. Al abrir una ruta puedes ver sus diferencias: − revisión registrada y + borrador actual. Recuperar este archivo afecta sólo a la ruta elegida; esa selección permite conservar una edición independiente de otro archivo."
         },
         {
           "type": "paragraph",
-          "text": "El proyecto del siguiente editor de código parte de las dos descripciones distribuidas correctas y conserva la implementación y los siete casos ya estudiados: 0, 4, 8, 20, 1, 5 y 17 piezas. Tiene su propio borrador, por lo que no necesitas sustituir tus intentos de prácticas anteriores. Antes de alterarlo, abre Historial y usa Registrar revisión; escribe una etiqueta propia que describa esta base distribuida y sus siete casos. Identifica la revisión que acabas de registrar. Guardar sus fuentes no equivale a construirlas ni a producir una ejecución nueva."
+          "text": "El proyecto siguiente tiene las dos descripciones distribuidas correctas y los siete casos 0, 4, 8, 20, 1, 5 y 17. Su objetivo es recuperar una fuente concreta desde una revisión registrada conservando un cambio independiente de CMakeLists.txt. Realiza todo el recorrido en este editor.\n\n1. Antes de editar, abre Historial, usa Registrar revisión y asigna una etiqueta que identifique esta base distribuida. Cierra Historial para continuar en el borrador.\n\n2. Cambia sólo el retorno de componente/src/cajas.cpp a piezas / 4 y añade a la raíz un comentario de CMake que quieras conservar, sin modificar sus órdenes. Son dos archivos cambiados con propósitos distintos.\n\n3. Configura, construye comprobar_cajas y ejecútalo. La batería debe revelar las discrepancias de 1, 5 y 17 piezas y terminar con 1; conserva los casos y esperados.\n\n4. Abre Historial, elige la base y compara las dos rutas con el borrador. Utiliza Recuperar este archivo únicamente para componente/src/cajas.cpp. El comentario de la raíz debe permanecer.\n\n5. Cierra Historial y, en este mismo editor, configura, construye y comprueba otra vez comprobar_cajas. Criterios finales: fuente recuperada igual a la revisión elegida, comentario independiente conservado y siete comparaciones OK con retorno 0. Registrar fuentes no acredita por sí solo su ejecución.",
+          "emphasis": [
+            {
+              "text": "recuperar una fuente concreta"
+            },
+            {
+              "text": "conservando un cambio independiente"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -644,11 +707,23 @@
           "cmake": {
             "target": "comprobar_cajas",
             "buildType": "Debug"
+          },
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
+                ],
+                "explanation": "Los siete casos conservados pasan con la fuente recuperada. Comprueba además en Historial que se recuperó sólo ese archivo y que el comentario independiente continúa en la raíz."
+              }
+            ]
           }
         },
         {
           "type": "paragraph",
-          "text": "La ventana Historial separa la lista de revisiones del borrador actual. Al elegir una revisión, Archivos de la revisión muestra el estado de cada ruta respecto de ese punto; al abrir una ruta puedes ver su comparación. La leyenda distingue − revisión registrada y + borrador actual. Identifica qué se conserva y con qué lo comparas antes de cambiar el proyecto; una etiqueta o una fecha por sí solas no describen qué instrucciones ejecutará después el compilador."
+          "text": "La revisión registrada y el borrador son estados distintos: el punto guardado no cambia por editar después. La comparación identifica qué conservó la recuperación y qué edición siguió en el borrador; la nueva ejecución aporta una evidencia diferente sobre ese estado final."
         }
       ]
     },
@@ -660,19 +735,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de registrar la base, cambia sólo el retorno de componente/src/cajas.cpp a piezas / 4. Conserva sin editar los siete casos y sus esperados. Añade también en CMakeLists.txt de la raíz un comentario propio que quieras conservar sobre la organización; no cambies sus órdenes. Esta segunda edición es independiente de la alteración del cálculo. Antes de continuar, identifica qué dos archivos deberían diferir de la revisión registrada; la comparación de Historial te permitirá comprobar sus líneas."
+          "text": "En el recorrido anterior, componente/src/cajas.cpp y CMakeLists.txt quedaron modificados respecto de la base: la fuente cambió el cálculo y la raíz recibió un comentario independiente. Comparar esas rutas permite identificar las líneas de la revisión y las del borrador antes de elegir qué recuperar."
         },
         {
           "type": "paragraph",
-          "text": "Predice las siete comparaciones del comprobador alterado. Vuelve a configurar, construye comprobar_cajas y ejecútalo; conserva sus líneas y su código final. La alteración ya te resulta conocida: aquí sirve para investigar cómo una recuperación selectiva conserva unas ediciones y retira otras. No cambies expectativas para acomodarlas al cálculo alterado ni uses el resultado anterior de la aplicación como evidencia de estos siete casos."
+          "text": "La construcción del comprobador alterado permite observar tres discrepancias sin cambiar los siete casos. Esa ejecución se atribuye a piezas / 4; el resultado guardado de la aplicación no sería evidencia sobre las comparaciones de esa revisión."
         },
         {
           "type": "paragraph",
-          "text": "Abre Historial, elige la base que registraste y examina tanto la fuente como el CMakeLists.txt de la raíz desde Archivos de la revisión. Comprueba los estados y las líneas de ambas comparaciones antes de decidir. Tu objetivo es recuperar la definición correcta mediante Recuperar este archivo, conservando el comentario independiente. Identifica la ruta que satisface ese objetivo; no repares la fórmula escribiéndola de nuevo ni recuperes otra edición que sí querías mantener."
+          "text": "La recuperación selectiva devuelve la fuente elegida a la revisión base y conserva el comentario de la raíz. No equivale a recuperar todas las rutas ni a reescribir manualmente la fórmula. Elegir el archivo correcto es parte del objetivo que se comprobó en la actividad."
         },
         {
           "type": "paragraph",
-          "text": "Después de recuperar, cierra Historial, sal de esta lección y vuelve al mismo editor de código. Reabre la revisión para verificar que sigue disponible, que la fuente recuperada coincide con ella y que el comentario continúa en el borrador de la raíz. Vuelve a configurar, construir comprobar_cajas y ejecutar sus siete casos con el estado que acabas de retomar. La recuperación cambia archivos; observar de nuevo el comprobador exige construir y ejecutar el objetivo pertinente, en vez de atribuirle un resultado guardado de otra construcción."
+          "text": "No hace falta salir de la lección para interpretar la recuperación. Cerrar Historial devuelve al mismo editor; su nueva construcción y ejecución deben corresponder a la fuente recuperada. Un resultado conservado de otra revisión no acredita ese estado."
         },
         {
           "type": "multiple_choice",
@@ -705,7 +780,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La ejecución del comprobador alterado, después de construirlo, conserva OK para 0, 4, 8 y 20 piezas; para 1, 5 y 17 obtiene 0, 1 y 4, frente a los esperados 1, 2 y 5. Esas tres comparaciones producen FALLO y el final Bateria: FALLO, con retorno 1. Después de recuperar la fuente, retomar el editor de código y reconstruir/ejecutar, las siete comparaciones producen OK y el final Bateria: OK, con retorno 0. stderr queda vacío en ambos recorridos. Estos resultados pertenecen a sus respectivas construcciones, no al acto de registrar o abrir una revisión."
+          "text": "La ejecución del comprobador alterado, después de construirlo, conserva OK para 0, 4, 8 y 20 piezas; para 1, 5 y 17 obtiene 0, 1 y 4, frente a los esperados 1, 2 y 5. Esas tres comparaciones producen FALLO y el final Bateria: FALLO, con retorno 1. Después de recuperar la fuente y reconstruir/ejecutar en el mismo editor, las siete comparaciones producen OK y el final Bateria: OK, con retorno 0. stderr queda vacío en ambos recorridos. Estos resultados pertenecen a sus respectivas construcciones, no al acto de registrar o abrir una revisión."
         },
         {
           "type": "multiple_choice",

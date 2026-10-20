@@ -105,19 +105,30 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, escribe las fronteras [inicio, fin) de cada grupo en la copia ordenada. Después construye el recorrido sin mirar la referencia posterior. En cada vuelta debe publicarse exactamente un grupo y avanzar inicio hasta el primer elemento aún no contado. Puedes organizar las variables de otra forma si justificas los mismos límites y resultados."
+          "text": "Construye el recorrido sin mirar la referencia posterior. Cada vuelta debe publicar exactamente un grupo y avanzar `inicio` hasta el primer elemento todavía no contado. El intervalo `[inicio, fin)` permite justificar los accesos; `fin` puede señalar el final sin pertenecer al vector."
         },
         {
           "type": "paragraph",
-          "text": "Repite con {}, {7}, {-1, -1, -1} y {4, -1}. En vacío sólo se muestra el encabezado y los resúmenes N:0, Distintos:0, Suma:0 y Original: sin valores. Con {-1, -1, -1} hay un grupo de frecuencia tres. Con {4, -1} hay dos grupos de frecuencia uno. Predice todas las líneas; la comprobación debe incluir el último grupo, no sólo el primero."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial. La comprobación incluye cada fila, los resúmenes y el original. Termina cada línea con salto, incluida la última. Los casos de otros tamaños tendrán su propio editor después de la referencia."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Frecuencias:\n[-3]=3\n[0]=2\n[8]=2\nN:7\nDistintos:3\nSuma:7\nOriginal:-3;8;-3;0;8;-3;0;\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también {2, 2, 5, 5, 5}: el último grupo llega al final de la copia. Debe publicarse una vez, sin leer una posición de valor igual a size(). Una permutación del mismo conjunto de observaciones cambia la línea Original, pero conserva la tabla de frecuencias."
+          "text": "El último grupo debe publicarse una sola vez, sin leer una posición igual a `size()`. Una permutación de las observaciones puede cambiar la línea `Original`, pero debe conservar la tabla de frecuencias. La suma de frecuencias debe coincidir con la cantidad de observaciones."
         }
       ]
     },
@@ -159,6 +170,60 @@
         {
           "type": "paragraph",
           "text": "Para detectar una omisión al final, compara {1, 1, 4} con {1, 1, 4, 4}. La segunda colección no añade un valor distinto, pero sí aumenta la frecuencia del grupo final y la suma en una observación. Un contador que sólo publica cuando descubre un valor diferente puede olvidar ambos finales si no tiene una decisión para el fin de la colección."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 7 para {7}\n• 3 -1 -1 -1 para {-1, -1, -1}\n• 2 4 -1 para {4, -1}\n• 5 2 2 5 5 5 para {2, 2, 5, 5, 5}\n• 7 -3 8 -3 0 8 -3 0 para {-3, 8, -3, 0, 8, -3, 0}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. Conserva exactamente el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ]
+              },
+              {
+                "standardInput": "1 7",
+                "outputs": [
+                  "Frecuencias:\n[7]=1\nN:1\nDistintos:1\nSuma:1\nOriginal:7;\n"
+                ]
+              },
+              {
+                "standardInput": "3 -1 -1 -1",
+                "outputs": [
+                  "Frecuencias:\n[-1]=3\nN:3\nDistintos:1\nSuma:3\nOriginal:-1;-1;-1;\n"
+                ]
+              },
+              {
+                "standardInput": "2 4 -1",
+                "outputs": [
+                  "Frecuencias:\n[-1]=1\n[4]=1\nN:2\nDistintos:2\nSuma:2\nOriginal:4;-1;\n"
+                ]
+              },
+              {
+                "standardInput": "5 2 2 5 5 5",
+                "outputs": [
+                  "Frecuencias:\n[2]=2\n[5]=3\nN:5\nDistintos:2\nSuma:5\nOriginal:2;2;5;5;5;\n"
+                ]
+              },
+              {
+                "standardInput": "7 -3 8 -3 0 8 -3 0",
+                "outputs": [
+                  "Frecuencias:\n[-3]=3\n[0]=2\n[8]=2\nN:7\nDistintos:3\nSuma:7\nOriginal:-3;8;-3;0;8;-3;0;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -232,15 +297,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Primer caso: {\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}. Debe mostrar Frecuencias:, [faro]=1, [patio]=3, [sala]=2, Maxima:3, Mayores:[patio], N:6, Distintas:3, Suma:6 y Original:[patio][sala][patio][faro][sala][patio], cada mensaje en su línea con salto final. Construye desde el editor mínimo antes de consultar la referencia. Prueba también {\"rio\", \"torre\", \"torre\", \"rio\"}, donde ambos valores son máximos; {\"faro\", \"valle\", \"valle\"}, con el máximo en el último grupo; y {\"roble\", \"ala\"}, donde ambos aparecen una vez."
+          "text": "Primer caso: `{\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}`. Debe mostrar `Frecuencias:`, `[faro]=1`, `[patio]=3`, `[sala]=2`, `Maxima:3`, `Mayores:[patio]`, `N:6`, `Distintas:3`, `Suma:6` y `Original:[patio][sala][patio][faro][sala][patio]`, una línea cada mensaje, con salto final. Construye desde el editor mínimo antes de consultar la referencia."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[patio]=3\n[sala]=2\nMaxima:3\nMayores:[patio]\nN:6\nDistintas:3\nSuma:6\nOriginal:[patio][sala][patio][faro][sala][patio]\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Completa tus predicciones con {}, {\"\"} y {\"\", \"a\", \"\"}. Los corchetes hacen visible una etiqueta vacía: [] significa un valor presente, mientras que Mayores: sin corchetes significa que no hay candidatos. Conserva el orden y las repeticiones del original y comprueba Suma = N. Explica cuándo retiras candidatos y cuándo conservas empates; una implementación de dos recorridos también es válida si obtiene el mismo informe sin ordenar ni alterar el original."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el caso inicial. Cada etiqueta del original debe conservar su orden y sus repeticiones. La igualdad `Suma = N` comprueba el conteo de observaciones. Los casos con empate o etiqueta vacía aparecen después en un editor independiente del mismo procedimiento."
         }
       ]
     },
@@ -282,6 +358,60 @@
         {
           "type": "paragraph",
           "text": "Como recuperación, permuta el caso del intento sin añadir ni quitar observaciones. Antes de ejecutar predice qué líneas permanecen iguales y cuál debe cambiar. Después elimina una aparición de la etiqueta más frecuente: comprueba si el nuevo máximo crea un empate en vez de seguir conservando sólo la ganadora anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de etiquetas de una palabra. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Para representar una etiqueta vacía en Entrada se utiliza `~`; el bucle la sustituye por `\"\"` antes de añadirla. Esa marca pertenece sólo al formato de prueba y no a la colección. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 4 rio torre torre rio para {'rio', 'torre', 'torre', 'rio'}\n• 3 faro valle valle para {'faro', 'valle', 'valle'}\n• 2 roble ala para {'roble', 'ala'}\n• 0 para el vector vacío\n• 1 ~ para {''}\n• 3 ~ a ~ para {'', 'a', ''}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. Conserva exactamente el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 rio torre torre rio",
+                "outputs": [
+                  "Frecuencias:\n[rio]=2\n[torre]=2\nMaxima:2\nMayores:[rio][torre]\nN:4\nDistintas:2\nSuma:4\nOriginal:[rio][torre][torre][rio]\n"
+                ]
+              },
+              {
+                "standardInput": "3 faro valle valle",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[valle]=2\nMaxima:2\nMayores:[valle]\nN:3\nDistintas:2\nSuma:3\nOriginal:[faro][valle][valle]\n"
+                ]
+              },
+              {
+                "standardInput": "2 roble ala",
+                "outputs": [
+                  "Frecuencias:\n[ala]=1\n[roble]=1\nMaxima:1\nMayores:[ala][roble]\nN:2\nDistintas:2\nSuma:2\nOriginal:[roble][ala]\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintas:0\nSuma:0\nOriginal:\n"
+                ]
+              },
+              {
+                "standardInput": "1 ~",
+                "outputs": [
+                  "Frecuencias:\n[]=1\nMaxima:1\nMayores:[]\nN:1\nDistintas:1\nSuma:1\nOriginal:[]\n"
+                ]
+              },
+              {
+                "standardInput": "3 ~ a ~",
+                "outputs": [
+                  "Frecuencias:\n[]=2\n[a]=1\nMaxima:2\nMayores:[]\nN:3\nDistintas:2\nSuma:3\nOriginal:[][a][]\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 rio torre torre rio"
         }
       ]
     },
@@ -331,11 +461,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve al editor de código de la tabla numérica y amplía tu propia tabla con Maxima y todos los candidatos de tipo int, una vez cada uno y en orden ascendente. Reutiliza la decisión por frecuencia aprendida con etiquetas; no selecciones por magnitud del número. Con {4, 1, 4, 2, 1, 2}, predice Maxima:2 y Mayores:[1][2][4]; con {1, 1, 5, 9}, Maxima:2 y Mayores:[1]; con {}, Maxima:0 y Mayores: sin ningún candidato. Si eliges una pasada, el reemplazo vacío corresponde ahora a std::vector<int>{}. Conserva también la tabla, Suma = N y el original. Después, al retomar esta lección, construye con datos propios sin consultar las referencias: alterna la práctica numérica y la de etiquetas en sus respectivos editores. Resuelve el puzzle de relaciones al final de esta página para distinguir la función de cada comparación. Una ejecución de un caso no sustituye comprobar vacío, empate, máximo final y conservación."
+          "text": "La selección de candidatos máximos también puede aplicarse a enteros. La actividad de relaciones siguiente distingue comparación de valores y comparación de frecuencias. Después construirás esa transferencia en otro editor: no hace falta modificar el informe numérico anterior. Vacío, empate y máximo en el último grupo deben conservarse como casos diferentes."
         },
         {
           "type": "note",
-          "text": "La frecuencia máxima en secuencias numéricas y de texto se estudia en los ejercicios de apoyo (Stroustrup, 2024, cap. 3, ejercicios 15–16, p. 81). Los contratos, datos, presentaciones y construcciones de esta lección son propios y hacen explícita su política de empates. La operación de ordenación se contrastó con el borrador HTML vigente (Working Draft: Programming Languages — C++, s. f., sección [alg.sorting], sort), que no es una reproducción literal de C++23. Aquí se usan sort sobre el rango completo, comparaciones y recorridos ya enseñados."
+          "text": "La frecuencia máxima en secuencias numéricas y de texto se estudia en los ejercicios de apoyo (Stroustrup, 2024, cap. 3, ejercicios 15–16, p. 81). Los contratos, datos, presentaciones y construcciones de esta lección son propios y hacen explícita su política de empates. La operación de ordenación se contrastó con el borrador HTML vigente (Working Draft: Programming Languages — C++, s. f., sección [alg.sorting], sort), que no es una reproducción literal de C++23. Aquí se usan sort sobre el rango completo, comparaciones y recorridos ya enseñados.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "math_puzzle",
@@ -428,6 +564,42 @@
             "correct": "fin < ordenadas.size() protege el acceso posterior a ordenadas[fin]. La igualdad entre observaciones decide si continúan el mismo grupo, tanto con enteros como con etiquetas. frecuencia > maxima descubre un máximo nuevo y reemplaza los candidatos anteriores; frecuencia == maxima conserva otro valor empatado. El orden de los valores organiza su presentación, pero no sustituye comparar sus cantidades de apariciones.",
             "incorrect": "Revisa qué magnitudes comparas: una posición del vector, una observación o una cantidad de apariciones. Confundir el orden de los valores con su frecuencia cambia la pregunta que responde el informe."
           }
+        },
+        {
+          "type": "heading",
+          "text": "Construir los candidatos máximos numéricos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto el informe de frecuencias numéricas con `Maxima` y `Mayores`, conservando tabla, resúmenes y original. Lee cantidad y datos. Comprueba `6 4 1 4 2 1 2`: máxima dos y candidatos `[1][2][4]`; `4 1 1 5 9`: máxima dos y candidato `[1]`; y `0`: máxima cero y ningún candidato. Cada mensaje conserva el formato anterior, y cada línea termina con salto. Los candidatos se eligen por frecuencia, no por magnitud.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. Conserva exactamente el salto final solicitado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 4 1 4 2 1 2",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=2\nMaxima:2\nMayores:[1][2][4]\nN:6\nDistintos:3\nSuma:6\nOriginal:4;1;4;2;1;2;\n"
+                ]
+              },
+              {
+                "standardInput": "4 1 1 5 9",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[5]=1\n[9]=1\nMaxima:2\nMayores:[1]\nN:4\nDistintos:3\nSuma:4\nOriginal:1;1;5;9;\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "6 4 1 4 2 1 2"
         }
       ]
     }

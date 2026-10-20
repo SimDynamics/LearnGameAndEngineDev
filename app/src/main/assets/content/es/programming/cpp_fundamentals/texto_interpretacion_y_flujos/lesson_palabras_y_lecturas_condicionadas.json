@@ -136,19 +136,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe para el texto preparado \"  eco\\tmar\\nsol  \". Cada palabra debe aparecer en su propia línea entre < y >. Después escribe Palabras: seguido de un espacio y la cantidad obtenida. Mantén el orden de lectura y no añadas una palabra por los espacios sobrantes. El texto de cada prueba contendrá como máximo 8 palabras, de hasta 20 caracteres ASCII cada una; un contador int de 0 a 8 es suficiente."
+          "text": "Construye un informe para el texto preparado \"  eco\\tmar\\nsol  \". Cada palabra debe aparecer en su propia línea entre < y >. Después escribe Palabras: seguido de un espacio y la cantidad obtenida. Mantén el orden de lectura y no añadas una palabra por los espacios sobrantes. El texto de cada prueba contendrá como máximo 8 palabras, de hasta 20 caracteres ASCII cada una; un contador int de 0 a 8 es suficiente. Construye una sola batería: define probar(const std::string& texto), crea un istringstream local nuevo en cada llamada y presenta su informe. main llama con \"  eco\\tmar\\nsol  \", \"\", \"   \", \"una dos\", \"unodos\" y \"  ola  \", en ese orden; \\t y \\n representan los caracteres reales. Termina también el resumen de cada llamada con salto, sin títulos ni líneas vacías entre informes. Resuelve el puzzle siguiente y usa Compilar, ejecutar y comprobar con las seis llamadas, sin cambiar de versión entre casos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Antes de ejecutar, establece lo esperado: el texto inicial produce <eco>, <mar>, <sol> y Palabras: 3 en cuatro líneas. La cadena vacía y una cadena con sólo espacios producen únicamente Palabras: 0. \"una dos\" produce dos palabras; \"unodos\" produce una sola. Añade un caso con espacios al principio y al final. El editor proporciona el origen, pero debes elegir destino, repetición, contador y presentación."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__palabras_y_lecturas_condicionadas__secuencia_palabras_previa",
+          "question": "Con extracción a string, ¿qué distingue \"una dos\" de \"unodos\"?",
+          "options": [
+            "La primera contiene dos palabras y la segunda una.",
+            "Las dos contienen dos palabras, porque cada una procede de dos sílabas.",
+            "La primera contiene una palabra, porque todo el texto llega en una string."
+          ],
+          "correctIndex": 0,
+          "explanation": "La extracción separa por blancos, sin analizar sílabas. Un espacio entre una y dos separa lecturas; su ausencia conserva una sola palabra."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "<eco>\n<mar>\n<sol>\nPalabras: 3\nPalabras: 0\nPalabras: 0\n<una>\n<dos>\nPalabras: 2\n<unodos>\nPalabras: 1\n<ola>\nPalabras: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "El editor permite construir y ejecutar tu programa; estos criterios no se comprueban automáticamente. Revisa cada salida y explica qué lectura hace avanzar el bucle y qué condición impide usar un dato que no se obtuvo. Compara con la referencia después del intento."
+          "text": "La comprobación de stdout contrasta los seis informes. La lectura debe hacer avanzar el flujo y su condición debe impedir procesar un destino sin dato nuevo; son criterios del algoritmo, además de coincidir con el texto. La referencia se consulta después del intento."
         }
       ]
     },
@@ -169,7 +193,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para comprobar los casos del intento, cambia sólo el texto del constructor y vuelve a ejecutar. Con una cadena vacía no entra al cuerpo; cantidad conserva 0. Con separadores consecutivos no aparecen palabras vacías: la extracción de string los omite."
+          "text": "Con cadena vacía el cuerpo no se ejecuta y cantidad conserva 0. Los separadores consecutivos no producen palabras vacías porque la extracción de string los omite. El espacio inicial y el final de \"  ola  \" tampoco agregan una palabra (Stroustrup, 2024, sección 9.10.3, p. 279)."
         },
         {
           "type": "output_prediction",
@@ -203,6 +227,19 @@
         {
           "type": "paragraph",
           "text": "Una palabra, una línea y un carácter son unidades distintas. Elegir una depende de lo que debas conservar. En las siguientes lecturas construiremos esas diferencias y validaremos el formato de números y operaciones; tener caracteres disponibles todavía no demuestra que constituyan un dato aceptable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"  eco\\tmar\\nsol  \");\n    probar(\"\");\n    probar(\"   \");\n    probar(\"una dos\");\n    probar(\"unodos\");\n    probar(\"  ola  \");\n    return 0;\n}\n"
         }
       ]
     }

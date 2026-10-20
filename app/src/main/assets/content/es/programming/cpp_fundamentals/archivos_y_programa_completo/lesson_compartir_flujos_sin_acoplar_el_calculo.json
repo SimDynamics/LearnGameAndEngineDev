@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya usamos cout, ofstream y ostringstream. Los tres permiten insertar caracteres, aunque los envían a destinos diferentes. std::ostream describe esa interfaz de salida. Una función con un parámetro std::ostream& puede operar sobre cualquiera de esos objetos sin decidir si el destino será la pantalla, una muestra de archivo o una cadena en memoria."
+          "text": "Ya usamos cout, ofstream y ostringstream. Los tres permiten insertar caracteres, aunque los envían a destinos diferentes. std::ostream describe esa interfaz de salida. Una función con un parámetro std::ostream& puede operar sobre cualquiera de esos objetos sin decidir si el destino será la pantalla, una muestra de archivo o una cadena en memoria (Stroustrup, 2024, sección 9.2, pp. 253–254)."
         },
         {
           "type": "paragraph",
@@ -121,15 +121,39 @@
         },
         {
           "type": "paragraph",
-          "text": "En main usa el texto conocido 7 2, con ambos valores dentro de 0..10. Los destinos comienzan en 9 y 4. Tras una lectura válida, calcula y escribe en un ostringstream; main muestra su cadena. Espera Balance=5. Prueba 0 0 y 2 7: sus balances son 0 y -5. Este lector comprueba extracción, no valida por sí mismo el dominio ni que se haya consumido todo el texto."
+          "text": "En main construye una sola batería: llama a una función probar(texto) con \"7 2\", \"0 0\" y \"2 7\", en ese orden. Cada llamada crea un istringstream nuevo y dos destinos distintos inicializados en 9 y 4. Tras leer correctamente, calcula el balance y compón con un ostringstream; main o probar presenta su cadena en una línea con salto final. Los resultados deben ser Balance=5, Balance=0 y Balance=-5. El lector comprueba extracción, sin validar por sí mismo dominio ni agotamiento de todo el texto. Usa Compilar, ejecutar y comprobar con las tres pruebas del mismo programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Cambia después el texto a 7 x. El lector debe devolver false y conservar los destinos en 9 y 4, aunque haya consumido caracteres. main muestra Entrada invalida|9:4 y termina con código 1; no ejecuta el cálculo. Prepara tus resultados antes de ejecutar."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo__secuencia_lectura_par_previa",
+          "question": "El texto es 7 x y los destinos distintos comienzan en 9 y 4. El lector promete publicar sólo tras ambas extracciones. ¿Qué resultado corresponde?",
+          "options": [
+            "false; destinos 7 y 4.",
+            "true; destinos 7 y 0.",
+            "false; destinos 9 y 4."
+          ],
+          "correctIndex": 2,
+          "explanation": "El primer entero pudo consumirse, pero la segunda extracción falla. Los candidatos locales no se publican; ambos destinos conservan su estado. La ejecución de ese diagnóstico tiene otro editor posterior."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define las funciones antes de main y construye las pruebas.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define las funciones antes de main y construye las pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Balance=5\nBalance=0\nBalance=-5\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -154,11 +178,93 @@
         },
         {
           "type": "paragraph",
-          "text": "Otra distribución en funciones o nombres distintos es válida si conserva esas responsabilidades. Repite después la escritura hacia un ofstream de una muestra propia: el llamador abre, comprueba, cierra y vuelve a comprobar. El archivo debe recibir el mismo texto Balance=5. La función escribir_balance no necesita conocer el nombre del archivo."
+          "text": "Otra distribución en funciones o nombres distintos es válida si conserva esas responsabilidades. Las dos actividades posteriores tienen editores propios: una observa el fallo de extracción con salida de proceso 1; la otra usa el escritor con una muestra ofstream, manteniendo apertura, cierre y comprobación en el llamador."
         },
         {
           "type": "note",
-          "text": "Las interfaces de flujos y la lectura se estudian en la fuente principal (Stroustrup, 2024, secciones 9.6–9.8, pp. 266–269). Explicaciones, modelo y actividades originales de esta ruta."
+          "text": "istream y ostream separan la operación de lectura o escritura del dispositivo concreto. Un archivo, la consola y una cadena pueden participar en esas interfaces; el cálculo no necesita conocer cuál de ellos se eligió. Las funciones reutilizables tampoco deben imponer mensajes ni destinos al llamador (Stroustrup, 2024, secciones 9.1–9.2 y 9.5.2, pp. 252–254 y 265)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de las tres lecturas válidas en una sola batería."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << ':' << rechazados << \"\\n\";\n        return;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str() << \"\\n\";\n}\n\nint main() {\n    probar(\"7 2\");\n    probar(\"0 0\");\n    probar(\"2 7\");\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar un fallo de lectura con su estado protegido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta este programa para observar el caso 7 x en un editor independiente. Debe conservar 9 y 4, mostrar Entrada invalida|9:4 y terminar con código 1. La ejecución fallida conserva sus diagnósticos; este objetivo no tiene comprobación de stdout ni veredicto Correcto. Después responde el puzzle para relacionar el resultado con la garantía del lector."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 x\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrada invalida|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo__secuencia_diagnostico_balance",
+          "question": "¿Por qué no debe ejecutarse el cálculo del balance tras leer 7 x?",
+          "options": [
+            "Porque el código 1 convierte los destinos automáticamente a cero.",
+            "Porque no se obtuvo el par completo; el resultado false deja 9 y 4 como estado previo, no como datos nuevos.",
+            "Porque un ostringstream sólo admite cantidades positivas."
+          ],
+          "correctIndex": 1,
+          "explanation": "El bool separa lectura completa de conservación del estado anterior. Usar los destinos después de false como si fueran datos recién leídos mezclaría dos contratos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Usar el mismo escritor con una muestra de archivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa independiente que calcule balance(7, 2), abra la muestra relativa balance_compartido_lgp.txt y use escribir_balance(std::ostream&, int) para insertar Balance=5 en ella. La función no conoce el nombre del archivo ni usa cout. main comprueba apertura, cierra y comprueba escritura; después abre la muestra, obtiene su única línea y la muestra con salto final. Ante cualquier fallo, conserva un diagnóstico de etapa y termina con código 1. Usa Compilar, ejecutar y comprobar para contrastar la lectura real de la muestra creada en esta ejecución.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Construye las funciones y la prueba con la muestra relativa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Balance=5\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior del escritor compartido"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    const int valor = balance(7, 2);\n    std::ofstream salida{\"balance_compartido_lgp.txt\"};\n    if (!salida) { std::cout << \"Fallo al abrir salida\"; return 1; }\n    escribir_balance(salida, valor);\n    salida.close();\n    if (!salida) { std::cout << \"Fallo al escribir\"; return 1; }\n    std::ifstream entrada{\"balance_compartido_lgp.txt\"};\n    if (!entrada) { std::cout << \"Fallo al abrir entrada\"; return 1; }\n    std::string texto;\n    if (!std::getline(entrada, texto) || entrada.bad()) {\n        std::cout << \"Lectura incompleta\"; return 1;\n    }\n    std::cout << texto << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

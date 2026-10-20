@@ -88,7 +88,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva el cuerpo investigado de contar_altos, el comienzo con acumulado a cero y la preparación causal de las llamadas originales, con sus datos y orden. La salida debe permitir localizar el resultado de la llamada vacía y compararlo con su cero requerido. No hace falta conservar los avisos accesorios ni todos los nombres locales. También puedes mantener la primera llamada sin guardar o imprimir su resultado, si su efecto sigue preparando la situación. La fuente final debe incluir por sí misma todo lo que use."
+          "text": "Conserva el cuerpo investigado de contar_altos, el comienzo con acumulado a cero y la preparación causal de las llamadas originales, con sus datos y orden. La salida debe permitir localizar el resultado de la llamada vacía y compararlo con su cero requerido. No hace falta conservar los avisos accesorios ni todos los nombres locales. También puedes mantener la primera llamada sin guardar o imprimir su resultado, si su efecto sigue preparando la situación. La fuente final debe incluir por sí misma todo lo que use.\n\nConstruye y ejecuta el recorte antes de continuar. Debe conservar la llamada que prepara el estado y mostrar que la llamada vacía devuelve 1 en vez de su cero requerido. Revisa las dependencias si deja de construir o desaparece esa contradicción. No sustituyas el recuento por una cifra fija ni modifiques la función investigada.",
+          "emphasis": [
+            {
+              "text": "la llamada que prepara el estado"
+            },
+            {
+              "text": "1 en vez de su cero requerido"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -98,11 +106,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Deduce y ejecuta primero el contexto completo. Después realiza tu recorte y vuelve a construir y ejecutar. Comprueba que la llamada vacía sigue devolviendo 1 en vez de 0. Las ejecuciones terminan normalmente con código 0: ese código no compara la función con el contrato. Si cambió la construcción o desapareció la discrepancia, revisa qué dependencia o preparación retiraste antes de llamar al recorte una reproducción válida."
+          "text": "La ejecución del recorte termina normalmente con código 0: ese código no compara la función con el contrato. El dato que acredita la reproducción es el recuento anterior mostrado por la llamada vacía."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba en la ejecución del recorte que conservaste la llamada que prepara el estado y que la llamada vacía todavía muestra el recuento anterior. Examina además que la fuente conserva las dependencias de los nombres que aún utiliza. No reemplaces el recuento por una cifra fija ni modifiques la función para fabricar la respuesta. Una reproducción válida debe calcular el resultado que permite observar el incumplimiento. Intenta y comprueba tu propuesta antes de consultar la referencia."
+          "text": "Una reproducción válida calcula la observación del incumplimiento y conserva sus dependencias. Puede retirar salidas accesorias, pero no reemplazar el cálculo por un literal ni eliminar la llamada que prepara el estado. La referencia siguiente permite contrastar esos criterios después del intento."
         }
       ]
     },
@@ -245,11 +253,28 @@
         },
         {
           "type": "paragraph",
-          "text": "En tu reproducción, dentro del editor de código, comprueba si todavía queda una parte ajena al recuento investigado. Si la retiras, vuelve a construir y ejecutar: la llamada vacía debe conservar la contradicción. Mantén cualquier parte necesaria para construir o comprender el caso. Una fuente ligeramente más larga puede ser una reproducción más clara; no se premia llegar a un número de líneas."
+          "text": "Una reducción adicional sólo es útil si conserva lo necesario para construir y la preparación que hace visible el incumplimiento. Examina el recorte propuesto en el siguiente puzzle; no hace falta regresar al editor ni retocar una reproducción ya comprobada."
         },
         {
           "type": "note",
           "text": "Contrasta la fuente final con el requisito, las condiciones, el resultado esperado y el observado. El código construido y las llamadas ejecutadas deben corresponder al mismo caso; los puzzles de esta lección comprueban qué dependencias y qué contradicción hay que conservar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reproduccion_evaluar_otro_recorte_sin_reabrir",
+          "question": "Una reproducción ya construye y conserva contar_altos({2}, 2) antes de contar_altos({}, 2). Se propone quitar sólo el mensaje de presentación, sin retirar ninguna llamada, cabecera necesaria ni uso de std::cout. ¿Qué comprobación permite aceptar ese recorte adicional?",
+          "options": [
+            "Que tenga menos líneas; así queda garantizado que conserva el fallo.",
+            "Que construya y la llamada vacía siga mostrando el recuento anterior 1, distinto de su cero requerido.",
+            "Que la llamada vacía deje de mostrar un resultado; ya no habría una salida que contradiga el requisito."
+          ],
+          "correctIndex": 1,
+          "explanation": "El recorte conserva su objetivo cuando todavía se puede construir y observar la misma contradicción con la preparación causal. La longitud de la fuente no sustituye esas comprobaciones.",
+          "reviewFeedback": [
+            "Una fuente más breve puede haber perdido una dependencia o la preparación del caso. Examina qué evidencia conserva el objetivo de la reproducción.",
+            "Relaciona la construcción satisfactoria con la contradicción concreta que se investiga.",
+            "Si desaparece la observación de la llamada vacía, revisa qué evidencia quedaría del incumplimiento que se pretendía reproducir."
+          ]
         }
       ]
     }

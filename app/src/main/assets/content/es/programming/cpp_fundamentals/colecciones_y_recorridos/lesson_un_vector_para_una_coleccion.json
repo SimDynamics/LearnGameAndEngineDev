@@ -224,15 +224,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una colección de cantidades de cuadernos: empieza vacía, añade cuatro y después siete. Muestra Cantidad de registros: 2 y Vacio: 0 en líneas distintas. Antes de ejecutar predice ambos datos. Después conserva sólo la definición vacía y las salidas: deben mostrar cero y uno. Finalmente empieza con un elemento cero y explica por qué ya no está vacío."
+          "text": "Construye una colección de cantidades de cuadernos: debe comenzar vacía, recibir cuatro y después siete. Muestra `Cantidad de registros: 2` y `Vacio: 0` en dos líneas. Usa `size()` y `empty()` para obtener esos datos; no los sustituyas por números fijos.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad de registros: 2\nVacio: 0",
+                  "Cantidad de registros: 2\nVacio: 0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Escribe una frase que distinga la cantidad de registros de las cantidades guardadas. No basta con que aparezca un dos: debe provenir de size(), para que los cambios de la colección actualicen el informe."
+          "text": "La cantidad de registros cuenta elementos, no suma las cantidades guardadas. La actividad siguiente contrasta una colección vacía con otra que contiene un dato de valor cero."
         }
       ]
     },
@@ -271,6 +283,45 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: obtener el tamaño y la condición de vacío del vector real; añadir al final en el orden de la consigna; conservar el caso con un elemento cero como distinto del vacío. La solución de referencia es una implementación posible."
+        },
+        {
+          "type": "heading",
+          "text": "Distinguir vacío de un cero guardado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 0 para {0}\n• 2 4 7 para {4, 7}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cuadernos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        cuadernos.push_back(dato);\n    }\n    std::cout << \"Cantidad de registros: \" << cuadernos.size() << \"\\n\";\n    std::cout << \"Vacio: \" << cuadernos.empty();\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Cantidad de registros: 0\nVacio: 1",
+                  "Cantidad de registros: 0\nVacio: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Cantidad de registros: 1\nVacio: 0",
+                  "Cantidad de registros: 1\nVacio: 0\n"
+                ]
+              },
+              {
+                "standardInput": "2 4 7",
+                "outputs": [
+                  "Cantidad de registros: 2\nVacio: 0",
+                  "Cantidad de registros: 2\nVacio: 0\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     }

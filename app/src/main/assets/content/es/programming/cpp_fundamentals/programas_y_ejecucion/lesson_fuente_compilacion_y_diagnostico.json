@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El texto que editamos es código fuente. El compilador analiza ese texto según las reglas de C++ y, si lo acepta, lo traduce a código objeto: una parte preparada para construir el programa. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable. Después podemos ejecutar ese resultado (Stroustrup, 2024).\n\nEl botón Compilar y ejecutar coordina esas etapas en el editor de código. Aunque usemos un solo botón, editar el texto, construir el programa y ejecutarlo son operaciones diferentes. Un diagnóstico de construcción se interpreta antes de buscar el mensaje del programa en la consola (Stroustrup, 2024).",
+          "text": "El texto que editamos es código fuente. El compilador analiza ese texto según las reglas de C++ y, si lo acepta, lo traduce a código objeto: una parte preparada para construir el programa. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable. Después podemos ejecutar ese resultado (Stroustrup, 2024).\n\nEl botón Compilar, ejecutar y comprobar coordina esas etapas en el editor de código. Aunque usemos un solo botón, editar el texto, construir el programa y ejecutarlo son operaciones diferentes. Un diagnóstico de construcción se interpreta antes de buscar el mensaje del programa en la consola (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "El compilador analiza ese texto"
@@ -173,35 +173,49 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Cambiar una cosa y observar"
+          "text": "Modificar el mensaje y comprobar el resultado"
         },
         {
           "type": "paragraph",
-          "text": "En esta práctica cambiaremos una sola cosa cada vez. Partir de un programa pequeño que funciona facilita relacionar una modificación con lo que observamos y evita acumular cambios sin comprender sus efectos (Stroustrup, 2024).\n\nResponde primero la predicción al final de esta página. Después ejecuta el programa inicial del editor de código y compara la consola con ella. Realiza las modificaciones siguientes en ese mismo editor.",
+          "text": "Separar modificaciones ayuda a relacionar una causa con su efecto. Un programa pequeño permite localizar qué instrucción cambia y contrastar su resultado sin acumular alteraciones innecesarias (Stroustrup, 2024).\n\nEn esta actividad conserva la estructura del programa y cambia sólo el contenido del literal para mostrar Revision completa. Escribe exactamente esas dos palabras, con un espacio, sin comillas en la salida ni salto final.",
           "emphasis": [
             {
-              "text": "una sola cosa cada vez"
+              "text": "relacionar una causa con su efecto"
             },
             {
-              "text": "Responde primero la predicción"
+              "text": "cambia sólo el contenido del literal"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código, quita sólo el ; de la instrucción de salida y pulsa Compilar y ejecutar. Lee el diagnóstico: esta versión debe ser rechazada al construirla. La consola podría conservar un resultado anterior; ese texto no demuestra que la versión con el error se haya ejecutado.\n\nRestaura el ;, vuelve a construir y comprueba que reaparece el mensaje inicial. Después cambia únicamente el literal para mostrar Revision completa, compila y ejecuta otra vez. El criterio final es ver esas dos palabras con un espacio y sin comillas, tras una construcción correcta.\n\nEl primer experimento estudia una regla de sintaxis y su reparación; el segundo modifica un dato manteniendo la estructura válida. Consulta la referencia posterior después de completar ambos experimentos.",
+          "text": "Pulsa Compilar, ejecutar y comprobar. La aplicación construye y ejecuta la revisión actual antes de evaluar su salida. Si compila pero el mensaje no coincide con el objetivo, aparece Incorrecto y puedes corregir el literal en este mismo editor.\n\nSi hay un error de compilación, esa revisión no se ejecuta ni recibe un veredicto de salida. Al iniciar la acción se vacía Salida del programa; el diagnóstico de construcción se muestra por separado. Lee ese diagnóstico para reparar la sintaxis, en lugar de buscar un resultado que el programa con el error no produjo. La actividad de reparación situada después de los puzzles permite comprobar esa diferencia.",
           "emphasis": [
             {
-              "text": "ese texto no demuestra que la versión con el error se haya ejecutado"
+              "text": "Compilar, ejecutar y comprobar"
             },
             {
-              "text": "tras una construcción correcta"
+              "text": "esa revisión no se ejecuta"
+            },
+            {
+              "text": "el diagnóstico de construcción se muestra por separado"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision completa"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -227,6 +241,41 @@
           "outputComparison": "exact",
           "explanation": "La inserción envía Revision inicial. Esta es la salida de la versión válida de partida; quitar después el terminador impide construir esa otra versión, no cambia por sí mismo el literal.",
           "reviewFeedback": "Identifica el contenido que la instrucción envía a std::cout. No incluyas las marcas que delimitan o terminan la instrucción."
+        },
+        {
+          "type": "heading",
+          "text": "Reparar la terminación de una instrucción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa conserva el mensaje Revision inicial, pero le falta el punto y coma que termina la instrucción de salida (Stroustrup, 2024). Pulsa Compilar, ejecutar y comprobar para examinar el diagnóstico antes de reparar el código. En este ejemplo, el compilador integrado señala el final de la instrucción de salida y solicita ese signo. Si un diagnóstico señala la línea de return, revisa también la terminación de la instrucción anterior; no borres return para ocultar una falta anterior.\n\nRestaura únicamente el signo que falta y vuelve a pulsar la misma acción. El objetivo de esta actividad es construir una versión válida que muestre Revision inicial, con un espacio y sin salto final. Hasta que la construcción y la ejecución terminen correctamente, no hay una salida evaluable.",
+          "emphasis": [
+            {
+              "text": "le falta el punto y coma"
+            },
+            {
+              "text": "la terminación de la instrucción anterior"
+            },
+            {
+              "text": "no hay una salida evaluable"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\"\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Revision inicial"
+                ],
+                "explanation": "La nueva ejecución muestra el mensaje original después de reparar la terminación de la instrucción de salida."
+              }
+            ]
+          }
         }
       ]
     },
@@ -276,13 +325,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de realizar los dos experimentos, compara tu versión reparada con esta referencia. La construcción debe terminar correctamente y la consola debe mostrar Revision completa. El mensaje no lleva comillas, caracteres adicionales ni un cero final.\n\nUna implementación diferente también cumple si conserva los elementos estudiados y produce exactamente el resultado pedido. La referencia muestra una forma de hacerlo, no una corrección automática del editor de código.",
+          "text": "Esta referencia corresponde al cambio de mensaje: la nueva ejecución debe mostrar Revision completa, con un espacio y sin caracteres adicionales. Compilar, ejecutar y comprobar compara esa salida con el objetivo de su editor. Otra implementación puede cumplirlo utilizando los elementos ya estudiados.",
           "emphasis": [
             {
-              "text": "Después de realizar los dos experimentos"
+              "text": "al cambio de mensaje"
             },
             {
-              "text": "produce exactamente el resultado pedido"
+              "text": "Compilar, ejecutar y comprobar"
             }
           ]
         },
@@ -293,13 +342,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Al quitar el punto y coma esperábamos un rechazo de construcción, no un mensaje de salida diferente. El diagnóstico puede señalar la instrucción siguiente, porque allí se detecta la terminación ausente. Restaurar el signo repara esa causa concreta (Stroustrup, 2024).\n\nCambiar Revision inicial por Revision completa conserva la sintaxis y modifica el texto enviado. Compara la consola con lo solicitado: que la herramienta acepte el código y que el mensaje sea el correcto son dos comprobaciones necesarias (Stroustrup, 2024).",
+          "text": "En la actividad de reparación, quitar el punto y coma impide construir esa revisión. El diagnóstico puede señalar la instrucción siguiente, porque allí se detecta la terminación ausente. Restaurar el signo repara esa causa concreta (Stroustrup, 2024).\n\nEl cambio de Revision inicial a Revision completa es otra actividad: conserva la sintaxis y modifica el texto enviado. Distinguir la construcción de una revisión y la comprobación de su comportamiento permite interpretar cada resultado (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "un rechazo de construcción"
+              "text": "impide construir esa revisión"
             },
             {
-              "text": "son dos comprobaciones necesarias"
+              "text": "es otra actividad"
             }
           ]
         }

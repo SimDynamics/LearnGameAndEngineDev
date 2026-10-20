@@ -192,15 +192,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una búsqueda de la primera aparición de ocho en {3, 8, 8, 2}. Si existe, muestra Indice: 1; si no, muestra No encontrado. Comprueba después {}, {8}, {2} y {8, 4, 8}: los resultados son ausencia, índice cero, ausencia e índice cero. Conserva el objetivo en una variable para poder cambiarlo sin modificar el algoritmo."
+          "text": "Construye una búsqueda de la primera aparición de ocho en `{3, 8, 8, 2}`. Conserva el objetivo en una variable. Si existe, muestra su índice; si no, `No encontrado`. Para este caso el objetivo es `Indice: 1`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. La presencia de dos ochos permite distinguir la primera aparición de la última."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Indice: 1",
+                  "Indice: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Añade después la salida del valor encontrado, pero sólo dentro de la rama que demuestra que su índice existe. Justifica por qué el caso con repetidos distingue primera aparición de última aparición."
+          "text": "Después de comprobar el índice, la actividad posterior construye una presentación del valor encontrado. Ese acceso sólo puede ocurrir en la rama que demuestra que la posición pertenece al vector."
         }
       ]
     },
@@ -239,6 +251,83 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: informar la primera aparición en el orden original, conservar la marca de ausencia cuando corresponda y acceder al valor encontrado sólo tras comprobar su dominio; los repetidos deben distinguir primera de última aparición."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 8 para {8}\n• 1 2 para {2}\n• 3 8 4 8 para {8, 4, 8}\n• 4 3 8 8 2 para {3, 8, 8, 2}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    int objetivo = 8;\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == objetivo) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice: \" << posicion;\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "No encontrado",
+                  "No encontrado\n"
+                ]
+              },
+              {
+                "standardInput": "1 8",
+                "outputs": [
+                  "Indice: 0",
+                  "Indice: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 2",
+                "outputs": [
+                  "No encontrado",
+                  "No encontrado\n"
+                ]
+              },
+              {
+                "standardInput": "3 8 4 8",
+                "outputs": [
+                  "Indice: 0",
+                  "Indice: 0\n"
+                ]
+              },
+              {
+                "standardInput": "4 3 8 8 2",
+                "outputs": [
+                  "Indice: 1",
+                  "Indice: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Mostrar el dato de una posición comprobada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Amplía el programa para añadir una segunda línea `Valor: 8` únicamente cuando se encontró el objetivo. Conserva la primera aparición y la rama de ausencia. Con los datos iniciales deben aparecer `Indice: 1` y `Valor: 8` en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 8, 8, 2};\n    int objetivo = 8;\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == objetivo) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice: \" << posicion;\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Indice: 1\nValor: 8",
+                  "Indice: 1\nValor: 8\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

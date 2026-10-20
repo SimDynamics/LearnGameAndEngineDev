@@ -147,20 +147,42 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código comienza con el diagnóstico que repite la llamada. Primero predice y ejecuta esa revisión para confirmar qué operaciones hace. Después modifica únicamente la expresión que obtiene el dato de DIAG: debe mostrar el resultado ya obtenido por la primera visita de trabajo sin registrar otra visita."
+          "text": "Este editor de código comienza con el diagnóstico que repite la llamada, cuya salida ya predijiste. Modifica únicamente la expresión que obtiene el dato de DIAG: debe mostrar el resultado ya obtenido por la primera visita de trabajo sin registrar otra visita. Ejecutar un intento incorrecto y repararlo forman parte de esta misma comprobación.",
+          "emphasis": [
+            {
+              "text": "el resultado ya obtenido por la primera visita"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "Conserva registrar_visita, su estado inicial y las dos llamadas de trabajo en su orden. Mantén ambas etiquetas y utiliza resultados calculados, no constantes que imiten la salida. La revisión corregida debe producir DIAG:1, un salto de línea y R:1:2, sin salto final. Contrasta también la línea R con el programa de referencia sin diagnóstico. Es una investigación del código de observación; quitar el incremento de la función o borrar una visita cambia el contrato."
+          "text": "Conserva registrar_visita, su estado inicial y las dos llamadas de trabajo en su orden. Mantén ambas etiquetas y utiliza resultados calculados, no constantes que imiten la salida. La revisión corregida debe producir DIAG:1, un salto de línea y R:1:2, sin salto final. Contrasta también la línea R con el programa de referencia sin diagnóstico. Es una investigación del código de observación; quitar el incremento de la función o borrar una visita cambia el contrato. Usa «Compilar, ejecutar y comprobar» y conserva además el criterio del código: DIAG debe utilizar el resultado guardado, sin otra llamada al servicio.",
+          "emphasis": [
+            {
+              "text": "sin otra llamada al servicio"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    const int segunda = registrar_visita();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:1\nR:1:2"
+                ],
+                "explanation": "El diagnóstico utiliza el resultado de la primera visita; no registra una visita adicional y la segunda operación de trabajo conserva el resultado 2."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba que la expresión del diagnóstico utiliza el resultado guardado y no realiza otra llamada al servicio. Al reconstruir, atribuye cada salida a su fuente. Consulta la referencia de la página siguiente después de intentar y comprobar tu reparación; una coincidencia obtenida cambiando también el servicio no cumple estos criterios."
+          "text": "El diagnóstico que reutiliza el resultado guardado no realiza otra visita. Una coincidencia conseguida cambiando también el servicio no cumpliría el criterio de esta reparación, aunque sus caracteres de salida coincidieran."
         }
       ]
     },
@@ -227,7 +249,19 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << \"DIAG:\" << registrar_visita() << \"\\n\";\n    std::cout << \"R:\" << primera << \":\" << segunda << \":\" << tercera << \"\\n\";\n    std::cout << \"C:\" << numero_visita;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:2\nR:1:2:3\nC:3"
+                ],
+                "explanation": "El dato histórico de la segunda visita es 2 y el estado final sigue siendo 3: observar ese resultado no añade otra visita."
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -327,12 +361,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Repara el programa del siguiente editor de código cambiando únicamente la obtención del dato de DIAG. Conserva el servicio, las dos llamadas de trabajo, su orden y las etiquetas. Los valores deben proceder de las operaciones, no de constantes que imiten la salida. Desde 4 unidades, la observación correcta es DIAG:3, salto de línea, R:3:2, sin salto final; el estado debe terminar en 2. Después cambia sólo la preparación a 6 unidades, calcula primero sus esperados, reconstruye y comprueba ambos registros. Consulta la referencia después de intentar esa variación."
+          "text": "Repara el programa del siguiente editor de código cambiando únicamente la obtención del dato de DIAG. Conserva el servicio, las dos llamadas de trabajo, su orden y las etiquetas. Los valores deben proceder de las operaciones, no de constantes que imiten la salida. Desde 4 unidades, la observación correcta es DIAG:3, salto de línea, R:3:2, sin salto final; el estado debe terminar en 2. Compila, ejecuta y comprueba esta reparación antes de continuar."
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint unidades{4};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:3\nR:3:2"
+                ],
+                "explanation": "Las dos retiradas de trabajo dejan 3 y 2 unidades. El diagnóstico reutiliza el primer resultado sin consumir una unidad adicional."
+              }
+            ]
+          }
         }
       ]
     },
@@ -392,6 +438,31 @@
             "Comprueba el vínculo entre la fuente, su construcción y la ejecución registrada. Mantén identificables las condiciones de cada contraste y la revisión que produjo cada salida.",
             "Un nombre de función puede mantenerse mientras cambia su cuerpo o la forma de llamarla. Revisa qué evidencia une el resultado guardado con la revisión que quieres comprobar."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la misma observación con seis unidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor tiene su propio código y empieza con seis unidades. Repara sólo la obtención del dato de DIAG: debe reutilizar el resultado de la primera retirada. Conserva las dos retiradas de trabajo, su orden y las etiquetas. Compila, ejecuta y comprueba; no necesitas regresar a la actividad anterior."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint unidades{6};\n\nint retirar_unidad() {\n    --unidades;\n    return unidades;\n}\n\nint main() {\n    const int primera = retirar_unidad();\n    std::cout << \"DIAG:\" << retirar_unidad() << \"\\n\";\n    const int segunda = retirar_unidad();\n    std::cout << \"R:\" << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "DIAG:5\nR:5:4"
+                ],
+                "explanation": "Con seis unidades iniciales, las retiradas de trabajo dejan cinco y cuatro. El diagnóstico sigue describiendo la primera retirada sin ejecutar una tercera."
+              }
+            ]
+          }
         }
       ]
     }

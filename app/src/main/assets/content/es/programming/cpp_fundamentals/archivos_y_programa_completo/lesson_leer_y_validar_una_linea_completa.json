@@ -95,6 +95,18 @@
           ],
           "correctIndex": 2,
           "explanation": "Objeto y flujo tienen estados distintos. La garantía de asignación aplazada protege el destino."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__leer_y_validar_una_linea_completa__secuencia_linea_completa_previa",
+          "question": "La línea es \"3 [2;1] sobra\". El operador de Recuento obtiene sus dos campos. ¿Qué debe decidir leer_linea?",
+          "options": [
+            "Aceptar porque el objeto inicial terminó en ].",
+            "Rechazar por residuo y conservar todo el Registro{8,{9,9}}.",
+            "Aceptar ID 3, pero conservar únicamente las cantidades anteriores."
+          ],
+          "correctIndex": 1,
+          "explanation": "El contrato de toda la línea exige ausencia de datos adicionales. La actualización conjunta ocurre sólo después de esa comprobación."
         }
       ]
     },
@@ -110,11 +122,27 @@
         },
         {
           "type": "paragraph",
-          "text": "En main prueba cuatro líneas, en este orden: 3 [2;1]; 3 [2;1] sobra; 10 [2;1]; 3 [2;11]. Antes de cada llamada reinicia el destino como {8,{9,9}}. Muestra éxito como 0 o 1, seguido de ID, aceptados y rechazados, separados por dos puntos. Predice cada resultado antes de ejecutar."
+          "text": "Construye una sola batería. En main prueba, en este orden: \"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\". Antes de cada llamada reinicia el destino como {8,{9,9}}. Muestra éxito como 0 o 1, seguido de ID, aceptados y rechazados, separados por dos puntos; cada informe ocupa una línea con salto final. El programa mantiene el mismo lector entre casos, pero cada llamada crea su flujo local. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con las trece líneas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:3:2:1\n0:8:9:9\n0:8:9:9\n0:8:9:9\n1:3:2:1\n1:3:2:1\n0:8:9:9\n0:8:9:9\n0:8:9:9\n0:8:9:9\n0:8:9:9\n1:0:0:0\n1:9:10:10\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -139,7 +167,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade estas pruebas: 03 [02;+1] y 3 [2;1] con espacios finales deben aceptarse como el mismo registro; la línea vacía, 3 [2;1 sin cierre, -1 [2;1], 3 [2,1] y 3 [2;1][0;0] deben rechazarse conservando {8,{9,9}}. 0 [0;0] y 9 [10;10] son fronteras válidas. No estamos comparando caracteres idénticos: comparamos el valor permitido por nuestro formato."
+          "text": "Las variantes 03 [02;+1] y 3 [2;1] con blancos finales representan el mismo registro válido. Vacío, cierre ausente, ID negativo, separador incorrecto y un segundo registro como sufijo se rechazan conservando {8,{9,9}}. Las fronteras 0 [0;0] y 9 [10;10] sí se aceptan. Se comparan valores permitidos por el formato, no una ortografía única de enteros."
         },
         {
           "type": "paragraph",
@@ -147,7 +175,20 @@
         },
         {
           "type": "note",
-          "text": "La lectura y validación se estudian en la fuente principal (Stroustrup, 2024, secciones 9.4–9.9, pp. 259–275). Formato, lector y actividades originales de esta ruta."
+          "text": "getline obtiene la línea para que el programa decida cómo analizarla; no garantiza que esa línea sea un registro válido. Un istringstream local separa el texto obtenido de su interpretación, y el programa puede comprobar campos, dominio y residuo antes de aceptar (Stroustrup, 2024, secciones 9.5.1, 9.10.3 y 9.11, pp. 262–265, 279 y 283–284). Un campo completo seguido de texto adicional todavía incumple el contrato de una línea completa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\"};\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
         }
       ]
     }

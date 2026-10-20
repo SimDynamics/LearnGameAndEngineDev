@@ -112,11 +112,23 @@
         },
         {
           "type": "paragraph",
-          "text": "cantidad vale 25 y capacidad vale 6, ambos declarados. Predice las tres respuestas y ejecuta. Después prueba cantidad 0 con capacidad 6; cantidad 120 con capacidad 12; capacidad 0 con cantidad 25; y cantidad -1 con capacidad 6. Establece primero si cada caso debe alcanzar el cálculo o mostrar el rechazo. Las condiciones de main protegen también el cálculo del resto."
+          "text": "El caso de este editor utiliza cantidad veinticinco y capacidad seis. La salida presenta grupos completos, resto y comprobación de la postcondición, separados por espacios: `4 1 1`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. La validación de `main` debe proteger tanto la división como el cálculo del resto."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "4 1 1",
+                  "4 1 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -131,7 +143,77 @@
         },
         {
           "type": "paragraph",
-          "text": "Con los datos iniciales, cambia temporalmente el cuerpo del cálculo a return cantidad / capacidad + 1;. Predice qué sucede con cumple y ejecuta. La modificación está definida para estos datos pequeños, pero contradice la postcondición. Restaura el cuerpo original después de observar la diferencia."
+          "text": "Los casos de dominio y la alteración del cálculo se practican en editores independientes. La postcondición permite detectar un resultado calculado que contradice la promesa, aunque el programa compile."
+        },
+        {
+          "type": "heading",
+          "text": "Separar aceptación y cálculo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee cantidad y capacidad. Comprueba `0 6` → `0 0 1`; `120 12` → `10 0 1`; `25 0` y `-1 6` → `Fuera del dominio`. Los datos inválidos deben rechazarse antes de obtener cociente o resto.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad{0};\n    int capacidad{0};\n    std::cin >> cantidad >> capacidad;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "0 0 1",
+                  "0 0 1\n"
+                ]
+              },
+              {
+                "standardInput": "120 12",
+                "outputs": [
+                  "10 0 1",
+                  "10 0 1\n"
+                ]
+              },
+              {
+                "standardInput": "25 0",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "-1 6",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 6"
+        },
+        {
+          "type": "heading",
+          "text": "Observar una postcondición incumplida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa suma uno al cociente. Ejecuta sin cambiar los datos veinticinco y seis: debe mostrar `5 1 0`. El último cero informa que la postcondición no se cumple; el objetivo de esta exploración es detectar esa diferencia, no aceptar la regla alterada como solución del reparto.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad + 1;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5 1 0",
+                  "5 1 0\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

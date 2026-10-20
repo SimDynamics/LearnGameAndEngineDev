@@ -22,7 +22,7 @@
         },
         {
           "type": "note",
-          "text": "Antes de escribir código, explica con tus palabras qué datos son válidos y qué pregunta distingue cada resultado. El enunciado especifica el comportamiento; la estructura de decisiones debe construirla tu programa."
+          "text": "Los requisitos fijan la prioridad de los resultados; la estructura de decisiones debe construirla tu programa. El puzzle siguiente permite elegir una salida a partir de esos requisitos antes del intento de construcción."
         }
       ]
     },
@@ -53,7 +53,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Estos casos son un punto de partida. Añade una cantidad menor que una capacidad válida y predice qué ocurre con los grupos completos y los sobrantes. No derives lo esperado de la salida de tu programa: derívalo primero de las reglas."
+          "text": "Una cantidad positiva menor que la capacidad válida deja cero grupos completos y fichas sobrantes. El resultado depende de si se aceptan: comprueba esa distinción en las actividades de construcción posteriores, a partir de las reglas y no de lo que produzca tu intento."
         }
       ]
     },
@@ -65,11 +65,22 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor contiene sólo la estructura del programa. Declara los tres datos con el caso inicial 14, 4 y true, y escribe las instrucciones necesarias para cumplir los requisitos. No copies todavía una solución de comparación. Antes de ejecutar, sigue tu recorrido con capacidad cero y verifica que no llega a una división ni a un resto. Después ejecuta los casos que has preparado, cambiando los inicializadores entre ejecuciones."
+          "text": "El editor contiene sólo la estructura del programa. Declara los tres datos del caso inicial: catorce fichas, capacidad cuatro y aceptación de sobrantes `true`. Construye las condiciones y las instrucciones necesarias para cumplir los requisitos.\n\nPulsa «Compilar, ejecutar y comprobar». Debe mostrar `Grupos: 3` y `Sobrantes: 2` en dos líneas, con salto final opcional. Los datos inválidos deben quedar fuera de cualquier división o resto. Los otros casos disponen de actividades independientes; corregir este mismo intento y volver a comprobarlo sigue disponible."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
@@ -101,6 +112,115 @@
             "Reparto pendiente"
           ],
           "explanation": "Los datos son válidos, sobran 2 fichas y ese modo no acepta sobrantes. No se muestra el cociente por separado en este camino."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el dominio original con entradas preparadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa adapta la referencia para leer fichas, capacidad y un indicador de aceptación de sobrantes, cero o uno. La condición `codigo_sobrantes != 0` conserva el valor lógico. Comprueba los casos del dominio original de la página de requisitos cambiando sólo Entrada. Por ejemplo, `14 4 1` debe producir grupos tres y sobrantes dos; `14 4 0`, `Reparto pendiente`; `0 4 1`, `Sin trabajo`; `30 6 1`, cinco grupos. Las cantidades fuera de cero a treinta y las capacidades fuera de uno a seis deben producir únicamente `Datos invalidos`, incluso `0 0 1`. Los casos de una ficha y capacidad cuatro distinguen cero grupos de ausencia de trabajo.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "14 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "14 4 1",
+                "outputs": [
+                  "Grupos: 3\nSobrantes: 2",
+                  "Grupos: 3\nSobrantes: 2\n"
+                ]
+              },
+              {
+                "standardInput": "14 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 1",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "12 4 0",
+                "outputs": [
+                  "Grupos: 3",
+                  "Grupos: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Sin trabajo",
+                  "Sin trabajo\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "-1 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "31 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "12 7 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 0",
+                "outputs": [
+                  "Reparto pendiente",
+                  "Reparto pendiente\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -112,7 +232,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve a tu programa y cambia el requisito: ahora una cantidad válida empieza en 1, de modo que cero fichas debe rechazarse. Decide qué parte necesitas cambiar y qué casos pueden detectar una modificación incompleta. Conserva la capacidad válida de 1 a 6 y los demás resultados. Formula lo esperado antes de ejecutar."
+          "text": "El requisito cambia: una cantidad válida empieza ahora en uno, de modo que cero fichas debe rechazarse. Conserva la capacidad válida de uno a seis y las demás reglas. Los dos puzzles siguientes permiten elegir un caso que distingue el dominio y reconocer la prioridad del rechazo. Después encontrarás el intento de construcción con este requisito nuevo."
         },
         {
           "type": "multiple_choice",
@@ -138,7 +258,30 @@
         },
         {
           "type": "note",
-          "text": "La construcción libre no se reduce a cambiar los datos de una solución entregada: elige expresiones, organiza alternativas y compara resultados. Conserva una explicación de cada caso y de la primera causa encontrada cuando una prueba falla."
+          "text": "La construcción exige elegir expresiones, organizar alternativas y comparar resultados con las reglas. El nuevo editor conserva un objetivo propio; los reintentos permiten reparar una condición sin sustituir la actividad anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Construir con el dominio que empieza en uno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde el esqueleto un programa para el requisito nuevo. Usa cero fichas, capacidad cuatro y aceptación de sobrantes `true`. El rechazo debe ocurrir antes de cualquier reparto. Conserva también en tu código las otras reglas del nuevo dominio.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es:\n\nDatos invalidos\n\nEl salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -159,7 +302,60 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia cambia la comprobación inferior y elimina la rama Sin trabajo, que ya no es alcanzable con los datos aceptados. Conserva los otros cálculos y decisiones. Prueba 0, 1 y 30 con capacidades válidas, y capacidad 0 con cantidades válidas e inválidas. Una estructura distinta también puede cumplir estos criterios; no se exige copiar esta organización."
+          "text": "La referencia cambia la comprobación inferior y elimina la rama `Sin trabajo`, que ya no corresponde a los datos admitidos. Conserva los otros cálculos y decisiones. Las actividades siguientes comprueban las fronteras y la prioridad del requisito nuevo; una estructura distinta también es válida si cumple esos observables."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el dominio nuevo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee los mismos tres datos, pero exige al menos una ficha. Comprueba `0 4 1` → `Datos invalidos`; `1 4 1` → `Grupos: 0` y `Sobrantes: 1`; `30 6 1` → `Grupos: 5`; `12 0 1` y `0 0 1` → `Datos invalidos`. Los resultados de dos líneas conservan su separación.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int fichas{0};\n    int capacidad{0};\n    int codigo_sobrantes{0};\n    std::cin >> fichas >> capacidad >> codigo_sobrantes;\n    const bool acepta_sobrantes = codigo_sobrantes != 0;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "0 4 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 4 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "1 4 1",
+                "outputs": [
+                  "Grupos: 0\nSobrantes: 1",
+                  "Grupos: 0\nSobrantes: 1\n"
+                ]
+              },
+              {
+                "standardInput": "30 6 1",
+                "outputs": [
+                  "Grupos: 5",
+                  "Grupos: 5\n"
+                ]
+              },
+              {
+                "standardInput": "12 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

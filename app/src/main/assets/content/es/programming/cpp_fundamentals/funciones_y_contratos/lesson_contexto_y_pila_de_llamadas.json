@@ -211,11 +211,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "M+4\nC+7\nP+7\nP-14\nC-7:14\nM-4:21",
+                  "M+4\nC+7\nP+7\nP-14\nC-7:14\nM-4:21\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, escribe la lista de llamadas activas de main, conjunto y pieza durante pieza y después de su retorno. Predice todas las líneas para cero y siete. Prueba también -1 y 8 como rechazos. Los valores intermedios están entre tres y diez, los dobles entre seis y veinte y el resultado entre nueve y treinta; toda la aritmética cabe en int."
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para el inicio cuatro, con salto final opcional. Las marcas deben proceder de las llamadas; no escribas una traza fija como respuesta. Las actividades posteriores recuperan los otros inicios y los rechazos sin cambiar las funciones."
         }
       ]
     },
@@ -237,6 +249,52 @@
         {
           "type": "paragraph",
           "text": "Para cero: M+0, C+3, P+3, P-6, C-3:6 y M-0:9. Para siete: M+7, C+10, P+10, P-20, C-10:20 y M-7:30. -1 y 8 producen sólo Datos invalidos. Otra implementación es válida si conserva responsabilidades, contratos y secuencia. Las marcas hacen visible parte del trabajo; no miden el almacenamiento físico de la implementación."
+        },
+        {
+          "type": "heading",
+          "text": "La misma pila con otros argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee el dato inicial. Comprueba `0`, `7`, `-1` y `8`. Las aceptaciones deben mostrar en orden las seis marcas de entrada y salida; los rechazos muestran únicamente `Datos invalidos`, antes de cualquier marca de llamada.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9",
+                  "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9\n"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30",
+                  "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
         }
       ]
     },
@@ -266,7 +324,7 @@
         },
         {
           "type": "note",
-          "text": "El modelo de llamada se estudia en la fuente principal (Stroustrup, 2024, sección 7.4.8, pp. 201–204). Modelo, dominios, trazas y actividades originales de esta ruta."
+          "text": "Cada llamada tiene su propio contexto de parámetros y objetos locales. Al llamar a otra función se conserva el contexto pendiente; al retornar, se continúa desde la llamada que esperaba ese resultado. La pila permite representar ese orden de llamadas y retornos, aunque sus detalles de implementación dependan del sistema (Stroustrup, 2024, sección 7.4.8)."
         }
       ]
     }

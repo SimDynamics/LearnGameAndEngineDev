@@ -275,7 +275,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial {1, 5, 8} produce Estuches: 5 y Cajas: 4. {0, 4, 7, 20} produce 8 y 5. El vector vacío produce dos ceros; seis cantidades 20 producen 30 y 18. Prueba también {0}, {4} y {7}: escribe lo esperado antes de ejecutar. -1, 21 o una colección de 7 cantidades deben producir sólo Pedido invalido."
+          "text": "El caso inicial `{1, 5, 8}` debe producir `Estuches: 5` y `Cajas: 4`. Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. Revisa también los espacios de nombres y el `using` local: coincidir con dos números no demuestra por sí solo qué funciones se llamaron. Los otros lotes se prueban después mediante Entrada."
         },
         {
           "type": "paragraph",
@@ -283,11 +283,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    const std::vector<int> piezas = {1, 5, 8};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    const std::vector<int> piezas = {1, 5, 8};\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Estuches: 5\nCajas: 4",
+                  "Estuches: 5\nCajas: 4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
-          "text": "El editor no califica estas decisiones automáticamente. Contrasta valores, rechazo, orden y conservación de la colección. Revisa también la pertenencia de necesarios y qué función recibe cada argumento: dos salidas plausibles no demuestran que ambas políticas estén conectadas correctamente."
+          "text": "La comprobación integrada contrasta las dos líneas de salida. Los permisos, la pertenencia de `necesarios` y la conservación de la colección deben revisarse además en el código: dos resultados plausibles no demuestran que ambas políticas estén conectadas correctamente."
         }
       ]
     },
@@ -344,6 +356,87 @@
         {
           "type": "note",
           "text": "Los namespaces no sustituyen el contrato, la prueba ni el control de efectos de las funciones. Usamos esta organización para distinguir políticas al componerlas, además de conservar los permisos por valor y const referencia aprendidos en la unidad."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las dos políticas con otros pedidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `4 0 4 7 20`; `0`; `6 20 20 20 20 20 20`; `1 0`; `1 4`; `1 7`; `1 -1`; `1 21`; `7 0 0 0 0 0 0 0`. El dominio conserva hasta seis cantidades de cero a veinte; fuera de él sólo debe aparecer Pedido invalido.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 0 4 7 20",
+                "outputs": [
+                  "Estuches: 8\nCajas: 5",
+                  "Estuches: 8\nCajas: 5\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "6 20 20 20 20 20 20",
+                "outputs": [
+                  "Estuches: 30\nCajas: 18",
+                  "Estuches: 30\nCajas: 18\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Estuches: 1\nCajas: 1",
+                  "Estuches: 1\nCajas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 7",
+                "outputs": [
+                  "Estuches: 2\nCajas: 1",
+                  "Estuches: 2\nCajas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              },
+              {
+                "standardInput": "1 21",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              },
+              {
+                "standardInput": "7 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 0 4 7 20"
         }
       ]
     },
@@ -375,11 +468,51 @@
         },
         {
           "type": "paragraph",
-          "text": "Explica qué tendrías que revisar si una política cambiara su capacidad: su regla y sus pruebas, sin convertir la otra función necesarios en esa misma política. Explica también por qué ampliar una directiva using puede cambiar una búsqueda aunque no se haya modificado el cuerpo de la función que antes se llamaba."
+          "text": "Los puzzles siguientes distinguen dos cambios: adaptar la capacidad de una política y modificar qué declaraciones participan en la búsqueda de un nombre. Una modificación de la regla no exige convertir las dos funciones homónimas en una sola política."
         },
         {
           "type": "note",
-          "text": "Los espacios de nombres se estudian en la referencia de apoyo (Stroustrup, 2024, secciones 7.6–7.6.1, pp. 209–211). Ejemplos y actividades propios. La precisión de cualificación y using se contrastó con el borrador de C++ (Working Draft: Programming Languages — C++, s. f., secciones [basic.lookup.qual], [namespace.udecl] y [namespace.udir])."
+          "text": "Una llamada cualificada identifica el espacio de nombres que se consulta. Una declaración `using` incorpora un nombre concreto y una directiva `using namespace` puede hacer que más declaraciones participen en la búsqueda (Stroustrup, 2024; Working Draft: Programming Languages — C++, s. f., secciones [basic.lookup.qual], [namespace.udecl] y [namespace.udir]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__espacios_de_nombres_y_nombres_calificados__revisar_solo_politica_modificada",
+          "question": "Estuches cambia su capacidad de cuatro a cinco piezas. Cajas conserva siete. ¿Qué revisión conserva ambas políticas y sus responsabilidades?",
+          "options": [
+            "Cambiar los dos cuerpos de necesarios a la capacidad cinco para que los nombres sigan significando lo mismo.",
+            "Cambiar el cuerpo de Estuches y sus casos de frontera; conservar Cajas y comprobar que sus resultados permanecen.",
+            "Cambiar sólo los rótulos de las dos salidas, conservando todos los cálculos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La capacidad pertenece a cada política. Cambiar Estuches exige adaptar su regla y comprobar sus fronteras, además de comprobar que Cajas conserva su propio contrato.",
+          "reviewFeedback": [
+            "Dos funciones pueden compartir nombre sin compartir contrato. Revisa qué política cambió su capacidad.",
+            "Contrasta cada espacio de nombres con la regla que debe conservar.",
+            "Un rótulo aporta texto a la salida; revisa dónde se calcula la cantidad de recipientes."
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__espacios_de_nombres_y_nombres_calificados__ampliar_busqueda_no_modifica_cuerpo",
+          "question": "Una llamada no cualificada necesarios(5) encontraba un único nombre visible. Al añadir otra directiva using namespace, participa una segunda función con la misma firma. ¿Qué debe revisarse?",
+          "options": [
+            "La búsqueda puede volverse ambigua; cualificar permite identificar la política que se pretende llamar.",
+            "Los dos cuerpos se fusionan automáticamente y la llamada suma sus resultados.",
+            "La directiva reescribe la definición que ya se había encontrado."
+          ],
+          "correctIndex": 0,
+          "explanation": "La búsqueda de nombres decide qué declaraciones se consideran para una llamada. Una directiva puede ampliar ese conjunto y provocar una ambigüedad sin cambiar el cuerpo de ninguna función.",
+          "reviewFeedback": [
+            "Distingue qué declaraciones se buscan de qué instrucciones contiene cada definición.",
+            "Las directivas no componen automáticamente los cuerpos de funciones. Revisa cómo se identifica un único nombre.",
+            "Una directiva afecta la búsqueda; no reescribe la definición de una función."
+          ]
         }
       ]
     }

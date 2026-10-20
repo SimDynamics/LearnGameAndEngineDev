@@ -10,11 +10,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Hasta ahora elegimos los datos de cada prueba. Podemos producir otros mediante un procedimiento. Un generador pseudoaleatorio calcula una secuencia a partir de un estado; no obtiene cada resultado por una decisión humana ni promete que sea impredecible. En esta unidad fijamos manualmente cómo empieza para poder investigar y repetir nuestros experimentos."
+          "text": "Hasta ahora elegimos los datos de cada prueba. Podemos producir otros mediante un procedimiento. Un generador pseudoaleatorio calcula una secuencia a partir de un estado; no obtiene cada resultado por una decisión humana ni promete que sea impredecible. En esta unidad fijamos manualmente cómo empieza para poder investigar y repetir nuestros experimentos.",
+          "emphasis": [
+            {
+              "text": "generador pseudoaleatorio"
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "text": "La cabecera <random> ofrece motores y distribuciones. std::mt19937 motor{31}; construye un motor con un estado inicial determinado por 31. Ese número se llama semilla. std::uniform_int_distribution<int> reparto{2, 5}; construye una distribución que obtiene enteros desde dos hasta cinco, incluidos. El motor proporciona valores de su propia secuencia; la distribución los transforma al intervalo que necesitamos."
+          "text": "La cabecera <random> ofrece motores y distribuciones. std::mt19937 motor{31}; construye un motor con un estado inicial determinado por 31. Ese número se llama semilla. std::uniform_int_distribution<int> reparto{2, 5}; construye una distribución que obtiene enteros desde dos hasta cinco, incluidos. El motor proporciona valores de su propia secuencia; la distribución los transforma al intervalo que necesitamos.",
+          "emphasis": [
+            {
+              "text": "semilla"
+            },
+            {
+              "text": "motores y distribuciones"
+            }
+          ]
         },
         {
           "type": "code",
@@ -142,15 +155,44 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde el editor mínimo, crea un motor con semilla 59 y una distribución entera -2..4. Obtén dieciséis datos y consérvalos en un vector<int>, en orden. Muestra Cantidad:16 y después En rango:1, en líneas separadas. Calcula la primera cantidad desde el vector y la segunda recorriendo sus elementos; no imprimas esas respuestas como constantes."
+          "text": "Construye probar(int cantidad, int minimo, int maximo). Cada llamada crea un motor con semilla 59 y una distribución entera para el intervalo indicado, obtiene cantidad datos y los conserva en un vector en orden. Muestra Cantidad:N desde su tamaño y En rango:B desde una comprobación de todos los elementos; termina ambas líneas con un salto. Todas las llamadas de esta actividad cumplen minimo <= maximo y cantidades entre cero y dieciséis.\n\nDesde main prueba (16,-2,4), (0,-2,4), (1,-2,4), (10,5,5) y (7,-4,-1), en ese orden. Pulsa Compilar, ejecutar y comprobar. Las cantidades deben ser 16, 0, 1, 10 y 7; cada línea En rango debe mostrar uno. No imprimas esas respuestas como constantes. No se comprueban listas concretas de valores ni frecuencias iguales entre bibliotecas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Antes de ejecutar explica por qué todos los valores deben satisfacer el rango. Observa además los valores si lo deseas, pero no uses una lista del PC como expectativa de otra biblioteca. Cambia después la cantidad de obtenciones a cero y a uno. Para una muestra de cero elementos, la comprobación de que no hay ningún dato fuera de rango es verdadera, aunque no se haya obtenido ningún dato."
+          "type": "multiple_choice",
+          "id": "u10_intervalo_propiedad_y_frecuencias",
+          "question": "La distribución está configurada con límites válidos -2 y 4. ¿Qué requisito debe cumplir cada dato obtenido?",
+          "options": [
+            "Estar entre -2 y 4, incluidos, sin que una muestra finita tenga que incluir ambos extremos.",
+            "Aparecer el mismo número de veces que cada uno de los otros valores del intervalo.",
+            "Coincidir con una lista observada en una biblioteca diferente."
+          ],
+          "correctIndex": 0,
+          "explanation": "El intervalo limita cada resultado. No obliga a que una muestra finita visite todos sus valores ni a que las frecuencias sean iguales. Comparar una lista de otra biblioteca añade una exigencia que no pertenece a ese contrato.",
+          "reviewFeedback": [
+            "Distingue la pertenencia de cada dato de la cobertura de una muestra completa.",
+            "Relaciona el rango permitido con lo que puede afirmarse de una cantidad finita de obtenciones.",
+            "Comprueba si el requisito fija una secuencia distribuida entre bibliotecas o únicamente sus límites."
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cantidad:16\nEn rango:1\nCantidad:0\nEn rango:1\nCantidad:1\nEn rango:1\nCantidad:10\nEn rango:1\nCantidad:7\nEn rango:1\n"
+                ],
+                "explanation": "Las cantidades y los rangos se comprueban sobre los vectores obtenidos. Vacío no contiene un dato fuera del intervalo, aunque tampoco acredita haber obtenido uno."
+              }
+            ]
+          }
         }
       ]
     },
@@ -172,6 +214,15 @@
         {
           "type": "paragraph",
           "text": "La variable dentro acumula una propiedad; la cantidad confirma cuántas observaciones existen. Ninguna de esas comprobaciones demuestra por sí sola que la muestra tenga frecuencias equilibradas. Se aceptan otras implementaciones que cumplan el contrato."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las cinco muestras y sus propiedades"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    std::vector<int> datos;\n    for (int i=0; i<cantidad; ++i) { datos.push_back(elegir(motor)); }\n    bool dentro=true;\n    for (int dato:datos) { dentro=dentro && dato>=minimo && dato<=maximo; }\n    std::cout<<\"Cantidad:\"<<datos.size()<<\"\\nEn rango:\"<<dentro<<\"\\n\";\n}\n\nint main() {\n    probar(16,-2,4);\n    probar(0,-2,4);\n    probar(1,-2,4);\n    probar(10,5,5);\n    probar(7,-4,-1);\n    return 0;\n}\n"
         }
       ]
     },
@@ -192,12 +243,31 @@
           "explanation": "No se obtiene ningún valor. No hay elemento que incumpla el rango y el vector permanece vacío."
         },
         {
-          "type": "paragraph",
-          "text": "En una sesión posterior construye una muestra para otro intervalo pequeño de enteros. Distingue la semilla, los límites y la cantidad: cambiar uno no significa cambiar los otros. Escribe propiedades comprobables antes de mirar los datos."
+          "type": "multiple_choice",
+          "id": "u10_intervalo_distinguir_configuraciones",
+          "question": "Una prueba pasa de obtener dieciséis datos en -2..4 a obtener siete en -4..-1, conservando la semilla 59. ¿Qué cambió?",
+          "options": [
+            "Sólo la semilla, porque una cantidad distinta siempre solicita otra semilla.",
+            "La cantidad y los límites; la semilla sigue siendo la misma decisión de configuración.",
+            "Sólo la cantidad; los límites no intervienen en los datos permitidos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cantidad, límites y semilla cumplen funciones diferentes. La batería del editor practicó esos dos intervalos sin confundir el número de datos con el rango permitido.",
+          "reviewFeedback": [
+            "Compara los datos de configuración explícitos antes de inferir un cambio en la semilla.",
+            "Identifica por separado cuántos datos se obtienen y qué valores admite cada uno.",
+            "Revisa ambos extremos del intervalo de cada prueba."
+          ]
         },
         {
           "type": "note",
-          "text": "La generación de enteros se estudia en la fuente principal (Stroustrup, 2024, sección 4.7.5, pp. 108–110). Adaptación a interfaces estándar y actividades originales. Intervalo y precondición contrastados con el borrador de C++ (Working Draft: Programming Languages — C++, s. f., sección [rand.dist.uni.int])."
+          "text": "La distribución entera usa un intervalo inclusivo con límites ordenados (Stroustrup, 2024, sección 4.7.5; Working Draft: Programming Languages — C++, s. f., sección [rand.dist.uni.int]). La batería comprueba cantidad y pertenencia sin convertir una lista de otra biblioteca en requisito.",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         }
       ]
     }

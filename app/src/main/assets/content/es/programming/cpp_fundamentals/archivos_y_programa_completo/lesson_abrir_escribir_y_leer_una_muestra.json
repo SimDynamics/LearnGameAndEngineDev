@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "<fstream> declara los flujos de archivo. std::ofstream escribe hacia un archivo; std::ifstream lee desde un archivo. El nombre indicado al construir el flujo identifica el archivo que intentamos abrir. El objeto flujo permite operar sobre él, pero no es el contenido completo almacenado ni es el nombre del archivo."
+          "text": "<fstream> declara los flujos de archivo. std::ofstream escribe hacia un archivo; std::ifstream lee desde un archivo. El nombre indicado al construir el flujo identifica el archivo que intentamos abrir. El objeto flujo permite operar sobre él, pero no es el contenido completo almacenado ni es el nombre del archivo (Stroustrup, 2024, sección 9.3.1, pp. 255–256)."
         },
         {
           "type": "paragraph",
@@ -102,15 +102,39 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye aquí la prueba con el archivo relativo datos_recarga.txt. Debe contener el texto 4 7, completarse su escritura y luego leerse hacia dos int. Si todas las etapas tienen éxito, muestra Total=11 calculado desde los valores leídos. Comprueba cada apertura, la escritura después de close y la extracción antes de usar sus destinos. En un fallo muestra el diagnóstico de su etapa y termina con return 1."
+          "text": "Construye aquí la prueba con el archivo relativo datos_recarga.txt. Debe contener el texto 4 7, completarse su escritura y luego leerse hacia dos int. Si todas las etapas tienen éxito, muestra Total=11 calculado desde los valores leídos. Comprueba cada apertura, la escritura después de close y la extracción antes de usar sus destinos. En un fallo muestra el diagnóstico de su etapa y termina con return 1. Construye una sola batería mediante probar(a,b): cada llamada crea y cierra la muestra, vuelve a abrirla y calcula desde sus dos extracciones. main llama con (4,7) y (0,6), en ese orden, y termina con código 1 si una etapa falla. Cada total ocupa una línea con salto; no añadas títulos ni líneas vacías. Usa Compilar, ejecutar y comprobar con ambos casos del mismo programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Antes de ejecutar, señala qué operaciones prueban escribir y cuáles prueban leer. Después cambia los datos a 0 6: debe aparecer Total=6. Conserva las comprobaciones; los ceros iniciales de las variables no sustituyen la lectura. No basta imprimir directamente 11 o 6."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__abrir_escribir_y_leer_una_muestra__secuencia_archivo_previa",
+          "question": "¿Qué observación permite calcular el total a partir de la muestra creada?",
+          "options": [
+            "Abrir el ofstream ya asigna los enteros del lector.",
+            "Completar y comprobar la escritura, abrir la entrada y completar ambas extracciones antes de sumar.",
+            "Inicializar ambos destinos a cero para omitir la lectura."
+          ],
+          "correctIndex": 1,
+          "explanation": "La escritura, la conexión del lector y la interpretación de dos enteros son etapas distintas. Un destino inicializado no acredita haber obtenido sus datos."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total=11\nTotal=6\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -139,7 +163,20 @@
         },
         {
           "type": "note",
-          "text": "La apertura, lectura, escritura y nombres de archivo se estudian en la fuente principal (Stroustrup, 2024, secciones 9.1–9.4 y 9.11). Ejemplos y actividades originales de esta ruta."
+          "text": "Abrir una muestra conecta el flujo con un archivo; extraer interpreta sus caracteres como valores. Son comprobaciones distintas: una apertura correcta no demuestra que el contenido permita obtener los dos enteros. El cierre del flujo completa su conexión y vacía el búfer de salida; por eso no usamos los destinos hasta comprobar las etapas que los producen (Stroustrup, 2024, secciones 9.3.1–9.4, pp. 255–261)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint probar(int a, int b) {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo << \"\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar(4, 7) != 0) return 1;\n    if (probar(0, 6) != 0) return 1;\n    return 0;\n}\n"
         }
       ]
     }

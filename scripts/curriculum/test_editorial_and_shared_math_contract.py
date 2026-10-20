@@ -21,19 +21,61 @@ def digest(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+@lru_cache(maxsize=1)
+def original_shared_math():
+    """Freeze the seven original compositions at their actual baseline locations."""
+    revision = "dd6787d190fcb707a8e935abeadda64584d773d9"
+    prefix = contract.CONTENT.relative_to(contract.ROOT).as_posix()
+    matches = subprocess.check_output(
+        ["git", "grep", "-l", "--fixed-strings", '"math_puzzle"', revision,
+         "--", prefix + "/**/lesson_*.json"], cwd=contract.ROOT).decode("utf-8")
+    found = []
+    for match in matches.splitlines():
+        relative = match.split(":", 1)[1]
+        lesson = relative[len(prefix) + 1:]
+        document = historical_lesson(revision, lesson)
+        for pn, page in enumerate(document["pages"]):
+            for bn, block in enumerate(page["blocks"]):
+                if block["type"] == "math_puzzle":
+                    found.append((lesson, pn, bn, block))
+    return found
+
+
 class EditorialAndSharedMathContractTest(unittest.TestCase):
     def setUp(self):
         contract.ERRORS.clear()
 
     def published_math(self):
         found = []
+        originals = original_shared_math()
+        self.assertEqual(7, len(originals), "The audited baseline contains exactly seven original compositions.")
+        for lesson, pn, bn, previous in originals:
+            path = contract.CONTENT / lesson
+            current = contract.load(path)["pages"][pn]["blocks"][bn]
+            self.assertEqual(previous, current,
+                             f"Original shared activity changed at {lesson}, page {pn + 1}, block {bn + 1}.")
+            found.append((path, pn, bn, current))
+        return found
+
+    def test_new_shared_puzzles_are_validated_separately_from_the_seven_frozen_originals(self):
+        original_locations = {(lesson, pn, bn) for lesson, pn, bn, _ in original_shared_math()}
+        new_ids = []
         for path in contract.CONTENT.glob("*/lesson_*.json"):
+            lesson = path.relative_to(contract.CONTENT).as_posix()
             for pn, page in enumerate(contract.load(path)["pages"]):
                 for bn, block in enumerate(page["blocks"]):
-                    if block["type"] == "math_puzzle":
-                        found.append((path, pn, bn, block))
-        self.assertEqual(7, len(found), "The seven registered shared activities remain explicit.")
-        return found
+                    if block["type"] != "math_puzzle" or (lesson, pn, bn) in original_locations:
+                        continue
+                    with self.subTest(lesson=lesson, page=pn + 1, block=bn + 1):
+                        previous = copy.deepcopy(block)
+                        contract.ERRORS.clear()
+                        contract.validate_math_puzzle_contract(block, "new shared activity")
+                        self.assertEqual([], contract.ERRORS)
+                        self.assertEqual(previous, block)
+                        self.assertTrue(set(block) <= contract.FIELDS["math_puzzle"])
+                        new_ids.append(block["id"])
+        self.assertEqual(len(new_ids), len(set(new_ids)))
+        self.assertIn("cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__clasificar_conversiones_implicitas", new_ids)
 
     def editorial_cases(self, before, after):
         cases = {}

@@ -285,20 +285,52 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor de código un programa que guarde una longitud de nueve metros y calcule cuánto mide cada una de dos partes iguales. Debe obtener la longitud de una parte mediante una división y mostrar exactamente:\n\nParte: 4.5 m\n\nCompleta el cuerpo de `main` con las variables y las instrucciones necesarias. Elige los tipos de los datos y calcula el resultado a partir de ellos; escribir directamente el mensaje completo con `4.5` no comprueba el reparto.\n\nCompila y ejecuta el programa. Compara el valor, el rótulo, los espacios y la unidad de la consola con la salida pedida. Si difieren, revisa el cálculo y el mensaje, modifica tu código y vuelve a probarlo. Después cambia solamente la longitud inicial a ocho metros: la nueva salida debe ser:\n\nParte: 4 m\n\nComprueba esa segunda versión en el mismo editor. Los dos casos permiten contrastar qué ocurre cuando el reparto necesita una fracción y cuando el resultado es una cantidad entera.",
-          "emphasis": [
-            {
-              "text": "Compila y ejecuta el programa"
-            }
-          ]
+          "text": "Construye un programa que guarde una longitud de nueve metros y calcule cuánto mide cada una de dos partes iguales. Debe obtener la longitud de una parte mediante una división y mostrar:\n\nParte: 4.5 m\n\nElige los tipos de los datos y calcula el resultado a partir de ellos. Escribir directamente el mensaje completo con `4.5` no realiza el reparto.\n\nPulsa «Compilar, ejecutar y comprobar». Se comprueban el valor, el rótulo, los espacios y la unidad; el salto final es opcional. Si hay diferencias, revisa el cálculo y el mensaje y vuelve a comprobar el mismo programa."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parte: 4.5 m",
+                  "Parte: 4.5 m\n"
+                ],
+                "explanation": "La mitad de nueve metros conserva la fracción necesaria: dos partes de 4.5 metros reúnen la longitud inicial."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Cuando hayas construido y comprobado las dos versiones, resuelve los dos últimos puzzles de la página siguiente. En la predicción registrarás la salida de la exploración con los enteros `9` y `2`; en el relleno completarás el tipo y los operandos necesarios para conservar la mitad de metro.\n\nDespués vuelve a este editor de código y realiza la exploración con ambos operandos de tipo `int`, usando nueve como longitud y dos como número de partes. Compara la consola con la respuesta que introdujiste en el puzzle y con el objetivo del reparto. Mantén el divisor dos: que una variante compile no demuestra que produzca dos partes iguales cuya suma sea la longitud inicial."
+          "text": "La comprobación de salida permite reconocer este resultado, pero también hay que revisar la división: debe utilizar la longitud guardada y las dos partes.\n\nLa siguiente actividad conserva esa operación con otra longitud. Después, las predicciones y el relleno recuperan la diferencia entre el tipo de los operandos y el tipo que recibe el cociente."
+        },
+        {
+          "type": "heading",
+          "text": "La mitad de una longitud par"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia únicamente la longitud inicial de este programa a ocho metros. Conserva el divisor dos, el cálculo y el formato del mensaje.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer `Parte: 4 m`, con un salto final opcional. Que el mensaje no muestre `.0` no cambia el tipo elegido para el resultado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    double longitud_metros = 9.0;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parte: 4 m",
+                  "Parte: 4 m\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -346,7 +378,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "question": "Después de comprobar tus repartos en el editor de código, lee este programa y predice la salida de la variante con operandos enteros. Escribe el mensaje de la consola con sus espacios y sin añadir un salto de línea. La variable que recibe el cociente es double: distingue su tipo del tipo de los operandos de la división.",
+          "question": "Lee este programa y predice la salida de la variante con operandos enteros. Escribe el mensaje de la consola con sus espacios y sin añadir un salto de línea. La variable que recibe el cociente es double: distingue su tipo del tipo de los operandos de la división.",
           "code": "#include <iostream>\n\nint main() {\n    int longitud_metros = 9;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n",
           "answers": [
             "Parte: 4 m"
@@ -369,6 +401,31 @@
           "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones__tipo_y_operandos_reparto",
           "reviewFeedback": "Antes de elegir el destino del cociente, revisa el tipo de cada dato que participa en la división. Relaciona también el orden de los operandos con repartir una longitud en partes iguales. Un destino capaz de guardar fracciones no cambia una división que ya se calculó.",
           "explanation": "Los huecos se completan con double, longitud_metros y partes, en ese orden. La primera definición hace que longitud_metros sea double, aunque su inicializador se escriba como el literal entero 9. El valor se convierte al tipo de la variable al inicializarla; esa variable ya aporta un operando de coma flotante cuando se realiza la división (Stroustrup, 2024).\n\nSe divide la longitud disponible entre el número de partes. Para nueve metros y dos partes iguales, el resultado es 4.5 metros. Si ambos operandos fueran enteros, 9 / 2 produciría 4; guardarlo después en un double no recuperaría la media unidad descartada. Dos partes de cuatro metros sumarían ocho, de modo que ese cálculo no cumpliría el reparto solicitado (Stroustrup, 2024).\n\nLa salida Parte: 4.5 m combina el resultado calculado con el rótulo, los espacios y la unidad que ya están escritos. Así se comprueban dos aspectos distintos: el cálculo conserva la fracción necesaria y el mensaje comunica qué longitud representa. Cambiar sólo el tipo que recibe el cociente, sin revisar los operandos, no garantiza esas dos condiciones."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la división entera"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta en este editor la variante de la predicción. Pulsa «Compilar, ejecutar y comprobar» sin cambiar sus operandos enteros. El objetivo es contrastar la salida real con el razonamiento que registraste, no reparar todavía el reparto.\n\nLa comprobación de esta actividad acepta un salto final opcional. El relleno anterior ya permitió elegir una representación que conserva la mitad de metro."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int longitud_metros = 9;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Parte: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Parte: 4 m",
+                  "Parte: 4 m\n"
+                ],
+                "explanation": "Los dos operandos son enteros y la división calcula cuatro. Guardarlo después en double no recupera la fracción descartada."
+              }
+            ]
+          }
         }
       ]
     },
@@ -404,7 +461,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia usa la inicialización con llaves que ya practicaste. `double longitud{9.0};` proporciona el dato inicial y `double parte{longitud / 2.0};` guarda el resultado de la división. Los dos operandos del cálculo son `double`. No es necesario que ambos lo sean, como muestra la primera solución de referencia.\n\nEn el mismo editor de código, sustituye el valor inicial por `8.0` para comprobar el segundo caso. Para contrastar la exploración entera, puedes utilizar `int longitud{9};` e `int parte{longitud / 2};`. La salida `4` procede entonces de la división entera, no de un fallo de `std::cout` ni de un cambio de unidad."
+          "text": "Esta referencia usa la inicialización con llaves que ya practicaste. `double longitud{9.0};` proporciona el dato inicial y `double parte{longitud / 2.0};` guarda el resultado de la división. Los dos operandos son `double`; no es necesario que ambos lo sean, como muestra la primera solución.\n\nEn la exploración, los operandos enteros `9` y `2` producen `4`. Ese valor procede de la división entera, no de un fallo de `std::cout` ni de un cambio de unidad (Stroustrup, 2024)."
         }
       ]
     }

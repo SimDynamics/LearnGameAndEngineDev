@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un int conserva un valor entero; para presentarlo, el flujo produce caracteres. En decimal usamos diez dígitos, de 0 a 9. En 42, la posición de la derecha cuenta unidades y la siguiente grupos de diez: cuatro grupos de diez más dos unidades. La base indica cuántas unidades de una posición forman una unidad de la siguiente."
+          "text": "Un int conserva un valor entero; para presentarlo, el flujo produce caracteres. En decimal usamos diez dígitos, de 0 a 9. En 42, la posición de la derecha cuenta unidades y la siguiente grupos de diez: cuatro grupos de diez más dos unidades. La base indica cuántas unidades de una posición forman una unidad de la siguiente (Stroustrup, 2024, sección 9.10.1, pp. 277–278)."
         },
         {
           "type": "paragraph",
@@ -191,6 +191,18 @@
         {
           "type": "note",
           "text": "Los prefijos de un literal C++ no significan que todas las lecturas de texto usen la misma regla. En una entrada preparada elegiremos también la base del flujo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__representar_enteros_en_distintas_bases__secuencia_bases_enteros_previa",
+          "question": "El mismo entero decimal 31 se presenta sin prefijos en decimal, hexadecimal minúsculo y octal. ¿Qué línea corresponde?",
+          "options": [
+            "dec=31;hex=31;oct=31",
+            "dec=31;hex=1f;oct=37",
+            "dec=31;hex=1f;oct=31"
+          ],
+          "correctIndex": 1,
+          "explanation": "Treinta y uno son 1×16+15, escrito 1f en hexadecimal, y 3×8+7, escrito 37 en octal. Sólo cambia la representación."
         }
       ]
     },
@@ -202,11 +214,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Para los valores decimales 0, 8, 15 y 64, construye una línea por valor con el formato dec=D;hex=H;oct=O, sin prefijos de base. Los tres campos deben representar el mismo entero. Puedes usar un vector y recorrido, o instrucciones separadas. Escribe antes los resultados de cada campo mediante sus grupos y posiciones. Después prueba un valor distinto entre cero y mil."
+          "text": "Para los valores decimales 0, 8, 15, 64 y 31, construye una batería que presenta una línea por valor, en ese orden, con el formato dec=D;hex=H;oct=O, sin prefijos de base. Los tres campos representan el mismo entero. Puedes usar un vector y recorrido o instrucciones separadas; cada campo selecciona su base y cada línea termina con salto. Resuelve el puzzle anterior y construye todo el programa antes de usar Compilar, ejecutar y comprobar. No sustituyas los enteros por respuestas guardadas como cadenas.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "dec=0;hex=0;oct=0\ndec=8;hex=8;oct=10\ndec=15;hex=f;oct=17\ndec=64;hex=40;oct=100\ndec=31;hex=1f;oct=37\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
@@ -238,6 +266,15 @@
             "30|26"
           ],
           "explanation": "Tres grupos de ocho son veinticuatro. La suma produce veintiséis y se muestra en decimal."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de la batería completa. Todas las llamadas pertenecen al mismo programa; no hace falta cambiar de versión para ejecutar los casos del contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    const std::vector<int> cantidades{0, 8, 15, 64, 31};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
         }
       ]
     }

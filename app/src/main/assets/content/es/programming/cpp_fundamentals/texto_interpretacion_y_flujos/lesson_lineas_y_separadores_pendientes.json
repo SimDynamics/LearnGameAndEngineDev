@@ -136,19 +136,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un informe de líneas para \"Patio norte\\n\\n  Muelle\\n\". Numera cada línea obtenida desde 1 y preséntala como número:<contenido>, conservando sus caracteres. Al terminar, presenta dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad que contiene cero caracteres. Usa un espacio después de cada etiqueta. El dominio de estas pruebas es de hasta 6 líneas de hasta 40 caracteres ASCII; ambos contadores caben en int."
+          "text": "Construye un informe de líneas para \"Patio norte\\n\\n  Muelle\\n\". Numera cada línea obtenida desde 1 y preséntala como número:<contenido>, conservando sus caracteres. Al terminar, presenta dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad que contiene cero caracteres. Usa un espacio después de cada etiqueta. El dominio de estas pruebas es de hasta 6 líneas de hasta 40 caracteres ASCII; ambos contadores caben en int. Construye una sola batería mediante probar(const std::string& texto): cada llamada crea un flujo y contadores nuevos. main llama con \"Patio norte\\n\\n  Muelle\\n\", \"\", \"\\n\", \"  \", \"A\\n\" y \"A\\n\\n\", en ese orden. Cada \\n representa un LF real. Cada línea de contenido y ambos resúmenes terminan con salto, sin títulos ni líneas vacías añadidas entre informes. Resuelve el puzzle siguiente y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "Para el caso inicial se esperan 1:<Patio norte>, 2:<> y 3:<  Muelle>, seguidos por Lineas: 3 y Vacias: 1. La cadena vacía produce sólo Lineas: 0 y Vacias: 0. \"\\n\" produce una línea vacía. \"  \" produce una línea con dos espacios, que no debe contarse como vacía. \"A\\n\" produce una línea y \"A\\n\\n\" produce dos. Decide lo esperado antes de ejecutar cada caso."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__lineas_y_separadores_pendientes__secuencia_lineas_previa",
+          "question": "Antes de construir, ¿qué cuenta getline en el texto \"A\\n\\n\" (cada \\n representa LF)?",
+          "options": [
+            "Una línea, porque sólo A contiene texto.",
+            "Tres líneas: el LF final siempre agrega otra.",
+            "Dos líneas: A y una línea vacía."
+          ],
+          "correctIndex": 2,
+          "explanation": "El primer LF termina A. El segundo termina una línea vacía. Después no hay caracteres ni delimitador para obtener una tercera línea."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:<Patio norte>\n2:<>\n3:<  Muelle>\nLineas: 3\nVacias: 1\nLineas: 0\nVacias: 0\n1:<>\nLineas: 1\nVacias: 1\n1:<  >\nLineas: 1\nVacias: 0\n1:<A>\nLineas: 1\nVacias: 0\n1:<A>\n2:<>\nLineas: 2\nVacias: 1\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Elige la lectura, los destinos y el lugar de cada actualización. Al revisar, distingue un fallo que termina el bucle de una línea válida cuyo contenido es vacío. El editor no evalúa estos criterios automáticamente; compara salidas completas y vuelve a los casos anteriores después de corregir."
+          "text": "La lectura decide si existe una línea nueva y empty() inspecciona su contenido. La comprobación de stdout contrasta los seis informes; una línea válida vacía debe diferenciarse del intento que no obtiene ninguna."
         }
       ]
     },
@@ -168,8 +192,16 @@
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zona este\\n\\n  Muelle\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    return 0;\n}\n"
         },
         {
-          "type": "paragraph",
-          "text": "Compara la referencia con tu implementación y explica por qué el espacio inicial de Muelle se conserva. Una solución que elimina todos los espacios o rechaza las líneas vacías incumple el informe aunque cuente algunas líneas correctamente."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__lineas_y_separadores_pendientes__secuencia_espacios_getline",
+          "question": "¿Por qué el informe conserva los dos espacios antes de Muelle?",
+          "options": [
+            "Porque getline conserva los caracteres previos al delimitador, incluidos los blancos.",
+            "Porque el contador vuelve a insertar dos espacios por cada línea.",
+            "Porque la extracción a string conserva siempre los blancos iniciales."
+          ],
+          "correctIndex": 0,
+          "explanation": "getline usa el salto como delimitador y no omite los espacios del contenido. Una eliminación general de blancos cambiaría el dato y el contrato."
         },
         {
           "type": "output_prediction",
@@ -203,6 +235,19 @@
           ],
           "correctIndex": 0,
           "explanation": "La lectura de línea obtiene una unidad de texto. Validar su estructura y convertir sus partes son responsabilidades posteriores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"Patio norte\\n\\n  Muelle\\n\");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"  \");\n    probar(\"A\\n\");\n    probar(\"A\\n\\n\");\n    return 0;\n}\n"
         }
       ]
     }

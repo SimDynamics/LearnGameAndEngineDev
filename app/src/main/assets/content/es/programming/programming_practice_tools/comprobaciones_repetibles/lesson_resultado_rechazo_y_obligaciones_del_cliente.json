@@ -153,12 +153,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice qué casos detectan el defecto antes de ejecutar. El programa muestra piezas:estado:salida y después el veredicto de cada prueba. Un rechazo esperado debe acabar en OK; un defecto del componente produce FALLO y retorno 1 de este comprobador. Tras reparar deben pasar los siete casos, incluidos cero y ambas fronteras exteriores. La referencia está después del intento."
+          "text": "Predice qué casos detectan el defecto antes de ejecutar. El programa muestra piezas:estado:salida y después el veredicto de cada prueba. Un rechazo esperado debe acabar en OK; un defecto del componente produce FALLO y retorno 1 de este comprobador. Tras reparar deben pasar los siete casos, incluidos cero y ambas fronteras exteriores. La referencia está después del intento. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    resultado = 0;\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    if (!bateria_componente()) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\n"
+                ],
+                "explanation": "Los siete controles coinciden: los rechazos conservan el destino y los datos admitidos producen el número de cajas pedido. Un rechazo previsto termina en OK dentro de la batería."
+              }
+            ]
+          }
         }
       ]
     },
@@ -249,12 +261,24 @@
         },
         {
           "type": "paragraph",
-          "text": "Traza cada estado y salida antes de ejecutar. Después de reparar, cambia sólo el orden de peticiones a {21, 4, -1, 0, 5}: siguen siendo las mismas cinco peticiones y se mantienen los tres esperados finales. El rechazo inicial conserva 77, pero ese valor no pertenece a ninguna petición aceptada. No arregles la biblioteca borrando resultados ni cambies la prueba para aceptar el total defectuoso."
+          "text": "Traza cada estado y salida antes de ejecutar. Repara únicamente el uso del bool dentro del bucle, conservando la biblioteca, los cinco datos y los tres esperados finales. El destino que conserva un rechazo no pertenece a una petición nueva y no debe incorporarse al total. La variación del orden se trabaja después en otro editor. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
         },
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, -1, 5, 21, 4}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "explanation": "El componente conserva sus siete controles; el cliente suma sólo resultados de peticiones aceptadas. Hay tres aceptadas, dos rechazadas y total tres."
+              }
+            ]
+          }
         }
       ]
     },
@@ -289,6 +313,31 @@
             "Atribuye por separado lo que comprueba la batería y lo que exige el acumulador.",
             "Deriva el total de las peticiones aceptadas antes de ajustar una comparación."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar el cliente cuando el primer dato se rechaza"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente cambia sólo el orden a 21, 4, -1, 0 y 5. Repara el mismo uso del bool conservando los cinco datos y los tres esperados: tres aceptadas, dos rechazadas y total 3. El rechazo inicial conserva 77; ese valor no pertenece a una petición aceptada. La batería del componente y el comprobador final deben seguir intactos. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    return (piezas + piezas_por_caja - 1) / piezas_por_caja;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nbool comprobar_cajas(int piezas, int inicial, bool estado_esperado,\n                     int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{intentar_cajas(piezas, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << piezas << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nbool bateria_componente() {\n    bool correcto{true};\n    if (!comprobar_cajas(0, 37, true, 0)) { correcto = false; }\n    if (!comprobar_cajas(-1, 37, false, 37)) { correcto = false; }\n    if (!comprobar_cajas(20, -8, true, 5)) { correcto = false; }\n    if (!comprobar_cajas(21, -8, false, -8)) { correcto = false; }\n    if (!comprobar_cajas(1, 37, true, 1)) { correcto = false; }\n    if (!comprobar_cajas(5, 37, true, 2)) { correcto = false; }\n    if (!comprobar_cajas(17, 37, true, 5)) { correcto = false; }\n    return correcto;\n}\n\nint main() {\n    const bool componente_correcto{bateria_componente()};\n    if (!componente_correcto) {\n        std::cout << \"Componente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Componente: OK\\n\";\n    int salida{77};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{21, 4, -1, 0, 5}) {\n        const bool aceptado{intentar_cajas(piezas, salida)};\n        total += salida;\n        if (aceptado) {\n            ++aceptados;\n        } else {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    const bool cliente_correcto{aceptados == 3 && rechazados == 2 && total == 3};\n    if (!cliente_correcto) {\n        std::cout << \"Cliente: FALLO\\n\";\n        return 1;\n    }\n    std::cout << \"Cliente: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
+                ],
+                "explanation": "El rechazo inicial conserva 77, pero no lo suma al total. El orden cambiado conserva tres aceptadas, dos rechazadas y total tres, además de la batería del componente."
+              }
+            ]
+          }
         }
       ]
     },
@@ -309,7 +358,7 @@
         },
         {
           "type": "paragraph",
-          "text": "registrar debe llamar una sola vez al componente. Si acepta, suma ese saldo a total y aumenta aceptados; si rechaza, aumenta únicamente rechazados. Los tres destinos recibidos por referencia pertenecen al cliente. En esta práctica son objetos distintos, comienzan en cero y se utilizan en estas cuatro llamadas: (5,5), (2,3), (10,0), (0,9), en ese orden. Se exigen tres aceptadas, una rechazada y total -10. Implementa ambas funciones en el editor de código; conserva el comprobador y sus seis casos. El esqueleto es compilable, pero todavía no satisface el trabajo."
+          "text": "registrar debe llamar una sola vez al componente. Si acepta, suma ese saldo a total y aumenta aceptados; si rechaza, aumenta únicamente rechazados. Los tres destinos recibidos por referencia pertenecen al cliente. En esta práctica son objetos distintos, comienzan en cero y se utilizan en estas cuatro llamadas: (5,5), (2,3), (10,0), (0,9), en ese orden. Se exigen tres aceptadas, una rechazada y total -10. Implementa ambas funciones en el editor de código; conserva el comprobador y sus seis casos. El esqueleto es compilable, pero todavía no satisface el trabajo. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
         },
         {
           "type": "multiple_choice",
@@ -331,7 +380,19 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    return false;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "explanation": "Los seis controles del componente coinciden. Las cuatro llamadas del cliente dejan tres aceptadas, una rechazada y total menos diez; un saldo negativo admitido se conserva como resultado."
+              }
+            ]
+          }
         }
       ]
     },

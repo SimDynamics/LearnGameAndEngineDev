@@ -112,19 +112,43 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor entrega el lector de un token ya explicado y main vacío. Construye la traza para \"5*2;\": presenta Primero: 5; lee y devuelve el signo siguiente; presenta Pendiente: 1; vuelve a leerlo y presenta Repetido: *; presenta Pendiente: 0; lee el número siguiente y presenta Siguiente: 2. Usa una línea por resultado y un espacio después de cada etiqueta."
+          "text": "El editor entrega el lector de un token ya explicado y main vacío.\n\nConstruye la traza para \"5*2;\": presenta Primero: 5; lee y devuelve el signo siguiente; presenta Pendiente: 1; vuelve a leerlo y presenta Repetido: *; presenta Pendiente: 0; lee el número siguiente y presenta Siguiente: 2.\n\nUsa una línea por resultado y un espacio después de cada etiqueta.\n\nConstruye una única batería sobre esa interfaz.\n\nLa función de traza crea un lector nuevo por texto; main la llama primero con \"5*2;\" y después con \"9-0;\".\n\nA continuación crea otro lector de \"3+6;\": consume 3, lee y reserva +, intenta reservar Token{'-', 0}, captura y presenta Buffer ocupado, y después muestra Conservado: + y Siguiente: 6 al consumir ambas unidades.\n\nFinalmente crea un lector de \"4;\", intenta devolver Token{'n', 10} con reserva vacía, captura y presenta Token invalido, muestra Pendiente: 0 y obtiene Siguiente: 4.\n\nCada resultado ocupa una línea con salto final, sin títulos ni líneas vacías entre casos.\n\nLas dos trazas iniciales utilizan las cinco etiquetas indicadas.\n\nUsa Compilar, ejecutar y comprobar con todo el programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
-          "type": "paragraph",
-          "text": "El objetivo es elegir y ordenar llamadas públicas, sin leer ni modificar directamente los miembros privados. Verifica también \"9-0;\", que cambia el signo y el número posterior. En una prueba aparte, devuelve una segunda unidad con la reserva llena: captura el rechazo y comprueba que la primera reserva y el número posterior se conservan. Con búfer vacío intenta devolver un número fuera de 0..9: debe rechazarse y seguir vacío."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__un_lector_con_buffer_de_un_token__secuencia_buffer_previa",
+          "question": "La reserva contiene + y se intenta devolver -. El contrato rechaza ese segundo intento. ¿Qué debe entregar la siguiente lectura?",
+          "options": [
+            "-, porque fue el último argumento recibido.",
+            "+, porque el rechazo conserva la reserva anterior.",
+            "El token de final, porque cualquier rechazo vacía el búfer."
+          ],
+          "correctIndex": 1,
+          "explanation": "La capacidad de una unidad se comprueba antes de sustituir guardado_. El error no publica la segunda propuesta ni borra la primera."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Primero: 5\nPendiente: 1\nRepetido: *\nPendiente: 0\nSiguiente: 2\nPrimero: 9\nPendiente: 1\nRepetido: -\nPendiente: 0\nSiguiente: 0\nBuffer ocupado\nConservado: +\nSiguiente: 6\nToken invalido\nPendiente: 0\nSiguiente: 4\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Esta práctica está guiada por una interfaz existente: debes construir el cliente y las pruebas de sus transiciones. El editor no califica la traza automáticamente. Comprueba tanto la salida como el estado después de cada operación; no basta con obtener el último número."
+          "text": "Esta práctica construye un cliente y una batería de transiciones sobre una interfaz existente. La comprobación contrasta la traza completa: obtener sólo el último número no acredita los estados de reserva ni la conservación tras rechazos."
         }
       ]
     },
@@ -145,7 +169,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la prueba de reserva ocupada, compara con la página anterior: comprueba el rechazo antes de leer lo conservado. Para el número inválido con reserva vacía, captura Token invalido y observa tiene_pendiente() false. La siguiente lectura debe continuar desde los caracteres del texto, ya que el rechazo no consumió ni insertó una unidad."
+          "text": "Ante la reserva ocupada, el rechazo aparece antes de leer el signo conservado. Ante el número inválido con reserva vacía, tiene_pendiente() sigue siendo false y la lectura obtiene 4 del texto. Rechazar una unidad propuesta no consume ni inserta caracteres en el origen."
         }
       ]
     },
@@ -184,6 +208,19 @@
         {
           "type": "note",
           "text": "La siguiente ampliación revisará también token_valido: el dominio declarado, el reconocimiento y la validación de la reserva deben coincidir. Ampliar sólo uno de ellos produciría un lector que reconoce números y después los rechaza al devolverlos. La reserva con una marca de ocupación y la lectura anticipada adaptan Token_stream de la lectura de apoyo (Stroustrup, 2024, secciones 5.8.1–5.8.2). La validación de combinaciones, las consultas y las actividades son propias de esta ruta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de todas las transiciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nvoid trazar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor << \"\\n\";\n}\n\nint main() {\n    trazar(\"5*2;\");\n    trazar(\"9-0;\");\n    Lector_tokens ocupado{\"3+6;\"};\n    ocupado.leer();\n    const Token signo = ocupado.leer();\n    ocupado.devolver(signo);\n    try { ocupado.devolver(Token{'-', 0}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << ocupado.leer().clase << \"\\n\";\n    std::cout << \"Siguiente: \" << ocupado.leer().valor << \"\\n\";\n    Lector_tokens invalido{\"4;\"};\n    try { invalido.devolver(Token{'n', 10}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Pendiente: \" << invalido.tiene_pendiente() << \"\\n\";\n    std::cout << \"Siguiente: \" << invalido.leer().valor << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

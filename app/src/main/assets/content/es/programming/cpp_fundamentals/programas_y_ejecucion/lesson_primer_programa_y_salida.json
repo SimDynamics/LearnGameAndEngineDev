@@ -229,21 +229,20 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Primera ejecución y modificación"
+          "text": "Construir un mensaje exacto"
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, responde la predicción que está debajo del editor de código. Después ejecuta el código original con Compilar, ejecutar y comprobar y compara el mensaje de la consola con tu respuesta. El programa no solicita datos de teclado.\n\nCambia únicamente el contenido del literal para mostrar Zona segura. Compila y ejecuta de nuevo: la consola debe contener exactamente esas dos palabras, con un espacio y sin comillas. Conserva main y #include <iostream>. En la instrucción de salida, mantén las comillas que delimitan el literal, el operador << y el punto y coma final.\n\nDespués cambia Zona segura por Caja recibida y pulsa Compilar, ejecutar y comprobar para ejecutar y verificar esta última modificación. Observa el mensaje en Salida del programa y el resultado de la comprobación. La salida solicitada es exactamente Caja recibida, con un espacio entre las palabras y sin comillas. Si la comprobación indica Incorrecto, revisa el literal, corrige el código y vuelve a pulsar Compilar, ejecutar y comprobar.\n\nSi quieres comparar con el programa original, pulsa el icono Reiniciar código, a la derecha de C++ en la barra de la consola, y ejecútalo de nuevo. Consulta la solución de la página siguiente después de realizar las pruebas.",
+          "text": "En el editor de código, modifica únicamente los caracteres del literal para que el programa muestre este mensaje exacto:\n\nCaja recibida\n\nConserva el espacio entre las palabras y no añadas comillas ni un salto de línea al mensaje. Mantén main, #include <iostream>, el operador << y el punto y coma de la instrucción. El programa no necesita datos de entrada.\n\nPulsa Compilar, ejecutar y comprobar. Observa la salida nueva y el veredicto. Si aparece Incorrecto, revisa el literal, corrige la diferencia y vuelve a ejecutar esta misma actividad. Una compilación fallida muestra un diagnóstico y necesita una reparación antes de poder comprobar la salida.\n\nEl icono Reiniciar código, a la derecha de C++ en la barra de la consola, permite recuperar el punto de partida si necesitas rehacer el intento.",
           "emphasis": [
             {
-              "text": "Antes de ejecutar, responde la predicción"
+              "text": "modifica únicamente los caracteres del literal"
             },
             {
-              "text": "Cambia únicamente el contenido del literal"
+              "text": "Compilar, ejecutar y comprobar"
             },
             {
-              "text": "Compilar, ejecutar y comprobar",
-              "occurrence": 2
+              "text": "esta misma actividad"
             },
             {
               "text": "Reiniciar código"
@@ -267,7 +266,7 @@
                     "outputs": [
                       "Zona segura"
                     ],
-                    "text": "Revisa si realizaste y ejecutaste la segunda modificación."
+                    "text": "Revisa el mensaje solicitado en esta actividad y qué caracteres contiene el literal que acabas de ejecutar."
                   }
                 ]
               }
@@ -284,7 +283,7 @@
             "Zona inicial"
           ],
           "outputComparison": "exact",
-          "explanation": "El literal contiene Zona inicial. La instrucción lo envía a std::cout; return 0; no añade un cero. Al ejecutar el programa inicial del editor de código, compara la consola con esta predicción.",
+          "explanation": "El literal contiene Zona inicial. La instrucción lo envía a std::cout; return 0; no añade un cero. La predicción corresponde a ese programa, con un espacio entre sus dos palabras y sin salto final.",
           "reviewFeedback": "Revisa qué caracteres están dentro del literal y distingue ese contenido de las comillas y de los signos que estructuran la instrucción."
         },
         {
@@ -309,10 +308,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de modificar el mensaje y ejecutar el programa en el editor de código. La construcción debe terminar sin errores y cada ejecución debe mostrar sólo el mensaje solicitado en esa prueba. Compara palabra por palabra y conserva el espacio entre ellas.\n\nNo se exige un número concreto de instrucciones ni una única forma de organizar el programa. El criterio es que use los elementos ya estudiados y produzca el resultado pedido.",
+          "text": "Esta referencia muestra una solución de la actividad anterior. Compilar, ejecutar y comprobar contrasta la salida de una ejecución nueva con Caja recibida. Las comillas delimitan el literal dentro del código y no forman parte del mensaje (Stroustrup, 2024).\n\nLa comprobación de salida admite distintas implementaciones que produzcan los caracteres solicitados; no exige un número concreto de instrucciones.",
           "emphasis": [
             {
-              "text": "después de modificar el mensaje y ejecutar el programa"
+              "text": "una ejecución nueva"
+            },
+            {
+              "text": "distintas implementaciones"
             }
           ]
         },
@@ -323,12 +325,55 @@
         },
         {
           "type": "paragraph",
-          "text": "Al probar Zona segura y después Caja recibida, el cambio está dentro del literal. La referencia muestra la última modificación solicitada; el icono Reiniciar código recupera el programa original.\n\nLas comillas que delimitan el literal no aparecen en la consola, y return 0; tampoco añade texto. Si tu resultado incluye caracteres adicionales, revisa qué instrucciones los envían antes de volver a comparar (Stroustrup, 2024).",
+          "text": "El cambio que produce Caja recibida está dentro del literal. `main` y la cabecera conservan su función. `return 0;` comunica la terminación correcta sin imprimir un cero; los caracteres que se muestran proceden de la instrucción de salida (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "el cambio está dentro del literal"
+              "text": "dentro del literal"
+            },
+            {
+              "text": "sin imprimir un cero"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Aplicar el cambio a otro mensaje"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este nuevo editor, el punto de partida muestra Caja recibida. Modifica únicamente el literal para mostrar Zona segura, con un espacio y sin salto final. Pulsa Compilar, ejecutar y comprobar y corrige el intento si el resultado no coincide. Esta actividad conserva la estructura que acabas de utilizar.",
+          "emphasis": [
+            {
+              "text": "este nuevo editor"
+            },
+            {
+              "text": "Modifica únicamente el literal"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja recibida\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Zona segura"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una solución cambia los caracteres entre comillas y conserva los elementos que permiten mostrar el texto. El veredicto de esta actividad corresponde sólo a Zona segura."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona segura\";\n    return 0;\n}\n"
         }
       ]
     }

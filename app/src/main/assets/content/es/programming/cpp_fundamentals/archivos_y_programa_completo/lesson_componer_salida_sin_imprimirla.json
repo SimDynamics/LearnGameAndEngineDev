@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "std::ostringstream, declarado en <sstream>, recibe inserciones y conserva los caracteres producidos en memoria. Su operación str() devuelve una cadena con ese contenido. A diferencia de cout, insertar en este flujo no envía el mensaje a la salida estándar. Puedes construir un texto, devolverlo y decidir después si mostrarlo, guardarlo o usarlo como nombre de una muestra."
+          "text": "std::ostringstream, declarado en <sstream>, recibe inserciones y conserva los caracteres producidos en memoria. Su operación str() devuelve una cadena con ese contenido. A diferencia de cout, insertar en este flujo no envía el mensaje a la salida estándar. Puedes construir un texto, devolverlo y decidir después si mostrarlo, guardarlo o usarlo como nombre de una muestra (Stroustrup, 2024, sección 9.11, pp. 283–284)."
         },
         {
           "type": "code",
@@ -78,6 +78,18 @@
           ],
           "correctIndex": 0,
           "explanation": "Un objeto local nuevo expresa un comienzo vacío para esa composición."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla__secuencia_composicion_previa",
+          "question": "La función compone primero con 2 y 1 y después con 0 y 0, creando un flujo local en cada llamada. ¿Qué debe contener la segunda cadena?",
+          "options": [
+            "Validos=2;Rechazados=1Validos=0;Rechazados=0",
+            "Validos=0;Rechazados=0",
+            "Una cadena vacía, porque todos los valores son cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un flujo local comienza sin texto. Cero es un valor presente y conserva los dos campos; str() devuelve su composición nueva."
         }
       ]
     },
@@ -93,11 +105,27 @@
         },
         {
           "type": "paragraph",
-          "text": "En main llama primero con 2 y 1, y después con 0 y 0. Muestra los dos resultados en líneas distintas, sin que el segundo acumule el primero. Criterios: devolver una cadena en cada llamada, conservar el orden de los campos y los separadores y dejar que main decida cuándo mostrar. Prepara la salida esperada antes de ejecutar."
+          "text": "En main llama con 2 y 1, con 0 y 0 y con 5 y 3, en ese orden. Guarda las tres cadenas y después preséntalas, una por línea con salto final, sin que una acumule las anteriores. Devolver una cadena, conservar campos y separadores y dejar la presentación a main son criterios del mismo programa. Resuelve el puzzle previo y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Define una funcion de composicion antes de main y usala aqui.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Define una funcion de composicion antes de main y usala aqui.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -122,7 +150,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también una tercera llamada con 5 y 3: debe devolver Validos=5;Rechazados=3 sin cambiar los dos resultados anteriores. Si aparecen datos repetidos, revisa dónde se crea el flujo. Si el programa muestra líneas inesperadas durante la llamada, busca una salida que se haya mezclado con la composición. El contrato restringe aquí los argumentos; esta prueba no certifica validación para cualquier entero."
+          "text": "La tercera llamada devuelve Validos=5;Rechazados=3 y no cambia los dos resultados anteriores. Crear un flujo local nuevo evita acumular otra llamada. Una salida durante la llamada mezclaría presentación con composición. Este contrato restringe los argumentos; no certifica validación para cualquier entero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia de las tres llamadas de la batería."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     },

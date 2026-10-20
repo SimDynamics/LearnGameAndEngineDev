@@ -114,23 +114,47 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa para el texto \"2\\nx\\n6 ruido\\n0\\n\". Cada línea debe contener exactamente un entero de 0 a 6, con espacios opcionales alrededor. Una línea válida produce Nivel: N; cualquier línea vacía, sin entero, fuera del dominio o con un residuo produce Operacion invalida. Presenta una línea de salida por cada línea de entrada obtenida, sin abandonar las operaciones posteriores por un rechazo."
+          "text": "Construye un programa para el texto \"2\\nx\\n6 ruido\\n0\\n\". Cada línea debe contener exactamente un entero de 0 a 6, con espacios opcionales alrededor. Una línea válida produce Nivel: N; cualquier línea vacía, sin entero, fuera del dominio o con un residuo produce Operacion invalida. Presenta una línea de salida por cada línea de entrada obtenida, sin abandonar las operaciones posteriores por un rechazo. Construye una sola batería mediante probar(const std::string& texto): cada llamada crea su lector exterior. main llama con \"2\\nx\\n6 ruido\\n0\\n\", \"6\", \"7\", \"-1\", \"3x\", \" 4 \", \"\", \"\\n\" y \"x\\n5\", en ese orden. \\n representa LF. Cada línea de diagnóstico o nivel termina con salto; no añadas títulos ni líneas vacías entre pruebas. Después comprueba la función aislada: resultado inicial 3, línea inválida \"4 extra\", luego línea válida \"5\". Presenta bool:resultado tras cada llamada, en dos líneas. Usa Compilar, ejecutar y comprobar con el programa completo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "paragraph",
           "text": "Escribe una función que recibe const std::string& y un int& para el resultado, devuelve bool y modifica el resultado sólo con una operación completa válida. Elige su nombre. El flujo exterior debe obtener líneas completas y el análisis debe utilizar un flujo local nuevo por operación. Las pruebas usan hasta 6 líneas de hasta 40 caracteres ASCII y enteros escritos pequeños, entre -20 y 99."
         },
         {
-          "type": "paragraph",
-          "text": "El caso inicial debe producir Nivel: 2, Operacion invalida, Operacion invalida y Nivel: 0. \"6\" es válido; \"7\" y \"-1\" se rechazan; \"3x\" se rechaza por residuo; \" 4 \" es válido. Una cadena vacía no contiene operaciones y no produce líneas. Un texto \"\\n\" contiene una operación vacía y produce un rechazo. Prepara además \"x\\n5\" para comprobar la recuperación."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__validar_una_operacion_y_recuperar_la_siguiente__secuencia_operacion_previa",
+          "question": "La entrada es \"x\\n5\" y cada \\n representa LF. ¿Qué informe exige el lector por líneas?",
+          "options": [
+            "Operacion invalida y después Nivel: 5, cada uno en su línea.",
+            "Sólo Operacion invalida: todo fallo impide continuar.",
+            "Nivel: 5: la lectura debe omitir por completo la línea incorrecta."
+          ],
+          "correctIndex": 0,
+          "explanation": "La frontera de getline consume la primera línea. Su analizador local falla sin inutilizar el lector exterior, y la segunda línea se analiza de forma independiente."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"2\\nx\\n6 ruido\\n0\\n\"};\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"2\\nx\\n6 ruido\\n0\\n\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Nivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Prueba también la función aislada: inicia el resultado en 3 y llámala con una línea inválida. Debe devolver false y conservar 3. Después usa una línea válida distinta para comprobar que devuelve true y entrega ese valor. Si sólo inspeccionas la salida de main podrías no detectar que un rechazo modifica el argumento."
+          "text": "La prueba aislada hace observable la conservación que el informe exterior podría ocultar: tras \"4 extra\" deben aparecer 0:3; después, con \"5\", 1:5. La aceptación se publica sólo al completar extracción, dominio y ausencia de residuo."
         }
       ]
     },
@@ -183,8 +207,16 @@
           "explanation": "Los espacios alrededor de 5 se permiten. La línea vacía no contiene un entero; -1 está fuera del dominio. Ambos rechazos conservan la posibilidad de leer 6."
         },
         {
-          "type": "paragraph",
-          "text": "Explica qué prueba distingue un número de una operación completa: 3x obtiene el prefijo entero 3, pero el residuo impide aceptar la línea. Explica también qué prueba distingue éxito de extracción y dominio: 7 es un int legible, pero el nivel máximo sigue siendo 6."
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__validar_una_operacion_y_recuperar_la_siguiente__secuencia_prefijo_y_dominio",
+          "question": "¿Por qué se rechazan tanto 3x como 7 en un contrato de línea completa con nivel 0..6?",
+          "options": [
+            "Los dos textos fallan antes de extraer un int.",
+            "3x deja residuo; 7 es un int legible que sale del dominio permitido.",
+            "7 deja residuo y 3x excede el máximo numérico."
+          ],
+          "correctIndex": 1,
+          "explanation": "La extracción, el dominio y la ausencia de texto adicional son comprobaciones diferentes. Ninguna puede sustituirse por las otras."
         }
       ]
     },
@@ -201,6 +233,19 @@
         {
           "type": "note",
           "text": "No todo error exige la misma recuperación. Estas funciones devuelven false para un contrato pequeño y entregan resultados sólo al final. El intérprete progresivo utilizará diagnósticos concretos y recuperación hasta una frontera declarada; no supondrá que limpiar el estado transforma una operación incorrecta en válida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la batería por líneas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        int nivel = 0;\n        if (analizar_nivel(linea, nivel)) {\n            std::cout << \"Nivel: \" << nivel << \"\\n\";\n        } else {\n            std::cout << \"Operacion invalida\\n\";\n        }\n    }\n    if (origen.bad()) {\n        std::cout << \"Fallo del origen\\n\";\n    }\n}\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"5\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

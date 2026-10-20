@@ -193,23 +193,57 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el editor de código para construir un programa que conserve la cantidad de llaves de un taller en una variable llamada llaves, con valor inicial 7. La consola debe mostrar exactamente Llaves: 7, con un espacio después de los dos puntos. La instrucción de salida debe utilizar la variable.\n\nCompila y ejecuta tu programa. Después cambia únicamente su valor inicial a 11, conserva la instrucción de salida y vuelve a ejecutar: la consola debe mostrar Llaves: 11. Compara el texto, el espacio y el número de cada ejecución con el resultado solicitado. Las dos predicciones de la página siguiente permiten comprobar después cómo se lee cada versión del código.",
+          "text": "Usa el editor de código para construir un programa que conserve la cantidad de llaves de un taller en una variable llamada `llaves`, con valor inicial `7`. La consola debe mostrar `Llaves: 7`, con un espacio después de los dos puntos. La instrucción de salida debe utilizar la variable.\n\nPulsa «Compilar, ejecutar y comprobar». La comprobación contrasta el mensaje completo con ese objetivo; puedes terminarlo con o sin un salto de línea. Si hay diferencias, corrige el mismo programa y vuelve a comprobarlo.",
           "emphasis": [
             {
               "text": "La instrucción de salida debe utilizar la variable"
-            },
-            {
-              "text": "Compila y ejecuta tu programa"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Llaves: 7",
+                  "Llaves: 7\n"
+                ],
+                "explanation": "El mensaje conserva el rótulo y muestra el valor inicial de la cantidad."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Mantén la misma instrucción de salida al probar los valores iniciales 7 y 11: así compruebas que el número mostrado procede de la variable.\n\nSi el número mostrado no cambia al cambiar el inicializador, revisa si enviaste a std::cout un número fijo o el texto \"llaves\" en lugar de consultar la variable."
+          "text": "Comprueba también el código: la definición debe preparar el valor antes de utilizarlo y la salida debe consultar `llaves`. La coincidencia de la consola no demuestra por sí sola que hayas usado la variable.\n\nLa siguiente actividad cambia un dato inicial y conserva la instrucción que lo muestra."
+        },
+        {
+          "type": "heading",
+          "text": "Otra cantidad inicial"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de este editor comienza con siete llaves. Cambia únicamente el inicializador de `llaves` a `11`; conserva la instrucción de salida.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo de esta actividad es `Llaves: 11`, con un espacio después de los dos puntos y un salto final opcional. Si el número mostrado no responde al cambio, revisa si la salida consulta la variable o utiliza un número fijo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Llaves: 11",
+                  "Llaves: 11\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -300,7 +334,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En las dos soluciones, \"Llaves: \" es texto fijo y llaves consulta el valor actual. En esta versión puedes cambiar {7} por {11}, ejecutar y reconstruir después {7}, conservando la instrucción de salida. Imprimir siempre el número fijo 7 o el texto \"llaves\" no satisface esa comparación, aunque una primera ejecución pueda parecer correcta."
+          "text": "En las dos soluciones, `\"Llaves: \"` es texto fijo y `llaves` consulta el valor actual. Con `{7}`, la salida muestra siete; con `{11}`, muestra once. La instrucción de salida conserva su forma porque lee el valor preparado en cada programa.\n\nImprimir siempre el número fijo `7` o el texto `\"llaves\"` no satisface esa relación, aunque una ejecución pueda parecer correcta."
         }
       ]
     }

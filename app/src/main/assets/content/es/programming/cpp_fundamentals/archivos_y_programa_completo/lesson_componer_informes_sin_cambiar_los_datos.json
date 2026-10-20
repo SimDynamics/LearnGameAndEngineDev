@@ -30,11 +30,22 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75",
+                  "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Prueba además colección vacía, una observación de cantidad cero y medida dos, y una etiqueta de seis caracteres con cantidad mil. El recorrido debe conservar orden y asociaciones. Cada composición comienza vacía y el estado de cout no debe decidir el formato interno."
+          "text": "La actividad posterior «Reconstruir otro informe completo» tiene un editor propio para vacío, una observación de cantidad cero y una etiqueta de seis caracteres con cantidad mil. Este primer editor comprueba únicamente el informe inicial. En ambos casos deben conservarse orden y asociaciones; cada composición comienza vacía y el estado de cout no decide el formato interno."
         },
         {
           "type": "math_puzzle",
@@ -225,15 +236,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otra función que reciba numero int entre cero y mil y devuelva muestra_NNNN.txt, con un mínimo de cuatro cifras decimales y ceros iniciales. Para siete debe devolver muestra_0007.txt; para mil, muestra_1000.txt. La función sólo forma un nombre: no abre ni escribe un archivo. Haz dos llamadas con siete y veintitrés y presenta los resultados en líneas distintas."
+          "text": "Construye otra función que reciba numero int entre cero y mil y devuelva muestra_NNNN.txt, con un mínimo de cuatro cifras decimales y ceros iniciales. Para siete debe devolver muestra_0007.txt; para mil, muestra_1000.txt. La función sólo forma un nombre: no abre ni escribe un archivo. Haz dos llamadas con siete y veintitrés y presenta los resultados en líneas distintas. Construye una batería con las llamadas para 7, 23, 0 y 1000, en ese orden, una por línea con salto final. Usa Compilar, ejecutar y comprobar cuando estén las cuatro llamadas en el mismo programa.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "muestra_0007.txt\nmuestra_0023.txt\nmuestra_0000.txt\nmuestra_1000.txt\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba cero y otro número permitido. El sufijo .txt debe seguir inmediatamente al entero, sin heredar un ancho de campo ni el resultado anterior. El cero inicial aquí es relleno de una cadena, no la notación de un literal octal del código C++."
+          "text": "La batería incorpora cero y el extremo mil. El sufijo .txt sigue inmediatamente al entero; no hereda un ancho de campo ni el resultado anterior. El cero inicial aquí rellena una cadena y no cambia la notación decimal de los datos del programa."
         }
       ]
     },
@@ -255,6 +282,15 @@
         {
           "type": "paragraph",
           "text": "La unidad ya enseñó a elegir el destino de una cadena. Si después se usa este nombre para abrir un archivo, apertura, escritura y cierre conservarán sus propias comprobaciones. Componer un nombre válido como texto no comprueba que ese destino pueda abrirse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia posterior de las cuatro composiciones del nombre."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     },
@@ -276,7 +312,64 @@
         },
         {
           "type": "paragraph",
-          "text": "En una sesión posterior compón otro informe a partir de registros propios dentro de este dominio. Escribe primero cada contrato: datos aceptados, cálculo, formato y destino. Usa las referencias después del intento. Criterios de transferencia: datos intactos; cuentas justificadas; vacío representado sin inventar una media; formato explícito; flujo local para cada resultado nuevo; anchuras y precisión separadas. No depende de repetir una cantidad fija de ejercicios."
+          "text": "La construcción posterior retoma los contratos de datos, cálculo, formato y destino en un editor independiente. Criterios de transferencia: datos intactos, media de medidas originales, vacío sin división, formato explícito y flujo local por resultado. Los datos nuevos deben comprobar la misma lógica sin volver al editor de este informe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir otro informe completo"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__componer_informes_sin_cambiar_los_datos__secuencia_informe_transferencia",
+          "question": "Las medidas son 12.0 y 1.0 y sus cantidades 1000 y 2. ¿Qué media pide este contrato?",
+          "options": [
+            "6.50: cada medida interviene una vez.",
+            "La media ponderada por las cantidades.",
+            "13.00: sumar las medidas ya da el resumen."
+          ],
+          "correctIndex": 0,
+          "explanation": "La media simple divide la suma 13 entre dos registros. Las cantidades participan en el total, sin ponderar esa media."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde este editor las funciones componer_fila y componer_informe con los contratos ya definidos. main presenta en una sola batería: colección vacía; un registro {\"O\", 0, 2.0}; y la colección {\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}. Cada fila y cada final de resumen termina con salto. La función devuelve texto sin imprimir ni modificar sus registros. Usa Compilar, ejecutar y comprobar con las tres llamadas y consulta después la referencia.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total:0;Sin medidas\n[O     ]|[   0]|[2.00]\nTotal:0;Media:2.00\n[Taller]|[1000]|[12.00]\n[N     ]|[   2]|[1.00]\nTotal:1002;Media:6.50\n"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior del otro informe"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe({{\"O\", 0, 2.0}}) << \"\\n\";\n    std::cout << componer_informe({{\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}}) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     }

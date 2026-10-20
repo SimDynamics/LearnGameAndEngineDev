@@ -115,11 +115,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice el plan inicial para {3, 4, 5} con capacidad 5 y ejecuta. Después prueba {}, {5}, {5, 5} y {6}. Cambia una colección por vez y conserva capacidad 5. Por último prueba capacidad 0 y un pedido negativo para confirmar que no se llega a los cálculos. Cada función representa una responsabilidad que puedes explicar por separado."
+          "text": "El editor comprueba el lote inicial `{3, 4, 5}` con capacidad cinco: `Unidades: 12` y `Contenedores: 3`, en dos líneas. Pulsa «Compilar, ejecutar y comprobar», con salto final opcional. El editor posterior recibe otros lotes y capacidades mediante Entrada, conservando todas las funciones y el orden validar, calcular y presentar."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Unidades: 12\nContenedores: 3",
+                  "Unidades: 12\nContenedores: 3\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -216,6 +228,66 @@
         {
           "type": "paragraph",
           "text": "Las funciones distinguen validación del lote, validación de capacidad, suma, cantidad de contenedores y presentación. La división cuenta los contenedores completos; un resto distinto de cero exige otro. El lote vacío no necesita contenedores y no contradice su dominio válido. Otras implementaciones son válidas si conservan esas responsabilidades, permisos de lectura y orden protegido de cálculo."
+        },
+        {
+          "type": "heading",
+          "text": "El mismo plan con otros lotes"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee cantidad de pedidos, sus valores y capacidad, en ese orden. Comprueba `0 5`, `1 5 5`, `2 5 5 5`, `1 6 5`, `3 3 4 5 0` y `1 -1 5`. Los dos últimos deben producir únicamente `Datos fuera del dominio`, antes de calcular. El vacío válido produce cero unidades y cero contenedores.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    std::vector<int> pedidos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        pedidos.push_back(dato);\n    }\n    int capacidad{0};\n    std::cin >> capacidad;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 5",
+                "outputs": [
+                  "Unidades: 0\nContenedores: 0",
+                  "Unidades: 0\nContenedores: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 5 5",
+                "outputs": [
+                  "Unidades: 5\nContenedores: 1",
+                  "Unidades: 5\nContenedores: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 5 5 5",
+                "outputs": [
+                  "Unidades: 10\nContenedores: 2",
+                  "Unidades: 10\nContenedores: 2\n"
+                ]
+              },
+              {
+                "standardInput": "1 6 5",
+                "outputs": [
+                  "Unidades: 6\nContenedores: 2",
+                  "Unidades: 6\nContenedores: 2\n"
+                ]
+              },
+              {
+                "standardInput": "3 3 4 5 0",
+                "outputs": [
+                  "Datos fuera del dominio",
+                  "Datos fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1 5",
+                "outputs": [
+                  "Datos fuera del dominio",
+                  "Datos fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 5"
         }
       ]
     }

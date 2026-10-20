@@ -10,7 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Refactorizar es cambiar la organización interna conservando el comportamiento que acordamos. Extraer la comprobación de piezas a una función bool con nombre puede facilitar lectura y reutilización. No aproveches la extracción para cambiar la frontera, el significado del cero o la señal de error sin declararlo: eso sería también un cambio de requisito."
+          "text": "Refactorizar es cambiar la organización interna conservando el comportamiento que acordamos. Extraer la comprobación de piezas a una función bool con nombre puede facilitar lectura y reutilización. No aproveches la extracción para cambiar la frontera, el significado del cero o la señal de error sin declararlo: eso sería también un cambio de requisito.",
+          "emphasis": [
+            {
+              "text": "Refactorizar"
+            },
+            {
+              "text": "comportamiento"
+            }
+          ]
         },
         {
           "type": "code",
@@ -124,11 +132,55 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código extrae piezas_validas y úsala dentro de estimar. Mantén las cuatro salidas originales. Después añade pruebas para -1,1 y 11. No cambies tiempos, dominio ni señal de error en esa etapa. Cuando la extracción esté comprobada, amplía la frontera a 12 como un cambio distinto y añade pruebas 12 y 13."
+          "text": "Extrae `piezas_validas` y úsala dentro de `estimar`, sin cambiar tiempos, dominio 0..10 ni señal -1. En main conserva las cuatro llamadas originales y añade en una segunda línea las pruebas -1, 1 y 11. Separa los resultados de cada línea con dos puntos; no añadas espacios ni un salto después de la última.\n\nPulsa Compilar, ejecutar y comprobar. La primera línea debe ser `0:7:23:-1` y la segunda, `-1:5:-1`. La salida comprueba esos casos; además revisa en tu código que la función extraída exprese sólo la validez y que la estimación y la presentación conserven sus responsabilidades. La ampliación a 12 corresponde al editor independiente que sigue, no a otro cambio en este borrador.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:7:23:-1\n-1:5:-1"
+                ],
+                "explanation": "La extracción conserva las reglas observables del dominio original. Las pruebas añadidas incluyen un rechazo inferior, el primer pedido real y un rechazo superior."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Separar una ampliación de la extracción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye en este editor la versión con piezas_validas que admite de 0 a 12. Conserva el caso vacío, los tiempos y la señal -1. Muestra en una primera línea los resultados para 0, 2, 10 y 11; en otra, los de -1, 1 y 11; y en una tercera, los de 12 y 13. Usa dos puntos entre resultados, sin espacios ni salto después de la última línea.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser 0:7:23:25, -1:5:25 y 27:-1. El cambio de 11 y la aceptación de 12 pertenecen a la ampliación; no se atribuyen a reorganizar las funciones. El editor anterior mantiene el requisito de 0 a 10.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:7:23:25\n-1:5:25\n27:-1"
+                ],
+                "explanation": "La frontera cambió de forma explícita. Los tiempos de los pedidos anteriores se conservan y 13 sigue fuera del dominio."
+              }
+            ]
+          }
         }
       ]
     },
@@ -153,7 +205,25 @@
         },
         {
           "type": "paragraph",
-          "text": "piezas_validas responde sólo a la pregunta del dominio. Compara primero la salida con la versión anterior. Añade después llamadas para -1,1,11 sin cambiar las reglas. Para la ampliación separada, cambia el límite superior de piezas_validas a 12 y comprueba 12,13 y los casos anteriores con sus expectativas actualizadas cuando corresponda."
+          "text": "piezas_validas responde a la pregunta del dominio. La estimación sigue calculando y main sigue presentando. Las referencias siguientes reúnen las pruebas de extracción y las de ampliación en programas independientes; cada conjunto conserva las expectativas de su propio requisito."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la extracción con sus pruebas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de la ampliación separada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(12) << \":\" << estimar(13);\n    return 0;\n}\n"
         }
       ]
     },
@@ -172,12 +242,25 @@
           "text": "El comportamiento observable incluye una línea Dato=valor:etiqueta por lectura y, al final, Resumen=validas:rechazadas:suma. La suma incluye únicamente lecturas válidas, con su signo original. La colección vacía no produce líneas de datos y conserva los tres contadores en cero. Mantén como máximo seis lecturas en estas pruebas: la suma válida queda entre -24 y 54, dentro del rango de int."
         },
         {
-          "type": "paragraph",
-          "text": "El programa de la siguiente página ya cumple ese contrato. Tu trabajo es reorganizarlo, sin reparar ni ampliar las reglas. Identifica una decisión del dominio que pueda convertirse en una función con un nombre claro. Antes de escribirla, explica qué dato necesita, qué devuelve y qué responsabilidad conserva main. La función extraída debe recibir lo necesario, devolver una decisión o un resultado y no imprimir ni modificar la colección."
+          "type": "multiple_choice",
+          "id": "u7_refactor_interfaz_de_una_decision",
+          "question": "Quieres extraer la decisión «esta lectura pertenece al intervalo válido», sin imprimir ni cambiar el resumen. ¿Qué propuesta separa esa responsabilidad?",
+          "options": [
+            "Una función que recibe la lectura y devuelve bool; el procesamiento usa el resultado antes de actualizar el resumen.",
+            "Una función que recibe la lectura y aumenta siempre el total de válidas antes de comprobar el intervalo.",
+            "Una función que imprime todas las etiquetas y devuelve la suma completa, aunque sólo se necesite decidir validez."
+          ],
+          "correctIndex": 0,
+          "explanation": "La entrada de la decisión es la lectura y su resultado es sí o no. La actualización de contadores y la presentación conservan responsabilidades distintas. También puede extraerse la clasificación de una lectura válida si su interfaz declara esa precondición.",
+          "reviewFeedback": [
+            "Revisa si la propuesta devuelve únicamente la decisión solicitada y deja las actualizaciones al procesamiento.",
+            "Comprueba en qué momento puede contarse una lectura como válida: la condición debe conocerse antes de actualizar.",
+            "Compara la responsabilidad que se quiere extraer con las tareas adicionales que reúne esta interfaz."
+          ]
         },
         {
           "type": "note",
-          "text": "Elige el nombre y la interfaz de la función; no hay una única extracción obligatoria. Mantén en main el recorrido, la actualización del resumen y la presentación. Si una función tiene una precondición, el lugar que la llama debe comprobarla antes. Usa los tipos, parámetros, retornos y condiciones ya estudiados; no necesitas sintaxis nueva."
+          "text": "En la construcción siguiente puedes elegir un nombre y una interfaz propios; no hay una única extracción obligatoria. Aísla una decisión reconocible, como la validez o la etiqueta de una lectura válida. El procesamiento conserva el recorrido, la actualización del resumen y la presentación. Si una función tiene precondiciones, se comprueban antes de llamarla. Para reunir pruebas, main coordina sesiones independientes mediante una función procesar. Usa los tipos, parámetros, retornos y condiciones ya estudiados."
         }
       ]
     },
@@ -189,19 +272,35 @@
         },
         {
           "type": "paragraph",
-          "text": "Primero calcula desde el requisito cada etiqueta y el resumen de {-4,0,7,10,-5}. Ejecuta la versión inicial y compara con esa expectativa; anota la salida completa antes de editar. No conviertas automáticamente una salida previa en la respuesta correcta: aquí puedes contrastarla con reglas explícitas. Luego realiza una extracción y vuelve a comprobar el mismo caso."
+          "text": "Reorganiza el programa inicial conservando su contrato. Extrae una decisión del dominio a una función que no imprima ni cambie la colección. Reúne el procesamiento de una sesión en `procesar(const std::vector<int>& lecturas)`, con contadores nuevos por llamada. Cada dato conserva una línea `Dato=valor:etiqueta`; el resumen es `Resumen=validas:rechazadas:suma`. Añade un salto de línea después de cada resumen para separar las sesiones."
         },
         {
           "type": "paragraph",
-          "text": "Cambia sólo la colección para preparar pruebas que distingan reglas: {} comprueba ausencia de datos; {-5,-4,-3} separa exterior, frontera e interior inferiores; {8,9,10} hace lo mismo en el extremo superior; {-1,0,1} distingue las tres etiquetas válidas; {-5,10} comprueba sólo rechazos; {9,9,-4,0} comprueba valores repetidos y una mezcla de signos. Obtén sus expectativas a mano y ejecuta cada colección antes y después de reorganizar."
+          "text": "En main llama a procesar con estas siete colecciones, en este orden: `{-4,0,7,10,-5}`, `{}`, `{-5,-4,-3}`, `{8,9,10}`, `{-1,0,1}`, `{-5,10}` y `{9,9,-4,0}`. Comprueban el caso original, ausencia de datos, ambas fronteras, las tres etiquetas válidas, sólo rechazos y valores repetidos. Mantén el formato Dato=valor:etiqueta y Resumen=validas:rechazadas:suma sin espacios. La salida incluye cada aparición en el orden original, además del resumen de cada sesión."
         },
         {
           "type": "paragraph",
-          "text": "Compara las líneas individuales, su orden y el resumen, no sólo la suma. Explica por qué tus pruebas revelarían que una frontera se excluyó, que cero recibió otra etiqueta, que un rechazo entró en la suma o que un dato repetido se omitió. Intenta la extracción y esas comprobaciones antes de avanzar a la referencia. Se admiten interfaces distintas si separan una responsabilidad reconocible y conservan todo el contrato."
+          "text": "Pulsa Compilar, ejecutar y comprobar para revisar toda la batería en una ejecución. La comparación incluye líneas individuales, etiquetas, orden y resúmenes: coincidir sólo en la suma no basta. Si difiere, corrige la extracción o el procesamiento y vuelve a comprobar este mismo objetivo. Se admiten interfaces distintas que separen una responsabilidad reconocible y conserven el contrato; el resultado automático no inspecciona por sí solo esa separación en tu código.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato=-4:Fria\nDato=0:Neutra\nDato=7:Calida\nDato=10:Fuera\nDato=-5:Fuera\nResumen=3:2:3\nResumen=0:0:0\nDato=-5:Fuera\nDato=-4:Fria\nDato=-3:Fria\nResumen=2:1:-7\nDato=8:Calida\nDato=9:Calida\nDato=10:Fuera\nResumen=2:1:17\nDato=-1:Fria\nDato=0:Neutra\nDato=1:Calida\nResumen=3:0:0\nDato=-5:Fuera\nDato=10:Fuera\nResumen=0:2:0\nDato=9:Calida\nDato=9:Calida\nDato=-4:Fria\nDato=0:Neutra\nResumen=4:0:14\n"
+                ],
+                "explanation": "Las etiquetas, el orden y los resúmenes se conservan en las siete sesiones. Repetidos, cero y fronteras mantienen su significado tras la extracción."
+              }
+            ]
+          }
         }
       ]
     },
@@ -230,7 +329,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Otra solución puede extraer la decisión de validez a una función bool y dejar la clasificación en main. También puede separar ambas decisiones si cada interfaz expresa una idea clara. Esas elecciones son válidas cuando mantienen las responsabilidades y todas las salidas; mover todo main a una función con otro nombre, sin separar ninguna idea, no realiza el objetivo de esta práctica. Devuelve después la colección inicial a tu propia versión y repite las comparaciones conservadas."
+          "text": "Otra solución puede extraer la decisión de validez a una función bool y dejar la clasificación en el procesamiento. También puede separar ambas decisiones si cada interfaz expresa una idea clara. Mover todo el procesamiento a una función con otro nombre, sin separar ninguna decisión, no cumple el objetivo de extracción. La referencia siguiente reúne las siete sesiones y crea un resumen nuevo para cada una."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nvoid procesar(const std::vector<int>& lecturas) {\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma << \"\\n\";\n}\n\nint main() {\n    procesar({-4, 0, 7, 10, -5});\n    procesar({});\n    procesar({-5, -4, -3});\n    procesar({8, 9, 10});\n    procesar({-1, 0, 1});\n    procesar({-5, 10});\n    procesar({9, 9, -4, 0});\n    return 0;\n}\n"
         }
       ]
     },
@@ -268,8 +372,21 @@
           "explanation": "La entrada igual y el resumen igual no garantizan todos los comportamientos observables. El contrato también especifica una etiqueta para cada lectura y su posición en la salida."
         },
         {
-          "type": "paragraph",
-          "text": "Recupera ahora tu propia extracción: explica por qué su parámetro y retorno bastan para la decisión elegida, dónde se protege su dominio y qué pruebas conservadas distinguen sus casos. Refactorizar conserva el comportamiento acordado y cambia una organización con propósito; una colección de salidas coincidentes sólo respalda aquello que se comparó."
+          "type": "multiple_choice",
+          "id": "u7_refactor_evidencia_de_la_interfaz",
+          "question": "Una función etiqueta recibe una lectura válida y devuelve una cadena. ¿Qué revisión completa la evidencia aportada por las salidas de prueba?",
+          "options": [
+            "Que su nombre sea idéntico al de la referencia, aunque imprima y cambie el contador.",
+            "Que se llame sólo después de comprobar su dominio, no imprima ni modifique la colección y devuelva la decisión que el procesamiento necesita.",
+            "Que produzca el resumen final por sí sola, aunque no se necesite ninguna etiqueta."
+          ],
+          "correctIndex": 1,
+          "explanation": "El contrato de la interfaz incluye datos requeridos, resultado y ausencia de efectos que no le corresponden. Las pruebas de salida complementan esa revisión, pero no demuestran por sí solas la separación de responsabilidades.",
+          "reviewFeedback": [
+            "Un nombre no acredita el comportamiento ni los efectos de una función; revisa la responsabilidad acordada.",
+            "Relaciona las precondiciones y los efectos de la función con la decisión que debe aportar al procesamiento.",
+            "Distingue clasificar una lectura de reunir y presentar un resumen de toda la sesión."
+          ]
         }
       ]
     }

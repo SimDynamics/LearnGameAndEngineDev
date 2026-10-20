@@ -14,7 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Capacidad y Ocupacion serán structs con un miembro unidades. Una Capacidad y una Ocupacion son tipos diferentes aunque ambas contengan un int. Primero usamos los tipos para evitar mezclas; después el constructor comprueba las reglas numéricas."
+          "text": "Capacidad y Ocupacion serán structs con un miembro unidades. Una Capacidad y una Ocupacion son tipos diferentes aunque ambas contengan un int. Primero usamos los tipos para evitar mezclas; después el constructor comprueba las reglas numéricas.",
+          "emphasis": [
+            {
+              "text": "tipos diferentes"
+            },
+            {
+              "text": "reglas numéricas"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -191,15 +199,43 @@
         },
         {
           "type": "paragraph",
-          "text": "Diseña Caja con tipos Ancho y Alto, cada uno con un miembro unidades int. Caja conserva sus dimensiones en miembros privados. El constructor solicita primero Ancho y después Alto; ambos deben estar entre una y diez. Rechaza los demás valores con CajaInvalida. Ofrece ancho(), alto() y area() const. Construye ancho tres y alto cuatro y muestra 3:4:12. Prueba uno y diez en cada dimensión, y los vecinos cero y once. Comprueba también que intercambiar tipos da un diagnóstico al compilar; retira esa llamada antes de ejecutar las pruebas válidas."
+          "text": "Diseña Caja con Ancho y Alto, cada uno con unidades int. Conserva las dimensiones en miembros privados; el constructor recibe primero Ancho y después Alto y rechaza con CajaInvalida las cantidades fuera de 1..10. Ofrece ancho(), alto() y area() const. Construye probar(int ancho, int alto), que crea los argumentos con sus tipos deliberados; si acepta, muestra ancho:alto:area; si captura CajaInvalida, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn una sola ejecución prueba (3,4), (1,4), (10,4), (3,1), (3,10), (0,4), (11,4), (3,0) y (3,11), en ese orden. Las primeras cinco líneas deben ser 3:4:12, 1:4:4, 10:4:40, 3:1:3 y 3:10:30; las cuatro restantes, Rechazado. Pulsa Compilar, ejecutar y comprobar. La comprobación de tipos intercambiados tiene un editor propio después.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:4:12\n1:4:4\n10:4:40\n3:1:3\n3:10:30\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                ],
+                "explanation": "Las dos dimensiones respetan el dominio antes de calcular el área. Los tipos distinguen sus funciones y la validación numérica comprueba una condición diferente."
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "El área cabe en int para este dominio: su máximo es cien. Justifica ese límite antes de multiplicar. La distinción de tipos evita intercambiar dimensiones; la comprobación numérica cumple otra función."
+          "text": "El área máxima del dominio es diez por diez: cien, representable en int. El constructor comprueba las cantidades antes de aceptar el objeto. La distinción entre Ancho y Alto impide otro error diferente: intercambiar las funciones de los argumentos, aunque ambos contengan números permitidos."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el rechazo de tipos intercambiados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente contiene el modelo conocido. Dentro de main añade únicamente `const Caja mal{Alto{4}, Ancho{3}};` y pulsa Compilar y ejecutar. El objetivo es obtener un diagnóstico de compilación: el primer argumento tiene tipo Alto donde el constructor solicita Ancho. Observa la fase y la relación entre los tipos; no exijas una redacción literal del diagnóstico. No debe ejecutarse el programa ni aparecer un veredicto de salida. Esta actividad conserva el error intencional; las llamadas válidas permanecen en el editor anterior."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    // Añade aquí la llamada indicada.\n    return 0;\n}\n"
         }
       ]
     },
@@ -227,6 +263,15 @@
             "5 2"
           ],
           "explanation": "La copia por valor conserva los dos miembros de una reserva válida."
+        },
+        {
+          "type": "heading",
+          "text": "Referencia de las comprobaciones numéricas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nvoid probar(int ancho, int alto) {\n    try {\n        const Caja caja{Ancho{ancho}, Alto{alto}};\n        std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    } catch (const CajaInvalida&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(3, 4);\n    probar(1, 4);\n    probar(10, 4);\n    probar(3, 1);\n    probar(3, 10);\n    probar(0, 4);\n    probar(11, 4);\n    probar(3, 0);\n    probar(3, 11);\n    return 0;\n}\n"
         }
       ]
     }

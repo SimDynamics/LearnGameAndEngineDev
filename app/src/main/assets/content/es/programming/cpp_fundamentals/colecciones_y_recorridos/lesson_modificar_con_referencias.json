@@ -194,15 +194,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa con {2, 6, 1}. Mediante un recorrido por rango con una referencia al elemento, aumenta en tres los valores menores que cuatro y presenta la colección al terminar: 5;6;4;. Repite con {}, {4} y {0}; deben resultar respectivamente ningún valor, 4; y 3;. Compara después el mismo programa borrando sólo & en el primer recorrido: explica qué cambios dejan de almacenarse."
+          "text": "Construye un programa con `{2, 6, 1}`. Recorre el vector por rango con una referencia al elemento y aumenta en tres los valores menores que cuatro. Presenta la colección sólo después de terminar la transformación: debe resultar `5;6;4;`.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. Un mensaje dentro del bucle no demuestra que el original haya cambiado: hay que consultar el vector después."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5;6;4;",
+                  "5;6;4;\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Predice tanto la salida final como el estado del vector. Un mensaje correcto dentro del bucle no demuestra que los datos originales hayan cambiado; hay que observarlos después de la transformación."
+          "text": "La referencia permite que la actualización quede guardada en el elemento. Los editores posteriores separan dos comprobaciones: otros datos del mismo procedimiento y el efecto de recorrer copias sin `&`."
         }
       ]
     },
@@ -241,6 +253,76 @@
         {
           "type": "paragraph",
           "text": "Criterios del laboratorio: la transformación debe quedar almacenada en el vector y afectar sólo a los valores que cumplen la condición; observar la colección después del recorrido; explicar la diferencia de estado al usar copias."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la misma construcción con otras colecciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee primero la cantidad de elementos, de cero a veinte, y después esa cantidad de enteros escritos válidamente. El bucle de preparación sólo construye la colección; el informe conserva el procedimiento estudiado. Comprueba estas entradas y compara el informe completo con los criterios anteriores:\n\n• 0 para el vector vacío\n• 1 4 para {4}\n• 1 0 para {0}\n• 3 2 6 1 para {2, 6, 1}\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el mismo programa al variar Entrada entre los casos de esta actividad. El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "",
+                  "\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "4;",
+                  "4;\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "3;",
+                  "3;\n"
+                ]
+              },
+              {
+                "standardInput": "3 2 6 1",
+                "outputs": [
+                  "5;6;4;",
+                  "5;6;4;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        },
+        {
+          "type": "heading",
+          "text": "Observar una actualización sobre copias"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer recorrido de este programa utiliza una copia del elemento. Ejecuta esa versión sin modificarla y observa el vector después: el objetivo es `2;6;1;`. La actualización de la copia no queda guardada en los elementos originales.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después del último mensaje es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2;6;1;",
+                  "2;6;1;\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

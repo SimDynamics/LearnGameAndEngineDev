@@ -142,11 +142,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Los datos están declarados. El programa pregunta si una humedad está por debajo de 40 y si coincide exactamente con 40. Predice la salida para el valor inicial 38 y compruébala. Después cambia humedad a 39, 40 y 41, una ejecución por caso. Conserva ambas preguntas y registra qué respuestas cambian al atravesar la frontera."
+          "text": "El programa compara una humedad inicial de `38` con el mínimo `40`. `por_debajo` pregunta si es menor y `justo_en_minimo`, si coincide. La salida presenta ambas respuestas, en ese orden, separadas por un espacio.\n\n«Compilar, ejecutar y comprobar» contrasta esas dos respuestas para el dato de este editor; el salto final es opcional. Los ejercicios siguientes permiten razonar sobre la igualdad y sobre qué dato distingue dos condiciones."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const int humedad = 38;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int humedad = 38;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1 0",
+                  "1 0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "multiple_choice",
@@ -169,6 +180,52 @@
           ],
           "correctIndex": 1,
           "explanation": "El valor de la frontera distingue una condición estricta de otra que incluye la igualdad."
+        },
+        {
+          "type": "heading",
+          "text": "Atravesar la frontera sin cambiar las preguntas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de este editor lee la humedad y conserva el mínimo cuarenta. Utiliza humedades entre cero y cien. Comprueba `38` y `39` → `1 0`; `40` → `0 1`; `41` → `0 0`. Las dos respuestas, separadas por un espacio, corresponden a estar por debajo y coincidir con el mínimo.\n\nTodos los datos de Entrada son enteros escritos válidamente. Separa los datos con espacios o saltos de línea y conserva el código entre pruebas. Pulsa «Compilar, ejecutar y comprobar» para contrastar cada entrada con su objetivo; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int humedad{0};\n    std::cin >> humedad;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n",
+          "initialStandardInput": "38",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "38",
+                "outputs": [
+                  "1 0",
+                  "1 0\n"
+                ]
+              },
+              {
+                "standardInput": "39",
+                "outputs": [
+                  "1 0",
+                  "1 0\n"
+                ]
+              },
+              {
+                "standardInput": "40",
+                "outputs": [
+                  "0 1",
+                  "0 1\n"
+                ]
+              },
+              {
+                "standardInput": "41",
+                "outputs": [
+                  "0 0",
+                  "0 0\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -226,7 +283,7 @@
         },
         {
           "type": "note",
-          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
+          "text": "Cada editor comprueba el objetivo de su actividad mediante «Compilar, ejecutar y comprobar». Si una salida difiere, revisa la primera condición, operación o instrucción de salida que produce la diferencia y reintenta el mismo objetivo. La coincidencia de stdout no sustituye revisar que el código exprese las reglas del problema."
         }
       ]
     }

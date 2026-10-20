@@ -290,11 +290,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba que el contador de la reparación se inicializa dentro de cada llamada y que las consultas posteriores ya no incorporan recuentos anteriores. Después de verificar ambas tandas, invierte el orden de las dos consultas no vacías de la segunda; deduce primero lo esperado y comprueba que los resultados siguen correspondiendo a cada consulta."
+          "text": "Comprueba que el contador de la reparación se inicializa dentro de cada llamada y que las consultas posteriores ya no incorporan recuentos anteriores. La comprobación de salida corresponde a las cinco llamadas de este editor, en el orden que muestra main."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo:1:0\nNuevo:2:2:0"
+                ],
+                "explanation": "Cada llamada comienza su propio recuento: la consulta vacía no reutiliza resultados anteriores y las dos consultas no vacías se cuentan por separado."
+              }
+            ]
+          }
         },
         {
           "type": "note",
@@ -337,6 +349,30 @@
             "Relee en qué contexto debe funcionar la consulta. Reconsidera si imponer procesos separados conserva ese contexto o elimina la condición que se quería examinar.",
             "Sigue cuándo se ejecuta la preparación del contador y qué historia existe entre consultas. Revisa si tu propuesta de prueba llega a observar una llamada después de otra en el mismo proceso."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Recuperación con otro orden de consultas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor independiente invierte las dos consultas no vacías de la segunda tanda. Repara el contador conservando las cinco llamadas que aparecen ahora. Antes de ejecutar, relaciona cada recuento con sus propios datos; el orden nuevo no autoriza a incorporar datos de una consulta anterior. Compila, ejecuta y comprueba la reparación."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({6, 7}, 5);\n    const int cuarta = contar_altos({8, 1, 5}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Minimo:1:0\nNuevo:2:2:0"
+                ],
+                "explanation": "Cada llamada comienza su propio recuento: la consulta vacía no reutiliza resultados anteriores y las dos consultas no vacías se cuentan por separado."
+              }
+            ]
+          }
         }
       ]
     },

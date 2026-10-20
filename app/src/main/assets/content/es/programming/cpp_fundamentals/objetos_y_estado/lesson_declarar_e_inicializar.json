@@ -199,11 +199,8 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el editor de código para construir un programa con dos variables de tipo int: cajas debe comenzar con 4 y sobres con 9. La consola debe mostrar dos líneas, sin una línea vacía entre ellas:\n\nCajas: 4\nSobres: 9\n\nDefine ambas variables antes de utilizarlas y escribe las instrucciones de salida. Compila, ejecuta y compara cada nombre mostrado, el espacio después de los dos puntos, los números y el salto entre las líneas con el resultado solicitado.\n\nDespués cambia únicamente los valores iniciales a 0 y 2, respectivamente. Conserva las instrucciones de salida, compila y ejecuta de nuevo. Esta segunda versión debe mostrar:\n\nCajas: 0\nSobres: 2",
+          "text": "Usa el editor de código para construir un programa con dos variables de tipo `int`: `cajas` debe comenzar con `4` y `sobres`, con `9`. La consola debe mostrar dos líneas, sin una línea vacía entre ellas:\n\nCajas: 4\nSobres: 9\n\nDefine ambas variables antes de utilizarlas y escribe las instrucciones de salida. Pulsa «Compilar, ejecutar y comprobar». Se comprueban los rótulos, el espacio después de los dos puntos, los números y el salto entre las líneas; el salto después de la última línea es opcional.",
           "emphasis": [
-            {
-              "text": "con dos variables de tipo int"
-            },
             {
               "text": "Define ambas variables antes de utilizarlas"
             }
@@ -211,11 +208,47 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cajas: 4\nSobres: 9",
+                  "Cajas: 4\nSobres: 9\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
           "text": "Antes de ejecutar, comprueba en el editor que cada nombre esté definido y tenga un inicializador antes de su primera lectura. Si la compilación falla, localiza el primer diagnóstico y revisa la definición y el uso del nombre que señala.\n\nAl compilar correctamente, comprueba también la consola: la aceptación del código no demuestra que hayas escrito las cantidades o los mensajes solicitados."
+        },
+        {
+          "type": "heading",
+          "text": "Cero también es un valor inicial"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor, cambia sólo los valores iniciales del programa: `cajas` debe comenzar con `0` y `sobres`, con `2`. Conserva las instrucciones que muestran las variables.\n\nPulsa «Compilar, ejecutar y comprobar». Deben aparecer estas dos líneas, con un salto final opcional:\n\nCajas: 0\nSobres: 2\n\nEl cero inicializado es un valor conocido; conserva el inicializador en lugar de omitirlo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres = 9;\n    std::cout << \"Cajas: \" << cajas << \"\\n\";\n    std::cout << \"Sobres: \" << sobres;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Cajas: 0\nSobres: 2",
+                  "Cajas: 0\nSobres: 2\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },

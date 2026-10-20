@@ -319,31 +319,51 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el editor de código para construir una etiqueta a partir de dos datos de texto. La variable edificio debe comenzar con Aula y la variable codigo, con 04. Define una tercera variable, etiqueta, que combine los dos valores con un guion entre ellos. Muestra el valor de etiqueta. La consola debe producir:\n\nAula-04\n\nDecide cómo construir esa cadena con las operaciones que has practicado. Compila y ejecuta tu programa. Compara el orden de las partes, el guion y el cero inicial con la salida solicitada. No debe haber espacios adicionales; puedes añadir o no un salto final.\n\nEn una segunda versión, cambia sólo el literal que inicializa codigo para que empiece con 07. Conserva las demás instrucciones y vuelve a compilar y ejecutar. La consola debe producir:\n\nAula-07\n\nPrimero construye y comprueba ambas versiones. Después pasa a la página siguiente: allí encontrarás la referencia y un puzzle para registrar una predicción antes de ejecutar una exploración diferente. El editor de código conserva tu código, pero esta construcción se comprueba comparando la consola con los requisitos; no tiene una calificación automática.",
-          "emphasis": [
-            {
-              "text": "Compila y ejecuta tu programa"
-            },
-            {
-              "text": "Primero construye y comprueba ambas versiones"
-            }
-          ]
+          "text": "Construye una etiqueta a partir de dos datos de texto. `edificio` debe comenzar con `Aula` y `codigo`, con `04`. Define `etiqueta` combinando los dos valores con un guion entre ellos y muestra su valor:\n\nAula-04\n\nDecide cómo construir la cadena con las operaciones practicadas. Pulsa «Compilar, ejecutar y comprobar». Se comprueban el orden de las partes, el guion y el cero inicial; no debe haber espacios adicionales y el salto final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-04",
+                  "Aula-04\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Distingue cambiar un dato inicial de cambiarlo después de haber calculado otro resultado. Ya construiste versiones que empiezan con 04 o con 07. La exploración de la página siguiente restaurará primero 04 y modificará codigo después de definir etiqueta.\n\nRegistra su salida en el puzzle antes de ejecutar esa exploración. Luego vuelve a este editor de código, realiza el cambio indicado y compara la consola con tu predicción. El puzzle de justificación permite elegir el razonamiento que explica lo observado.",
-          "emphasis": [
-            {
-              "text": "cambiar un dato inicial de cambiarlo después de haber calculado otro resultado"
-            },
-            {
-              "text": "Registra su salida en el puzzle antes de ejecutar esa exploración"
-            }
-          ]
+          "text": "La etiqueta se calcula a partir de los datos que existen cuando se ejecuta su definición. Primero comprueba esta construcción; la siguiente actividad conserva las operaciones y cambia un dato inicial."
+        },
+        {
+          "type": "heading",
+          "text": "Cambiar un dato antes de construir la etiqueta"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este editor, cambia sólo el literal que inicializa `codigo` para que comience con `07`. Conserva la definición de `etiqueta` y la salida.\n\nPulsa «Compilar, ejecutar y comprobar». El objetivo es `Aula-07`, sin espacios adicionales y con un salto final opcional. La página siguiente contrasta este cambio inicial con una asignación realizada después de calcular la etiqueta."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-07",
+                  "Aula-07\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -360,7 +380,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de construir y comprobar las dos primeras versiones en el editor de código. La definición de etiqueta combina el valor que edificio y codigo tienen en ese momento con el guion del literal. Con codigo inicializado como 04, produce Aula-04; si el inicializador es 07, produce Aula-07.\n\nEn las dos predicciones de esta página, sigue por separado cada cadena y el momento en que recibe su valor. La recuperación con Area utiliza datos diferentes. El puzzle de la exploración con Aula permite registrar lo que esperas del cambio posterior de codigo antes de comprobarlo en el editor de código."
+          "text": "La definición de `etiqueta` combina el valor que `edificio` y `codigo` tienen en ese momento con el guion del literal. Con `codigo` inicializado como `04`, produce `Aula-04`; con `07`, produce `Aula-07`.\n\nEn las predicciones siguientes, sigue por separado cada cadena y el momento en que recibe su valor. La recuperación con `Area` utiliza otros datos. La exploración con `Aula` cambia `codigo` después de construir `etiqueta`: registra su salida en el puzzle antes de utilizar el editor que aparece después."
         },
         {
           "type": "output_prediction",
@@ -393,7 +413,7 @@
           "type": "output_prediction",
           "id": "u2_texto_etiqueta_antes_del_cambio",
           "language": "cpp",
-          "question": "Registra aquí la predicción de la exploración antes de ejecutarla en el editor de código. Escribe la salida de este programa, conservando el guion y el cero inicial cuando correspondan. No añadas las comillas que delimitan los literales.",
+          "question": "Predice la salida de este programa, conservando el guion y el cero inicial cuando correspondan. No añadas las comillas que delimitan los literales. Después de responder podrás ejecutar esta misma exploración en el editor situado tras los puzzles.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    codigo = \"07\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
           "answers": [
             "Aula-04"
@@ -417,6 +437,31 @@
             "Una salida consulta el valor de la variable que lee. Busca qué instrucciones cambian los objetos y cuáles sólo los muestran.",
             "Sigue el momento en que se obtiene cada resultado y el objeto que lo recibe. Compara calcular una combinación con conservarla en una variable."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Ejecutar el cambio posterior del dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa «Compilar, ejecutar y comprobar» para ejecutar la exploración que acabas de predecir. Conserva el orden del programa: primero se calcula `etiqueta` y después cambia `codigo`.\n\nEl objetivo es contrastar la predicción con la ejecución de esa secuencia; el salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    codigo = \"07\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-04",
+                  "Aula-04\n"
+                ],
+                "explanation": "La etiqueta conserva la cadena calculada antes de cambiar codigo. La asignación posterior no vuelve a ejecutar la concatenación anterior."
+              }
+            ]
+          }
         }
       ]
     },
@@ -446,15 +491,31 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código puedes comprobar las mismas versiones a partir de esta referencia si necesitas contrastarlas con tu intento. Cambiar sólo el literal que inicializa codigo a `\"07\"` debe producir Aula-07. Después restaura `\"04\"` para preparar la exploración de estado.\n\nInserta `codigo = \"07\";` después de definir etiqueta y antes de mostrarla. La consola sigue mostrando Aula-04, de acuerdo con el puzzle de predicción. Para actualizar la etiqueta guardada, añade después de ese cambio `etiqueta = edificio + \"-\" + codigo;`. Compila y ejecuta de nuevo: ahora debe aparecer Aula-07.\n\nCompara los tres lugares donde puede intervenir el dato: su valor inicial, su asignación posterior y el momento en que reconstruyes etiqueta. El orden de esas instrucciones explica las diferencias entre las versiones. El nombre de una variable no hace que sus resultados se recalculen automáticamente (Stroustrup, 2024).",
-          "emphasis": [
-            {
-              "text": "el momento en que reconstruyes etiqueta"
-            },
-            {
-              "text": "El orden de esas instrucciones explica las diferencias entre las versiones"
-            }
-          ]
+          "text": "El valor inicial de `codigo`, su asignación posterior y el momento en que se construye `etiqueta` cumplen funciones distintas. Cambiar un dato después de calcular otro no vuelve a realizar la operación anterior (Stroustrup, 2024).\n\nPara que la etiqueta guardada incorpore el nuevo código, la asignación `etiqueta = edificio + \"-\" + codigo;` debe ejecutarse después de cambiar `codigo`. El puzzle de justificación distingue esa reconstrucción de una actualización automática que el programa no contiene."
+        },
+        {
+          "type": "heading",
+          "text": "Actualizar el resultado guardado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva el programa que cambia `codigo` después de calcular `etiqueta`. Añade una asignación que reconstruya `etiqueta` con el nuevo código antes de mostrarla; conserva las otras instrucciones.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe mostrar `Aula-07`, sin espacios adicionales y con un salto final opcional. Esta actividad practica la actualización explícita del resultado guardado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    codigo = \"07\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aula-07",
+                  "Aula-07\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     }

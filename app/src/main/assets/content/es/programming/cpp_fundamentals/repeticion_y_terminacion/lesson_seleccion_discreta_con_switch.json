@@ -164,7 +164,13 @@
         },
         {
           "type": "paragraph",
-          "text": "break abandona el bucle o el switch más interno que lo contiene. Si el switch está dentro del for y el break está dentro del switch, ese break termina el switch; no termina el for que lo rodea. Esta regla se lee por anidamiento, no por cercanía visual en columnas (Working Draft: Programming Languages — C++, s. f., sección [stmt.break])."
+          "text": "break abandona el bucle o el switch más interno que lo contiene. Si el switch está dentro del for y el break está dentro del switch, ese break termina el switch; no termina el for que lo rodea. Esta regla se lee por anidamiento, no por cercanía visual en columnas (Working Draft: Programming Languages — C++, s. f., sección [stmt.break]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -179,11 +185,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Transforma el programa del editor de código en un selector de comandos char. Conserva la primera línea Comando= seguida del carácter probado. En el switch, g debe mostrar Guardado, m debe mostrar Mostrado y cualquier otro carácter debe mostrar Desconocido, cada mensaje en su propia línea. Prueba cada alternativa por separado cambiando la constante inicial. Cada acción debe ser exclusiva y el texto Fin debe aparecer en la línea siguiente después del switch en todos los casos."
+          "text": "Construye en el editor un selector de comandos `char`. Conserva la primera línea `Comando=` seguida de `g`. En el `switch`, `g` debe mostrar `Guardado`, `m` debe mostrar `Mostrado` y cualquier otro carácter, `Desconocido`. Cada acción debe ser exclusiva y `Fin` debe aparecer después del `switch` en su propia línea.\n\nPulsa «Compilar, ejecutar y comprobar». El caso de este editor debe producir `Comando=g`, `Guardado` y `Fin` en tres líneas, con salto final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Comando=g\nGuardado\nFin",
+                  "Comando=g\nGuardado\nFin\n"
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -204,7 +222,46 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba g, m y x cambiando sólo comando. La primera línea permite identificar el caso probado. Quitar break tras Guardado haría ejecutar también Mostrado y dejaría de cumplir la exclusividad. default cubre aquí cualquier carácter que no coincida; no es una acción adicional que se ejecuta siempre."
+          "text": "La primera línea identifica el caso comprobado. Quitar `break` después de `Guardado` ejecutaría también `Mostrado` y perdería la exclusividad. `default` corresponde a un carácter que no coincide con las otras etiquetas; no es una acción adicional que se ejecute siempre."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar cada alternativa del selector"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa lee un carácter sencillo. Comprueba `g`, `m` y `x`: cada salida debe comenzar con `Comando=` y el carácter recibido, mostrar una única acción y terminar con `Fin`. La extracción de `char` utiliza el mismo operador `>>`; el dato de esta actividad es un solo carácter sin espacios.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cin >> comando;\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    switch (comando) {\n        case 'g':\n            std::cout << \"Guardado\\n\";\n            break;\n        case 'm':\n            std::cout << \"Mostrado\\n\";\n            break;\n        default:\n            std::cout << \"Desconocido\\n\";\n            break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "g",
+                "outputs": [
+                  "Comando=g\nGuardado\nFin",
+                  "Comando=g\nGuardado\nFin\n"
+                ]
+              },
+              {
+                "standardInput": "m",
+                "outputs": [
+                  "Comando=m\nMostrado\nFin",
+                  "Comando=m\nMostrado\nFin\n"
+                ]
+              },
+              {
+                "standardInput": "x",
+                "outputs": [
+                  "Comando=x\nDesconocido\nFin",
+                  "Comando=x\nDesconocido\nFin\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "g"
         }
       ]
     },
@@ -220,7 +277,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe [[fallthrough]]; para señalar que esa continuación es intencional. Es un atributo: una anotación del programa que expresa nuestra intención al compilador (Stroustrup, 2024, sección 3.4.1.3). Aquí acompaña una instrucción vacía, por eso lleva punto y coma. No hace una operación ni salta a otra etiqueta; la ejecución continúa porque no hay un break que la termine. En este uso sencillo se coloca después de la última acción del primer caso y antes del siguiente case o default del mismo switch (Working Draft: Programming Languages — C++, s. f., sección [dcl.attr.fallthrough])."
+          "text": "Escribe [[fallthrough]]; para señalar que esa continuación es intencional. Es un atributo: una anotación del programa que expresa nuestra intención al compilador (Stroustrup, 2024, sección 3.4.1.3). Aquí acompaña una instrucción vacía, por eso lleva punto y coma. No hace una operación ni salta a otra etiqueta; la ejecución continúa porque no hay un break que la termine. En este uso sencillo se coloca después de la última acción del primer caso y antes del siguiente case o default del mismo switch (Working Draft: Programming Languages — C++, s. f., sección [dcl.attr.fallthrough]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
         },
         {
           "type": "code",
@@ -299,7 +362,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una estación repite una misma orden tantas veces como indique repeticiones, entre 0 y 4. La orden 1 realiza una preparación y una revisión por vuelta. La orden 2 realiza sólo una revisión. Cualquier otro valor entero de orden cuenta como desconocido, sin preparar ni revisar. Los datos ya están definidos en el código; no necesitas leer una entrada. Antes de programar, calcula cuántas preparaciones, revisiones y órdenes desconocidas habrá para (orden,repeticiones) iguales a (1,3), (2,3), (9,3) y (1,0)."
+          "text": "Una estación repite una misma orden entre cero y cuatro veces. La orden uno realiza una preparación y una revisión por vuelta; la dos, sólo una revisión; otra orden cuenta como desconocida sin preparar ni revisar. El primer intento fija orden uno y tres repeticiones. Los casos posteriores varían únicamente esos datos desde Entrada, conservando el procedimiento."
         },
         {
           "type": "paragraph",
@@ -307,11 +370,23 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    // Construye el recorrido, la seleccion y el resumen.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    // Construye el recorrido, la seleccion y el resumen.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Preparaciones=3;Revisiones=3;Desconocidas=0",
+                  "Preparaciones=3;Revisiones=3;Desconocidas=0\n"
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "paragraph",
-          "text": "Comprueba por separado las tres reglas y el caso sin vueltas. Con orden 2 y tres repeticiones, el resumen debe tener cero preparaciones, tres revisiones y cero desconocidas. Con orden 9 y tres repeticiones, cero, cero y tres. Con cero repeticiones, los tres contadores deben quedar en cero para cualquier orden. Prueba también una y cuatro repeticiones y órdenes -1 y 0. El editor de código no califica automáticamente el programa: contrasta su salida con los requisitos; si aparece una diferencia, localiza en tu código la decisión o actualización responsable, corrígela y repite ese caso."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». El objetivo de este intento es `Preparaciones=3;Revisiones=3;Desconocidas=0`, con salto final opcional. Revisa también que la revisión aparezca una sola vez en el código y que los contadores se inicialicen antes del recorrido; coincidir con la salida no demuestra por sí solo el uso de `[[fallthrough]]`."
         }
       ]
     },
@@ -359,7 +434,87 @@
         },
         {
           "type": "note",
-          "text": "El libro distingue la caída accidental de la intención explícita con [[fallthrough]]; (Stroustrup, 2024, sección 3.4.1.3). Para precisar su ubicación y el punto y coma se contrastó la sección [dcl.attr.fallthrough] del borrador público (Working Draft: Programming Languages — C++, s. f.). Las consignas, los programas y los casos de esta ampliación son originales; las referencias completas están reunidas al final del curso."
+          "text": "`[[fallthrough]];` documenta una continuación intencional entre alternativas, sin realizar una operación ni saltar por sí mismo. La instrucción vacía y su ubicación delante de otra etiqueta del mismo `switch` están descritas en la regla del atributo (Stroustrup, 2024, sección 3.4.1.3; Working Draft: Programming Languages — C++, s. f., sección [dcl.attr.fallthrough]).",
+          "emphasis": [
+            {
+              "text": "Working Draft: Programming Languages — C++",
+              "style": "italic"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la etapa compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa lee orden y repeticiones. Conserva repeticiones entre cero y cuatro. Comprueba `(1,3)`, `(2,3)`, `(9,3)` y `(1,0)` con los resúmenes anteriores; después `(1,1)`, `(1,4)`, `(-1,3)` y `(0,3)`. Los dos últimos casos sólo incrementan desconocidas. No alteres la selección ni los contadores entre entradas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar únicamente Entrada entre los casos de esta actividad. El salto final es opcional."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{0};\n    int repeticiones{0};\n    std::cin >> orden >> repeticiones;\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int vuelta{0}; vuelta < repeticiones; ++vuelta) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << \"Preparaciones=\" << preparaciones\n              << \";Revisiones=\" << revisiones\n              << \";Desconocidas=\" << desconocidas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1 3",
+                "outputs": [
+                  "Preparaciones=3;Revisiones=3;Desconocidas=0",
+                  "Preparaciones=3;Revisiones=3;Desconocidas=0\n"
+                ]
+              },
+              {
+                "standardInput": "2 3",
+                "outputs": [
+                  "Preparaciones=0;Revisiones=3;Desconocidas=0",
+                  "Preparaciones=0;Revisiones=3;Desconocidas=0\n"
+                ]
+              },
+              {
+                "standardInput": "9 3",
+                "outputs": [
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3",
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Preparaciones=0;Revisiones=0;Desconocidas=0",
+                  "Preparaciones=0;Revisiones=0;Desconocidas=0\n"
+                ]
+              },
+              {
+                "standardInput": "1 1",
+                "outputs": [
+                  "Preparaciones=1;Revisiones=1;Desconocidas=0",
+                  "Preparaciones=1;Revisiones=1;Desconocidas=0\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Preparaciones=4;Revisiones=4;Desconocidas=0",
+                  "Preparaciones=4;Revisiones=4;Desconocidas=0\n"
+                ]
+              },
+              {
+                "standardInput": "-1 3",
+                "outputs": [
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3",
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3\n"
+                ]
+              },
+              {
+                "standardInput": "0 3",
+                "outputs": [
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3",
+                  "Preparaciones=0;Revisiones=0;Desconocidas=3\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "1 3"
         }
       ]
     }
