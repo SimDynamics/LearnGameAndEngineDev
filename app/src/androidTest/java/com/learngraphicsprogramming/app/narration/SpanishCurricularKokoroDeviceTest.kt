@@ -220,6 +220,74 @@ class SpanishCurricularKokoroDeviceTest {
         assertTrue(true in states && false in states)
     }
 
+    @Test fun silentInlineMarkupGeneratesFreshNormalAndPuzzleFeedbackSpeechOnTheHonor() {
+        verifyInstalledResources()
+        val lesson = LessonRepository.loadLessonJson(context, "programming",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato")
+        val block = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks").getJSONObject(1)
+        assertEquals("literal_y_operador", block.getString("id"))
+        assertTrue(block.getString("explanation").startsWith("El primer hueco contiene `<<`"))
+        val script = LessonNarrationScript.page(lesson, 4, NarrationLanguage.SPANISH, forKokoro = true)
+        val gate = script.gates.single { it.blockIndex == 1 }
+        val correct = NarrationSegments.sentences(script.texts.subList(gate.start, gate.endExclusive))
+            .single { ManualEnglishSpeech.strip(it).contains("El primer hueco contiene") }
+        val normalLesson = LessonRepository.loadLessonJson(context, "programming",
+            "cpp_fundamentals__objetos_y_estado__cadenas_y_texto")
+        val normal = NarrationSegments.sentences(LessonNarrationText.page(normalLesson, 0,
+            NarrationLanguage.SPANISH, forKokoro = true)).single {
+                ManualEnglishSpeech.strip(it).startsWith("Al escribir ")
+            }
+        val wrong = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(
+            listOf("✗ Incorrecto. Reconsidera la función de `<<` antes de reintentar."),
+            NarrationLanguage.SPANISH, forKokoro = true)).single {
+                ManualEnglishSpeech.strip(it).contains("Reconsidera")
+            }
+        val texts = listOf(normal, correct, wrong)
+        val evidence = if (InstrumentationRegistry.getArguments().getString("inlineSpeechEvidence") == "true") {
+            File(context.filesDir, "inline-speech-evidence-${UUID.randomUUID()}").apply {
+                assertEquals(context.filesDir.canonicalFile, canonicalFile.parentFile)
+                assertTrue(mkdir())
+                println("INLINE_SPEECH_EVIDENCE=$absolutePath")
+            }
+        } else null
+        val names = listOf("normal", "correcto", "incorrecto")
+        val current = newController()
+        for ((index, text) in texts.withIndex()) {
+            val plain = ManualEnglishSpeech.strip(text)
+            assertTrue(plain, plain.contains("doble menor que"))
+            assertFalse("Inline formatting must not inject spoken code labels", plain.contains("código"))
+            assertMissingAudio(text)
+            val hash = key(text)
+            onMain { current.toggle(listOf(text), NarrationLanguage.SPANISH) }
+            await("Fresh normal/correct/incorrect inline speech must play through native Kokoro", 180_000) {
+                ready(current) && current.isPlaying && player(current).isPlaying && player(current).currentPosition >= 700
+            }
+            val recording = onMain { segmentFile(current, 0)!! }
+            assertOwnedSpeech(recording)
+            evidence?.let { directory ->
+                recording.copyTo(File(directory, "${names[index]}.wav"), overwrite = false)
+                File(directory, "${names[index]}.json").writeText(JSONObject().put("prepared", text)
+                    .put("spoken", plain).put("cacheKey", hash).put("sha256", sha256(recording))
+                    .put("source", when (index) {
+                        0 -> "Current cadenas_y_texto authored page 1 paragraph"
+                        1 -> "Current literal_y_operador authored first explanation sentence"
+                        else -> "Deliberate synthetic incorrect-guidance regression sample; no curricular file changes"
+                    }).toString(2))
+            }
+            assertEquals("Each test sentence must generate one fresh native recording", 1, generationEvents(hash).size)
+            assertNoSubstitutedAudio(hash)
+            onMain {
+                assertNull("The corrected utterance must never initialize Android TTS", field<Any?>(current, "tts"))
+                val route = requireNotNull(player(current).routedDevice)
+                assertTrue(route.type in setOf(AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE))
+                assertTrue(context.getSystemService(AudioManager::class.java).getStreamVolume(AudioManager.STREAM_MUSIC) > 0)
+                current.stop()
+            }
+            assertTrue("Stopping playback does not remove its recording", recording.isFile)
+        }
+        assertTrue("All three native playback samples started and stopped", true in states && false in states)
+    }
+
     @Test fun passivePagePreparationYieldsThenCachesAndReusesRealPlayback() {
         verifyInstalledResources()
         val samples = representativeSamples()

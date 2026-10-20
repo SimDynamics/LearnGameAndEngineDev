@@ -78,6 +78,19 @@ class ProgrammingTechnicalRangesTest {
         }
     }
 
+    @Test fun silentSpanishInlineOperatorKeepsItsExactTechnicalInkAndHiddenWrapperRanges() {
+        val source = "El operador `<<` conserva su lugar y después continúa la explicación."
+        val operator = source.indexOf("<<")
+        val result = analysis(source)
+        assertEquals(listOf(operator - 1, operator + 2), result.wrappers.map { it.start })
+        assertEquals(listOf("`", "`"), result.wrappers.map { source.substring(it.start, it.endExclusive) })
+        assertTrue(result.fragments.any { it.start == operator && it.endExclusive == operator + 2 })
+        assertTrue(result.fragments.none { it.start < operator || it.endExclusive > operator + 2 })
+        assertEquals("El operador doble menor que conserva su lugar y después continúa la explicación.",
+            SpanishTechnicalSpeech.prepare(source).text)
+        assertEquals("El operador `<<` conserva su lugar y después continúa la explicación.", source)
+    }
+
     @Test fun ordinaryFrenchAndEnglishHomonymsAndPunctuationRemainProse() {
         for (source in listOf("La main droite reste ouverte; puis elle se ferme.",
             "La fonction sort du domaine; la main est calme.", "Une double valeur existe dans cette phrase; elle reste visible.",

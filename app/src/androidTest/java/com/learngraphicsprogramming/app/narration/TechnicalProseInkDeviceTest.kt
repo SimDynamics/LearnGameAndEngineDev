@@ -265,6 +265,43 @@ class TechnicalProseInkDeviceTest {
         assertEquals(geometry, geometry(view))
     }
 
+    @Test fun silentSpanishInlineOperatorRetainsItsNativeGeometryColorAndVisibleSource() = onMain {
+        val source = "Lee el operador `<<` y continúa."
+        val operator = source.indexOf("<<")
+        val open = operator - 1
+        val close = operator + 2
+        val view = view(source, Color.rgb(16, 17, 20), Color.WHITE)
+        LessonTechnicalText.apply(view, mathematics = false, language = NarrationLanguage.SPANISH)
+        measure(view)
+        val original = render(view)
+        val text = view.text
+        val layout = view.layout
+        val spans = spans(text)
+        val geometry = geometry(view)
+        val replacements = (text as Spanned).getSpans(0, source.length, TechnicalDelimiterSpan::class.java)
+        assertEquals(2, replacements.size)
+        assertEquals(source, text.toString())
+        assertEquals(layout.getPrimaryHorizontal(open), layout.getPrimaryHorizontal(operator), .01f)
+        assertEquals(layout.getPrimaryHorizontal(close), layout.getPrimaryHorizontal(close + 1), .01f)
+        val plain = this.view(source.replace("`", ""), Color.rgb(16, 17, 20), Color.WHITE)
+        assertEquals(plain.height, view.height)
+        assertEquals(plain.layout.getLineWidth(0), layout.getLineWidth(0), .01f)
+        val prepared = requireNotNull(NarrationSourceProjection.spanish(text.toString(), "auto"))
+        assertEquals("Lee el operador doble menor que y continúa.", ManualEnglishSpeech.strip(prepared.text))
+        val operatorOwners = prepared.owners.filter { it.start >= operator && it.endExclusive <= close && it.start < it.endExclusive }
+        assertTrue("The spoken operator still owns its two visible glyphs", operatorOwners.isNotEmpty())
+        assertTrue(operatorOwners.all { it.start == operator && it.endExclusive == close })
+        val gray = LessonReadingColor.unread(Color.rgb(16, 17, 20))
+        view.setUnreadWordRanges(listOf(ReadingTextRange(operator, close)), gray)
+        assertInk(render(view), view, operator, 2, gray)
+        view.setUnreadWordRanges(null, gray)
+        assertTrue(original.sameAs(render(view)))
+        assertSame(text, view.text)
+        assertSame(layout, view.layout)
+        assertEquals(spans, spans(view.text))
+        assertEquals(geometry, geometry(view))
+    }
+
     @Test fun missingWordAlignmentKeepsSyntaxColoredProsePendingUntilReadOrDisabled() = onMain {
         val surface = Color.rgb(16, 17, 20)
         val source = "Lis std::cout puis continue."
@@ -333,7 +370,19 @@ class TechnicalProseInkDeviceTest {
         assertInk(pending, view, code, "std".length, semanticGray)
         assertInk(pending, view, tail, "puis".length, baseGray)
         assertEquals(0, countColor(pending, bounds(view, code, "std".length), baseGray))
-        assertEquals(0, countColor(pending, bounds(view, 0, "Lis".length), semanticGray))
+        // Compare with ordinary prose through its own pending-ink path, without a technical capsule.
+        // Direct gray text has different compositing and cannot identify incidental antialias colors.
+        val proseReference = this.view(source, Color.WHITE, Color.BLACK)
+        val proseReading = LessonReadingTextColors().apply { register(0, proseReference) }
+        proseReading.show(mapOf(0 to ReadingBlockState.CURRENT), enabled = true, unreadWords = full)
+        val proseBounds = bounds(view, 0, "Lis".length)
+        assertEquals(view.layout.getLineBaseline(0), proseReference.layout.getLineBaseline(0))
+        assertEquals(view.layout.getPrimaryHorizontal(0).toBits(), proseReference.layout.getPrimaryHorizontal(0).toBits())
+        assertEquals(view.layout.getPrimaryHorizontal("Lis".length).toBits(),
+            proseReference.layout.getPrimaryHorizontal("Lis".length).toBits())
+        assertArrayEquals(proseBounds, bounds(proseReference, 0, "Lis".length))
+        assertPixels(render(proseReference), pending, proseBounds)
+        proseReading.clear()
         val codeBounds = bounds(view, code, "std".length)
         assertEquals("Gray glyph filters cannot recolor the console backing", semanticSurface,
             pending.getPixel((codeBounds[0] + codeBounds[2]) / 2, codeBounds[1]))

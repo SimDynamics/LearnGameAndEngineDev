@@ -65,14 +65,18 @@ object SpanishTechnicalSpeech {
                 if (end >= 0) {
                     val code = text.substring(index + delimiter.length, end)
                     val regexPattern = regexCue.containsMatchIn(text.substring((index - 96).coerceAtLeast(0), index))
-                    output.append("código, ")
+                    // Inline delimiters are invisible formatting, not spoken code boundaries.
+                    // Keep a word boundary even when adjacent fragments have no authored space.
+                    val opening = if (delimiter.length == 3) "código, " else " "
+                    val closing = if (delimiter.length == 3) ", fin de código" else " "
+                    output.append(opening)
                     if (onPiece != null && !regexPattern) {
-                        onPiece(index, index + delimiter.length, "código, ")
+                        onPiece(index, index + delimiter.length, opening)
                         output.append(readCode(code, index + delimiter.length, selected, onPiece))
-                        onPiece(end, end + delimiter.length, ", fin de código")
+                        onPiece(end, end + delimiter.length, closing)
                         observedChildren = true
                     } else output.append(if (regexPattern) readLiteral(code) else readCode(code, index + delimiter.length, selected))
-                    output.append(", fin de código")
+                    output.append(closing)
                     index = end + delimiter.length
                     changed = true
                     continue

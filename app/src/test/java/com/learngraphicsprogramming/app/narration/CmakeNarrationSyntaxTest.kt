@@ -20,7 +20,7 @@ class CmakeNarrationSyntaxTest {
         assertEquals("$spoken $spoken", SpanishTechnicalSpeech.prepare("$expansion$expansion").text)
         assertEquals("list abre paréntesis APPEND $spoken comprobar guion bajo cajas cierra paréntesis",
             SpanishTechnicalSpeech.prepare("list(APPEND $expansion comprobar_cajas)").text)
-        assertEquals("código, $spoken, fin de código", SpanishTechnicalSpeech.prepare("`$expansion`").text)
+        assertEquals(spoken, SpanishTechnicalSpeech.prepare("`$expansion`").text)
         assertEquals("abre comilla doble $spoken cierra comilla doble",
             SpanishTechnicalSpeech.prepare("\"$expansion\"").text)
     }

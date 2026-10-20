@@ -16,13 +16,18 @@ class SpanishInlineReadingOwnershipTest {
             }
             val production = SpanishTechnicalSpeech.prepareForKokoro(source)
             assertEquals("Observing offsets cannot change production speech", production, observed)
-            assertEquals("Lee código, ese te de operador de resolución de ámbito cout doble menor que siete punto y coma, fin de código después.",
+            val openingSpeech = if (delimiter.length == 3) "código, " else " "
+            val closingSpeech = if (delimiter.length == 3) ", fin de código" else " "
+            val expected = if (delimiter.length == 3)
+                "Lee código, ese te de operador de resolución de ámbito cout doble menor que siete punto y coma, fin de código después."
+                else "Lee ese te de operador de resolución de ámbito cout doble menor que siete punto y coma después."
+            assertEquals(expected,
                 ManualEnglishSpeech.strip(observed.text))
             assertEquals(source.indices.toList(), pieces.flatMap { it.start until it.end })
             val opening = source.indexOf(delimiter)
             val closing = source.lastIndexOf(delimiter)
-            assertTrue(pieces.any { it.start == opening && it.end == opening + delimiter.length && it.speech == "código, " })
-            assertTrue(pieces.any { it.start == closing && it.end == closing + delimiter.length && it.speech == ", fin de código" })
+            assertTrue(pieces.any { it.start == opening && it.end == opening + delimiter.length && it.speech == openingSpeech })
+            assertTrue(pieces.any { it.start == closing && it.end == closing + delimiter.length && it.speech == closingSpeech })
             val chunks = pieces.filter { it.start < it.end }.map { source.substring(it.start, it.end) }
             assertTrue(chunks.toString(), chunks.containsAll(listOf("std", "::", "cout", "<<", "7", ";")))
             assertFalse("A delimiter cannot own its entire code expression", pieces.any {
@@ -54,15 +59,17 @@ class SpanishInlineReadingOwnershipTest {
         val cout = source.indexOf("cout")
         val later = source.indexOf("seguimos")
         val displayed = mappings.values.flatMap { it.displayed }
-        assertTrue("The opening code announcement owns only the hidden delimiter", displayed.any {
+        assertFalse("A silent delimiter must not create a narrated word", displayed.any {
             it.start == open && it.endExclusive == open + 1
         })
         for ((start, end) in listOf(std to scope, scope to cout, cout to source.indexOf("<<"))) {
             assertTrue("The real technical pieces have distinct glyph owners", displayed.any {
-                it.start == start && it.endExclusive == end
+                it.start in open..start && it.endExclusive == end
             })
         }
-        assertTrue(displayed.any { it.start == close && it.endExclusive <= close + 2 })
+        assertFalse("The closing delimiter must also remain silent", displayed.any {
+            it.start == close && it.endExclusive <= close + 2
+        })
         assertTrue(displayed.any { it.start == later && it.endExclusive <= later + "seguimos ".length })
         assertFalse("No early code word may illuminate the entire expression", displayed.any {
             it.start <= open && it.endExclusive >= close + 1

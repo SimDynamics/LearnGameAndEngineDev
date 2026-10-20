@@ -14,6 +14,16 @@ class SpanishTechnicalSpeechTest {
         return result.text
     }
 
+    @Test fun inlineFormattingIsSilentWithoutJoiningNeighboringWordsOrChangingFencedSpeech() {
+        assertEquals("doble menor que", read("`<<`"))
+        assertEquals("El operador doble menor que inserta datos.", read("El operador `<<` inserta datos."))
+        assertEquals("Usa doble menor que aquí.", read("Usa`<<`aquí."))
+        assertEquals("doble menor que doble mayor que", read("`<<``>>`"))
+        assertEquals("¿ doble menor que?", read("¿`<<`?"))
+        assertEquals("código, doble menor que, fin de código", read("```<<```"))
+        assertEquals("Sin cierre `", SpanishTechnicalSpeech.prepare("Sin cierre `").text)
+    }
+
     @Test fun ordinaryProseNumbersUnitsAndLanguageNamesKeepTheirExistingReadingAndCacheIdentity() {
         for (source in listOf("Las fracciones representan la misma cantidad.", "C++", "Ejemplo de código C más más.",
             "12 casas", "0,05 litros", "-3 °C", "90°", "cm²", "La temperatura (en °C) indica un estado.",
@@ -41,7 +51,7 @@ class SpanishTechnicalSpeechTest {
         }
         val source = "Calcula \\(\\frac{1}{2}\\), $" + "x_{n}$ y \\[a_b\\]."
         assertEquals(SpanishTechnicalSpeech.Preparation(source, false), SpanishTechnicalSpeech.prepare(source))
-        assertEquals("código, equis, fin de código", read("`x`", "block"))
+        assertEquals("equis", read("`x`", "block"))
     }
 
     @Test fun mathematicalFunctionNamesRemainWithTheExistingMathReader() {
@@ -49,7 +59,7 @@ class SpanishTechnicalSpeechTest {
             val source = "Calcula $name(x) y conserva el resultado."
             assertEquals(source, SpanishTechnicalSpeech.Preparation(source, false), SpanishTechnicalSpeech.prepare(source))
         }
-        assertEquals("código, sinh abre paréntesis equis cierra paréntesis, fin de código", read("`sinh(x)`"))
+        assertEquals("sinh abre paréntesis equis cierra paréntesis", read("`sinh(x)`"))
     }
 
     @Test fun includeDirectivesAndHeadersAreNotComparisons() {
@@ -69,7 +79,7 @@ class SpanishTechnicalSpeechTest {
         assertEquals(2, Regex("cierra ángulo").findAll(nested).count())
         val cast = read("static_cast<int>(valor)")
         assertEquals("static guion bajo cast abre ángulo int cierra ángulo abre paréntesis valor cierra paréntesis", cast)
-        assertEquals("código, $cast, fin de código", read("`static_cast<int>(valor)`"))
+        assertEquals("$cast", read("`static_cast<int>(valor)`"))
         val comparison = read("`std::max(a < b, c)`")
         assertTrue(comparison, comparison.contains("a menor que be"))
         assertFalse(comparison, comparison.contains("abre ángulo"))
@@ -81,7 +91,7 @@ class SpanishTechnicalSpeechTest {
             read("Repite con {}, {4} y {0}."))
         assertEquals("No ejecutes abre corchete cierra corchete fuera del rango.", read("No ejecutes [] fuera del rango."))
         assertEquals("operator abre corchete cierra corchete", read("operator[]"))
-        assertEquals("código, datos abre corchete uno cierra corchete, fin de código", read("`datos[1]`"))
+        assertEquals("datos abre corchete uno cierra corchete", read("`datos[1]`"))
     }
 
     @Test fun logicalOperatorsReferencesAndLiteralSeparatorsHaveDifferentReadings() {
@@ -90,8 +100,8 @@ class SpanishTechnicalSpeechTest {
         assertEquals("int ampersand valor", read("int& valor"))
         assertEquals("const auto ampersand texto", read("const auto& texto"))
         assertEquals("La salida barra vertical termina la fila.", read("La salida | termina la fila."))
-        assertEquals("código, abre comilla doble barra vertical barra vertical cierra comilla doble, fin de código", read("`\"||\"`"))
-        assertEquals("código, int doble ampersand valor, fin de código", read("`int&& valor`"))
+        assertEquals("abre comilla doble barra vertical barra vertical cierra comilla doble", read("`\"||\"`"))
+        assertEquals("int doble ampersand valor", read("`int&& valor`"))
     }
 
     @Test fun compoundOperatorsAreReadBeforeTheirIndividualCharacters() {
@@ -99,19 +109,19 @@ class SpanishTechnicalSpeechTest {
         assertEquals("equis comparación de igualdad uno", read("x==1"))
         assertEquals("a distinto de uno", read("a!=1"))
         assertEquals("equis o lógico uno", read("x||1"))
-        assertEquals("código, cout doble menor que equis punto y coma, fin de código", read("`cout << x;`"))
+        assertEquals("cout doble menor que equis punto y coma", read("`cout << x;`"))
         val condition = read("También se puede escribir (temperatura >= 15) && (temperatura <= 25).")
         assertTrue(condition.contains("mayor o igual que"))
         assertTrue(condition.contains("menor o igual que"))
         assertFalse(condition.contains("mayor que es igual"))
-        assertEquals("código, equis asigna uno punto y coma, fin de código", read("`x = 1;`"))
+        assertEquals("equis asigna uno punto y coma", read("`x = 1;`"))
     }
 
     @Test fun asteriskKeepsItsSyntacticAndArithmeticRoles() {
         assertEquals("El símbolo asterisco expresa multiplicación.", read("El símbolo * expresa multiplicación."))
         assertEquals("En este caso equivale a cajas = cajas por 3.", read("En este caso equivale a cajas = cajas * 3."))
-        assertEquals("código, int asterisco valor, fin de código", read("`int* valor`"))
-        assertEquals("código, a por be, fin de código", read("`a*b`"))
+        assertEquals("int asterisco valor", read("`int* valor`"))
+        assertEquals("a por be", read("`a*b`"))
     }
 
     @Test fun technicalNamesKeepNamespaceSpellingAndEveryCompoundOperatorIntact() {
@@ -129,18 +139,18 @@ class SpanishTechnicalSpeechTest {
             ".*" to "acceso a miembro mediante puntero a miembro"
         )
         for ((operator, name) in names) {
-            assertEquals(operator, "código, equis $name uno punto y coma, fin de código", read("`x $operator 1;`"))
+            assertEquals(operator, "equis $name uno punto y coma", read("`x $operator 1;`"))
             if (operator in listOf("<<=", ">>=")) assertEquals("equis $name uno", read("x${operator}1"))
         }
-        assertEquals("código, negación lógica listo, fin de código", read("`!listo`"))
+        assertEquals("negación lógica listo", read("`!listo`"))
         assertEquals("negación lógica listo", read("!listo"))
         assertEquals("Evalúa negación lógica listo y continúa.", read("Evalúa !listo y continúa."))
         for (source in listOf("¡Bien! Continúa.", "¡No!Sigue.", "https://example.org/std::cout?x+=2", "www.example.org/a::b")) {
             assertEquals(SpanishTechnicalSpeech.Preparation(source, false), SpanishTechnicalSpeech.prepare(source))
         }
-        assertEquals("código, abre comilla doble admiración cierra comilla doble, fin de código", read("`\"!\"`"))
-        assertEquals("código, abre comilla doble más asigna cierra comilla doble, fin de código", read("`\"+=\"`"))
-        assertEquals("código, abre comilla doble dos puntos dos puntos cierra comilla doble, fin de código", read("`\"::\"`"))
+        assertEquals("abre comilla doble admiración cierra comilla doble", read("`\"!\"`"))
+        assertEquals("abre comilla doble más asigna cierra comilla doble", read("`\"+=\"`"))
+        assertEquals("abre comilla doble dos puntos dos puntos cierra comilla doble", read("`\"::\"`"))
     }
 
     @Test fun identifiersKeepTheirUnderscoresAndDigitsWithoutSpellingProse() {
@@ -149,19 +159,19 @@ class SpanishTechnicalSpeechTest {
         assertEquals("guion bajo valor tres", read("_valor3"))
         assertEquals("for abre paréntesis int ampersand valor dos puntos datos cierra paréntesis",
             read("for (int& valor: datos)"))
-        assertEquals("código, efe abre paréntesis args cierra paréntesis, fin de código", read("`f(args)`"))
+        assertEquals("efe abre paréntesis args cierra paréntesis", read("`f(args)`"))
     }
 
     @Test fun literalEscapesQuotesAndNumericRepresentationsRemainRecoverable() {
         assertEquals("barra inversa ene", read("\\n"))
-        assertEquals("código, abre comilla simple barra inversa te cierra comilla simple, fin de código", read("`'\\t'`"))
-        assertEquals("código, abre comilla doble dos barra inversa te asterisco espacio nueve barra inversa ene cierra comilla doble, fin de código",
+        assertEquals("abre comilla simple barra inversa te cierra comilla simple", read("`'\\t'`"))
+        assertEquals("abre comilla doble dos barra inversa te asterisco espacio nueve barra inversa ene cierra comilla doble",
             read("`\"2\\t* 9\\n\"`"))
         assertEquals("cero equis uno a", read("0x1a"))
         assertEquals("uno punto dos cinco e más cero uno", read("1.25e+01"))
-        assertEquals("código, cero tres dos, fin de código", read("`032`"))
-        assertEquals("código, tres punto cero efe, fin de código", read("`3.0f`"))
-        assertEquals("código, uno apóstrofo cero cero cero, fin de código", read("`1'000`"))
+        assertEquals("cero tres dos", read("`032`"))
+        assertEquals("tres punto cero efe", read("`3.0f`"))
+        assertEquals("uno apóstrofo cero cero cero", read("`1'000`"))
     }
 
     @Test fun referencesOrdinalsAndRangesKeepTheirMeaningWithoutBecomingDecimals() {
@@ -179,7 +189,7 @@ class SpanishTechnicalSpeechTest {
         for (literal in listOf("1234567890123", "9223372036854775807", "9223372036854775808")) {
             val expected = literal.map { names[it.digitToInt()] }.joinToString(" ")
             val speech = read("`$literal`")
-            assertEquals("código, $expected, fin de código", speech)
+            assertEquals("$expected", speech)
             assertFalse(speech, speech.any(Char::isDigit))
         }
     }
@@ -244,9 +254,11 @@ class SpanishTechnicalSpeechTest {
             .single { it.contains("Cada instrucción de salida") && it.contains("termina con ;.") }
         val prepared = SpanishTechnicalSpeech.prepareForKokoro(source).text
         val spoken = ManualEnglishSpeech.strip(prepared)
-        assertEquals("The current explanation has one technical terminator", 1, Regex("punto y coma").findAll(spoken).count())
-        assertTrue("The citation's ordinary semicolon remains punctuation", spoken.contains("25; sección"))
-        assertEquals(1, spoken.count { it == ';' })
+        assertEquals("One symbolic terminator and its authored name remain spoken", 2,
+            Regex("punto y coma").findAll(spoken).count())
+        assertTrue("Ordinary clause punctuation remains punctuation", spoken.contains("instrucción; un cambio"))
+        assertTrue(spoken.contains("main; no se necesita"))
+        assertEquals(4, spoken.count { it == ';' })
         val parts = NarrationSegments.sentences(listOf(prepared)).withIndex().associate { it.index to it.value }
         val mapping = NarrationWordMappings.forBlock(0, source, parts)
         assertEquals(parts.keys, mapping.keys)
