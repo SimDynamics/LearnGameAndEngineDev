@@ -164,6 +164,7 @@ object SpanishFluidG2P {
             val normalized = normalizeText(source)
             val expected = mutableListOf<String>()
             val owners = mutableListOf<Int>()
+            val residualSlashes = mutableListOf<Triple<IntRange, Int, Int>>()
             // Match consecutive comment slashes as one lexical pronunciation unit.
             // G2P reads // in context; separately normalizing / can give a
             // different mathematical reading and invalidate whole-sentence timing.
@@ -193,10 +194,42 @@ object SpanishFluidG2P {
                 }
                 val lexical = words(expanded)
                 if (lexical.isEmpty()) return null
+                if (match.value == "/") residualSlashes += Triple(match.range, expected.size, lexical.size)
                 expected += lexical
                 owners += List(lexical.size) { owner }
             }
             if (nextOwner != sourceWords.size) return null
+            // A lone slash is itself a mathematical expression ("dividido entre"),
+            // while an unparsed slash in prose retains the production reading "barra".
+            // Observe that exact contextual insertion without changing normalization or
+            // maintaining another operator-name table. Only one uniquely attributable
+            // insertion is accepted; structured fractions and ambiguous rewrites retain
+            // their conservative fallback. Every other original word must still match.
+            if (words(normalized) != expected && residualSlashes.size == 1) {
+                val (range, first, count) = residualSlashes.single()
+                val whole = words(normalized)
+                val without = words(normalizeText(source.replaceRange(range, " ")))
+                val added = whole.size - without.size
+                if (added > 0) {
+                    var prefix = 0
+                    while (prefix < without.size && whole[prefix] == without[prefix]) prefix++
+                    var suffix = 0
+                    while (suffix < without.size && whole[whole.lastIndex - suffix] == without[without.lastIndex - suffix]) suffix++
+                    // Valid insertion positions form this closed interval. A single
+                    // pass avoids searching/rebuilding every candidate in long prose.
+                    val firstPosition = without.size - suffix
+                    if (firstPosition == prefix) {
+                        val position = firstPosition
+                        val contextualWords = whole.subList(position, position + added)
+                        val candidate = expected.take(first) + contextualWords + expected.drop(first + count)
+                        if (candidate == whole) {
+                            repeat(count) { expected.removeAt(first); owners.removeAt(first) }
+                            expected.addAll(first, contextualWords)
+                            owners.addAll(first, List(contextualWords.size) { -1 })
+                        }
+                    }
+                }
+            }
             // A residual relation can enter the production technical pass contextually
             // (e.g. an already spoken operand before '= 600 ...;'). Observe that exact
             // pass only when independent token expansion cannot prove its ownership.

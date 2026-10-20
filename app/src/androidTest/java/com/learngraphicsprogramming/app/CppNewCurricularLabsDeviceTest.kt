@@ -44,6 +44,7 @@ class CppNewCurricularLabsDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private var screenGuardRegistered = false
+    private var preservedPreferences: Map<String, Map<String, *>>? = null
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
             if (activity is LessonActivity && activity.packageName == QA_PACKAGE) {
@@ -64,6 +65,11 @@ class CppNewCurricularLabsDeviceTest {
         assertEquals("The compiled application must also be the isolated copy",
             QA_PACKAGE, BuildConfig.APPLICATION_ID)
         assertEquals(QA_PACKAGE, context.applicationContext.packageName)
+        preservedPreferences = preferenceFiles().associateWith { name ->
+            context.getSharedPreferences(name, Context.MODE_PRIVATE).all.mapValues { (_, value) ->
+                if (value is Set<*>) value.toSet() else value
+            }
+        }
         (context.applicationContext as Application).registerActivityLifecycleCallbacks(screenGuard)
         screenGuardRegistered = true
         ParcelFileDescriptor.AutoCloseInputStream(
@@ -96,6 +102,26 @@ class CppNewCurricularLabsDeviceTest {
         if (screenGuardRegistered) {
             (context.applicationContext as Application).unregisterActivityLifecycleCallbacks(screenGuard)
             screenGuardRegistered = false
+        }
+        preservedPreferences?.let { originals ->
+            (preferenceFiles() + originals.keys).forEach { name ->
+                if (name !in originals) context.deleteSharedPreferences(name)
+                else {
+                    val edit = context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear()
+                    originals.getValue(name).forEach { (key, value) -> when (value) {
+                        is String -> edit.putString(key, value)
+                        is Int -> edit.putInt(key, value)
+                        is Long -> edit.putLong(key, value)
+                        is Float -> edit.putFloat(key, value)
+                        is Boolean -> edit.putBoolean(key, value)
+                        is Set<*> -> edit.putStringSet(key, value.filterIsInstance<String>().toSet())
+                        else -> error("Unexpected preference type: $name/$key")
+                    } }
+                    assertTrue(edit.commit())
+                    assertEquals(originals.getValue(name), context.getSharedPreferences(name, Context.MODE_PRIVATE).all)
+                }
+            }
+            assertEquals(originals.keys, preferenceFiles())
         }
     }
 
@@ -1706,7 +1732,10 @@ class CppNewCurricularLabsDeviceTest {
                         assertFalse(response.isEnabled)
                         assertFalse(check.isEnabled)
                     } else {
-                        assertEquals(activity.getString(R.string.exercise_incorrect), feedback.text.toString())
+                        assertEquals(activity.getString(R.string.exercise_incorrect) + "\n" +
+                            activity.getString(R.string.cpp_review_output), feedback.text.toString())
+                        assertFalse("A wrong prediction never reveals its success explanation",
+                            feedback.text.toString().contains(prediction.getString("explanation")))
                         assertTrue(response.isEnabled)
                     }
                     assertEquals(if (answer == "Archivo preparado") 1 else 0,
@@ -1739,10 +1768,20 @@ class CppNewCurricularLabsDeviceTest {
             scenario.onActivity {
                 assertEquals(reference, editor(it).text.toString())
                 assertEquals("", input(it).text.toString())
-                assertTrue("The current draft instruction uses the real note presentation",
+                assertTrue("The current published instruction remains visible beside the lab and prediction",
                     descendants(content(it)).filterIsInstance<TextView>().any { view ->
-                    view.text.toString() == it.getString(R.string.lesson_note, blockAt(lesson, 5, 4).getString("text"))
+                    view.text.toString() == blockAt(lesson, 5, 2).getString("text")
                 })
+                val prediction = blockAt(lesson, 5, 4)
+                assertEquals("output_prediction", prediction.getString("type"))
+                assertEquals("prediccion_zona_inicial", prediction.getString("id"))
+                assertTrue(descendants(content(it)).filterIsInstance<TextView>().any { view ->
+                    view.text.toString() == prediction.getString("question")
+                })
+                assertEquals("Editing and reopening the lab must not answer the neighboring prediction", "",
+                    descendants(content(it)).filterIsInstance<EditText>().single { view ->
+                        view.hint?.toString() == it.getString(R.string.exercise_expected_output)
+                    }.text.toString())
             }
         }
     }
@@ -2541,7 +2580,25 @@ class CppNewCurricularLabsDeviceTest {
     private fun editor(activity: LessonActivity) = tagged(activity, "cpp_code_input") as EditText
     private fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
     private fun text(activity: LessonActivity, tag: String) = (tagged(activity, tag) as TextView).text.toString()
-    private fun tagged(activity: LessonActivity, tag: String): View = descendants(content(activity)).single { it.tag == tag }
+    private fun tagged(activity: LessonActivity, tag: String): View {
+        val page = content(activity)
+        if (tag != "cpp_code_input") return descendants(page).single { it.tag == tag }
+        // A prediction also uses the technical-editor tag. The compiler card,
+        // stdin, Run and console are separate lessonContent children. Find the
+        // editor card immediately preceding this lab's Run, rather than looking
+        // inside the Run button or selecting an answer editor elsewhere on the page.
+        val run = descendants(page).single { it.tag == "cpp_run" }
+        var runChild: View = run
+        while (runChild.parent !== page) runChild = runChild.parent as? View
+            ?: error("The compiler Run control is not inside the current lesson block")
+        val card = (page.indexOfChild(runChild) - 1 downTo 0).asSequence()
+            .map(page::getChildAt).first { sibling -> descendants(sibling).any { it.tag == tag } }
+        return descendants(card).single { it.tag == tag }.also {
+            assertTrue("The selected editor is the actual compiler component", it is FreeScrollEditText)
+        }
+    }
+    private fun preferenceFiles() = java.io.File(context.applicationInfo.dataDir, "shared_prefs")
+        .listFiles().orEmpty().filter { it.extension == "xml" }.map { it.nameWithoutExtension }.toSet()
     private fun descendants(root: View): List<View> = buildList {
         add(root)
         if (root is ViewGroup) for (index in 0 until root.childCount) addAll(descendants(root.getChildAt(index)))

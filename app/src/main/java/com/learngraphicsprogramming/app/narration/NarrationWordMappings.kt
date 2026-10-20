@@ -5,7 +5,7 @@ import com.learngraphicsprogramming.app.math.MathTextSemantics
 /** Projects lexical provenance onto all existing glyphs, without changing either text. */
 internal object NarrationWordMappings {
     private const val OPENING = "([{«“‘¿¡"
-    private const val MATHEMATICAL_PENDING = "=<>≤≥≠≈+−×÷·"
+    private const val MATHEMATICAL_PENDING = "=<>≤≥≠≈+−×÷·/"
     /** A degree mark immediately before C or F is part of the scale's spoken word. */
     private fun scaleStart(text: CharSequence, gapStart: Int, nextStart: Int, nextEnd: Int): Int? {
         if (nextEnd != nextStart + 1 || nextStart !in text.indices || text[nextStart] !in "CcFf") return null
