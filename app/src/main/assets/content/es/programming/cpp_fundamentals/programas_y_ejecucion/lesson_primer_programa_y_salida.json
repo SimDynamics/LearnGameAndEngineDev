@@ -233,7 +233,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, responde la predicción que está debajo del editor de código. Después ejecuta el código original con Compilar y ejecutar y compara el mensaje de la consola con tu respuesta. El programa no solicita datos de teclado.\n\nCambia únicamente el contenido del literal para mostrar Zona segura. Compila y ejecuta de nuevo: la consola debe contener exactamente esas dos palabras, con un espacio y sin comillas. Conserva main y #include <iostream>. En la instrucción de salida, mantén las comillas que delimitan el literal, el operador << y el punto y coma final.\n\nDespués cambia Zona segura por Caja recibida y vuelve a ejecutar. Observa el mensaje en Salida del programa y pulsa Comprobar salida, inmediatamente debajo de esa ventana, para verificar esta última modificación. La salida solicitada es exactamente Caja recibida, con un espacio entre las palabras y sin comillas. Si la comprobación indica Incorrecto, revisa el literal, corrige el código y ejecútalo de nuevo antes de volver a comprobar.\n\nSi quieres comparar con el programa original, pulsa el icono Reiniciar código, a la derecha de C++ en la barra de la consola, y ejecútalo de nuevo. Consulta la solución de la página siguiente después de realizar las pruebas.",
+          "text": "Antes de ejecutar, responde la predicción que está debajo del editor de código. Después ejecuta el código original con Compilar, ejecutar y comprobar y compara el mensaje de la consola con tu respuesta. El programa no solicita datos de teclado.\n\nCambia únicamente el contenido del literal para mostrar Zona segura. Compila y ejecuta de nuevo: la consola debe contener exactamente esas dos palabras, con un espacio y sin comillas. Conserva main y #include <iostream>. En la instrucción de salida, mantén las comillas que delimitan el literal, el operador << y el punto y coma final.\n\nDespués cambia Zona segura por Caja recibida y pulsa Compilar, ejecutar y comprobar para ejecutar y verificar esta última modificación. Observa el mensaje en Salida del programa y el resultado de la comprobación. La salida solicitada es exactamente Caja recibida, con un espacio entre las palabras y sin comillas. Si la comprobación indica Incorrecto, revisa el literal, corrige el código y vuelve a pulsar Compilar, ejecutar y comprobar.\n\nSi quieres comparar con el programa original, pulsa el icono Reiniciar código, a la derecha de C++ en la barra de la consola, y ejecútalo de nuevo. Consulta la solución de la página siguiente después de realizar las pruebas.",
           "emphasis": [
             {
               "text": "Antes de ejecutar, responde la predicción"
@@ -242,7 +242,8 @@
               "text": "Cambia únicamente el contenido del literal"
             },
             {
-              "text": "Comprobar salida"
+              "text": "Compilar, ejecutar y comprobar",
+              "occurrence": 2
             },
             {
               "text": "Reiniciar código"
@@ -251,7 +252,27 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caja recibida"
+                ],
+                "explanation": "Las comillas delimitan el literal y no forman parte del mensaje.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Zona segura"
+                    ],
+                    "text": "Revisa si realizaste y ejecutaste la segunda modificación."
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "output_prediction",

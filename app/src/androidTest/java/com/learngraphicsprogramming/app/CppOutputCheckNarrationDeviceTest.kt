@@ -120,15 +120,16 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                 host.onActivity { activity ->
                     editor(activity).setText(CppOutputCheckDeviceTest.program(runs[index]))
                     input(activity).setText(cases[index].getString("standardInput"))
-                    assertFalse(check(activity).isEnabled)
+                    assertSingleRunButton(activity, checking = true)
+                    assertEquals(View.GONE, result(activity).visibility)
                     tagged(activity, "cpp_run").performClick()
                 }
                 await(host, "The exact checked source executes on native Clang", 120_000L) { activity -> tagged(activity, "cpp_run").isEnabled }
                 var shown = ""
                 host.onActivity { activity ->
                     assertEquals(runs[index], (tagged(activity, "cpp_stdout") as TextView).text.toString())
-                    assertTrue(check(activity).isEnabled)
-                    check(activity).performClick()
+                    assertTrue(runButton(activity).isEnabled)
+                    assertEquals("A single run automatically presents its fresh verdict", View.VISIBLE, result(activity).visibility)
                     shown = result(activity).text.toString()
                     val verdict = activity.getString(if (index == 0 || index == 2) R.string.cpp_output_check_correct else R.string.cpp_output_check_incorrect)
                     val extra = when (index) { 2 -> CppOutputCheckDeviceTest.EXPLANATION; 3 -> CppOutputCheckDeviceTest.GUIDE; else -> null }

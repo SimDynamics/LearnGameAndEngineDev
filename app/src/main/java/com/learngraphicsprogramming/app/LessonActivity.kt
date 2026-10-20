@@ -6711,6 +6711,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             )
 
         val initialStandardInput = block.optString("initialStandardInput", "")
+        val standardInputRequested = CppLabInputPolicy.requested(block, outputCheckSpecification)
         val draftKey = "$currentRouteId/$currentLessonId/$currentPage/$blockIndex"
         val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
         var projectControls: View? = null
@@ -6720,6 +6721,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         }
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
+            visibility = if (standardInputRequested) View.VISIBLE else View.GONE
             setTextColor(Color.rgb(230, 237, 243))
             setHintTextColor(Color.rgb(174, 180, 190))
             contentDescription = getString(R.string.cpp_input_hint)
@@ -6742,6 +6744,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                 }
             })
         }
+        fun preparedStandardInput() = CppLabInputPolicy.effectiveInput(standardInputRequested, standardInput.text.toString())
 
         /*
          * TARJETA DEL EDITOR.
@@ -7426,7 +7429,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         lessonContent.addView(standardInput)
 
         runButton.text =
-            getString(R.string.cpp_runtime_run)
+            getString(if (outputCheckSpecification == null) R.string.cpp_runtime_run else R.string.cpp_compile_run_check)
 
         runButton.isAllCaps =
             false
@@ -7520,8 +7523,11 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                     CppCompilerVariant.OPTIONAL_CLANG_21 && !CppCompiler.isOptionalClang21Available(this)) {
                     offerCompilerRecovery()
                 }
+            }, onFreshResult = { result ->
                 outputChecker?.complete(cmakeCheckTicket, CppOutputCheck.successfulOutput(result))
-            }, onOperationStarted = { phase ->
+                cmakeCheckTicket = null
+            }, compileRunAndCheck = outputCheckSpecification != null, inputValue = ::preparedStandardInput,
+                onOperationStarted = { phase ->
                 cmakeCheckTicket = if (phase == com.learngraphicsprogramming.app.runtime.CppCmakePhase.EXECUTION)
                     outputChecker?.begin() else null
                 if (phase != com.learngraphicsprogramming.app.runtime.CppCmakePhase.EXECUTION) outputChecker?.invalidate()
@@ -7539,7 +7545,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                 onCleared = { verdict ->
                     readingTextPages[compilerPageIdentity]?.unregister(verdict)
                     narrationController?.cancelUnscoredFeedback(compilerPageIdentity, blockIndex)
-                })
+                }, inputValue = ::preparedStandardInput)
             projectEditor?.onSourceSelectionChanged = { outputChecker?.draftChanged() }
         }
 
@@ -7956,7 +7962,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
             outputChecker?.invalidate()
 
-            standardInput.setText(initialStandardInput)
+            if (standardInputRequested) standardInput.setText(initialStandardInput)
             programOutput.text = ""
             programError.text = ""
             console.present()
@@ -8071,7 +8077,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
             val source =
                 sourceCode.text.toString()
-            val preparedInput = standardInput.text.toString()
+            val preparedInput = preparedStandardInput()
             val compilerVariant = compilerVariants[compilerSelector.selectedItemPosition]
             if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21 &&
                 !CppCompiler.isOptionalClang21Available(this)) {
@@ -8109,10 +8115,11 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
                 runOnUiThread {
 
-                    if (isDestroyed || isFinishing || !sourceCode.isAttachedToWindow) return@runOnUiThread
-
-                    runButton.isEnabled =
-                        true
+                    if (isDestroyed || isFinishing) return@runOnUiThread
+                    // Cached pages can finish a run while detached. Release their
+                    // button too, without publishing that old run on another page.
+                    runButton.isEnabled = true
+                    if (!sourceCode.isAttachedToWindow) return@runOnUiThread
 
                     result.onSuccess { engineResult ->
 

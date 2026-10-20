@@ -104,6 +104,22 @@ class CppOutputCheckTest {
         assertFalse(session.complete(ticket, original, "different", "OK"))
     }
 
+    @Test fun leavingACachedPageDropsBothTheVerdictAndAnUnfinishedRunEvenWithUnchangedCode() {
+        val session = CppOutputCheck.Session(spec("" to listOf("OK")))
+        val current = snapshot()
+        val unfinished = session.begin(current, "")
+        session.invalidate() // Detach, followed by reattaching exactly the same page Views.
+        assertFalse(session.observe(current, ""))
+        assertFalse(session.complete(unfinished, current, "", "OK"))
+        assertNull(session.check())
+        val fresh = session.begin(current, "")
+        assertTrue(session.complete(fresh, current, "", "OK"))
+        assertTrue(session.check()!!.correct)
+        session.invalidate()
+        assertNull(session.check())
+        assertFalse(session.complete(fresh, current, "", "OK"))
+    }
+
     @Test fun snapshotsDefensivelyCopyTheMutableProjectAndTranslationUnits() {
         val files = linkedMapOf("main.cpp" to "old")
         val units = mutableListOf("main.cpp")

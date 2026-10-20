@@ -174,11 +174,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Before selecting Compile and Run, predict the message. Then inspect the output. Change only the text so that the program displays Safe zone, and run it again. Finally, change that message to Box received. Keep the structure you have already tested. Comparing these versions lets you connect a specific change in the program to a specific change in its result."
+          "text": "Before selecting Compile, run and check, predict the message. Then inspect the output. Change only the text so that the program displays Safe zone, and run it again. Finally, change that message to Box received. Keep the structure you have already tested. Comparing these versions lets you connect a specific change in the program to a specific change in its result."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Initial zone\";\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Initial zone\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Box received"
+                ],
+                "explanation": "The quotation marks delimit the string literal and are not part of the message.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Safe zone"
+                    ],
+                    "text": "Check whether you made and ran the second modification."
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "note",

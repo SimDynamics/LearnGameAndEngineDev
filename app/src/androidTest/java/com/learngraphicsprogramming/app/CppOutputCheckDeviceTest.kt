@@ -22,6 +22,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
+import com.learngraphicsprogramming.app.runtime.CppCmakePhase
+import com.learngraphicsprogramming.app.runtime.CppCmakeResult
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -33,7 +35,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
 
-/** Optional, QA-only contracts on the six unchanged authored compiler locations. */
+/** Real authored output-check integration plus isolated regression contracts on six laboratories. */
 @RunWith(AndroidJUnit4::class)
 class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
     private var originalFiniteHeartState: Map<String, *> = emptyMap<String, Any?>()
@@ -45,16 +47,26 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
         originalFiniteHeartState = context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all.toMap()
     }
 
-    @Test fun firstAuthoredLabShowsTheOptionalButtonBelowItsConsoleInStableRealWindows() {
+    @Test fun firstAuthoredLabUsesItsDeclaredCheckWithOneExistingRunButtonInStableRealWindows() {
         val location = LOCATIONS.first()
-        val fixture = fixture(location, contracts(0))
+        val authored = source(location.path).getJSONArray("pages").getJSONObject(location.page - 1)
+            .getJSONArray("blocks").getJSONObject(location.number - 1)
+        assertTrue("The requested real lesson declares the capability; this test must not invent an expected answer", authored.has("outputCheck"))
+        val declared = authored.getJSONObject("outputCheck")
+        val declaredCase = declared.getJSONArray("cases").getJSONObject(0)
+        assertEquals("", declaredCase.getString("standardInput"))
+        assertEquals(listOf("Caja recibida"), declaredCase.getJSONArray("outputs").let { values -> (0 until values.length()).map { values.getString(it) } })
+        val explanation = declaredCase.optString("explanation").takeIf { it.isNotBlank() }
+        val fixture = fixture(location, declared)
         val reference = source(location.path).getJSONArray("pages").getJSONObject(5).getJSONArray("blocks").getJSONObject(2).getString("code")
         val frames = JSONArray()
         withFixture(fixture) { host ->
             host.onActivity { activity ->
                 assertEquals(fixture.block.getString("initialCode"), editor(activity).text.toString())
                 assertEquals(fixture.block.optString("initialStandardInput"), input(activity).text.toString())
-                assertFalse(check(activity).isEnabled)
+                assertEquals("The first output-only laboratory does not request a visible stdin field", View.GONE, input(activity).visibility)
+                assertSingleRunButton(activity, checking = true)
+                assertTrue(runButton(activity).isEnabled)
                 assertEquals(View.GONE, result(activity).visibility)
                 assertTrue(tree(content(activity)).filterIsInstance<TextView>().any {
                     it.text.toString() == source(location.path).getJSONArray("pages").getJSONObject(4)
@@ -64,7 +76,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             }
             frames.put(captureRealOutputWindow(host, "first-lab-before-run", fixture.block.getString("initialCode"), false))
             edit(host, reference)
-            val execution = runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "published_reference_for_window")
+            val execution = runAndCheck(host, fixture, "Caja recibida", true, explanation, "published_reference_for_window")
             frames.put(captureRealOutputWindow(host, "first-lab-after-check", reference, true))
             saveEvidence("first-lab-real-window", JSONObject().put("source", location.path).put("page", 5).put("block", 3)
                 .put("execution", execution).put("frames", frames)
@@ -87,10 +99,11 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             var finalInput = fixture.block.optString("initialStandardInput")
             withFixture(fixture) { host ->
                 host.onActivity { activity ->
-                    assertFalse(check(activity).isEnabled)
+                    assertSingleRunButton(activity, checking = true)
+                    assertEquals("Only authored input laboratories request stdin", if (index >= 4) View.VISIBLE else View.GONE, input(activity).visibility)
+                    assertTrue(runButton(activity).isEnabled)
                     assertEquals(View.GONE, result(activity).visibility)
                     assertNull("Authored compiler blocks keep their absence of an ID", fixture.block.opt("id"))
-                    assertTrue("Only the explicitly opted-in compiler has the button", tree(content(activity)).count { it.tag == "cpp_check_output" } == 1)
                 }
                 when (index) {
                     0 -> {
@@ -103,9 +116,10 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                         host.onActivity { activity ->
                             val original = editor(activity).text.toString()
                             editor(activity).append(" ")
-                            assertFalse(check(activity).isEnabled)
+                            assertTrue("Editing remains available without a second check button", runButton(activity).isEnabled)
+                            assertEquals(View.GONE, result(activity).visibility)
                             editor(activity).setText(original)
-                            assertFalse(check(activity).isEnabled)
+                            assertTrue(runButton(activity).isEnabled)
                             assertEquals(View.GONE, result(activity).visibility)
                         }
                         evidence.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "new_run_after_restored_bytes"))
@@ -154,18 +168,19 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             withFixture(fixture) { host -> host.onActivity { activity ->
                 assertEquals("The actual lab draft survives reopening", expectedDraft, editor(activity).text.toString())
                 assertEquals(finalInput, input(activity).text.toString())
-                assertFalse("Reopening restores drafts but never a stale run verdict", check(activity).isEnabled)
+                assertTrue("Reopening restores editable drafts and permits a fresh run", runButton(activity).isEnabled)
                 assertEquals(View.GONE, result(activity).visibility)
             } }
         }
         saveEvidence("six-native-laboratories", JSONObject().put("executions", evidence))
     }
 
-    @Test fun projectHeaderAndSourceSelectionInvalidateTheActualRunWhileFreeLabsKeepNoButton() {
+    @Test fun projectHeaderAndSourceSelectionInvalidateTheActualRunWhileFreeLabsKeepTheirNormalRunButton() {
         val original = LOCATIONS.first()
         val free = fixture(original, null)
         withFixture(free) { host -> host.onActivity { activity ->
-            assertTrue(tree(content(activity)).none { it.tag == "cpp_check_output" || it.tag == "cpp_output_check_result" })
+            assertSingleRunButton(activity, checking = false)
+            assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" })
         } }
         val fixture = fixture(original, contracts(0)).also { value ->
             value.block.put("projectFiles", JSONArray()
@@ -179,7 +194,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             host.onActivity { activity -> tagged(activity, "cpp_file_message.hpp").performClick() }
             edit(host, "inline constexpr auto message = \"Zona segura\";\n")
             host.onActivity { activity ->
-                assertFalse("A non-selected header belongs to the executable identity", check(activity).isEnabled)
+                assertTrue("Changing a header permits rebuilding without locking the editor", runButton(activity).isEnabled)
                 assertEquals(View.GONE, result(activity).visibility)
                 tagged(activity, "cpp_file_main.cpp").performClick()
             }
@@ -188,9 +203,10 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                 val selected = tagged(activity, "cpp_source_enabled") as CheckBox
                 assertTrue(selected.isChecked)
                 selected.performClick()
-                assertFalse(check(activity).isEnabled)
+                assertEquals(View.GONE, result(activity).visibility)
                 selected.performClick()
-                assertFalse("Restoring the selected translation units needs a new run", check(activity).isEnabled)
+                assertTrue(runButton(activity).isEnabled)
+                assertEquals("Restoring translation units must never restore an old verdict", View.GONE, result(activity).visibility)
             }
             observations.put(runAndCheck(host, fixture, "Zona segura", false, GUIDE, "restored_translation_unit"))
             assertNoExerciseChanges(host, fixture)
@@ -198,18 +214,345 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
         saveEvidence("project-invalidation", JSONObject().put("executions", observations))
     }
 
+    @Test fun bothModalitiesUseTheActualInterfaceTranslationsAndFreeLabsReallyExecute() {
+        val originalLanguage = UiLanguageSettings.selectedTag(context)
+        val observations = JSONArray()
+        val translations = listOf(
+            Triple("es", "Compilar y ejecutar", "Compilar, ejecutar y comprobar"),
+            Triple("en", "Compile and Run", "Compile, run and check"),
+            Triple("fr", "Compiler et exécuter", "Compiler, exécuter et vérifier"))
+        try {
+            for ((language, normalCaption, checkingCaption) in translations) {
+                instrumentation.runOnMainSync { UiLanguageSettings.select(context, language) }
+                val free = fixture(LOCATIONS.first(), null)
+                withFixture(free) { host ->
+                    host.onActivity { activity ->
+                        assertSingleRunButton(activity, checking = false)
+                        assertEquals(normalCaption, runButton(activity).text.toString())
+                        assertEquals("An output-only free lab has no stdin field in $language", View.GONE, input(activity).visibility)
+                        assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" })
+                        runButton(activity).performClick()
+                    }
+                    await(host, "The ordinary compiler still executes in $language", 120_000L) { activity -> runButton(activity).isEnabled }
+                    host.onActivity { activity ->
+                        assertEquals("Zona inicial", (tagged(activity, "cpp_stdout") as TextView).text.toString())
+                        assertEquals(activity.getString(R.string.cpp_runtime_finished, 0), (tagged(activity, "cpp_status") as TextView).text.toString())
+                        assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" || it.tag == "cpp_check_output" })
+                        assertUnchangedExercises(activity, free)
+                        observations.put(JSONObject().put("language", language).put("mode", "compile_run")
+                            .put("caption", runButton(activity).text.toString()).put("stdout", "Zona inicial"))
+                    }
+                }
+                val checked = fixture(LOCATIONS.first(), contracts(0))
+                withFixture(checked) { host ->
+                    host.onActivity { activity ->
+                        assertSingleRunButton(activity, checking = true)
+                        assertEquals(checkingCaption, runButton(activity).text.toString())
+                        assertEquals("An output-only checked lab has no stdin field in $language", View.GONE, input(activity).visibility)
+                    }
+                    val execution = runAndCheck(host, checked, "Zona inicial", false, null, "translated_combined_action")
+                    host.onActivity { activity ->
+                        val expected = when (language) { "es" -> "Incorrecto"; "fr" -> "Incorrect"; else -> "Incorrect" }
+                        assertEquals(expected, result(activity).text.toString())
+                        observations.put(execution.put("language", language).put("mode", "compile_run_check")
+                            .put("caption", runButton(activity).text.toString()))
+                    }
+                }
+            }
+        } finally { instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLanguage) } }
+        saveEvidence("both-modalities-translated-native-runs", JSONObject().put("runs", observations))
+    }
+
+    @Test fun declaredInputVisibilityPreservesHiddenDraftsAndFeedsOnlyRequestedInput() {
+        val observations = JSONArray()
+        // This isolated QA program exposes whether the runtime received the persisted hidden draft.
+        val eofProgram = "#include <iostream>\nint main() { int value = 0; if (std::cin >> value) std::cout << value; else std::cout << \"EOF\"; }\n"
+        fun contract(stdin: String, expected: String) = JSONObject().put("cases", JSONArray().put(
+            JSONObject().put("standardInput", stdin).put("outputs", JSONArray(listOf(expected)))))
+        val hidden = fixture(LOCATIONS.first(), contract("", "EOF")).also {
+            it.block.remove("initialStandardInput")
+            it.block.put("initialCode", eofProgram)
+        }
+        val drafts = context.getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+        val key = "programming/${hidden.id}/${hidden.location.page - 1}/${hidden.location.number - 1}/input"
+        val preservedDraft = "917\n"
+        assertTrue(drafts.edit().putString(key, preservedDraft).commit())
+        repeat(2) { reopening ->
+            withFixture(hidden) { host ->
+                host.onActivity { activity ->
+                    assertEquals("No source-code inference may expose stdin without curricular metadata", View.GONE, input(activity).visibility)
+                    assertEquals("Hiding an old draft must not erase it", preservedDraft, input(activity).text.toString())
+                    assertEquals(preservedDraft, drafts.getString(key, null))
+                }
+                observations.put(runAndCheck(host, hidden, "EOF", true, null, "hidden_input_eof_$reopening")
+                    .put("storedHiddenDraft", preservedDraft).put("effectiveStandardInput", ""))
+                host.onActivity { activity ->
+                    tagged(activity, "cpp_reset").performClick()
+                    assertEquals("Resetting a task without input also preserves its hidden draft", preservedDraft, input(activity).text.toString())
+                    assertEquals(preservedDraft, drafts.getString(key, null))
+                    assertUnchangedExercises(activity, hidden)
+                }
+            }
+        }
+        val explicitEmpty = fixture(LOCATIONS.first(), contract("", "EOF")).also {
+            it.block.put("initialStandardInput", "").put("initialCode", eofProgram)
+        }
+        withFixture(explicitEmpty) { host ->
+            host.onActivity { activity ->
+                assertEquals("An explicitly declared empty input still requests the input control", View.VISIBLE, input(activity).visibility)
+                assertEquals("", input(activity).text.toString())
+            }
+            observations.put(runAndCheck(host, explicitEmpty, "EOF", true, null, "explicit_empty_input_is_visible"))
+            host.onActivity { activity -> input(activity).setText("23") }
+            observations.put(runWithoutKnownCase(host, explicitEmpty, "23"))
+        }
+        val contractInput = fixture(LOCATIONS.first(), contract("23", "23")).also {
+            it.block.remove("initialStandardInput")
+            it.block.put("initialCode", eofProgram)
+        }
+        withFixture(contractInput) { host ->
+            host.onActivity { activity ->
+                assertEquals("A nonempty input case is sufficient curricular metadata", View.VISIBLE, input(activity).visibility)
+                input(activity).setText("23")
+            }
+            observations.put(runAndCheck(host, contractInput, "23", true, null, "contract_declares_visible_input"))
+        }
+        assertEquals("Every run and reset preserved the original hidden draft", preservedDraft, drafts.getString(key, null))
+        saveEvidence("metadata-input-visibility-and-hidden-draft", JSONObject().put("runs", observations)
+            .put("hiddenDraftPreserved", true).put("inputVisibilityDependsOnMetadataOnly", true))
+    }
+
+    @Test fun editsAndCachedPageChangesInvalidateFreshRunTicketsButNeverPreventCorrection() {
+        val fixture = fixture(LOCATIONS.first(), contracts(0))
+        val observations = JSONArray()
+        val correctProgram = program("Caja recibida")
+        withFixture(fixture) { host ->
+            edit(host, correctProgram)
+            host.onActivity { activity ->
+                runButton(activity).performClick()
+                assertFalse(runButton(activity).isEnabled)
+                editor(activity).append(" ")
+                editor(activity).setText(correctProgram)
+            }
+            await(host, "The native run captured before edit/undo completes", 120_000L) { activity -> runButton(activity).isEnabled }
+            host.onActivity { activity ->
+                assertEquals("Caja recibida", (tagged(activity, "cpp_stdout") as TextView).text.toString())
+                assertEquals("Even restoring identical bytes cannot reuse an earlier run ticket", View.GONE, result(activity).visibility)
+                assertEquals(correctProgram, editor(activity).text.toString())
+                assertUnchangedExercises(activity, fixture)
+            }
+            observations.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "fresh_run_after_edit_undo"))
+            host.onActivity { activity ->
+                setField(activity, "currentPage", fixture.location.page)
+                invoke(activity, "renderCurrentPage")
+                assertTrue("The next page is the authored reference, not another compiler", tree(content(activity)).none { it.tag == "cpp_run" })
+            }
+            host.onActivity { activity ->
+                setField(activity, "currentPage", fixture.location.page - 1)
+                invoke(activity, "renderCurrentPage")
+                assertSingleRunButton(activity, checking = true)
+                assertEquals(correctProgram, editor(activity).text.toString())
+                assertTrue("Returning to the cached editor permits compiling", runButton(activity).isEnabled)
+                assertEquals("A cached page must not redisplay its previous verdict", View.GONE, result(activity).visibility)
+                runButton(activity).performClick()
+                // Both real render/detach transitions occur before the native callback can run.
+                setField(activity, "currentPage", fixture.location.page)
+                invoke(activity, "renderCurrentPage")
+                setField(activity, "currentPage", fixture.location.page - 1)
+                invoke(activity, "renderCurrentPage")
+            }
+            await(host, "The run crossing cached-page detach/reattach completes", 120_000L) { activity -> runButton(activity).isEnabled }
+            host.onActivity { activity ->
+                assertEquals("A run started before changing page cannot grade the returned page", View.GONE, result(activity).visibility)
+                assertUnchangedExercises(activity, fixture)
+            }
+            observations.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "fresh_run_after_returning_to_cached_page"))
+            lateinit var inactiveRunButton: Button
+            host.onActivity { activity ->
+                inactiveRunButton = runButton(activity)
+                inactiveRunButton.performClick()
+                assertFalse(inactiveRunButton.isEnabled)
+                setField(activity, "currentPage", fixture.location.page)
+                invoke(activity, "renderCurrentPage")
+                assertTrue("The compiler stays detached while the next authored page is visible", tree(content(activity)).none { it.tag == "cpp_run" })
+            }
+            await(host, "The native run releases its busy button even while its cached page is detached", 120_000L) { activity ->
+                assertEquals("Wait on the other page until the native callback has completed", fixture.location.page, field<Int>(activity, "currentPage"))
+                inactiveRunButton.isEnabled
+            }
+            host.onActivity { activity ->
+                setField(activity, "currentPage", fixture.location.page - 1)
+                invoke(activity, "renderCurrentPage")
+                assertSame("Returning reuses the actual cached compiler action", inactiveRunButton, runButton(activity))
+                assertTrue("Finishing while detached must never leave the cached compiler blocked", runButton(activity).isEnabled)
+                assertEquals("The detached execution is not a fresh check after returning", View.GONE, result(activity).visibility)
+                assertEquals(correctProgram, editor(activity).text.toString())
+                assertUnchangedExercises(activity, fixture)
+            }
+            observations.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "fresh_run_after_inactive_completion"))
+            edit(host, "int main() { return 7; }\n")
+            host.onActivity { activity -> runButton(activity).performClick() }
+            await(host, "A genuine nonzero native execution completes", 120_000L) { activity -> runButton(activity).isEnabled }
+            host.onActivity { activity ->
+                assertEquals(activity.getString(R.string.cpp_execution_failed, 7), (tagged(activity, "cpp_status") as TextView).text.toString())
+                assertEquals("Execution errors are diagnostics, never an incorrect answer", View.GONE, result(activity).visibility)
+                assertUnchangedExercises(activity, fixture)
+                observations.put(JSONObject().put("stage", "runtime_error_no_verdict").put("exitCode", 7))
+            }
+            edit(host, correctProgram)
+            observations.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "fresh_run_after_runtime_failure"))
+        }
+        saveEvidence("page-and-inflight-invalidation", JSONObject().put("runs", observations))
+    }
+
+    @Test fun cmakeChecksOnlyFreshRealConfigureBuildAndRunResultsWhileKeepingCorrectionsAvailable() {
+        assertTrue("Real Android CMake requires API 28 or later", Build.VERSION.SDK_INT >= 28)
+        // Use the existing native CMake regression's two-source inventory project.
+        // Only this in-memory QA block adds an explicit stdout oracle.
+        val cmake = """
+            cmake_minimum_required(VERSION 3.20)
+            project(Existencias LANGUAGES CXX)
+            option(USAR_COMPARACION_ESTRICTA "Comparar sin incluir la igualdad" OFF)
+            add_executable(consulta main.cpp existencias.cpp)
+            target_compile_features(consulta PRIVATE cxx_std_20)
+            set_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)
+            if(USAR_COMPARACION_ESTRICTA)
+                target_compile_definitions(consulta PRIVATE LGP_STRICT_RESTOCK=1)
+            endif()
+            add_executable(no_construir fuente_otro_objetivo.cpp)
+        """.trimIndent() + "\n"
+        val implementation = """
+            #include "existencias.h"
+            bool debe_reponer(int disponibles, int minimo) {
+            #ifdef LGP_STRICT_RESTOCK
+                return disponibles < minimo;
+            #else
+                return disponibles <= minimo;
+            #endif
+            }
+        """.trimIndent() + "\n"
+        val files = linkedMapOf(
+            "CMakeLists.txt" to cmake,
+            "existencias.h" to "#ifndef QA_EXISTENCIAS_H\n#define QA_EXISTENCIAS_H\nbool debe_reponer(int disponibles, int minimo);\n#endif\n",
+            "existencias.cpp" to implementation,
+            "main.cpp" to "#include \"existencias.h\"\n#include <iostream>\nint main() {\n    std::cout << debe_reponer(4, 5) << ':' << debe_reponer(5, 5) << ':' << debe_reponer(6, 5);\n    return 0;\n}\n",
+            "fuente_otro_objetivo.cpp" to "este objetivo no debe construirse como parte de consulta;\n")
+        val contract = JSONObject().put("cases", JSONArray().put(JSONObject().put("standardInput", "")
+            .put("outputs", JSONArray(listOf("1:1:0")))))
+        val fixture = fixture(LOCATIONS.first(), contract)
+        fixture.block.remove("sourceFiles")
+        fixture.block.put("initialCode", "").put("initialStandardInput", "")
+            .put("projectFiles", JSONArray().apply { files.forEach { (path, code) ->
+                put(JSONObject().put("path", path).put("initialCode", code))
+            } }).put("cmake", JSONObject().put("target", "consulta").put("buildType", "Debug")
+                .put("options", JSONObject().put("USAR_COMPARACION_ESTRICTA", "OFF")))
+        val observations = JSONArray()
+        withFixture(fixture) { host ->
+            host.onActivity { activity ->
+                assertSingleRunButton(activity, checking = true)
+                assertTrue("A new project can compile/run/check without any pre-existing built artifact", runButton(activity).isEnabled)
+                assertNull(tagged(activity, "cpp_status").getTag(R.id.cpp_lab_cmake_result))
+                assertEquals(View.GONE, result(activity).visibility)
+            }
+            fun execute(stage: String, expected: String?, correct: Boolean?): CppCmakeResult {
+                host.onActivity { activity ->
+                    assertSingleRunButton(activity, checking = true)
+                    assertTrue(runButton(activity).isEnabled)
+                    runButton(activity).performClick()
+                    assertFalse(runButton(activity).isEnabled)
+                    assertEquals(View.GONE, result(activity).visibility)
+                }
+                await(host, "The actual CMake pipeline finishes: $stage", 180_000L) { activity ->
+                    runButton(activity).isEnabled && tagged(activity, "cpp_status")
+                        .getTag(R.id.cpp_lab_cmake_result) is CppCmakeResult
+                }
+                lateinit var actual: CppCmakeResult
+                host.onActivity { activity ->
+                    actual = tagged(activity, "cpp_status").getTag(R.id.cpp_lab_cmake_result) as CppCmakeResult
+                    assertTrue("CMake genuinely generated Ninja rules", File(actual.workspace, "build/build.ninja").isFile)
+                    assertTrue("The requested target is built by CMake, never by a direct cpp shortcut", actual.records.any { record ->
+                        record.phase == CppCmakePhase.BUILD && "--build" in record.command &&
+                            record.command.windowed(2).any { it == listOf("--target", "consulta") }
+                    })
+                    if (expected != null) {
+                        assertEquals(CppCmakePhase.EXECUTION, actual.phase)
+                        assertEquals(0, actual.exitCode)
+                        assertNotNull(actual.execution)
+                        assertEquals(expected, actual.execution!!.stdout)
+                        assertEquals(expected, (tagged(activity, "cpp_stdout") as TextView).text.toString())
+                        assertTrue(requireNotNull(actual.artifact).isFile)
+                        assertEquals(activity.getString(if (correct == true) R.string.cpp_output_check_correct
+                            else R.string.cpp_output_check_incorrect), result(activity).text.toString())
+                        assertEquals(View.VISIBLE, result(activity).visibility)
+                    } else {
+                        assertEquals(CppCmakePhase.BUILD, actual.phase)
+                        assertNotEquals(0, actual.exitCode)
+                        assertNull(actual.execution)
+                        assertEquals(View.GONE, result(activity).visibility)
+                        assertTrue((tagged(activity, "cpp_compilation_output") as TextView).text.isNotBlank())
+                    }
+                    assertUnchangedExercises(activity, fixture)
+                    observations.put(JSONObject().put("stage", stage).put("phase", actual.phase.name)
+                        .put("exitCode", actual.exitCode).put("stdout", actual.execution?.stdout ?: JSONObject.NULL)
+                        .put("verdict", result(activity).text.toString()).put("verdictVisibility", result(activity).visibility)
+                        .put("projectFingerprint", actual.projectFingerprint)
+                        .put("artifactSha256", actual.artifact?.takeIf(File::isFile)?.readBytes()?.let { bytes ->
+                            MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+                        } ?: JSONObject.NULL)
+                        .put("records", JSONArray().apply { actual.records.forEach { record -> put(JSONObject()
+                            .put("phase", record.phase.name).put("exitCode", record.exitCode)
+                            .put("command", JSONArray(record.command)).put("stdout", record.stdout).put("stderr", record.stderr)) } }))
+                }
+                return actual
+            }
+            val first = execute("new_project_one_click_configures_builds_and_checks", "1:1:0", true)
+            assertTrue(first.records.any { it.phase == CppCmakePhase.CONFIGURATION })
+            assertTrue(first.records.any { it.phase == CppCmakePhase.GENERATION })
+            host.onActivity { activity -> tagged(activity, "cpp_file_existencias.cpp").performClick() }
+            edit(host, implementation.replace("disponibles <= minimo", "disponibles < minimo"))
+            val edited = execute("source_edit_incrementally_builds_new_behavior", "1:0:0", false)
+            assertFalse("Source-only edits reuse valid generation", edited.records.any {
+                it.phase == CppCmakePhase.CONFIGURATION || it.phase == CppCmakePhase.GENERATION })
+            assertNotEquals(first.projectFingerprint, edited.projectFingerprint)
+            edit(host, implementation + "\nesto no es C++;\n")
+            execute("genuine_build_error_has_no_verdict", null, null)
+            edit(host, implementation)
+            execute("corrected_source_builds_and_checks_again", "1:1:0", true)
+            host.onActivity { activity ->
+                setField(activity, "currentPage", fixture.location.page)
+                invoke(activity, "renderCurrentPage")
+                assertTrue(tree(content(activity)).none { it.tag == "cpp_run" })
+            }
+            host.onActivity { activity ->
+                setField(activity, "currentPage", fixture.location.page - 1)
+                invoke(activity, "renderCurrentPage")
+            }
+            await(host, "The cached CMake page reattaches without rechecking old output") { activity ->
+                runButton(activity).isEnabled && editor(activity).isAttachedToWindow
+            }
+            host.onActivity { activity ->
+                assertSingleRunButton(activity, checking = true)
+                assertEquals("Observer replay is not a new requested output check", View.GONE, result(activity).visibility)
+                assertUnchangedExercises(activity, fixture)
+            }
+            execute("fresh_pipeline_after_cached_page_return", "1:1:0", true)
+        }
+        saveEvidence("cmake-real-compile-run-check", JSONObject().put("runs", observations)
+            .put("fixture", "Existing two-source native CMake inventory project; stdout oracle is QA-only"))
+    }
+
     private fun edit(host: ActivityScenario<LessonActivity>, code: String, stdin: String? = null) = host.onActivity { activity ->
         editor(activity).setText(code)
         stdin?.let { input(activity).setText(it) }
-        assertFalse("Every source/input edit invalidates the last check", check(activity).isEnabled)
-        assertEquals(View.GONE, result(activity).visibility)
+        assertTrue("Every source/input edit permits a new run", runButton(activity).isEnabled)
+        assertEquals("Every source/input edit invalidates the last verdict", View.GONE, result(activity).visibility)
     }
     private fun runAndCheck(host: ActivityScenario<LessonActivity>, fixture: LabFixture, expected: String,
                             correct: Boolean, explanation: String?, stage: String): JSONObject {
         val evidence = run(host, fixture, expected)
         host.onActivity { activity ->
-            assertTrue(check(activity).isEnabled)
-            check(activity).performClick()
+            assertTrue("A completed check never prevents another execution", runButton(activity).isEnabled)
+            assertSingleRunButton(activity, checking = true)
             val verdict = activity.getString(if (correct) R.string.cpp_output_check_correct else R.string.cpp_output_check_incorrect)
             assertEquals(verdict + (explanation?.let { "\n$it" } ?: ""), result(activity).text.toString())
             assertEquals(View.VISIBLE, result(activity).visibility)
@@ -220,7 +563,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
     }
     private fun runWithoutKnownCase(host: ActivityScenario<LessonActivity>, fixture: LabFixture, expected: String): JSONObject {
         val evidence = run(host, fixture, expected)
-        host.onActivity { activity -> assertFalse(check(activity).isEnabled); assertEquals(View.GONE, result(activity).visibility) }
+        host.onActivity { activity -> assertTrue(runButton(activity).isEnabled); assertEquals(View.GONE, result(activity).visibility) }
         return evidence.put("stage", "input_not_in_declared_cases_no_verdict")
     }
     private fun runTechnicalFailure(host: ActivityScenario<LessonActivity>, fixture: LabFixture, stage: String): JSONObject {
@@ -232,7 +575,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
         var evidence = JSONObject()
         host.onActivity { activity ->
             assertTrue("A genuine native compiler diagnostic is retained", (tagged(activity, "cpp_compilation_output") as TextView).text.isNotBlank())
-            assertFalse(check(activity).isEnabled)
+            assertTrue(runButton(activity).isEnabled)
             assertEquals(View.GONE, result(activity).visibility)
             evidence = JSONObject().put("stage", stage).put("diagnostics", (tagged(activity, "cpp_compilation_output") as TextView).text.toString())
             assertUnchangedExercises(activity, fixture)
@@ -246,7 +589,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             assertTrue(tagged(activity, "cpp_run").isEnabled)
             tagged(activity, "cpp_run").performClick()
             assertFalse(tagged(activity, "cpp_run").isEnabled)
-            assertFalse(check(activity).isEnabled)
+            assertEquals("Starting a new execution clears the old verdict", View.GONE, result(activity).visibility)
         }
         await(host, "This native Clang 23 execution completes", 120_000L) { activity ->
             assertSame(owner, activity); tagged(activity, "cpp_run").isEnabled
@@ -259,7 +602,9 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             assertEquals("", (tagged(activity, "cpp_stderr") as TextView).text.toString())
             assertUnchangedExercises(activity, fixture)
             evidence = JSONObject().put("source", fixture.location.path).put("page", fixture.location.page)
-                .put("block", fixture.location.number).put("stdin", input(activity).text.toString()).put("stdout", expected)
+                .put("block", fixture.location.number)
+                .put("stdin", if (input(activity).visibility == View.VISIBLE) input(activity).text.toString() else "")
+                .put("storedInputDraft", input(activity).text.toString()).put("stdout", expected)
                 .put("sourceSha256", sha(editor(activity).text.toString())).put("compiler", "Clang23/default")
         }
         return evidence
@@ -297,36 +642,37 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                     }
                     assertTrue("A real viewport remains without moving or hiding the reader", safe.width() > 0 && safe.height() > 0)
                     val console = tagged(activity, "cpp_console")
-                    val consolePosition = IntArray(2).also(console::getLocationOnScreen)
                     val child = requireNotNull(scroll.getChildAt(0))
                     val margins = (child.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.topMargin + it.bottomMargin } ?: 0
                     val limit = (child.height + margins + scroll.paddingTop + scroll.paddingBottom - scroll.height).coerceAtLeast(0)
-                    val desired = (scroll.scrollY + consolePosition[1] - safe.top - margin).coerceIn(0, limit)
+                    val runPosition = IntArray(2).also(runButton(activity)::getLocationOnScreen)
+                    val desired = (scroll.scrollY + runPosition[1] - safe.top - margin).coerceIn(0, limit)
                     if (scroll.scrollY != desired) scroll.scrollTo(0, desired)
                     fun bounds(view: View): Rect {
                         val position = IntArray(2).also(view::getLocationOnScreen)
                         return Rect(position[0], position[1], position[0] + view.width, position[1] + view.height)
                     }
                     val consoleBounds = bounds(console)
-                    val buttonBounds = bounds(check(activity))
+                    val buttonBounds = bounds(runButton(activity))
                     val resultBounds = if (checked) bounds(result(activity)) else Rect()
                     group = Rect(consoleBounds).apply { union(buttonBounds); if (checked) union(resultBounds) }
-                    assertTrue("The new button is immediately after the original console", buttonBounds.top >= consoleBounds.bottom)
+                    assertTrue("The original run button stays before the original console", buttonBounds.bottom <= consoleBounds.top)
+                    assertSingleRunButton(activity, checking = true)
                     assertEquals(activity.getString(R.string.cpp_program_stdout), (tagged(activity, "cpp_console_title") as TextView).text.toString())
                     assertEquals(expectedCode, editor(activity).text.toString())
                     assertEquals("", input(activity).text.toString())
-                    assertEquals(checked, check(activity).isEnabled)
+                    assertTrue("The single run action remains usable after every result", runButton(activity).isEnabled)
                     assertEquals(if (checked) View.VISIBLE else View.GONE, result(activity).visibility)
                     if (checked) {
                         assertEquals("Caja recibida", (tagged(activity, "cpp_console_display") as TextView).text.toString())
-                        assertEquals(activity.getString(R.string.cpp_output_check_correct) + "\n" + EXPLANATION, result(activity).text.toString())
+                        assertTrue(result(activity).text.toString().startsWith(activity.getString(R.string.cpp_output_check_correct)))
                     }
                     ready = activity.hasWindowFocus() && !scroll.isLayoutRequested && !console.isLayoutRequested &&
-                        !check(activity).isLayoutRequested && (!checked || !result(activity).isLayoutRequested) && safe.contains(group)
+                        !runButton(activity).isLayoutRequested && (!checked || !result(activity).isLayoutRequested) && safe.contains(group)
                     fun json(rect: Rect) = JSONArray(listOf(rect.left, rect.top, rect.right, rect.bottom))
                     metadata = JSONObject().put("safeViewport", json(safe)).put("consoleBounds", json(consoleBounds))
                         .put("buttonBounds", json(buttonBounds)).put("resultBounds", json(resultBounds))
-                        .put("scrollY", scroll.scrollY).put("maxLegalScrollY", limit).put("buttonEnabled", check(activity).isEnabled)
+                        .put("scrollY", scroll.scrollY).put("maxLegalScrollY", limit).put("buttonEnabled", runButton(activity).isEnabled)
                         .put("visibleResult", result(activity).text.toString()).put("stdout", (tagged(activity, "cpp_stdout") as TextView).text.toString())
                         .put("readerVisible", readerVisible).put("readerBounds", json(readerRect)).put("readerHiddenOrMoved", false)
                         .put("sourceSha256", sha(expectedCode)).put("stdin", input(activity).text.toString())
@@ -457,7 +803,7 @@ abstract class CppOutputCheckQaSupport {
         lesson.put("id", id)
         val block = lesson.getJSONArray("pages").getJSONObject(location.page - 1).getJSONArray("blocks").getJSONObject(location.number - 1)
         assertEquals("cpp_compiler", block.getString("type"))
-        contract?.let { block.put("outputCheck", it) }
+        if (contract == null) block.remove("outputCheck") else block.put("outputCheck", contract)
         return LabFixture(location, id, original, lesson, block)
     }
     protected fun withFixture(fixture: LabFixture, body: (ActivityScenario<LessonActivity>) -> Unit) {
@@ -494,7 +840,12 @@ abstract class CppOutputCheckQaSupport {
     protected fun source(path: String) = JSONObject(context.assets.open("content/es/programming/cpp_fundamentals/$path").bufferedReader().use { it.readText() })
     protected fun editor(activity: LessonActivity) = tree(content(activity)).filterIsInstance<FreeScrollEditText>().single { it.tag == "cpp_code_input" }
     protected fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
-    protected fun check(activity: LessonActivity) = tagged(activity, "cpp_check_output") as Button
+    protected fun runButton(activity: LessonActivity) = tagged(activity, "cpp_run") as Button
+    protected fun assertSingleRunButton(activity: LessonActivity, checking: Boolean) {
+        assertEquals("A compiler exposes exactly one compile/run action", 1, tree(content(activity)).count { it.tag == "cpp_run" })
+        assertTrue("No separate check-output button exists", tree(content(activity)).none { it.tag == "cpp_check_output" })
+        assertEquals(activity.getString(if (checking) R.string.cpp_compile_run_check else R.string.cpp_runtime_run), runButton(activity).text.toString())
+    }
     protected fun result(activity: LessonActivity) = tagged(activity, "cpp_output_check_result") as com.learngraphicsprogramming.app.narration.ReadingTextView
     protected fun tagged(activity: LessonActivity, tag: String) = tree(content(activity)).single { it.tag == tag }
     protected fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)

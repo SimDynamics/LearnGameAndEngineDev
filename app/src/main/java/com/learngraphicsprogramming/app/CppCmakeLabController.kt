@@ -15,6 +15,7 @@ import android.widget.TextView
 import com.learngraphicsprogramming.app.runtime.CppCmakeEngine
 import com.learngraphicsprogramming.app.runtime.CppCmakePhase
 import com.learngraphicsprogramming.app.runtime.CppCmakeProject
+import com.learngraphicsprogramming.app.runtime.CppCmakeRecord
 import com.learngraphicsprogramming.app.runtime.CppCmakeResult
 import com.learngraphicsprogramming.app.runtime.CppCompilerVariant
 import org.json.JSONObject
@@ -37,7 +38,10 @@ internal class CppCmakeLabController(
     private val standardInput: EditText,
     private val onResultDisplayed: (CppCmakeResult) -> Unit = {},
     private val onOperationStarted: (CppCmakePhase) -> Unit = {},
-    private val onDraftChanged: () -> Unit = {}
+    private val onDraftChanged: () -> Unit = {},
+    private val compileRunAndCheck: Boolean = false,
+    private val onFreshResult: (CppCmakeResult) -> Unit = {},
+    private val inputValue: () -> String = { standardInput.text.toString() }
 ) {
     init {
         require(config.keys().asSequence().all { it in setOf("target", "options", "buildType") })
@@ -114,7 +118,7 @@ internal class CppCmakeLabController(
                     if (!busy && result != null) {
                         val current = runCatching { snapshot() }.getOrNull()
                         if (current?.fingerprint == result.projectFingerprint &&
-                            (result.execution == null || result.executionInput == standardInput.text.toString())) {
+                            (result.execution == null || result.executionInput == inputValue())) {
                             displayResult(result)
                         } else clearDisplayedResult()
                     }
@@ -128,7 +132,8 @@ internal class CppCmakeLabController(
             override fun onViewDetachedFromWindow(view: View) { subscription?.close(); subscription = null }
         })
         if (controls.isAttachedToWindow) observeWhileAttached()
-        runButton.text = activity.getString(R.string.cpp_cmake_execute)
+        runButton.text = activity.getString(if (compileRunAndCheck) R.string.cpp_compile_run_check
+            else R.string.cpp_cmake_execute)
         val watch = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
@@ -141,7 +146,7 @@ internal class CppCmakeLabController(
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
             override fun afterTextChanged(s: Editable?) {
-                if (displayedInput != null && displayedInput != s.toString()) clearDisplayedResult()
+                if (displayedInput != null && displayedInput != inputValue()) clearDisplayedResult()
             }
         })
         buildType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -191,7 +196,8 @@ internal class CppCmakeLabController(
         val sessionBusy = engine.isBusy()
         configure.isEnabled = supported && !busy && !sessionBusy
         build.isEnabled = supported && !busy && !sessionBusy && project != null && engine.isConfigured(project)
-        runButton.isEnabled = supported && !busy && !sessionBusy && project != null && engine.hasBuiltArtifact(project, verifyContent = false)
+        runButton.isEnabled = supported && !busy && !sessionBusy && project != null &&
+            (compileRunAndCheck || engine.hasBuiltArtifact(project, verifyContent = false))
         if (!busy && sessionBusy) {
             status.text = activity.getString(R.string.cpp_cmake_busy)
             status.setTag(R.id.cpp_lab_build_phase, "BUILDING")
@@ -206,13 +212,13 @@ internal class CppCmakeLabController(
             status.setTag(R.id.cpp_lab_build_phase, phase.name)
             return
         }
-        val input = standardInput.text.toString()
+        val input = inputValue()
         busy = true
         refresh(project)
         status.text = activity.getString(when (phase) {
             CppCmakePhase.CONFIGURATION, CppCmakePhase.GENERATION -> R.string.cpp_cmake_configuring
             CppCmakePhase.BUILD -> R.string.cpp_cmake_building
-            CppCmakePhase.EXECUTION -> R.string.cpp_cmake_running
+            CppCmakePhase.EXECUTION -> if (compileRunAndCheck) R.string.exercise_compiling else R.string.cpp_cmake_running
         })
         status.setTag(R.id.cpp_lab_build_phase, "BUILDING")
         status.setTag(R.id.cpp_lab_cmake_result, null)
@@ -221,7 +227,9 @@ internal class CppCmakeLabController(
             val result = when (phase) {
                 CppCmakePhase.CONFIGURATION, CppCmakePhase.GENERATION -> engine.configure(project)
                 CppCmakePhase.BUILD -> engine.build(project)
-                CppCmakePhase.EXECUTION -> engine.run(project, input)
+                CppCmakePhase.EXECUTION -> if (compileRunAndCheck) CppCmakeRunWorkflow.run(project, input,
+                    engine::isConfigured, engine::configure, engine::build, engine::run)
+                    else engine.run(project, input)
             }
             activity.runOnUiThread {
                 busy = false
@@ -229,7 +237,7 @@ internal class CppCmakeLabController(
                 if (activity.isDestroyed || activity.isFinishing || !sourceEditor.isAttachedToWindow) return@runOnUiThread
                 val current = runCatching { snapshot() }.getOrNull()
                 if (current?.fingerprint != project.fingerprint ||
-                    (phase == CppCmakePhase.EXECUTION && standardInput.text.toString() != input)) {
+                    (phase == CppCmakePhase.EXECUTION && inputValue() != input)) {
                     status.text = activity.getString(R.string.cpp_cmake_changed)
                     status.setTag(R.id.cpp_lab_build_phase, "DRAFT_CHANGED")
                     stdout.text = ""; stderr.text = ""; diagnostics.text = ""
@@ -237,6 +245,9 @@ internal class CppCmakeLabController(
                     return@runOnUiThread
                 }
                 displayResult(result)
+                // Replayed results still populate diagnostics, but only this invocation
+                // can provide the fresh output for a curricular check.
+                onFreshResult(result)
                 refresh(current)
             }
         }.start()
@@ -256,8 +267,19 @@ internal class CppCmakeLabController(
             else -> activity.getString(R.string.cpp_runtime_finished, result.exitCode)
         }
         diagnostics.text = buildString {
-            append(phaseName(result.phase)); append('\n')
-            append(clean(result.stdout)); append(clean(result.stderr))
+            val phaseRecords = if (compileRunAndCheck) result.records.filter {
+                it.phase != CppCmakePhase.EXECUTION || result.execution == null
+            } else emptyList()
+            if (phaseRecords.isEmpty()) {
+                append(phaseName(result.phase)); append('\n')
+                append(clean(result.stdout)); append(clean(result.stderr))
+            } else {
+                phaseRecords.forEach { record ->
+                    append(phaseName(record.phase)); append('\n')
+                    append(clean(record.stdout)); append(clean(record.stderr)); append('\n')
+                }
+                if (result.phase == CppCmakePhase.EXECUTION && result.execution != null) append(phaseName(result.phase))
+            }
             if (result.timedOut) { append('\n'); append(activity.getString(R.string.cpp_cmake_timeout)) }
             if (result.toolsInfo.isNotEmpty()) {
                 append('\n'); append(result.toolsInfo.filterKeys { it in setOf("cmake", "ninja", "compiler") }
@@ -289,5 +311,34 @@ internal class CppCmakeLabController(
         status.setTag(R.id.cpp_lab_cmake_result, null)
         status.setTag(R.id.cpp_lab_exit_code, null)
         draftChanged()
+    }
+}
+
+/** One requested run always builds the current project and executes a new program run.
+ * Cached configuration may be reused; cached stdout is never an input to this workflow. */
+internal object CppCmakeRunWorkflow {
+    fun run(
+        project: CppCmakeProject,
+        input: String,
+        isConfigured: (CppCmakeProject) -> Boolean,
+        configure: (CppCmakeProject) -> CppCmakeResult,
+        build: (CppCmakeProject) -> CppCmakeResult,
+        execute: (CppCmakeProject, String) -> CppCmakeResult
+    ): CppCmakeResult {
+        val records = mutableListOf<CppCmakeRecord>()
+        fun include(result: CppCmakeResult): CppCmakeResult {
+            records += result.records.ifEmpty {
+                listOf(CppCmakeRecord(result.phase, result.exitCode, result.stdout, result.stderr,
+                    timedOut = result.timedOut))
+            }
+            return result.copy(records = records.toList())
+        }
+        if (!isConfigured(project)) {
+            val configured = include(configure(project))
+            if (configured.exitCode != 0 || configured.timedOut) return configured
+        }
+        val built = include(build(project))
+        if (built.exitCode != 0 || built.timedOut || built.artifact == null) return built
+        return include(execute(project, input))
     }
 }
