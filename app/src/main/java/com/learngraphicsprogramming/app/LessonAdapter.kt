@@ -103,11 +103,6 @@ class LessonAdapter(
                 lesson.number
             )
 
-        holder.textLessonNumber
-            .setTextColor(
-                accentTextColor
-            )
-
         holder.textLessonTitle.text =
             lesson.title
 
@@ -140,6 +135,13 @@ class LessonAdapter(
             ColorStateList.valueOf(
                 accentColor
             )
+
+        CompletionCardStyle.apply(
+            holder.itemView,
+            holder.textLessonNumber,
+            progress,
+            accentTextColor
+        )
 
         holder.itemView.setOnClickListener {
 

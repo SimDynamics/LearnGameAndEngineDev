@@ -1,7 +1,6 @@
 package com.learngraphicsprogramming.app
 
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -129,46 +128,12 @@ class CourseAdapter(
                 progress.percentage
         }
 
-        if (
-            progress.total > 0 &&
-            progress.completed ==
-            progress.total
-        ) {
-
-            holder.binding.courseContainer
-                .setBackgroundColor(
-                    Color.rgb(
-                        29,
-                        78,
-                        52
-                    )
-                )
-
-            holder.binding.textCourseNumber
-                .setTextColor(
-                    Color.rgb(
-                        105,
-                        220,
-                        145
-                    )
-                )
-
-        } else {
-
-            holder.binding.courseContainer
-                .setBackgroundColor(
-                    Color.rgb(
-                        32,
-                        33,
-                        38
-                    )
-                )
-
-            holder.binding.textCourseNumber
-                .setTextColor(
-                    accentTextColor
-                )
-        }
+        CompletionCardStyle.apply(
+            holder.binding.courseContainer,
+            holder.binding.textCourseNumber,
+            progress,
+            accentTextColor
+        )
 
         holder.binding.courseContainer
             .setOnClickListener {
