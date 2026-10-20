@@ -35,7 +35,9 @@ internal class CppCmakeLabController(
     private val stdout: TextView,
     private val stderr: TextView,
     private val standardInput: EditText,
-    private val onResultDisplayed: (CppCmakeResult) -> Unit = {}
+    private val onResultDisplayed: (CppCmakeResult) -> Unit = {},
+    private val onOperationStarted: (CppCmakePhase) -> Unit = {},
+    private val onDraftChanged: () -> Unit = {}
 ) {
     init {
         require(config.keys().asSequence().all { it in setOf("target", "options", "buildType") })
@@ -156,6 +158,11 @@ internal class CppCmakeLabController(
     private fun snapshot() = CppCmakeProject(files.filesSnapshot(), target.text.toString(),
         CppCmakeProject.parseOptions(options.text.toString()), CppCmakeProject.BUILD_TYPES[buildType.selectedItemPosition], variant())
 
+    fun outputCheckSnapshot(): CppOutputCheck.Snapshot = CppOutputCheck.snapshot(
+        files.filesSnapshot(), emptyList(), variant().name).copy(configuration = JSONObject()
+        .put("target", target.text.toString()).put("options", options.text.toString())
+        .put("buildType", CppCmakeProject.BUILD_TYPES[buildType.selectedItemPosition]).toString())
+
     fun draftChanged() {
         preferences.edit().putString("$draftKey/cmake", JSONObject().put("target", target.text.toString())
             .put("optionsText", options.text.toString()).put("buildType", CppCmakeProject.BUILD_TYPES[buildType.selectedItemPosition]).toString()).apply()
@@ -164,6 +171,7 @@ internal class CppCmakeLabController(
             clearDisplayedResult()
         }
         refresh(project)
+        onDraftChanged()
     }
 
     private fun clearDisplayedResult() {
@@ -191,6 +199,7 @@ internal class CppCmakeLabController(
     }
 
     private fun start(phase: CppCmakePhase) {
+        onOperationStarted(phase)
         stdout.text = ""; stderr.text = ""; diagnostics.text = ""
         val project = runCatching { snapshot() }.getOrElse { error ->
             status.text = error.message ?: activity.getString(R.string.cpp_project_invalid)

@@ -28,13 +28,21 @@ object LessonNarrationText {
     internal fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
                       forKokoro: Boolean, completeVisibleLabels: Boolean,
                       visibleInstruction: (String) -> String): List<String> =
-        Extractor(language, forKokoro, visibleInstruction, completeVisibleLabels).page(lesson, pageIndex)
+        pageVersioned(lesson, pageIndex, language, forKokoro, completeVisibleLabels,
+            separateTableCells = completeVisibleLabels, visibleInstruction = visibleInstruction)
+
+    /** The preceding cell join exists only to relocate its same bounded page position. */
+    internal fun pageVersioned(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                              forKokoro: Boolean, completeVisibleLabels: Boolean, separateTableCells: Boolean,
+                              visibleInstruction: (String) -> String): List<String> =
+        Extractor(language, forKokoro, visibleInstruction, completeVisibleLabels, separateTableCells).page(lesson, pageIndex)
 
     private class Extractor(
         private val speechLanguage: NarrationLanguage,
         private val forKokoro: Boolean,
         private val visibleInstruction: (String) -> String,
-        private val completeVisibleLabels: Boolean
+        private val completeVisibleLabels: Boolean,
+        private val separateTableCells: Boolean
     ) {
     private fun localized(spanish: String, english: String, french: String): String = when (speechLanguage) {
         NarrationLanguage.SPANISH -> spanish
@@ -136,8 +144,9 @@ object LessonNarrationText {
                         val cell = cells.optJSONObject(index)
                         if (cell?.has("field") == true) field(cell.string("field"), inline = false)
                         else scalar(cells.opt(index))
-                    }.joinToString("; ")
-                    append(output, content)
+                    }
+                    if (separateTableCells) content.forEach { append(output, it) }
+                    else append(output, content.joinToString("; "))
                 }
             }
             else -> fields.values.forEach { append(output, fieldText(it, inline = false), it.mode()) }

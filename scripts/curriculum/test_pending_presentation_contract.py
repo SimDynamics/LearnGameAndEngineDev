@@ -36,7 +36,7 @@ class PendingPresentationContractTest(unittest.TestCase):
     def test_bad_emphasis_selectors_are_reported_without_using_answers(self):
         for value in (None, False, "objeto", {}, ["objeto"], [None], [{}],
                       [{"text": ""}], [{"text": " \n"}], [{"text": "missing"}],
-                      [{"text": "objeto", "style": "bold"}]):
+                      [{"text": "objeto", "unknownStyle": "bold"}]):
             with self.subTest(value=value):
                 self.assertFalse(self.emphasis(value))
         for occurrence in (None, False, 0, -1, 1.5, 2, "1", {}, [], 10**50):
@@ -51,7 +51,13 @@ class PendingPresentationContractTest(unittest.TestCase):
             location = (lesson, page, block)
             kind, explanation = contract.EXPLANATION_CLARIFICATIONS[location]
             published = source["pages"][page - 1]["blocks"][block - 1]
-            self.assertEqual((kind, explanation), (published["type"], published["explanation"]))
+            self.assertEqual(kind, published["type"])
+            # Keep the original reviewed oracle. Seven APA revisions now have
+            # a separately pinned source/destination transition, not a new
+            # baseline that accepts an arbitrary current explanation.
+            restored = contract.restore_approved_editorial_fields(
+                location, {"type": kind, "explanation": explanation}, published)
+            self.assertEqual(explanation, restored["explanation"])
             old = {"type": kind, "id": "stable", "question": "Original question",
                    "code": "Original C++ source", "answers": ["original"],
                    "language": "cpp", "explanation": "Previous wording"}
@@ -63,6 +69,54 @@ class PendingPresentationContractTest(unittest.TestCase):
                 with self.subTest(page=page, block=block, changed=key):
                     self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block - 1, old, changed))
             self.assertFalse(contract.preserves_previous_exercise(relative, page - 1, block, old, current))
+
+    def test_italic_styles_are_explicit_optional_and_do_not_rewrite_original_text(self):
+        for style in ("bold", "italic", "bold_italic"):
+            self.assertTrue(self.emphasis([{"text": "objeto", "style": style}]))
+        for style in (None, "", "BOLD", "italics", 1, False, [], {}):
+            with self.subTest(style=style):
+                self.assertFalse(self.emphasis([{"text": "objeto", "style": style}]))
+
+    def test_note_emphasis_selects_only_its_original_body_and_preserves_the_localized_heading(self):
+        body = "La cadena conserva el valor (Stroustrup, 2024)."
+        block = {"type": "note", "text": body,
+                 "emphasis": [{"text": "(Stroustrup, 2024)", "style": "italic"}]}
+        before = copy.deepcopy(block)
+        contract.validate_paragraph_emphasis_contract(block, "note fixture")
+        self.assertEqual([], contract.ERRORS)
+        self.assertEqual(before, block)
+        self.assertTrue(set(block) <= contract.FIELDS["note"])
+        for prefix in ("Nota", "Note", "Nota: ", "Remarque"):
+            contract.ERRORS.clear()
+            invalid = dict(block, emphasis=[{"text": prefix, "style": "italic"}])
+            contract.validate_paragraph_emphasis_contract(invalid, "localized UI prefix is absent from body")
+            self.assertTrue(contract.ERRORS)
+        for style in ("bold", "italic", "bold_italic"):
+            contract.ERRORS.clear()
+            contract.validate_paragraph_emphasis_contract(
+                dict(block, emphasis=[{"text": "valor", "style": style}]), "note style fixture")
+            self.assertEqual([], contract.ERRORS)
+
+    def test_note_repetitions_invalid_styles_and_other_block_families_keep_their_guards(self):
+        body = "valor y valor"
+        for emphasis in ([{"text": "valor"}], [{"text": "valor", "occurrence": 3}],
+                         [{"text": "valor", "occurrence": 2, "style": "unsupported"}],
+                         [{"text": "valor", "occurrence": 2, "extra": True}]):
+            contract.ERRORS.clear()
+            contract.validate_paragraph_emphasis_contract(
+                {"type": "note", "text": body, "emphasis": emphasis}, "invalid note fixture")
+            self.assertTrue(contract.ERRORS)
+        contract.ERRORS.clear()
+        contract.validate_paragraph_emphasis_contract(
+            {"type": "note", "text": body, "emphasis": [{"text": "valor", "occurrence": 2, "style": "italic"}]},
+            "explicit note occurrence")
+        self.assertEqual([], contract.ERRORS)
+        for kind in contract.FIELDS.keys() - {"paragraph", "note"}:
+            contract.ERRORS.clear()
+            self.assertNotIn("emphasis", contract.FIELDS[kind])
+            contract.validate_paragraph_emphasis_contract(
+                {"type": kind, "text": body, "emphasis": [{"text": "y"}]}, "unsupported fixture")
+            self.assertTrue(contract.ERRORS)
 
     def test_verified_conversion_alternatives_do_not_create_holes_or_license_new_answers(self):
         lesson = "objetos_y_estado/lesson_conversiones_y_deduccion.json"

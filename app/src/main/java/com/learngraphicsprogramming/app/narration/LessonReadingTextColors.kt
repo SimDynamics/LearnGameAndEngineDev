@@ -31,6 +31,7 @@ class LessonReadingTextColors {
     private val sourceSegments = mutableMapOf<Int, Set<Int>>()
     private val unreadColors = mutableMapOf<Int, Int>()
     private val unreadSurfaceColors = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
+    private val puzzleMappings = NarrationPuzzleWordMappings.Cache()
 
     fun register(blockIndex: Int, view: TextView, feedback: Boolean = false, incorrect: Boolean = false) {
         if (view is EditText || (view !is ReadingTextHost &&
@@ -50,10 +51,12 @@ class LessonReadingTextColors {
     }
 
     /** Feedback changes role and ink in the same native view; never restore stale success colors. */
-    fun unregister(view: TextView) {
+    fun unregister(view: TextView): Boolean {
         (view as? ReadingTextHost)?.setUnreadWordRanges(null, 0)
-        entries.remove(view)?.let { sourceSegments.remove(it.target) }
-        spokenAnchors.remove(view)
+        val removed = entries.remove(view)
+        removed?.let { sourceSegments.remove(it.target) }
+        val anchor = spokenAnchors.remove(view)
+        return removed != null || anchor != null
     }
 
     fun show(states: Map<Int, ReadingBlockState>, enabled: Boolean,
@@ -126,6 +129,7 @@ class LessonReadingTextColors {
         nextTarget = Int.MIN_VALUE
         unreadColors.clear()
         unreadSurfaceColors.clear()
+        puzzleMappings.clear()
     }
 
     /** Require complete monotonic lexical identity; repeated words are never found by indexOf. */
@@ -148,7 +152,7 @@ class LessonReadingTextColors {
             if (views.size == 1 && views.single().target == block && anchors.isEmpty()) {
                 result += NarrationWordMappings.forView(block, views.single().view.text, segments, language)
             } else {
-                result += NarrationPuzzleWordMappings.forViews(block, sources.map { it.target to it.text }, segments, language, feedback = feedback)
+                result += puzzleMappings.forViews(block, sources.map { it.target to it.text }, segments, language, feedback = feedback)
             }
         }
         return result

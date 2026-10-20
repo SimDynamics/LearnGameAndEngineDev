@@ -417,9 +417,13 @@ class LessonActivity : AppCompatActivity() {
     private val narrationUiPreferences by lazy {
         applicationContext.getSharedPreferences("lesson_narration_settings", MODE_PRIVATE)
     }
-    private val narrationUiSettingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+    private val narrationUiSettingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         runOnUiThread {
             if (!isDestroyed && ::buttonNarrationToggle.isInitialized) {
+                if (key == "enabled" && ::lessonJson.isInitialized && NarrationSettingsRepository.get(this).enabled) {
+                    narrationScript(NarrationLanguage.forLesson(
+                        lessonJson, currentPage, NarrationSettingsRepository.get(this).language))
+                }
                 narrationControls?.refresh(narrationController?.isPlaying == true)
                 updateNarrationVisibility()
             }
@@ -455,17 +459,27 @@ class LessonActivity : AppCompatActivity() {
             presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block })
         val configuration = "${language.tag}/${selected.engine}/${selected.kokoroVoice}/${selected.androidVoice}"
         val known = readingPresentations[identity]?.takeIf { it.configuration == configuration }?.script
-        val previousPresentations = if (known != null) listOf(known) else listOf(
-            LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
-                instruction = { type -> NarrationUiInstructions.forBlock(this, type) },
-                completeVisibleLabels = false,
-                presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block }),
-            LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
-                instruction = { type -> if (type in setOf("order_code", "drag_fill_code"))
-                    NarrationUiInstructions.forBlock(this, type) else "" },
-                completeVisibleLabels = false,
-                presentation = { _, block -> com.learngraphicsprogramming.app.math.MathNarrationPresentation.legacyBlock(block) })
-        )
+        val previousPresentations = if (known != null) listOf(known) else buildList {
+            // Only response tables changed their spoken separators. Reconstruct the
+            // exact preceding plan so its existing bounded slot can be relocated;
+            // unchanged recordings keep their original millisecond position.
+            if (LessonNarrationScript.hasJoinedTableRows(lessonJson, currentPage)) add(
+                LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
+                    instruction = { type -> NarrationUiInstructions.forBlock(this@LessonActivity, type) },
+                    completeVisibleLabels = true, separateTableCells = false,
+                    presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block }))
+            addAll(listOf(
+                LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
+                    instruction = { type -> NarrationUiInstructions.forBlock(this@LessonActivity, type) },
+                    completeVisibleLabels = false,
+                    presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block }),
+                LessonNarrationScript.presentedPageVersioned(lessonJson, currentPage, language, neural,
+                    instruction = { type -> if (type in setOf("order_code", "drag_fill_code"))
+                        NarrationUiInstructions.forBlock(this@LessonActivity, type) else "" },
+                    completeVisibleLabels = false,
+                    presentation = { _, block -> com.learngraphicsprogramming.app.math.MathNarrationPresentation.legacyBlock(block) })
+            ))
+        }
         var update: com.learngraphicsprogramming.app.narration.NarrationPresentationUpdate? = null
         var deferred: LessonNarrationScript? = null
         try {
@@ -535,7 +549,15 @@ class LessonActivity : AppCompatActivity() {
             registerReadingText(view, blockIndex)
             return
         }
-        page.unregister(view)
+        val removedReadingText = page.unregister(view)
+        // Initial spinner callbacks and ordinary field edits may clear a result
+        // that was already empty. Its page/script/word mapping has not changed.
+        val originalBlock = lessonJson.optJSONArray("pages")?.optJSONObject(currentPage)
+            ?.optJSONArray("blocks")?.optJSONObject(blockIndex)
+        val unchangedOrder = com.learngraphicsprogramming.app.narration.NarrationPuzzlePresentationChanges
+            .hasFixedTextOrder(originalBlock)
+        if (role == MathPuzzleRenderer.TextRole.CLEARED && !removedReadingText &&
+            incorrectReadingPresentation == null && unchangedOrder) return
         if (role != MathPuzzleRenderer.TextRole.CLEARED) {
             LessonTechnicalText.apply(view,
                 currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
@@ -552,6 +574,12 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun prepareReadingPage(script: LessonNarrationScript, language: NarrationLanguage) {
+        if (!NarrationSettingsRepository.get(this).enabled) {
+            // No audible position or bookmark is discarded. Play/re-enable prepares
+            // the same current source when word synchronization is needed again.
+            readingTextPages[narrationPageIdentity()]?.restore()
+            return
+        }
         val selected = NarrationSettingsRepository.forLanguage(this, language)
         val plan = script.readingPlan(selected.engine)
         if (plan == null) {
@@ -4001,7 +4029,7 @@ class LessonActivity : AppCompatActivity() {
             )
         }
     }
-    private fun addNote(text: String, mathMode: String = "auto") {
+    private fun addNote(text: String, mathMode: String = "auto", emphasis: Any? = null) {
 
         val view = ReadingTextView(this)
 
@@ -4053,6 +4081,9 @@ class LessonActivity : AppCompatActivity() {
         view.layoutParams =
             params
 
+        LessonParagraphEmphasis.apply(
+            view, emphasis, LessonParagraphEmphasis.Range(getString(R.string.lesson_note, "").length, view.text.length)
+        )
         registerReadingText(view, mathMode = mathMode)
         lessonContent.addView(view)
     }
@@ -4103,6 +4134,32 @@ class LessonActivity : AppCompatActivity() {
         controller.readIncorrectFeedback(texts, language, narrationPageIdentity(), blockIndex,
             pageTexts = script.texts, feedbackGates = script.gates,
             correctBlocks = narrationCorrectBlocks())
+    }
+
+    /** Laboratory checks only narrate their visible verdict. They are never puzzle gates. */
+    private fun narrateLabOutputResult(pageIndex: Int, blockIndex: Int, view: ReadingTextView) {
+        if (!::lessonJson.isInitialized || currentPage != pageIndex || isDestroyed || isFinishing) return
+        val settings = NarrationSettingsRepository.get(this)
+        val language = NarrationLanguage.forLesson(lessonJson, currentPage, settings.language)
+        val selected = NarrationSettingsRepository.forLanguage(this, language)
+        val page = readingTextPages[narrationPageIdentity()]
+        page?.unregister(view)
+        LessonTechnicalText.apply(view, currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS, language)
+        // The existing transient-review lane also follows a green unscored verdict;
+        // this registration flag selects its provenance, never its ink or correctness.
+        page?.register(blockIndex, view, feedback = true, incorrect = true)
+        if (!settings.enabled) { applyReadingPresentation(); return }
+        val controller = narrationController ?: return
+        val texts = com.learngraphicsprogramming.app.narration.IncorrectFeedbackNarration.prepare(
+            listOf(view.text.toString()), language, forKokoro = selected.engine != NarrationEngine.ANDROID)
+        val script = narrationScript(language)
+        incorrectReadingPresentation?.identity?.let(readingProgress::forget)
+        incorrectReadingPresentation = IncorrectReadingPresentation(narrationPageIdentity(), blockIndex,
+            LessonNarrationScript(texts, emptyList(), List(texts.size) {
+                com.learngraphicsprogramming.app.narration.NarrationTextOrigin(blockIndex, feedback = true)
+            }), language, selected.engine)
+        controller.readUnscoredFeedback(texts, language, narrationPageIdentity(), blockIndex,
+            script.texts, script.gates, narrationCorrectBlocks())
     }
 
     private fun restoreCppReview(block: JSONObject, state: JSONObject?, answer: Any,
@@ -6637,6 +6694,12 @@ class LessonActivity : AppCompatActivity() {
         blockIndex: Int
     ) {
 
+        val outputCheckSpecification = CppOutputCheck.fromBlock(block)
+        val compilerPage = currentPage
+        val compilerPageIdentity = narrationPageIdentity()
+        var outputChecker: CppOutputCheckController? = null
+        var cmakeCheckTicket: CppOutputCheck.Session.Ticket? = null
+
         val cmakeConfiguration = if (block.has("cmake")) block.getJSONObject("cmake") else null
         require(cmakeConfiguration == null || block.has("projectFiles")) { "CMake requires projectFiles" }
         var cmakeLab: CppCmakeLabController? = null
@@ -7318,6 +7381,7 @@ class LessonActivity : AppCompatActivity() {
             CppLessonProjectEditor(this, block, draftKey, sourceCode) {
                 viewportController.refresh()
                 updateLineNumbers()
+                outputChecker?.draftChanged()
             }.also {
                 projectControls = it.controls
                 codeCard.addView(it.controls, 1)
@@ -7345,6 +7409,7 @@ class LessonActivity : AppCompatActivity() {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     labDrafts.edit().putString("$draftKey/compiler", compilerVariants[position].name).apply()
                     cmakeLab?.draftChanged()
+                    outputChecker?.draftChanged()
                 }
             }
         }
@@ -7446,7 +7511,8 @@ class LessonActivity : AppCompatActivity() {
         if (cmakeConfiguration != null) {
             cmakeLab = CppCmakeLabController(this, cmakeConfiguration, draftKey, requireNotNull(projectEditor),
                 sourceCode, { compilerVariants[compilerSelector.selectedItemPosition] }, lessonContent,
-                inputLabel, runButton, statusText, outputText, programOutput, programError, standardInput) { result ->
+                inputLabel, runButton, statusText, outputText, programOutput, programError, standardInput,
+                onResultDisplayed = { result ->
                 console.present(when {
                     result.execution == null -> CppLabPresentationPolicy.Channel.DIAGNOSTICS
                     result.exitCode != 0 -> CppLabPresentationPolicy.Channel.STDERR
@@ -7456,7 +7522,27 @@ class LessonActivity : AppCompatActivity() {
                     CppCompilerVariant.OPTIONAL_CLANG_21 && !CppCompiler.isOptionalClang21Available(this)) {
                     offerCompilerRecovery()
                 }
-            }
+                outputChecker?.complete(cmakeCheckTicket, CppOutputCheck.successfulOutput(result))
+            }, onOperationStarted = { phase ->
+                cmakeCheckTicket = if (phase == com.learngraphicsprogramming.app.runtime.CppCmakePhase.EXECUTION)
+                    outputChecker?.begin() else null
+                if (phase != com.learngraphicsprogramming.app.runtime.CppCmakePhase.EXECUTION) outputChecker?.invalidate()
+            }, onDraftChanged = { outputChecker?.draftChanged() })
+        }
+
+        if (outputCheckSpecification != null) {
+            outputChecker = CppOutputCheckController(this, outputCheckSpecification, lessonContent, sourceCode,
+                standardInput, snapshot = {
+                    if (cmakeConfiguration != null) cmakeLab?.outputCheckSnapshot()
+                    else projectEditor?.outputCheckSnapshot(compilerVariants[compilerSelector.selectedItemPosition].name)
+                        ?: CppOutputCheck.snapshot(mapOf("main.cpp" to sourceCode.text.toString()), listOf("main.cpp"),
+                            compilerVariants[compilerSelector.selectedItemPosition].name)
+                }, onShown = { verdict -> narrateLabOutputResult(compilerPage, blockIndex, verdict) },
+                onCleared = { verdict ->
+                    readingTextPages[compilerPageIdentity]?.unregister(verdict)
+                    narrationController?.cancelUnscoredFeedback(compilerPageIdentity, blockIndex)
+                })
+            projectEditor?.onSourceSelectionChanged = { outputChecker?.draftChanged() }
         }
 
         /*
@@ -7870,6 +7956,8 @@ class LessonActivity : AppCompatActivity() {
          */
         resetButton.setOnClickListener {
 
+            outputChecker?.invalidate()
+
             standardInput.setText(initialStandardInput)
             programOutput.text = ""
             programError.text = ""
@@ -7976,6 +8064,8 @@ class LessonActivity : AppCompatActivity() {
          */
         if (cmakeLab == null) runButton.setOnClickListener {
 
+            val checkTicket = outputChecker?.begin()
+
             outputText.text = ""
             programOutput.text = ""
             programError.text = ""
@@ -8021,10 +8111,14 @@ class LessonActivity : AppCompatActivity() {
 
                 runOnUiThread {
 
+                    if (isDestroyed || isFinishing || !sourceCode.isAttachedToWindow) return@runOnUiThread
+
                     runButton.isEnabled =
                         true
 
                     result.onSuccess { engineResult ->
+
+                        outputChecker?.complete(checkTicket, CppOutputCheck.successfulOutput(engineResult))
 
                         val compilation =
                             engineResult.compilation
@@ -8074,6 +8168,8 @@ class LessonActivity : AppCompatActivity() {
                     }
 
                     result.onFailure { error ->
+
+                        outputChecker?.complete(checkTicket, null)
 
                         statusText.text =
                             getString(R.string.exercise_execution_failed)
@@ -9487,7 +9583,8 @@ class LessonActivity : AppCompatActivity() {
                         block.getString(
                             "text"
                         ),
-                        block.optString("mathMode", "auto")
+                        block.optString("mathMode", "auto"),
+                        block.opt("emphasis")
                     )
                 }
 

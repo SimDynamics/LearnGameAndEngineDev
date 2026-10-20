@@ -34,6 +34,7 @@ internal class CppLessonProjectEditor(
     private val indentation = mutableMapOf<String, String>()
     private var selected = ""
     private var switching = false
+    var onSourceSelectionChanged: (() -> Unit)? = null
     private var historyDialog: CppProjectHistoryDialog? = null
     private val history by lazy { CppProjectHistory(File(context.filesDir, "cpp_project_history"), draftKey) }
     private val usesCmake = block.optJSONObject("cmake") != null
@@ -148,6 +149,7 @@ internal class CppLessonProjectEditor(
             if (!switching) {
                 if (included) sources.add(selected) else sources.remove(selected)
                 save()
+                onSourceSelectionChanged?.invoke()
             }
         }
         editor.addTextChangedListener(object : TextWatcher {
@@ -248,6 +250,10 @@ internal class CppLessonProjectEditor(
         }
         return LinkedHashMap(files)
     }
+
+    /** A file-tab change alone does not change the program being checked. */
+    fun outputCheckSnapshot(compiler: String): CppOutputCheck.Snapshot =
+        CppOutputCheck.snapshot(filesSnapshot(), sources.toList(), compiler)
 
     fun reset() {
         files.clear()

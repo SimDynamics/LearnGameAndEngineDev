@@ -124,6 +124,309 @@ class CppCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun focusedResetRetainsExactAuthoredSourceAfterSettlingAndRecreation() {
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        withAsset(lessonId, { true }) { scenario, location ->
+            val original = LessonRepository.loadLessonJson(context, ROUTE, lessonId).getJSONArray("pages")
+                .getJSONObject(location.page).getJSONArray("blocks").getJSONObject(location.block)
+            val code = original.getString("initialCode")
+            val stdin = original.optString("initialStandardInput")
+            val observations = JSONArray()
+            for (iteration in 0..3) {
+                scenario.onActivity { activity ->
+                    val source = editor(activity)
+                    source.setText(code.replace("Zona inicial", "Caja recibida") + "\n// reset check $iteration\n")
+                    input(activity).setText("temporary input")
+                    source.requestFocus()
+                    source.setSelection(source.length())
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .showSoftInput(source, InputMethodManager.SHOW_IMPLICIT)
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    // Startup/IME dismissal may legitimately retire a caret. Acquire
+                    // focus on the current native instance immediately before Reset.
+                    assertTrue("The actual editor can enter editing before Reset", editor(activity).requestFocus())
+                    assertTrue("Reset is exercised with the actual editor focused", editor(activity).hasFocus())
+                    tagged(activity, "cpp_reset").performClick()
+                    assertEquals("Reset restores exact authored characters immediately", code, editor(activity).text.toString())
+                    assertEquals(stdin, input(activity).text.toString())
+                }
+                repeat(5) {
+                    SystemClock.sleep(100)
+                    instrumentation.waitForIdleSync()
+                    scenario.onActivity { activity ->
+                        assertEquals("No delayed IME/rules edit may add whitespace after reset", code, editor(activity).text.toString())
+                        assertEquals(stdin, input(activity).text.toString())
+                    }
+                }
+                scenario.recreate()
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    assertEquals("Reopened source stays byte-exact", code, editor(activity).text.toString())
+                    assertEquals(stdin, input(activity).text.toString())
+                    val draft = "$ROUTE/$lessonId/${location.page}/${location.block}/source"
+                    assertEquals("The persisted draft has no added trailing spaces", code,
+                        context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE).getString(draft, null))
+                    observations.put(JSONObject().put("iteration", iteration).put("sourceSha256", sha256(code))
+                        .put("characters", code.length).put("exactAfterSettlingAndRecreation", true)
+                        .put("imeVisibleAfterRecreation", imeVisible(activity)))
+                }
+            }
+            assertSuccessful(run(scenario), "Zona inicial")
+            stabilityEvidence("focused-reset-exact.json", JSONObject().put("observations", observations)
+                .put("newExecutionStdout", "Zona inicial").put("device", Build.MODEL))
+        }
+    }
+
+    @Test fun pedidosWithAuthoredSkeletonRetainsAllFifteenAnswersWithoutBlocking() =
+        checkPedidosPage(null, "pedidos-skeleton")
+
+    @Test fun pedidosMappingsPrepareOnEnableAndReuseOnlyTheUnchangedVisiblePresentation() {
+        val lessonId = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
+        val blocks = LessonRepository.loadLessonJson(context, ROUTE, lessonId).getJSONArray("pages")
+            .getJSONObject(1).getJSONArray("blocks")
+        MainThreadProbe("pedidos-reading-mapping-reuse").use { probe ->
+        withAsset(lessonId, { it.getString("initialCode") == blocks.getJSONObject(2).getString("initialCode") }) { scenario, _ ->
+            var cached: Any? = null
+            fun cache(activity: LessonActivity): Map<*, *> {
+                val pages = field(activity, "readingTextPages") as Map<*, *>
+                val page = requireNotNull(pages["$ROUTE/$lessonId/1"])
+                val mappings = page.javaClass.getDeclaredField("puzzleMappings").apply { isAccessible = true }.get(page)
+                return mappings.javaClass.getDeclaredField("current").apply { isAccessible = true }.get(mappings) as Map<*, *>
+            }
+            scenario.onActivity { assertTrue("Disabled narration does not perform expensive unused puzzle mappings", cache(it).isEmpty()) }
+            NarrationSettingsRepository.saveEnabled(context, true)
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                cached = requireNotNull(cache(activity)[4 to false])
+                val actual = cached!!.javaClass.getDeclaredField("mappings").apply { isAccessible = true }.get(cached) as Map<*, *>
+                val originalInputs = dumpPedidosMappingInput(requireNotNull(cached), actual).getJSONArray("views")
+                assertTrue("Enabling the reader reconstructs actual word mappings from the original page", actual.isNotEmpty())
+                val words = actual.values.map { it as com.learngraphicsprogramming.app.narration.NarrationWordMapping }
+                val expectedTargets = (0 until originalInputs.length()).map { originalInputs.getJSONObject(it).getInt("target") }.toSet()
+                assertEquals("The actual page has 24 original passive targets, with controls excluded", 24, expectedTargets.size)
+                assertEquals("Every visible cell, including all technical rows, has proven word owners",
+                    expectedTargets, words.flatMap { requireNotNull(it.targets) }.toSet())
+                for (index in 0 until originalInputs.length()) {
+                    val original = originalInputs.getJSONObject(index)
+                    val target = original.getInt("target")
+                    val owned = words.flatMap { word -> word.displayed.indices
+                        .filter { word.targets!![it] == target }.flatMap { offset ->
+                            word.displayed[offset].let { it.start until it.endExclusive }
+                        } }.toSet()
+                    assertEquals("All original glyphs in ${original.getString("text")} have real spoken provenance",
+                        original.getString("text").indices.toSet(), owned)
+                }
+                fillPedidos(activity, blocks.getJSONObject(4), wrong = true)
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertSame("Ordinary answers do not change passive visible text or rebuild its verified mapping",
+                    cached, cache(activity)[4 to false])
+            }
+            NarrationSettingsRepository.saveEnabled(context, false)
+            instrumentation.waitForIdleSync()
+            NarrationSettingsRepository.saveEnabled(context, true)
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertSame("Re-enabling preserves the exact current mapping, not another reader history",
+                    cached, cache(activity)[4 to false])
+                val controller = field(activity, "narrationController") as com.learngraphicsprogramming.app.narration.LessonNarrationController
+                assertFalse("Preparing display mappings does not start playback", controller.isPlaying)
+            }
+            probe.result.put("disabledMappingDeferred", true).put("enabledMappingPresent", true)
+                .put("allFifteenOrdinaryChangesReuseCurrentMapping", true).put("reenableReuse", true)
+                .put("playbackStarted", false).put("allTwentyFourTargetsMapped", true).put("allOriginalGlyphsMapped", true)
+        }
+        }
+    }
+
+    /** Native source ranges only, to reproduce expensive searches on the host.
+     * Contains no validator, expected response, model data or user preference dump. */
+    private fun dumpPedidosMappingInput(cached: Any, actual: Map<*, *>): JSONObject {
+        fun property(owner: Any, name: String): Any? = owner.javaClass.getDeclaredField(name)
+            .apply { isAccessible = true }.get(owner)
+        val key = requireNotNull(property(cached, "key"))
+        val sources = property(key, "sources") as List<*>
+        val views = JSONArray()
+        sources.forEach { source ->
+            source ?: return@forEach
+            val ranges = property(source, "formulas") as List<*>
+            views.put(JSONObject().put("target", property(source, "target")).put("text", property(source, "text"))
+                .put("formulas", JSONArray().apply { ranges.forEach { range ->
+                    range as com.learngraphicsprogramming.app.narration.ReadingTextRange
+                    put(JSONArray().put(range.start).put(range.endExclusive))
+                } }))
+        }
+        val segments = JSONObject()
+        (property(key, "segments") as Map<*, *>).forEach { (segment, text) -> segments.put(segment.toString(), text) }
+        val matched = JSONArray()
+        actual.forEach { (segment, value) ->
+            value as com.learngraphicsprogramming.app.narration.NarrationWordMapping
+            matched.put(JSONObject().put("segment", segment).put("targets", JSONArray(value.targets)))
+        }
+        return JSONObject().put("block", 4)
+            .put("language", property(key, "language").toString()).put("feedback", property(key, "feedback"))
+            .put("views", views).put("segments", segments).put("matched", matched)
+            .also { stabilityEvidence("pedidos-mapping-input.json", it) }
+    }
+
+    @Test fun pedidosWithPreservedSeventyThreeLineDraftRetainsAllFifteenAnswersWithoutBlocking() {
+        val file = File(requireNotNull(context.getExternalFilesDir(null)), "editor-stability-input/honor-pedidos-draft.cpp")
+        assertTrue("Supply only the preserved isolated QA draft, never user preferences: $file", file.isFile)
+        val draft = file.readText()
+        assertEquals("This diagnostic uses the exact draft described in the pending ficha", 2513, draft.length)
+        assertEquals(72, draft.count { it == '\n' })
+        assertEquals("60abf07523286e700215cff07fa5055b4f26ee6ae88ba483149f21d349a9b789", sha256(draft))
+        checkPedidosPage(draft, "pedidos-preserved-draft")
+    }
+
+    private fun checkPedidosPage(draft: String?, evidence: String) {
+        val lessonId = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val blocks = lesson.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+        val puzzle = blocks.getJSONObject(4)
+        if (draft != null) assertTrue(context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE).edit()
+            .putString("$ROUTE/$lessonId/1/2/source", draft).commit())
+        MainThreadProbe(evidence).use { probe ->
+            withAsset(lessonId, { it.getString("initialCode") == blocks.getJSONObject(2).getString("initialCode") }) { scenario, location ->
+                assertEquals(LabLocation(1, 2), location)
+                scenario.onActivity { activity ->
+                    assertEquals("The requested real editor source is rendered", draft ?: blocks.getJSONObject(2).getString("initialCode"),
+                        editor(activity).text.toString())
+                    assertEquals("The actual page retains its one numeric table", 10,
+                        descendants(content(activity)).filterIsInstance<EditText>()
+                            .count { it.contentDescription?.toString()?.startsWith("Solicitud ") == true })
+                    assertEquals(5, descendants(content(activity)).filterIsInstance<Spinner>()
+                        .count { it.contentDescription?.toString()?.startsWith("Motivo de la solicitud ") == true })
+                    editor(activity).requestFocus()
+                    editor(activity).setSelection(editor(activity).text.indexOf("return 0").coerceAtLeast(0))
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .showSoftInput(editor(activity), InputMethodManager.SHOW_IMPLICIT)
+                    fillPedidos(activity, puzzle, wrong = true)
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    descendants(content(activity)).single { it.tag == com.learngraphicsprogramming.app.math.MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+                    assertTrue("An actual wrong numeric response is rejected", descendants(content(activity)).filterIsInstance<TextView>()
+                        .any { it.text.toString().startsWith("✗") })
+                    assertFalse("A wrong attempt does not show the solution", descendants(content(activity)).filterIsInstance<TextView>()
+                        .any { it.text.toString().startsWith("✓") })
+                    fillPedidos(activity, puzzle, wrong = false)
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    descendants(content(activity)).single { it.tag == com.learngraphicsprogramming.app.math.MathPuzzleRenderer.CHECK_ACTION_TAG }.performClick()
+                    assertTrue("The original fifteen expected responses are accepted", descendants(content(activity)).filterIsInstance<TextView>()
+                        .any { it.text.toString().startsWith("✓") })
+                }
+                scenario.recreate()
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    verifyPedidos(activity, puzzle)
+                    assertEquals("Reopening preserves this independent compiler draft",
+                        draft ?: blocks.getJSONObject(2).getString("initialCode"), editor(activity).text.toString())
+                    assertTrue(descendants(content(activity)).filterIsInstance<TextView>().any { it.text.toString().startsWith("✓") })
+                }
+                val expectedOutput = if (draft == null) "" else
+                    "Rechazado:0\nAceptado:1\nAceptado:20\nRechazado:21\nCodigo rechazado\n" +
+                        "1:0:0:0:5:1\n1:0:0:0:2:1\n1:1:1:3:20:1:1"
+                assertSuccessful(run(scenario), expectedOutput)
+                probe.result.put("allFifteenAnswersRestored", true).put("wrongRetryCorrect", true)
+                    .put("sourceSha256", sha256(draft ?: blocks.getJSONObject(2).getString("initialCode")))
+                    .put("sourceCharacters", (draft ?: blocks.getJSONObject(2).getString("initialCode")).length)
+                    .put("nativeCompilerStdout", expectedOutput)
+            }
+        }
+    }
+
+    private fun fillPedidos(activity: LessonActivity, puzzle: JSONObject, wrong: Boolean) {
+        val responses = puzzle.getJSONArray("responses")
+        for (index in 0 until responses.length()) {
+            val response = responses.getJSONObject(index)
+            val fields = response.getJSONArray("fields")
+            val validators = response.getJSONObject("validator").getJSONObject("fields")
+            for (fieldIndex in 0 until fields.length()) {
+                val field = fields.getJSONObject(fieldIndex)
+                val expected = validators.getJSONObject(field.getString("id")).getString("expected")
+                val control = descendants(content(activity)).single { (it is EditText || it is Spinner) &&
+                    it.contentDescription?.toString() == field.getString("label") }
+                if (control is EditText) control.setText(if (wrong && field.getString("id") == "resultado_1") "9" else expected)
+                else {
+                    control as Spinner
+                    val options = field.getJSONArray("options")
+                    control.setSelection((0 until options.length()).single { options.getJSONObject(it).getString("id") == expected } + 1)
+                }
+            }
+        }
+    }
+
+    private fun verifyPedidos(activity: LessonActivity, puzzle: JSONObject) {
+        val responses = puzzle.getJSONArray("responses")
+        for (index in 0 until responses.length()) {
+            val response = responses.getJSONObject(index)
+            val fields = response.getJSONArray("fields")
+            val validators = response.getJSONObject("validator").getJSONObject("fields")
+            for (fieldIndex in 0 until fields.length()) {
+                val field = fields.getJSONObject(fieldIndex)
+                val expected = validators.getJSONObject(field.getString("id")).getString("expected")
+                val control = descendants(content(activity)).single { (it is EditText || it is Spinner) &&
+                    it.contentDescription?.toString() == field.getString("label") }
+                val actual = if (control is EditText) control.text.toString() else {
+                    control as Spinner
+                    field.getJSONArray("options").getJSONObject(control.selectedItemPosition - 1).getString("id")
+                }
+                assertEquals("Original response ${field.getString("id")} survives reopening", expected, actual)
+            }
+        }
+    }
+
+    /** A diagnostic observer only: no dispatch, reader, compiler or layout behavior changes.
+     * Its independent thread records the actual UI stack if a queued heartbeat is delayed. */
+    private inner class MainThreadProbe(private val name: String) : java.io.Closeable {
+        val result = JSONObject().put("device", Build.MODEL).put("sdk", Build.VERSION.SDK_INT)
+        private val running = java.util.concurrent.atomic.AtomicBoolean(true)
+        private val queuedAt = java.util.concurrent.atomic.AtomicLong(0)
+        private val maxDelay = java.util.concurrent.atomic.AtomicLong(0)
+        private val samples = java.util.concurrent.ConcurrentLinkedQueue<JSONObject>()
+        private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        private val thread = Thread({
+            while (running.get()) {
+                val start = SystemClock.uptimeMillis()
+                if (queuedAt.compareAndSet(0, start)) handler.post {
+                    val queued = queuedAt.getAndSet(0)
+                    if (queued > 0) maxDelay.accumulateAndGet(SystemClock.uptimeMillis() - queued) { first, second -> maxOf(first, second) }
+                }
+                val queued = queuedAt.get()
+                val delay = if (queued > 0) SystemClock.uptimeMillis() - queued else 0
+                if (delay > 500 && samples.size < 30) {
+                    samples.add(JSONObject().put("delayMs", delay).put("mainThreadStack", JSONArray(
+                        android.os.Looper.getMainLooper().thread.stackTrace.map { it.toString() })))
+                    flush()
+                }
+                SystemClock.sleep(100)
+            }
+        }, "qa-editor-main-observer").apply { isDaemon = true; start() }
+        private fun flush() = stabilityEvidence("$name.json", JSONObject(result.toString())
+            .put("maxHeartbeatDelayMs", maxDelay.get()).put("slowSamples", JSONArray(samples.toList())))
+        override fun close() {
+            running.set(false)
+            thread.join(1000)
+            flush()
+            assertTrue("The actual UI heartbeat must precede Android's documented 5000 ms focus/input timeout; " +
+                "observed ${maxDelay.get()} ms (original stacks preserved in $name.json)", maxDelay.get() < 5000)
+        }
+    }
+
+    private fun sha256(value: String) = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) }
+
+    private fun stabilityEvidence(name: String, value: JSONObject) {
+        File(requireNotNull(context.getExternalFilesDir(null)), "editor-stability-current-qa").apply { mkdirs() }
+            .resolve(name).writeText(value.toString(2))
+    }
+
     @Test fun preparedInputHandlesEmptyMalformedUnicodeAndSeparatesAllOutputChannels() {
         withFixture(STREAM_SOURCE, "") { scenario ->
             runWithInput(scenario, "", "EMPTY")
@@ -736,7 +1039,21 @@ class CppCurricularLabsDeviceTest {
     private fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
     private fun text(activity: LessonActivity, tag: String) = (tagged(activity, tag) as TextView).text.toString()
     private fun tagged(activity: LessonActivity, tag: String): View {
-        val matches = descendants(content(activity)).filter { it.tag == tag }
+        val page = content(activity)
+        val matches = if (tag == "cpp_code_input") {
+            // A prediction legitimately shares this editor tag. Locate the compiler's
+            // editor card before its Run control without selecting the answer editor.
+            val run = descendants(page).single { it.tag == "cpp_run" }
+            var runChild: View = run
+            while (runChild.parent !== page) runChild = runChild.parent as? View
+                ?: error("The compiler Run control is not inside the current lesson block")
+            val card = (page.indexOfChild(runChild) - 1 downTo 0).asSequence()
+                .map(page::getChildAt).first { sibling -> descendants(sibling).any { it.tag == tag } }
+            descendants(card).filter { it.tag == tag }.also { selected ->
+                assertTrue("The selected editor is the actual compiler component",
+                    selected.singleOrNull() is FreeScrollEditText)
+            }
+        } else descendants(page).filter { it.tag == tag }
         if (matches.size != 1) diagnoseUnexpectedRuntimeControls(activity, tag, matches.size)
         return matches.single()
     }

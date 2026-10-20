@@ -4,8 +4,12 @@ No compila C++, no modifica archivos y no certifica las respuestas pedagógicas.
 """
 
 import json
+import hashlib
+import math
 import re
 import subprocess
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 from pathlib import Path, PurePosixPath
 
 
@@ -14,7 +18,7 @@ CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
 FIELDS = {
     "heading": {"type", "text"},
     "paragraph": {"type", "text", "emphasis"},
-    "note": {"type", "text"},
+    "note": {"type", "text", "emphasis"},
     "code": {"type", "language", "code"},
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation", "reviewFeedback"},
     "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison", "reviewFeedback"},
@@ -23,10 +27,12 @@ FIELDS = {
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder", "explanation", "reviewFeedback"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives", "reviewFeedback", "explanation"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
-    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake"},
+    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck"},
+    # Contenedor compartido ya admitido por MathPuzzleParser en ambas rutas.
+    "math_puzzle": {"type", "schemaVersion", "version", "id", "prompt", "question", "representations", "tools", "responses", "feedback"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
-COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake"}
+COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake", "outputCheck"}
 REVIEW_FEEDBACK_TYPES = {"multiple_choice", "fill_code", "output_prediction", "order_code", "drag_fill_code", "inline_fill_code"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
@@ -98,6 +104,93 @@ EXERCISE_TEXT_CLARIFICATIONS = {
         "Se muestra Archivo preparado, con un espacio entre las palabras. Las comillas, el punto y coma y los saltos de línea que separan las instrucciones del código fuente no forman parte de esta salida.",
     ),
 }
+# Revisiones editoriales autorizadas, comprobadas contra los commits originales.
+# Cada transición fija ubicación, tipo, campo y ambos textos exactos por SHA-256.
+# No se acepta un texto futuro distinto ni se altera el resto del ejercicio.
+APPROVED_EDITORIAL_REVISIONS = {
+    ('objetos_y_estado/lesson_cadenas_y_texto.json', 4, 5, 'inline_fill_code', 'explanation'): (
+        '0b00e407d9f1d5fe3423d93e8c290eddc3130f5def742e5676b6c31c3a9cb21d',
+        'ff7fd9ab41d8a60284a2432a274db8ddb0dc4e8b0899cb0eeadb73a7f1324d7e'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 1, 5, 'fill_code', 'explanation'): (
+        'a8f2b9592f694fffb80d3727d4e57b4018bcab943e33dbd997bfeb45188fcbe7',
+        '2efd44ee40319f872137cb3051a05196bf37e325cba411bf9301ac6099a195fa'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 2, 3, 'output_prediction', 'explanation'): (
+        'f2d3bbc11d7a244a396b91e4a8278dee2aaa60201d08bff8abf2e8cb28e3c0e4',
+        'c1667ea1c68a2f13578370d4e07aa40253d6e8cff0047db1316ca397649e24b5'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 3, 3, 'output_prediction', 'explanation'): (
+        '96af27304af8e07e9c7519fc9cadbb0940f11cae8481bcbd7ef12366b60d686e',
+        '25f419e89cceb8fbac53952b45b1980c48057e59763a1c7b2f54a3880e8e074a'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 3, 4, 'inline_fill_code', 'explanation'): (
+        '1a22244910e8f2f4e7897c17ce4458482c1c24c285de931824f9ec867c62af6b',
+        '970e68c637ab36808ddf6407b7f97a72cbb8e33eba26efa96c5c0ef8096b196b'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 2, 'output_prediction', 'explanation'): (
+        '45ca7a8464e04a165e484fd5ec56c6838fb6a05533da8e20c9d064185ca07f04',
+        'f76b0a7cf1c4a7027e00fb02afdb04349566a86071b770e4071820091b85b12c'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 3, 'fill_code', 'explanation'): (
+        '9a8e3fd50b66622ea487de26fbd414f943d6b6c04685d08737ea9a02f47e84af',
+        '1885014efb8a6cff68259a9e531dc95be25d227cf1e9fab2c2d725f074587ed0'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 6, 5, 'output_prediction', 'explanation'): (
+        '78ce60b5118570727a27c9aebfb81869ffecc39dd7465c92f18356532058d959',
+        '6780d56f05919c9030020dff5195e1d89a64a37e6cbb84989b4d3321b76d1612'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_caracteres_y_valores_logicos.json', 8, 5, 'output_prediction', 'explanation'): (
+        'ea46217c72bfbcdf6a91f4ce9f0b44cfe9334cb229b6e3505ee5189fbc89daff',
+        'de0e1f2c73bdf62a4afc6f1b39d1060fdaa74359746366ae535e4a64ebc58a3d'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_conversiones_y_deduccion.json', 4, 6, 'inline_fill_code', 'explanation'): (
+        'cc2330bc9c038bde0b4b5b7005b5c9f657dde993f08b20c09ebd4c0f7648dde9',
+        '6e756fb7eb6302efc1f7a959abf1b37bc9b58cba320eee26d773635e203ed526'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_declarar_e_inicializar.json', 3, 5, 'inline_fill_code', 'explanation'): (
+        '4119aa2d1fa244c212eb462893c5c271e4fd51bc783a457f1e23f073e2a908e5',
+        '556b24cae3458ce1445c06cca12f56cd48fccc9d3a57bafa51b9dccdb2bc1a1b'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_enteros_y_aproximaciones.json', 4, 4, 'inline_fill_code', 'explanation'): (
+        '294fe6fba1a293d9ab2d4d890224de0ec41e216a400850145f2ee3d43b093261',
+        '29e344a9c4c75c3bf3889bbf736b59a28818b5ba74e10edd62fa313b4e9d826b'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_enteros_y_aproximaciones.json', 8, 7, 'inline_fill_code', 'explanation'): (
+        'bcbf2a476d60f2e326154b7b73a6104c9f11d225591cd5973915e54d8a2587fa',
+        'a9d3465943dd97701672d0164fd8005f7255824249176acc63d6df33583486eb'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_estado_asignacion_y_copia.json', 6, 5, 'inline_fill_code', 'explanation'): (
+        'fc13f615e189b261ccc229062a1e084c72fc434140900e94716392b15ee988ff',
+        '83d52151de37084d81e2d5f0197575ea7e730a637478200e7363728a1bd841fd'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_leer_una_entrada_conocida.json', 9, 6, 'drag_fill_code', 'explanation'): (
+        '8a6b313147e327407bfa956931ccf313cbe1d0d441053a85832abfc4f28c3137',
+        'f06a1f6a8c871f962f1954ae04440ab7f49e77eca9bc863af5b3a9ea191483e3'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_nombres_con_intencion.json', 4, 5, 'inline_fill_code', 'explanation'): (
+        'c7e59ef44575bb0209559dc292e858b26b067bebc123d89015b99e39fcd6da60',
+        '60826465ccc4e96e14b4c4248689e96135ed49cac8371b5d4e58b96f6955bc31'),  # ad4f362 -> 879f5ce
+    ('programas_y_ejecucion/lesson_texto_secuencia_y_formato.json', 5, 2, 'inline_fill_code', 'explanation'): (
+        'e128bdfeb5fe91f82f96d4c9b01de833d9e632ac9efe03aee2232e412bc3569f',
+        '745e7f84b90234c0926cf061d43da90b04c70acc0b911e30ed8eb249e9b80ee5'),  # ad4f362 -> 879f5ce
+    ('objetos_y_estado/lesson_cadenas_y_texto.json', 8, 6, 'output_prediction', 'explanation'): (
+        '71b820f683c5bf932dbbd1e1ab362c0d247688b6e23fa01693a749ee3bab90f5',
+        '40b2ffffea40a5840a66aefad3ce337ec5d6a827b8960015c822c293026c3bfb'),  # 879f5ce -> HEAD
+    ('objetos_y_estado/lesson_cadenas_y_texto.json', 8, 6, 'output_prediction', 'question'): (
+        '95de26b71f4a251ce41da5d9ce55a0cf6ba2de19abfe75889329abfa8ea7d6a6',
+        'ffd2567e4d964854df7fe1cda0bed34a2cc6179a4a6c9b3b58a52cafe26be492'),  # 879f5ce -> HEAD
+    ('objetos_y_estado/lesson_enteros_y_aproximaciones.json', 8, 6, 'output_prediction', 'question'): (
+        '0675fd8b649157d5e354779fb5c4674b0ccfa8ae95ec64af35039d5d123aea26',
+        '7322b70b9362e5e4c98c4046b45aafba681ee27792e6697955559ea4a80e68c7'),  # 879f5ce -> HEAD
+    ('objetos_y_estado/lesson_leer_una_entrada_conocida.json', 7, 5, 'output_prediction', 'question'): (
+        '96d0e7e48bb788850554ee18248d42f009a7a5706b00be66496e37ad1d6b67b1',
+        'bc683ef3cdb8e33263794d1a080cdec6eb0cd9f59fd4fe121a940cf3806eee5c'),  # 879f5ce -> HEAD
+    ('objetos_y_estado/lesson_leer_una_entrada_conocida.json', 9, 6, 'drag_fill_code', 'question'): (
+        '32ccd907d2d8d3d0a1efb9cf3b7463fae1065bce5ddc01f367efe3197dd56a4b',
+        '51d4fabbb6d93b9c66778232cd363b0b361efb457b9d385fb6f18a91e75acc6e'),  # 879f5ce -> HEAD
+    ('objetos_y_estado/lesson_representar_procesar_y_recuperar.json', 4, 3, 'multiple_choice', 'explanation'): (
+        'b478018c0c2a50ca5961803c48d21f950ca156fd7c9bb23257243ea03832cf9b',
+        '2c392fe6fdf001544822609a0e540d72b7c77ba36d4183486b845acef5cadd73'),  # 879f5ce -> HEAD
+    ('programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json', 4, 6, 'output_prediction', 'question'): (
+        '60f43916d4f3e314e647e88dbc0baa345ec37e816f62abceadacfb873733c679',
+        'daf9bb92af0fb387f61efc5a0062adf550c1bdffd15ab2a4be5b5b3f6b874d34'),  # 879f5ce -> HEAD
+    ('programas_y_ejecucion/lesson_primer_programa_y_salida.json', 5, 4, 'output_prediction', 'explanation'): (
+        'fcce514cc7299967e071a6740a5c531d358c40ffcf34321aa0310e8eb4bb61d1',
+        '2406d5a896fb0e0e871515a0456c6dc4762a02a78b26905184384763e5e35fd1'),  # 879f5ce -> HEAD
+    ('programas_y_ejecucion/lesson_primer_programa_y_salida.json', 5, 4, 'output_prediction', 'question'): (
+        '7951c377436bffa8a83f65ea8fe6044c1603d28c384af95723d607480c6052e0',
+        '3e7fa5f573c566bc17a7308398d90ee0a849aa6cb849bb89f9a2d5d643b7b01c'),  # 879f5ce -> HEAD
+    ('programas_y_ejecucion/lesson_texto_secuencia_y_formato.json', 7, 4, 'output_prediction', 'question'): (
+        'ade2fccf6105bfd136127f960de80ee2ac9ad02f3d6b0c3630e20c0537257950',
+        '7f48db3071af57952889a2c2680f14dba906231d495638855feb71c4bf23c53a'),  # 879f5ce -> HEAD
+}
+
 # Reordenaciones puntuales que retiran pistas de posición, sin cambiar opciones
 # ni la respuesta por contenido. Los índices indican el orden nuevo de HEAD.
 MULTIPLE_CHOICE_OPTION_PERMUTATIONS = {
@@ -458,23 +551,188 @@ def without_review_feedback(block):
     return {key: value for key, value in block.items() if key != "reviewFeedback"}
 
 
+def validate_math_puzzle_contract(block, where):
+    """Check the shared composition used in C++; Android remains the math evaluator.
+
+    These are the three response families currently authored in this course.
+    Additional families require extending this checker and their own native QA;
+    recognizing math_puzzle must not silently accept arbitrary nested answers.
+    """
+    for key in ("schemaVersion", "version"):
+        if key in block:
+            require(not isinstance(block[key], bool) and block[key] == 1, where,
+                    f"{key} debe ser 1")
+    prompt = block.get("prompt") if "prompt" in block else block.get("question")
+    require(isinstance(prompt, str) and bool(prompt.strip()), where, "math_puzzle requiere prompt o question no vacío")
+    if "id" in block:
+        require(isinstance(block["id"], str) and bool(block["id"].strip()), where, "ID de math_puzzle vacío")
+    for key in ("representations", "tools"):
+        values = block.get(key, [])
+        require(isinstance(values, list), where, f"{key} requiere una lista de objetos")
+        if isinstance(values, list):
+            require(all(isinstance(value, dict) and isinstance(value.get("type"), str)
+                        and value["type"].strip() for value in values), where,
+                    f"{key} requiere objetos con type no vacío")
+    if "feedback" in block:
+        feedback = block["feedback"]
+        require(isinstance(feedback, dict) and set(feedback) <= {"correct", "incorrect"}
+                and all(isinstance(value, str) for value in feedback.values()), where,
+                "feedback requiere textos correct/incorrect")
+    responses = block.get("responses")
+    require(isinstance(responses, list) and bool(responses), where, "math_puzzle requiere responses no vacío")
+    if not isinstance(responses, list):
+        return
+    seen = set()
+    for response in responses:
+        require(isinstance(response, dict), where, "respuesta matemática debe ser objeto")
+        if not isinstance(response, dict):
+            continue
+        identifier = response.get("id")
+        valid_id = isinstance(identifier, str) and bool(identifier.strip())
+        require(valid_id and identifier not in seen, where, "ID de respuesta vacío o duplicado")
+        if valid_id:
+            seen.add(identifier)
+        kind = response.get("type")
+        validator = response.get("validator")
+        require(isinstance(validator, dict), where, "respuesta matemática requiere validator objeto")
+        if not isinstance(validator, dict):
+            continue
+        validate_math_tolerance(validator, where)
+        if kind == "math_multiple_choice_single":
+            option_ids = math_item_ids(response.get("options"), where, "options")
+            expected = validator.get("expected")
+            require(validator.get("type") == "choice" and isinstance(expected, list)
+                    and len(expected) == 1 and isinstance(expected[0], str) and expected[0] in option_ids,
+                    where, "selección única requiere una opción correcta existente")
+        elif kind == "math_matching_drag":
+            sources = math_item_ids(response.get("sources"), where, "sources")
+            targets = math_item_ids(response.get("targets"), where, "targets")
+            expected = validator.get("expected")
+            require(validator.get("type") == "matching" and isinstance(expected, dict)
+                    and set(expected) == sources
+                    and all(isinstance(value, str) and value in targets for value in expected.values())
+                    and len(set(expected.values())) == len(expected), where,
+                    "matching requiere cada origen y destinos existentes sin repetir")
+        elif kind == "math_multi_input":
+            fields = response.get("fields")
+            math_item_ids(fields, where, "fields")
+            if not isinstance(fields, list):
+                continue
+            editable = {}
+            for field in fields:
+                if not isinstance(field, dict) or not isinstance(field.get("id"), str):
+                    continue
+                field_kind = field.get("type", "numeric")
+                require(field_kind in ("numeric", "expression", "dropdown", "fixed"), where,
+                        "tipo de campo matemático desconocido")
+                if field_kind == "fixed":
+                    require(isinstance(field.get("text"), str), where, "campo fijo requiere text")
+                else:
+                    editable[field["id"]] = field
+                if field_kind == "dropdown":
+                    math_item_ids(field.get("options"), where, "options")
+            expected = validator.get("fields")
+            require(validator.get("type") == "fields" and isinstance(expected, dict)
+                    and bool(editable) and set(expected) == set(editable), where,
+                    "fields requiere exactamente un validador por campo editable")
+            if isinstance(expected, dict):
+                for key, value in expected.items():
+                    require(isinstance(value, dict), where, "validador de campo debe ser objeto")
+                    if not isinstance(value, dict):
+                        continue
+                    family = value.get("type")
+                    validate_math_tolerance(value, where)
+                    # Las tablas actuales usan número/texto; otras semánticas no
+                    # se aceptan de modo implícito como si hubieran sido revisadas.
+                    require(family in ("numeric", "text", "exact_text"), where,
+                            "validador de campo no comprobado en este contrato")
+                    answer = value.get("expected")
+                    require(isinstance(answer, (str, int, float)) and not isinstance(answer, bool), where,
+                            "valor esperado de campo no textual/numérico")
+                    if family in ("text", "exact_text"):
+                        require(isinstance(answer, str), where, "validador de texto requiere expected textual")
+                    elif family == "numeric":
+                        require(is_finite_math_number(answer), where, "validador numérico requiere expected finito")
+                    if key in editable and editable[key].get("type") == "dropdown" and family in ("text", "exact_text"):
+                        choices = math_item_ids(editable[key].get("options"), where, "options")
+                        require(isinstance(answer, str) and answer in choices, where, "respuesta dropdown no existe")
+        else:
+            require(False, where, f"tipo de respuesta matemática no comprobado: {kind}")
+
+
+def math_item_ids(values, where, name):
+    require(isinstance(values, list) and bool(values), where, f"{name} requiere una lista de objetos no vacía")
+    if not isinstance(values, list):
+        return set()
+    identifiers = [item.get("id") if isinstance(item, dict) else None for item in values]
+    valid = all(isinstance(value, str) and value.strip() for value in identifiers)
+    require(valid, where, f"{name} requiere IDs textuales no vacíos")
+    if not valid:
+        return set()
+    require(len(set(identifiers)) == len(identifiers), where, f"IDs duplicados en {name}")
+    return set(identifiers)
+
+
+def is_finite_math_number(value):
+    """Mirror Rational.parse's bounded decimal/fraction syntax, not an evaluator."""
+    if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+        return False
+    text = str(value).strip().replace("−", "-").replace(",", ".")
+    if not text or len(text) > 256:
+        return False
+    percent = text.endswith("%")
+    if percent:
+        text = text[:-1].strip()
+    parts = text.split("/")
+    if len(parts) not in (1, 2):
+        return False
+    try:
+        values = []
+        for part in parts:
+            # Decimal accepts underscores unlike java.math.BigDecimal.
+            if not re.fullmatch(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", part.strip()):
+                return False
+            number = Decimal(part.strip())
+            if not number.is_finite() or abs(number.as_tuple().exponent) > 1000 or len(number.as_tuple().digits) > 256:
+                return False
+            values.append(Fraction(number))
+        result = values[0] / values[1] if len(values) == 2 else values[0]
+        return math.isfinite(float(result / 100 if percent else result))
+    except (InvalidOperation, ValueError, OverflowError, ZeroDivisionError):
+        return False
+
+
+def validate_math_tolerance(validator, where):
+    if "tolerance" not in validator:
+        return
+    try:
+        value = validator["tolerance"]
+        valid = not isinstance(value, bool) and math.isfinite(float(value)) and float(value) >= 0
+    except (TypeError, ValueError, OverflowError):
+        valid = False
+    require(valid, where, "tolerance matemática debe ser finita y no negativa")
+
+
 def validate_paragraph_emphasis_contract(block, where):
-    """Only explicit exact selections decorate original paragraph text; no markup."""
+    """Exact selections decorate original paragraph/note body, never a UI prefix."""
     if "emphasis" not in block:
         return
-    require(block.get("type") == "paragraph", where, "emphasis sólo está disponible en párrafos")
+    require(block.get("type") in ("paragraph", "note"), where,
+            "emphasis sólo está disponible en párrafos y notas")
     items, text = block["emphasis"], block.get("text")
     require(isinstance(items, list) and isinstance(text, str), where,
             "emphasis requiere una lista y el texto original del párrafo")
     if not isinstance(items, list) or not isinstance(text, str):
         return
     for item in items:
-        valid = isinstance(item, dict) and set(item) <= {"text", "occurrence"}
+        valid = isinstance(item, dict) and set(item) <= {"text", "occurrence", "style"}
         fragment = item.get("text") if isinstance(item, dict) else None
         valid = valid and isinstance(fragment, str) and bool(fragment.strip())
         require(valid, where, "cada énfasis requiere un fragmento textual exacto no vacío")
         if not valid:
             continue
+        require(item.get("style", "bold") in ("bold", "italic", "bold_italic"), where,
+                "style de énfasis debe ser bold, italic o bold_italic")
         occurrence, starts, index = item.get("occurrence"), [], 0
         while index <= len(text) - len(fragment):
             index = text.find(fragment, index)
@@ -550,6 +808,7 @@ def is_source_file(path):
 
 def validate_cpp_compiler(block, where):
     require(isinstance(block.get("initialCode"), str), where, "initialCode debe ser texto")
+    validate_cpp_output_check_contract(block, where)
     if "initialStandardInput" in block:
         require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
 
@@ -607,6 +866,78 @@ def validate_cpp_compiler(block, where):
         require(is_source_file(source), source_where, "se seleccionó una cabecera o archivo no fuente")
 
 
+def normalize_output_check_input(value, mode):
+    if mode == "tokens":
+        text = value.strip(" \t\r\n\f\v")
+        return tuple(re.split(r"[ \t\r\n\f\v]+", text)) if text else ()
+    return value
+
+
+def validate_cpp_output_check_contract(block, where):
+    """Optional, explicit output oracles; never infer success from source code."""
+    if "outputCheck" not in block:
+        return
+    config = block["outputCheck"]
+    require(isinstance(config, dict), where, "outputCheck debe ser un objeto")
+    if not isinstance(config, dict):
+        return
+    require(set(config) <= {"inputComparison", "cases"}, where, "campo outputCheck no admitido")
+    mode = config.get("inputComparison", "exact")
+    require(mode in ("exact", "tokens"), where, "inputComparison debe ser exact o tokens")
+    cases = config.get("cases")
+    require(isinstance(cases, list) and bool(cases), where, "outputCheck requiere cases no vacío")
+    if not isinstance(cases, list):
+        return
+    seen = set()
+    for index, case in enumerate(cases, 1):
+        case_where = f"{where} outputCheck caso {index}"
+        require(isinstance(case, dict), case_where, "caso debe ser un objeto")
+        if not isinstance(case, dict):
+            continue
+        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback"}, case_where,
+                "campo de caso outputCheck no admitido")
+        stdin = case.get("standardInput")
+        require(isinstance(stdin, str), case_where, "standardInput de caso debe ser texto")
+        if isinstance(stdin, str):
+            normalized = normalize_output_check_input(stdin, mode)
+            require(normalized not in seen, case_where, "entrada de caso duplicada según inputComparison")
+            seen.add(normalized)
+        correct = output_check_outputs(case.get("outputs"), case_where)
+        if "explanation" in case:
+            explanation = case["explanation"]
+            require(isinstance(explanation, str) and bool(explanation.strip()), case_where,
+                    "explanation de caso debe ser texto no vacío")
+        if "reviewFeedback" not in case:
+            continue
+        reviews = case["reviewFeedback"]
+        require(isinstance(reviews, list), case_where, "reviewFeedback de caso debe ser una lista")
+        if not isinstance(reviews, list):
+            continue
+        claimed = set(correct)
+        for review in reviews:
+            require(isinstance(review, dict), case_where, "guía de caso debe ser objeto")
+            if not isinstance(review, dict):
+                continue
+            require(set(review) == {"outputs", "text"}, case_where,
+                    "guía de caso requiere sólo outputs y text")
+            text = review.get("text")
+            require(isinstance(text, str) and bool(text.strip()), case_where,
+                    "texto de guía de caso no vacío")
+            outputs = output_check_outputs(review.get("outputs"), case_where)
+            require(not claimed.intersection(outputs), case_where,
+                    "salida de guía repetida o también admitida como correcta")
+            claimed.update(outputs)
+
+
+def output_check_outputs(values, where):
+    valid = isinstance(values, list) and bool(values) and all(isinstance(value, str) for value in values)
+    require(valid, where, "outputs requiere una lista no vacía de textos exactos")
+    if not valid:
+        return set()
+    require(len(set(values)) == len(values), where, "salida exacta duplicada en outputs")
+    return set(values)
+
+
 def validate_cmake(config, where):
     """Contrato opcional; los errores de CMakeLists se diagnostican en CMake real."""
     require(isinstance(config, dict), where, "cmake debe ser un objeto")
@@ -647,6 +978,30 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     return base == old
 
 
+def restore_approved_editorial_fields(location, old, current):
+    """Project only individually approved text transitions onto their old values.
+
+    Every remaining key still passes through the original preservation guards.
+    Neither source nor destination can be replaced by an arbitrary explanation.
+    """
+    result = current
+    for field in ("question", "explanation"):
+        transition = APPROVED_EDITORIAL_REVISIONS.get(location + (old.get("type"), field))
+        before, after = old.get(field), current.get(field)
+        if transition is None or not isinstance(before, str) or not isinstance(after, str):
+            continue
+        digests = (hashlib.sha256(before.encode("utf-8")).hexdigest(),
+                   hashlib.sha256(after.encode("utf-8")).hexdigest())
+        if digests == transition:
+            result = dict(result, **{field: before})
+    return result
+
+
+def previous_exercise_difference(old, current):
+    fields = sorted(key for key in old.keys() | current.keys() if old.get(key) != current.get(key))
+    return "campos previos modificados sin autorización: " + ", ".join(fields)
+
+
 def preserves_previous_exercise(relative, pn, bn, old, current):
     old = without_review_feedback(old)
     current = without_review_feedback(current)
@@ -658,6 +1013,9 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
     location = (lesson_path, pn + 1, bn + 1)
+    current = restore_approved_editorial_fields(location, old, current)
+    if current == old:
+        return True
     if location in DECIMAL_LITERAL_LOCATIONS and old["type"] == "fill_code":
         if current == dict(old, answerComparison=DECIMAL_LITERAL_MODE):
             return True
@@ -761,6 +1119,8 @@ def main():
                 validate_review_feedback_contract(block, where)
                 validate_code_presentation_contract(block, where)
                 validate_paragraph_emphasis_contract(block, where)
+                if kind == "math_puzzle":
+                    validate_math_puzzle_contract(block, where)
                 if kind == "cpp_compiler":
                     validate_cpp_compiler(block, where)
                 if kind in {"heading", "paragraph", "note"}:
@@ -833,7 +1193,8 @@ def main():
                         pn + 1,
                         bn + 1,
                     ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS):
-                        require(preserves_previous_exercise(relative, pn, bn, block, current), relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
+                        require(preserves_previous_exercise(relative, pn, bn, block, current), relative,
+                                f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
 
     if ERRORS:
         print("\n".join(ERRORS))

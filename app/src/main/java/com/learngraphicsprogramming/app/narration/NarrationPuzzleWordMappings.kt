@@ -2,13 +2,48 @@ package com.learngraphicsprogramming.app.narration
 
 /** Exact source projections for the ordered, already registered text views of one puzzle. */
 internal object NarrationPuzzleWordMappings {
+    /** One current result per page block/role. Reuse requires the complete original
+     * text, formula intent, target order and exact spoken segments to remain equal.
+     * It never owns views, audio, reader positions or curricular answers. */
+    internal class Cache(
+        private val compute: (Int, List<Pair<Int, CharSequence>>, Map<Int, String>, NarrationLanguage, Boolean) ->
+            Map<Int, NarrationWordMapping> = NarrationPuzzleWordMappings::forViews
+    ) {
+        private data class Source(val target: Int, val text: String, val formulas: List<ReadingTextRange>)
+        private data class Key(val sources: List<Source>, val segments: Map<Int, String>,
+                               val language: NarrationLanguage, val feedback: Boolean)
+        private data class Value(val key: Key, val mappings: Map<Int, NarrationWordMapping>)
+        private val current = mutableMapOf<Pair<Int, Boolean>, Value>()
+
+        fun forViews(block: Int, views: List<Pair<Int, CharSequence>>, segments: Map<Int, String>,
+                     language: NarrationLanguage, feedback: Boolean = false): Map<Int, NarrationWordMapping> {
+            val sources = views.map { (target, text) ->
+                Source(target, text.toString(), NarrationSourceProjection.formulaRanges(text).toList())
+            }
+            val key = Key(sources, segments.toMap(), language, feedback)
+            val slot = block to feedback
+            current[slot]?.takeIf { it.key == key }?.let { return it.mappings }
+            val stableViews = sources.map { it.target to NarrationSourceProjection.Source(it.text, it.formulas) }
+            return compute(block, stableViews, key.segments, language, feedback).also {
+                current[slot] = Value(key, it)
+            }
+        }
+
+        fun clear() = current.clear()
+    }
+
     private data class ViewPart(val target: Int, val start: Int, val end: Int,
                                 val owners: List<ReadingTextRange>)
-    private data class VisibleRun(
+    private class VisibleRun(
         val text: CharSequence,
         val parts: List<ViewPart>,
-        val signatures: List<List<String>>
-    )
+        val literalSignature: List<String>,
+        firstAutoSignature: () -> List<String>?,
+        projectedSignatures: () -> List<List<String>>
+    ) {
+        val autoSignature: List<String>? by lazy(firstAutoSignature)
+        val signatures: List<List<String>> by lazy(projectedSignatures)
+    }
     private data class Match(val endSegment: Int, val endView: Int,
                              val mappings: Map<Int, NarrationWordMapping>)
 
@@ -39,13 +74,24 @@ internal object NarrationPuzzleWordMappings {
                 ViewPart(views[viewIndex].first, offset, text.length, projection.owners)
             }
             val source = NarrationSourceProjection.Source(text.toString(), formulas)
-            val signatures = mutableListOf(NarrationSpokenWords.technicalAtoms(source, language).map { it.canonical })
-            for (restoreFormulas in if (formulas.isEmpty()) listOf(false) else listOf(false, true))
-            for (mode in listOf("auto", "text", "inline", "block")) {
-                val projection = NarrationSourceProjection.forLanguage(source, mode, language, restoreFormulas) ?: continue
-                signatures += NarrationSpokenWords.technicalAtoms(projection.text, language).map { it.canonical }
+            val literal = NarrationSpokenWords.technicalAtoms(source, language).map { it.canonical }
+            val firstAuto by lazy {
+                NarrationSourceProjection.forLanguage(source, "auto", language, restoreFormulaIntent = false)
+                    ?.let { NarrationSpokenWords.technicalAtoms(it.text, language).map { word -> word.canonical } }
             }
-            VisibleRun(source, parts, signatures.filter { it.isNotEmpty() }.distinct())
+            VisibleRun(source, parts, literal, { firstAuto }) {
+                val signatures = mutableListOf(literal)
+                for (restoreFormulas in if (formulas.isEmpty()) listOf(false) else listOf(false, true))
+                for (mode in listOf("auto", "text", "inline", "block")) {
+                    if (!restoreFormulas && mode == "auto") {
+                        firstAuto?.let { signatures += it }
+                        continue
+                    }
+                    val projection = NarrationSourceProjection.forLanguage(source, mode, language, restoreFormulas) ?: continue
+                    signatures += NarrationSpokenWords.technicalAtoms(projection.text, language).map { it.canonical }
+                }
+                signatures.filter { it.isNotEmpty() }.distinct()
+            }
         }
 
         var nextSegment = 0
@@ -58,6 +104,20 @@ internal object NarrationPuzzleWordMappings {
             search@ for (start in nextSegment until ordered.size) {
                 for (endView in nextView until views.size) {
                     val visible = visibleRun(nextView, endView)
+                    // At this same source/view occurrence no match can end before
+                    // its first segment. Prove complete literal/ordinary-auto identity
+                    // first, avoiding the forced math modes for complete labels.
+                    // Failed ownership retains the exhaustive projected search below.
+                    if (visible.literalSignature.isNotEmpty() && visible.literalSignature == spoken[start] ||
+                        visible.autoSignature?.let { it.isNotEmpty() && it == spoken[start] } == true) {
+                        val mapping = NarrationWordMappings.forBlock(block, visible.text,
+                            mapOf(ordered[start].key to ordered[start].value), language)
+                        val targeted = target(mapping, visible)
+                        if (!targeted.isNullOrEmpty()) {
+                            selected = Match(start, endView, targeted)
+                            break@search
+                        }
+                    }
                     if (visible.signatures.isEmpty()) continue
                     var candidates = visible.signatures
                     val accumulated = mutableListOf<String>()

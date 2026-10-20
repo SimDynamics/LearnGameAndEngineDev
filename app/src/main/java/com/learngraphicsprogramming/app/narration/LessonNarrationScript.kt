@@ -38,6 +38,13 @@ data class LessonNarrationScript(
         /** Rebuild the previous visible-label contract solely for its existing bookmark. */
         internal fun presentedPageVersioned(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
                  forKokoro: Boolean, instruction: (String) -> String, completeVisibleLabels: Boolean,
+                 presentation: (Int, JSONObject) -> JSONObject): LessonNarrationScript =
+            presentedPageVersioned(lesson, pageIndex, language, forKokoro, instruction, completeVisibleLabels,
+                separateTableCells = completeVisibleLabels, presentation = presentation)
+
+        internal fun presentedPageVersioned(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                 forKokoro: Boolean, instruction: (String) -> String, completeVisibleLabels: Boolean,
+                 separateTableCells: Boolean,
                  presentation: (Int, JSONObject) -> JSONObject): LessonNarrationScript {
             val blocks = lesson.optJSONArray("pages")?.optJSONObject(pageIndex)?.optJSONArray("blocks")
                 ?: return LessonNarrationScript(emptyList(), emptyList())
@@ -50,7 +57,8 @@ data class LessonNarrationScript(
             }
             fun authored(block: JSONObject): List<String> {
                 val one = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
-                return LessonNarrationText.page(one, 0, language, forKokoro, completeVisibleLabels, instruction)
+                return LessonNarrationText.pageVersioned(one, 0, language, forKokoro, completeVisibleLabels,
+                    separateTableCells, instruction)
             }
             fun paragraph(text: String, mode: String = "auto") = authored(JSONObject()
                 .put("type", "paragraph").put("text", text).put("mathMode", mode))
@@ -77,6 +85,26 @@ data class LessonNarrationScript(
                 gates += NarrationTextGate(index, start, texts.size)
             }
             return LessonNarrationScript(texts, gates, origins)
+        }
+
+        /** Only response tables changed presentation; representations and console code
+         * retain their current speech. Do not attempt a legacy-table relocation elsewhere. */
+        internal fun hasJoinedTableRows(lesson: JSONObject, pageIndex: Int): Boolean {
+            fun table(response: JSONObject): Boolean {
+                if (response.optString("layout") != "table") return false
+                val rows = response.optJSONArray("rows") ?: return false
+                return (0 until rows.length()).any { (rows.optJSONArray(it)?.length() ?: 0) > 1 }
+            }
+            val blocks = lesson.optJSONArray("pages")?.optJSONObject(pageIndex)?.optJSONArray("blocks") ?: return false
+            return (0 until blocks.length()).any { index ->
+                val block = blocks.optJSONObject(index) ?: return@any false
+                if (block.optString("type") != "math_puzzle") {
+                    block.optString("type") in MathPuzzleTypes.responseTypes && table(block)
+                } else {
+                    val responses = block.optJSONArray("responses") ?: return@any false
+                    (0 until responses.length()).any { response -> responses.optJSONObject(response)?.let(::table) == true }
+                }
+            }
         }
     }
 }

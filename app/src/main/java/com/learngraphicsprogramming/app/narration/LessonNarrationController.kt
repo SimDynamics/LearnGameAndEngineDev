@@ -124,7 +124,8 @@ class LessonNarrationController(
         var index: Int = 0, var offset: Long = 0L,
         @Volatile var finished: Boolean = false,
         var pendingManualForward: NarrationGatePosition? = null,
-        val pending: MutableSet<Int> = mutableSetOf()
+        val pending: MutableSet<Int> = mutableSetOf(),
+        val unscored: Boolean = false
     )
     @Volatile private var incorrectFeedback: IncorrectFeedback? = null
     private var incorrectFeedbackSequence = 0L
@@ -505,6 +506,24 @@ class LessonNarrationController(
         texts: List<String>, language: NarrationLanguage, pageIdentity: String, blockIndex: Int,
         pageTexts: List<String> = emptyList(), feedbackGates: List<NarrationTextGate> = emptyList(),
         correctBlocks: Set<Int> = emptySet()
+    ) = readVisibleFeedback(texts, language, pageIdentity, blockIndex, pageTexts, feedbackGates, correctBlocks, false)
+
+    /** A laboratory verdict uses the existing transient review and the same decoder.
+     * It cannot be an exercise gate, credit feedback, skip a question or create a bookmark. */
+    fun readUnscoredFeedback(
+        texts: List<String>, language: NarrationLanguage, pageIdentity: String, blockIndex: Int,
+        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>
+    ) = readVisibleFeedback(texts, language, pageIdentity, blockIndex, pageTexts, feedbackGates, correctBlocks, true)
+
+    fun cancelUnscoredFeedback(pageIdentity: String, blockIndex: Int) = onMain {
+        if (activePageIdentity == pageIdentity && incorrectFeedback?.let { it.unscored && it.blockIndex == blockIndex } == true) {
+            finishIncorrectFeedback(restoreWaiting = true)
+        }
+    }
+
+    private fun readVisibleFeedback(
+        texts: List<String>, language: NarrationLanguage, pageIdentity: String, blockIndex: Int,
+        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>, unscored: Boolean
     ) = onMain {
         if (closed || blockIndex < 0 || pageIdentity.isBlank()) return@onMain
         val selected = NarrationSettingsRepository.forLanguage(appContext, language)
@@ -517,11 +536,12 @@ class LessonNarrationController(
                     NarrationScriptSegments.gates(pageTexts, selected.engine, feedbackGates), correctBlocks)) return@onMain
             } else updateSolvedExercises(pageIdentity, correctBlocks)
         }
-        if (activePageIdentity != pageIdentity || this.language != language || segments.isEmpty() ||
-            blockIndex in correctExercises) return@onMain
+        if (activePageIdentity != pageIdentity || this.language != language || segments.isEmpty()) return@onMain
         // Do not speak unbound or validator-derived material: the UI supplies visible orientation,
         // and the exercise must be one of the original script's actual permission gates.
-        if (playbackGate?.hasExercise(blockIndex) != true) return@onMain
+        if (unscored) {
+            if (playbackGate?.hasExercise(blockIndex) == true) return@onMain
+        } else if (blockIndex in correctExercises || playbackGate?.hasExercise(blockIndex) != true) return@onMain
         val prepared = narrationParts(texts, selected)
         if (prepared.isEmpty()) return@onMain
         pendingPausedCorrectBlock = null
@@ -531,10 +551,10 @@ class LessonNarrationController(
         if (previous != null) finishIncorrectFeedback(restoreWaiting = false, prepareOriginal = false)
         // The wrong-answer guide already interrupts page audio. If the page was
         // being read, reveal the skipped prefix without moving its bookmark.
-        if (wasPlaying || wasWaiting) skipAnsweredQuestion(blockIndex, moveSourceAudio = false)
+        if (!unscored && (wasPlaying || wasWaiting)) skipAnsweredQuestion(blockIndex, moveSourceAudio = false)
         pause()
         val feedback = IncorrectFeedback(++incorrectFeedbackSequence, blockIndex,
-            prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying)
+            prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying, unscored = unscored)
         incorrectFeedback = feedback
         publishGuideProgress(feedback, NarrationPlaybackPhase.PREPARED)
         resume()
