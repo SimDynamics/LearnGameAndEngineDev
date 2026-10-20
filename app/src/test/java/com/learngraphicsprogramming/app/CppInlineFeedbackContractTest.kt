@@ -54,8 +54,12 @@ class CppInlineFeedbackContractTest {
                 }
             }
             assertEquals(before, original.toString())
-            enhanced.remove("reviewFeedback")
-            enhanced.remove("explanation")
+            // Published lessons may already contain editorial feedback. Restore
+            // those exact values before checking that every contract field stayed intact.
+            for (field in listOf("reviewFeedback", "explanation")) {
+                if (original.has(field)) enhanced.put(field, original.get(field))
+                else enhanced.remove(field)
+            }
             assertEquals("Feedback cannot alter any original contract field", before, enhanced.toString())
         }
         assertEquals(9, LOCATIONS.size)

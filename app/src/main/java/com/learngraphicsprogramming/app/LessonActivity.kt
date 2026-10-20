@@ -457,6 +457,9 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             forKokoro = neural,
             instruction = { type -> NarrationUiInstructions.forBlock(this,type) },
             presentation = { index, block -> mathNarrationSources[identity]?.get(index)?.invoke() ?: block })
+        narrationController?.bindStableLesson(
+            lessonJson, currentRouteId, currentLessonId, currentPage, script, language, neural
+        ) { type -> NarrationUiInstructions.forBlock(this, type) }
         val configuration = "${language.tag}/${selected.engine}/${selected.kokoroVoice}/${selected.androidVoice}"
         val known = readingPresentations[identity]?.takeIf { it.configuration == configuration }?.script
         val previousPresentations = if (known != null) listOf(known) else buildList {
@@ -660,7 +663,9 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
 
     private fun narrationPageIdentity(): String =
-        "$currentRouteId/$currentLessonId/$currentPage"
+        LessonStateCoordinates.narrationPageIdentity(
+            this, currentRouteId, currentLessonId, currentPage
+        )
 
     /** Identical text for page prefetch, Play and Restart. */
     private fun pageNarrationText(
@@ -1480,7 +1485,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         verdict: (T) -> Boolean?
     ): T? = try {
         exerciseAttempts.evaluate(
-            ExerciseAttemptKey(currentRouteId, currentLessonId, pageIndex, blockIndex),
+            LessonStateCoordinates.attemptKey(this, currentRouteId, currentLessonId, pageIndex, blockIndex),
             ExerciseAnswerIdentity.of(answer),
             canEvaluate = ::canEvaluateAttempt,
             evaluation = evaluation,
@@ -6712,7 +6717,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
 
         val initialStandardInput = block.optString("initialStandardInput", "")
         val standardInputRequested = CppLabInputPolicy.requested(block, outputCheckSpecification)
-        val draftKey = "$currentRouteId/$currentLessonId/$currentPage/$blockIndex"
+        val draftKey = LessonStateCoordinates.draftKey(this, currentRouteId, currentLessonId, currentPage, blockIndex)
         val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
         var projectControls: View? = null
         val inputLabel = TextView(this).apply {
@@ -9359,6 +9364,10 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                 )
 
         renderCurrentPage()
+
+        // Opening a page counts as visiting its blocks even if the student advances
+        // before onPause. Navigation already saves its destination page explicitly.
+        saveCurrentPageProgress()
     }
 
     private fun renderCurrentPage() {

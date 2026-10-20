@@ -81,7 +81,7 @@ class CppOutputCheckPublishedLessonTest {
         assertEquals(2, blocks.getJSONObject(4).getInt("correctIndex"))
     }
 
-    @Test fun localizedInstructionsNameTheSingleActionAndOtherLabsRemainOptional() {
+    @Test fun localizedInstructionsNameTheSingleActionAndOutputChecksRemainExplicitAndOptional() {
         for (translation in translations) {
             val lesson = lesson(translation.language)
             val blocks = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
@@ -95,7 +95,20 @@ class CppOutputCheckPublishedLessonTest {
                 "cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json").readText())
                 .getJSONArray("pages").getJSONObject(6).getJSONArray("blocks").getJSONObject(2)
             assertEquals("cpp_compiler", ordinary.getString("type"))
-            assertNull(CppOutputCheck.fromBlock(ordinary))
+            if (translation.language == "es") {
+                val specification = requireNotNull(CppOutputCheck.fromBlock(ordinary))
+                assertEquals("exact", specification.inputComparison)
+                val target = specification.cases.single()
+                assertEquals("", target.standardInput)
+                assertEquals(listOf("Informe\nZona Este\nFin", "Informe\nZona Este\nFin\n"), target.outputs)
+            } else {
+                assertFalse(ordinary.has("outputCheck"))
+                assertNull(CppOutputCheck.fromBlock(ordinary))
+            }
+            // An authored output contract is optional in every language. Keep that guarantee
+            // independent of the Spanish lab, which now declares its own valid contract.
+            val withoutOutputCheck = JSONObject(ordinary.toString()).apply { remove("outputCheck") }
+            assertNull(CppOutputCheck.fromBlock(withoutOutputCheck))
         }
     }
 

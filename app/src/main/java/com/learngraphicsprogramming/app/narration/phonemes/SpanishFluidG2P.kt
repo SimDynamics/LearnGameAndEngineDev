@@ -49,7 +49,7 @@ object SpanishFluidG2P {
         if (text.isBlank() || text.length > 32_768) return null
         return runCatching {
             val source = nfc(text)
-            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
+            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'•"
             val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
             val cppRanges = cpp.findAll(source).map { it.range }.toList()
             if (source.indices.any { index ->
@@ -134,7 +134,7 @@ object SpanishFluidG2P {
         if (text.isBlank() || text.length > 32_768 || foreignTokens.keys != foreignWords.keys) return null
         return runCatching {
             val source = nfc(text)
-            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'"
+            val prosePunctuation = ".,!?;:—–-…()«»\"“”¡¿'•"
             val cpp = Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE)
             val cppRanges = cpp.findAll(source).map { it.range }.toList()
             val normalizationOperators = "=+×÷·<>≤≥≠≈/\\−-"
@@ -422,6 +422,11 @@ object SpanishFluidG2P {
         // NOT in Kokoro's token alphabet. Preserve the pause as a comma;
         // arithmetic middot remains spoken as multiplication ("por").
         val separator = math.replace(Regex("\\s+·\\s+(?=\\p{Lu})"), ", ")
+            // An independent list bullet introduces a pause, with no lexical
+            // owner. Leave adjacent symbols and arithmetic middot unchanged.
+            .replace(Regex("(?<!\\S)•(?=\\s|$)"), ",")
+            // Test-input prose uses the same literal symbol name as code.
+            .replace(Regex("(?<!\\S)~(?=\\s|$)"), "tilde")
         val words = numberRuns.replace(separator) { match -> " ${SpanishMathSpeech.text(match.value)} " }
         return words.replace("%", " por ciento ").replace("=", " es igual a ")
             .replace("+", " más ").replace("×", " por ").replace("·", " por ")

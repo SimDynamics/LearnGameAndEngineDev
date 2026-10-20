@@ -4,7 +4,8 @@ import java.security.MessageDigest
 
 internal data class NarrationResumePoint(val segment: Int = 0, val positionMs: Long = 0,
                                         val finished: Boolean = false, val feedbackHeardThrough: Int = 0)
-internal data class NarrationResumeEntry(val key: String, val point: NarrationResumePoint)
+internal data class NarrationResumeEntry(val key: String, val point: NarrationResumePoint,
+                                        val stable: NarrationStablePage? = null)
 internal data class NarrationResumeHistory(
     val entries: List<NarrationResumeEntry> = emptyList(),
     val activeKey: String = "",
@@ -57,6 +58,7 @@ internal object NarrationResumePolicy {
 
     /** A presentation change updates its existing slot without promoting or evicting a page. */
     fun relocate(history: NarrationResumeHistory, oldKey: String, newKey: String,
+                 stable: NarrationStablePage? = null,
                  transform: (NarrationResumePoint) -> NarrationResumePoint?): NarrationResumeHistory {
         require(oldKey.isNotEmpty() && newKey.isNotEmpty())
         if (oldKey == newKey) return history
@@ -72,16 +74,16 @@ internal object NarrationResumePolicy {
             it.segment >= 0 && it.positionMs >= 0 && it.feedbackHeardThrough >= 0
         } ?: return history
         return history.copy(entries = history.entries.map {
-            if (it.key == oldKey) NarrationResumeEntry(newKey, point) else it
+            if (it.key == oldKey) NarrationResumeEntry(newKey, point, stable) else it
         }, activeKey = if (history.activeKey == oldKey) newKey else history.activeKey)
     }
 
     /** Only an explicit playback request promotes a page or evicts the oldest bookmark. */
     fun begin(history: NarrationResumeHistory, key: String, owner: String,
-              point: NarrationResumePoint): NarrationResumeHistory {
+              point: NarrationResumePoint, stable: NarrationStablePage? = null): NarrationResumeHistory {
         require(key.isNotEmpty() && owner.isNotEmpty())
         require(point.segment >= 0 && point.positionMs >= 0)
-        val entry = NarrationResumeEntry(key, point.copy(finished = false))
+        val entry = NarrationResumeEntry(key, point.copy(finished = false), stable)
         return NarrationResumeHistory(
             (listOf(entry) + history.entries.filterNot { it.key == key }).take(MAX_BOOKMARKS),
             key, owner

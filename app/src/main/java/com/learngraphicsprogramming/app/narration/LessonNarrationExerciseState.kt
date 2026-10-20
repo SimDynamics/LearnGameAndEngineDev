@@ -28,7 +28,8 @@ internal class LessonNarrationExerciseState(context: Context,
         }
     }
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (!closed && (key == null || key.startsWith("exercise_${lessonId}_page_${page}_block_"))) {
+        // A visible page may now own exercises stored in several original page slots.
+        if (!closed && (key == null || key.startsWith("exercise_${lessonId}_"))) {
             main.removeCallbacks(update)
             main.post(update)
         }

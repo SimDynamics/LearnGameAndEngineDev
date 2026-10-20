@@ -1,0 +1,454 @@
+from copy import deepcopy
+from contextlib import redirect_stderr
+import importlib.util
+import io
+import json
+from pathlib import Path
+import random
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+SPEC = importlib.util.spec_from_file_location('stable_state_layout', Path(__file__).with_name('stable_state_layout.py'))
+m = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(m)
+
+
+def fixture():
+    return {
+        'id': 'cpp_fundamentals__programas_y_ejecucion__fixture', 'title': 'Fixture',
+        'pages': [
+            {'title': 'A', 'blocks': [{'type': 'paragraph', 'text': 'Teoría A'},
+                                    {'type': 'output_prediction', 'id': 'a', 'answers': ['Zona inicial']}]},
+            {'title': 'B', 'blocks': [{'type': 'paragraph', 'text': 'Teoría B'},
+                                    {'type': 'cpp_compiler', 'initialCode': 'SOURCE', 'initialStandardInput': 'Rita 4'}]},
+            {'title': 'C', 'blocks': [{'type': 'math_puzzle', 'id': 'm', 'responses': [{'id':'r','validator': {'value':2}}]}]},
+        ]
+    }
+
+
+class StateLayoutTest(unittest.TestCase):
+    def test_bootstrap_preserves_source(self):
+        source = fixture(); before = deepcopy(source)
+        new = m.prepare(source)
+        self.assertEqual(source, before)
+        self.assertEqual(new['pages'], source['pages'])
+        self.assertEqual(m.validate(new), m.validate(source))
+
+    def test_bootstrap_is_idempotent(self):
+        one = m.prepare(fixture())
+        self.assertEqual(m.prepare(one), one)
+
+    def test_swap_editor_prediction_without_crossing_their_state_keys(self):
+        source = m.prepare(fixture())
+        plan = deepcopy(source['stateLayout']['current'])
+        plan[0]['blocks'][1], plan[1]['blocks'][1] = plan[1]['blocks'][1], plan[0]['blocks'][1]
+        moved = m.reorder(source, plan)
+        self.assertEqual(m.validate(moved)[0, 1], (1, 1))
+        self.assertEqual(m.validate(moved)[1, 1], (0, 1))
+        m.validate_transition(fixture(), moved)
+
+    def test_editor_without_curricular_id_gets_stable_identity(self):
+        source = m.prepare(fixture())
+        self.assertNotIn('id', source['pages'][1]['blocks'][1])
+        self.assertIn((1, 1), m.validate(source))
+
+    def test_math_block_remains_byte_equivalent_as_json_payload(self):
+        import json
+        source = m.prepare(fixture())
+        before = json.dumps(source['pages'][2]['blocks'][0])
+        moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        self.assertEqual(json.dumps(moved['pages'][0]['blocks'][0]), before)
+
+    def test_math_key_reordering_cannot_invalidate_the_legacy_runtime_fingerprint(self):
+        original = fixture()
+        moved = m.reorder(m.prepare(original), list(reversed(m.prepare(original)['stateLayout']['current'])))
+        block = moved['pages'][0]['blocks'][0]
+        moved['pages'][0]['blocks'][0] = dict(reversed(list(block.items())))
+        m.validate(moved)  # Canonical state hashes alone cannot detect this regression.
+        with self.assertRaisesRegex(m.LayoutError, 'historical JSON key order'):
+            m.validate_transition(original, moved)
+
+    def test_nested_math_key_reordering_is_rejected_even_without_a_visible_move(self):
+        original = m.prepare(fixture())
+        revised = deepcopy(original)
+        response = revised['pages'][2]['blocks'][0]['responses'][0]
+        revised['pages'][2]['blocks'][0]['responses'][0] = dict(reversed(list(response.items())))
+        m.validate(revised)
+        with self.assertRaisesRegex(m.LayoutError, 'historical JSON key order'):
+            m.validate_transition(original, revised)
+
+    def test_skipped_intermediate_releases_and_repeated_moves_keep_original_slots(self):
+        source = m.prepare(fixture())
+        moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        twice = m.reorder(moved, [moved['stateLayout']['current'][1], moved['stateLayout']['current'][0],
+                                 moved['stateLayout']['current'][2]])
+        m.validate_transition(fixture(), twice)
+        self.assertEqual(twice['stateLayout']['origin'], source['stateLayout']['origin'])
+
+    def test_old_validator_receives_original_positions_after_verified_reorder(self):
+        source = fixture()
+        prepared = m.prepare(source)
+        moved = m.reorder(prepared, list(reversed(prepared['stateLayout']['current'])))
+        aligned = m.align_for_previous_validation(source, moved)
+        self.assertEqual(aligned['pages'], source['pages'])
+
+    def test_old_validator_still_has_no_positional_relaxation_without_manifest(self):
+        source = fixture(); moved = deepcopy(source)
+        moved['pages'].reverse()
+        self.assertIs(m.align_for_previous_validation(source, moved), moved)
+        self.assertNotEqual(moved['pages'], source['pages'])
+
+    def test_changed_correct_answer_is_rejected(self):
+        source = m.prepare(fixture())
+        source['pages'][0]['blocks'][1]['answers'] = ['other']
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_changed_editor_source_is_rejected(self):
+        source = m.prepare(fixture())
+        source['pages'][1]['blocks'][1]['initialCode'] = 'OTHER'
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_changed_block_under_existing_id_is_rejected(self):
+        source = m.prepare(fixture())
+        source['pages'][0]['blocks'][1], source['pages'][1]['blocks'][1] = source['pages'][1]['blocks'][1], source['pages'][0]['blocks'][1]
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_origin_rewrite_cannot_hide_new_answer_from_transition_check(self):
+        original = m.prepare(fixture()); forged = deepcopy(original)
+        forged['pages'][0]['blocks'][1]['answers'] = ['forged']
+        forged['stateLayout']['origin'][0]['blocks'][1]['sha256'] = m.state_fingerprint(forged['pages'][0]['blocks'][1])
+        m.validate(forged)  # Local integrity alone is not proof of a safe transition.
+        with self.assertRaises(m.LayoutError): m.validate_transition(original, forged)
+
+    def test_reinitializing_origins_after_reorder_is_rejected(self):
+        source = m.prepare(fixture()); moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        del moved['stateLayout']; forged = m.prepare(moved)
+        with self.assertRaises(m.LayoutError): m.validate_transition(source, forged)
+
+    def test_theory_only_origin_cannot_be_regenerated_after_swapping_equal_shape_pages(self):
+        original = {'id':'theory', 'pages': [
+            {'blocks':[{'type':'paragraph', 'text':'First explanation'}]},
+            {'blocks':[{'type':'paragraph', 'text':'Second explanation'}]}]}
+        source = m.prepare(original)
+        swapped = deepcopy(original); swapped['pages'].reverse()
+        forged = m.prepare(swapped)
+        # Prose is deliberately excluded from the persistent state signature.
+        self.assertEqual(source['stateLayout']['origin'], forged['stateLayout']['origin'])
+        with self.assertRaises(m.LayoutError): m.validate_transition(original, forged)
+        with self.assertRaises(m.LayoutError): m.validate_transition(source, forged)
+
+    def test_first_adoption_keeps_full_editorial_content_unambiguous(self):
+        previous = fixture(); current = m.prepare(previous)
+        current['pages'][0]['blocks'][0]['text'] = 'Changed while adopting'
+        with self.assertRaisesRegex(m.LayoutError, 'preserve complete blocks'):
+            m.validate_transition(previous, current)
+
+    def test_move_and_editorial_revision_are_checked_in_separate_transitions(self):
+        previous = m.prepare(fixture())
+        moved = m.reorder(previous, list(reversed(previous['stateLayout']['current'])))
+        revised = deepcopy(moved)
+        revised['pages'][2]['blocks'][0]['text'] = 'Clearer wording after the move'
+        with self.assertRaisesRegex(m.LayoutError, 'preserve complete blocks'):
+            m.validate_transition(previous, revised)
+        m.validate_transition(moved, revised)
+
+    def test_removing_manifest_is_rejected(self):
+        source = m.prepare(fixture())
+        with self.assertRaises(m.LayoutError): m.validate_transition(source, fixture())
+
+    def test_duplicate_block_identity_rejected(self):
+        source = m.prepare(fixture())
+        source['stateLayout']['current'][0]['blocks'][1] = source['stateLayout']['current'][0]['blocks'][0]
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_duplicate_origin_page_rejected(self):
+        source = m.prepare(fixture()); source['stateLayout']['origin'][1]['id'] = source['stateLayout']['origin'][0]['id']
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_unknown_block_rejected(self):
+        source = m.prepare(fixture()); source['stateLayout']['current'][0]['blocks'][0] = 'unregistered'
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_removed_block_is_not_silently_forgotten(self):
+        source = m.prepare(fixture()); source['pages'][0]['blocks'].pop(); source['stateLayout']['current'][0]['blocks'].pop()
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_added_block_must_not_inherit_old_slot(self):
+        source = m.prepare(fixture()); source['pages'][0]['blocks'].append({'type':'paragraph','text':'NEW'})
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_invalid_or_path_like_ids_rejected(self):
+        for bad in ('../x', 'a/b', '', 'a\x00b', 'é', 'x'*129, 3):
+            with self.subTest(bad=bad):
+                source = m.prepare(fixture()); source['stateLayout']['current'][0]['id'] = bad
+                with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_empty_or_future_version_fails(self):
+        for version in (None, True, 1.0, 2, '1'):
+            with self.subTest(version=version):
+                source = m.prepare(fixture()); source['stateLayout']['version'] = version
+                with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_null_manifest_is_not_a_legacy_lesson(self):
+        source = fixture()
+        source['stateLayout'] = None
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_unknown_metadata_field_fails(self):
+        source = m.prepare(fixture()); source['stateLayout']['ignoreMismatch'] = True
+        with self.assertRaises(m.LayoutError): m.validate(source)
+
+    def test_object_key_order_does_not_change_fingerprint(self):
+        self.assertEqual(m.fingerprint({'a':1, 'b':2}), m.fingerprint({'b':2, 'a':1}))
+
+    def test_string_spaces_and_linebreaks_are_not_discarded(self):
+        values = ['Caja recibida', 'Caja  recibida', 'Caja recibida\n', 'Caja recibida ']
+        self.assertEqual(len({m.fingerprint(v) for v in values}), len(values))
+
+    def test_numerical_canonicalization_without_conflating_boolean(self):
+        self.assertEqual(m.fingerprint(1), m.fingerprint(1.0))
+        self.assertNotEqual(m.fingerprint(1), m.fingerprint(True))
+        self.assertEqual(m.fingerprint(-0.0), m.fingerprint(0))
+
+    def test_translations_may_use_different_order_but_same_origins(self):
+        spanish = fixture(); english = deepcopy(spanish)
+        english['pages'][0]['blocks'][0]['text'] = 'Theory A'
+        es = m.prepare(spanish); en = m.prepare(english)
+        en = m.reorder(en, list(reversed(en['stateLayout']['current'])))
+        m.check_localized_family([es, en])
+
+    def test_translation_without_manifest_blocks_adoption(self):
+        with self.assertRaises(m.LayoutError): m.check_localized_family([m.prepare(fixture()), fixture()])
+
+    def test_misplaced_translation_activity_is_rejected(self):
+        es = m.prepare(fixture()); other = fixture()
+        other['pages'][0]['blocks'][1], other['pages'][1]['blocks'][1] = other['pages'][1]['blocks'][1], other['pages'][0]['blocks'][1]
+        with self.assertRaises(m.LayoutError): m.check_localized_family([es, m.prepare(other)])
+
+    def test_random_permutations_do_not_lose_any_address_or_mutate_content(self):
+        rng = random.Random(90431)
+        source = m.prepare(fixture()); moved = source
+        for _ in range(200):
+            plan = deepcopy(moved['stateLayout']['current']); rng.shuffle(plan)
+            flat = [x for p in plan for x in p['blocks']]; rng.shuffle(flat)
+            cursor = 0
+            for page in plan:
+                count = len(page['blocks']); page['blocks'] = flat[cursor:cursor+count]; cursor += count
+            moved = m.reorder(moved, plan)
+            m.validate_transition(source, moved)
+            self.assertEqual(set(m.validate(moved).values()), set(m.validate(source).values()))
+
+    def test_editorial_text_does_not_change_saved_response_identity(self):
+        original = m.prepare(fixture()); revised = deepcopy(original)
+        revised['pages'][0]['blocks'][0]['text'] = 'Clearer wording of the existing explanation'
+        revised['pages'][0]['blocks'][1]['question'] = 'A clearer question'
+        revised['pages'][0]['blocks'][1]['explanation'] = 'Corrected feedback'
+        m.validate_transition(original, revised)
+        self.assertEqual(m.validate(original), m.validate(revised))
+
+    def test_math_response_contract_still_uses_full_payload(self):
+        original = m.prepare(fixture()); revised = deepcopy(original)
+        revised['pages'][2]['blocks'][0]['responses'][0]['validator']['value'] = 5
+        with self.assertRaises(m.LayoutError): m.validate(revised)
+
+    def test_output_check_expected_stdout_cannot_change(self):
+        original = fixture()
+        original['pages'][1]['blocks'][1]['outputCheck'] = {'cases':[{'standardInput':'','outputs':['Caja recibida'], 'explanation':'Feedback'}]}
+        prepared = m.prepare(original)
+        prepared['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['explanation'] = 'Improved feedback'
+        m.validate(prepared)
+        prepared['pages'][1]['blocks'][1]['outputCheck']['cases'][0]['outputs'] = ['Wrong target']
+        with self.assertRaises(m.LayoutError): m.validate(prepared)
+
+    def test_duplicate_json_keys_are_rejected(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'bad.json'; path.write_text('{"id":"x", "id":"y"}')
+            with self.assertRaises(m.LayoutError): m.load(path)
+
+    def test_cli_does_not_overwrite_target(self):
+        import json, subprocess, sys, tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder)/'source.json'; source.write_text(json.dumps(fixture()))
+            target = Path(folder)/'target.json'; target.write_text('KEEP')
+            proc = subprocess.run([sys.executable, str(SPEC.origin), 'prepare', str(source),
+                                   '--previous', str(source), '--output', str(target)], capture_output=True)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertEqual(target.read_text(), 'KEEP')
+
+    def test_cli_requires_published_previous_document(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder)/'source.json'; source.write_text(json.dumps(fixture()))
+            target = Path(folder)/'target.json'
+            result = subprocess.run([sys.executable, str(SPEC.origin), 'prepare', str(source),
+                                     '--output', str(target)], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('--previous', result.stderr)
+            self.assertFalse(target.exists())
+
+    def test_cli_cannot_reinitialize_origin_after_reorder(self):
+        with tempfile.TemporaryDirectory() as folder:
+            previous = Path(folder)/'published.json'; previous.write_text(json.dumps(fixture()))
+            changed = fixture(); changed['pages'].reverse()
+            source = Path(folder)/'source.json'; source.write_text(json.dumps(changed))
+            target = Path(folder)/'target.json'
+            result = subprocess.run([sys.executable, str(SPEC.origin), 'prepare', str(source),
+                                     '--previous', str(previous), '--output', str(target)],
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('immutable origin', result.stderr)
+            self.assertFalse(target.exists())
+
+
+class RepositoryGateTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.git('init', '--quiet', '--initial-branch=codex-chat/app')
+        self.files = {locale: self.root/m.CONTENT_DIRECTORY/locale/'programming/cpp_fundamentals/unit/lesson_fixture.json'
+                      for locale in ('es', 'en', 'fr')}
+        for path in self.files.values(): self.write(path, fixture())
+        self.base = self.commit()
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def git(self, *args):
+        return subprocess.check_output(['git', '-c', 'user.name=State contract fixture',
+                                        '-c', 'user.email=fixture@example.invalid', *args],
+                                       cwd=self.root, text=True, encoding='utf-8').strip()
+
+    def commit(self):
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'State migration fixture')
+        return self.git('rev-parse', 'HEAD')
+
+    def write(self, path, document):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(document, ensure_ascii=False), encoding='utf-8')
+
+    def mapped(self, reordered=True):
+        source = m.prepare(fixture())
+        return m.reorder(source, list(reversed(source['stateLayout']['current']))) if reordered else source
+
+    def adopt(self):
+        for path in self.files.values(): self.write(path, self.mapped())
+
+    def test_direct_upgrade_from_legacy_tree_needs_no_intermediate_release(self):
+        self.adopt()
+        report = m.check_repository(self.root, self.base)
+        self.assertEqual(report, {'base_commit': self.base, 'mapped_lessons': 3, 'families': 1})
+        for path in self.files.values():
+            self.assertEqual(m.validate(m.load(path))[0, 0], (2, 0))
+
+    def test_tree_without_identity_metadata_keeps_legacy_validation(self):
+        self.assertEqual(m.check_repository(self.root, None)['mapped_lessons'], 0)
+
+    def test_adoption_requires_explicit_published_base(self):
+        self.adopt()
+        with self.assertRaisesRegex(m.LayoutError, '--base-ref'):
+            m.check_repository(self.root, None)
+
+    def test_invalid_base_fails_instead_of_skipping_transition(self):
+        self.adopt()
+        with self.assertRaisesRegex(m.LayoutError, 'Cannot resolve'):
+            m.check_repository(self.root, 'nonexistent-publication')
+
+    def test_all_shipped_translations_must_adopt_together(self):
+        for locale in ('es', 'en'): self.write(self.files[locale], self.mapped())
+        with self.assertRaisesRegex(m.LayoutError, 'Every shipped translation'):
+            m.check_repository(self.root, self.base)
+
+    def test_current_locale_orders_may_differ_without_changing_original_keys(self):
+        self.adopt()
+        self.write(self.files['fr'], self.mapped(reordered=False))
+        self.assertEqual(m.check_repository(self.root, self.base)['families'], 1)
+
+    def test_regenerated_metadata_cannot_hide_reorder_even_after_local_commit(self):
+        self.adopt()
+        forged = self.mapped(); del forged['stateLayout']; forged = m.prepare(forged)
+        for path in self.files.values(): self.write(path, forged)
+        self.commit()
+        with self.assertRaisesRegex(m.LayoutError, 'immutable origin'):
+            m.check_repository(self.root, self.base)
+
+    def test_repeated_reorder_can_skip_all_intermediate_releases(self):
+        self.adopt()
+        intermediate = self.commit()
+        moved = self.mapped()
+        moved = m.reorder(moved, [moved['stateLayout']['current'][1], moved['stateLayout']['current'][0],
+                                 moved['stateLayout']['current'][2]])
+        for path in self.files.values(): self.write(path, moved)
+        self.assertEqual(m.check_repository(self.root, self.base)['mapped_lessons'], 3)
+        self.assertEqual(m.check_repository(self.root, intermediate)['mapped_lessons'], 3)
+
+    def test_removing_every_manifest_is_detected_from_previous_tree(self):
+        self.adopt(); published = self.commit()
+        for path in self.files.values(): self.write(path, fixture())
+        with self.assertRaisesRegex(m.LayoutError, 'identity manifest'):
+            m.check_repository(self.root, published)
+
+    def test_removing_every_manifest_cannot_bypass_explicit_baseline_gate(self):
+        self.adopt(); self.commit()
+        for path in self.files.values(): self.write(path, fixture())
+        with self.assertRaisesRegex(m.LayoutError, '--base-ref'):
+            m.check_repository(self.root, None)
+
+    def test_deleting_mapped_lessons_is_rejected(self):
+        self.adopt(); published = self.commit()
+        for path in self.files.values(): path.unlink()
+        with self.assertRaisesRegex(m.LayoutError, 'mapped lesson was removed'):
+            m.check_repository(self.root, published)
+
+    def test_new_translation_cannot_reintroduce_positional_storage(self):
+        self.files['fr'].unlink()
+        for locale in ('es', 'en'): self.write(self.files[locale], self.mapped())
+        published = self.commit()
+        self.write(self.files['fr'], fixture())
+        with self.assertRaisesRegex(m.LayoutError, 'Every shipped translation'):
+            m.check_repository(self.root, published)
+
+    def test_guard_covers_mathematics_and_other_programming_courses(self):
+        for route in ('mathematics/algebra', 'programming/programming_practice_tools'):
+            for locale in ('es', 'en', 'fr'):
+                path = self.root/m.CONTENT_DIRECTORY/locale/route/'unit/lesson_fixture.json'
+                self.write(path, fixture())
+        previous = self.commit()
+        for route in ('mathematics/algebra', 'programming/programming_practice_tools'):
+            for locale in ('es', 'en', 'fr'):
+                path = self.root/m.CONTENT_DIRECTORY/locale/route/'unit/lesson_fixture.json'
+                self.write(path, self.mapped())
+        self.assertEqual(m.check_repository(self.root, previous)['families'], 2)
+
+    def test_cli_check_tree_runs_family_and_published_origin_checks(self):
+        self.adopt()
+        result = subprocess.run([sys.executable, str(SPEC.origin), 'check-tree', str(self.root),
+                                 '--base-ref', self.base], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(self.base, result.stdout)
+        self.assertIn('does not verify an Android build', result.stdout)
+
+    def test_existing_validator_entrypoint_enforces_translation_family(self):
+        import validar_json_programacion as contract
+        self.write(self.files['es'], self.mapped())
+        output = io.StringIO()
+        with mock.patch.object(contract, 'ROOT', self.root), redirect_stderr(output):
+            with self.assertRaises(SystemExit) as error:
+                contract.main(['--base-ref', self.base])
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn('Every shipped translation', output.getvalue())
+
+    def test_existing_validator_entrypoint_requires_explicit_published_base(self):
+        import validar_json_programacion as contract
+        self.adopt()
+        output = io.StringIO()
+        with mock.patch.object(contract, 'ROOT', self.root), redirect_stderr(output):
+            with self.assertRaises(SystemExit) as error:
+                contract.main([])
+        self.assertEqual(error.exception.code, 1)
+        self.assertIn('--base-ref', output.getvalue())
+
+if __name__ == '__main__': unittest.main(verbosity=2)

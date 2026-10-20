@@ -64,13 +64,7 @@ object ProgressRepository {
         pageIndex: Int
     ) {
 
-        preferences(context)
-            .edit()
-            .putInt(
-                "lesson_${lessonId}_page",
-                pageIndex
-            )
-            .apply()
+        LessonStateCoordinates.savePage(context, lessonId, pageIndex)
 
         refreshLessonCompletionFromProgress(
             context,
@@ -84,11 +78,12 @@ object ProgressRepository {
         lessonId: String
     ): Int {
 
-        return preferences(context)
+        val saved = preferences(context)
             .getInt(
                 "lesson_${lessonId}_page",
                 0
             )
+        return LessonStateCoordinates.currentPage(context, lessonId, saved)
     }
 
     /*
@@ -120,6 +115,8 @@ object ProgressRepository {
         lessonId: String
     ) {
 
+        // Seed legacy coverage before this call can make a fresh lesson look visited.
+        LessonStateCoordinates.prepare(context, lessonId)
         preferences(context)
             .edit()
             .putBoolean(
@@ -190,6 +187,8 @@ object ProgressRepository {
             } catch (
                 exception: Exception
             ) {
+                // Broken identity metadata must not clear an existing completion flag.
+                LessonStateCoordinates.rethrowIfMapped(context, lessonId, exception)
 
                 return ProgressSnapshot(
                     completed = 0,
@@ -234,94 +233,37 @@ object ProgressRepository {
                 totalPages - 1
             )
 
-        var completedPages =
-            0
-
-        for (
-        pageIndex in
-        0 until totalPages
-        ) {
-
-            val page =
-                pages.optJSONObject(
-                    pageIndex
-                ) ?: continue
-
-            val blocks =
-                page.optJSONArray(
-                    "blocks"
-                )
-
-            val exerciseBlocks =
-                mutableListOf<Int>()
-
-            if (
-                blocks != null
-            ) {
-
-                for (
-                blockIndex in
-                0 until blocks.length()
-                ) {
-
-                    val block =
-                        blocks.optJSONObject(
-                            blockIndex
-                        ) ?: continue
-
-                    val type =
-                        block.optString(
-                            "type",
-                            ""
-                        )
-
-                    if (
-                        isExerciseBlockType(
-                            type
-                        )
-                    ) {
-
-                        exerciseBlocks.add(
-                            blockIndex
-                        )
-                    }
+        // A permutation must not change the weight of already completed work.
+        // Displayed pages still own navigation and their exercise gates; progress
+        // groups retain the original page membership and resolve current payloads.
+        val stableGroups = LessonStateCoordinates.progressGroups(context, lessonId)
+        val progressGroups = stableGroups ?: (0 until totalPages).map { p ->
+            val count = pages.optJSONObject(p)?.optJSONArray("blocks")?.length() ?: 0
+            (0 until count).map { b -> LessonStatePosition(p, b) }
+        }
+        var completedPages = 0
+        for ((progressPage, positions) in progressGroups.withIndex()) {
+            if (stableGroups == null && pages.optJSONObject(progressPage) == null) continue
+            val exerciseBlocks = positions.mapNotNull { position ->
+                val block = pages.optJSONObject(position.page)?.optJSONArray("blocks")
+                    ?.optJSONObject(position.block) ?: return@mapNotNull null
+                if (isExerciseBlockType(block.optString("type", ""))) position to block else null
+            }
+            val pageCompleted = if (exerciseBlocks.isEmpty()) {
+                if (stableGroups != null) {
+                    LessonStateCoordinates.isTheoryProgressPageRead(context, lessonId, progressPage) == true
+                } else started && progressPage <= currentPage
+            } else {
+                exerciseBlocks.all { (position, block) ->
+                    // These are current positions: getExerciseState resolves the
+                    // immutable storage address exactly once.
+                    val saved = getExerciseState(context, lessonId, position.page, position.block)
+                    if (com.learngraphicsprogramming.app.math.MathPuzzleTypes.isExercise(block.optString("type"))) {
+                        com.learngraphicsprogramming.app.math.MathPuzzleState.isCurrentCorrect(block, saved)
+                    } else saved?.optBoolean("correct", false) == true
                 }
             }
-
-            val pageCompleted =
-                if (
-                    exerciseBlocks.isEmpty()
-                ) {
-
-                    started &&
-                            pageIndex <=
-                            currentPage
-
-                } else {
-
-                    exerciseBlocks.all {
-                            blockIndex ->
-
-                        val savedState = getExerciseState(
-                            context,
-                            lessonId,
-                            pageIndex,
-                            blockIndex
-                        )
-                        val exerciseBlock = blocks?.optJSONObject(blockIndex)
-                        if (exerciseBlock != null &&
-                            com.learngraphicsprogramming.app.math.MathPuzzleTypes.isExercise(exerciseBlock.optString("type"))) {
-                            com.learngraphicsprogramming.app.math.MathPuzzleState.isCurrentCorrect(exerciseBlock, savedState)
-                        } else savedState?.optBoolean("correct", false) == true
-                    }
-                }
-
-            if (
-                pageCompleted
-            ) {
-
-                completedPages++
-            }
+            if (pageCompleted) completedPages++
         }
 
         return ProgressSnapshot(
@@ -429,6 +371,7 @@ object ProgressRepository {
 
         val key =
             exerciseKey(
+                context,
                 lessonId,
                 pageIndex,
                 blockIndex
@@ -458,6 +401,7 @@ object ProgressRepository {
 
         val key =
             exerciseKey(
+                context,
                 lessonId,
                 pageIndex,
                 blockIndex
@@ -637,6 +581,7 @@ object ProgressRepository {
             .edit()
             .remove(
                 exerciseKey(
+                    context,
                     lessonId,
                     pageIndex,
                     blockIndex
@@ -1116,6 +1061,7 @@ object ProgressRepository {
             }
         }
 
+        LessonStateCoordinates.clearReading(context, lessonId, editor)
         editor.remove(
             "lesson_${lessonId}_page"
         )
@@ -1376,19 +1322,13 @@ object ProgressRepository {
     }
 
     private fun exerciseKey(
+        context: Context,
         lessonId: String,
         pageIndex: Int,
         blockIndex: Int
     ): String {
-
-        return (
-                "exercise_" +
-                        lessonId +
-                        "_page_" +
-                        pageIndex +
-                        "_block_" +
-                        blockIndex
-                )
+        val origin = LessonStateCoordinates.block(context, lessonId, pageIndex, blockIndex)
+        return "exercise_${lessonId}_page_${origin.page}_block_${origin.block}"
     }
 
     private data class LessonLocation(

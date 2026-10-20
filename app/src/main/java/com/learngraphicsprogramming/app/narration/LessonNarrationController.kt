@@ -3,7 +3,14 @@ package com.learngraphicsprogramming.app.narration
 import android.content.Context
 import android.content.SharedPreferences
 import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.ProgressRepository
+import com.learngraphicsprogramming.app.StableLessonStateLayout
 import com.learngraphicsprogramming.app.UiLanguageSettings
+import com.learngraphicsprogramming.app.math.MathAnswer
+import com.learngraphicsprogramming.app.math.MathAnswerJson
+import com.learngraphicsprogramming.app.math.MathNarrationPresentation
+import com.learngraphicsprogramming.app.math.MathPuzzleState
+import com.learngraphicsprogramming.app.math.MathPuzzleTypes
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -25,6 +32,7 @@ import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
 import java.util.UUID
+import org.json.JSONObject
 
 /** The Activity installs the new reading plan before rebinding or resuming playback. */
 data class NarrationPresentationUpdate(
@@ -358,6 +366,14 @@ class LessonNarrationController(
     private val resumeStore = NarrationResumeStore(appContext)
     private var resumeKey: String? = null
     private var resumeOwner: String? = null
+    private data class StableBinding(val page: NarrationStableLesson.Page,
+                                     val legacy: Map<String, NarrationStablePage>)
+    private var stableBinding: StableBinding? = null
+    private var activeStablePage: NarrationStablePage? = null
+    private var stableLessonJson: JSONObject? = null
+    private var stableLessonLayout: StableLessonStateLayout? = null
+    private var legacyStableConfiguration: String? = null
+    private var legacyStablePages: Map<String, NarrationStablePage> = emptyMap()
     private var userPositionChosen = false
     private val playbackCheckpoint = object : Runnable {
         override fun run() {
@@ -390,6 +406,48 @@ class LessonNarrationController(
         if (selected.engine == NarrationEngine.ANDROID) selected.androidVoice.orEmpty()
         else selected.kokoroVoice, prepared
     )
+
+    /**
+     * Supply the displayed script's stable block provenance before binding playback.
+     * This does not play, create a bookmark, or promote an existing history slot.
+     */
+    internal fun bindStableLesson(lesson: JSONObject, routeId: String, lessonId: String,
+                                  pageIndex: Int, script: LessonNarrationScript,
+                                  language: NarrationLanguage, forKokoro: Boolean,
+                                  instruction: (String) -> String) {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (lesson !== stableLessonJson) {
+            stableLessonJson = lesson
+            stableLessonLayout = NarrationStableLesson.layout(lesson)
+            legacyStableConfiguration = null
+            legacyStablePages = emptyMap()
+        }
+        val layout = stableLessonLayout
+        if (layout == null) { stableBinding = null; return }
+        val selected = NarrationSettingsRepository.forLanguage(appContext, language)
+        val page = NarrationStableLesson.page(layout, routeId, lessonId, pageIndex, script, selected)
+        if (page == null) { stableBinding = null; return }
+        if (legacyStableConfiguration != page.stable.configuration) {
+            legacyStablePages = NarrationStableLesson.legacy(lesson, layout, routeId, lessonId, selected,
+                resumeStore.legacyKeys(), forKokoro, instruction) { p, b, block ->
+                savedNarrationPresentation(lessonId, p, b, block)
+            }
+            legacyStableConfiguration = page.stable.configuration
+        }
+        stableBinding = StableBinding(page, legacyStablePages)
+    }
+
+    private fun savedNarrationPresentation(lessonId: String, page: Int, index: Int,
+                                           block: JSONObject): JSONObject {
+        if (!MathPuzzleTypes.isExercise(block.optString("type"))) return block
+        val saved = ProgressRepository.getExerciseState(appContext, lessonId, page, index)
+            ?.takeIf { it.optString("contentFingerprint") == MathPuzzleState.fingerprint(block) } ?: return block
+        val responses = saved.optJSONObject("responses") ?: return block
+        val orders = responses.keys().asSequence().mapNotNull { id ->
+            responses.optJSONObject(id)?.let { MathAnswerJson.decode(it) as? MathAnswer.Order }?.let { id to it.ids }
+        }.toMap()
+        return MathNarrationPresentation.block(block, orders)
+    }
 
     // Construction, inference and close belong to the worker; main may request cancellation.
     @Volatile private var english: EnglishMisakiG2P? = null
@@ -490,7 +548,7 @@ class LessonNarrationController(
         if (active && incorrectFeedback != null) return NarrationPresentationUpdate(deferred = true)
         val resume = active && playing
         if (active) stopInternal()
-        resumeStore.relocate(oldKey, newKey) { point ->
+        resumeStore.relocate(oldKey, newKey, stableBinding?.page?.takeIf { it.key == newKey }?.stable) { point ->
             NarrationPresentationRemap.remap(point, previous, current, selected.engine)
         }
         return NarrationPresentationUpdate(rebind = active, resume = resume)
@@ -674,6 +732,9 @@ class LessonNarrationController(
         segments = prepared.map { Segment(it) }.toMutableList()
         resumeKey = playbackIdentity(pageIdentity,selected,prepared)
         resumeOwner = null
+        val stable = stableBinding?.takeIf { it.page.key == resumeKey && it.page.texts == prepared }
+        activeStablePage = stable?.page?.stable
+        if (stable != null) resumeStore.prepareStable(requireNotNull(resumeKey), stable.page.stable, stable.legacy)
         userPositionChosen = false
         val saved = resumeStore.restore(requireNotNull(resumeKey),segments.size)
         playbackGate = NarrationExerciseGate(segments.size,gates,correctBlocks,saved?.feedbackHeardThrough ?: 0)
@@ -852,7 +913,7 @@ class LessonNarrationController(
             if (current.segment != target.segment || current.positionMs != target.positionMs) {
                 releasePlayer(); index = target.segment; offset = target.positionMs
             }
-            resumeOwner = resumeStore.begin(key,playbackPoint())
+            resumeOwner = resumeStore.begin(key,playbackPoint(),activeStablePage)
         }
         userPositionChosen = false
         playing = true
@@ -953,7 +1014,7 @@ class LessonNarrationController(
         if (wasFinished) {
             // Rewind is explicit user intent and creates a resumable bookmark.
             // The completed bookmark's former owner was released at finish.
-            resumeKey?.let { resumeOwner = resumeStore.begin(it,playbackPoint()) }
+            resumeKey?.let { resumeOwner = resumeStore.begin(it,playbackPoint(),activeStablePage) }
         }
         rememberPlaybackPosition()
     }
@@ -1624,6 +1685,7 @@ class LessonNarrationController(
         NarrationPlaybackOwner.release(this)
         resumeKey = null
         resumeOwner = null
+        activeStablePage = null
         userPositionChosen = false
         pendingManualForward = null
         playbackGate = null

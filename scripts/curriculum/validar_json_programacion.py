@@ -3,6 +3,7 @@
 No compila C++, no modifica archivos y no certifica las respuestas pedagógicas.
 """
 
+import argparse
 import json
 import hashlib
 import math
@@ -11,6 +12,14 @@ import subprocess
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from pathlib import Path, PurePosixPath
+from importlib import util as import_util
+
+
+# Also supports this validator's existing importlib-based regression tests.
+_state_spec = import_util.spec_from_file_location(
+    "lgp_stable_state_layout", Path(__file__).with_name("stable_state_layout.py"))
+_state_layout = import_util.module_from_spec(_state_spec)
+_state_spec.loader.exec_module(_state_layout)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1146,11 +1155,25 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     return False
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-ref", help="Verified published commit; mandatory for stateLayout adoption/updates")
+    args = parser.parse_args(argv)
+    # Check all routes/locales, including metadata removed from the working tree.
+    # A self-consistent regenerated origin is not evidence of a safe migration.
+    try:
+        _state_layout.check_repository(ROOT, args.base_ref)
+        base_commit = _state_layout.resolve_base_commit(ROOT, args.base_ref or "HEAD") if (ROOT / ".git").exists() else None
+    except (ValueError, KeyError, TypeError, OSError) as error:
+        parser.exit(1, f"Conservación de estado no verificada: {error}\n")
     lessons = {}
     blocks = 0
     for path in sorted(CONTENT.glob("*/lesson_*.json")):
         doc = load(path)
+        try:
+            _state_layout.validate(doc)
+        except (ValueError, KeyError, TypeError) as error:
+            require(False, path, f"identidad de estado inválida: {error}")
         expected = "__".join(("cpp_fundamentals", path.parent.name, path.stem[7:]))
         require(doc["id"] == expected, path, "ID distinto de la ruta del loader")
         require(doc["id"] not in lessons, path, "ID de lección duplicado")
@@ -1217,13 +1240,22 @@ def main():
         if item["id"] in units:
             require(item["title"] == units[item["id"]]["title"], "curso", "título de unidad no coincide")
 
-    # Mantener páginas/bloques evita trasladar las claves de progreso existentes.
+    # Un mapa contrastado permite proyectar bloques a sus posiciones publicadas.
     git = ROOT / ".git"
     if git.exists():
-        files = subprocess.check_output(["git", "ls-files", "app/src/main/assets/content/es/programming/cpp_fundamentals/*/lesson_*.json"], cwd=ROOT, text=True).splitlines()
+        files = [relative for relative in sorted(_state_layout._lesson_paths_at(ROOT, base_commit))
+                 if relative.startswith(CONTENT.relative_to(ROOT).as_posix() + "/")]
         for relative in files:
-            old = json.loads(subprocess.check_output(["git", "show", "HEAD:" + relative], cwd=ROOT, text=True, encoding="utf-8"))
+            old = json.loads(subprocess.check_output(["git", "show", base_commit + ":" + relative], cwd=ROOT, text=True, encoding="utf-8"))
+            if not (ROOT / relative).is_file():
+                require(False, relative, "lección previa perdida")
+                continue
             new = load(ROOT / relative)
+            try:
+                new = _state_layout.align_for_previous_validation(old, new)
+            except (ValueError, KeyError, TypeError) as error:
+                require(False, relative, f"traslado de estado no verificado: {error}")
+                continue
             require(new["id"] == old["id"], relative, "ID previo modificado")
             for pn, page in enumerate(old["pages"]):
                 for bn, block in enumerate(page["blocks"]):

@@ -119,7 +119,7 @@ object LessonRepository {
 
         return JSONObject(
             json
-        )
+        ).also { LessonStateCoordinates.register(context, lessonId, it) }
     }
 
     /*

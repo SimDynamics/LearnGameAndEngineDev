@@ -306,7 +306,7 @@ class SpanishTechnicalSpeechTest {
         val assets = requireNotNull(resources.absoluteFile.parentFile).resolve("assets/content/es/programming/cpp_fundamentals")
         for ((relative, expected) in listOf(
             "programas_y_ejecucion/lesson_primer_programa_y_salida.json" to "abre ángulo iostream cierra ángulo",
-            "funciones_y_contratos/lesson_declaraciones_y_firmas.json" to "abre comilla doble diferencia punto ache cierra comilla doble"
+            "funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json" to "abre comilla doble sobres punto ache cierra comilla doble"
         )) {
             val lesson = JSONObject(assets.resolve(relative).readText())
             val unchanged = lesson.toString()

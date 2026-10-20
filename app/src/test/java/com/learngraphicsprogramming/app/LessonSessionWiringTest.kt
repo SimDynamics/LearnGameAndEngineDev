@@ -57,7 +57,15 @@ class LessonSessionWiringTest {
     @Test fun allLessonNarrationPathsUseTheSameRealPageIdentity() {
         val activity = source("LessonActivity.kt")
         assertEquals(3, Regex("pageIdentity = narrationPageIdentity\\(\\)").findAll(activity).count())
-        assertTrue(activity.contains("\$currentRouteId/\$currentLessonId/\$currentPage"))
+        assertTrue("Every playback path must resolve the displayed page's stable identity", Regex(
+            "private fun narrationPageIdentity\\(\\): String =\\s*" +
+                "LessonStateCoordinates\\.narrationPageIdentity\\(\\s*" +
+                "this, currentRouteId, currentLessonId, currentPage\\s*\\)"
+        ).containsMatchIn(activity))
+        val identity = body(source("LessonStateCoordinates.kt"), "fun narrationPageIdentity(")
+        assertTrue(identity.contains("return \"\$routeId/\$lessonId/\$page\""))
+        assertTrue(identity.contains("NarrationStableLesson.identity("))
+        assertTrue(identity.contains("resolved, routeId, lessonId, page"))
     }
 
     @Test fun prefetchDoesNotCreateNativePlayersOrPromoteBookmarks() {
@@ -74,6 +82,18 @@ class LessonSessionWiringTest {
         assertTrue(ensure.contains("((feedback != null) == (incorrectFeedback != null))) preparePlayer(segment, feedback)"))
         val generated = body(controller, "private fun generated(")
         assertTrue(generated.contains("if (incorrectFeedback == null && playing && request.index == index && player == null) preparePlayer(segment)"))
+    }
+
+    @Test fun openingTheLessonRecordsItsVisiblePageBeforeNavigationOrPause() {
+        val activity = source("LessonActivity.kt")
+        val load = body(activity, "private fun loadLesson(")
+        val render = load.lastIndexOf("renderCurrentPage()")
+        val visit = load.lastIndexOf("saveCurrentPageProgress()")
+        assertTrue("The successfully opened page must be recorded without waiting for onPause", render >= 0 && visit > render)
+        for (signature in listOf("private fun tryGoNextPage()", "private fun goPreviousPage()")) {
+            val navigate = body(activity, signature)
+            assertTrue("The destination page must retain its visit", navigate.contains("saveCurrentPageProgress()"))
+        }
     }
 
     @Test fun pauseAndDepartureReleaseResourcesAfterRememberingThePosition() {

@@ -56,6 +56,40 @@ class MixedSpanishWordPhonemeTraceTest {
         assertEquals("c", cpp.word)
     }
 
+    @Test fun listBulletsUseExistingPausesAndPreserveExactWordProvenance() {
+        val plain = "Comprueba: • vector vacío • valores repetidos."
+        val plainTrace = requireNotNull(SpanishFluidG2P.traceWords(plain))
+        assertEquals(SpanishFluidG2P.phonemize(plain), plainTrace.phonemes)
+        assertEquals(SpanishFluidG2P.traceWords(plain.replace('•', ',')), plainTrace)
+
+        val mixed = ManualEnglishSpeech.PREPARED + "Comprueba: • 0 para el vector vacío • " +
+            ManualEnglishSpeech.encode(term("cout")) + " conserva 12 valores."
+        for (source in listOf(plain, mixed)) {
+            val trace = assertTrace(source)
+            val punctuationEquivalent = source.replace('•', ',')
+            assertEquals(assertTrace(punctuationEquivalent), trace)
+            assertEquals(NarrationSpokenWords.lexemes(punctuationEquivalent).map { it.start to it.endExclusive },
+                NarrationSpokenWords.lexemes(source).map { it.start to it.endExclusive })
+            assertFalse(trace.phonemes.contains('•'))
+        }
+        assertEquals(SpanishFluidG2P.phonemize("tres por cuatro"), SpanishFluidG2P.phonemize("3 · 4"))
+    }
+
+    @Test fun standaloneInputTildesUseTheCodeSymbolNameWithoutInventingWordRanges() {
+        val source = ManualEnglishSpeech.PREPARED +
+            "vector vacío • 1 ~ para abre llave abre comilla simple cierra comilla simple cierra llave " +
+            "• 3 ~ a ~ para abre llave abre comilla simple cierra comilla simple coma " +
+            "abre comilla simple a cierra comilla simple coma abre comilla simple cierra comilla simple " +
+            "cierra llave Pulsa «Compilar, ejecutar y comprobar»."
+        assertEquals(MixedSpanishG2P.phonemizePrepared(source.replace("~", "tilde"), emptyMap()),
+            MixedSpanishG2P.phonemizePrepared(source, emptyMap()))
+        assertEquals(SpanishFluidG2P.phonemize("`~`"), SpanishFluidG2P.phonemize("~"))
+        // The visible symbol is not a lexical word. Keep conservative timing
+        // fallback instead of assigning its new phones to a neighbouring word.
+        assertNull(MixedSpanishG2P.traceWordsPrepared(source))
+        assertNull(SpanishFluidG2P.traceWords("Lee ~ al terminar."))
+    }
+
     @Test fun publishedLibraryParagraphSupportsEveryActualSentenceWithoutChangingLessonOrAudioFrontend() {
         val resources = File(System.getProperty("translation.resources") ?: "src/main/res")
         val file = requireNotNull(resources.absoluteFile.parentFile).resolve(
