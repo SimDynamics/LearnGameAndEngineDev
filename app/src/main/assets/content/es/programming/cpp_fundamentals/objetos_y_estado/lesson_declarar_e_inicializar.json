@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una declaración introduce un nombre e indica su tipo. Cuando también crea el objeto al que se refiere ese nombre, es una definición. En int filas = 5;, la misma instrucción declara el nombre filas, crea un objeto de tipo int y lo prepara con el valor 5 (Stroustrup, 2024, sección 7.2, pp. 181–182).\n\nLa inicialización es esa preparación del primer valor. El 5 es el inicializador; no es un resultado que el compilador elija. Una definición con inicializador permite utilizar la variable con un valor conocido desde el comienzo (Stroustrup, 2024, sección 2.2, p. 32; sección 2.5, p. 38).",
+          "text": "Una declaración introduce un nombre e indica su tipo. Cuando también crea el objeto al que se refiere ese nombre, es una definición. En int filas = 5;, la misma instrucción declara el nombre filas, crea un objeto de tipo int y lo prepara con el valor 5 (Stroustrup, 2024).\n\nLa inicialización es esa preparación del primer valor. El 5 es el inicializador; no es un resultado que el compilador elija. Una definición con inicializador permite utilizar la variable con un valor conocido desde el comienzo (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "Una declaración introduce un nombre e indica su tipo"
@@ -25,7 +25,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El punto y coma termina la declaración. En el ejemplo siguiente, int filas = 5; aparece antes de std::cout << filas;, de modo que el nombre y el tipo ya se conocen cuando la salida utiliza su valor. Un nombre debe estar declarado antes de usarse (Stroustrup, 2024, sección 7.2, p. 181).\n\nEstas variables se definen dentro de las llaves de main y son locales a ese cuerpo. Para nuestras instrucciones, eso significa que sus nombres se utilizan a partir de su declaración dentro de ese ámbito. Una definición escrita después de la salida no resuelve un uso anterior del nombre (Stroustrup, 2024, sección 7.3, p. 186)."
+          "text": "El punto y coma termina la declaración. En el ejemplo siguiente, int filas = 5; aparece antes de std::cout << filas;, de modo que el nombre y el tipo ya se conocen cuando la salida utiliza su valor. Un nombre debe estar declarado antes de usarse (Stroustrup, 2024).\n\nEstas variables se definen dentro de las llaves de main y son locales a ese cuerpo. Para nuestras instrucciones, eso significa que sus nombres se utilizan a partir de su declaración dentro de ese ámbito. Una definición escrita después de la salida no resuelve un uso anterior del nombre (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Un nombre debe estar declarado antes de usarse"
+            },
+            {
+              "text": "son locales a ese cuerpo"
+            }
+          ]
         },
         {
           "type": "code",
@@ -52,11 +60,19 @@
         },
         {
           "type": "paragraph",
-          "text": "La instrucción int filas; crea una variable local de tipo int, pero no establece un valor inicial que podamos leer con seguridad. No significa que comience con cero. Antes de utilizar su valor debemos prepararlo; en estas lecciones lo haremos al definir la variable (Stroustrup, 2024, sección 2.8, p. 44).\n\nUn programa que lee una variable local entera sin inicializar puede llegar a compilar. Esa aceptación no proporciona el dato que faltó ni garantiza una salida correcta. Probar varias veces hasta ver un número razonable tampoco repara la lectura (Stroustrup, 2024, sección 7.2.2, p. 185)."
+          "text": "La instrucción int filas; crea una variable local de tipo int, pero no establece un valor inicial que podamos leer con seguridad. No significa que comience con cero. Antes de utilizar su valor debemos prepararlo; en estas lecciones lo haremos al definir la variable (Stroustrup, 2024).\n\nUn programa que lee una variable local entera sin inicializar puede llegar a compilar. Esa aceptación no proporciona el dato que faltó ni garantiza una salida correcta. Probar varias veces hasta ver un número razonable tampoco repara la lectura (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "no establece un valor inicial que podamos leer con seguridad"
+            },
+            {
+              "text": "Esa aceptación no proporciona el dato que faltó"
+            }
+          ]
         },
         {
           "type": "note",
-          "text": "Repara la falta de inicialización antes de ejecutar. Por ejemplo, si la cantidad inicial debe ser cero, una definición con ese valor deja preparado el dato. La comprobación consiste en encontrar su inicializador antes de la primera lectura, sin ejecutar la versión que lee un valor sin preparar (Stroustrup, 2024, sección 2.8, p. 44)."
+          "text": "Repara la falta de inicialización antes de ejecutar. Por ejemplo, si la cantidad inicial debe ser cero, una definición con ese valor deja preparado el dato. La comprobación consiste en encontrar su inicializador antes de la primera lectura, sin ejecutar la versión que lee un valor sin preparar (Stroustrup, 2024)."
         },
         {
           "type": "multiple_choice",
@@ -98,7 +114,15 @@
         },
         {
           "type": "paragraph",
-          "text": "También podemos escribir el inicializador entre llaves. Las definiciones int filas{5}; e int filas = 5; crean un entero con valor 5. En la primera forma, las llaves inmediatamente después del nombre contienen el valor con el que se prepara el objeto (Stroustrup, 2024, sección 2.9, p. 46).\n\nLa forma con llaves rechaza las conversiones de estrechamiento: cambios de tipo que C++ restringe porque pueden perder información. Por ejemplo, int filas{5.8}; intenta preparar un entero a partir de un número con parte fraccionaria y debe producir un diagnóstico de compilación. No es una instrucción para redondear 5.8 (Stroustrup, 2024, sección 2.9, pp. 45–46).\n\nAquí utilizaremos valores enteros pequeños que int puede representar. Más adelante estudiaremos los números con parte fraccionaria y cómo decidir una conversión; por ahora interesa reconocer la inicialización y preparar el dato antes de leerlo."
+          "text": "También podemos escribir el inicializador entre llaves. Las definiciones int filas{5}; e int filas = 5; crean un entero con valor 5. En la primera forma, las llaves inmediatamente después del nombre contienen el valor con el que se prepara el objeto (Stroustrup, 2024).\n\nLa forma con llaves rechaza las conversiones de estrechamiento: cambios de tipo que C++ restringe porque pueden perder información. Por ejemplo, int filas{5.8}; intenta preparar un entero a partir de un número con parte fraccionaria y debe producir un diagnóstico de compilación. No es una instrucción para redondear 5.8 (Stroustrup, 2024).\n\nAquí utilizaremos valores enteros pequeños que int puede representar. Más adelante estudiaremos los números con parte fraccionaria y cómo decidir una conversión; por ahora interesa reconocer la inicialización y preparar el dato antes de leerlo.",
+          "emphasis": [
+            {
+              "text": "las llaves inmediatamente después del nombre contienen el valor"
+            },
+            {
+              "text": "rechaza las conversiones de estrechamiento"
+            }
+          ]
         },
         {
           "type": "code",
@@ -125,7 +149,7 @@
             "12"
           ],
           "reviewFeedback": "Relaciona cada cantidad del enunciado con el nombre de la variable que debe recibirla. Cada par de llaves contiene el valor inicial de su propio objeto; distingue esa preparación de las instrucciones que consultan los valores para mostrarlos.",
-          "explanation": "`3` inicializa `pisos` y `12` inicializa `ventanas`. Cada definición prepara su propio objeto con el dato solicitado; las llaves contienen el inicializador de esa variable (Stroustrup, 2024, sección 2.2, p. 32; sección 2.9, p. 46).\n\nLa salida consulta primero `pisos`, envía el espacio del literal `\" \"` y después consulta `ventanas`. Por eso la consola muestra `3 12`: la separación procede del texto y las cantidades proceden de los dos objetos."
+          "explanation": "`3` inicializa `pisos` y `12` inicializa `ventanas`. Cada definición prepara su propio objeto con el dato solicitado; las llaves contienen el inicializador de esa variable (Stroustrup, 2024).\n\nLa salida consulta primero `pisos`, envía el espacio del literal `\" \"` y después consulta `ventanas`. Por eso la consola muestra `3 12`: la separación procede del texto y las cantidades proceden de los dos objetos."
         }
       ]
     },
@@ -137,7 +161,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En el puzzle anterior, el primer inicializador prepara pisos con 3 y el segundo prepara ventanas con 12. Cada variable tiene su propia definición. Las llaves de una no conectan su valor con el de la otra.\n\nLa salida consulta primero pisos, envía un espacio y después consulta ventanas. Por eso produce 3 12. El espacio procede del literal \" \"; los números proceden de las variables."
+          "text": "En el puzzle anterior, el primer inicializador prepara pisos con 3 y el segundo prepara ventanas con 12. Cada variable tiene su propia definición. Las llaves de una no conectan su valor con el de la otra.\n\nLa salida consulta primero pisos, envía un espacio y después consulta ventanas. Por eso produce 3 12. El espacio procede del literal \" \"; los números proceden de las variables.",
+          "emphasis": [
+            {
+              "text": "Cada variable tiene su propia definición"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -170,7 +199,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el Laboratorio para construir un programa con dos variables de tipo int: cajas debe comenzar con 4 y sobres con 9. La consola debe mostrar dos líneas, sin una línea vacía entre ellas:\n\nCajas: 4\nSobres: 9\n\nDefine ambas variables antes de utilizarlas y escribe las instrucciones de salida. Compila, ejecuta y compara cada nombre mostrado, el espacio después de los dos puntos, los números y el salto entre las líneas con el resultado solicitado.\n\nDespués cambia únicamente los valores iniciales a 0 y 2, respectivamente. Conserva las instrucciones de salida, compila y ejecuta de nuevo. Esta segunda versión debe mostrar:\n\nCajas: 0\nSobres: 2"
+          "text": "Usa el Laboratorio para construir un programa con dos variables de tipo int: cajas debe comenzar con 4 y sobres con 9. La consola debe mostrar dos líneas, sin una línea vacía entre ellas:\n\nCajas: 4\nSobres: 9\n\nDefine ambas variables antes de utilizarlas y escribe las instrucciones de salida. Compila, ejecuta y compara cada nombre mostrado, el espacio después de los dos puntos, los números y el salto entre las líneas con el resultado solicitado.\n\nDespués cambia únicamente los valores iniciales a 0 y 2, respectivamente. Conserva las instrucciones de salida, compila y ejecuta de nuevo. Esta segunda versión debe mostrar:\n\nCajas: 0\nSobres: 2",
+          "emphasis": [
+            {
+              "text": "con dos variables de tipo int"
+            },
+            {
+              "text": "Define ambas variables antes de utilizarlas"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -195,7 +232,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta solución combina las dos formas de inicialización: cajas{4} y sobres = 9. Con estos valores enteros, ambas preparan el dato que corresponde antes de su primera lectura. La forma con llaves incorpora además la protección frente a conversiones de estrechamiento (Stroustrup, 2024, sección 2.9, p. 46).\n\nEsa protección no decide qué cantidad exige la tarea. Si la consigna pide cuatro cajas, escribir un inicializador válido con otro número seguiría describiendo un estado inicial equivocado. Comprueba tanto la preparación del objeto como el valor que elegiste."
+          "text": "Esta solución combina las dos formas de inicialización: cajas{4} y sobres = 9. Con estos valores enteros, ambas preparan el dato que corresponde antes de su primera lectura. La forma con llaves incorpora además la protección frente a conversiones de estrechamiento (Stroustrup, 2024).\n\nEsa protección no decide qué cantidad exige la tarea. Si la consigna pide cuatro cajas, escribir un inicializador válido con otro número seguiría describiendo un estado inicial equivocado. Comprueba tanto la preparación del objeto como el valor que elegiste.",
+          "emphasis": [
+            {
+              "text": "no decide qué cantidad exige la tarea"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -216,7 +258,7 @@
             "La compilación correcta garantiza el valor inicial que pide la tarea."
           ],
           "correctIndex": 0,
-          "explanation": "El valor debe estar establecido antes de la primera lectura. Si una salida ya intenta leer una variable local entera sin inicializar, darle un valor después no vuelve válida esa lectura anterior. La compilación correcta tampoco garantiza que se haya preparado el dato solicitado (Stroustrup, 2024, sección 2.8, p. 44; sección 7.2.2, p. 185)."
+          "explanation": "El valor debe estar establecido antes de la primera lectura. Si una salida ya intenta leer una variable local entera sin inicializar, darle un valor después no vuelve válida esa lectura anterior. La compilación correcta tampoco garantiza que se haya preparado el dato solicitado (Stroustrup, 2024)."
         }
       ]
     },
@@ -232,7 +274,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada objeto debe estar definido con su valor antes de utilizarse. La primera versión muestra Cajas: 4 y Sobres: 9 en dos líneas. La segunda, cambiando sólo los valores iniciales a 0 y 2, muestra Cajas: 0 y Sobres: 2. Conserva los espacios después de los dos puntos y el salto entre los mensajes.\n\nLa referencia siguiente utiliza una forma de salto de línea que conviene distinguir. Las comillas simples delimitan un literal de un solo carácter; en '\\n', ese carácter es el salto de línea. Las comillas dobles de \"\\n\", que ya utilizaste, delimitan un literal de texto que contiene ese salto. En estas instrucciones de salida, ambas formas separan los mensajes del mismo modo (Stroustrup, 2024, sección 1.2, p. 19; sección 2.2, p. 32).\n\nPuedes conservar la forma \"\\n\" en tu propia solución. La lección de caracteres desarrollará el tipo char y las comillas simples; aquí la comparación permite leer esta referencia sin confundir su notación con un texto que deba aparecer en la consola."
+          "text": "Cada objeto debe estar definido con su valor antes de utilizarse. La primera versión muestra Cajas: 4 y Sobres: 9 en dos líneas. La segunda, cambiando sólo los valores iniciales a 0 y 2, muestra Cajas: 0 y Sobres: 2. Conserva los espacios después de los dos puntos y el salto entre los mensajes.\n\nLa referencia siguiente utiliza una forma de salto de línea que conviene distinguir. Las comillas simples delimitan un literal de un solo carácter; en '\\n', ese carácter es el salto de línea. Las comillas dobles de \"\\n\", que ya utilizaste, delimitan un literal de texto que contiene ese salto. En estas instrucciones de salida, ambas formas separan los mensajes del mismo modo (Stroustrup, 2024).\n\nPuedes conservar la forma \"\\n\" en tu propia solución. La lección de caracteres desarrollará el tipo char y las comillas simples; aquí la comparación permite leer esta referencia sin confundir su notación con un texto que deba aparecer en la consola.",
+          "emphasis": [
+            {
+              "text": "Las comillas simples delimitan un literal de un solo carácter"
+            }
+          ]
         },
         {
           "type": "code",

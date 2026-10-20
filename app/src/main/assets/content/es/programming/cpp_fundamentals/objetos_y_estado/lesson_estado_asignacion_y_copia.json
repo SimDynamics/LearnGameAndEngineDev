@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una variable puede recibir otro valor después de su preparación inicial. La definición `int reservas = 4;` crea el objeto reservas y lo inicializa con 4. Una instrucción posterior `reservas = 7;` utiliza el objeto que ya existe y le asigna el nuevo valor 7. Inicializar y asignar son operaciones distintas: una prepara el primer valor y la otra cambia el valor de un objeto existente (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nEn la asignación no se vuelve a escribir `int` porque no estamos definiendo otra variable. El nombre de la izquierda señala dónde se guardará el valor de la derecha. Al terminar `reservas = 7;`, una lectura posterior de reservas utiliza el valor recién guardado (Stroustrup, 2024, sección 2.5, p. 37).",
+          "text": "Una variable puede recibir otro valor después de su preparación inicial. La definición `int reservas = 4;` crea el objeto reservas y lo inicializa con 4. Una instrucción posterior `reservas = 7;` utiliza el objeto que ya existe y le asigna el nuevo valor 7. Inicializar y asignar son operaciones distintas: una prepara el primer valor y la otra cambia el valor de un objeto existente (Stroustrup, 2024).\n\nEn la asignación no se vuelve a escribir `int` porque no estamos definiendo otra variable. El nombre de la izquierda señala dónde se guardará el valor de la derecha. Al terminar `reservas = 7;`, una lectura posterior de reservas utiliza el valor recién guardado (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "Inicializar y asignar son operaciones distintas"
@@ -27,7 +27,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera salida consulta reservas cuando vale 4 y añade un salto de línea. Después, `reservas = 7;` sustituye su valor. La segunda salida consulta el mismo objeto y muestra 7. El mensaje que ya se produjo en la primera línea no se cambia cuando se modifica la variable.\n\nPara estos programas, seguiremos el estado observando qué valor tiene cada variable después de cada instrucción. Una salida consulta ese estado; una asignación puede modificarlo. Así podemos relacionar cada mensaje con el momento en que se produce (Stroustrup, 2024, sección 2.5.1, p. 39)."
+          "text": "La primera salida consulta reservas cuando vale 4 y añade un salto de línea. Después, `reservas = 7;` sustituye su valor. La segunda salida consulta el mismo objeto y muestra 7. El mensaje que ya se produjo en la primera línea no se cambia cuando se modifica la variable.\n\nPara estos programas, seguiremos el estado observando qué valor tiene cada variable después de cada instrucción. Una salida consulta ese estado; una asignación puede modificarlo. Así podemos relacionar cada mensaje con el momento en que se produce (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "El mensaje que ya se produjo en la primera línea no se cambia"
+            },
+            {
+              "text": "qué valor tiene cada variable después de cada instrucción"
+            }
+          ]
         }
       ]
     },
@@ -39,7 +47,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En `reservas = reservas + 2;`, el nombre aparece a ambos lados, pero cumple dos funciones. A la derecha se consulta el valor actual y se calcula el resultado; a la izquierda se identifica el objeto que recibirá ese resultado. Si `reservas` vale 4, se calcula 4 `+` 2 y después se guarda 6 en `reservas` (Stroustrup, 2024, sección 2.5, p. 37).\n\nEl signo `=` indica asignación, no una igualdad matemática que deba ser cierta antes y después. La instrucción realiza la actualización una vez cuando le corresponde ejecutarse; no vuelve a sumarse por sí sola. En estas expresiones con enteros, `+` realiza la suma y `-` la resta (Stroustrup, 2024, sección 2.4, p. 34; sección 2.5, p. 37)."
+          "text": "En `reservas = reservas + 2;`, el nombre aparece a ambos lados, pero cumple dos funciones. A la derecha se consulta el valor actual y se calcula el resultado; a la izquierda se identifica el objeto que recibirá ese resultado. Si `reservas` vale 4, se calcula 4 `+` 2 y después se guarda 6 en `reservas` (Stroustrup, 2024).\n\nEn esta instrucción, el signo `=` indica una asignación, no una igualdad matemática que deba ser cierta antes y después. La instrucción realiza la actualización una vez cuando le corresponde ejecutarse; no vuelve a sumarse por sí sola. En estas expresiones con enteros, `+` realiza la suma y `-` la resta (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "A la derecha se consulta el valor actual y se calcula el resultado"
+            },
+            {
+              "text": "a la izquierda se identifica el objeto que recibirá ese resultado"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -82,7 +98,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En `int copia = original;`, se define una segunda variable de tipo `int` y se la inicializa con el valor que tiene `original` en ese momento. Si `original` vale 6, las dos guardan 6 al terminar esa definición (Stroustrup, 2024, sección 2.5, p. 37).\n\nSon dos objetos distintos. Cambiar después el entero `original` no vuelve a ejecutar la inicialización de copia ni mantiene sus valores sincronizados. La nueva variable conserva el valor recibido hasta que alguna instrucción la modifique. Esto es diferente de imprimir dos veces la misma variable (Stroustrup, 2024, sección 2.5, pp. 37–38).",
+          "text": "En `int copia = original;`, se define una segunda variable de tipo `int` y se la inicializa con el valor que tiene `original` en ese momento. Si `original` vale 6, las dos guardan 6 al terminar esa definición (Stroustrup, 2024).\n\nSon dos objetos distintos. Cambiar después el entero `original` no vuelve a ejecutar la inicialización de copia ni mantiene sus valores sincronizados. La nueva variable conserva el valor recibido hasta que alguna instrucción la modifique. Esto es diferente de imprimir dos veces la misma variable (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "Son dos objetos distintos"
@@ -99,7 +115,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En este programa, copia recibe 6 al definirse. La instrucción `original = 10;` modifica solamente original. Por eso, al llegar a la salida, original vale 10 y copia sigue valiendo 6: el mensaje es 10 6.\n\nPara actualizar copia con el valor que original tiene después del cambio, haría falta otra instrucción: `copia = original;`. Esa instrucción consultaría el valor disponible en ese nuevo momento. El nombre copia no realiza actualizaciones por sí solo."
+          "text": "En este programa, copia recibe 6 al definirse. La instrucción `original = 10;` modifica solamente original. Por eso, al llegar a la salida, original vale 10 y copia sigue valiendo 6: el mensaje es 10 6.\n\nPara actualizar copia con el valor que original tiene después del cambio, haría falta otra instrucción: `copia = original;`. Esa instrucción consultaría el valor disponible en ese nuevo momento. El nombre copia no realiza actualizaciones por sí solo.",
+          "emphasis": [
+            {
+              "text": "copia recibe 6 al definirse"
+            },
+            {
+              "text": "modifica solamente original"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -132,7 +156,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El seguimiento por etapas permite distinguir la creación de una copia de las asignaciones posteriores. Se aplica cada instrucción al estado que dejó la anterior; una modificación no vuelve a ejecutar automáticamente las instrucciones que ya pasaron (Stroustrup, 2024, sección 2.5, p. 37).\n\nEn la secuencia `int a = 2;` `int b = a;` `a = a + 3;` `b = a;`, las etapas son:\n\n1. Tras `int a = 2;`, a vale 2; b todavía no se ha definido.\n2. Tras `int b = a;`, a y b valen 2.\n3. Tras `a = a + 3;`, a vale 5 y b conserva 2.\n4. Tras `b = a;`, ambas valen 5. Esta última igualdad de valores se debe a una nueva asignación.\n\nEl puzzle de seguimiento al final de esta página utiliza salidas entre las instrucciones para registrar las etapas dentro de la aplicación. Cada línea corresponde al estado que existe en ese punto del programa."
+          "text": "El seguimiento por etapas permite distinguir la creación de una copia de las asignaciones posteriores. Se aplica cada instrucción al estado que dejó la anterior; una modificación no vuelve a ejecutar automáticamente las instrucciones que ya pasaron (Stroustrup, 2024).\n\nEn la secuencia `int a = 2;` `int b = a;` `a = a + 3;` `b = a;`, las etapas son:\n\n1. Tras `int a = 2;`, a vale 2; b todavía no se ha definido.\n2. Tras `int b = a;`, a y b valen 2.\n3. Tras `a = a + 3;`, a vale 5 y b conserva 2.\n4. Tras `b = a;`, ambas valen 5. Esta última igualdad de valores se debe a una nueva asignación.\n\nEl puzzle de seguimiento al final de esta página utiliza salidas entre las instrucciones para registrar las etapas dentro de la aplicación. Cada línea corresponde al estado que existe en ese punto del programa.",
+          "emphasis": [
+            {
+              "text": "Se aplica cada instrucción al estado que dejó la anterior"
+            }
+          ]
         },
         {
           "type": "order_code",
@@ -197,7 +226,12 @@
         },
         {
           "type": "paragraph",
-          "text": "C++ permite escribir algunas actualizaciones de forma compacta. Para un entero, `cantidad += 3;` suma 3 a su valor y guarda el resultado en el mismo objeto. De modo semejante, `cantidad -= 2;` resta 2 y conserva allí el resultado. En estos usos, equivalen a `cantidad = cantidad + 3;` y `cantidad = cantidad - 2;`, respectivamente (Stroustrup, 2024, sección 2.5.2, pp. 39–40).\n\nLas instrucciones `++cantidad;` y `--cantidad;` aumentan y reducen el valor en una unidad. Aquí el incremento y el decremento son instrucciones separadas: primero se completa cada actualización y después se continúa con la instrucción siguiente. Todavía no combinaremos estas operaciones con otras dentro de una misma expresión (Stroustrup, 2024, sección 2.4, p. 35; sección 2.5.2, p. 39)."
+          "text": "C++ permite escribir algunas actualizaciones de forma compacta. Para un entero, `cantidad += 3;` suma 3 a su valor y guarda el resultado en el mismo objeto. De modo semejante, `cantidad -= 2;` resta 2 y conserva allí el resultado. En estos usos, equivalen a `cantidad = cantidad + 3;` y `cantidad = cantidad - 2;`, respectivamente (Stroustrup, 2024).\n\nLas instrucciones `++cantidad;` y `--cantidad;` aumentan y reducen el valor en una unidad. Aquí el incremento y el decremento son instrucciones separadas: primero se completa cada actualización y después se continúa con la instrucción siguiente. Todavía no combinaremos estas operaciones con otras dentro de una misma expresión (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "son instrucciones separadas"
+            }
+          ]
         },
         {
           "type": "code",
@@ -206,7 +240,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el ejemplo, pasos comienza con 2. La instrucción `pasos += 3;` lo cambia a 5 y `++pasos;` lo cambia a 6. La salida consulta ese último valor.\n\nTrabajaremos con cantidades pequeñas que el tipo puede representar. La memoria reservada para un `int` tiene un tamaño fijo, por lo que su conjunto de valores es finito; estas instrucciones no permiten aumentar sin límite una cantidad conservada en ese tipo (Stroustrup, 2024, sección 2.7, pp. 42–43)."
+          "text": "En el ejemplo, pasos comienza con 2. La instrucción `pasos += 3;` lo cambia a 5 y `++pasos;` lo cambia a 6. La salida consulta ese último valor.\n\nTrabajaremos con cantidades pequeñas que el tipo puede representar. La memoria reservada para un `int` tiene un tamaño fijo, por lo que su conjunto de valores es finito; estas instrucciones no permiten aumentar sin límite una cantidad conservada en ese tipo (Stroustrup, 2024)."
         },
         {
           "type": "drag_fill_code",
@@ -232,7 +266,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El relleno de la página anterior utiliza 10 como inicializador y `-=` para restar. El saldo pasa de 10 a 7 antes de mostrarse. En ese programa no se solicita una entrada al usuario: los datos necesarios están escritos en el código.\n\nAdemás de sumar y restar, podemos multiplicar enteros. En C++, el signo `*` representa la multiplicación; por ejemplo, `3 * 5` produce 15. Una asignación como `total = total * 3;` calcula el triple del valor actual y lo guarda en total. El signo `-` expresa la resta que ya utilizaste. Estos operadores permiten componer las dos actualizaciones del siguiente relleno (Stroustrup, 2024, sección 2.4, pp. 34–35)."
+          "text": "El relleno de la página anterior utiliza 10 como inicializador y `-=` para restar. El saldo pasa de 10 a 7 antes de mostrarse. En ese programa no se solicita una entrada al usuario: los datos necesarios están escritos en el código.\n\nAdemás de sumar y restar, podemos multiplicar enteros. En C++, el signo `*` representa la multiplicación; por ejemplo, `3 * 5` produce 15. Una asignación como `total = total * 3;` calcula el triple del valor actual y lo guarda en total. El signo `-` expresa la resta que ya utilizaste. Estos operadores permiten componer las dos actualizaciones del siguiente relleno (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "el signo `*` representa la multiplicación"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -264,7 +303,7 @@
             "-"
           ],
           "reviewFeedback": "Sigue las actualizaciones en el orden en que se ejecutan. Relaciona la primera operación con duplicar el valor y la segunda con reducir el resultado ya obtenido; cada asignación utiliza el estado que dejó la anterior.",
-          "explanation": "El primer hueco usa `*`: la expresión `cantidad * 2` duplica el valor inicial de cuatro y la asignación guarda ocho. El segundo usa `-`: ahora lee ese ocho, resta dos y guarda seis. En C++, esos signos representan multiplicación y resta (Stroustrup, 2024, sección 2.4, pp. 34–35).\n\nLa parte derecha se calcula con el valor actual antes de guardar el resultado en la variable de la izquierda. Por eso el segundo cambio utiliza ocho y no vuelve a partir de cuatro (Stroustrup, 2024, sección 2.5, p. 37). La consola muestra `6`."
+          "explanation": "El primer hueco usa `*`: la expresión `cantidad * 2` duplica el valor inicial de cuatro y la asignación guarda ocho. El segundo usa `-`: ahora lee ese ocho, resta dos y guarda seis. En C++, esos signos representan multiplicación y resta (Stroustrup, 2024).\n\nLa parte derecha se calcula con el valor actual antes de guardar el resultado en la variable de la izquierda. Por eso el segundo cambio utiliza ocho y no vuelve a partir de cuatro (Stroustrup, 2024). La consola muestra `6`."
         }
       ]
     },
@@ -276,7 +315,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El relleno anterior utiliza * para multiplicar y - para restar. La variable cantidad pasa de 4 a 8 y después a 6. Cada actualización utiliza el resultado que dejó la anterior.\n\nAhora usa el Laboratorio para construir un registro de entradas a una sala. La variable aforo debe comenzar con 5; anterior debe recibir una copia de ese valor; después, aforo debe aumentar en 3. La consola debe mostrar estas dos líneas:\n\nAntes: 5\nAhora: 8\n\nCompila y ejecuta tu programa. Compara los números, los espacios después de los dos puntos y el salto entre los mensajes con la salida solicitada. La primera línea debe consultar anterior y la segunda, aforo.\n\nEn una segunda versión, cambia el orden para que anterior reciba su copia después del aumento. Conserva las instrucciones de salida y vuelve a ejecutar. En esta versión, la consola debe mostrar:\n\nAntes: 8\nAhora: 8"
+          "text": "El relleno anterior utiliza * para multiplicar y - para restar. La variable cantidad pasa de 4 a 8 y después a 6. Cada actualización utiliza el resultado que dejó la anterior.\n\nAhora usa el Laboratorio para construir un registro de entradas a una sala. La variable aforo debe comenzar con 5; anterior debe recibir una copia de ese valor; después, aforo debe aumentar en 3. La consola debe mostrar estas dos líneas:\n\nAntes: 5\nAhora: 8\n\nCompila y ejecuta tu programa. Compara los números, los espacios después de los dos puntos y el salto entre los mensajes con la salida solicitada. La primera línea debe consultar anterior y la segunda, aforo.\n\nEn una segunda versión, cambia el orden para que anterior reciba su copia después del aumento. Conserva las instrucciones de salida y vuelve a ejecutar. En esta versión, la consola debe mostrar:\n\nAntes: 8\nAhora: 8",
+          "emphasis": [
+            {
+              "text": "anterior debe recibir una copia de ese valor"
+            },
+            {
+              "text": "debe consultar anterior y la segunda, aforo"
+            }
+          ]
         },
         {
           "type": "cpp_compiler",
@@ -301,7 +348,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera solución copia el valor de aforo antes del aumento. anterior conserva ese valor hasta que otra instrucción la modifique. Si se realiza la copia después del aumento, recibe el valor disponible en ese otro momento; el nombre anterior no recupera automáticamente un dato pasado (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nEn esta solución, la copia inicial conserva 5 y aforo pasa a 8. Si mueves la definición de anterior después del aumento, la copia recibe 8. Esa diferencia en el orden explica el cambio de la primera línea de consola; cambiar una etiqueta no modifica los valores guardados.\n\nLa recuperación siguiente utiliza `cajas *= 3;`. Para el entero de este ejemplo, equivale a `cajas = cajas * 3;`: se multiplica su valor actual por 3 y se guarda el resultado en cajas. El signo `*` realiza el cálculo y `*=` lo combina con la actualización del mismo objeto. Las copias hechas antes no cambian por esa actualización (Stroustrup, 2024, sección 2.5, p. 37; sección 2.5.2, pp. 39–40)."
+          "text": "La primera solución copia el valor de aforo antes del aumento. anterior conserva ese valor hasta que otra instrucción la modifique. Si se realiza la copia después del aumento, recibe el valor disponible en ese otro momento; el nombre anterior no recupera automáticamente un dato pasado (Stroustrup, 2024).\n\nEn esta solución, la copia inicial conserva 5 y aforo pasa a 8. Si mueves la definición de anterior después del aumento, la copia recibe 8. Esa diferencia en el orden explica el cambio de la primera línea de consola; cambiar una etiqueta no modifica los valores guardados.\n\nLa recuperación siguiente utiliza `cajas *= 3;`. Para el entero de este ejemplo, equivale a `cajas = cajas * 3;`: se multiplica su valor actual por 3 y se guarda el resultado en cajas. El signo `*` realiza el cálculo y `*=` lo combina con la actualización del mismo objeto. Las copias hechas antes no cambian por esa actualización (Stroustrup, 2024)."
         },
         {
           "type": "output_prediction",
@@ -379,7 +426,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes del aumento, aforo debe valer 5 y anterior debe recibir una copia de ese valor. La primera versión muestra Antes: 5 y Ahora: 8 en líneas distintas. Si la definición de anterior aparece después del aumento, las dos variables valen 8 al llegar a la salida y se muestra Antes: 8 y Ahora: 8.\n\nEn los puzzles de seguimiento, cada línea registra los valores que existen después de una etapa. El puzzle de justificación permite elegir el razonamiento que relaciona el dato copiado con ese momento de ejecución. Mantener el nombre anterior no crea una relación que actualice su valor ni guarda por sí solo un historial de aforo (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nLa referencia usa inicialización con llaves y escribe el aumento como `aforo = aforo + 3;`. Con estos enteros, las formas `int aforo{5};` e `int aforo = 5;` preparan el mismo valor inicial; el aumento escrito mediante `+=` expresa la misma actualización que acabas de practicar (Stroustrup, 2024, sección 2.9, p. 46; sección 2.5.2, p. 39)."
+          "text": "Antes del aumento, aforo debe valer 5 y anterior debe recibir una copia de ese valor. La primera versión muestra Antes: 5 y Ahora: 8 en líneas distintas. Si la definición de anterior aparece después del aumento, las dos variables valen 8 al llegar a la salida y se muestra Antes: 8 y Ahora: 8.\n\nEn los puzzles de seguimiento, cada línea registra los valores que existen después de una etapa. El puzzle de justificación permite elegir el razonamiento que relaciona el dato copiado con ese momento de ejecución. Mantener el nombre anterior no crea una relación que actualice su valor ni guarda por sí solo un historial de aforo (Stroustrup, 2024).\n\nLa referencia usa inicialización con llaves y escribe el aumento como `aforo = aforo + 3;`. Con estos enteros, las formas `int aforo{5};` e `int aforo = 5;` preparan el mismo valor inicial; el aumento escrito mediante `+=` expresa la misma actualización que acabas de practicar (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Mantener el nombre anterior no crea una relación que actualice su valor"
+            }
+          ]
         },
         {
           "type": "code",

@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un dato no siempre representa una cantidad. También podemos necesitar conservar un nombre, un mensaje o un código como una secuencia de caracteres. Para trabajar con ese texto utilizamos el tipo `std::string`, cuyo valor es una cadena de caracteres (Stroustrup, 2024, sección 2.2, p. 32).\n\nAñadimos `#include <string>` para disponer de este tipo de la biblioteca estándar. Conservamos además `#include <iostream>` porque nuestros programas muestran resultados mediante `std::cout`. Cada cabecera proporciona los recursos que utilizamos; `<string>` declara el tipo de texto y sus operaciones (Köppe et al., 2023, secciones [string.classes.general], párr. 1, y [string.syn]).\n\nEl prefijo `std::` que ya conoces en `std::cout` también aparece en `std::string`: señala que esos nombres pertenecen a la biblioteca estándar (Stroustrup, 2024, sección 1.2, p. 19).",
+          "text": "Un dato no siempre representa una cantidad. También podemos necesitar conservar un nombre, un mensaje o un código como una secuencia de caracteres. Para trabajar con ese texto utilizamos el tipo `std::string`, cuyo valor es una cadena de caracteres (Stroustrup, 2024).\n\nAñadimos `#include <string>` para disponer de este tipo de la biblioteca estándar. Conservamos además `#include <iostream>` porque nuestros programas muestran resultados mediante `std::cout`. Cada cabecera proporciona los recursos que utilizamos; `<string>` declara el tipo de texto y sus operaciones (Köppe et al., 2023, secciones [string.classes.general], párr. 1, y [string.syn]).\n\nEl prefijo `std::` que ya conoces en `std::cout` también aparece en `std::string`: señala que esos nombres pertenecen a la biblioteca estándar (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "conservar un nombre, un mensaje o un código"
@@ -22,7 +22,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En `std::string zona = \"Norte\";`, el nombre zona identifica la variable y `\"Norte\"` es el literal que proporciona su valor inicial. El tipo indica qué clase de dato conserva el objeto; el inicializador aporta el texto concreto con el que comienza (Stroustrup, 2024, sección 2.2, p. 32).\n\nLas comillas delimitan el literal dentro del código. En este ejemplo, la cadena guarda las cinco letras de Norte, sin añadir las comillas. Al escribir `std::cout << zona;`, se muestra el valor guardado. En cambio, `std::cout << \"zona\";` mostraría las cuatro letras del nombre escrito entre comillas (Stroustrup, 2024, sección 2.1, p. 31; sección 2.7, p. 43)."
+          "text": "En `std::string zona = \"Norte\";`, el nombre zona identifica la variable y `\"Norte\"` es el literal que proporciona su valor inicial. El tipo indica qué clase de dato conserva el objeto; el inicializador aporta el texto concreto con el que comienza (Stroustrup, 2024).\n\nLas comillas delimitan el literal dentro del código. En este ejemplo, la cadena guarda las cinco letras de Norte, sin añadir las comillas. Al escribir `std::cout << zona;`, se muestra el valor guardado. En cambio, `std::cout << \"zona\";` mostraría las cuatro letras del nombre escrito entre comillas (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Las comillas delimitan el literal dentro del código"
+            },
+            {
+              "text": "sin añadir las comillas"
+            }
+          ]
         },
         {
           "type": "code",
@@ -50,7 +58,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La definición `std::string etiqueta;` crea la variable y la inicializa como una cadena vacía. Su valor contiene cero caracteres. No hay que inventar un primer texto para poder utilizarla: empezar vacía es una garantía de este tipo (Stroustrup, 2024, sección 2.3, p. 34).\n\nTambién puedes escribir `std::string etiqueta = \"\";`. Entre las dos comillas no hay ningún carácter del mensaje. La variable existe y tiene un valor definido, aunque mostrarla no aporte letras a la consola (Stroustrup, 2024, sección 2.5.1, p. 38).\n\nEsta garantía no se debe extender a todos los tipos. Una definición local como `int cantidad;`, sin inicializador, no prepara un número que podamos leer con seguridad. El comportamiento de inicialización depende del tipo; por eso distinguimos la cadena vacía del caso numérico sin inicializar (Stroustrup, 2024, sección 2.8, p. 44).",
+          "text": "La definición `std::string etiqueta;` crea la variable y la inicializa como una cadena vacía. Su valor contiene cero caracteres. No hay que inventar un primer texto para poder utilizarla: empezar vacía es una garantía de este tipo (Stroustrup, 2024).\n\nTambién puedes escribir `std::string etiqueta = \"\";`. Entre las dos comillas no hay ningún carácter del mensaje. La variable existe y tiene un valor definido, aunque mostrarla no aporte letras a la consola (Stroustrup, 2024).\n\nEsta garantía no se debe extender a todos los tipos. Una definición local como `int cantidad;`, sin inicializador, no prepara un número que podamos leer con seguridad. El comportamiento de inicialización depende del tipo; por eso distinguimos la cadena vacía del caso numérico sin inicializar (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "cero caracteres"
@@ -101,7 +109,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La asignación `zona = \"Sur\";` utiliza una variable que ya existe y reemplaza el texto que conserva. La variable sigue llamándose zona y su tipo sigue siendo `std::string`; lo que cambia es su valor (Stroustrup, 2024, sección 2.5, pp. 37–38).\n\nTambién podemos definir otra cadena a partir del valor de zona, por ejemplo `std::string registro = zona;`. La nueva variable recibe una copia del texto que zona tiene en ese momento. Cambiar después zona no vuelve a ejecutar esa inicialización ni modifica por sí solo registro (Stroustrup, 2024, sección 2.5, p. 37).\n\nRecupera el seguimiento de los enteros: después de una copia, hay dos objetos cuyos valores debemos seguir por separado. Para que registro reciba posteriormente otro texto, tiene que ejecutarse una instrucción que lo actualice. La predicción siguiente permite observar el valor conservado por cada cadena.",
+          "text": "La asignación `zona = \"Sur\";` utiliza una variable que ya existe y reemplaza el texto que conserva. La variable sigue llamándose zona y su tipo sigue siendo `std::string`; lo que cambia es su valor (Stroustrup, 2024).\n\nTambién podemos definir otra cadena a partir del valor de zona, por ejemplo `std::string registro = zona;`. La nueva variable recibe una copia del texto que zona tiene en ese momento. Cambiar después zona no vuelve a ejecutar esa inicialización ni modifica por sí solo registro (Stroustrup, 2024).\n\nRecupera el seguimiento de los enteros: después de una copia, hay dos objetos cuyos valores debemos seguir por separado. Para que registro reciba posteriormente otro texto, tiene que ejecutarse una instrucción que lo actualice. La predicción siguiente permite observar el valor conservado por cada cadena.",
           "emphasis": [
             {
               "text": "La nueva variable recibe una copia del texto"
@@ -159,7 +167,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Concatenar significa formar una cadena colocando los caracteres de un texto después de los de otro. Cuando primera y segunda son variables `std::string`, la expresión `primera + segunda` obtiene sus textos en ese orden y produce una nueva cadena. El signo `+` representa aquí una concatenación, no una suma de cantidades (Stroustrup, 2024, sección 2.4, p. 36).\n\nLa operación no añade separadores por su cuenta. Si sala guarda Sala y numero guarda 2 como texto, `sala + numero` produce Sala2. Para obtener Sala 2 debemos aportar el espacio, por ejemplo mediante `sala + \" \" + numero`. Ese espacio es un carácter más del texto que estamos construyendo (Stroustrup, 2024, sección 2.4, p. 36).\n\nCalcular una concatenación no asigna el resultado automáticamente a sus datos de origen. En el programa siguiente, nombre recibe el resultado de combinar sala, el espacio y numero; las variables sala y numero conservan sus textos anteriores. Distingue calcular un valor de guardarlo mediante una definición o una asignación (Stroustrup, 2024, sección 2.5, pp. 37–38).",
+          "text": "Concatenar significa formar una cadena colocando los caracteres de un texto después de los de otro. Cuando primera y segunda son variables `std::string`, la expresión `primera + segunda` obtiene sus textos en ese orden y produce una nueva cadena. El signo `+` representa aquí una concatenación, no una suma de cantidades (Stroustrup, 2024).\n\nLa operación no añade separadores por su cuenta. Si sala guarda Sala y numero guarda 2 como texto, `sala + numero` produce Sala2. Para obtener Sala 2 debemos aportar el espacio, por ejemplo mediante `sala + \" \" + numero`. Ese espacio es un carácter más del texto que estamos construyendo (Stroustrup, 2024).\n\nCalcular una concatenación no asigna el resultado automáticamente a sus datos de origen. En el programa siguiente, nombre recibe el resultado de combinar sala, el espacio y numero; las variables sala y numero conservan sus textos anteriores. Distingue calcular un valor de guardarlo mediante una definición o una asignación (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "no añade separadores por su cuenta"
@@ -194,7 +202,7 @@
             "\"Oeste\""
           ],
           "reviewFeedback": "Revisa qué texto debe aportar cada variable y cómo se delimita un literal para inicializar una cadena. Localiza el separador que ya proporciona la expresión de salida; comprueba si tus datos repiten u omiten caracteres del mensaje solicitado.",
-          "explanation": "primera se inicializa con el literal \"Sector\" y segunda con \"Oeste\". Las comillas dobles delimitan cada literal en el código; no se conservan como parte de las palabras que se muestran al consultar las variables (Stroustrup, 2024, sección 2.1, p. 31).\n\nLa expresión primera + \" \" + segunda concatena el texto de la primera variable, un espacio y el de la segunda, en ese orden. Por eso produce Sector Oeste. El espacio ya está escrito entre las variables: no hay que duplicarlo dentro de los dos literales completados. La concatenación reúne los caracteres aportados por sus operandos sin inventar separadores (Stroustrup, 2024, sección 2.4, p. 36).\n\nCada hueco inicializa una variable con su palabra. Mostrar luego la combinación consulta esos valores y calcula el texto resultante; no cambia por sí solo el contenido de las dos cadenas (Stroustrup, 2024, sección 2.5, p. 37)."
+          "explanation": "primera se inicializa con el literal \"Sector\" y segunda con \"Oeste\". Las comillas dobles delimitan cada literal en el código; no se conservan como parte de las palabras que se muestran al consultar las variables (Stroustrup, 2024).\n\nLa expresión primera + \" \" + segunda concatena el texto de la primera variable, un espacio y el de la segunda, en ese orden. Por eso produce Sector Oeste. El espacio ya está escrito entre las variables: no hay que duplicarlo dentro de los dos literales completados. La concatenación reúne los caracteres aportados por sus operandos sin inventar separadores (Stroustrup, 2024).\n\nCada hueco inicializa una variable con su palabra. Mostrar luego la combinación consulta esos valores y calcula el texto resultante; no cambia por sí solo el contenido de las dos cadenas (Stroustrup, 2024)."
         }
       ]
     },
@@ -206,7 +214,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En el relleno anterior, primera recibe `\"Sector\"` y segunda recibe `\"Oeste\"`. El espacio ya está en la expresión de salida, entre ambos datos. Por eso cada literal debe aportar únicamente la palabra que le corresponde.\n\nEs importante distinguir un número de un texto que contiene dígitos. El literal `2` representa un entero; `\"2\"` proporciona el carácter 2 a una cadena. Del mismo modo, una cadena puede conservar los caracteres de `\"1.2\"` sin representar una cantidad sobre la que se haya pedido una operación aritmética (Stroustrup, 2024, sección 2.2, p. 32; sección 2.7, p. 43).\n\nEn los puzzles siguientes, el tipo de las variables determina qué hace `+`: con las cadenas concatena los textos; con los enteros suma las cantidades. Escribir dígitos dentro de una cadena no hace que esa concatenación se convierta en una suma numérica (Stroustrup, 2024, sección 2.4, pp. 34–36)."
+          "text": "En el relleno anterior, primera recibe `\"Sector\"` y segunda recibe `\"Oeste\"`. El espacio ya está en la expresión de salida, entre ambos datos. Por eso cada literal debe aportar únicamente la palabra que le corresponde.\n\nEs importante distinguir un número de un texto que contiene dígitos. El literal `2` representa un entero; `\"2\"` proporciona el carácter 2 a una cadena. Del mismo modo, una cadena puede conservar los caracteres de `\"1.2\"` sin representar una cantidad sobre la que se haya pedido una operación aritmética (Stroustrup, 2024).\n\nEn los puzzles siguientes, el tipo de las variables determina qué hace `+`: con las cadenas concatena los textos; con los enteros suma las cantidades. Escribir dígitos dentro de una cadena no hace que esa concatenación se convierta en una suma numérica (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "distinguir un número de un texto que contiene dígitos"
+            },
+            {
+              "text": "con las cadenas concatena los textos; con los enteros suma las cantidades"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -256,7 +272,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con una cadena, `cartel += \" abierto\";` añade los caracteres del texto de la derecha al final del valor que cartel ya conserva. La misma variable queda actualizada. Si comenzaba con Taller, después de esa instrucción conserva Taller abierto (Stroustrup, 2024, sección 2.4, p. 35).\n\nCompara las dos acciones: `cartel + \" abierto\"` calcula una cadena nueva; `cartel += \" abierto\";` modifica cartel. En estos ejemplos, la segunda forma expresa la actualización `cartel = cartel + \" abierto\";`. Para reconocer qué dato cambia, busca si el programa sólo calcula un resultado o si además lo guarda en un objeto (Stroustrup, 2024, sección 2.5, p. 37; sección 2.5.2, pp. 39–40).\n\nEl espacio inicial de `\" abierto\"` también se añade. Sin ese carácter, las palabras quedarían juntas. La concatenación conserva los caracteres de sus textos; no decide dónde necesitamos separar las palabras (Stroustrup, 2024, sección 2.4, p. 36).\n\nUn literal entre comillas puede proporcionar texto a una cadena, pero no tiene por sí solo el tipo `std::string`. En `cartel + \" abierto\"`, cartel ya es una cadena y puede concatenarse con el texto del literal. En cambio, `\"Taller\" + \" abierto\"` no realiza esa operación y no es una expresión válida en nuestros programas. Aquí construimos el texto a partir de las cadenas ya definidas (Köppe et al., 2023, sección [lex.string], párr. 1; sección [string.op.plus], párr. 1; sección [expr.add], párr. 1).",
+          "text": "Con una cadena, `cartel += \" abierto\";` añade los caracteres del texto de la derecha al final del valor que cartel ya conserva. La misma variable queda actualizada. Si comenzaba con Taller, después de esa instrucción conserva Taller abierto (Stroustrup, 2024).\n\nCompara las dos acciones: `cartel + \" abierto\"` calcula una cadena nueva; `cartel += \" abierto\";` modifica cartel. En estos ejemplos, la segunda forma expresa la actualización `cartel = cartel + \" abierto\";`. Para reconocer qué dato cambia, busca si el programa sólo calcula un resultado o si además lo guarda en un objeto (Stroustrup, 2024).\n\nEl espacio inicial de `\" abierto\"` también se añade. Sin ese carácter, las palabras quedarían juntas. La concatenación conserva los caracteres de sus textos; no decide dónde necesitamos separar las palabras (Stroustrup, 2024).\n\nUn literal entre comillas puede proporcionar texto a una cadena, pero no tiene por sí solo el tipo `std::string`. En `cartel + \" abierto\"`, cartel ya es una cadena y puede concatenarse con el texto del literal. En cambio, `\"Taller\" + \" abierto\"` no realiza esa operación y no es una expresión válida en nuestros programas. Aquí construimos el texto a partir de las cadenas ya definidas (Köppe et al., 2023, sección [lex.string], párr. 1; sección [string.op.plus], párr. 1; sección [expr.add], párr. 1).",
           "emphasis": [
             {
               "text": "La misma variable queda actualizada"
@@ -319,7 +335,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Distingue cambiar un dato inicial de cambiarlo después de haber calculado otro resultado. Ya construiste versiones que empiezan con 04 o con 07. La exploración de la página siguiente restaurará primero 04 y modificará codigo después de definir etiqueta.\n\nRegistra su salida en el puzzle antes de ejecutar esa exploración. Luego vuelve a este Laboratorio, realiza el cambio indicado y compara la consola con tu predicción. El puzzle de justificación permite elegir el razonamiento que explica lo observado."
+          "text": "Distingue cambiar un dato inicial de cambiarlo después de haber calculado otro resultado. Ya construiste versiones que empiezan con 04 o con 07. La exploración de la página siguiente restaurará primero 04 y modificará codigo después de definir etiqueta.\n\nRegistra su salida en el puzzle antes de ejecutar esa exploración. Luego vuelve a este Laboratorio, realiza el cambio indicado y compara la consola con tu predicción. El puzzle de justificación permite elegir el razonamiento que explica lo observado.",
+          "emphasis": [
+            {
+              "text": "cambiar un dato inicial de cambiarlo después de haber calculado otro resultado"
+            },
+            {
+              "text": "Registra su salida en el puzzle antes de ejecutar esa exploración"
+            }
+          ]
         }
       ]
     },
@@ -408,7 +432,12 @@
         },
         {
           "type": "paragraph",
-          "text": "La construcción debe utilizar los textos guardados en edificio y codigo para obtener etiqueta, con un guion entre ambas partes. La primera versión, con codigo inicializado como 04, debe mostrar:\n\nAula-04\n\nLa segunda versión cambia sólo ese inicializador a 07 y debe mostrar:\n\nAula-07\n\nEn la exploración posterior, codigo comienza con 04 y recibe 07 después de construir etiqueta. La etiqueta ya calculada conserva Aula-04. Esta diferencia recupera el modelo de asignación y copia: calcular un resultado utiliza los valores disponibles en ese momento; cambiar después uno de los datos no vuelve a realizar la operación anterior (Stroustrup, 2024, sección 2.5, p. 37).\n\nConserva el cero inicial, el orden de los textos y el guion. No se exige copiar exactamente la organización de esta referencia."
+          "text": "La construcción debe utilizar los textos guardados en edificio y codigo para obtener etiqueta, con un guion entre ambas partes. La primera versión, con codigo inicializado como 04, debe mostrar:\n\nAula-04\n\nLa segunda versión cambia sólo ese inicializador a 07 y debe mostrar:\n\nAula-07\n\nEn la exploración posterior, codigo comienza con 04 y recibe 07 después de construir etiqueta. La etiqueta ya calculada conserva Aula-04. Esta diferencia recupera el modelo de asignación y copia: calcular un resultado utiliza los valores disponibles en ese momento; cambiar después uno de los datos no vuelve a realizar la operación anterior (Stroustrup, 2024).\n\nConserva el cero inicial, el orden de los textos y el guion. No se exige copiar exactamente la organización de esta referencia.",
+          "emphasis": [
+            {
+              "text": "los textos guardados en edificio y codigo"
+            }
+          ]
         },
         {
           "type": "code",
@@ -417,7 +446,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En el Laboratorio puedes comprobar las mismas versiones a partir de esta referencia si necesitas contrastarlas con tu intento. Cambiar sólo el literal que inicializa codigo a `\"07\"` debe producir Aula-07. Después restaura `\"04\"` para preparar la exploración de estado.\n\nInserta `codigo = \"07\";` después de definir etiqueta y antes de mostrarla. La consola sigue mostrando Aula-04, de acuerdo con el puzzle de predicción. Para actualizar la etiqueta guardada, añade después de ese cambio `etiqueta = edificio + \"-\" + codigo;`. Compila y ejecuta de nuevo: ahora debe aparecer Aula-07.\n\nCompara los tres lugares donde puede intervenir el dato: su valor inicial, su asignación posterior y el momento en que reconstruyes etiqueta. El orden de esas instrucciones explica las diferencias entre las versiones. El nombre de una variable no hace que sus resultados se recalculen automáticamente (Stroustrup, 2024, sección 2.5, pp. 37–38)."
+          "text": "En el Laboratorio puedes comprobar las mismas versiones a partir de esta referencia si necesitas contrastarlas con tu intento. Cambiar sólo el literal que inicializa codigo a `\"07\"` debe producir Aula-07. Después restaura `\"04\"` para preparar la exploración de estado.\n\nInserta `codigo = \"07\";` después de definir etiqueta y antes de mostrarla. La consola sigue mostrando Aula-04, de acuerdo con el puzzle de predicción. Para actualizar la etiqueta guardada, añade después de ese cambio `etiqueta = edificio + \"-\" + codigo;`. Compila y ejecuta de nuevo: ahora debe aparecer Aula-07.\n\nCompara los tres lugares donde puede intervenir el dato: su valor inicial, su asignación posterior y el momento en que reconstruyes etiqueta. El orden de esas instrucciones explica las diferencias entre las versiones. El nombre de una variable no hace que sus resultados se recalculen automáticamente (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "el momento en que reconstruyes etiqueta"
+            },
+            {
+              "text": "El orden de esas instrucciones explica las diferencias entre las versiones"
+            }
+          ]
         }
       ]
     }

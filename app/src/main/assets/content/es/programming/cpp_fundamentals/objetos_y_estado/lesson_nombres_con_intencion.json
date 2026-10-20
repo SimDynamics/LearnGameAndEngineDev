@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El nombre de una variable identifica un objeto y también ayuda a comprender qué dato guarda. Si contamos las bicicletas de un alquiler, `int bicicletas = 7;` comunica su función con más claridad que `int x2 = 7;`. Ambos nombres pueden ser válidos, pero una persona que lee el programa necesita menos contexto para interpretar el primero. Elegir nombres con significado facilita revisar y mantener el código (Stroustrup, 2024, sección 2.6, p. 42).\n\nUn nombre claro no cambia por sí solo el valor ni las operaciones de una variable. Su utilidad consiste en hacer visible la intención para el lector. El programa debe seguir utilizando el objeto correcto en cada instrucción.",
+          "text": "El nombre de una variable identifica un objeto y también ayuda a comprender qué dato guarda. Si contamos las bicicletas de un alquiler, `int bicicletas = 7;` comunica su función con más claridad que `int x2 = 7;`. Ambos nombres pueden ser válidos, pero una persona que lee el programa necesita menos contexto para interpretar el primero. Elegir nombres con significado facilita revisar y mantener el código (Stroustrup, 2024).\n\nUn nombre claro no cambia por sí solo el valor ni las operaciones de una variable. Su utilidad consiste en hacer visible la intención para el lector. El programa debe seguir utilizando el objeto correcto en cada instrucción.",
           "emphasis": [
             {
               "text": "Elegir nombres con significado"
@@ -22,7 +22,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Llamamos identificador al nombre que escribimos para referirnos a una entidad del programa, como una variable. En los ejemplos de este curso usaremos letras latinas sin acento, cifras y guiones bajos, comenzando por una letra: `bicicletas`, `nivel2` y `paquetes_recibidos`. Las reglas básicas permiten combinar letras, cifras y guiones bajos, pero una cifra no puede ser el primer carácter de un nombre (Stroustrup, 2024, sección 2.6, pp. 40–41).\n\nLa elección de letras sin acento y de un comienzo con letra es nuestra convención de trabajo; no pretende enumerar todas las posibilidades de C++. En un nombre compuesto, el guion bajo permite separar palabras sin introducir un espacio. A continuación, los nombres distinguen cuántos paquetes se reciben de cuántos se envían."
+          "text": "Llamamos identificador al nombre que escribimos para referirnos a una entidad del programa, como una variable. En los ejemplos de este curso usaremos letras latinas sin acento, cifras y guiones bajos, comenzando por una letra: `bicicletas`, `nivel2` y `paquetes_recibidos`. Las reglas básicas permiten combinar letras, cifras y guiones bajos, pero una cifra no puede ser el primer carácter de un nombre (Stroustrup, 2024).\n\nLa elección de letras sin acento y de un comienzo con letra es nuestra convención de trabajo; no pretende enumerar todas las posibilidades de C++. En un nombre compuesto, el guion bajo permite separar palabras sin introducir un espacio. A continuación, los nombres distinguen cuántos paquetes se reciben de cuántos se envían.",
+          "emphasis": [
+            {
+              "text": "Llamamos identificador al nombre que escribimos para referirnos a una entidad del programa"
+            },
+            {
+              "text": "una cifra no puede ser el primer carácter de un nombre"
+            }
+          ]
         },
         {
           "type": "code",
@@ -39,7 +47,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Distingue una regla del lenguaje de una elección para facilitar la lectura. `paquetes nuevos` contiene un espacio y `paquetes-nuevos` incluye el operador de resta; ninguno forma un solo identificador. Tampoco podemos comenzar un identificador con una cifra (Stroustrup, 2024, sección 2.6, p. 41).\n\nAlgunas palabras tienen una función reservada en el lenguaje. Por ejemplo, `int` indica un tipo y `return` introduce una instrucción de retorno: no están disponibles como nombres de nuestras variables. `bool`, que desarrollaremos más adelante, también es una palabra reservada (Stroustrup, 2024, sección 2.6, p. 41).\n\nComo medida de claridad y para evitar conflictos con nombres de la implementación, en este curso evitaremos los identificadores que comiencen con guion bajo. También evitaremos reutilizar nombres asociados a la biblioteca, como `cout`. Ese último cuidado es una recomendación de nombrado; no convierte los nombres de la biblioteca en palabras reservadas del lenguaje (Stroustrup, 2024, sección 2.6, p. 41)."
+          "text": "Distingue una regla del lenguaje de una elección para facilitar la lectura. `paquetes nuevos` contiene un espacio y `paquetes-nuevos` incluye el operador de resta; ninguno forma un solo identificador. Tampoco podemos comenzar un identificador con una cifra (Stroustrup, 2024).\n\nAlgunas palabras tienen una función reservada en el lenguaje. Por ejemplo, `int` indica un tipo y `return` introduce una instrucción de retorno: no están disponibles como nombres de nuestras variables. `bool`, que desarrollaremos más adelante, también es una palabra reservada (Stroustrup, 2024).\n\nComo medida de claridad y para evitar conflictos con nombres de la implementación, en este curso evitaremos los identificadores que comiencen con guion bajo. También evitaremos reutilizar nombres asociados a la biblioteca, como `cout`. Ese último cuidado es una recomendación de nombrado; no convierte los nombres de la biblioteca en palabras reservadas del lenguaje (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "una regla del lenguaje"
+            },
+            {
+              "text": "una elección para facilitar la lectura"
+            },
+            {
+              "text": "no están disponibles como nombres de nuestras variables"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -83,7 +102,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Las letras mayúsculas y minúsculas forman parte del identificador. `cajas` y `Cajas` son nombres distintos: declarar uno no declara automáticamente el otro. El compilador utiliza el nombre escrito, no adivina que una diferencia de mayúscula fue un descuido (Stroustrup, 2024, sección 2.6, p. 41).\n\nEl ejemplo siguiente contiene un error intencional. Se define `cajas`, pero la salida intenta utilizar `Cajas`, que no se ha declarado. Para conservar la variable existente, la reparación debe hacer que su uso corresponda a esa definición.\n\nAunque dos variables con nombres que sólo difieran en mayúsculas puedan ser distintas para C++, esa elección puede confundir al lector. Cuando representan datos diferentes, conviene que el nombre comunique la diferencia de función, en lugar de depender sólo de una letra mayúscula (Stroustrup, 2024, sección 2.6, pp. 41–42)."
+          "text": "Las letras mayúsculas y minúsculas forman parte del identificador. `cajas` y `Cajas` son nombres distintos: declarar uno no declara automáticamente el otro. El compilador utiliza el nombre escrito, no adivina que una diferencia de mayúscula fue un descuido (Stroustrup, 2024).\n\nEl ejemplo siguiente contiene un error intencional. Se define `cajas`, pero la salida intenta utilizar `Cajas`, que no se ha declarado. Para conservar la variable existente, la reparación debe hacer que su uso corresponda a esa definición.\n\nAunque dos variables con nombres que sólo difieran en mayúsculas puedan ser distintas para C++, esa elección puede confundir al lector. Cuando representan datos diferentes, conviene que el nombre comunique la diferencia de función, en lugar de depender sólo de una letra mayúscula (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "`cajas` y `Cajas` son nombres distintos"
+            },
+            {
+              "text": "hacer que su uso corresponda a esa definición"
+            }
+          ]
         },
         {
           "type": "code",
@@ -121,7 +148,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Elige la información que permite distinguir un dato de los demás. Si existen dos saldos, `saldo_pendiente` y `saldo_pagado` explican qué representa cada uno. Una abreviatura sin contexto obliga a adivinar; un nombre excesivamente largo también puede dificultar la lectura. La meta es expresar el significado necesario con una longitud manejable (Stroustrup, 2024, sección 2.6, p. 42).\n\nLa claridad depende del contexto. Un nombre breve puede ser útil cuando su función ya es evidente; ser corto no lo vuelve incorrecto. En un inventario con varias cantidades, nombres específicos permiten distinguir mejor los datos que una colección de etiquetas como `numero`, `numero2` o `x1` (Stroustrup, 2024, sección 2.6, p. 42).\n\nRecupera también la diferencia entre nombre y comportamiento: llamar `anterior` a una variable no hace que conserve un valor pasado. Para que el nombre describa ese papel, la copia debe producirse en el momento adecuado, como comprobaste en la lección anterior."
+          "text": "Elige la información que permite distinguir un dato de los demás. Si existen dos saldos, `saldo_pendiente` y `saldo_pagado` explican qué representa cada uno. Una abreviatura sin contexto obliga a adivinar; un nombre excesivamente largo también puede dificultar la lectura. La meta es expresar el significado necesario con una longitud manejable (Stroustrup, 2024).\n\nLa claridad depende del contexto. Un nombre breve puede ser útil cuando su función ya es evidente; ser corto no lo vuelve incorrecto. En un inventario con varias cantidades, nombres específicos permiten distinguir mejor los datos que una colección de etiquetas como `numero`, `numero2` o `x1` (Stroustrup, 2024).\n\nRecupera también la diferencia entre nombre y comportamiento: llamar `anterior` a una variable no hace que conserve un valor pasado. Para que el nombre describa ese papel, la copia debe producirse en el momento adecuado, como comprobaste en la lección anterior.",
+          "emphasis": [
+            {
+              "text": "expresar el significado necesario con una longitud manejable"
+            }
+          ]
         },
         {
           "type": "multiple_choice",
@@ -154,7 +186,7 @@
             "sobres_recibidos"
           ],
           "reviewFeedback": "Distingue el lugar donde se introduce el nombre del objeto del lugar donde se consulta su valor. Ambos usos deben corresponder a la misma variable; revisa su escritura completa, incluidas las mayúsculas y los guiones bajos indicados en la consigna.",
-          "explanation": "Los dos huecos utilizan `sobres_recibidos`. En la definición, ese nombre identifica el objeto `int` que comienza con seis; en la salida, el mismo nombre permite consultar el valor que guarda (Stroustrup, 2024, sección 2.2, p. 32).\n\nLa consola muestra `6`, no el nombre escrito en el código. El nombre sin comillas consulta la variable; un literal entre comillas aportaría texto fijo. Esa distinción permite utilizar el dato del objeto en el mensaje (Stroustrup, 2024, sección 2.1, p. 31)."
+          "explanation": "Los dos huecos utilizan `sobres_recibidos`. En la definición, ese nombre identifica el objeto `int` que comienza con seis; en la salida, el mismo nombre permite consultar el valor que guarda (Stroustrup, 2024).\n\nLa consola muestra `6`, no el nombre escrito en el código. El nombre sin comillas consulta la variable; un literal entre comillas aportaría texto fijo. Esa distinción permite utilizar el dato del objeto en el mensaje (Stroustrup, 2024)."
         }
       ]
     },
@@ -182,7 +214,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Si olvidaste renombrar una aparición, localiza el nombre señalado por el diagnóstico y relaciónalo con su definición. Actualiza ese uso en vez de crear otra variable únicamente para hacer desaparecer el error.\n\nDespués comprueba el cálculo con otros datos en el mismo Laboratorio: cambia las cantidades iniciales a 6 y 2, compila y verifica que la consola muestra 8. Reconstruye luego los valores 4 y 3 y comprueba que recuperas 7. Conserva los nombres nuevos y la operación durante esta variación.\n\nTras realizar el renombrado, resuelve el puzzle de comentarios de la página siguiente. Allí asociarás cada nombre nuevo con la función de su variable."
+          "text": "Si olvidaste renombrar una aparición, localiza el nombre señalado por el diagnóstico y relaciónalo con su definición. Actualiza ese uso en vez de crear otra variable únicamente para hacer desaparecer el error.\n\nDespués comprueba el cálculo con otros datos en el mismo Laboratorio: cambia las cantidades iniciales a 6 y 2, compila y verifica que la consola muestra 8. Reconstruye luego los valores 4 y 3 y comprueba que recuperas 7. Conserva los nombres nuevos y la operación durante esta variación.\n\nTras realizar el renombrado, resuelve el puzzle de comentarios de la página siguiente. Allí asociarás cada nombre nuevo con la función de su variable.",
+          "emphasis": [
+            {
+              "text": "Actualiza ese uso en vez de crear otra variable"
+            },
+            {
+              "text": "Reconstruye luego los valores 4 y 3"
+            }
+          ]
         }
       ]
     },
@@ -199,7 +239,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La solución conserva los datos y la suma. Los nombres permiten reconocer la cantidad que había, la que se incorpora y el resultado. Para que el renombrado sea coherente, cada uso debe continuar refiriéndose al mismo dato que utilizaba antes; escribir una palabra más descriptiva sólo en la definición no actualiza las demás apariciones.\n\nEl puzzle siguiente documenta esas funciones mediante comentarios. El marcador `//` inicia un comentario que ayuda a una persona a leer el código; el compilador lo ignora. Por eso, completar las descripciones no modifica el cálculo del programa ni su salida (Stroustrup, 2024, sección 1.2, p. 19)."
+          "text": "La solución conserva los datos y la suma. Los nombres permiten reconocer la cantidad que había, la que se incorpora y el resultado. Para que el renombrado sea coherente, cada uso debe continuar refiriéndose al mismo dato que utilizaba antes; escribir una palabra más descriptiva sólo en la definición no actualiza las demás apariciones.\n\nEl puzzle siguiente documenta esas funciones mediante comentarios. El marcador `//` inicia un comentario que ayuda a una persona a leer el código; el compilador lo ignora. Por eso, completar las descripciones no modifica el cálculo del programa ni su salida (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "El marcador `//` inicia un comentario"
+            },
+            {
+              "text": "el compilador lo ignora"
+            }
+          ]
         },
         {
           "type": "output_prediction",
@@ -255,7 +303,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Los tres nombres deben corresponder a la cantidad inicial, la cantidad agregada y la cantidad final. Conserva los valores 4 y 3, su suma y la salida 7. Todos los usos de cada objeto deben utilizar su nombre nuevo. Renombrar no requiere añadir otras variables ni cambiar la operación.\n\nLa salida debe consultar `cajas_finales`, que conserva el resultado de sumar las otras dos cantidades. Imprimir el número fijo 7 puede coincidir con el primer caso, pero no cumple el objetivo de utilizar los datos. La comprobación con 6 y 2 debe producir 8 sin cambiar la suma ni la instrucción de salida.\n\nLa referencia usa las llaves de inicialización ya estudiadas. Para estos enteros, preparar `cajas_iniciales` con `{4}` o con `= 4` establece el mismo valor. Esa diferencia de notación es independiente de elegir nombres que describan bien los datos (Stroustrup, 2024, sección 2.9, p. 46)."
+          "text": "Los tres nombres deben corresponder a la cantidad inicial, la cantidad agregada y la cantidad final. Conserva los valores 4 y 3, su suma y la salida 7. Todos los usos de cada objeto deben utilizar su nombre nuevo. Renombrar no requiere añadir otras variables ni cambiar la operación.\n\nLa salida debe consultar `cajas_finales`, que conserva el resultado de sumar las otras dos cantidades. Imprimir el número fijo 7 puede coincidir con el primer caso, pero no cumple el objetivo de utilizar los datos. La comprobación con 6 y 2 debe producir 8 sin cambiar la suma ni la instrucción de salida.\n\nLa referencia usa las llaves de inicialización ya estudiadas. Para estos enteros, preparar `cajas_iniciales` con `{4}` o con `= 4` establece el mismo valor. Esa diferencia de notación es independiente de elegir nombres que describan bien los datos (Stroustrup, 2024).",
+          "emphasis": [
+            {
+              "text": "Todos los usos de cada objeto deben utilizar su nombre nuevo"
+            }
+          ]
         },
         {
           "type": "code",
@@ -264,7 +317,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`cajas_iniciales` conserva lo que había y `cajas_agregadas`, lo que se incorpora. Al definir `cajas_finales`, se calcula la suma de sus valores y se guarda el resultado. El nombre permite reconocer qué representa ese objeto; no convierte la variable en una fórmula que vuelva a calcularse por sí sola si cambian después otros datos (Stroustrup, 2024, sección 2.5, p. 37).\n\nLa salida 7 comprueba el caso con 4 y 3. La variación a 6 y 2 comprueba otro caso del cálculo; ninguna de las dos sustituye revisar que cada uso corresponda al nombre del objeto adecuado. Puedes reconstruir ambas versiones dentro del editor conservando los nombres nuevos."
+          "text": "`cajas_iniciales` conserva lo que había y `cajas_agregadas`, lo que se incorpora. Al definir `cajas_finales`, se calcula la suma de sus valores y se guarda el resultado. El nombre permite reconocer qué representa ese objeto; no convierte la variable en una fórmula que vuelva a calcularse por sí sola si cambian después otros datos (Stroustrup, 2024).\n\nLa salida 7 comprueba el caso con 4 y 3. La variación a 6 y 2 comprueba otro caso del cálculo; ninguna de las dos sustituye revisar que cada uso corresponda al nombre del objeto adecuado. Puedes reconstruir ambas versiones dentro del editor conservando los nombres nuevos."
         }
       ]
     }
