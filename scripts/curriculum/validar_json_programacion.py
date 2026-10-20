@@ -920,20 +920,29 @@ def validate_cpp_output_check_contract(block, where):
     require(isinstance(cases, list) and bool(cases), where, "outputCheck requiere cases no vacío")
     if not isinstance(cases, list):
         return
-    seen = set()
+    seen = []
     for index, case in enumerate(cases, 1):
         case_where = f"{where} outputCheck caso {index}"
         require(isinstance(case, dict), case_where, "caso debe ser un objeto")
         if not isinstance(case, dict):
             continue
-        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback"}, case_where,
+        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target"}, case_where,
                 "campo de caso outputCheck no admitido")
+        target = case.get("target")
+        if "target" in case:
+            require(isinstance(block.get("cmake"), dict), case_where,
+                    "target de caso requiere un proyecto CMake")
+            require(isinstance(target, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.+-]{0,127}", target) is not None,
+                    case_where, "target de caso debe ser un nombre de objetivo CMake válido")
         stdin = case.get("standardInput")
         require(isinstance(stdin, str), case_where, "standardInput de caso debe ser texto")
         if isinstance(stdin, str):
             normalized = normalize_output_check_input(stdin, mode)
-            require(normalized not in seen, case_where, "entrada de caso duplicada según inputComparison")
-            seen.add(normalized)
+            require(not any(previous_input == normalized and
+                            (previous_target is None or target is None or previous_target == target)
+                            for previous_target, previous_input in seen), case_where,
+                    "objetivo/entrada de caso ambiguos según inputComparison")
+            seen.append((target, normalized))
         correct = output_check_outputs(case.get("outputs"), case_where)
         if "explanation" in case:
             explanation = case["explanation"]

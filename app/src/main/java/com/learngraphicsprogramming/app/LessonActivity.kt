@@ -4442,10 +4442,6 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         // Preserve multilines and the native Tab/indent rules when needed.
         if (submitOnEnter) input.setSingleLine(true)
 
-        enableCppAutoClose(
-            input
-        )
-
         protectProgrammingInteractionFromPageSwipe(
             input
         )
@@ -4484,6 +4480,8 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         input.setText(
             savedAnswer
         )
+        // Restore the answer verbatim before treating new keystrokes as code.
+        enableCppAutoClose(input)
 
         answerCard.addView(
             input
@@ -5095,8 +5093,8 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         /*
          * CAMPO DE RESPUESTA.
          */
-        val input =
-            EditText(this)
+        val input: EditText =
+            FreeScrollEditText(this)
 
         // Output predictions are programming answer editors, even when the
         // expected output is plain text. The shared shortcut bar is focus-
@@ -5151,6 +5149,8 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         input.setText(
             savedAnswer
         )
+        // Share pairing/cursor/keyboard rules, preserving literal output lines.
+        CppCodeInputRules.install(input, autoIndent = false, submitImeNext = submitOnEnter)
 
         answerCard.addView(
             input
@@ -6740,12 +6740,12 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             gravity = Gravity.TOP or Gravity.START
             typeface = Typeface.MONOSPACE
             minLines = 1
-            setText(labDrafts.getString("$draftKey/input", initialStandardInput))
+            setText(CppLessonInputDraft.read(labDrafts, draftKey, initialStandardInput))
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
                 override fun afterTextChanged(s: Editable?) {
-                    labDrafts.edit().putString("$draftKey/input", s.toString()).apply()
+                    CppLessonInputDraft.write(labDrafts.edit(), draftKey, s ?: "").apply()
                 }
             })
         }
@@ -14824,10 +14824,6 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                     android.text.InputType.TYPE_CLASS_TEXT or
                             android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
-                enableCppAutoClose(
-                    input
-                )
-
                 protectProgrammingInteractionFromPageSwipe(
                     input
                 )
@@ -14929,6 +14925,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                         )
                     )
                 }
+                enableCppAutoClose(input)
 
                 inputs.add(
                     input

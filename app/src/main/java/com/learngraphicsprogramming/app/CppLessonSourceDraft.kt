@@ -10,7 +10,7 @@ import java.security.MessageDigest
  * JSON keeps that LF escaped and preserves every original source character.
  */
 internal object CppLessonSourceDraft {
-    internal const val ENCODING = "json-v1"
+    internal const val ENCODING = CppDraftTextCodec.ENCODING
 
     fun read(preferences: SharedPreferences, draftKey: String, initialCode: String): String {
         val stored = preferences.getString("$draftKey/source", null) ?: return initialCode
@@ -23,14 +23,10 @@ internal object CppLessonSourceDraft {
             .putString("$draftKey/sourceEncoding", ENCODING)
             .putString("$draftKey/sourceIndentation_v2", CppIndentationUnits.snapshot(source))
 
-    internal fun encode(source: String): String = JSONObject().put("version", 1).put("code", source).toString()
+    internal fun encode(source: String): String = CppDraftTextCodec.encode(source, "code")
 
     internal fun decode(stored: String, encoding: String?, indentation: String?): String {
-        if (encoding == ENCODING) return runCatching {
-            val value = JSONObject(stored)
-            require(value.opt("version") == 1)
-            value.get("code") as String
-        }.getOrElse { stored } // Preserve unrecognized data rather than replace it with initialCode.
+        if (encoding == ENCODING) return CppDraftTextCodec.decode(stored, "code") ?: stored
         if (encoding != null || !stored.endsWith("\n    ")) return stored
 
         // Recover only the exact legacy corruption proved by the already-recorded

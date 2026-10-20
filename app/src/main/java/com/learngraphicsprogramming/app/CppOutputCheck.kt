@@ -10,15 +10,16 @@ import org.json.JSONObject
 internal object CppOutputCheck {
     data class Review(val outputs: List<String>, val text: String)
     data class Case(val standardInput: String, val outputs: List<String>,
-                    val explanation: String?, val reviews: List<Review>)
+                    val explanation: String?, val reviews: List<Review>, val target: String? = null)
     data class Verdict(val correct: Boolean, val explanation: String?)
     data class Snapshot(val files: Map<String, String>, val sourceFiles: List<String>,
-                        val compiler: String, val configuration: String? = null)
+                        val compiler: String, val configuration: String? = null, val target: String? = null)
     fun snapshot(files: Map<String, String>, sources: List<String>, compiler: String) =
         Snapshot(files.toMap(), sources.toList(), compiler)
     class Specification(val inputComparison: String, val cases: List<Case>) {
-        fun caseFor(input: String): Case? = cases.singleOrNull {
-            inputKey(it.standardInput, inputComparison) == inputKey(input, inputComparison)
+        fun caseFor(input: String, target: String? = null): Case? = cases.singleOrNull {
+            (it.target == null || it.target == target) &&
+                inputKey(it.standardInput, inputComparison) == inputKey(input, inputComparison)
         }
     }
 
@@ -32,8 +33,14 @@ internal object CppOutputCheck {
         require(items.length() > 0) { "outputCheck needs at least one case" }
         val cases = List(items.length()) { index ->
             val item = items.get(index) as? JSONObject ?: invalid("Invalid outputCheck case")
-            keys(item, setOf("standardInput", "outputs", "explanation", "reviewFeedback"))
+            keys(item, setOf("standardInput", "outputs", "explanation", "reviewFeedback", "target"))
             val input = text(item, "standardInput")
+            val target = if (item.has("target")) text(item, "target").also {
+                require(block.opt("cmake") is JSONObject) { "outputCheck target requires a CMake project" }
+                require(it.matches(Regex("[A-Za-z_][A-Za-z0-9_.+-]{0,127}"))) {
+                    "Invalid outputCheck CMake target"
+                }
+            } else null
             val outputs = strings(item.get("outputs"))
             val explanation = optionalText(item, "explanation")
             val rules = if (item.has("reviewFeedback")) {
@@ -50,10 +57,13 @@ internal object CppOutputCheck {
             require(reviewed.distinct().size == reviewed.size && reviewed.none { it in outputs }) {
                 "Overlapping outputCheck feedback conditions"
             }
-            Case(input, outputs, explanation, rules)
+            Case(input, outputs, explanation, rules, target)
         }
-        require(cases.map { inputKey(it.standardInput, mode) }.distinct().size == cases.size) {
-            "Ambiguous outputCheck input cases"
+        cases.forEachIndexed { index, current ->
+            require(cases.take(index).none { previous ->
+                inputKey(previous.standardInput, mode) == inputKey(current.standardInput, mode) &&
+                    (previous.target == null || current.target == null || previous.target == current.target)
+            }) { "Ambiguous outputCheck target/input cases" }
         }
         return Specification(mode, cases)
     }
@@ -108,7 +118,7 @@ internal object CppOutputCheck {
         fun begin(currentSnapshot: Snapshot?, currentInput: String): Ticket? {
             observe(currentSnapshot, currentInput)
             invalidate()
-            return currentSnapshot?.let { Ticket(it, currentInput, specification.caseFor(currentInput)).also { pending = it } }
+            return currentSnapshot?.let { Ticket(it, currentInput, specification.caseFor(currentInput, it.target)).also { pending = it } }
         }
 
         fun complete(ticket: Ticket?, currentSnapshot: Snapshot?, currentInput: String, stdout: String?): Boolean {

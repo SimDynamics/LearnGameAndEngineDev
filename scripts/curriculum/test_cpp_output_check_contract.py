@@ -110,6 +110,43 @@ class CppOutputCheckContractTest(unittest.TestCase):
         changed["cases"].append({"standardInput": "other", "outputs": ["Wrong"]})
         self.assertEqual([], self.errors(changed))
 
+    def cmake_errors(self, cases, mode="exact"):
+        contract.ERRORS.clear()
+        contract.validate_cpp_output_check_contract({
+            "cmake": {"target": "client"}, "outputCheck": {"inputComparison": mode, "cases": cases}}, "cmake")
+        return list(contract.ERRORS)
+
+    def test_targets_can_share_input_without_sharing_their_oracles(self):
+        cases = [{"target": "client", "standardInput": "", "outputs": ["1:2"]},
+                 {"target": "battery", "standardInput": "", "outputs": ["Bateria: OK\n"]}]
+        original = copy.deepcopy(cases)
+        self.assertEqual([], self.cmake_errors(cases))
+        self.assertEqual(original, cases)
+        self.assertTrue(self.errors({"cases": cases}))  # No CMake execution identity in a plain compiler.
+        cases[1]["standardInput"] = " \t\n"
+        self.assertEqual([], self.cmake_errors(cases, "tokens"))
+
+    def test_target_or_global_cases_reject_only_real_ambiguities(self):
+        case = {"target": "client", "standardInput": "A B", "outputs": ["OK"]}
+        for other in (dict(case), dict(case, outputs=["Other"]),
+                      {"standardInput": "A B", "outputs": ["Global"]}):
+            for cases in ([case, other], [other, case]):
+                self.assertTrue(self.cmake_errors(cases))
+        self.assertTrue(self.cmake_errors([case, dict(case, standardInput="A\nB")], "tokens"))
+        self.assertEqual([], self.cmake_errors([case, dict(case, target="other")], "tokens"))
+        self.assertEqual([], self.cmake_errors([case, {"standardInput": "different", "outputs": ["Global"]}]))
+
+    def test_target_uses_the_existing_cmake_identifier_contract(self):
+        for target in (None, False, [], {}, "", " client", "client ", "../client", "client;other", "a/b",
+                       "9client", "a" * 129):
+            with self.subTest(target=target):
+                self.assertTrue(self.cmake_errors([{"target": target, "standardInput": "", "outputs": ["OK"]}]))
+        for target in ("client", "_a", "client.test-2+debug", "a" * 128):
+            self.assertEqual([], self.cmake_errors([{"target": target, "standardInput": "", "outputs": ["OK"]}]))
+
+    def test_legacy_cmake_checks_need_no_target_or_content_migration(self):
+        self.assertEqual([], self.cmake_errors(self.check["cases"]))
+
 
 if __name__ == "__main__":
     unittest.main()

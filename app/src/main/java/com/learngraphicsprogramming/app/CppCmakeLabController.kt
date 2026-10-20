@@ -166,7 +166,8 @@ internal class CppCmakeLabController(
     fun outputCheckSnapshot(): CppOutputCheck.Snapshot = CppOutputCheck.snapshot(
         files.filesSnapshot(), emptyList(), variant().name).copy(configuration = JSONObject()
         .put("target", target.text.toString()).put("options", options.text.toString())
-        .put("buildType", CppCmakeProject.BUILD_TYPES[buildType.selectedItemPosition]).toString())
+        .put("buildType", CppCmakeProject.BUILD_TYPES[buildType.selectedItemPosition]).toString(),
+        target = target.text.toString())
 
     fun draftChanged() {
         preferences.edit().putString("$draftKey/cmake", JSONObject().put("target", target.text.toString())

@@ -28,7 +28,8 @@ El ejemplo comprueba únicamente la construcción final de esa etapa. Las ejecuc
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.
 - La comparación de **stdout siempre es literal**: espacios, tabuladores, CR y LF se conservan. Para permitir exclusivamente un LF final, declarar ambas alternativas, por ejemplo `"Informe\nZona Este\nFin"` y `"Informe\nZona Este\nFin\n"`. No se recortan los extremos.
 - `inputComparison` es `exact` por defecto. `tokens` se usa sólo cuando la consigna permite separar los mismos datos con espacios en blanco ASCII (` `, TAB, LF, CR, VT, FF). Por ejemplo, un caso `"Leo 2"` también identifica `"Leo\n2\n"`. No normaliza stdout ni admite espacios Unicode como si fueran separadores de C++.
-- Los casos deben tener entradas inequívocas bajo el modo seleccionado. La entrada vigente identifica automáticamente un único caso; no se añade un selector de respuestas ni de etapas. Un objetivo distinto con la misma entrada corresponde a otro bloque/etapa curricular, no a varios casos ambiguos.
+- Los casos deben identificar inequívocamente la ejecución bajo el modo seleccionado. En un proyecto CMake, cada caso admite `target` opcional: el nombre exacto y sensible a mayúsculas del ejecutable que debe producir esa salida. Dos ejecutables pueden compartir entrada y tener salidas distintas. Se usa el objetivo realmente capturado al pulsar ejecutar, sin deducirlo del código ni añadir un selector curricular de respuestas.
+- Sin `target`, se conserva el contrato anterior: el caso se identifica por entrada y es aplicable a cualquier objetivo del bloque. No se permite mezclar un caso global y otro con `target` para la misma entrada, ni repetir un mismo par objetivo/entrada. No existe precedencia implícita entre ellos. `target` sólo es válido en bloques con `cmake` y acepta el mismo formato que `cmake.target`: `[A-Za-z_][A-Za-z0-9_.+-]{0,127}`. No obliga a que sea el objetivo inicial: el alumno puede cambiar de ejecutable y reconstruirlo.
 - `explanation` es texto opcional no vacío de acierto. `reviewFeedback` es un array opcional, también puede ser vacío: cada regla declara `outputs` y `text` no vacío. Sólo una coincidencia literal con esas salidas incorrectas permite mostrar su orientación. Las condiciones no pueden solaparse entre reglas ni con las salidas correctas.
 - Sin explicación se muestra sólo el veredicto. Un error no previsto muestra sólo «Incorrecto». No se infiere una causa, no se expone la salida esperada y los campos internos no entran en el guion normal de la lección. Se rechazan tipos y propiedades desconocidos como errores de configuración, no como respuestas incorrectas.
 
@@ -46,10 +47,33 @@ Con el lector activado, todo el veredicto visible —incluida una respuesta sin 
 
 El contrato es independiente de `output_prediction`, de los datos de evaluación matemática y del estilo del texto. Ningún JSON antiguo necesita migración.
 
+## Varios ejecutables de un proyecto CMake
+
+Work puede declarar un caso por consumidor, conservando su entrada y salida literal. Por ejemplo, dos programas con entrada vacía:
+
+```json
+"outputCheck": {
+  "cases": [
+    { "target": "consultar_cajas", "standardInput": "", "outputs": ["1:2"] },
+    {
+      "target": "comprobar_cajas",
+      "standardInput": "",
+      "outputs": ["piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"]
+    }
+  ]
+}
+```
+
+La salida del cliente nunca acredita la batería. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. Cambiar el objetivo invalida la comprobación anterior, incluso si todos los archivos siguen iguales; volver al objetivo anterior requiere ejecutar de nuevo. La reapertura conserva el objetivo y los archivos, pero no recupera un veredicto. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
+
+Este contrato prepara las siete prácticas registradas en `CPP_COMPROBACION_POR_OBJETIVO_CMAKE`. Su incorporación curricular corresponde a Work: el motor y las pruebas no añaden `outputCheck` a esos assets.
+
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.
 
+El guardado de entrada comparte el códec de texto escapado del código fuente, manteniendo la clave de borrador existente. Conserva espacios manuales, tabuladores y saltos finales sin depender de la indentación del XML de Android. Las entradas anteriores sin marca de formato se conservan exactamente como están guardadas: no se adivina qué espacios son manuales ni se recortan sus extremos. Este formato es interno; Work no añade metadatos de persistencia a las lecciones.
+
 ## Actividad integrada
 
-`programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`, página 5, bloque 3, declara la última modificación que ya solicitan sus instrucciones y muestra su referencia en la página 6: `Caja recibida` (español), `Box received` (inglés) o `Boîte reçue` (francés), sin salto final ni comillas. No se deduce el esperado de la predicción del programa inicial ni se cambia esa respuesta. El programa original y la primera modificación siguen disponibles para editar, ejecutar, comparar y reiniciar; esta comprobación no exige completar una etapa previa ni bloquea otra ejecución. Los demás laboratorios conservan su modalidad actual hasta que declaren su propio `outputCheck`.
+`programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`, página 5, bloque 3, declara la última modificación que ya solicitan sus instrucciones y muestra su referencia en la página 6: `Caja recibida` (español), `Box received` (inglés) o `Boîte reçue` (francés), sin salto final ni comillas. No se deduce el esperado de la predicción del programa inicial ni se cambia esa respuesta. El programa original y la primera modificación siguen disponibles para editar, ejecutar, comparar y reiniciar; esta comprobación no exige completar una etapa previa ni bloquea otra ejecución. Cada laboratorio utiliza la modalidad de sus propios metadatos; la ausencia de `outputCheck` conserva la exploración libre.

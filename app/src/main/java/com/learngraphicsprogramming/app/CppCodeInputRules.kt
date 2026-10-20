@@ -48,8 +48,11 @@ internal object CppCodeInputRules {
         input.setSelection((unitStart + 1).coerceAtMost(editable.length))
     }
 
+    /** Literal console answers share pairing and shortcuts, but must not invent code indentation. */
     fun install(
-        input: EditText
+        input: EditText,
+        autoIndent: Boolean = true,
+        submitImeNext: Boolean = false
     ) {
         if (input.getTag(R.id.cpp_editor_input_rules) != null) return
         val indentationHistory = (input as? FreeScrollEditText)?.cppIndentationHistory
@@ -116,7 +119,14 @@ internal object CppCodeInputRules {
             replaceSelectionWithTab(input)
         })
         input.setTag(R.id.cpp_editor_input_rules, explicitTab)
+        var physicalTabPressed = false
         val hardwareKey: (Int, KeyEvent) -> Boolean = { keyCode, event ->
+            // The newly shared one-line output editor retains its original
+            // NEXT submission, except while the same physical Tab is held.
+            // Match the native DOWN -> NEXT -> UP sequence without a timeout.
+            if (keyCode == KeyEvent.KEYCODE_TAB && event.action == KeyEvent.ACTION_UP) {
+                physicalTabPressed = false
+            }
             val backward = event.isShiftPressed && !event.isCtrlPressed &&
                 !event.isAltPressed && !event.isMetaPressed
             val plain = event.hasNoModifiers()
@@ -125,6 +135,7 @@ internal object CppCodeInputRules {
                 !input.isEnabled || input.keyListener == null ||
                 (event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)) false
             else {
+                if (event.action == KeyEvent.ACTION_DOWN) physicalTabPressed = true
                 if (event.action == KeyEvent.ACTION_DOWN &&
                     (explicitTab.nextField == null || event.repeatCount == 0)) {
                     explicitTab.press(reverse = navigableReverse)
@@ -140,7 +151,8 @@ internal object CppCodeInputRules {
                 // Some IMEs follow an already-handled physical TAB with NEXT.
                 // Consume only its navigation; inserting here would duplicate TAB.
                 actionCode == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT &&
-                    isEnabled && keyListener != null
+                    isEnabled && keyListener != null &&
+                    (!submitImeNext || isMultiline || physicalTabPressed)
             }
         }
         input.setOnKeyListener { _, keyCode, event -> hardwareKey(keyCode, event) }
@@ -519,7 +531,7 @@ internal object CppCodeInputRules {
                      */
                     if (
                         typedCharacter == '\n' &&
-                        isMultiline
+                        isMultiline && autoIndent
                     ) {
 
                         val previousLineStart =
@@ -705,7 +717,7 @@ internal object CppCodeInputRules {
                      */
                     if (
                         typedCharacter == '}' &&
-                        isMultiline
+                        isMultiline && autoIndent
                     ) {
 
                         val lineStart =
