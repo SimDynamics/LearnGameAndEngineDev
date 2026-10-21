@@ -112,9 +112,7 @@ class CppPreparedInputLessonDeviceTest : CppOutputCheckQaSupport() {
             assertEquals("", (tagged(activity, "cpp_stderr") as TextView).text.toString())
             val matching = requireNotNull(CppOutputCheck.fromBlock(fixture.block)).caseFor(preparedInput)!!
             val explanation = matching.explanation
-            val expectedVerdict = activity.getString(R.string.cpp_output_check_correct) +
-                (explanation?.let { "\n$it" } ?: "")
-            assertEquals(expectedVerdict, result(activity).text.toString())
+            assertEquals(expectedVerdict(activity, true, explanation), result(activity).text.toString())
             assertEquals(View.VISIBLE, result(activity).visibility)
             assertEquals(hearts, context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all)
             assertEquals(0, field<Int>(activity, "completedExercises"))

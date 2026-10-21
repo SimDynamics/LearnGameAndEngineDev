@@ -16,7 +16,7 @@ internal class CppOutputCheckController(
     private val source: EditText,
     private val input: EditText,
     private val snapshot: () -> CppOutputCheck.Snapshot?,
-    private val onShown: (ReadingTextView) -> Unit,
+    private val onShown: (ReadingTextView, Boolean) -> Unit,
     private val onCleared: (ReadingTextView) -> Unit,
     private val inputValue: () -> String = { input.text.toString() }
 ) {
@@ -25,7 +25,7 @@ internal class CppOutputCheckController(
         tag = "cpp_output_check_result"
         textSize = 18f
         visibility = View.GONE
-        setPadding(0, dp(8), 0, dp(12))
+        setPadding(0, dp(12), 0, dp(24))
     }
     init {
         parent.addView(result, LinearLayout.LayoutParams(-1, -2))
@@ -75,12 +75,15 @@ internal class CppOutputCheckController(
         if (!session.complete(ticket, current, currentInput, stdout)) return
         val verdict = session.check() ?: return
         result.setTextColor(if (verdict.correct) Color.rgb(180, 220, 190) else Color.rgb(240, 150, 150))
-        result.text = buildString {
-            append(activity.getString(if (verdict.correct) R.string.cpp_output_check_correct else R.string.cpp_output_check_incorrect))
-            verdict.explanation?.let { append('\n'); append(it) }
+        result.text = when {
+            verdict.correct && verdict.explanation != null ->
+                activity.getString(R.string.lesson_correct_explanation, verdict.explanation)
+            verdict.correct -> activity.getString(R.string.lesson_correct_feedback)
+            else -> activity.getString(R.string.exercise_incorrect) +
+                verdict.explanation?.let { "\n$it" }.orEmpty()
         }
         result.visibility = View.VISIBLE
-        onShown(result)
+        onShown(result, verdict.correct)
     }
 
     private fun clearPresentation() {

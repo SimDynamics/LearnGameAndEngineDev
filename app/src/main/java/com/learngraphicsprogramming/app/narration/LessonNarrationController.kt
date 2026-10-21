@@ -133,7 +133,8 @@ class LessonNarrationController(
         @Volatile var finished: Boolean = false,
         var pendingManualForward: NarrationGatePosition? = null,
         val pending: MutableSet<Int> = mutableSetOf(),
-        val unscored: Boolean = false
+        val unscored: Boolean = false,
+        val continueAfterCompletion: Boolean = false
     )
     @Volatile private var incorrectFeedback: IncorrectFeedback? = null
     private var incorrectFeedbackSequence = 0L
@@ -570,8 +571,10 @@ class LessonNarrationController(
      * It cannot be an exercise gate, credit feedback, skip a question or create a bookmark. */
     fun readUnscoredFeedback(
         texts: List<String>, language: NarrationLanguage, pageIdentity: String, blockIndex: Int,
-        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>
-    ) = readVisibleFeedback(texts, language, pageIdentity, blockIndex, pageTexts, feedbackGates, correctBlocks, true)
+        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>,
+        continueAfterCompletion: Boolean = false
+    ) = readVisibleFeedback(texts, language, pageIdentity, blockIndex, pageTexts, feedbackGates, correctBlocks, true,
+        continueAfterCompletion)
 
     fun cancelUnscoredFeedback(pageIdentity: String, blockIndex: Int) = onMain {
         if (activePageIdentity == pageIdentity && incorrectFeedback?.let { it.unscored && it.blockIndex == blockIndex } == true) {
@@ -581,7 +584,8 @@ class LessonNarrationController(
 
     private fun readVisibleFeedback(
         texts: List<String>, language: NarrationLanguage, pageIdentity: String, blockIndex: Int,
-        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>, unscored: Boolean
+        pageTexts: List<String>, feedbackGates: List<NarrationTextGate>, correctBlocks: Set<Int>, unscored: Boolean,
+        continueAfterCompletion: Boolean = false
     ) = onMain {
         if (closed || blockIndex < 0 || pageIdentity.isBlank()) return@onMain
         val selected = NarrationSettingsRepository.forLanguage(appContext, language)
@@ -612,7 +616,8 @@ class LessonNarrationController(
         if (!unscored && (wasPlaying || wasWaiting)) skipAnsweredQuestion(blockIndex, moveSourceAudio = false)
         pause()
         val feedback = IncorrectFeedback(++incorrectFeedbackSequence, blockIndex,
-            prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying, unscored = unscored)
+            prepared.map { Segment(it) }.toMutableList(), wasWaiting, wasPlaying, unscored = unscored,
+            continueAfterCompletion = unscored && continueAfterCompletion)
         incorrectFeedback = feedback
         publishGuideProgress(feedback, NarrationPlaybackPhase.PREPARED)
         resume()
@@ -674,6 +679,15 @@ class LessonNarrationController(
         rememberPlaybackPosition()
         onState(false)
         publishGuideProgress(feedback, NarrationPlaybackPhase.FINISHED)
+        if (feedback.unscored && feedback.continueAfterCompletion &&
+            (feedback.wasPlaying || feedback.wasWaiting) && !finished) {
+            // A successful laboratory check resumes only its interrupted source.
+            // Its final ink remains read, but it never completes a puzzle gate.
+            finishIncorrectFeedback(restoreWaiting = false, prepareOriginal = false, publishStopped = false)
+            userPositionChosen = true
+            resume()
+            return
+        }
         if (settings.engine != NarrationEngine.ANDROID && !finished) {
             ensureSegment(index)
             ensureSegment(index + 1)
@@ -681,10 +695,11 @@ class LessonNarrationController(
     }
 
     /** Cancel only this transient guide; completed and pending page recordings remain reusable. */
-    private fun finishIncorrectFeedback(restoreWaiting: Boolean, prepareOriginal: Boolean = true) {
+    private fun finishIncorrectFeedback(restoreWaiting: Boolean, prepareOriginal: Boolean = true,
+                                        publishStopped: Boolean = true) {
         val feedback = incorrectFeedback ?: return
         val shouldWait = restoreWaiting && (waitingForExercise || (playing && (feedback.wasWaiting || feedback.wasPlaying)))
-        publishGuideProgress(feedback, NarrationPlaybackPhase.STOPPED, feedbackPlaybackPosition(feedback))
+        if (publishStopped) publishGuideProgress(feedback, NarrationPlaybackPhase.STOPPED, feedbackPlaybackPosition(feedback))
         releasePlayer()
         main.removeCallbacks(playbackCheckpoint)
         clearGuideRequests(feedback)
@@ -870,6 +885,12 @@ class LessonNarrationController(
 
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
+        if (incorrectFeedback?.let { it.finished && it.unscored && it.continueAfterCompletion } == true) {
+            // A manually paused page stays paused after its verdict. The next Play
+            // resumes that page, rather than getting trapped in a finished guide.
+            finishIncorrectFeedback(restoreWaiting = false, prepareOriginal = false, publishStopped = false)
+            userPositionChosen = true
+        }
         if (incorrectFeedback == null) pendingPausedCorrectBlock?.let { blockIndex ->
             pendingPausedCorrectBlock = null
             skipAnsweredQuestion(blockIndex, moveSourceAudio = true)

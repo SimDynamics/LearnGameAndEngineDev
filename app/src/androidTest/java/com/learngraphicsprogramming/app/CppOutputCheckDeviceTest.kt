@@ -6,10 +6,13 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -22,6 +25,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
+import com.learngraphicsprogramming.app.narration.ReadingTextRange
 import com.learngraphicsprogramming.app.runtime.CppCmakePhase
 import com.learngraphicsprogramming.app.runtime.CppCmakeResult
 import org.json.JSONArray
@@ -252,7 +256,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                     }
                     val execution = runAndCheck(host, checked, "Zona inicial", false, null, "translated_combined_action")
                     host.onActivity { activity ->
-                        val expected = when (language) { "es" -> "Incorrecto"; "fr" -> "Incorrect"; else -> "Incorrect" }
+                        val expected = when (language) { "es" -> "✗ Incorrecto"; "fr" -> "✗ Incorrect"; else -> "✗ Incorrect" }
                         assertEquals(expected, result(activity).text.toString())
                         observations.put(execution.put("language", language).put("mode", "compile_run_check")
                             .put("caption", runButton(activity).text.toString()))
@@ -261,6 +265,78 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             }
         } finally { instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLanguage) } }
         saveEvidence("both-modalities-translated-native-runs", JSONObject().put("runs", observations))
+    }
+
+    @Test fun verdictFormattingMatchesPuzzlesAndKeepsTechnicalInkAndShadingInAllInterfaceLanguages() {
+        val originalLanguage = UiLanguageSettings.selectedTag(context)
+        val observations = JSONArray()
+        try {
+            for (language in listOf("es", "en", "fr")) {
+                instrumentation.runOnMainSync { UiLanguageSettings.select(context, language) }
+                val technical = "`std::cout << \"Caja recibida\";`"
+                val explanation = when (language) {
+                    "es" -> "La instrucción $technical conserva el literal."
+                    "fr" -> "L’instruction $technical conserve le littéral."
+                    else -> "The statement $technical preserves the literal."
+                }
+                val guidance = when (language) {
+                    "es" -> "Revisa la instrucción $technical antes de ejecutar."
+                    "fr" -> "Vérifie l’instruction $technical avant de l’exécuter."
+                    else -> "Review the statement $technical before running it."
+                }
+                // Only these isolated QA cases add rich feedback; no curricular asset changes.
+                val contract = JSONObject().put("cases", JSONArray().put(JSONObject()
+                    .put("standardInput", "").put("outputs", JSONArray(listOf("Caja recibida")))
+                    .put("explanation", explanation).put("reviewFeedback", JSONArray().put(JSONObject()
+                        .put("outputs", JSONArray(listOf("Zona segura"))).put("text", guidance)))))
+                val fixture = fixture(LOCATIONS.first(), contract)
+                withFixture(fixture) { host ->
+                    for (correct in listOf(true, false)) {
+                        val stdout = if (correct) "Caja recibida" else "Zona segura"
+                        edit(host, program(stdout))
+                        runAndCheck(host, fixture, stdout, correct,
+                            if (correct) explanation else guidance, "rich_format_$language")
+                        host.onActivity { activity ->
+                            val view = result(activity)
+                            val text = view.text.toString()
+                            val heading = if (language == "es") {
+                                if (correct) "✓ Correcto" else "✗ Incorrecto"
+                            } else if (correct) "✓ Correct" else "✗ Incorrect"
+                            assertEquals(heading + (if (correct) "\n\n" else "\n") +
+                                (if (correct) explanation else guidance), text)
+                            fun dp(value: Int) = (value * activity.resources.displayMetrics.density + .5f).toInt()
+                            assertEquals(dp(12), view.paddingTop)
+                            assertEquals(dp(24), view.paddingBottom)
+                            val ink = if (correct) Color.rgb(180, 220, 190) else Color.rgb(240, 150, 150)
+                            assertEquals("The verdict keeps the existing success/error color", ink, view.currentTextColor)
+                            val styled = view.text as? Spanned ?: error("Technical feedback needs its existing syntax spans")
+                            val start = text.indexOf("std::cout")
+                            val end = text.indexOf(';', start) + 1
+                            assertTrue(start >= 0 && end > start)
+                            val syntax = styled.getSpans(start, end, ForegroundColorSpan::class.java)
+                            assertTrue("Technical syntax retains its console palette", syntax.any { it.foregroundColor != ink })
+                            assertTrue("The same native text remains eligible for word shading", view.safeSupportsWordReading)
+                            // Presentation compatibility only; actual audio timing is exercised
+                            // separately by CppOutputCheckNarrationDeviceTest.
+                            val pending = listOf(ReadingTextRange(start, end))
+                            view.setUnreadWordRanges(pending, Color.rgb(110, 115, 125))
+                            assertEquals(pending, field<List<ReadingTextRange>>(view.readingInk, "unreadRanges"))
+                            assertSame("Shading never replaces source text or syntax spans", styled, view.text)
+                            assertEquals(ink, view.currentTextColor)
+                            view.setUnreadWordRanges(emptyList(), Color.rgb(110, 115, 125))
+                            assertEquals(text, view.text.toString())
+                            assertUnchangedExercises(activity, fixture)
+                            observations.put(JSONObject().put("language", language).put("correct", correct)
+                                .put("visibleResult", text).put("paddingTop", view.paddingTop)
+                                .put("paddingBottom", view.paddingBottom).put("technicalSpans", syntax.size)
+                                .put("shadingPreservesSourceAndSpans", true))
+                        }
+                    }
+                }
+            }
+        } finally { instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLanguage) } }
+        saveEvidence("verdict-puzzle-format-and-technical-ink", JSONObject().put("checks", observations)
+            .put("scope", "Actual native compiler results and rendering; shading presentation compatibility, not simulated playback timing"))
     }
 
     @Test fun declaredInputVisibilityPreservesHiddenDraftsAndFeedsOnlyRequestedInput() {
@@ -481,8 +557,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                         assertEquals(expected, actual.execution!!.stdout)
                         assertEquals(expected, (tagged(activity, "cpp_stdout") as TextView).text.toString())
                         assertTrue(requireNotNull(actual.artifact).isFile)
-                        assertEquals(activity.getString(if (correct == true) R.string.cpp_output_check_correct
-                            else R.string.cpp_output_check_incorrect), result(activity).text.toString())
+                        assertEquals(expectedVerdict(activity, correct == true), result(activity).text.toString())
                         assertEquals(View.VISIBLE, result(activity).visibility)
                     } else {
                         assertEquals(CppCmakePhase.BUILD, actual.phase)
@@ -553,8 +628,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
         host.onActivity { activity ->
             assertTrue("A completed check never prevents another execution", runButton(activity).isEnabled)
             assertSingleRunButton(activity, checking = true)
-            val verdict = activity.getString(if (correct) R.string.cpp_output_check_correct else R.string.cpp_output_check_incorrect)
-            assertEquals(verdict + (explanation?.let { "\n$it" } ?: ""), result(activity).text.toString())
+            assertEquals(expectedVerdict(activity, correct, explanation), result(activity).text.toString())
             assertEquals(View.VISIBLE, result(activity).visibility)
             evidence.put("visibleResult", result(activity).text.toString()).put("stage", stage)
             assertUnchangedExercises(activity, fixture)
@@ -665,7 +739,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                     assertEquals(if (checked) View.VISIBLE else View.GONE, result(activity).visibility)
                     if (checked) {
                         assertEquals("Caja recibida", (tagged(activity, "cpp_console_display") as TextView).text.toString())
-                        assertTrue(result(activity).text.toString().startsWith(activity.getString(R.string.cpp_output_check_correct)))
+                        assertTrue(result(activity).text.toString().startsWith(activity.getString(R.string.lesson_correct_feedback)))
                     }
                     ready = activity.hasWindowFocus() && !scroll.isLayoutRequested && !console.isLayoutRequested &&
                         !runButton(activity).isLayoutRequested && (!checked || !result(activity).isLayoutRequested) && safe.contains(group)
@@ -838,7 +912,15 @@ abstract class CppOutputCheckQaSupport {
         }
     }
     protected fun source(path: String) = JSONObject(context.assets.open("content/es/programming/cpp_fundamentals/$path").bufferedReader().use { it.readText() })
-    protected fun editor(activity: LessonActivity) = tree(content(activity)).filterIsInstance<FreeScrollEditText>().single { it.tag == "cpp_code_input" }
+    protected fun editor(activity: LessonActivity): FreeScrollEditText {
+        val page = content(activity)
+        var runChild: View = runButton(activity)
+        while (runChild.parent !== page) runChild = runChild.parent as? View
+            ?: error("The compiler Run control is not inside the lesson content")
+        val card = (page.indexOfChild(runChild) - 1 downTo 0).asSequence().map(page::getChildAt)
+            .first { child -> tree(child).any { it.tag == "cpp_code_input" } }
+        return tree(card).filterIsInstance<FreeScrollEditText>().single { it.tag == "cpp_code_input" }
+    }
     protected fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
     protected fun runButton(activity: LessonActivity) = tagged(activity, "cpp_run") as Button
     protected fun assertSingleRunButton(activity: LessonActivity, checking: Boolean) {
@@ -847,6 +929,11 @@ abstract class CppOutputCheckQaSupport {
         assertEquals(activity.getString(if (checking) R.string.cpp_compile_run_check else R.string.cpp_runtime_run), runButton(activity).text.toString())
     }
     protected fun result(activity: LessonActivity) = tagged(activity, "cpp_output_check_result") as com.learngraphicsprogramming.app.narration.ReadingTextView
+    protected fun expectedVerdict(activity: LessonActivity, correct: Boolean, explanation: String? = null): String = when {
+        correct && explanation != null -> activity.getString(R.string.lesson_correct_explanation, explanation)
+        correct -> activity.getString(R.string.lesson_correct_feedback)
+        else -> activity.getString(R.string.exercise_incorrect) + explanation?.let { "\n$it" }.orEmpty()
+    }
     protected fun tagged(activity: LessonActivity, tag: String) = tree(content(activity)).single { it.tag == tag }
     protected fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)
     protected fun tree(view: View): List<View> = listOf(view) + if (view is ViewGroup) (0 until view.childCount).flatMap { tree(view.getChildAt(it)) } else emptyList()

@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app
 
 import android.content.SharedPreferences
+import android.util.Log
 import org.json.JSONObject
 import java.security.MessageDigest
 
@@ -12,9 +13,44 @@ import java.security.MessageDigest
 internal object CppLessonSourceDraft {
     internal const val ENCODING = CppDraftTextCodec.ENCODING
 
+    /** Repair unopened drafts only when their own previously stored digest proves
+     * the exact original. Escape intact LF-ending drafts without changing text,
+     * before a whole-map XML rewrite can add indentation to them as well.
+     */
+    fun repairProvenDrafts(preferences: SharedPreferences): Int {
+        val values = preferences.all
+        val repairs = linkedMapOf<String, String>()
+        val protections = linkedMapOf<String, String>()
+        for ((key, stored) in values) {
+            if (!key.endsWith("/source") || stored !is String) continue
+            val draftKey = key.removeSuffix("/source")
+            if (values.containsKey("$draftKey/sourceEncoding")) continue
+            val restored = decode(stored, null, values["$draftKey/sourceIndentation_v2"] as? String)
+            if (restored != stored) repairs[draftKey] = restored
+            else if (stored.endsWith('\n')) protections[draftKey] = stored
+        }
+        val editor = preferences.edit()
+        val protectedInputs = CppLessonInputDraft.stageLegacyInputProtection(editor, values)
+        if (repairs.isEmpty() && protections.isEmpty() && protectedInputs == 0) return 0
+        for ((draftKey, restored) in repairs + protections) {
+            editor.putString("$draftKey/source", encode(restored))
+                .putString("$draftKey/sourceEncoding", ENCODING)
+        }
+        if (!editor.commit()) {
+            Log.w("CppLessonSourceDraft", "Proven source repairs could not be confirmed on disk")
+            return 0
+        }
+        Log.i("CppLessonSourceDraft", "SHA-proven sources repaired=${repairs.size}; " +
+            "unchanged LF-ending sources protected=${protections.size}; legacy inputs protected=$protectedInputs")
+        return repairs.size
+    }
+
     fun read(preferences: SharedPreferences, draftKey: String, initialCode: String): String {
+        // Inputs and sources must be protected in the same whole-map commit.
+        repairProvenDrafts(preferences)
         val stored = preferences.getString("$draftKey/source", null) ?: return initialCode
-        return decode(stored, preferences.getString("$draftKey/sourceEncoding", null),
+        val encoding = preferences.getString("$draftKey/sourceEncoding", null)
+        return decode(stored, encoding,
             preferences.getString("$draftKey/sourceIndentation_v2", null))
     }
 

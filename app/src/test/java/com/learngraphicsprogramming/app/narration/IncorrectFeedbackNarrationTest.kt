@@ -92,9 +92,28 @@ class IncorrectFeedbackNarrationTest {
     @Test fun verdictMarksAreRemovedOnlyAtTheNativeLeadingPosition() {
         assertEquals("Incorrecto.\nRevisa.", IncorrectFeedbackNarration.visibleSpeech("✗ Incorrecto.\nRevisa."))
         assertEquals("Revisa el signo ✗ escrito aquí.", IncorrectFeedbackNarration.visibleSpeech("Revisa el signo ✗ escrito aquí."))
-        assertEquals("✓ Correcto.", IncorrectFeedbackNarration.visibleSpeech("✓ Correcto."))
+        assertEquals("Correcto.", IncorrectFeedbackNarration.visibleSpeech("✓ Correcto."))
+        assertEquals("Conserva el signo ✓ aquí.", IncorrectFeedbackNarration.visibleSpeech("Conserva el signo ✓ aquí."))
+        assertEquals("✓Correcto.", IncorrectFeedbackNarration.visibleSpeech("✓Correcto."))
         assertEquals("✗Incorrecto.", IncorrectFeedbackNarration.visibleSpeech("✗Incorrecto."))
         assertEquals("", IncorrectFeedbackNarration.visibleSpeech("✗ "))
+        assertEquals("", IncorrectFeedbackNarration.visibleSpeech("✓ "))
+    }
+
+    @Test fun unscoredCorrectVerdictsReuseTheVisiblePuzzleDecorationWithoutSpeakingTheCheckmark() {
+        for (language in NarrationLanguage.entries) for (kokoro in listOf(false, true)) {
+            val verdict = if (language == NarrationLanguage.SPANISH) "Correcto" else "Correct"
+            val explanation = "std::cout << 6;"
+            for (visible in listOf("✓ $verdict", "✓ $verdict\n\n$explanation")) {
+                val actual = IncorrectFeedbackNarration.prepare(listOf(visible), language, kokoro)
+                val expected = LessonNarrationText.page(paragraphPage(listOf(visible.drop(2))), 0, language, kokoro)
+                assertEquals(expected, actual)
+                assertEquals("Source mapping and speech skip the same decorative prefix", 2,
+                    IncorrectFeedbackNarration.verdictIconPrefix(visible))
+                assertFalse(actual.any { '✓' in it })
+                assertTrue(ManualEnglishSpeech.strip(actual.joinToString(" ")).startsWith(verdict))
+            }
+        }
     }
 
     @Test fun theCompleteUnmarkedNativeMathReviewKeepsItsOrdinarySemicolon() {

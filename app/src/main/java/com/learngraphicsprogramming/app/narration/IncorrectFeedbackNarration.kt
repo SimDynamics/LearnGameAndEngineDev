@@ -10,7 +10,7 @@ internal object IncorrectFeedbackNarration {
     fun visibleSpeech(text: String): String = text.drop(verdictIconPrefix(text))
 
     fun verdictIconPrefix(text: String): Int =
-        if (text.startsWith("✗ ")) 2 else 0
+        if (text.startsWith("✗ ") || text.startsWith("✓ ")) 2 else 0
 
     fun prepare(texts: List<String>, language: NarrationLanguage, forKokoro: Boolean): List<String> {
         val blocks = JSONArray()

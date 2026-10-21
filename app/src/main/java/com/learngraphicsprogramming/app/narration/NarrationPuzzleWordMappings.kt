@@ -187,8 +187,11 @@ internal object NarrationPuzzleWordMappings {
         val source = original.text
         val ordinary = { original }
         if (!feedback) return ordinary()
+        val heading = listOf("✓ Correcto", "✓ Correct", "✓ ¡Correcto!").firstOrNull {
+            source == it || source.startsWith("$it\n")
+        }
         val iconPrefix = IncorrectFeedbackNarration.verdictIconPrefix(source)
-        if (iconPrefix > 0 && source.length > iconPrefix) {
+        if (heading == null && iconPrefix > 0 && source.length > iconPrefix) {
             val owners = original.owners.drop(iconPrefix).toMutableList()
             // The nonspoken verdict mark follows its first real word visually too.
             owners[0] = ReadingTextRange(0, owners[0].endExclusive)
@@ -198,9 +201,7 @@ internal object NarrationPuzzleWordMappings {
                         (it.start - iconPrefix).coerceAtLeast(0), it.endExclusive - iconPrefix)
                 })
         }
-        val heading = listOf("✓ Correcto", "✓ Correct", "✓ ¡Correcto!").firstOrNull {
-            source == it || source.startsWith("$it\n")
-        } ?: return ordinary()
+        if (heading == null) return ordinary()
         val spoken = if (language == NarrationLanguage.SPANISH) "Correcto." else "Correct."
         val text = spoken + source.substring(heading.length)
         val owners = List(spoken.length) { NarrationSourceProjection.owner(original.owners.subList(0, heading.length)) } +

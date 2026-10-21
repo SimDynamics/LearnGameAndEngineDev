@@ -66,6 +66,266 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLocale) }
     }
 
+    @Test fun naturallyFinishedCorrectVerdictReturnsToPlayingPageAfterAResourceReleasingPause() {
+        verifyCorrectVerdictReturnsToItsSource(initiallyPaused = false, pauseVerdict = true)
+    }
+
+    @Test fun naturallyFinishedCorrectVerdictLeavesAPausedPagePausedButTheNextPlayCanResumeIt() {
+        verifyCorrectVerdictReturnsToItsSource(initiallyPaused = true, pauseVerdict = false)
+    }
+
+    @Test fun alreadyFinishedNativeSourceNeverRestartsAfterCorrectVerdictOrPlay() {
+        val location = CppOutputCheckDeviceTest.LOCATIONS.first()
+        val lesson = source(location.path)
+        val authored = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
+        val fixture = fixture(location, authored.getJSONObject(2).getJSONObject("outputCheck"))
+        // A short runtime page reuses this authored heading to reach a real audio
+        // completion without pretending that either neighboring puzzle was answered.
+        val sourceTexts = listOf(authored.getJSONObject(0).getString("text"))
+        val identity = "finished-native-source-$session"
+        val resume = context.getSharedPreferences("lesson_narration_resume_bounded_v1", Context.MODE_PRIVATE)
+        assertTrue(resume.edit().clear().commit())
+        val store = NarrationResumeStore(context)
+        val olderFinished = "finished-native-older-finished-$session"
+        val olderPaused = "finished-native-older-paused-$session"
+        val finishedPoint = NarrationResumePoint(1, 2345, finished = true)
+        val pausedPoint = NarrationResumePoint(2, 678)
+        val finishedOwner = store.begin(olderFinished, finishedPoint)
+        store.save(olderFinished, finishedOwner, finishedPoint)
+        assertEquals(finishedPoint, store.restore(olderFinished, finishedPoint.segment + 1))
+        store.begin(olderPaused, pausedPoint)
+        val events = mutableListOf<NarrationPlaybackProgress>()
+        val errors = mutableListOf<String>()
+        var completedIndex = -1
+        var completedOffset = -1L
+        var completeBookmarks: Map<String, *> = emptyMap<String, Any?>()
+        var sourceRecording: File? = null
+        var sourceBytes: ByteArray? = null
+        lateinit var controller: LessonNarrationController
+        withFixture(fixture) { host ->
+            host.onActivity {
+                NarrationSettingsRepository.saveEnabled(context, true)
+                controller = LessonNarrationController(context, {}, { errors += it }, { events += it })
+                readers += controller
+                controller.toggle(sourceTexts, NarrationLanguage.SPANISH, identity)
+            }
+            var sourceAudiblyAdvanced = false
+            await(host, "The original runtime page finishes actual Kokoro audio naturally", 180_000L) {
+                val player = field<MediaPlayer?>(controller, "player")
+                if (controller.isPlaying && field<Boolean>(controller, "playerReady") &&
+                    player != null && player.isPlaying && player.currentPosition > 30) {
+                    val part = field<List<Any>>(controller, "segments").single()
+                    assertFalse(field<Boolean>(part, "usedAndroidTts"))
+                    sourceAudiblyAdvanced = true
+                }
+                sourceAudiblyAdvanced && field<Boolean>(controller, "finished") && !controller.isPlaying
+            }
+            host.onActivity { activity ->
+                assertTrue(errors.toString(), errors.isEmpty())
+                assertNull(field<MediaPlayer?>(controller, "player"))
+                completedIndex = field(controller, "index")
+                completedOffset = field(controller, "offset")
+                assertTrue(completedOffset > 0L)
+                sourceRecording = requireNotNull(field<File?>(field<List<Any>>(controller, "segments").single(), "file"))
+                sourceBytes = requireNotNull(sourceRecording).readBytes()
+                completeBookmarks = resume.all.toMap()
+                assertEquals(3, (0 until 3).mapNotNull { resume.getString("key_$it", null) }.size)
+                val verdict = IncorrectFeedbackNarration.prepare(
+                    listOf(activity.getString(R.string.lesson_correct_feedback)), NarrationLanguage.SPANISH, true)
+                controller.readUnscoredFeedback(verdict, NarrationLanguage.SPANISH, identity, 2,
+                    sourceTexts, emptyList(), emptySet(), continueAfterCompletion = true)
+            }
+            var guide: Any? = null
+            var verdictAudiblyAdvanced = false
+            await(host, "The correct verdict itself also finishes actual Kokoro audio", 180_000L) {
+                val active = field<Any?>(controller, "incorrectFeedback") ?: return@await false
+                if (guide == null) {
+                    guide = active
+                    assertFalse(field<Boolean>(active, "wasPlaying"))
+                    assertFalse(field<Boolean>(active, "wasWaiting"))
+                }
+                assertSame(guide, active)
+                val player = field<MediaPlayer?>(controller, "player")
+                if (controller.isPlaying && field<Boolean>(controller, "playerReady") &&
+                    player != null && player.isPlaying && player.currentPosition > 30) {
+                    val part = field<List<Any>>(active, "parts")[field(active, "index")]
+                    assertFalse(field<Boolean>(part, "usedAndroidTts"))
+                    verdictAudiblyAdvanced = true
+                }
+                verdictAudiblyAdvanced && field<Boolean>(active, "finished") && !controller.isPlaying
+            }
+            host.onActivity {
+                assertTrue(errors.toString(), errors.isEmpty())
+                assertTrue(field<Boolean>(controller, "finished"))
+                assertFalse(controller.isPlaying)
+                assertNull(field<MediaPlayer?>(controller, "player"))
+                assertEquals(completedIndex, field<Int>(controller, "index"))
+                assertEquals(completedOffset, field<Long>(controller, "offset"))
+                assertEquals(completeBookmarks, resume.all)
+                val priorEvents = events.size
+                controller.toggle(sourceTexts, NarrationLanguage.SPANISH, identity)
+                assertNull("Play releases the completed unscored guide metadata", field<Any?>(controller, "incorrectFeedback"))
+                assertTrue("Play must not restart an already completed source page", field<Boolean>(controller, "finished"))
+                assertFalse(controller.isPlaying)
+                assertNull(field<MediaPlayer?>(controller, "player"))
+                assertEquals(completedIndex, field<Int>(controller, "index"))
+                assertEquals(completedOffset, field<Long>(controller, "offset"))
+                assertEquals(completeBookmarks, resume.all)
+                assertEquals(finishedPoint, store.restore(olderFinished, finishedPoint.segment + 1))
+                assertEquals(pausedPoint, store.restore(olderPaused, pausedPoint.segment + 1))
+                assertArrayEquals("The source recording is reused unchanged", sourceBytes, requireNotNull(sourceRecording).readBytes())
+                assertFalse(events.drop(priorEvents).any { it.phase == NarrationPlaybackPhase.RESTARTED })
+                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
+                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 4))
+            }
+        }
+    }
+
+    private fun verifyCorrectVerdictReturnsToItsSource(initiallyPaused: Boolean, pauseVerdict: Boolean) {
+        PremiumRepository.setVerifiedFree(context)
+        assertFalse(AttemptRepository.getState(context, "programming").unlimited)
+        val hearts = context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all.toMap()
+        val location = CppOutputCheckDeviceTest.LOCATIONS.first()
+        val authored = source(location.path).getJSONArray("pages").getJSONObject(4).getJSONArray("blocks").getJSONObject(2)
+        val fixture = fixture(location, authored.getJSONObject("outputCheck"))
+        val correctSource = source(location.path).getJSONArray("pages").getJSONObject(5)
+            .getJSONArray("blocks").getJSONObject(2).getString("code")
+        val resume = context.getSharedPreferences("lesson_narration_resume_bounded_v1", Context.MODE_PRIVATE)
+        assertTrue(resume.edit().clear().commit())
+        val store = NarrationResumeStore(context)
+        val olderFinished = "verdict-return-finished-$session"
+        val olderPaused = "verdict-return-paused-$session"
+        val finishedPoint = NarrationResumePoint(1, 2345, finished = true)
+        val pausedPoint = NarrationResumePoint(2, 678)
+        val finishedOwner = store.begin(olderFinished, finishedPoint)
+        store.save(olderFinished, finishedOwner, finishedPoint)
+        assertEquals(finishedPoint, store.restore(olderFinished, finishedPoint.segment + 1))
+        store.begin(olderPaused, pausedPoint)
+        withFixture(fixture) { host ->
+            host.onActivity { activity ->
+                NarrationSettingsRepository.saveEnabled(context, true)
+                invoke(activity, "renderCurrentPage")
+                readers += reader(activity)
+                editor(activity).setText(correctSource)
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            await(host, "The authored paragraph really plays before the correct laboratory run", 180_000L) { activity ->
+                val controller = reader(activity)
+                val player = field<MediaPlayer?>(controller, "player")
+                controller.isPlaying && field<Int>(controller, "index") >= 1 &&
+                    field<Boolean>(controller, "playerReady") && player != null && player.isPlaying &&
+                    player.duration > 4000 && player.currentPosition in 301..(player.duration - 1000)
+            }
+            host.onActivity { activity ->
+                if (initiallyPaused) {
+                    reader(activity).pauseKeepingPosition()
+                    assertNull("A deliberately paused source retains its position without a decoder",
+                        field<MediaPlayer?>(reader(activity), "player"))
+                }
+                runButton(activity).performClick()
+                assertFalse(runButton(activity).isEnabled)
+            }
+
+            var guide: Any? = null
+            var sourceIndex = -1
+            var sourceOffset = -1L
+            var gate: NarrationExerciseGate? = null
+            var heard = -1
+            var sourceParts: List<Any> = emptyList()
+            var bookmarkKeys: List<String> = emptyList()
+            var pausedGuide = !pauseVerdict
+            var pausedOffset = -1L
+            var pausedAudio: ByteArray? = null
+            var guideFile: File? = null
+            await(host, "The fresh correct verdict completes its real Kokoro audio naturally", 180_000L) { activity ->
+                val controller = reader(activity)
+                val currentGuide = field<Any?>(controller, "incorrectFeedback")
+                if (guide == null && currentGuide != null) {
+                    guide = currentGuide
+                    assertTrue(field<Boolean>(currentGuide, "unscored"))
+                    assertEquals("The test must distinguish an active source from a deliberate pause", !initiallyPaused,
+                        field<Boolean>(currentGuide, "wasPlaying"))
+                    assertFalse(field<Boolean>(currentGuide, "wasWaiting"))
+                    assertEquals("Caja recibida", (tagged(activity, "cpp_stdout") as TextView).text.toString())
+                    assertEquals(View.VISIBLE, result(activity).visibility)
+                    assertTrue(runButton(activity).isEnabled)
+                    sourceIndex = field(controller, "index")
+                    sourceOffset = field(controller, "offset")
+                    sourceParts = field(controller, "segments")
+                    gate = field(controller, "playbackGate")
+                    heard = requireNotNull(gate).heardThrough
+                    bookmarkKeys = (0 until 3).mapNotNull { resume.getString("key_$it", null) }
+                    assertEquals("A verdict does not acquire a fourth bookmark", 3, bookmarkKeys.size)
+                }
+                val active = guide ?: return@await false
+                val parts = field<List<Any>>(active, "parts")
+                val partIndex = field<Int>(active, "index")
+                val player = field<MediaPlayer?>(controller, "player")
+                if (!pausedGuide && currentGuide === active && controller.isPlaying &&
+                    field<Boolean>(controller, "playerReady") && player != null && player.isPlaying &&
+                    player.duration > 1200 && player.currentPosition in 301..(player.duration - 600)) {
+                    val part = parts[partIndex]
+                    assertFalse("The verdict really uses installed Kokoro", field<Boolean>(part, "usedAndroidTts"))
+                    guideFile = requireNotNull(field<File?>(part, "file"))
+                    pausedAudio = requireNotNull(guideFile).readBytes()
+                    controller.pauseKeepingPosition()
+                    pausedOffset = field(active, "offset")
+                    assertTrue(pausedOffset > 0L)
+                    assertNull("Pausing a verdict releases MediaPlayer", field<MediaPlayer?>(controller, "player"))
+                    assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+                    assertArrayEquals("The exact same generated recording is reused on resume", pausedAudio,
+                        requireNotNull(guideFile).readBytes())
+                    pausedGuide = true
+                }
+                if (currentGuide === active) {
+                    assertSame(sourceParts, field<List<Any>>(controller, "segments"))
+                    assertEquals(sourceIndex, field<Int>(controller, "index"))
+                    assertEquals(sourceOffset, field<Long>(controller, "offset"))
+                    assertSame(gate, field<NarrationExerciseGate?>(controller, "playbackGate"))
+                    assertEquals(heard, requireNotNull(gate).heardThrough)
+                }
+                field<Boolean>(active, "finished")
+            }
+            assertTrue("The resource-releasing pause/resume branch was actually exercised", pausedGuide)
+            if (pauseVerdict) assertTrue(pausedOffset > 0L && pausedAudio != null && guideFile?.isFile == true)
+            if (initiallyPaused) host.onActivity { activity ->
+                val controller = reader(activity)
+                assertFalse("Completing a verdict must respect a manually paused page", controller.isPlaying)
+                assertNull(field<MediaPlayer?>(controller, "player"))
+                assertEquals(sourceIndex, field<Int>(controller, "index"))
+                assertEquals(sourceOffset, field<Long>(controller, "offset"))
+                assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+            }
+            await(host, "After the full correct verdict, the source page really resumes instead of being trapped", 30_000L) { activity ->
+                val controller = reader(activity)
+                val player = field<MediaPlayer?>(controller, "player")
+                field<Any?>(controller, "incorrectFeedback") == null && controller.isPlaying &&
+                    field<Boolean>(controller, "playerReady") && player != null && player.isPlaying &&
+                    field<Int>(controller, "index") == sourceIndex && player.currentPosition > sourceOffset + 80L
+            }
+            host.onActivity { activity ->
+                val controller = reader(activity)
+                assertSame(sourceParts, field<List<Any>>(controller, "segments"))
+                assertSame(gate, field<NarrationExerciseGate?>(controller, "playbackGate"))
+                assertEquals("Unscored narration never accredits a puzzle's successful explanation", heard,
+                    requireNotNull(gate).heardThrough)
+                assertFalse("The neighboring unanswered puzzle keeps its curricular boundary",
+                    requireNotNull(gate).canPlay(sourceParts.lastIndex))
+                assertEquals(bookmarkKeys, (0 until 3).mapNotNull { resume.getString("key_$it", null) })
+                assertEquals(finishedPoint, store.restore(olderFinished, finishedPoint.segment + 1))
+                assertEquals(pausedPoint, store.restore(olderPaused, pausedPoint.segment + 1))
+                assertTrue("A completely narrated verdict must remain visually read after source continuation",
+                    unread(result(activity)).isEmpty())
+                assertEquals(hearts, context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all)
+                assertEquals(0, field<Int>(activity, "completedExercises"))
+                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
+                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 4))
+                controller.pauseKeepingPosition()
+                assertNull(field<MediaPlayer?>(controller, "player"))
+            }
+        }
+    }
+
     @Test fun allFourVisibleVerdictsReallyPlayInFullWithoutCreditingTheNeighboringPrediction() {
         val cases = listOf(
             JSONObject().put("standardInput", "plain_correct").put("outputs", JSONArray(listOf("Caja recibida"))),
@@ -82,7 +342,10 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         val store = NarrationResumeStore(context)
         val olderA = "output-check-older-finished-$session"
         val olderB = "output-check-older-paused-$session"
-        store.begin(olderA, NarrationResumePoint(1, 2345, finished = true))
+        val olderFinishedPoint = NarrationResumePoint(1, 2345, finished = true)
+        val olderFinishedOwner = store.begin(olderA, olderFinishedPoint)
+        store.save(olderA, olderFinishedOwner, olderFinishedPoint)
+        assertEquals(olderFinishedPoint, store.restore(olderA, olderFinishedPoint.segment + 1))
         store.begin(olderB, NarrationResumePoint(2, 678))
         withFixture(fixture) { host ->
             host.onActivity { activity ->
@@ -131,9 +394,8 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                     assertTrue(runButton(activity).isEnabled)
                     assertEquals("A single run automatically presents its fresh verdict", View.VISIBLE, result(activity).visibility)
                     shown = result(activity).text.toString()
-                    val verdict = activity.getString(if (index == 0 || index == 2) R.string.cpp_output_check_correct else R.string.cpp_output_check_incorrect)
                     val extra = when (index) { 2 -> CppOutputCheckDeviceTest.EXPLANATION; 3 -> CppOutputCheckDeviceTest.GUIDE; else -> null }
-                    assertEquals(verdict + (extra?.let { "\n$it" } ?: ""), shown)
+                    assertEquals(expectedVerdict(activity, index == 0 || index == 2, extra), shown)
                 }
                 val expectedParts = NarrationSegments.sentences(IncorrectFeedbackNarration.prepare(listOf(shown), NarrationLanguage.SPANISH, true))
                 await(host, "Every visible verdict word naturally plays and stops in the unscored lane", 180_000L) { activity ->
@@ -179,13 +441,65 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                         true
                     } else false
                 }
+                var replayedAfterCompletion = false
+                if (index == 3) {
+                    lateinit var completedGuide: Any
+                    lateinit var recording: File
+                    lateinit var recordingBytes: ByteArray
+                    var replayIndex = -1
+                    var replayOffset = -1L
+                    host.onActivity { activity ->
+                        val controller = reader(activity)
+                        completedGuide = requireNotNull(field<Any?>(controller, "incorrectFeedback"))
+                        assertTrue(field<Boolean>(completedGuide, "finished"))
+                        replayIndex = field(completedGuide, "index")
+                        val end = field<Long>(completedGuide, "offset")
+                        assertTrue("The narrated red guide has at least one second to replay", end > 1000L)
+                        val part = field<List<Any>>(completedGuide, "parts")[replayIndex]
+                        recording = requireNotNull(field<File?>(part, "file"))
+                        recordingBytes = recording.readBytes()
+                        controller.seekBy(-1)
+                        replayOffset = end - 1000L
+                        assertSame(completedGuide, field<Any?>(controller, "incorrectFeedback"))
+                        assertFalse(field<Boolean>(completedGuide, "finished"))
+                        assertEquals(replayIndex, field<Int>(completedGuide, "index"))
+                        assertEquals(replayOffset, field<Long>(completedGuide, "offset"))
+                        assertNull("Rewinding stopped feedback does not keep a player alive", field<MediaPlayer?>(controller, "player"))
+                        assertTrue(activity.findViewById<View>(R.id.buttonLessonListen).performClick())
+                    }
+                    await(host, "The already completed incorrect guide really plays again after Back", 30_000L) { activity ->
+                        val controller = reader(activity)
+                        val player = field<MediaPlayer?>(controller, "player")
+                        assertSame(completedGuide, field<Any?>(controller, "incorrectFeedback"))
+                        controller.isPlaying && field<Boolean>(controller, "playerReady") && player != null && player.isPlaying &&
+                            field<Int>(completedGuide, "index") == replayIndex && player.currentPosition > replayOffset + 40L
+                    }
+                    await(host, "Replayed incorrect feedback stops naturally again", 30_000L) { activity ->
+                        val controller = reader(activity)
+                        field<Boolean>(completedGuide, "finished") && !controller.isPlaying
+                    }
+                    host.onActivity { activity ->
+                        val controller = reader(activity)
+                        assertArrayEquals("Replaying reuses the same audio without regeneration", recordingBytes, recording.readBytes())
+                        assertNull(field<MediaPlayer?>(controller, "player"))
+                        assertEquals(sourceIndex, field<Int>(controller, "index"))
+                        assertEquals(sourceOffset, field<Long>(controller, "offset"))
+                        assertEquals(heard, requireNotNull(field<NarrationExerciseGate?>(controller, "playbackGate")).heardThrough)
+                        assertEquals(originalBookmarks, resume.all)
+                        assertEquals(olderFinishedPoint, store.restore(olderA, olderFinishedPoint.segment + 1))
+                        assertTrue(unread(result(activity)).isEmpty())
+                        assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
+                    }
+                    replayedAfterCompletion = true
+                }
                 observations.put(JSONObject().put("case", index).put("visibleResult", shown).put("expectedSpokenParts", JSONArray(expectedParts))
                     .put("audio", JSONArray(played.values.toList())).put("maskSamples", JSONObject().apply { masks.forEach { (part, ranges) -> put(part.toString(), JSONArray(ranges.toList())) } })
-                    .put("pauseReleasedPlayerAndExactSeekRestored", transportChecked && index == 3))
+                    .put("pauseReleasedPlayerAndExactSeekRestored", transportChecked && index == 3)
+                    .put("incorrectGuideReplayedAfterNaturalCompletion", replayedAfterCompletion))
             }
             host.onActivity { activity -> reader(activity).pauseKeepingPosition() }
         }
-        saveEvidence("four-real-kokoro-verdicts", JSONObject().put("voice", NarrationLanguage.SPANISH.defaultVoice)
+        savePlaybackEvidence("four-real-kokoro-verdicts", JSONObject().put("voice", NarrationLanguage.SPANISH.defaultVoice)
             .put("verdicts", observations).put("evidenceLevel", "Actual LDPlayer Kokoro WAV playback and native word masks; no human listening assessment"))
     }
 
@@ -238,12 +552,15 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         val image = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         try {
             val canvas = Canvas(image); canvas.drawColor(Color.rgb(28, 31, 36)); view.draw(canvas)
-            val folder = File(requireNotNull(context.getExternalFilesDir(null)), "cpp-output-check-qa/$session").apply { mkdirs() }
-            File(folder, "$name.png").outputStream().use { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, it)) }
-            saveEvidence(name, JSONObject().put("text", view.text.toString()).put("width", view.width).put("height", view.height)
+            val folder = requireNotNull(context.getExternalFilesDir(null))
+            File(folder, "cpp-output-check-$name.png").outputStream().use { assertTrue(image.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+            savePlaybackEvidence(name, JSONObject().put("text", view.text.toString()).put("width", view.width).put("height", view.height)
                 .put("unreadRanges", JSONArray(unread(view).map { JSONArray(listOf(it.start, it.endExclusive)) }))
                 .put("kind", "Actual Android view Canvas at original bounds sampled during real audio; not a whole-screen screenshot"))
         } finally { image.recycle() }
+    }
+    private fun savePlaybackEvidence(name: String, value: JSONObject) {
+        File(requireNotNull(context.getExternalFilesDir(null)), "cpp-output-check-$name.json").writeText(value.toString(2))
     }
     private fun unread(view: ReadingTextView): List<ReadingTextRange> = field(view.readingInk, "unreadRanges")
     private fun reader(activity: LessonActivity): LessonNarrationController = field(activity, "narrationController")

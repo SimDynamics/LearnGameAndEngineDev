@@ -4142,7 +4142,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
     }
 
     /** Laboratory checks only narrate their visible verdict. They are never puzzle gates. */
-    private fun narrateLabOutputResult(pageIndex: Int, blockIndex: Int, view: ReadingTextView) {
+    private fun narrateLabOutputResult(pageIndex: Int, blockIndex: Int, view: ReadingTextView, correctVerdict: Boolean) {
         if (!::lessonJson.isInitialized || currentPage != pageIndex || isDestroyed || isFinishing) return
         val settings = NarrationSettingsRepository.get(this)
         val language = NarrationLanguage.forLesson(lessonJson, currentPage, settings.language)
@@ -4164,7 +4164,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                 com.learngraphicsprogramming.app.narration.NarrationTextOrigin(blockIndex, feedback = true)
             }), language, selected.engine)
         controller.readUnscoredFeedback(texts, language, narrationPageIdentity(), blockIndex,
-            script.texts, script.gates, narrationCorrectBlocks())
+            script.texts, script.gates, narrationCorrectBlocks(), continueAfterCompletion = correctVerdict)
     }
 
     private fun restoreCppReview(block: JSONObject, state: JSONObject?, answer: Any,
@@ -6719,11 +6719,13 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
         val standardInputRequested = CppLabInputPolicy.requested(block, outputCheckSpecification)
         val draftKey = LessonStateCoordinates.draftKey(this, currentRouteId, currentLessonId, currentPage, blockIndex)
         val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+        CppLessonSourceDraft.repairProvenDrafts(labDrafts)
         var projectControls: View? = null
         val inputLabel = TextView(this).apply {
             // Retain the CMake insertion anchor without a developer-facing explanation.
             visibility = View.GONE
         }
+        var inputReviewPending = false
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
             visibility = if (standardInputRequested) View.VISIBLE else View.GONE
@@ -6741,13 +6743,25 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             typeface = Typeface.MONOSPACE
             minLines = 1
             setText(CppLessonInputDraft.read(labDrafts, draftKey, initialStandardInput))
+            inputReviewPending = CppLessonInputDraft.review(labDrafts, draftKey) != null
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
                 override fun afterTextChanged(s: Editable?) {
-                    CppLessonInputDraft.write(labDrafts.edit(), draftKey, s ?: "").apply()
+                    val input = s?.toString().orEmpty()
+                    if (inputReviewPending && !CppLessonInputDraft.needsReview(input, null)) inputReviewPending = false
+                    CppLessonInputDraft.write(labDrafts.edit(), draftKey, input,
+                        confirmed = !inputReviewPending).apply()
                 }
             })
+        }
+        if (standardInputRequested) CppInputDraftReview.attach(standardInput, labDrafts, draftKey) { chosen ->
+            inputReviewPending = false
+            val current = standardInput.text
+            if (current.toString() == chosen + "    ") {
+                // Resolve just the disputed suffix without replacing other text, cursor or spans.
+                current.delete(current.length - 4, current.length)
+            }
         }
         fun preparedStandardInput() = CppLabInputPolicy.effectiveInput(standardInputRequested, standardInput.text.toString())
 
@@ -7546,7 +7560,7 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
                     else projectEditor?.outputCheckSnapshot(compilerVariants[compilerSelector.selectedItemPosition].name)
                         ?: CppOutputCheck.snapshot(mapOf("main.cpp" to sourceCode.text.toString()), listOf("main.cpp"),
                             compilerVariants[compilerSelector.selectedItemPosition].name)
-                }, onShown = { verdict -> narrateLabOutputResult(compilerPage, blockIndex, verdict) },
+                }, onShown = { verdict, correct -> narrateLabOutputResult(compilerPage, blockIndex, verdict, correct) },
                 onCleared = { verdict ->
                     readingTextPages[compilerPageIdentity]?.unregister(verdict)
                     narrationController?.cancelUnscoredFeedback(compilerPageIdentity, blockIndex)

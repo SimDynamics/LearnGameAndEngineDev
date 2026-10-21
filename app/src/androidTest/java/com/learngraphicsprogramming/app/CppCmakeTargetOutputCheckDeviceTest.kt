@@ -238,8 +238,7 @@ class CppCmakeTargetOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                 assertEquals(0, actual.exitCode)
                 assertEquals(expectedOutput, actual.execution!!.stdout)
                 assertEquals(View.VISIBLE, result(activity).visibility)
-                assertEquals(activity.getString(if (correct == true) R.string.cpp_output_check_correct else
-                    R.string.cpp_output_check_incorrect), result(activity).text.toString())
+                assertEquals(expectedVerdict(activity, correct == true), result(activity).text.toString())
             }
             unchangedHearts()
             evidence = JSONObject().put("lesson", fixture.originalId).put("page", fixture.location.page)
