@@ -664,7 +664,11 @@ class ExtendedStateLayoutTest(unittest.TestCase):
     def test_real_u1l2_family_keeps_34_spanish_and_29_translated_historical_blocks(self):
         root = Path(__file__).resolve().parents[2]
         suffix = 'programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json'
-        family = {locale: m.load(root/m.CONTENT_DIRECTORY/locale/suffix) for locale in ('es', 'en', 'fr')}
+        # This fixture exercises the published positional history, not the number
+        # of activities currently displayed after independent additions.
+        baseline = '25cfe2965b4fb03740795ef1d10d6fd7a0dcb50d'
+        family = {locale: m._git_document(root, baseline, f'{m.CONTENT_DIRECTORY}/{locale}/{suffix}')
+                  for locale in ('es', 'en', 'fr')}
         translated_bytes = {locale: (root/m.CONTENT_DIRECTORY/locale/suffix).read_bytes() for locale in ('en', 'fr')}
         self.assertEqual([sum(len(p['blocks']) for p in family[locale]['pages']) for locale in ('es', 'en', 'fr')],
                          [34, 29, 29])

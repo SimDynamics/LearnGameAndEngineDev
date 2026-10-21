@@ -8,6 +8,7 @@ import unittest
 from functools import lru_cache
 
 import validar_json_programacion as contract
+import stable_state_layout as state_layout
 
 
 @lru_cache(maxsize=None)
@@ -51,7 +52,8 @@ class EditorialAndSharedMathContractTest(unittest.TestCase):
         self.assertEqual(7, len(originals), "The audited baseline contains exactly seven original compositions.")
         for lesson, pn, bn, previous in originals:
             path = contract.CONTENT / lesson
-            current = contract.load(path)["pages"][pn]["blocks"][bn]
+            document = contract.load(path)
+            current = state_layout.original_projection(document)["pages"][pn]["blocks"][bn]
             self.assertEqual(previous, current,
                              f"Original shared activity changed at {lesson}, page {pn + 1}, block {bn + 1}.")
             found.append((path, pn, bn, current))
@@ -62,9 +64,12 @@ class EditorialAndSharedMathContractTest(unittest.TestCase):
         new_ids = []
         for path in contract.CONTENT.glob("*/lesson_*.json"):
             lesson = path.relative_to(contract.CONTENT).as_posix()
-            for pn, page in enumerate(contract.load(path)["pages"]):
+            document = contract.load(path)
+            positions = state_layout.validate(document)
+            for pn, page in enumerate(document["pages"]):
                 for bn, block in enumerate(page["blocks"]):
-                    if block["type"] != "math_puzzle" or (lesson, pn, bn) in original_locations:
+                    original_position = positions.get((pn, bn), (pn, bn))
+                    if block["type"] != "math_puzzle" or (lesson, *original_position) in original_locations:
                         continue
                     with self.subTest(lesson=lesson, page=pn + 1, block=bn + 1):
                         previous = copy.deepcopy(block)
@@ -75,6 +80,7 @@ class EditorialAndSharedMathContractTest(unittest.TestCase):
                         self.assertTrue(set(block) <= contract.FIELDS["math_puzzle"])
                         new_ids.append(block["id"])
         self.assertEqual(len(new_ids), len(set(new_ids)))
+        self.assertFalse(set(new_ids) & {block["id"] for _, _, _, block in original_shared_math()})
         self.assertIn("cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__clasificar_conversiones_implicitas", new_ids)
 
     def editorial_cases(self, before, after):
