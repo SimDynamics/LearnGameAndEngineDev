@@ -6,7 +6,9 @@ param(
     [string] $Profile,
     [switch] $SkipTests,
     [switch] $Fresh,
-    [switch] $CleanFirst
+    [switch] $CleanFirst,
+    [ValidatePattern('^[A-Za-z][A-Za-z0-9_]*$')]
+    [string] $Target
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,11 +41,12 @@ foreach ($commandPath in @($sourceRoot, $vcvars, $cmake, $ctest)) {
 }
 $freshArgument = if ($Fresh) { '--fresh ' } else { '' }
 $cleanArgument = if ($CleanFirst) { ' --clean-first' } else { '' }
+$targetArgument = if ($Target) { " --target $Target" } else { '' }
 $commands = @(
     'chcp 65001 >nul',
     "call `"$vcvars`" x64 10.0.26100.0 -vcvars_ver=14.51.36231",
     "`"$cmake`" ${freshArgument}--preset $Preset -DLGAED_DEFAULT_PROFILE=$Profile",
-    "`"$cmake`" --build --preset $Preset$cleanArgument"
+    "`"$cmake`" --build --preset $Preset$cleanArgument$targetArgument"
 )
 if (-not $SkipTests) { $commands += "`"$ctest`" --preset $Preset" }
 $commandLine = $commands -join ' && '
@@ -62,8 +65,11 @@ try {
     # CREATE_NO_WINDOW can leave their encodings mismatched and lose dependencies.
     $buildProcess = Start-Process -FilePath $env:ComSpec `
         -ArgumentList ('/d /v:off /s /c "' + $commandLine + '"') `
-        -WorkingDirectory $sourceRoot -WindowStyle Hidden -Wait -PassThru `
+        -WorkingDirectory $sourceRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput $standardOutputFile -RedirectStandardError $standardErrorFile
+    # Cache the native process handle before waiting; Windows PowerShell can
+    # otherwise lose ExitCode when Start-Process is used without -Wait.
+    $nativeProcessHandle = $buildProcess.Handle
     $buildProcess.WaitForExit()
     $buildExitCode = $buildProcess.ExitCode
     # File redirection preserves both streams without PowerShell reclassifying

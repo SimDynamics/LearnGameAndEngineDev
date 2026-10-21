@@ -1,9 +1,11 @@
 #include "core/profile.hpp"
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
+#include "presentation/windows/lesson_view.hpp"
 
 #include <windows.h>
 #include <shellapi.h>
+#include <ole2.h>
 
 #include <algorithm>
 #include <array>
@@ -25,6 +27,8 @@ struct WindowState {
     HFONT font = nullptr;
     bool painted = false;
     int exit_code = 0;
+    HWND lesson = nullptr;
+    std::string startup_error;
 };
 
 std::wstring widen_error(const std::exception& error) {
@@ -40,6 +44,11 @@ std::wstring widen_error(const std::exception& error) {
 }
 
 void layout_controls(HWND window, WindowState& state) {
+    if (state.lesson) {
+        RECT area{}; GetClientRect(window, &area);
+        MoveWindow(state.lesson, 0, 0, area.right, area.bottom, TRUE);
+        return;
+    }
     const auto dpi = GetDpiForWindow(window);
     const auto scale = [dpi](int value) { return MulDiv(value, static_cast<int>(dpi), 96); };
     RECT client{};
@@ -88,6 +97,17 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         return 0;
     }
     case WM_CREATE: {
+        if (!state->environment.options.smoke_test) {
+            try {
+                state->lesson = lgaed::presentation::create_lesson_view(window, state->environment,
+                    std::filesystem::path(lgaed::build::source_root) / L"app/src/main/assets/content");
+                layout_controls(window, *state);
+                return 0;
+            } catch (const std::exception& error) {
+                state->startup_error = error.what();
+                return -1;
+            }
+        }
         const auto instance = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(window, GWLP_HINSTANCE));
         const auto label = [window, instance](const wchar_t* text) {
             return CreateWindowExW(0, L"STATIC", text, WS_CHILD | WS_VISIBLE | SS_LEFT,
@@ -150,6 +170,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         }
         break;
     case WM_CLOSE:
+        if (state->lesson && !lgaed::presentation::flush_lesson_view(state->lesson)) return 0;
         DestroyWindow(window);
         return 0;
     case WM_DESTROY:
@@ -170,6 +191,10 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     bool qa_requested = false;
     try {
+        struct OleApartment {
+            OleApartment() { if (FAILED(OleInitialize(nullptr))) throw std::runtime_error("Cannot initialize native Windows controls"); }
+            ~OleApartment() { OleUninitialize(); }
+        } apartment;
         static_assert(sizeof(void*) == 8, "The native application requires a 64-bit target");
         const auto default_profile = lgaed::parse_profile(lgaed::build::default_profile);
         if (!default_profile) {
@@ -211,7 +236,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         }
         const auto initial_dpi = GetDpiForSystem();
         RECT initial_size{0, 0, MulDiv(900, static_cast<int>(initial_dpi), 96),
-            MulDiv(440, static_cast<int>(initial_dpi), 96)};
+            MulDiv(state.environment.options.smoke_test ? 440 : 720, static_cast<int>(initial_dpi), 96)};
         if (!AdjustWindowRectExForDpi(&initial_size, window_style, FALSE, 0, initial_dpi)) {
             throw std::runtime_error("Cannot calculate the initial DPI-aware window size");
         }
@@ -219,7 +244,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
             CW_USEDEFAULT, CW_USEDEFAULT, initial_size.right - initial_size.left,
             initial_size.bottom - initial_size.top, nullptr, nullptr, instance, &state);
         if (!window) {
-            throw std::runtime_error("Cannot create the native application window");
+            throw std::runtime_error(state.startup_error.empty() ? "Cannot create the native application window" : state.startup_error);
         }
         ShowWindow(window, show_command);
         UpdateWindow(window);

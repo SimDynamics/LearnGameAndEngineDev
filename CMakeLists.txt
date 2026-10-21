@@ -27,6 +27,8 @@ if(NOT LGAED_DEFAULT_PROFILE MATCHES "^(Work|Codex)$")
     message(FATAL_ERROR "Select -DLGAED_DEFAULT_PROFILE=Work or Codex for this checkout.")
 endif()
 
+file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" LGAED_EDUCATIONAL_VC_ROOT)
+file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" LGAED_EDUCATIONAL_SDK_ROOT)
 configure_file(cmake/native_build_config.hpp.in generated/native_build_config.hpp @ONLY)
 
 add_library(lgaed_host_options INTERFACE)
@@ -37,19 +39,29 @@ target_include_directories(lgaed_host_options INTERFACE
     "${CMAKE_SOURCE_DIR}/native"
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-add_library(lgaed_core STATIC native/core/profile.cpp)
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
-add_library(lgaed_platform_windows STATIC native/platform/windows/environment.cpp)
+add_library(lgaed_platform_windows STATIC
+    native/platform/windows/environment.cpp
+    native/platform/windows/content_loader.cpp
+    native/platform/windows/state_store.cpp
+    native/platform/windows/android_import.cpp
+    native/platform/windows/cpp_runner.cpp)
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
-target_link_libraries(lgaed_platform_windows PRIVATE shell32 ole32 advapi32)
+target_link_libraries(lgaed_platform_windows PRIVATE shell32 ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
+add_library(lgaed_presentation_windows STATIC
+    native/presentation/windows/lesson_view.cpp
+    native/presentation/windows/rich_text.cpp
+    native/presentation/windows/code_editor.cpp)
+target_link_libraries(lgaed_presentation_windows PUBLIC
+    lgaed_platform_windows lgaed_host_options user32 gdi32 shell32 ole32 advapi32 comctl32 uuid)
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
     native/presentation/windows/app.manifest)
 target_link_libraries(LearnGameAndEngineDev PRIVATE
-    lgaed_core lgaed_platform_windows lgaed_host_options
-    user32 gdi32 shell32 ole32 advapi32)
+    lgaed_presentation_windows)
 set_target_properties(LearnGameAndEngineDev PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
@@ -62,6 +74,30 @@ if(BUILD_TESTING)
         COMMAND LearnGameAndEngineDev --profile "${LGAED_DEFAULT_PROFILE}"
         --qa-instance "ctest-${CMAKE_BUILD_TYPE}" --smoke-test)
     set_tests_properties(native.window_smoke PROPERTIES TIMEOUT 20)
+    add_executable(lgaed_lesson_tests native/core/lesson_tests.cpp)
+    target_link_libraries(lgaed_lesson_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.lesson_contract COMMAND lgaed_lesson_tests)
+    add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
+    target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.cpp_runner COMMAND lgaed_cpp_runner_tests)
+    set_tests_properties(native.cpp_runner PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
+    target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
+    add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp native/presentation/windows/rich_text.cpp)
+    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_core lgaed_host_options user32 gdi32 ole32 uuid)
+    add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
+    add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
+    target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.code_editor COMMAND lgaed_code_editor_tests)
+    add_executable(lgaed_lesson_view_tests native/presentation/windows/lesson_view_tests.cpp)
+    target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.lesson_view COMMAND lgaed_lesson_view_tests)
+    set_tests_properties(native.lesson_view PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_import_view_tests native/presentation/windows/import_view_tests.cpp)
+    target_link_libraries(lgaed_import_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.import_view COMMAND lgaed_import_view_tests)
+    set_tests_properties(native.import_view PROPERTIES TIMEOUT 180)
 endif()
 
 install(TARGETS LearnGameAndEngineDev RUNTIME DESTINATION bin)

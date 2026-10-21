@@ -80,11 +80,74 @@ autorizado por el usuario. No copiar `out`, `.vs` ni `CMakeUserPresets.json` ent
 copias. La aceptación de dos checkouts compilados requiere ejecutar las pruebas
 en ambos después de integrar las mismas fuentes.
 
-## Límites de esta base
+## Primer recorrido curricular
 
-`native/core` contiene perfiles y contratos independientes de Win32;
-`native/platform/windows`, las rutas y servicios del sistema;
-`native/presentation/windows`, la ventana y controles nativos con adaptación DPI.
-Todavía no se ha recuperado el lector, el currículo, la evaluación, los compiladores
-educativos ni el progreso Android. Tampoco se ha iniciado el renderizado GPU.
-Esas capacidades conservan sus encargos separados en `PENDIENTES_WORK.md`.
+El inicio normal abre las seis páginas existentes de «Construir y leer un primer
+programa», desde el JSON original bajo `app/src/main/assets/content/es/`.
+No se genera una segunda copia del contenido. El adaptador comprueba el contrato
+del JSON y las familias y direcciones históricas de `stateLayout` antes de cargar
+respuestas o borradores. Las traducciones importadas se conservan sin cambios;
+esta primera interfaz utiliza español.
+
+Los controles Win32 conservan párrafos separados, énfasis y coloreado C++.
+La predicción, la selección, el relleno y el ordenamiento usan los contratos del
+contenido. Enter comprueba una respuesta de una línea sin avanzar de página.
+Una respuesta correcta conserva el mecanismo explícito «Reiniciar respuesta».
+Avanzar requiere los puzzles de la página; el compilador permanece editable.
+
+Cada editor compila realmente con las herramientas MSVC/SDK fijadas y ejecuta
+su programa en un proceso hijo limitado en tiempo y salida. No necesita Android
+ni un servicio externo. Usa una consola, y «Entrada» solo aparece si el contenido
+la solicita. Cuando hay `outputCheck`, el mismo botón compila, ejecuta y comprueba
+la salida recién obtenida; un error de compilación o ejecución es un diagnóstico,
+no una respuesta incorrecta. Editar invalida el veredicto, que nunca se restaura
+como vigente tras reabrir. Las comprobaciones no descuentan corazones.
+
+Los editores original y de modificación de la página 5 guardan borradores
+independientes, incluidos espacios, saltos y procedencia de la sangría. TAB físico
+y TAB del editor comparten la misma operación; deshacer/rehacer conserva la
+identidad de las unidades. La entrada estándar es texto literal, sin asistencia
+de código ni inserción automática de sangrías.
+
+## Importar un estado Android exportado
+
+En un perfil Windows vacío, «Importar estado Android…» permite seleccionar
+explícitamente una carpeta que contenga `shared_prefs/*.xml` y opcionalmente
+`files/`. No extrae datos del teléfono. Primero verifica versiones, familias,
+tipos, proyectos, revisiones e integridad; después solicita confirmación.
+El origen no se modifica. El destino se publica de forma atómica y rechaza
+sobrescribir estado existente o un origen cambiado durante la revisión.
+
+Las preferencias y los archivos originales se conservan también byte por byte
+bajo el área privada `state/active/android`, con manifiesto SHA-256. El estado
+Windows conserva las respuestas y las direcciones históricas, los borradores y
+su entrada exacta, selecciones UTF-16 y metadatos de sangría. Una respuesta
+editada pero no comprobada no se presenta como un intento incorrecto.
+Los veredictos antiguos del compilador requieren siempre una ejecución nueva.
+
+La primera validación utiliza exportaciones sintéticas y perfiles QA, no el
+progreso personal. Los datos que Android conserva únicamente en memoria o en
+`savedInstanceState` no pueden reconstruirse si no forman parte de la exportación.
+
+## Arquitectura y límites actuales
+
+`native/core` contiene perfiles, contratos de evaluación y modelos de estado;
+`native/platform/windows`, los adaptadores de JSON, persistencia, importación y
+ejecución; `native/presentation/windows`, los controles nativos con adaptación DPI.
+La importación conserva archivos e historial de proyectos, pero su interfaz de
+edición de múltiples archivos y restauración de revisiones aún no está migrada.
+Tampoco se ha recuperado el catálogo completo, los porcentajes de curso, Kokoro,
+la narración sincronizada, las funciones Android restantes ni el renderizado GPU.
+La implementación de este primer recorrido no acredita esas capacidades ni la aceptación curricular de Work.
+
+La ejecución educativa necesita la instalación MSVC/SDK indicada. El Job Object
+gestiona cancelación y procesos descendientes; no es un sandbox de seguridad:
+los programas tienen los permisos del usuario que inicia la aplicación. Los
+artefactos de ejecución se conservan en `projects/cpp-runs` del perfil; todavía
+no hay recolección automática. Los futuros contratos de salidas multilínea deben
+definir explícitamente LF/CRLF de Windows; esta lección espera salidas sin salto
+final y se comparan sus bytes exactos, sin recortar datos.
+
+Work mantiene los pedidos en `PENDIENTES_RECURSOS_CURRICULARES.md`.
+Codex comunica en el chat las capacidades comprobadas y sus límites para que
+Work actualice ese único registro.

@@ -9,14 +9,12 @@ Lee íntegramente `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt`
 - Cada agente trabaja en su directorio. No cambiar de rama el checkout del otro, sobrescribir sus cambios, crear worktrees adicionales ni ejecutar sus botones de publicación.
 - Guardar progresivamente en los archivos locales. Work no crea commits ni publica sin una instrucción expresa. La importación conserva los commits anteriores; no constituye una implementación Windows terminada.
 
-## Registros con propietario exclusivo
+## Registro único de pendientes
 
-- `PENDIENTES_WORK.md`: solo Work lo crea y modifica. Contiene los encargos, requisitos pedagógicos, integración curricular y aceptación de Work.
-- `ACTUALIZACIONES_CODEX.md`: solo Codex lo crea y modifica. Contiene respuestas a los encargos, implementación, pruebas, evidencias y límites técnicos.
-- Ambos pueden leer los dos registros. Enlazar el mismo identificador de encargo y su sección correspondiente; no copiar la especificación para mantener dos versiones ni modificar el registro del otro.
-- Codex crea su registro cuando empiece su trabajo. Work no mantiene un segundo registro en su nombre.
-- `PENDIENTES_RECURSOS_CURRICULARES.md` se conserva íntegro como referencia histórica Android, en modo de consulta. Los encargos y actualizaciones nuevos se escriben en el registro del propietario.
-- Distinguir implementación técnica, integración curricular y aceptación comprobada en Windows. Las pruebas Android mantienen su alcance original y no acreditan Windows.
+- `PENDIENTES_RECURSOS_CURRICULARES.md` es el único registro de pedidos y capacidades pendientes. Work lo crea y modifica, incluidos los encargos de Windows.
+- Codex consulta ese archivo, implementa y verifica los componentes técnicos y comunica únicamente en el chat qué pedidos puede retirar Work y qué comprobaciones quedan pendientes.
+- Codex no modifica el registro de Work ni crea registros paralelos, informes o reportes de avance. Los cambios de la aplicación y sus pruebas se guardan directamente en los archivos técnicos.
+- Conservar las fichas, identificadores y evidencias existentes. Distinguir implementación técnica, integración curricular y aceptación comprobada en Windows: las pruebas Android mantienen su alcance original y no acreditan Windows.
 
 ## Conservación y prioridad de migración
 
@@ -25,4 +23,4 @@ Lee íntegramente `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt`
 - Work produce y revisa únicamente español. Las traducciones existentes se conservan; su actualización corresponde al usuario.
 - El contenido sigue en `app/src/main/assets/content/` hasta que Codex integre una ubicación común compatible y Work compruebe su conservación. No mantener dos copias activas del currículo.
 - Primero recuperar en Windows lo ya construido. Programación 1 sigue abierto. No ampliar rutas ni comenzar la evaluación visual de proyectos antes de disponer de la base Windows y sus verificaciones correspondientes.
-- Conservar los compiladores, modelos, audios, pruebas, preferencias y evidencias originales. No borrar cachés ni importar datos reales del estudiante para probar. Los recursos locales no versionados y sus ubicaciones constan en `PENDIENTES_WORK.md`.
+- Conservar los compiladores, modelos, audios, pruebas, preferencias y evidencias originales. No borrar cachés ni importar datos reales del estudiante para probar.
