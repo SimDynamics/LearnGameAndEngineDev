@@ -97,8 +97,8 @@ class CppPreparedInputPersistenceDeviceTest {
                 raw.getString("$key/input", null))
             assertEquals("No old SHA exists for stdin: never discard potentially manual spaces", original + "    ",
                 CppLessonInputDraft.read(raw, key, "unused"))
-            assertNotNull("The unchanged ambiguous draft is pending an owner decision, not considered repaired",
-                CppLessonInputDraft.review(raw, key))
+            assertFalse("Protecting unproved legacy data must not invent an original checksum",
+                raw.contains("$key/inputSha256"))
             val observations = JSONArray()
             for (input in listOf(original, original + "    ", "", "\n", "  Rita\t4\r\n", "ñ é λ 中文\n")) {
                 val preferences = context.getSharedPreferences(newName(names), Context.MODE_PRIVATE)
@@ -149,14 +149,13 @@ class CppPreparedInputPersistenceDeviceTest {
             assertEquals(source, inputFromPreferenceXml(persisted, "$key/source"))
             assertEquals("\t\r\n    ", CppLessonInputDraft.decode(inputFromPreferenceXml(persisted, "$neighbor/input"),
                 CppDraftTextCodec.ENCODING))
-            assertNull(CppLessonInputDraft.review(preferences, key))
             val afterRepair = preferences.all.toMap()
             assertEquals(original, CppLessonInputDraft.read(preferences, key, "unused"))
             assertEquals("A completed repair is idempotent", afterRepair, preferences.all)
         } finally { names.forEach { context.deleteSharedPreferences(it) } }
     }
 
-    @Test fun aLegacyDigestOfManualSpacesProtectsAllTenCharactersAndNeedsNoDecision() {
+    @Test fun aLegacyDigestOfManualSpacesProtectsAllTenCharacters() {
         requireQa()
         val names = mutableListOf<String>()
         try {
@@ -167,7 +166,6 @@ class CppPreparedInputPersistenceDeviceTest {
             assertTrue(preferences.edit().putString("$key/input", manual)
                 .putString("$key/inputSha256", checksum).commit())
             assertEquals(manual, CppLessonInputDraft.read(preferences, key, "unused"))
-            assertNull(CppLessonInputDraft.review(preferences, key))
             assertEquals(3, preferences.all.size)
             assertEquals(checksum, preferences.getString("$key/inputSha256", null))
             val encoded = inputFromPreferenceXml(File(context.applicationInfo.dataDir, "shared_prefs/$name.xml").readText())
@@ -175,70 +173,57 @@ class CppPreparedInputPersistenceDeviceTest {
         } finally { names.forEach { context.deleteSharedPreferences(it) } }
     }
 
-    @Test fun bothLegacyFormatsRequireAnExplicitKeepOrRemoveDecisionAndResolveOnlyOnce() {
+    @Test fun bothLegacyFormatsPreserveUnprovedWhitespaceExactlyWithoutInventingADigest() {
         requireQa()
         val names = mutableListOf<String>()
         try {
-            val original = "Leo\n2\n"
-            val ambiguous = original + "    "
             for (encoding in listOf(null, CppDraftTextCodec.ENCODING)) {
-                for (removeFourSpaces in listOf(false, true)) {
+                for (input in listOf("Leo\n2\n    ", " \t ", "  Patio norte  \nSala azul", "\t\r\n    ")) {
                     val name = newName(names)
                     val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
                     val editor = preferences.edit().putString("$key/input",
-                        if (encoding == null) ambiguous else CppDraftTextCodec.encode(ambiguous, "input"))
+                        if (encoding == null) input else CppDraftTextCodec.encode(input, "input"))
                     if (encoding != null) editor.putString("$key/inputEncoding", encoding)
                     assertTrue(editor.commit())
-                    val beforeDecision = preferences.all.toMap()
-                    assertEquals(ambiguous, CppLessonInputDraft.read(preferences, key, "unused"))
-                    val presented = requireNotNull(CppLessonInputDraft.review(preferences, key))
-                    assertEquals(ambiguous, presented.input)
-                    assertEquals(original, presented.proposedInput)
-                    assertEquals("Merely checking a pending value cannot make a decision for its owner",
-                        beforeDecision, preferences.all)
-                    assertEquals(presented, CppLessonInputDraft.review(preferences, key))
-                    val chosen = if (removeFourSpaces) original else ambiguous
-                    assertEquals(chosen, CppLessonInputDraft.resolve(preferences, key, presented, removeFourSpaces))
-                    assertEquals(setOf("$key/input", "$key/inputEncoding", "$key/inputSha256"), preferences.all.keys)
-                    assertEquals(chosen, CppLessonInputDraft.read(preferences, key, "unused"))
-                    assertNull(CppLessonInputDraft.review(preferences, key))
-                    val resolved = preferences.all.toMap()
-                    assertNull("The same old decision must never be applied twice",
-                        CppLessonInputDraft.resolve(preferences, key, presented, removeFourSpaces))
-                    assertEquals(resolved, preferences.all)
+                    assertEquals("A legacy whitespace pattern alone authorizes no deletion", input,
+                        CppLessonInputDraft.read(preferences, key, "unused"))
+                    assertEquals(setOf("$key/input", "$key/inputEncoding"), preferences.all.keys)
+                    assertFalse("The old original remains unproved", preferences.contains("$key/inputSha256"))
+                    val protected = preferences.all.toMap()
+                    assertEquals(input, CppLessonInputDraft.read(preferences, key, "unused"))
+                    assertEquals("Repeated reads do not alter any characters or metadata", protected, preferences.all)
+                    assertTrue(preferences.edit().putInt("unrelated-progress", 37).commit())
                     val encoded = inputFromPreferenceXml(File(context.applicationInfo.dataDir, "shared_prefs/$name.xml").readText())
-                    assertEquals(chosen, CppLessonInputDraft.decode(encoded, CppDraftTextCodec.ENCODING))
+                    assertEquals(input, CppLessonInputDraft.decode(encoded, CppDraftTextCodec.ENCODING))
                 }
             }
         } finally { names.forEach { context.deleteSharedPreferences(it) } }
     }
 
-    @Test fun editingPendingInputInvalidatesAnOldDecisionAndDoesNotConfirmInheritedSpaces() {
+    @Test fun newEditsRecordTheirExactWhitespaceAndChecksumWithoutChangingNeighboringData() {
         requireQa()
         val names = mutableListOf<String>()
         try {
             val name = newName(names)
             val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
-            assertTrue(preferences.edit().putString("$key/input", "Leo\n2\n    ").commit())
-            val oldReview = requireNotNull(CppLessonInputDraft.review(preferences, key))
-            val edited = "Leo\n3\n    "
-            assertTrue(CppLessonInputDraft.write(preferences.edit(), key, edited, confirmed = false).commit())
-            val pending = preferences.all.toMap()
-            assertFalse(preferences.contains("$key/inputSha256"))
-            val currentReview = requireNotNull(CppLessonInputDraft.review(preferences, key))
-            assertNotEquals(oldReview, currentReview)
-            assertNull(CppLessonInputDraft.resolve(preferences, key, oldReview, removeFourSpaces = true))
-            assertEquals("A stale dialog cannot overwrite a newer edit", pending, preferences.all)
-            assertEquals(edited, CppLessonInputDraft.read(preferences, key, "unused"))
-            assertEquals(currentReview, CppLessonInputDraft.review(preferences, key))
-            assertEquals(edited, CppLessonInputDraft.resolve(preferences, key, currentReview, removeFourSpaces = false))
-            assertNull(CppLessonInputDraft.review(preferences, key))
-
-            for (newInput in listOf("Leo\n2\n    ", "\t\r\n    ", "\n\t", "\r\n", "")) {
+            val source = CppLessonSourceDraft.encode("int main() { return 0; }\n")
+            val sidecar = "unchanged-source-metadata"
+            assertTrue(preferences.edit().putString("$key/input", "Leo\n2\n    ")
+                .putString("$key/source", source).putString("$key/sourceEncoding", CppDraftTextCodec.ENCODING)
+                .putString("$key/sourceIndentation_v2", sidecar).putInt("student-progress", 37).commit())
+            assertEquals("Leo\n2\n    ", CppLessonInputDraft.read(preferences, key, "unused"))
+            val untouched = preferences.all.filterKeys { !it.startsWith("$key/input") }
+            for (newInput in listOf("Leo\n3\n    ", " \t ", "  Patio norte  \nSala azul", "\t\r\n    ", "\n\t", "\r\n", "")) {
                 assertTrue(CppLessonInputDraft.write(preferences.edit(), key, newInput).commit())
                 assertEquals(newInput, CppLessonInputDraft.read(preferences, key, "unused"))
-                assertEquals("Newly typed whitespace is confirmed exactly, not inferred from its shape", 3, preferences.all.size)
-                assertNull(CppLessonInputDraft.review(preferences, key))
+                assertEquals(CppLessonInputDraft.checksum(newInput), preferences.getString("$key/inputSha256", null))
+                assertEquals("Newly typed whitespace is stored exactly, not inferred from its shape", 3,
+                    preferences.all.keys.count { it.startsWith("$key/input") })
+                assertEquals(untouched, preferences.all.filterKeys { !it.startsWith("$key/input") })
+                val persisted = File(context.applicationInfo.dataDir, "shared_prefs/$name.xml").readText()
+                assertEquals(newInput, CppLessonInputDraft.decode(inputFromPreferenceXml(persisted), CppDraftTextCodec.ENCODING))
+                assertEquals(source, inputFromPreferenceXml(persisted, "$key/source"))
+                assertEquals(sidecar, inputFromPreferenceXml(persisted, "$key/sourceIndentation_v2"))
             }
         } finally { names.forEach { context.deleteSharedPreferences(it) } }
     }
@@ -280,9 +265,9 @@ class CppPreparedInputPersistenceDeviceTest {
                     assertEquals("Unrelated data and known formats remain untouched at $storedKey", value,
                         preferences.all[storedKey])
             }
-            assertNotNull("Escaping old data protects it, but does not decide what its four spaces mean",
-                CppLessonInputDraft.review(preferences, unopened))
-            assertNull(CppLessonInputDraft.review(preferences, key))
+            assertEquals("Escaping old data must preserve its full original whitespace", ambiguous,
+                CppLessonInputDraft.read(preferences, unopened, "unused"))
+            assertEquals(original, CppLessonInputDraft.read(preferences, key, "unused"))
             val protectedValues = preferences.all.toMap()
             assertTrue(CppLessonInputDraft.protectLegacyInputs(preferences))
             assertEquals("A second protection pass does not alter any value", protectedValues, preferences.all)

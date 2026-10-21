@@ -6725,7 +6725,6 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             // Retain the CMake insertion anchor without a developer-facing explanation.
             visibility = View.GONE
         }
-        var inputReviewPending = false
         val standardInput = EditText(this).apply {
             tag = "cpp_input"
             visibility = if (standardInputRequested) View.VISIBLE else View.GONE
@@ -6743,25 +6742,13 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             typeface = Typeface.MONOSPACE
             minLines = 1
             setText(CppLessonInputDraft.read(labDrafts, draftKey, initialStandardInput))
-            inputReviewPending = CppLessonInputDraft.review(labDrafts, draftKey) != null
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
                 override fun afterTextChanged(s: Editable?) {
-                    val input = s?.toString().orEmpty()
-                    if (inputReviewPending && !CppLessonInputDraft.needsReview(input, null)) inputReviewPending = false
-                    CppLessonInputDraft.write(labDrafts.edit(), draftKey, input,
-                        confirmed = !inputReviewPending).apply()
+                    CppLessonInputDraft.write(labDrafts.edit(), draftKey, s ?: "").apply()
                 }
             })
-        }
-        if (standardInputRequested) CppInputDraftReview.attach(standardInput, labDrafts, draftKey) { chosen ->
-            inputReviewPending = false
-            val current = standardInput.text
-            if (current.toString() == chosen + "    ") {
-                // Resolve just the disputed suffix without replacing other text, cursor or spans.
-                current.delete(current.length - 4, current.length)
-            }
         }
         fun preparedStandardInput() = CppLabInputPolicy.effectiveInput(standardInputRequested, standardInput.text.toString())
 

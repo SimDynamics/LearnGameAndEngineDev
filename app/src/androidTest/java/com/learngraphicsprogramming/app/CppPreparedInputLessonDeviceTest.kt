@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app
 
 import android.content.Context
+import android.graphics.Rect
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
@@ -73,6 +74,68 @@ class CppPreparedInputLessonDeviceTest : CppOutputCheckQaSupport() {
             .put("page", 7).put("block", 3).put("originalBlock", original).put("runs", observations)
             .put("kind", "Actual LessonActivity, native EditText, Clang23 and WASI; Activity recreation and reopening")
             .put("processColdEvidence", "CppPreparedInputPersistenceDeviceTest separate-process phases"))
+    }
+
+    @Test fun confirmedLegacyExampleCanBeCorrectedInTheEditorWithoutAnyReviewDialog() {
+        val location = LabLocation("objetos_y_estado/lesson_leer_una_entrada_conocida.json", 7, 3)
+        val original = source(location.path).getJSONArray("pages").getJSONObject(6).getJSONArray("blocks").getJSONObject(2)
+        val fixture = fixture(location, original.getJSONObject("outputCheck"))
+        val preferences = context.getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+        val key = "programming/${fixture.id}/6/2"
+        val damaged = "Leo\n2\n    "
+        val corrected = "Leo\n2\n"
+        val initialSource = original.getString("initialCode")
+        for (encoded in listOf(false, true)) {
+            val edit = CppLessonSourceDraft.write(preferences.edit(), key,
+                CppIndentationUnits.loadedText(initialSource, seedPredefined = true))
+                .putString("$key/input", if (encoded) CppDraftTextCodec.encode(damaged, "input") else damaged)
+                .remove("$key/inputSha256")
+            if (encoded) edit.putString("$key/inputEncoding", CppDraftTextCodec.ENCODING)
+            else edit.remove("$key/inputEncoding")
+            assertTrue(edit.commit())
+            val sourceMetadata = preferences.all.filterKeys { it.startsWith("$key/source") }
+            val hearts = context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all.toMap()
+            fun assertNeighboringState(activity: LessonActivity) {
+                assertEquals(0, field<Int>(activity, "completedExercises"))
+                val blocks = fixture.lesson.getJSONArray("pages").getJSONObject(6).getJSONArray("blocks")
+                for (index in 0 until blocks.length()) if (blocks.getJSONObject(index).has("id"))
+                    assertNull(ProgressRepository.getExerciseState(context, fixture.id, 6, index))
+                assertEquals(hearts, context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all)
+            }
+            withFixture(fixture) { host ->
+                host.onActivity { activity ->
+                    val field = input(activity)
+                    assertEquals("Loading alone cannot infer which whitespace the student intended", damaged,
+                        field.text.toString())
+                    field.requestRectangleOnScreen(Rect(0, 0, field.width.coerceAtLeast(1), field.height.coerceAtLeast(1)), true)
+                }
+                await(host, "The actual input stays available, without a review window") { activity ->
+                    activity.hasWindowFocus() && input(activity).isShown && !content(activity).isLayoutRequested
+                }
+                host.onActivity { activity ->
+                    val field = input(activity)
+                    assertTrue(field.requestFocus())
+                    field.setSelection(field.length())
+                    // Work confirmed this exact QA example. Perform the requested manual edit,
+                    // not a curricular heuristic or a general trailing-whitespace migration.
+                    field.text.delete(field.length() - 4, field.length())
+                    assertEquals(corrected.length, field.selectionStart)
+                    assertTrue(preferences.edit().commit())
+                    assertExactInput(activity, fixture, corrected, initialSource)
+                    assertEquals(CppLessonInputDraft.checksum(corrected), preferences.getString("$key/inputSha256", null))
+                    assertEquals(sourceMetadata, preferences.all.filterKeys { it.startsWith("$key/source") })
+                    assertNeighboringState(activity)
+                }
+            }
+            withFixture(fixture) { host ->
+                host.onActivity { activity ->
+                    assertExactInput(activity, fixture, corrected, initialSource)
+                    assertTrue(activity.hasWindowFocus())
+                    assertEquals(sourceMetadata, preferences.all.filterKeys { it.startsWith("$key/source") })
+                    assertNeighboringState(activity)
+                }
+            }
+        }
     }
 
     private fun assertExactInput(activity: LessonActivity, fixture: LabFixture, expected: String, source: String) {

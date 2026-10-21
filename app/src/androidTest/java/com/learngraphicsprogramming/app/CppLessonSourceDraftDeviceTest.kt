@@ -167,8 +167,8 @@ class CppLessonSourceDraftDeviceTest {
             val result = assertBulkRepair(preferences, name)
             assertEquals(2, result.first)
             assertEquals(1, result.second)
-            assertNotNull("Escaping ambiguous stdin does not decide whether its spaces were intentional",
-                CppLessonInputDraft.review(preferences, "$key/ambiguous"))
+            assertEquals("Escaping legacy stdin preserves every character, without interpreting its spaces",
+                "Leo\n2\n    ", CppLessonInputDraft.read(preferences, "$key/ambiguous", "unused"))
             assertEquals(otherPreferences, existingOtherPreferenceValues(name))
         }
     }

@@ -30,6 +30,16 @@ class CppLessonInputDraftTest {
         }
     }
 
+    @Test fun curricularWhitespaceExamplesAreNeverNormalized() {
+        for (input in listOf(" \t ", "  Patio norte  \nSala azul", "Rita 4", "Leo\n2", "Leo\n2\n")) {
+            val encoded = CppDraftTextCodec.encode(input, "input")
+            assertEquals(input, CppLessonInputDraft.decode(encoded, CppDraftTextCodec.ENCODING))
+            assertNull(CppLessonInputDraft.recoverProvedInput(encoded, CppDraftTextCodec.ENCODING, null))
+            assertNull(CppLessonInputDraft.recoverProvedInput(encoded, CppDraftTextCodec.ENCODING,
+                CppLessonInputDraft.checksum(input)))
+        }
+    }
+
     @Test fun unknownAndDamagedFormatsPreserveTheStoredValue() {
         val raw = "Leo\n2\n    "
         assertEquals(raw, CppLessonInputDraft.decode(raw, "future"))
@@ -66,8 +76,8 @@ class CppLessonInputDraftTest {
             assertEquals(original, CppLessonInputDraft.recoverProvedInput(damaged, null, proof))
             assertEquals(original, CppLessonInputDraft.recoverProvedInput(
                 CppDraftTextCodec.encode(damaged, "input"), CppDraftTextCodec.ENCODING, proof))
-            assertTrue("The mismatch remains unresolved until the proved original is actually persisted",
-                CppLessonInputDraft.needsReview(damaged, proof))
+            assertEquals("Decoding alone never mutates the stored input", damaged,
+                CppLessonInputDraft.decode(damaged, null))
         }
     }
 
@@ -77,7 +87,7 @@ class CppLessonInputDraftTest {
             assertNull(CppLessonInputDraft.recoverProvedInput(manual, null, proofOfManualInput))
             assertNull(CppLessonInputDraft.recoverProvedInput(CppDraftTextCodec.encode(manual, "input"),
                 CppDraftTextCodec.ENCODING, proofOfManualInput))
-            assertFalse(CppLessonInputDraft.needsReview(manual, proofOfManualInput))
+            assertEquals(manual, CppLessonInputDraft.decode(manual, null))
         }
     }
 
@@ -90,8 +100,6 @@ class CppLessonInputDraftTest {
             assertNull(CppLessonInputDraft.recoverProvedInput(ambiguous, null, unproved))
             assertNull(CppLessonInputDraft.recoverProvedInput(CppDraftTextCodec.encode(ambiguous, "input"),
                 CppDraftTextCodec.ENCODING, unproved))
-            assertTrue("The old value still requires an explicit owner decision",
-                CppLessonInputDraft.needsReview(ambiguous, unproved))
             assertEquals(ambiguous, CppLessonInputDraft.decode(ambiguous, null))
         }
     }
@@ -101,10 +109,10 @@ class CppLessonInputDraftTest {
         val inherited = CppDraftTextCodec.encode(ambiguous, "input")
         val decoded = CppLessonInputDraft.decode(inherited, CppDraftTextCodec.ENCODING)
         assertEquals(ambiguous, decoded)
-        assertTrue(CppLessonInputDraft.needsReview(decoded, null))
         assertNull(CppLessonInputDraft.recoverProvedInput(inherited, CppDraftTextCodec.ENCODING, null))
-        assertFalse("An exact confirmed value may retain all four deliberate spaces",
-            CppLessonInputDraft.needsReview(decoded, CppLessonInputDraft.checksum(decoded)))
+        assertNull("An exact checksum preserves all four deliberately stored spaces",
+            CppLessonInputDraft.recoverProvedInput(inherited, CppDraftTextCodec.ENCODING,
+                CppLessonInputDraft.checksum(decoded)))
     }
 
     @Test fun unknownAndMalformedEnvelopesCannotBeRepairedEvenWhenAProvidedHashMatchesACandidate() {
