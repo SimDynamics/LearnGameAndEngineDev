@@ -16,6 +16,23 @@ class LocalizedNarrationStableResumeTest {
     private fun family() = listOf("es", "en", "fr").associateWith {
         JSONObject(File("src/main/assets/content/$it/$asset").readText())
     }
+    /** Own legacy documents exercise first adoption without stripping a published map or its additions. */
+    private fun legacyFamily() = listOf("es", "en", "fr").associateWith { language ->
+        val counts = if (language == "es") listOf(5, 5, 6, 4, 5, 9) else listOf(5, 5, 6, 4, 5, 4)
+        val pages = JSONArray()
+        counts.forEachIndexed { p, count ->
+            val blocks = JSONArray()
+            repeat(count) { b -> blocks.put(JSONObject().put("type", "paragraph")
+                .put("text", "Explicación QA $language ${p + 1}.${b + 1}. Otra frase de la prueba.")) }
+            pages.put(JSONObject().put("blocks", blocks))
+        }
+        val fifth = pages.getJSONObject(4).getJSONArray("blocks")
+        fifth.put(2, JSONObject().put("type", "cpp_compiler").put("initialCode", "int main() { return 0; }"))
+        fifth.put(3, if (language == "es") JSONObject().put("type", "output_prediction")
+            .put("question", "¿Qué imprime este ejemplo QA?").put("code", "std::cout << 7;")
+            .put("answers", JSONArray(listOf("7"))) else JSONObject().put("type", "note").put("text", "QA note."))
+        JSONObject().put("id", lessonId).put("title", "Prueba propia de adopción histórica").put("pages", pages)
+    }
     private fun pageId(p: Int) = "page_%04d".format(java.util.Locale.ROOT, p)
     private fun blockId(p: Int, b: Int) = "block_%04d_%04d".format(java.util.Locale.ROOT, p, b)
     private fun manifest(source: JSONObject) = JSONArray().also { origin ->
@@ -31,6 +48,7 @@ class LocalizedNarrationStableResumeTest {
     private fun mapped(family: Map<String, JSONObject>, edit: Boolean = true,
                        swap: Boolean = false, newSpeech: Boolean = false): JSONObject {
         val original = family.getValue("es")
+        if (original.has("stateLayout")) return mappedPublished(original, edit, swap, newSpeech)
         val result = JSONObject(original.toString())
         val pages = result.getJSONArray("pages")
         val origin = manifest(original)
@@ -78,6 +96,47 @@ class LocalizedNarrationStableResumeTest {
             .put("origin", origin).put("current", current).put("family", relatives)
             .put("additions", additions).put("editorial", editorial))
     }
+    private fun mappedPublished(original: JSONObject, edit: Boolean, swap: Boolean, newSpeech: Boolean): JSONObject {
+        requireNotNull(LessonStateLayoutJson.read(original))
+        val result = JSONObject(original.toString())
+        val metadata = result.getJSONObject("stateLayout")
+        val current = metadata.getJSONArray("current")
+        val pages = result.getJSONArray("pages")
+        if (edit) {
+            val id = blockId(4, 1)
+            val p = (0 until current.length()).first { page ->
+                val ids = current.getJSONObject(page).getJSONArray("blocks")
+                (0 until ids.length()).any { ids.getString(it) == id }
+            }
+            val ids = current.getJSONObject(p).getJSONArray("blocks")
+            val b = (0 until ids.length()).first { ids.getString(it) == id }
+            val block = pages.getJSONObject(p).getJSONArray("blocks").getJSONObject(b)
+            val before = LessonStateLayoutJson.fingerprint(block)
+            block.put("text", block.getString("text") + " Conserva todo lo demás.")
+            metadata.getJSONArray("editorial").put(JSONObject().put("id", id)
+                .put("beforeSha256", before).put("afterSha256", LessonStateLayoutJson.fingerprint(block)))
+        }
+        if (newSpeech) {
+            val instruction = JSONObject().put("type", "paragraph").put("text", "Otra instrucción que todavía debe leerse.")
+            val p = (0 until current.length()).first { current.getJSONObject(it).getString("id") == pageId(4) }
+            pages.getJSONObject(p).getJSONArray("blocks").put(instruction)
+            current.getJSONObject(p).getJSONArray("blocks").put("qa_new_instruction")
+            val additions = metadata.getJSONArray("additions")
+            val nextBlock = (0 until additions.length()).map { additions.getJSONObject(it).getJSONObject("storage") }
+                .filter { it.getInt("page") == 6 }.maxOfOrNull { it.getInt("block") }?.plus(1) ?: 0
+            additions.put(JSONObject().put("id", "qa_new_instruction")
+                .put("sha256", LessonStateLayoutJson.stateFingerprint(instruction))
+                .put("storage", JSONObject().put("page", 6).put("block", nextBlock)).put("progressPage", pageId(4)))
+        }
+        if (swap) {
+            val a = pages.getJSONObject(4); val b = pages.getJSONObject(5)
+            pages.put(4, b); pages.put(5, a)
+            val ma = current.getJSONObject(4); val mb = current.getJSONObject(5)
+            current.put(4, mb); current.put(5, ma)
+        }
+        requireNotNull(LessonStateLayoutJson.read(result))
+        return result
+    }
     private fun script(source: JSONObject, p: Int) =
         LessonNarrationScript.page(source, p, selected.language, forKokoro = true)
     private fun page(source: JSONObject, p: Int) = requireNotNull(NarrationStableLesson.page(
@@ -94,8 +153,8 @@ class LocalizedNarrationStableResumeTest {
         requireNotNull(NarrationStableLesson.layout(source)), "programming", lessonId, selected,
         setOf(wanted), true, { "" }, { _, _, block -> block })
 
-    @Test fun unchangedRealPageFollowsItsBlocksWithoutAnExtraBookmarkOrTranslatedCopies() {
-        val family = family()
+    @Test fun unchangedLegacyPageFollowsItsBlocksWithoutAnExtraBookmarkOrTranslatedCopies() {
+        val family = legacyFamily()
         val beforeDocuments = family.mapValues { it.value.toString() }
         val original = family.getValue("es")
         val current = mapped(family, swap = true)
@@ -112,7 +171,7 @@ class LocalizedNarrationStableResumeTest {
     }
 
     @Test fun changedLegacyFullPageAudioKeepsItsOldPositionRatherThanInventingNewMilliseconds() {
-        val family = family()
+        val family = legacyFamily()
         val oldKey = rawKey(family.getValue("es"), 4)
         val changed = mapped(family, swap = true)
         val target = page(changed, 5)
@@ -134,6 +193,29 @@ class LocalizedNarrationStableResumeTest {
         assertEquals(after.key, moved.entries[1].key)
         assertEquals(537L, moved.entries[1].point.positionMs)
         assertEquals(before.stable.parts[index], after.stable.parts[moved.entries[1].point.segment])
+    }
+
+    @Test fun aPublishedFamilyRetainsEveryHistoricalAndAddedIdentityDuringTheNextMove() {
+        val originals = family()
+        val before = originals.mapValues { it.value.toString() }
+        val published = originals.getValue("es")
+        val oldMetadata = published.getJSONObject("stateLayout")
+        val moved = mapped(originals, edit = false, swap = true)
+        val metadata = moved.getJSONObject("stateLayout")
+        listOf("origin", "family", "additions", "editorial").forEach { key ->
+            assertEquals("Published $key cannot be rebuilt from the current visible order",
+                LessonStateLayoutJson.fingerprint(oldMetadata.get(key)), LessonStateLayoutJson.fingerprint(metadata.get(key)))
+        }
+        val oldLayout = requireNotNull(NarrationStableLesson.layout(published))
+        val newLayout = requireNotNull(NarrationStableLesson.layout(moved))
+        assertEquals(oldLayout.lineage, newLayout.lineage)
+        assertEquals(oldLayout.current.flatMap { it.blocks }.toSet(), newLayout.current.flatMap { it.blocks }.toSet())
+        assertEquals(37, newLayout.current.sumOf { it.blocks.size })
+        assertEquals(3, newLayout.additions.size)
+        assertEquals(34, newLayout.origin.sumOf { it.blocks.size })
+        assertFalse(originals.getValue("en").has("stateLayout"))
+        assertFalse(originals.getValue("fr").has("stateLayout"))
+        assertEquals(before, originals.mapValues { it.value.toString() })
     }
 
     @Test fun aNewSpokenInstructionNeverInheritsTheFinishedFlagOrFeedbackCredit() {

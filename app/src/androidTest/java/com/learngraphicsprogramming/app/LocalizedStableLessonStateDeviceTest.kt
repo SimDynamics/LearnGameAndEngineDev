@@ -133,16 +133,25 @@ class LocalizedStableLessonStateDeviceTest {
         assertEquals(ProgressSnapshot(0, 6), ProgressRepository.getLessonPageProgress(context, F.ROUTE, F.LESSON))
     }
 
-    @Test fun realUnalignedFamilyMapsInMemoryWithoutEditingOrTranslatingAnyCurricularAsset() {
+    @Test fun thePublishedUnalignedFamilyKeepsItsOriginsAndAdditionsThroughAnotherMove() {
         val real = F.realFamily(target)
         val before = real.mapValues { LessonStateLayoutJson.fingerprint(it.value) }
-        assertEquals(listOf(34, 29, 29), F.languages.map { blockCount(real.getValue(it)) })
+        assertEquals(listOf(37, 29, 29), F.languages.map { blockCount(real.getValue(it)) })
+        val publishedMetadata = real.getValue("es").getJSONObject("stateLayout")
+        val publishedLayout = requireNotNull(LessonStateLayoutJson.read(real.getValue("es")))
+        assertEquals(34, publishedLayout.origin.sumOf { it.blocks.size })
+        assertEquals(3, publishedLayout.additions.size)
         seedLegacy(F.REAL_LESSON)
-        val drafts = drafts().all.toMap()
         val mapped = F.mapped(real)
         LessonStateCoordinates.register(context, F.REAL_LESSON, mapped)
-        assertHistoricalOwners(F.REAL_LESSON, 4, 1, 4)
+        assertHistoricalOwners(F.REAL_LESSON, 4, 1, 6)
         assertFreshAddition(F.REAL_LESSON, 4, 3)
+        val newDraft = LessonStateCoordinates.draftKey(context, F.ROUTE, F.REAL_LESSON, 4, 3)
+        val newEdit = drafts().edit()
+        CppLessonSourceDraft.write(newEdit, newDraft, "// independent original activity QA\n")
+        CppLessonInputDraft.write(newEdit, newDraft, "\tindependent\n  ")
+        assertTrue(newEdit.commit())
+        val drafts = drafts().all.toMap()
         assertEquals(4, ProgressRepository.getCurrentPage(context, F.REAL_LESSON))
         val identity = LessonStateCoordinates.narrationPageIdentity(context, F.ROUTE, F.REAL_LESSON, 4)
         assertNotEquals("programming/${F.REAL_LESSON}/4", identity)
@@ -157,8 +166,14 @@ class LocalizedStableLessonStateDeviceTest {
         val again = F.mapped(real, secondPermutation = true)
         LessonStateCoordinates.register(context, F.REAL_LESSON, again)
         assertEquals(5, ProgressRepository.getCurrentPage(context, F.REAL_LESSON))
-        assertHistoricalOwners(F.REAL_LESSON, 5, 1, 4)
-        assertFreshAddition(F.REAL_LESSON, 5, 3)
+        assertHistoricalOwners(F.REAL_LESSON, 5, 1, 6)
+        assertEquals(newDraft, LessonStateCoordinates.draftKey(context, F.ROUTE, F.REAL_LESSON, 5, 3))
+        assertEquals("// independent original activity QA\n", CppLessonSourceDraft.read(drafts(), newDraft, "missing"))
+        assertEquals("\tindependent\n  ", CppLessonInputDraft.read(drafts(), newDraft, "missing"))
+        listOf("origin", "family", "additions", "editorial").forEach { key ->
+            assertEquals(LessonStateLayoutJson.fingerprint(publishedMetadata.get(key)),
+                LessonStateLayoutJson.fingerprint(again.getJSONObject("stateLayout").get(key)))
+        }
         assertEquals(before, real.mapValues { LessonStateLayoutJson.fingerprint(it.value) })
         assertEquals(before, F.realFamily(target).mapValues { LessonStateLayoutJson.fingerprint(it.value) })
         assertEquals(drafts, drafts().all)
@@ -239,11 +254,13 @@ class LocalizedStableLessonStateDeviceTest {
         edit.putString(answerKey(lesson, 4, 3), """{"correct":true,"answer":"7"}""")
             .putString(answerKey(lesson, 4, 4), """{"correct":false,"selectedIndex":1}""")
             .putString(answerKey(lesson, 6, 0), """{"correct":true,"answer":"unrelated virtual-slot decoy"}""")
+            .putString(answerKey(lesson, 6, 1), """{"correct":true,"answer":"unrelated published-slot decoy"}""")
         assertTrue(edit.commit())
         val draftEdit = drafts().edit()
         for ((key, source) in listOf(oldDraft(lesson) to "// exact student draft\nint main() { return 4; }\n",
             "programming/$lesson/5/6" to "// independent existing Spanish editor\n",
-            "programming/$lesson/6/0" to "// never inherit this virtual-slot decoy\n")) {
+            "programming/$lesson/6/0" to "// never inherit this virtual-slot decoy\n",
+            "programming/$lesson/6/1" to "// never inherit this published-slot decoy\n")) {
             CppLessonSourceDraft.write(draftEdit, key, source)
             CppLessonInputDraft.write(draftEdit, key, " \tRita\n4\n  ")
             draftEdit.putString("$key/project", """{"main.cpp":"student project","CMakeLists.txt":"project(qa)"}""")
@@ -266,7 +283,9 @@ class LocalizedStableLessonStateDeviceTest {
 
     private fun assertFreshAddition(lesson: String, page: Int, block: Int) {
         val key = LessonStateCoordinates.draftKey(context, F.ROUTE, lesson, page, block)
-        assertNotEquals("New activities cannot claim a coincident old positional draft", "programming/$lesson/6/0", key)
+        val storage = LessonStateCoordinates.block(context, lesson, page, block)
+        assertNotEquals("New activities cannot claim a coincident old positional draft",
+            "programming/$lesson/${storage.page}/${storage.block}", key)
         assertNotEquals(oldDraft(lesson), key)
         assertEquals("new initial code", CppLessonSourceDraft.read(drafts(), key, "new initial code"))
         assertNull("A virtual-slot answer cannot complete a new activity", ProgressRepository.getExerciseState(context, lesson, page, block))

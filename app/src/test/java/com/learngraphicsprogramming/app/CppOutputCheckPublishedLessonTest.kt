@@ -25,7 +25,7 @@ class CppOutputCheckPublishedLessonTest {
         for (translation in translations) {
             val lesson = lesson(translation.language)
             val page = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
-            val block = page.getJSONObject(2)
+            val block = historicalBlock(lesson, 4, 2)
             assertEquals("cpp_compiler", block.getString("type"))
             assertFalse(block.has("id")) // Existing draft/progress keys remain page/block based.
             val specification = requireNotNull(CppOutputCheck.fromBlock(block))
@@ -33,9 +33,8 @@ class CppOutputCheckPublishedLessonTest {
             val target = specification.cases.single()
             assertEquals("", target.standardInput)
             assertEquals(listOf(translation.expected), target.outputs)
-            assertTrue(page.getJSONObject(1).getString("text").contains(translation.expected))
-            val reference = lesson.getJSONArray("pages").getJSONObject(5).getJSONArray("blocks")
-                .getJSONObject(2).getString("code")
+            assertTrue(historicalBlock(lesson, 4, 1).getString("text").contains(translation.expected))
+            val reference = historicalBlock(lesson, 5, 2).getString("code")
             assertTrue(reference.contains("std::cout << \"${translation.expected}\";"))
             assertTrue(block.getString("initialCode").contains("std::cout << \"${translation.initial}\";"))
         }
@@ -70,30 +69,40 @@ class CppOutputCheckPublishedLessonTest {
     }
 
     @Test fun initialPredictionRetainsItsIndependentOriginalAnswer() {
-        val blocks = lesson("es").getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
-        val prediction = blocks.getJSONObject(3)
+        val source = lesson("es")
+        val prediction = historicalBlock(source, 4, 3)
         assertEquals("output_prediction", prediction.getString("type"))
         assertEquals("prediccion_zona_inicial", prediction.getString("id"))
         assertEquals(listOf("Zona inicial"), (0 until prediction.getJSONArray("answers").length())
             .map { prediction.getJSONArray("answers").getString(it) })
         assertEquals("exact", prediction.getString("outputComparison"))
-        assertEquals("cambiar_mensaje", blocks.getJSONObject(4).getString("id"))
-        assertEquals(2, blocks.getJSONObject(4).getInt("correctIndex"))
+        assertEquals("cambiar_mensaje", historicalBlock(source, 4, 4).getString("id"))
+        assertEquals(2, historicalBlock(source, 4, 4).getInt("correctIndex"))
+        val metadata = source.getJSONObject("stateLayout")
+        val current = metadata.getJSONArray("current").getJSONObject(4).getJSONArray("blocks")
+        val ids = (0 until current.length()).map(current::getString)
+        assertTrue(ids.indexOf("block_0004_0003") < ids.indexOf("ejecucion_original_editor"))
+        assertTrue(ids.indexOf("ejecucion_original_editor") < ids.indexOf("block_0004_0002"))
+        val original = source.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
+            .getJSONObject(ids.indexOf("ejecucion_original_editor"))
+        val specification = requireNotNull(CppOutputCheck.fromBlock(original))
+        assertTrue(verdict(specification, "Zona inicial").correct)
+        assertFalse(verdict(specification, "Caja recibida").correct)
     }
 
     @Test fun localizedInstructionsNameTheSingleActionAndOutputChecksRemainExplicitAndOptional() {
         for (translation in translations) {
             val lesson = lesson(translation.language)
             val blocks = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
-            val instructions = blocks.getJSONObject(1).getString("text")
+            val instructions = historicalBlock(lesson, 4, 1).getString("text")
             assertTrue(instructions.contains(translation.action))
             if (translation.language == "es") {
                 assertFalse(instructions.contains("pulsa Comprobar salida"))
                 assertFalse(instructions.contains("inmediatamente debajo de esa ventana"))
             }
-            val ordinary = JSONObject(File(assets(), "content/${translation.language}/programming/" +
+            val ordinaryLesson = JSONObject(File(assets(), "content/${translation.language}/programming/" +
                 "cpp_fundamentals/programas_y_ejecucion/lesson_texto_secuencia_y_formato.json").readText())
-                .getJSONArray("pages").getJSONObject(6).getJSONArray("blocks").getJSONObject(2)
+            val ordinary = historicalBlock(ordinaryLesson, 6, 2)
             assertEquals("cpp_compiler", ordinary.getString("type"))
             if (translation.language == "es") {
                 val specification = requireNotNull(CppOutputCheck.fromBlock(ordinary))
@@ -118,8 +127,15 @@ class CppOutputCheckPublishedLessonTest {
     private fun lesson(language: String) = JSONObject(File(assets(), "content/$language/programming/" +
         "cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json").readText())
 
-    private fun compiler(language: String) = lesson(language).getJSONArray("pages")
-        .getJSONObject(4).getJSONArray("blocks").getJSONObject(2)
+    private fun compiler(language: String) = historicalBlock(lesson(language), 4, 2)
+
+    private fun historicalBlock(source: JSONObject, page: Int, block: Int): JSONObject {
+        val layout = LessonStateLayoutJson.read(source)
+        val position = if (layout == null) LessonStatePosition(page, block) else
+            layout.current.flatMapIndexed { p, current -> current.blocks.indices.map { b -> LessonStatePosition(p, b) } }
+                .single { layout.storagePosition(it.page, it.block) == LessonStatePosition(page, block) }
+        return source.getJSONArray("pages").getJSONObject(position.page).getJSONArray("blocks").getJSONObject(position.block)
+    }
 
     private fun verdict(specification: CppOutputCheck.Specification, output: String): CppOutputCheck.Verdict {
         val session = CppOutputCheck.Session(specification)

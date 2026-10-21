@@ -1,5 +1,43 @@
 # Verificación de conservación de estado — 20 de octubre de 2026
 
+## Adaptación de pruebas al currículo integrado — 21 de octubre de 2026
+
+Base local `a973074a533f2e9f69e65d368f792ddce0afc512`: Work ya incorporó los
+mapas y aceptó sus diez recorridos en Honor. Las pruebas heredadas que todavía
+indexaban los bloques anteriores se adaptaron a sus identidades históricas,
+objetivos e IDs. Las fixtures de legado utilizan datos sintéticos propios;
+las pruebas del currículo real conservan su familia, origen y altas publicados.
+
+Suite JVM completa: **1325 casos, 1318 aprobados, un fallo y seis omisiones**.
+Se corrigieron las quince expectativas afectadas por la reorganización. El fallo
+de `FirstUnitNarrationPackTest` conserva siete locuciones actuales sin su Ogg;
+no se omitió ni relajó la prueba. Las omisiones siguen siendo cinco casos de
+enlaces simbólicos sin permiso Windows y una regeneración Misaki optativa sin
+diccionarios externos. Log: `.gradle/work-current-verification-20261020/` con
+`jvm-current-layout-before-20261021.log` y `build-current-layout-curricular-20261021.log`.
+El APK QA contiene los mismos 878 JSON byte a byte. Esta adaptación no cambia
+producción, currículo, traducciones ni la aceptación física de Work.
+
+Android: **28 métodos distintos aprobados**, mediante tandas y repeticiones en
+LDPlayer `emulator-5554`, paquetes aislados `curricularqa` y `realdownloadsqa`.
+Incluye los métodos originales de lectura y pedidos, borrador de 73 líneas,
+reinicio, recursión, siete casos de estado, ocho de compilación/comprobación
+y cinco de reproducción Kokoro. Se conservan los fallos anteriores de preparación:
+stdin oculto que el contrato conserva, almacenamiento protegido `json-v1`, otra
+consola legítima en la página siguiente y generación automática ajena al test.
+Se corrigieron sólo sus expectativas y aislamiento; no se relajaron oráculos,
+restricciones de puzzles, cierres de trabajadores ni esperas.
+
+En el mismo directorio de logs están `ldplayer-current-layout-curricular-20261021.log`,
+`ldplayer-current-layout-reset-recursion-20261021.log`,
+`ldplayer-current-layout-state-output-20261021.log`,
+`ldplayer-current-layout-output-final-20261021.log`,
+`ldplayer-current-layout-audio-input-cmake-final-20261021.log` y
+`ldplayer-current-layout-input-final-20261021.log`. Las repeticiones finales
+acreditan todos los métodos sin borrar los intentos fallidos. La captura
+`current-layout-output-window-20261021.png` se inspeccionó con botón, stdout,
+veredicto y explicación completos. No se atribuye escucha humana ni prueba en Honor.
+
 ## Ampliación v2 comprobada en el entorno local actual
 
 Base de esta ampliación: `882400602048f459e6460ddf0c6a34710ba33f3d`,

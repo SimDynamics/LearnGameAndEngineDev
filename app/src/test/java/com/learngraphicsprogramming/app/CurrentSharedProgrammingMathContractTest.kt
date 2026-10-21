@@ -66,7 +66,13 @@ class CurrentSharedProgrammingMathContractTest {
     private fun block(path: String, page: Int, index: Int): JSONObject {
         // Locate by immutable lesson filename if its unit has since been reorganized.
         val file = assets.resolve(path).takeIf(File::isFile) ?: assets.walkTopDown().single { it.name == File(path).name }
-        return JSONObject(file.readText()).getJSONArray("pages").getJSONObject(page - 1).getJSONArray("blocks").getJSONObject(index - 1)
+        val lesson = JSONObject(file.readText())
+        val historical = LessonStatePosition(page - 1, index - 1)
+        val layout = LessonStateLayoutJson.read(lesson)
+        val position = layout?.let { checked -> checked.current.flatMapIndexed { p, current -> current.blocks.indices.map { b ->
+            LessonStatePosition(p, b)
+        } }.single { checked.storagePosition(it.page, it.block) == historical } } ?: historical
+        return lesson.getJSONArray("pages").getJSONObject(position.page).getJSONArray("blocks").getJSONObject(position.block)
     }
     private fun assertRejected(block: JSONObject) {
         try { MathPuzzleParser.parse(block); fail("Invalid shared composition must be rejected") }

@@ -45,6 +45,7 @@ class CppNewCurricularLabsDeviceTest {
     private val context = instrumentation.targetContext
     private var screenGuardRegistered = false
     private var preservedPreferences: Map<String, Map<String, *>>? = null
+    private var selectedLab: LabLocation? = null
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
             if (activity is LessonActivity && activity.packageName == QA_PACKAGE) {
@@ -310,8 +311,8 @@ class CppNewCurricularLabsDeviceTest {
 
             // Both labs are in one lesson, but their page/block keys must differ.
             scenario.onActivity { showPage(it, PROJECT.page - 1) }
-            assertProjectSkeleton(scenario, blockAt(lesson, PROJECT.page, PROJECT.block))
-            val earlierHeader = blockAt(lesson, PROJECT.page, PROJECT.block)
+            assertProjectSkeleton(scenario, labBlockAt(lesson, PROJECT))
+            val earlierHeader = labBlockAt(lesson, PROJECT)
                 .getJSONArray("projectFiles").getJSONObject(0).getString("initialCode") + "\n// Earlier attempt draft\n"
             editFile(scenario, "estante.h") { earlierHeader }
             enableSource(scenario, "conteo.cpp", false)
@@ -372,7 +373,7 @@ class CppNewCurricularLabsDeviceTest {
 
         withLab(four) { scenario, lesson, fourBlock ->
             assertSingleSourceSkeleton(scenario, fourBlock)
-            val eightBlock = blockAt(lesson, eight.page, eight.block)
+            val eightBlock = labBlockAt(lesson, eight)
             assertEquals("The second coordinate is also an authored lab", "cpp_compiler", eightBlock.getString("type"))
             assertFalse(eightBlock.has("projectFiles"))
             val fourReference = referenceCode(lesson, 9, 3)
@@ -492,7 +493,7 @@ class CppNewCurricularLabsDeviceTest {
 
         withLab(pairs) { scenario, lesson, pairBlock ->
             assertSingleSourceSkeleton(scenario, pairBlock)
-            val groupBlock = blockAt(lesson, groups.page, groups.block)
+            val groupBlock = labBlockAt(lesson, groups)
             assertEquals("The transfer coordinate remains an authored lab", "cpp_compiler", groupBlock.getString("type"))
             assertFalse(groupBlock.has("projectFiles"))
             val pairReference = referenceCode(lesson, 8, 2)
@@ -631,7 +632,7 @@ class CppNewCurricularLabsDeviceTest {
 
         withLab(swap) { scenario, lesson, swapBlock ->
             assertSingleSourceSkeleton(scenario, swapBlock)
-            val aliasBlock = blockAt(lesson, aliases.page, aliases.block)
+            val aliasBlock = labBlockAt(lesson, aliases)
             assertEquals("The alias construction has its own lab coordinate", "cpp_compiler", aliasBlock.getString("type"))
             assertFalse(aliasBlock.has("projectFiles"))
             val swapReference = referenceCode(lesson, 9, 3)
@@ -902,7 +903,7 @@ class CppNewCurricularLabsDeviceTest {
 
         withLab(NESTED_REVIEW) { scenario, lesson, firstBlock ->
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val parityBlock = blockAt(lesson, NESTED_PARITY.page, NESTED_PARITY.block)
+            val parityBlock = labBlockAt(lesson, NESTED_PARITY)
             assertEquals("The transfer has its own real lab coordinate", "cpp_compiler", parityBlock.getString("type"))
             assertFalse(parityBlock.has("projectFiles"))
             val skeleton = "#include <iostream>\n\nint main() {\n" +
@@ -931,7 +932,7 @@ class CppNewCurricularLabsDeviceTest {
         val parityRows = listOf(listOf(1, 3), listOf(2, 4), listOf(1, 3))
         withLab(NESTED_REVIEW) { scenario, lesson, firstBlock ->
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val parityBlock = blockAt(lesson, NESTED_PARITY.page, NESTED_PARITY.block)
+            val parityBlock = labBlockAt(lesson, NESTED_PARITY)
             assertEquals("The transfer has its own real lab coordinate", "cpp_compiler", parityBlock.getString("type"))
             assertFalse(parityBlock.has("projectFiles"))
             val firstReference = referenceCode(lesson, 9, 3)
@@ -993,7 +994,7 @@ class CppNewCurricularLabsDeviceTest {
         withLab(DEPOSIT_OPERATIONS) { scenario, lesson, firstBlock ->
             requireDepositScaffold(firstBlock)
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val batchBlock = blockAt(lesson, DEPOSIT_BATCH.page, DEPOSIT_BATCH.block)
+            val batchBlock = labBlockAt(lesson, DEPOSIT_BATCH)
             requireDepositScaffold(batchBlock)
             val firstReference = referenceCode(lesson, 11, 3)
             val batchReference = referenceCode(lesson, 14, 3)
@@ -1077,7 +1078,7 @@ class CppNewCurricularLabsDeviceTest {
         withLab(EXACT_INTEGER_CONVERSION) { scenario, lesson, firstBlock ->
             requireConversionScaffold(firstBlock)
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val transferBlock = blockAt(lesson, EXACT_INTEGER_COLLECTION.page, EXACT_INTEGER_COLLECTION.block)
+            val transferBlock = labBlockAt(lesson, EXACT_INTEGER_COLLECTION)
             requireConversionScaffold(transferBlock)
             val firstReference = referenceCode(lesson, 4, 3)
             val transferReference = referenceCode(lesson, 7, 3)
@@ -1146,7 +1147,7 @@ class CppNewCurricularLabsDeviceTest {
         withLab(DELIBERATE_ROUNDING) { scenario, lesson, firstBlock ->
             requireRoundingScaffold(firstBlock)
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val transferBlock = blockAt(lesson, UNIQUE_ROUNDED_MARKS.page, UNIQUE_ROUNDED_MARKS.block)
+            val transferBlock = labBlockAt(lesson, UNIQUE_ROUNDED_MARKS)
             requireRoundingScaffold(transferBlock)
             val firstReference = referenceCode(lesson, 4, 3)
             val transferReference = referenceCode(lesson, 7, 3)
@@ -1212,7 +1213,7 @@ class CppNewCurricularLabsDeviceTest {
             requireSequenceScaffold(firstBlock)
             assertSingleSourceSkeleton(scenario, firstBlock)
             assertEquals("tiza tiza muro tiza muro muro", firstBlock.getString("initialStandardInput"))
-            val transferBlock = blockAt(lesson, CONSECUTIVE_LINES.page, CONSECUTIVE_LINES.block)
+            val transferBlock = labBlockAt(lesson, CONSECUTIVE_LINES)
             requireSequenceScaffold(transferBlock)
             assertEquals("patio\n\n\npatio\n patio\n patio", transferBlock.getString("initialStandardInput"))
             val firstReference = referenceCode(lesson, 4, 3)
@@ -1435,7 +1436,7 @@ class CppNewCurricularLabsDeviceTest {
                 Regex("\\b(seleccionar|struct|while|for|if)\\b").containsMatchIn(firstBlock.getString("initialCode")
                     .lineSequence().map { it.substringBefore("//") }.joinToString("\n")))
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val transferBlock = blockAt(lesson, UNIQUE_PAIRS.page, UNIQUE_PAIRS.block)
+            val transferBlock = labBlockAt(lesson, UNIQUE_PAIRS)
             requireSelectionScaffold(transferBlock)
             val firstReference = referenceCode(lesson, 4, 3)
             val transferReference = referenceCode(lesson, 7, 3)
@@ -1503,7 +1504,7 @@ class CppNewCurricularLabsDeviceTest {
         withLab(FREQUENCY_TABLE) { scenario, lesson, firstBlock ->
             requireIndependentScaffold(firstBlock, textLabels = false)
             assertSingleSourceSkeleton(scenario, firstBlock)
-            val transferBlock = blockAt(lesson, TIED_LABEL_FREQUENCIES.page, TIED_LABEL_FREQUENCIES.block)
+            val transferBlock = labBlockAt(lesson, TIED_LABEL_FREQUENCIES)
             requireIndependentScaffold(transferBlock, textLabels = true)
             val firstReference = referenceCode(lesson, 4, 3)
             val transferReference = referenceCode(lesson, 7, 3)
@@ -1770,9 +1771,9 @@ class CppNewCurricularLabsDeviceTest {
                 assertEquals("", input(it).text.toString())
                 assertTrue("The current published instruction remains visible beside the lab and prediction",
                     descendants(content(it)).filterIsInstance<TextView>().any { view ->
-                    view.text.toString() == blockAt(lesson, 5, 2).getString("text")
+                    view.text.toString() == historicalBlockAt(lesson, 5, 2).getString("text")
                 })
-                val prediction = blockAt(lesson, 5, 4)
+                val prediction = historicalBlockAt(lesson, 5, 4)
                 assertEquals("output_prediction", prediction.getString("type"))
                 assertEquals("prediccion_zona_inicial", prediction.getString("id"))
                 assertTrue(descendants(content(it)).filterIsInstance<TextView>().any { view ->
@@ -2019,7 +2020,7 @@ class CppNewCurricularLabsDeviceTest {
                 showPage(it, LABEL_COLLECTION_CATALOG.page - 1)
             }
             assertSingleSourceSkeleton(scenario,
-                blockAt(lesson, LABEL_COLLECTION_CATALOG.page, LABEL_COLLECTION_CATALOG.block))
+                labBlockAt(lesson, LABEL_COLLECTION_CATALOG))
             scenario.onActivity {
                 showPage(it, NUMERIC_COLLECTION_REPORT.page - 1)
                 assertEquals(draft, editor(it).text.toString())
@@ -2081,7 +2082,7 @@ class CppNewCurricularLabsDeviceTest {
                 showPage(it, NUMERIC_COLLECTION_REPORT.page - 1)
             }
             assertSingleSourceSkeleton(scenario,
-                blockAt(lesson, NUMERIC_COLLECTION_REPORT.page, NUMERIC_COLLECTION_REPORT.block))
+                labBlockAt(lesson, NUMERIC_COLLECTION_REPORT))
             scenario.onActivity {
                 showPage(it, LABEL_COLLECTION_CATALOG.page - 1)
                 assertEquals(draft, editor(it).text.toString())
@@ -2334,25 +2335,31 @@ class CppNewCurricularLabsDeviceTest {
                         test: (ActivityScenario<LessonActivity>, JSONObject, JSONObject) -> Unit) {
         val lesson = LessonRepository.loadLessonJson(context, ROUTE, location.lesson)
         assertEquals(location.lesson, lesson.getString("id"))
-        val block = blockAt(lesson, location.page, location.block)
-        assertEquals("The exact published lab coordinate still matches", "cpp_compiler", block.getString("type"))
+        val displayed = historicalPosition(lesson, location.page, location.block)
+        val block = blockAt(lesson, displayed.page + 1, displayed.block + 1)
+        assertEquals("The historical identity still selects its authored lab", "cpp_compiler", block.getString("type"))
         ProgressRepository.resetLesson(context, ROUTE, location.lesson)
-        ProgressRepository.saveCurrentPage(context, ROUTE, location.lesson, location.page - 1)
+        ProgressRepository.saveCurrentPage(context, ROUTE, location.lesson, displayed.page)
         val parts = location.lesson.split("__")
         val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", ROUTE)
             .putExtra("courseId", parts[0]).putExtra("unitId", parts[1]).putExtra("lessonId", location.lesson)
             .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)
-        ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+        val previousLab = selectedLab
+        selectedLab = location
+        try { ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
             scenario.onActivity {
                 assertEquals("Activity storage remains isolated", QA_PACKAGE, it.packageName)
                 it.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 assertEquals(location.lesson, (field(it, "lessonJson") as JSONObject).getString("id"))
-                assertEquals(location.page - 1, field(it, "currentPage"))
+                assertEquals(displayed.page, field(it, "currentPage"))
+                assertEquals("The rendered lab preserves its historical storage slot",
+                    LessonStatePosition(location.page - 1, location.block - 1),
+                    LessonStateCoordinates.block(it, location.lesson, displayed.page, displayed.block))
                 assertEquals(block.optString("initialStandardInput", ""), input(it).text.toString())
             }
             instrumentation.waitForIdleSync()
             test(scenario, lesson, block)
-        }
+        } } finally { selectedLab = previousLab }
     }
 
     private fun assertSingleSourceSkeleton(scenario: ActivityScenario<LessonActivity>, block: JSONObject) {
@@ -2379,6 +2386,23 @@ class CppNewCurricularLabsDeviceTest {
 
     private fun blockAt(lesson: JSONObject, page: Int, block: Int): JSONObject = lesson.getJSONArray("pages")
         .getJSONObject(page - 1).getJSONArray("blocks").getJSONObject(block - 1)
+
+    /** Test coordinates name the published identities, not their later visual order. */
+    private fun historicalPosition(lesson: JSONObject, page: Int, block: Int): LessonStatePosition {
+        val historical = LessonStatePosition(page - 1, block - 1)
+        val layout = LessonStateLayoutJson.read(lesson) ?: return historical
+        return layout.current.flatMapIndexed { pageIndex, current -> current.blocks.indices.map { blockIndex ->
+            LessonStatePosition(pageIndex, blockIndex)
+        } }.single { layout.storagePosition(it.page, it.block) == historical }
+    }
+
+    private fun historicalBlockAt(lesson: JSONObject, page: Int, block: Int): JSONObject =
+        historicalPosition(lesson, page, block).let { blockAt(lesson, it.page + 1, it.block + 1) }
+
+    private fun labBlockAt(lesson: JSONObject, location: LabLocation): JSONObject =
+        historicalBlockAt(lesson, location.page, location.block).also {
+            assertEquals("Historical lab ${location.draftPrefix()} retains its component", "cpp_compiler", it.getString("type"))
+        }
 
     private fun referenceCode(lesson: JSONObject, page: Int, block: Int): String {
         val source = blockAt(lesson, page, block)
@@ -2582,19 +2606,33 @@ class CppNewCurricularLabsDeviceTest {
     private fun text(activity: LessonActivity, tag: String) = (tagged(activity, tag) as TextView).text.toString()
     private fun tagged(activity: LessonActivity, tag: String): View {
         val page = content(activity)
-        if (tag != "cpp_code_input") return descendants(page).single { it.tag == tag }
-        // A prediction also uses the technical-editor tag. The compiler card,
-        // stdin, Run and console are separate lessonContent children. Find the
-        // editor card immediately preceding this lab's Run, rather than looking
-        // inside the Run button or selecting an answer editor elsewhere on the page.
-        val run = descendants(page).single { it.tag == "cpp_run" }
-        var runChild: View = run
-        while (runChild.parent !== page) runChild = runChild.parent as? View
-            ?: error("The compiler Run control is not inside the current lesson block")
-        val card = (page.indexOfChild(runChild) - 1 downTo 0).asSequence()
-            .map(page::getChildAt).first { sibling -> descendants(sibling).any { it.tag == tag } }
-        return descendants(card).single { it.tag == tag }.also {
-            assertTrue("The selected editor is the actual compiler component", it is FreeScrollEditText)
+        val lesson = field(activity, "lessonJson") as JSONObject
+        val pageIndex = field(activity, "currentPage") as Int
+        val blocks = lesson.getJSONArray("pages").getJSONObject(pageIndex).getJSONArray("blocks")
+        val compilers = (0 until blocks.length()).filter { blocks.getJSONObject(it).optString("type") == "cpp_compiler" }
+        val selected = selectedLab?.takeIf { it.lesson == lesson.getString("id") }
+            ?.let { historicalPosition(lesson, it.page, it.block) }?.takeIf { it.page == pageIndex }
+        val blockIndex = selected?.block ?: compilers.single()
+        val ordinal = compilers.indexOf(blockIndex)
+        assertTrue("The selected historical lab is a compiler on the current page", ordinal >= 0)
+        val runs = descendants(page).filter { it.tag == "cpp_run" }
+        assertEquals("Each authored compiler has its own Run control", compilers.size, runs.size)
+        fun editorCardIndex(run: View): Int {
+            var runChild = run
+            while (runChild.parent !== page) runChild = runChild.parent as? View
+                ?: error("The compiler Run control is not inside the current lesson block")
+            return (page.indexOfChild(runChild) - 1 downTo 0).first { index ->
+                descendants(page.getChildAt(index)).any { it.tag == "cpp_code_input" }
+            }
+        }
+        // Compilers share a page after reordering. Limit every editor, stdin and
+        // console lookup to the Run group belonging to the historical identity.
+        val start = editorCardIndex(runs[ordinal])
+        val end = runs.getOrNull(ordinal + 1)?.let(::editorCardIndex) ?: page.childCount
+        val scope = if (tag == "cpp_code_input") descendants(page.getChildAt(start))
+            else (start until end).flatMap { descendants(page.getChildAt(it)) }
+        return scope.single { it.tag == tag }.also {
+            if (tag == "cpp_code_input") assertTrue("The selected editor is the actual compiler component", it is FreeScrollEditText)
         }
     }
     private fun preferenceFiles() = java.io.File(context.applicationInfo.dataDir, "shared_prefs")

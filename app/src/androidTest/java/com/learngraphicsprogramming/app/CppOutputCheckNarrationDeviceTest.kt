@@ -36,6 +36,17 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
             durable[name] = File(context.filesDir, name).takeIf(File::isFile)?.readBytes()
         }
         audioPrepared = true
+        // The parent already preserves the original preferences and the bytes above
+        // preserve its queued work. These tests exercise on-demand native playback,
+        // not unattended preparation of unrelated courses or the rest of this page.
+        instrumentation.runOnMainSync {
+            NarrationSettingsRepository.saveAdvanceGenerationEnabled(context, false)
+        }
+        instrumentation.waitForIdleSync()
+        awaitWorkerStop("Existing optional preparation stops before isolated playback starts", 30_000L) {
+            Thread.getAllStackTraces().keys.none { it.isAlive && it.name == "KokoroOfflineNarration" }
+        }
+        assertFalse(NarrationSettingsRepository.advanceGenerationEnabled(context))
         UiLanguageSettings.select(context, "es")
         NarrationSettingsRepository.saveEngine(context, NarrationEngine.KOKORO)
         NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.SPANISH)
@@ -66,7 +77,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLocale) }
     }
 
-    @Test fun firstLocalizedStateAdoptionReusesTheRealMovedPageAudioAndItsReleasedPause() {
+    @Test fun publishedLocalizedStateReusesTheRealMovedPageAudioAndItsReleasedPause() {
         val family = LocalizedStableLessonQaFixture.realFamily(context)
         val original = family.getValue("es")
         val mapped = LocalizedStableLessonQaFixture.mapped(family, secondPermutation = true)
@@ -78,8 +89,14 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
             originalScript.texts, movedScript.texts)
         assertEquals(originalScript.gates, movedScript.gates)
         val settings = NarrationSettingsRepository.forLanguage(context, NarrationLanguage.SPANISH)
+        val originalLayout = requireNotNull(LessonStateLayoutJson.read(original))
+        listOf("origin", "family", "additions", "editorial").forEach { key ->
+            assertEquals(LessonStateLayoutJson.fingerprint(original.getJSONObject("stateLayout").get(key)),
+                LessonStateLayoutJson.fingerprint(mapped.getJSONObject("stateLayout").get(key)))
+        }
         fun playbackKey(page: Int, script: LessonNarrationScript) = NarrationResumePolicy.key(
-            "$route/$lessonId/$page", settings.language.tag, settings.engine.name, settings.kokoroVoice,
+            NarrationStableLesson.identity(originalLayout, route, lessonId, page),
+            settings.language.tag, settings.engine.name, settings.kokoroVoice,
             NarrationSegments.sentences(script.texts))
         val resume = context.getSharedPreferences("lesson_narration_resume_bounded_v1", Context.MODE_PRIVATE)
         assertTrue(resume.edit().clear().commit())
@@ -135,10 +152,11 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                 readers += before
                 before.bindStableLesson(original, route, lessonId, 5, originalScript,
                     NarrationLanguage.SPANISH, true) { "" }
-                before.toggle(originalScript.texts, NarrationLanguage.SPANISH, "$route/$lessonId/5",
+                before.toggle(originalScript.texts, NarrationLanguage.SPANISH,
+                    NarrationStableLesson.identity(originalLayout, route, lessonId, 5),
                     originalScript.gates, emptySet())
             }
-            await(host, "The real original sixth page plays a long Kokoro sentence before migration", 180_000L) {
+            await(host, "The published sixth page plays a long Kokoro sentence before its next move", 180_000L) {
                 val player = field<MediaPlayer?>(before, "player")
                 before.isPlaying && field<Int>(before, "index") >= 1 &&
                     field<Boolean>(before, "playerReady") && player != null && player.isPlaying &&
@@ -183,9 +201,9 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                     NarrationLanguage.SPANISH, true) { "" }
                 after.toggle(movedScript.texts, NarrationLanguage.SPANISH, identity, movedScript.gates, emptySet())
                 movedKey = requireNotNull(field<String?>(after, "resumeKey"))
-                assertNotEquals("The visible page identity changes while its bookmark is adopted", originalKey, movedKey)
-                assertEquals("Adoption retains the exact original segment", savedIndex, field<Int>(after, "index"))
-                assertEquals("Adoption retains the exact millisecond position", savedOffset, field<Long>(after, "offset"))
+                assertEquals("Moving a whole published page preserves its stable playback identity", originalKey, movedKey)
+                assertEquals("The next move retains the exact original segment", savedIndex, field<Int>(after, "index"))
+                assertEquals("The next move retains the exact millisecond position", savedOffset, field<Long>(after, "offset"))
                 assertEquals(listOf(movedKey, pausedKey, previousKey), keys())
                 assertEquals(completedPoint, store.restore(previousKey, completedPoint.segment + 1))
                 assertEquals(pausedPoint, store.restore(pausedKey, NarrationSegments.sentences(pausedScript.texts).size))
@@ -244,7 +262,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                 assertEquals(0, field<NarrationExerciseGate>(after, "playbackGate").heardThrough)
                 assertTrue(progressEvents.any { event -> event.phase == NarrationPlaybackPhase.PREPARED &&
                     event.segmentIndex == savedIndex && event.positionMs == savedOffset })
-                android.util.Log.i("StableLessonState", "Real Kokoro v2 first adoption: originalPage=5 visiblePage=4; " +
+                android.util.Log.i("StableLessonState", "Real Kokoro published v2 subsequent move: originalPage=5 visiblePage=4; " +
                     "segment=$savedIndex offsetMs=$savedOffset resumedPauseMs=$secondPause; audioSha256=$originalAudioSha; " +
                     "threeBookmarks=true playerReleased=true cacheReused=true puzzlesUnchanged=true")
             }
@@ -274,7 +292,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         val location = CppOutputCheckDeviceTest.LOCATIONS.first()
         val lesson = source(location.path)
         val authored = lesson.getJSONArray("pages").getJSONObject(4).getJSONArray("blocks")
-        val fixture = fixture(location, authored.getJSONObject(2).getJSONObject("outputCheck"))
+        val fixture = fixture(location, authoredBlock(location).getJSONObject("outputCheck"))
         // A short runtime page reuses this authored heading to reach a real audio
         // completion without pretending that either neighboring puzzle was answered.
         val sourceTexts = listOf(authored.getJSONObject(0).getString("text"))
@@ -371,8 +389,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                 assertEquals(pausedPoint, store.restore(olderPaused, pausedPoint.segment + 1))
                 assertArrayEquals("The source recording is reused unchanged", sourceBytes, requireNotNull(sourceRecording).readBytes())
                 assertFalse(events.drop(priorEvents).any { it.phase == NarrationPlaybackPhase.RESTARTED })
-                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
-                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 4))
+                assertAllNeighboringPuzzlesRemainUnanswered(fixture)
             }
         }
     }
@@ -382,7 +399,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         assertFalse(AttemptRepository.getState(context, "programming").unlimited)
         val hearts = context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all.toMap()
         val location = CppOutputCheckDeviceTest.LOCATIONS.first()
-        val authored = source(location.path).getJSONArray("pages").getJSONObject(4).getJSONArray("blocks").getJSONObject(2)
+        val authored = authoredBlock(location)
         val fixture = fixture(location, authored.getJSONObject("outputCheck"))
         val correctSource = source(location.path).getJSONArray("pages").getJSONObject(5)
             .getJSONArray("blocks").getJSONObject(2).getString("code")
@@ -514,8 +531,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                     unread(result(activity)).isEmpty())
                 assertEquals(hearts, context.getSharedPreferences("attempt_reserve_seconds_test", Context.MODE_PRIVATE).all)
                 assertEquals(0, field<Int>(activity, "completedExercises"))
-                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
-                assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 4))
+                assertAllNeighboringPuzzlesRemainUnanswered(fixture)
                 controller.pauseKeepingPosition()
                 assertNull(field<MediaPlayer?>(controller, "player"))
             }
@@ -632,7 +648,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                         assertFalse("An unscored verdict is not page completion", field<Boolean>(controller, "finished"))
                         assertEquals("No additional or modified page bookmark", originalBookmarks, resume.all)
                         assertTrue("The complete displayed verdict is read", unread(result(activity)).isEmpty())
-                        assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
+                        assertAllNeighboringPuzzlesRemainUnanswered(fixture)
                         capture(activity, "verdict-$index-complete")
                         true
                     } else false
@@ -684,7 +700,7 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
                         assertEquals(originalBookmarks, resume.all)
                         assertEquals(olderFinishedPoint, store.restore(olderA, olderFinishedPoint.segment + 1))
                         assertTrue(unread(result(activity)).isEmpty())
-                        assertNull(ProgressRepository.getExerciseState(context, fixture.id, 4, 3))
+                        assertAllNeighboringPuzzlesRemainUnanswered(fixture)
                     }
                     replayedAfterCompletion = true
                 }
@@ -697,6 +713,19 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         }
         savePlaybackEvidence("four-real-kokoro-verdicts", JSONObject().put("voice", NarrationLanguage.SPANISH.defaultVoice)
             .put("verdicts", observations).put("evidenceLevel", "Actual LDPlayer Kokoro WAV playback and native word masks; no human listening assessment"))
+    }
+
+    private fun assertAllNeighboringPuzzlesRemainUnanswered(fixture: LabFixture) {
+        val page = fixture.location.page - 1
+        val blocks = fixture.lesson.getJSONArray("pages").getJSONObject(page).getJSONArray("blocks")
+        val exercises = (0 until blocks.length()).filter { index ->
+            LessonNarrationScript.isExercise(blocks.getJSONObject(index).optString("type"))
+        }
+        assertTrue("The native fixture must retain its actual neighboring puzzles", exercises.isNotEmpty())
+        exercises.forEach { index ->
+            assertNull("Compiler feedback cannot answer the visible ${blocks.getJSONObject(index).getString("type")} at $page/$index",
+                ProgressRepository.getExerciseState(context, fixture.id, page, index))
+        }
     }
 
     private fun observe(activity: LessonActivity, controller: LessonNarrationController, parts: List<Any>, index: Int, verdict: Int,

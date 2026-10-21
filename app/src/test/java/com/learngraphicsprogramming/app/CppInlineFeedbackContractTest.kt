@@ -36,7 +36,7 @@ class CppInlineFeedbackContractTest {
         var alternatives = 0
         for ((path, page, blockNumber) in LOCATIONS) {
             val source = lesson(path)
-            val original = source.getJSONArray("pages").getJSONObject(page - 1).getJSONArray("blocks").getJSONObject(blockNumber - 1)
+            val original = historicalBlockAt(source, page, blockNumber)
             assertEquals("inline_fill_code", original.getString("type"))
             val before = original.toString()
             val enhanced = JSONObject(before).put("reviewFeedback", REVIEW).put("explanation", EXPLANATION)
@@ -84,8 +84,7 @@ class CppInlineFeedbackContractTest {
     }
 
     @Test fun inlineExplanationUsesOnlyTheExistingSuccessGateAndTheWholeReviewUsesTheExistingSpeechFrontend() {
-        val block = lesson(LOCATIONS.first().first).getJSONArray("pages").getJSONObject(7)
-            .getJSONArray("blocks").getJSONObject(6)
+        val block = historicalBlockAt(lesson(LOCATIONS.first().first), 8, 7)
         val authored = JSONObject(block.toString()).put("reviewFeedback", REVIEW).put("explanation", EXPLANATION)
         for (language in NarrationLanguage.entries) for (kokoro in listOf(false, true)) {
             val page = page(authored)
@@ -101,8 +100,7 @@ class CppInlineFeedbackContractTest {
     }
 
     @Test fun exactOutputPreservesVoluntaryAccentsBoundaryWhitespaceAndMultilineAnswers() {
-        val block = lesson("programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json")
-            .getJSONArray("pages").getJSONObject(3).getJSONArray("blocks").getJSONObject(5)
+        val block = historicalBlockAt(lesson("programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json"), 4, 6)
         assertEquals("prediccion_revision_inicial", block.getString("id"))
         assertEquals("exact", block.getString("outputComparison"))
         assertEquals(listOf("Revision inicial"), strings(block.getJSONArray("answers")))
@@ -123,6 +121,14 @@ class CppInlineFeedbackContractTest {
         return JSONObject(main.resolve("assets/content/es/programming/cpp_fundamentals/$relative").readText())
     }
     private fun strings(array: JSONArray) = List(array.length()) { array.getString(it) }
+    private fun historicalBlockAt(lesson: JSONObject, page: Int, block: Int): JSONObject {
+        val historical = LessonStatePosition(page - 1, block - 1)
+        val layout = LessonStateLayoutJson.read(lesson)
+        val position = layout?.let { checked -> checked.current.flatMapIndexed { p, current -> current.blocks.indices.map { b ->
+            LessonStatePosition(p, b)
+        } }.single { checked.storagePosition(it.page, it.block) == historical } } ?: historical
+        return lesson.getJSONArray("pages").getJSONObject(position.page).getJSONArray("blocks").getJSONObject(position.block)
+    }
     private fun page(block: JSONObject) = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
     private fun invalid(action: () -> Unit) {
         try { action(); fail("Malformed feedback must not be silently accepted") }

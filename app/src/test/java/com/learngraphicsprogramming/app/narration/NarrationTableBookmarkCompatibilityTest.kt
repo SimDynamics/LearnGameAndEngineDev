@@ -1,6 +1,8 @@
 package com.learngraphicsprogramming.app.narration
 
 import org.json.JSONObject
+import com.learngraphicsprogramming.app.LessonStateLayoutJson
+import com.learngraphicsprogramming.app.LessonStatePosition
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
@@ -12,6 +14,9 @@ class NarrationTableBookmarkCompatibilityTest {
         "assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/" +
             "lesson_construir_y_comprobar_un_modelo_de_pedidos.json").readText())
     private val page = "programming/${lesson.getString("id")}/1"
+    private val tableBlockIndex = LessonStateLayoutJson.read(lesson)?.let { layout ->
+        layout.current[1].blocks.indices.single { layout.storagePosition(1, it) == LessonStatePosition(1, 4) }
+    } ?: 4
 
     private data class Plans(val language: NarrationLanguage, val engine: NarrationEngine,
                              val previous: LessonNarrationScript, val current: LessonNarrationScript,
@@ -101,7 +106,7 @@ class NarrationTableBookmarkCompatibilityTest {
             assertTrue("The removed synthetic separator really changes a recording", changed >= 0)
             val moved = requireNotNull(NarrationPresentationRemap.remap(
                 NarrationResumePoint(changed, 2_907), plans.previous, plans.current, plans.engine))
-            val prefix = plans.current.origins.indexOfFirst { it.blockIndex == 4 && !it.feedback }
+            val prefix = plans.current.origins.indexOfFirst { it.blockIndex == tableBlockIndex && !it.feedback }
             val expected = if (plans.engine == NarrationEngine.ANDROID)
                 NarrationSegments.prepare(plans.current.texts.take(prefix), 250).size
                 else NarrationSegments.sentences(plans.current.texts.take(prefix)).size

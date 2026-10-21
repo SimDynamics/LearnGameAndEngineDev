@@ -75,7 +75,7 @@ internal object LocalizedStableLessonQaFixture {
     /** Mirrors a verified authoring result; does not relax the production parser. */
     fun mapped(family: Map<String, JSONObject>, language: String = "es", secondPermutation: Boolean = false): JSONObject {
         val original = family.getValue(language)
-        require(!original.has("stateLayout"))
+        if (original.has("stateLayout")) return movePublished(original, secondPermutation)
         val result = copy(original)
         val pages = result.getJSONArray("pages")
         val current = JSONArray()
@@ -121,6 +121,22 @@ internal object LocalizedStableLessonQaFixture {
                 .put("beforeSha256", LessonStateLayoutJson.fingerprint(oldParagraph))
                 .put("afterSha256", LessonStateLayoutJson.fingerprint(paragraph))))
         return result.put("stateLayout", metadata)
+    }
+
+    /** A later publication moves the actual published layout, never rebases its historical family. */
+    private fun movePublished(original: JSONObject, secondPermutation: Boolean): JSONObject {
+        requireNotNull(LessonStateLayoutJson.read(original))
+        val result = copy(original)
+        if (secondPermutation) {
+            val pages = result.getJSONArray("pages")
+            val current = result.getJSONObject("stateLayout").getJSONArray("current")
+            val fifth = pages.getJSONObject(4); val sixth = pages.getJSONObject(5)
+            pages.put(4, sixth); pages.put(5, fifth)
+            val fifthRecord = current.getJSONObject(4); val sixthRecord = current.getJSONObject(5)
+            current.put(4, sixthRecord); current.put(5, fifthRecord)
+        }
+        requireNotNull(LessonStateLayoutJson.read(result))
+        return result
     }
 
     fun pageId(page: Int) = "page_%04d".format(java.util.Locale.ROOT, page)

@@ -59,6 +59,7 @@ class CppCurricularLabsDeviceTest {
     private val snapshots = linkedMapOf<String, Map<String, *>>()
     private var originalPreferenceFiles = emptySet<String>()
     private var injectedFixtureActivityIdentity: Int? = null
+    private var selectedLab: Pair<String, LabLocation>? = null
 
     @Before fun preserveUserState() {
         assertEquals("Usar -Plgp.curricularQa=true para aislar los datos del usuario",
@@ -103,7 +104,10 @@ class CppCurricularLabsDeviceTest {
     }
 
     @Test fun authoredReadingLabConsumesFreshPreparedInputAndRetainsTheDraft() {
-        withAsset(READING, { it.optString("initialStandardInput") == "Rita 4" }) { scenario, location ->
+        withAsset(READING, LessonStatePosition(6, 2), { block ->
+            block.optString("initialStandardInput") == "Rita 4" &&
+                declaresOutput(block, "Rita 4", "Rita: 7") && declaresOutput(block, "Leo 2", "Leo: 5")
+        }) { scenario, location ->
             runWithInput(scenario, "Rita 4", "Rita: 7")
             runWithInput(scenario, "Leo\n2\n", "Leo: 5")
             runWithInput(scenario, "  Rita\t4\n", "Rita: 7")
@@ -126,17 +130,24 @@ class CppCurricularLabsDeviceTest {
 
     @Test fun focusedResetRetainsExactAuthoredSourceAfterSettlingAndRecreation() {
         val lessonId = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
-        withAsset(lessonId, { true }) { scenario, location ->
+        withAsset(lessonId, LessonStatePosition(4, 2), { declaresOutput(it, "", "Caja recibida") }) { scenario, location ->
             val original = LessonRepository.loadLessonJson(context, ROUTE, lessonId).getJSONArray("pages")
                 .getJSONObject(location.page).getJSONArray("blocks").getJSONObject(location.block)
             val code = original.getString("initialCode")
             val stdin = original.optString("initialStandardInput")
+            val requestsInput = CppLabInputPolicy.requested(original, CppOutputCheck.fromBlock(original))
+            val temporaryInput = "temporary input"
+            // A task without stdin intentionally keeps an older hidden draft. Reset
+            // restores authored input only when this activity actually requests it.
+            val inputAfterReset = if (requestsInput) stdin else temporaryInput
             val observations = JSONArray()
             for (iteration in 0..3) {
                 scenario.onActivity { activity ->
                     val source = editor(activity)
                     source.setText(code.replace("Zona inicial", "Caja recibida") + "\n// reset check $iteration\n")
-                    input(activity).setText("temporary input")
+                    assertEquals("Only curricular input metadata exposes the input field",
+                        if (requestsInput) View.VISIBLE else View.GONE, input(activity).visibility)
+                    input(activity).setText(temporaryInput)
                     source.requestFocus()
                     source.setSelection(source.length())
                     (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
@@ -150,26 +161,28 @@ class CppCurricularLabsDeviceTest {
                     assertTrue("Reset is exercised with the actual editor focused", editor(activity).hasFocus())
                     tagged(activity, "cpp_reset").performClick()
                     assertEquals("Reset restores exact authored characters immediately", code, editor(activity).text.toString())
-                    assertEquals(stdin, input(activity).text.toString())
+                    assertEquals("Reset respects authored input and preserves an unrelated hidden draft",
+                        inputAfterReset, input(activity).text.toString())
                 }
                 repeat(5) {
                     SystemClock.sleep(100)
                     instrumentation.waitForIdleSync()
                     scenario.onActivity { activity ->
                         assertEquals("No delayed IME/rules edit may add whitespace after reset", code, editor(activity).text.toString())
-                        assertEquals(stdin, input(activity).text.toString())
+                        assertEquals(inputAfterReset, input(activity).text.toString())
                     }
                 }
                 scenario.recreate()
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
                     assertEquals("Reopened source stays byte-exact", code, editor(activity).text.toString())
-                    assertEquals(stdin, input(activity).text.toString())
-                    val draft = "$ROUTE/$lessonId/${location.page}/${location.block}"
+                    assertEquals(inputAfterReset, input(activity).text.toString())
+                    val draft = LessonStateCoordinates.draftKey(context, ROUTE, lessonId, location.page, location.block)
                     assertEquals("The persisted draft has no added trailing spaces", code,
                         CppLessonSourceDraft.read(context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE), draft, "missing"))
                     observations.put(JSONObject().put("iteration", iteration).put("sourceSha256", sha256(code))
                         .put("characters", code.length).put("exactAfterSettlingAndRecreation", true)
+                        .put("preparedInputRequested", requestsInput).put("resetInputContractPreserved", true)
                         .put("imeVisibleAfterRecreation", imeVisible(activity)))
                 }
             }
@@ -184,14 +197,18 @@ class CppCurricularLabsDeviceTest {
 
     @Test fun pedidosMappingsPrepareOnEnableAndReuseOnlyTheUnchangedVisiblePresentation() {
         val lessonId = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
-        val blocks = LessonRepository.loadLessonJson(context, ROUTE, lessonId).getJSONArray("pages")
-            .getJSONObject(1).getJSONArray("blocks")
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val locations = pedidosLocations(lessonId, lesson)
+        val puzzle = blockAt(lesson, locations.puzzle)
+        val mappingKey = locations.puzzle.block to false
         MainThreadProbe("pedidos-reading-mapping-reuse").use { probe ->
-        withAsset(lessonId, { it.getString("initialCode") == blocks.getJSONObject(2).getString("initialCode") }) { scenario, _ ->
+        withAsset(lessonId, LessonStatePosition(1, 2), { declaresPedidosOutput(it) }) { scenario, location ->
+            assertEquals(locations.compiler, location)
             var cached: Any? = null
             fun cache(activity: LessonActivity): Map<*, *> {
                 val pages = field(activity, "readingTextPages") as Map<*, *>
-                val page = requireNotNull(pages["$ROUTE/$lessonId/1"])
+                val identity = LessonStateCoordinates.narrationPageIdentity(context, ROUTE, lessonId, location.page)
+                val page = requireNotNull(pages[identity])
                 val mappings = page.javaClass.getDeclaredField("puzzleMappings").apply { isAccessible = true }.get(page)
                 return mappings.javaClass.getDeclaredField("current").apply { isAccessible = true }.get(mappings) as Map<*, *>
             }
@@ -199,9 +216,10 @@ class CppCurricularLabsDeviceTest {
             NarrationSettingsRepository.saveEnabled(context, true)
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
-                cached = requireNotNull(cache(activity)[4 to false])
+                cached = requireNotNull(cache(activity)[mappingKey])
                 val actual = cached!!.javaClass.getDeclaredField("mappings").apply { isAccessible = true }.get(cached) as Map<*, *>
-                val originalInputs = dumpPedidosMappingInput(requireNotNull(cached), actual).getJSONArray("views")
+                val originalInputs = dumpPedidosMappingInput(requireNotNull(cached), actual,
+                    locations.puzzle.block).getJSONArray("views")
                 assertTrue("Enabling the reader reconstructs actual word mappings from the original page", actual.isNotEmpty())
                 val words = actual.values.map { it as com.learngraphicsprogramming.app.narration.NarrationWordMapping }
                 val expectedTargets = (0 until originalInputs.length()).map { originalInputs.getJSONObject(it).getInt("target") }.toSet()
@@ -218,12 +236,12 @@ class CppCurricularLabsDeviceTest {
                     assertEquals("All original glyphs in ${original.getString("text")} have real spoken provenance",
                         original.getString("text").indices.toSet(), owned)
                 }
-                fillPedidos(activity, blocks.getJSONObject(4), wrong = true)
+                fillPedidos(activity, puzzle, wrong = true)
             }
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
                 assertSame("Ordinary answers do not change passive visible text or rebuild its verified mapping",
-                    cached, cache(activity)[4 to false])
+                    cached, cache(activity)[mappingKey])
             }
             NarrationSettingsRepository.saveEnabled(context, false)
             instrumentation.waitForIdleSync()
@@ -231,7 +249,7 @@ class CppCurricularLabsDeviceTest {
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
                 assertSame("Re-enabling preserves the exact current mapping, not another reader history",
-                    cached, cache(activity)[4 to false])
+                    cached, cache(activity)[mappingKey])
                 val controller = field(activity, "narrationController") as com.learngraphicsprogramming.app.narration.LessonNarrationController
                 assertFalse("Preparing display mappings does not start playback", controller.isPlaying)
             }
@@ -244,7 +262,7 @@ class CppCurricularLabsDeviceTest {
 
     /** Native source ranges only, to reproduce expensive searches on the host.
      * Contains no validator, expected response, model data or user preference dump. */
-    private fun dumpPedidosMappingInput(cached: Any, actual: Map<*, *>): JSONObject {
+    private fun dumpPedidosMappingInput(cached: Any, actual: Map<*, *>, blockIndex: Int): JSONObject {
         fun property(owner: Any, name: String): Any? = owner.javaClass.getDeclaredField(name)
             .apply { isAccessible = true }.get(owner)
         val key = requireNotNull(property(cached, "key"))
@@ -266,7 +284,7 @@ class CppCurricularLabsDeviceTest {
             value as com.learngraphicsprogramming.app.narration.NarrationWordMapping
             matched.put(JSONObject().put("segment", segment).put("targets", JSONArray(value.targets)))
         }
-        return JSONObject().put("block", 4)
+        return JSONObject().put("block", blockIndex)
             .put("language", property(key, "language").toString()).put("feedback", property(key, "feedback"))
             .put("views", views).put("segments", segments).put("matched", matched)
             .also { stabilityEvidence("pedidos-mapping-input.json", it) }
@@ -285,15 +303,19 @@ class CppCurricularLabsDeviceTest {
     private fun checkPedidosPage(draft: String?, evidence: String) {
         val lessonId = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
         val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
-        val blocks = lesson.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
-        val puzzle = blocks.getJSONObject(4)
+        val locations = pedidosLocations(lessonId, lesson)
+        val puzzle = blockAt(lesson, locations.puzzle)
+        val authoredCode = blockAt(lesson, locations.compiler).getString("initialCode")
+        val draftKey = LessonStateCoordinates.draftKey(context, ROUTE, lessonId,
+            locations.compiler.page, locations.compiler.block)
+        assertEquals("The reordered compiler keeps the original draft identity", "$ROUTE/$lessonId/1/2", draftKey)
         if (draft != null) assertTrue(context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE).edit()
-            .putString("$ROUTE/$lessonId/1/2/source", draft).commit())
+            .putString("$draftKey/source", draft).commit())
         MainThreadProbe(evidence).use { probe ->
-            withAsset(lessonId, { it.getString("initialCode") == blocks.getJSONObject(2).getString("initialCode") }) { scenario, location ->
-                assertEquals(LabLocation(1, 2), location)
+            withAsset(lessonId, LessonStatePosition(1, 2), { declaresPedidosOutput(it) }) { scenario, location ->
+                assertEquals(locations.compiler, location)
                 scenario.onActivity { activity ->
-                    assertEquals("The requested real editor source is rendered", draft ?: blocks.getJSONObject(2).getString("initialCode"),
+                    assertEquals("The requested real editor source is rendered", draft ?: authoredCode,
                         editor(activity).text.toString())
                     assertEquals("The actual page retains its one numeric table", 10,
                         descendants(content(activity)).filterIsInstance<EditText>()
@@ -326,7 +348,7 @@ class CppCurricularLabsDeviceTest {
                 scenario.onActivity { activity ->
                     verifyPedidos(activity, puzzle)
                     assertEquals("Reopening preserves this independent compiler draft",
-                        draft ?: blocks.getJSONObject(2).getString("initialCode"), editor(activity).text.toString())
+                        draft ?: authoredCode, editor(activity).text.toString())
                     assertTrue(descendants(content(activity)).filterIsInstance<TextView>().any { it.text.toString().startsWith("✓") })
                 }
                 val expectedOutput = if (draft == null) "" else
@@ -334,8 +356,8 @@ class CppCurricularLabsDeviceTest {
                         "1:0:0:0:5:1\n1:0:0:0:2:1\n1:1:1:3:20:1:1"
                 assertSuccessful(run(scenario), expectedOutput)
                 probe.result.put("allFifteenAnswersRestored", true).put("wrongRetryCorrect", true)
-                    .put("sourceSha256", sha256(draft ?: blocks.getJSONObject(2).getString("initialCode")))
-                    .put("sourceCharacters", (draft ?: blocks.getJSONObject(2).getString("initialCode")).length)
+                    .put("sourceSha256", sha256(draft ?: authoredCode))
+                    .put("sourceCharacters", (draft ?: authoredCode).length)
                     .put("nativeCompilerStdout", expectedOutput)
             }
         }
@@ -729,6 +751,7 @@ class CppCurricularLabsDeviceTest {
     }
 
     private data class LabLocation(val page: Int, val block: Int)
+    private data class PedidosLocations(val compiler: LabLocation, val puzzle: LabLocation)
     private data class RunResult(val status: String, val phase: String, val compilation: String,
                                  val stdout: String, val stderr: String, val finishedStatuses: Map<Int, String>) {
         fun finishedStatus(exitCode: Int) = finishedStatuses.getValue(exitCode)
@@ -742,32 +765,76 @@ class CppCurricularLabsDeviceTest {
         }, test)
 
     private fun withAsset(lessonId: String, select: (JSONObject) -> Boolean,
+                          test: (ActivityScenario<LessonActivity>, LabLocation) -> Unit) =
+        withAsset(lessonId, null, select, test)
+
+    private fun withAsset(lessonId: String, storage: LessonStatePosition?, select: (JSONObject) -> Boolean,
                           test: (ActivityScenario<LessonActivity>, LabLocation) -> Unit) {
         val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val location = authoredLocation(lessonId, lesson, "cpp_compiler", storage, select)
+        ProgressRepository.resetLesson(context, ROUTE, lessonId)
+        ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, location.page)
+        selectedLab = lessonId to location
+        try {
+            ActivityScenario.launch<LessonActivity>(lessonIntent(lessonId)).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    assertEquals("The published asset is loaded", lessonId, (field(activity, "lessonJson") as JSONObject).getString("id"))
+                    assertEquals(location.page, field(activity, "currentPage"))
+                    tagged(activity, "cpp_code_input")
+                }
+                instrumentation.waitForIdleSync()
+                test(scenario, location)
+            }
+        } finally { selectedLab = null }
+    }
+
+    private fun authoredLocation(lessonId: String, lesson: JSONObject, type: String,
+                                 storage: LessonStatePosition? = null,
+                                 select: (JSONObject) -> Boolean): LabLocation {
         val locations = buildList {
             val pages = lesson.getJSONArray("pages")
             for (page in 0 until pages.length()) {
                 val blocks = pages.getJSONObject(page).getJSONArray("blocks")
                 for (block in 0 until blocks.length()) {
                     val candidate = blocks.getJSONObject(block)
-                    if (candidate.optString("type") == "cpp_compiler" && select(candidate)) add(LabLocation(page, block))
+                    if (candidate.optString("type") == type &&
+                        (storage == null || LessonStateCoordinates.block(context, lessonId, page, block) == storage) &&
+                        select(candidate)) add(LabLocation(page, block))
                 }
             }
         }
-        assertEquals("One authored curricular lab matches $lessonId", 1, locations.size)
-        val location = locations.single()
-        ProgressRepository.resetLesson(context, ROUTE, lessonId)
-        ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, location.page)
-        ActivityScenario.launch<LessonActivity>(lessonIntent(lessonId)).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                assertEquals("The published asset is loaded", lessonId, (field(activity, "lessonJson") as JSONObject).getString("id"))
-                assertEquals(location.page, field(activity, "currentPage"))
-                tagged(activity, "cpp_code_input")
-            }
-            instrumentation.waitForIdleSync()
-            test(scenario, location)
+        assertEquals("One authored $type matches $lessonId at historical identity $storage", 1, locations.size)
+        return locations.single()
+    }
+
+    private fun blockAt(lesson: JSONObject, location: LabLocation) = lesson.getJSONArray("pages")
+        .getJSONObject(location.page).getJSONArray("blocks").getJSONObject(location.block)
+
+    /** Use the authored objective as well as its immutable storage identity. A nearby
+     * prediction or a different program with the same prepared input is not this lab. */
+    private fun declaresOutput(block: JSONObject, standardInput: String, expected: String): Boolean {
+        val cases = block.optJSONObject("outputCheck")?.optJSONArray("cases") ?: return false
+        return (0 until cases.length()).any { index ->
+            val case = cases.getJSONObject(index)
+            val outputs = case.optJSONArray("outputs") ?: return@any false
+            case.optString("standardInput") == standardInput &&
+                (0 until outputs.length()).any { outputs.getString(it) == expected }
         }
+    }
+
+    private fun declaresPedidosOutput(block: JSONObject) =
+        declaresOutput(block, "", "1:7\n0:7\n1:1\n0:1\n0:7")
+
+    private fun pedidosLocations(lessonId: String, lesson: JSONObject): PedidosLocations {
+        val compiler = authoredLocation(lessonId, lesson, "cpp_compiler", LessonStatePosition(1, 2)) {
+            declaresPedidosOutput(it)
+        }
+        val puzzle = authoredLocation(lessonId, lesson, "math_puzzle") {
+            it.optString("id") == "${lessonId}__traza_de_solicitudes"
+        }
+        assertEquals("The original table and compiler remain on the same curricular page", compiler.page, puzzle.page)
+        return PedidosLocations(compiler, puzzle)
     }
 
     private fun withFixture(source: String, preparedInput: String? = null,
@@ -1040,20 +1107,38 @@ class CppCurricularLabsDeviceTest {
     private fun text(activity: LessonActivity, tag: String) = (tagged(activity, tag) as TextView).text.toString()
     private fun tagged(activity: LessonActivity, tag: String): View {
         val page = content(activity)
-        val matches = if (tag == "cpp_code_input") {
-            // A prediction legitimately shares this editor tag. Locate the compiler's
-            // editor card before its Run control without selecting the answer editor.
-            val run = descendants(page).single { it.tag == "cpp_run" }
+        val lesson = field(activity, "lessonJson") as JSONObject
+        val pageIndex = field(activity, "currentPage") as Int
+        val blocks = lesson.getJSONArray("pages").getJSONObject(pageIndex).getJSONArray("blocks")
+        val compilerBlocks = (0 until blocks.length()).filter {
+            blocks.getJSONObject(it).optString("type") == "cpp_compiler"
+        }
+        val selected = selectedLab?.takeIf { it.first == lesson.optString("id") && it.second.page == pageIndex }?.second
+        val compilerIndex = if (selected != null) compilerBlocks.indexOf(selected.block) else {
+            assertEquals("A technical fixture without a selected identity has one compiler", 1, compilerBlocks.size)
+            0
+        }
+        assertTrue("The selected historical lab is a displayed compiler", compilerIndex >= 0)
+        val runs = descendants(page).filter { it.tag == "cpp_run" }
+        assertEquals("Every displayed compiler owns its Run action", compilerBlocks.size, runs.size)
+        fun cardIndex(run: View): Int {
             var runChild: View = run
             while (runChild.parent !== page) runChild = runChild.parent as? View
                 ?: error("The compiler Run control is not inside the current lesson block")
-            val card = (page.indexOfChild(runChild) - 1 downTo 0).asSequence()
-                .map(page::getChildAt).first { sibling -> descendants(sibling).any { it.tag == tag } }
-            descendants(card).filter { it.tag == tag }.also { selected ->
-                assertTrue("The selected editor is the actual compiler component",
-                    selected.singleOrNull() is FreeScrollEditText)
+            return (page.indexOfChild(runChild) - 1 downTo 0).first { index ->
+                descendants(page.getChildAt(index)).any { it.tag == "cpp_code_input" && it is FreeScrollEditText }
             }
-        } else descendants(page).filter { it.tag == tag }
+        }
+        val start = cardIndex(runs[compilerIndex])
+        val end = if (compilerIndex + 1 < runs.size) cardIndex(runs[compilerIndex + 1]) else page.childCount
+        // The real renderer places each card, prepared input, Run, status and console
+        // consecutively. Scope every tag to that selected compiler, including when
+        // an independent compiler or prediction precedes it on the same page.
+        val scope = if (tag == "cpp_code_input") descendants(page.getChildAt(start))
+            else (start until end).flatMap { descendants(page.getChildAt(it)) }
+        val matches = scope.filter { it.tag == tag }
+        if (tag == "cpp_code_input") assertTrue("The selected editor is the actual compiler component",
+            matches.singleOrNull() is FreeScrollEditText)
         if (matches.size != 1) diagnoseUnexpectedRuntimeControls(activity, tag, matches.size)
         return matches.single()
     }

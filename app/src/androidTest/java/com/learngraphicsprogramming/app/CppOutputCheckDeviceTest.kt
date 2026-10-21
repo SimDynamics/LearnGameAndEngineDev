@@ -53,8 +53,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
 
     @Test fun firstAuthoredLabUsesItsDeclaredCheckWithOneExistingRunButtonInStableRealWindows() {
         val location = LOCATIONS.first()
-        val authored = source(location.path).getJSONArray("pages").getJSONObject(location.page - 1)
-            .getJSONArray("blocks").getJSONObject(location.number - 1)
+        val authored = authoredBlock(location)
         assertTrue("The requested real lesson declares the capability; this test must not invent an expected answer", authored.has("outputCheck"))
         val declared = authored.getJSONObject("outputCheck")
         val declaredCase = declared.getJSONArray("cases").getJSONObject(0)
@@ -74,7 +73,8 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                 assertEquals(View.GONE, result(activity).visibility)
                 assertTrue(tree(content(activity)).filterIsInstance<TextView>().any {
                     it.text.toString() == source(location.path).getJSONArray("pages").getJSONObject(4)
-                        .getJSONArray("blocks").getJSONObject(3).getString("question")
+                        .getJSONArray("blocks").let { blocks -> (0 until blocks.length()).map(blocks::getJSONObject)
+                            .single { it.optString("id") == "prediccion_zona_inicial" }.getString("question") }
                 })
                 assertUnchangedExercises(activity, fixture)
             }
@@ -82,7 +82,8 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             edit(host, reference)
             val execution = runAndCheck(host, fixture, "Caja recibida", true, explanation, "published_reference_for_window")
             frames.put(captureRealOutputWindow(host, "first-lab-after-check", reference, true))
-            saveEvidence("first-lab-real-window", JSONObject().put("source", location.path).put("page", 5).put("block", 3)
+            saveEvidence("first-lab-real-window", JSONObject().put("source", location.path)
+                .put("page", fixture.location.page).put("block", fixture.location.number)
                 .put("execution", execution).put("frames", frames)
                 .put("kind", "Unmodified Android display screenshots, legal lessonScroll only; no Canvas composition"))
         }
@@ -184,7 +185,7 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
         val free = fixture(original, null)
         withFixture(free) { host -> host.onActivity { activity ->
             assertSingleRunButton(activity, checking = false)
-            assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" })
+            assertTrue(compilerViews(activity).none { it.tag == "cpp_output_check_result" })
         } }
         val fixture = fixture(original, contracts(0)).also { value ->
             value.block.put("projectFiles", JSONArray()
@@ -234,14 +235,14 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                         assertSingleRunButton(activity, checking = false)
                         assertEquals(normalCaption, runButton(activity).text.toString())
                         assertEquals("An output-only free lab has no stdin field in $language", View.GONE, input(activity).visibility)
-                        assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" })
+                        assertTrue(compilerViews(activity).none { it.tag == "cpp_output_check_result" })
                         runButton(activity).performClick()
                     }
                     await(host, "The ordinary compiler still executes in $language", 120_000L) { activity -> runButton(activity).isEnabled }
                     host.onActivity { activity ->
                         assertEquals("Zona inicial", (tagged(activity, "cpp_stdout") as TextView).text.toString())
                         assertEquals(activity.getString(R.string.cpp_runtime_finished, 0), (tagged(activity, "cpp_status") as TextView).text.toString())
-                        assertTrue(tree(content(activity)).none { it.tag == "cpp_output_check_result" || it.tag == "cpp_check_output" })
+                        assertTrue(compilerViews(activity).none { it.tag == "cpp_output_check_result" || it.tag == "cpp_check_output" })
                         assertUnchangedExercises(activity, free)
                         observations.put(JSONObject().put("language", language).put("mode", "compile_run")
                             .put("caption", runButton(activity).text.toString()).put("stdout", "Zona inicial"))
@@ -358,14 +359,16 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                 host.onActivity { activity ->
                     assertEquals("No source-code inference may expose stdin without curricular metadata", View.GONE, input(activity).visibility)
                     assertEquals("Hiding an old draft must not erase it", preservedDraft, input(activity).text.toString())
-                    assertEquals(preservedDraft, drafts.getString(key, null))
+                    assertEquals(CppDraftTextCodec.encode(preservedDraft, "input"), drafts.getString(key, null))
+                    assertEquals(CppDraftTextCodec.ENCODING,
+                        drafts.getString(key.removeSuffix("/input") + "/inputEncoding", null))
                 }
                 observations.put(runAndCheck(host, hidden, "EOF", true, null, "hidden_input_eof_$reopening")
                     .put("storedHiddenDraft", preservedDraft).put("effectiveStandardInput", ""))
                 host.onActivity { activity ->
                     tagged(activity, "cpp_reset").performClick()
                     assertEquals("Resetting a task without input also preserves its hidden draft", preservedDraft, input(activity).text.toString())
-                    assertEquals(preservedDraft, drafts.getString(key, null))
+                    assertEquals(CppDraftTextCodec.encode(preservedDraft, "input"), drafts.getString(key, null))
                     assertUnchangedExercises(activity, hidden)
                 }
             }
@@ -393,7 +396,8 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             }
             observations.put(runAndCheck(host, contractInput, "23", true, null, "contract_declares_visible_input"))
         }
-        assertEquals("Every run and reset preserved the original hidden draft", preservedDraft, drafts.getString(key, null))
+        assertEquals("Every run and reset preserved the exact escaped hidden draft",
+            CppDraftTextCodec.encode(preservedDraft, "input"), drafts.getString(key, null))
         saveEvidence("metadata-input-visibility-and-hidden-draft", JSONObject().put("runs", observations)
             .put("hiddenDraftPreserved", true).put("inputVisibilityDependsOnMetadataOnly", true))
     }
@@ -419,9 +423,11 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             }
             observations.put(runAndCheck(host, fixture, "Caja recibida", true, EXPLANATION, "fresh_run_after_edit_undo"))
             host.onActivity { activity ->
+                val selectedAction = runButton(activity)
                 setField(activity, "currentPage", fixture.location.page)
                 invoke(activity, "renderCurrentPage")
-                assertTrue("The next page is the authored reference, not another compiler", tree(content(activity)).none { it.tag == "cpp_run" })
+                assertFalse("The checked compiler is detached on the next authored page",
+                    tree(content(activity)).any { it === selectedAction })
             }
             host.onActivity { activity ->
                 setField(activity, "currentPage", fixture.location.page - 1)
@@ -450,7 +456,8 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
                 assertFalse(inactiveRunButton.isEnabled)
                 setField(activity, "currentPage", fixture.location.page)
                 invoke(activity, "renderCurrentPage")
-                assertTrue("The compiler stays detached while the next authored page is visible", tree(content(activity)).none { it.tag == "cpp_run" })
+                assertFalse("The checked compiler stays detached while another page is visible",
+                    tree(content(activity)).any { it === inactiveRunButton })
             }
             await(host, "The native run releases its busy button even while its cached page is detached", 120_000L) { activity ->
                 assertEquals("Wait on the other page until the native callback has completed", fixture.location.page, field<Int>(activity, "currentPage"))
@@ -594,9 +601,11 @@ class CppOutputCheckDeviceTest : CppOutputCheckQaSupport() {
             edit(host, implementation)
             execute("corrected_source_builds_and_checks_again", "1:1:0", true)
             host.onActivity { activity ->
+                val selectedAction = runButton(activity)
                 setField(activity, "currentPage", fixture.location.page)
                 invoke(activity, "renderCurrentPage")
-                assertTrue(tree(content(activity)).none { it.tag == "cpp_run" })
+                assertFalse("The selected CMake lab is detached even if the next page has another lab",
+                    tree(content(activity)).any { it === selectedAction })
             }
             host.onActivity { activity ->
                 setField(activity, "currentPage", fixture.location.page - 1)
@@ -819,6 +828,7 @@ abstract class CppOutputCheckQaSupport {
     private val preferences = linkedMapOf<String, Map<String, *>>()
     private var original = emptySet<String>()
     private var preserved = false
+    private var activeLab: LabLocation? = null
     private val guard = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, state: Bundle?) { activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
         override fun onActivityStarted(activity: Activity) = Unit
@@ -870,17 +880,35 @@ abstract class CppOutputCheckQaSupport {
     }
     data class LabLocation(val path: String, val page: Int, val number: Int)
     data class LabFixture(val location: LabLocation, val id: String, val sourceLesson: String, val lesson: JSONObject, val block: JSONObject)
+    protected fun historicalLab(location: LabLocation): LabLocation {
+        val lesson = source(location.path)
+        val layout = LessonStateLayoutJson.read(lesson) ?: return location
+        val original = LessonStatePosition(location.page - 1, location.number - 1)
+        val visible = layout.current.flatMapIndexed { p, page -> page.blocks.indices.map { b -> LessonStatePosition(p, b) } }
+            .single { layout.storagePosition(it.page, it.block) == original }
+        return location.copy(page = visible.page + 1, number = visible.block + 1)
+    }
+    protected fun authoredBlock(location: LabLocation): JSONObject {
+        val visible = historicalLab(location)
+        return source(location.path).getJSONArray("pages").getJSONObject(visible.page - 1)
+            .getJSONArray("blocks").getJSONObject(visible.number - 1)
+    }
     protected fun fixture(location: LabLocation, contract: JSONObject?): LabFixture {
         val lesson = source(location.path)
+        val visible = historicalLab(location)
         val original = lesson.getString("id")
         val id = original + "__output_check_qa_" + UUID.randomUUID().toString().replace("-", "")
         lesson.put("id", id)
-        val block = lesson.getJSONArray("pages").getJSONObject(location.page - 1).getJSONArray("blocks").getJSONObject(location.number - 1)
+        val block = lesson.getJSONArray("pages").getJSONObject(visible.page - 1).getJSONArray("blocks").getJSONObject(visible.number - 1)
         assertEquals("cpp_compiler", block.getString("type"))
         if (contract == null) block.remove("outputCheck") else block.put("outputCheck", contract)
-        return LabFixture(location, id, original, lesson, block)
+        // These independent execution fixtures intentionally change a contract. They are
+        // isolated lessons, not a rewritten version of the published immutable lineage.
+        lesson.remove("stateLayout")
+        return LabFixture(visible, id, original, lesson, block)
     }
     protected fun withFixture(fixture: LabFixture, body: (ActivityScenario<LessonActivity>) -> Unit) {
+        activeLab = fixture.location
         ProgressRepository.saveCurrentPage(context, "programming", fixture.sourceLesson, 0)
         val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", "programming")
             .putExtra("courseId", "cpp_fundamentals").putExtra("unitId", fixture.location.path.substringBefore('/'))
@@ -924,7 +952,11 @@ abstract class CppOutputCheckQaSupport {
     protected fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
     protected fun runButton(activity: LessonActivity) = tagged(activity, "cpp_run") as Button
     protected fun assertSingleRunButton(activity: LessonActivity, checking: Boolean) {
-        assertEquals("A compiler exposes exactly one compile/run action", 1, tree(content(activity)).count { it.tag == "cpp_run" })
+        val blocks = requireNotNull(field<JSONObject?>(activity, "lessonJson")).getJSONArray("pages")
+            .getJSONObject(requireNotNull(activeLab).page - 1).getJSONArray("blocks")
+        assertEquals("Each displayed compiler exposes one compile/run action",
+            (0 until blocks.length()).count { blocks.getJSONObject(it).optString("type") == "cpp_compiler" },
+            tree(content(activity)).count { it.tag == "cpp_run" })
         assertTrue("No separate check-output button exists", tree(content(activity)).none { it.tag == "cpp_check_output" })
         assertEquals(activity.getString(if (checking) R.string.cpp_compile_run_check else R.string.cpp_runtime_run), runButton(activity).text.toString())
     }
@@ -934,7 +966,28 @@ abstract class CppOutputCheckQaSupport {
         correct -> activity.getString(R.string.lesson_correct_feedback)
         else -> activity.getString(R.string.exercise_incorrect) + explanation?.let { "\n$it" }.orEmpty()
     }
-    protected fun tagged(activity: LessonActivity, tag: String) = tree(content(activity)).single { it.tag == tag }
+    protected fun tagged(activity: LessonActivity, tag: String): View = compilerViews(activity).single { it.tag == tag }
+
+    protected fun compilerViews(activity: LessonActivity): List<View> {
+        val location = requireNotNull(activeLab)
+        val page = content(activity)
+        val blocks = requireNotNull(field<JSONObject?>(activity, "lessonJson")).getJSONArray("pages")
+            .getJSONObject(location.page - 1).getJSONArray("blocks")
+        val ordinal = (0 until location.number - 1).count { blocks.getJSONObject(it).optString("type") == "cpp_compiler" }
+        val runs = tree(page).filter { it.tag == "cpp_run" }
+        assertEquals((0 until blocks.length()).count { blocks.getJSONObject(it).optString("type") == "cpp_compiler" }, runs.size)
+        fun top(view: View): View {
+            var result = view
+            while (result.parent !== page) result = result.parent as? View ?: error("Compiler is outside lesson content")
+            return result
+        }
+        fun card(run: View) = (page.indexOfChild(top(run)) - 1 downTo 0).first { index ->
+            tree(page.getChildAt(index)).any { it.tag == "cpp_code_input" }
+        }
+        val start = card(runs[ordinal])
+        val end = runs.getOrNull(ordinal + 1)?.let(::card) ?: page.childCount
+        return (start until end).flatMap { tree(page.getChildAt(it)) }
+    }
     protected fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)
     protected fun tree(view: View): List<View> = listOf(view) + if (view is ViewGroup) (0 until view.childCount).flatMap { tree(view.getChildAt(it)) } else emptyList()
     protected inline fun <reified T> field(owner: Any, name: String): T = owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner) as T

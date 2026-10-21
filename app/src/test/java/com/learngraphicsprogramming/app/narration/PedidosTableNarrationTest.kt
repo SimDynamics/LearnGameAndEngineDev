@@ -61,14 +61,19 @@ class PedidosTableNarrationTest {
     @Test fun theActualPedidosPageMapsAllTwentyFourNativeLabelsIncludingEveryTechnicalRow() {
         val source = published()
         val original = source.toString()
-        val block = source.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks").getJSONObject(4)
+        val blocks = source.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+        val blockIndex = (0 until blocks.length()).single {
+            blocks.getJSONObject(it).optString("id") ==
+                "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos__traza_de_solicitudes"
+        }
+        val block = blocks.getJSONObject(blockIndex)
         val views = publishedNativeLabels(block)
         assertEquals(24, views.size)
         val script = LessonNarrationScript.page(source, 1, NarrationLanguage.SPANISH, true)
         val parts = NarrationSegments.sentences(script.texts)
         val plan = requireNotNull(script.readingPlan(NarrationEngine.KOKORO))
-        val segments = parts.indices.filter { plan.origins[it] == NarrationTextOrigin(4) }.associateWith { parts[it] }
-        val mappings = NarrationPuzzleWordMappings.forViews(4, views, segments, NarrationLanguage.SPANISH)
+        val segments = parts.indices.filter { plan.origins[it] == NarrationTextOrigin(blockIndex) }.associateWith { parts[it] }
+        val mappings = NarrationPuzzleWordMappings.forViews(blockIndex, views, segments, NarrationLanguage.SPANISH)
         assertEquals("No real cell needs a guessed/partial fallback", segments.keys, mappings.keys)
         assertCompleteGlyphOwnership(views, mappings)
         assertEquals(original, source.toString())
