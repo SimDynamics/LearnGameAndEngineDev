@@ -1,5 +1,6 @@
 from copy import deepcopy
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
+import hashlib
 import importlib.util
 import io
 import json
@@ -450,5 +451,388 @@ class RepositoryGateTest(unittest.TestCase):
                 contract.main([])
         self.assertEqual(error.exception.code, 1)
         self.assertIn('--base-ref', output.getvalue())
+
+
+def divergent_family():
+    family = {language: deepcopy(fixture()) for language in ('es', 'en', 'fr')}
+    for language in ('en', 'fr'):
+        family[language]['pages'][0]['blocks'][1] = {'type': 'note', 'text': 'Historical translated note'}
+    family['es']['pages'][2]['blocks'].append({'type': 'cpp_compiler', 'initialCode': 'INDEPENDENT SOURCE'})
+    return family
+
+
+def new_activity(identity='new_original_execution', page=3, block=0):
+    return {'id': identity, 'storage': {'page': page, 'block': block}, 'progressPage': 'page_0001',
+            'block': {'type': 'cpp_compiler', 'initialCode': 'NEW ORIGINAL SOURCE'}}
+
+
+class ExtendedStateLayoutTest(unittest.TestCase):
+    def prepared(self, family=None):
+        family = family or divergent_family()
+        return m.prepare_v2(family['es'], 'es', family)
+
+    def add(self, source, addition=None):
+        addition = addition or new_activity()
+        plan = deepcopy(source['stateLayout']['current'])
+        plan[1]['blocks'].insert(1, addition['id'])
+        return m.reorder(source, plan, [addition])
+
+    def test_divergent_history_is_preserved_without_editing_translations(self):
+        family = divergent_family(); before = deepcopy(family)
+        source = self.prepared(family)
+        m.check_localized_family([source, family['en'], family['fr']], ['es', 'en', 'fr'])
+        self.assertEqual(family, before)
+        self.assertEqual(source['stateLayout']['origin'], m.prepare(family['es'])['stateLayout']['origin'])
+        self.assertNotEqual(source['stateLayout']['family']['es']['origin'], source['stateLayout']['family']['en']['origin'])
+
+    def test_editorial_revision_and_move_are_one_anchored_transition(self):
+        family = divergent_family(); edited = deepcopy(family['es'])
+        edited['pages'][0]['blocks'][0]['text'] = 'Clearer original explanation'
+        edited['pages'][0]['blocks'][1]['question'] = 'An explicit revised prediction'
+        prepared = m.prepare_v2(edited, 'es', family)
+        moved = m.reorder(prepared, list(reversed(prepared['stateLayout']['current'])))
+        m.validate_transition(family['es'], moved)
+        self.assertEqual(m.validate(moved)[2, 1], (0, 1))
+        self.assertEqual(len(moved['stateLayout']['editorial']), 2)
+
+    def test_same_shaped_paragraphs_cannot_exchange_their_coverage(self):
+        family = divergent_family(); edited = deepcopy(family['es'])
+        edited['pages'][0]['blocks'][0], edited['pages'][1]['blocks'][0] = (
+            edited['pages'][1]['blocks'][0], edited['pages'][0]['blocks'][0])
+        with self.assertRaisesRegex(m.LayoutError, 'another identity'):
+            m.prepare_v2(edited, 'es', family)
+
+    def test_missing_editorial_proof_cannot_hide_revision_in_a_move(self):
+        family = divergent_family(); source = self.prepared(family)
+        moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        moved['pages'][2]['blocks'][0]['text'] = 'Changed without provenance'
+        with self.assertRaisesRegex(m.LayoutError, 'before/after proof'):
+            m.validate_transition(family['es'], moved)
+
+    def test_false_before_or_after_proof_is_rejected(self):
+        family = divergent_family(); edited = deepcopy(family['es'])
+        edited['pages'][0]['blocks'][0]['text'] = 'Actual revision'
+        source = m.prepare_v2(edited, 'es', family)
+        for field in ('beforeSha256', 'afterSha256'):
+            with self.subTest(field=field):
+                bad = deepcopy(source); bad['stateLayout']['editorial'][0][field] = '0' * 64
+                with self.assertRaises(m.LayoutError): m.validate_transition(family['es'], bad)
+
+    def test_repeated_editorial_proofs_support_skipping_an_intermediate_release(self):
+        family = divergent_family(); one = self.prepared(family)
+        edited = deepcopy(one); edited['pages'][0]['blocks'][0]['text'] = 'Revision one'
+        two = m.prepare_v2(edited, 'es', family, one)
+        edited = deepcopy(two); edited['pages'][0]['blocks'][0]['text'] = 'Revision two'
+        three = m.prepare_v2(edited, 'es', family, two)
+        m.validate_transition(family['es'], three)
+        m.validate_transition(one, three)
+        m.validate_transition(two, three)
+        self.assertEqual(len(three['stateLayout']['editorial']), 2)
+
+    def test_editorial_proofs_cannot_be_removed_reordered_or_cycled(self):
+        family = divergent_family(); one = self.prepared(family)
+        edited = deepcopy(one); edited['pages'][0]['blocks'][0]['text'] = 'Revision one'
+        two = m.prepare_v2(edited, 'es', family, one)
+        edited = deepcopy(two); edited['pages'][0]['blocks'][0]['text'] = 'Revision two'
+        three = m.prepare_v2(edited, 'es', family, two)
+        for change in ('remove', 'reverse', 'cycle'):
+            with self.subTest(change=change):
+                bad = deepcopy(three)
+                if change == 'remove': bad['stateLayout']['editorial'].pop(0)
+                if change == 'reverse': bad['stateLayout']['editorial'].reverse()
+                if change == 'cycle':
+                    bad['stateLayout']['editorial'][-1]['afterSha256'] = bad['stateLayout']['editorial'][0]['beforeSha256']
+                with self.assertRaises(m.LayoutError): m.validate_transition(two, bad)
+
+    def test_response_code_and_math_key_order_remain_protected_with_editorial_proof(self):
+        family = divergent_family()
+        mutations = (
+            lambda d: d['pages'][0]['blocks'][1].update(answers=['OTHER']),
+            lambda d: d['pages'][1]['blocks'][1].update(initialCode='OTHER SOURCE'),
+            lambda d: d['pages'][2]['blocks'].__setitem__(0, dict(reversed(list(d['pages'][2]['blocks'][0].items())))),
+        )
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                bad = deepcopy(family['es']); mutate(bad)
+                with self.assertRaises(m.LayoutError): m.prepare_v2(bad, 'es', family)
+
+    def test_new_activity_has_an_explicit_unoccupied_storage_slot(self):
+        source = self.prepared(); added = self.add(source)
+        self.assertEqual(m.validate(added)[1, 1], (3, 0))
+        self.assertEqual(m.validate(added)[1, 2], (1, 1))
+        self.assertEqual(added['stateLayout']['origin'], source['stateLayout']['origin'])
+        self.assertEqual(added['stateLayout']['additions'][0]['sha256'], m.state_fingerprint(new_activity()['block']))
+
+    def test_reservation_considers_the_largest_historical_translation(self):
+        family = divergent_family()
+        family['en']['pages'].append({'title': 'Only historical English', 'blocks': []})
+        source = self.prepared(family)
+        with self.assertRaisesRegex(m.LayoutError, 'outside every historical'):
+            self.add(source, new_activity(page=3))
+        self.assertEqual(m.validate(self.add(source, new_activity(page=4)))[1, 1], (4, 0))
+
+    def test_new_slots_identity_and_contract_are_append_only(self):
+        source = self.add(self.prepared())
+        for change in ('slot', 'id', 'digest', 'remove'):
+            with self.subTest(change=change):
+                bad = deepcopy(source)
+                if change == 'slot': bad['stateLayout']['additions'][0]['storage']['page'] = 40
+                if change == 'id':
+                    bad['stateLayout']['additions'][0]['id'] = 'renamed'
+                    bad['stateLayout']['current'][1]['blocks'][1] = 'renamed'
+                if change == 'digest':
+                    bad['pages'][1]['blocks'][1]['initialCode'] = 'CHANGED'
+                    bad['stateLayout']['additions'][0]['sha256'] = m.state_fingerprint(bad['pages'][1]['blocks'][1])
+                if change == 'remove':
+                    bad['stateLayout']['additions'].clear(); bad['stateLayout']['current'][1]['blocks'].pop(1)
+                    bad['pages'][1]['blocks'].pop(1)
+                with self.assertRaises(m.LayoutError): m.validate_transition(source, bad)
+
+    def test_duplicate_new_slots_and_historical_ids_are_rejected(self):
+        source = self.add(self.prepared())
+        with self.assertRaises(m.LayoutError): self.add(source, new_activity('another', 3, 0))
+        with self.assertRaises(m.LayoutError): self.add(self.prepared(), new_activity('block_0000_0000'))
+
+    def test_new_activity_can_be_editorially_revised_without_losing_its_storage(self):
+        family = divergent_family(); source = self.add(self.prepared(family))
+        # Compiler feedback is editorial; its program and expected output stay fixed.
+        original = new_activity('new_theory')
+        original['block'] = {'type': 'paragraph', 'text': 'A newly authored explanation'}
+        source = self.add(self.prepared(family), original)
+        edited = deepcopy(source); edited['pages'][1]['blocks'][1]['text'] = 'A clearer new explanation'
+        revised = m.prepare_v2(edited, 'es', family, source)
+        m.validate_transition(source, revised)
+        self.assertEqual(m.validate(revised)[1, 1], (3, 0))
+
+    def test_old_validator_projection_keeps_only_historical_positions_but_source_contains_additions(self):
+        family = divergent_family(); source = self.add(self.prepared(family))
+        aligned = m.align_for_previous_validation(family['es'], source)
+        self.assertEqual(aligned['pages'], family['es']['pages'])
+        self.assertEqual(sum(len(p['blocks']) for p in source['pages']),
+                         1 + sum(len(p['blocks']) for p in family['es']['pages']))
+        moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        self.assertEqual(m.original_projection(moved)['pages'], family['es']['pages'])
+
+    def test_family_is_immutable_and_own_origin_cannot_be_borrowed(self):
+        source = self.prepared()
+        bad = deepcopy(source); bad['stateLayout']['family']['en']['sha256'] = '0' * 64
+        with self.assertRaises(m.LayoutError): m.validate_transition(source, bad)
+        bad = deepcopy(source); bad['stateLayout']['origin'] = bad['stateLayout']['family']['en']['origin']
+        with self.assertRaises(m.LayoutError): m.validate(bad)
+
+    def test_unmapped_translation_must_remain_exact_and_have_its_source_locale(self):
+        family = divergent_family(); source = self.prepared(family)
+        with self.assertRaises(m.LayoutError): m.check_localized_family([source, family['en'], family['fr']])
+        bad = deepcopy(family['en']); bad['pages'][0]['blocks'][0]['text'] = 'Unanchored translation revision'
+        with self.assertRaises(m.LayoutError):
+            m.check_localized_family([source, bad, family['fr']], ['es', 'en', 'fr'])
+
+    def test_each_mapped_translation_keeps_its_own_origin(self):
+        family = divergent_family()
+        documents = [m.prepare_v2(family[locale], locale, family) for locale in ('es', 'en', 'fr')]
+        m.check_localized_family(documents)
+        self.assertNotEqual(documents[0]['stateLayout']['origin'], documents[1]['stateLayout']['origin'])
+
+    def test_new_localized_activities_cannot_alias_different_types_or_storage(self):
+        family = divergent_family(); spanish = self.add(self.prepared(family))
+        english = m.prepare_v2(family['en'], 'en', family)
+        for change in ('type', 'slot', 'id'):
+            with self.subTest(change=change):
+                addition = new_activity()
+                if change == 'type': addition['block'] = {'type': 'paragraph', 'text': 'Different ownership'}
+                if change == 'slot': addition['storage']['block'] = 1
+                if change == 'id': addition['id'] = 'different_new_activity'
+                plan = deepcopy(english['stateLayout']['current']); plan[1]['blocks'].insert(1, addition['id'])
+                bad = m.reorder(english, plan, [addition])
+                with self.assertRaises(m.LayoutError):
+                    m.check_localized_family([spanish, bad, family['fr']], ['es', 'en', 'fr'])
+
+    def test_downgrade_and_unknown_fields_are_rejected(self):
+        source = self.prepared()
+        with self.assertRaises(m.LayoutError): m.validate_transition(source, m.prepare(divergent_family()['es']))
+        for location in ('root', 'family', 'addition', 'editorial'):
+            with self.subTest(location=location):
+                bad = deepcopy(self.add(source))
+                if location == 'root': bad['stateLayout']['ignoreMismatch'] = True
+                if location == 'family': bad['stateLayout']['family']['en']['ignoreMismatch'] = True
+                if location == 'addition': bad['stateLayout']['additions'][0]['ignoreMismatch'] = True
+                if location == 'editorial':
+                    bad['stateLayout']['editorial'] = [{'id':'block_0000_0000', 'beforeSha256':'0'*64,
+                                                       'afterSha256':'1'*64, 'ignoreMismatch':True}]
+                with self.assertRaises(m.LayoutError): m.validate(bad)
+
+    def test_real_u1l2_family_keeps_34_spanish_and_29_translated_historical_blocks(self):
+        root = Path(__file__).resolve().parents[2]
+        suffix = 'programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json'
+        family = {locale: m.load(root/m.CONTENT_DIRECTORY/locale/suffix) for locale in ('es', 'en', 'fr')}
+        translated_bytes = {locale: (root/m.CONTENT_DIRECTORY/locale/suffix).read_bytes() for locale in ('en', 'fr')}
+        self.assertEqual([sum(len(p['blocks']) for p in family[locale]['pages']) for locale in ('es', 'en', 'fr')],
+                         [34, 29, 29])
+        edited = deepcopy(family['es'])
+        edited['pages'][4]['blocks'][1]['text'] += ' Verificación editorial aislada.'
+        source = m.prepare_v2(edited, 'es', family)
+        plan = deepcopy(source['stateLayout']['current'])
+        plan[4]['blocks'][2], plan[4]['blocks'][3] = plan[4]['blocks'][3], plan[4]['blocks'][2]
+        addition = new_activity(page=6)
+        addition['progressPage'] = 'page_0004'
+        plan[4]['blocks'].insert(3, addition['id'])
+        moved = m.reorder(source, plan, [addition])
+        positions = m.validate(moved)
+        self.assertEqual(positions[4, 2], (4, 3))  # Existing prediction, not the translated note.
+        self.assertEqual(positions[4, 3], (6, 0))  # Independent original execution, without inherited state.
+        self.assertEqual(positions[4, 4], (4, 2))  # Original editable lab keeps its draft.
+        self.assertEqual(positions[5, 6], (5, 6))  # The separate Zona segura practice remains intact.
+        m.validate_transition(family['es'], moved)
+        m.check_localized_family([moved, family['en'], family['fr']], ['es', 'en', 'fr'])
+        self.assertEqual(translated_bytes,
+                         {locale: (root/m.CONTENT_DIRECTORY/locale/suffix).read_bytes() for locale in ('en', 'fr')})
+
+
+class ExtendedRepositoryGateTest(unittest.TestCase):
+    git = RepositoryGateTest.git
+    commit = RepositoryGateTest.commit
+    write = RepositoryGateTest.write
+    tearDown = RepositoryGateTest.tearDown
+
+    def setUp(self):
+        RepositoryGateTest.setUp(self)
+        self.family = divergent_family()
+        for locale, document in self.family.items(): self.write(self.files[locale], document)
+        self.base = self.commit()
+
+    def adopt(self):
+        result = m.prepare_v2(self.family['es'], 'es', self.family)
+        self.write(self.files['es'], result)
+        return result
+
+    def test_spanish_can_adopt_while_old_translations_stay_byte_identical(self):
+        before = {locale: self.files[locale].read_bytes() for locale in ('en', 'fr')}
+        self.adopt()
+        self.assertEqual(m.check_repository(self.root, self.base)['mapped_lessons'], 1)
+        self.assertEqual(before, {locale: self.files[locale].read_bytes() for locale in ('en', 'fr')})
+
+    def test_forged_family_digest_is_rejected_by_the_published_git_anchor(self):
+        source = self.adopt(); source['stateLayout']['family']['es']['sha256'] = '0' * 64
+        self.write(self.files['es'], source)
+        with self.assertRaisesRegex(m.LayoutError, 'published source'):
+            m.check_repository(self.root, self.base)
+
+    def test_omitting_a_shipped_locale_or_changing_its_raw_text_is_rejected(self):
+        source = self.adopt(); del source['stateLayout']['family']['fr']
+        self.write(self.files['es'], source)
+        with self.assertRaises(m.LayoutError): m.check_repository(self.root, self.base)
+        self.adopt(); changed = deepcopy(self.family['fr']); changed['pages'][0]['blocks'][0]['text'] = 'Changed'
+        self.write(self.files['fr'], changed)
+        with self.assertRaises(m.LayoutError): m.check_repository(self.root, self.base)
+
+    def test_repeat_delivery_keeps_the_original_family_instead_of_rebaselining_it(self):
+        source = self.adopt(); published = self.commit()
+        moved = m.reorder(source, list(reversed(source['stateLayout']['current'])))
+        self.write(self.files['es'], moved)
+        self.assertEqual(m.check_repository(self.root, published)['families'], 1)
+        self.assertEqual(m.check_repository(self.root, self.base)['families'], 1)
+
+    def test_later_translation_adopts_its_real_history_without_rewriting_the_family(self):
+        spanish = self.adopt(); spanish = m.reorder(spanish, list(reversed(spanish['stateLayout']['current'])))
+        self.write(self.files['es'], spanish); published = self.commit()
+        previous, actual_family = m.published_family(self.files['en'], 'en', published)
+        english = m.prepare_v2(previous, 'en', actual_family)
+        self.write(self.files['en'], english)
+        self.assertEqual(m.check_repository(self.root, published)['mapped_lessons'], 2)
+        self.assertEqual(english['stateLayout']['family'], spanish['stateLayout']['family'])
+
+    def test_git_cli_prepares_edits_move_and_new_activity_without_exporting_old_assets(self):
+        edited = deepcopy(self.family['es']); edited['pages'][0]['blocks'][0]['text'] = 'Edited in the same delivery'
+        self.write(self.files['es'], edited)
+        initial = m.prepare_v2(edited, 'es', self.family)
+        plan = list(reversed(deepcopy(initial['stateLayout']['current'])))
+        plan[1]['blocks'].insert(0, 'new_original_execution')
+        plan_path = self.root/'authoring-plan.json'; additions_path = self.root/'authoring-additions.json'
+        plan_path.write_text(json.dumps(plan)); additions_path.write_text(json.dumps([new_activity()]))
+        target = self.root/'prepared-lesson.json'
+        before = set(self.root.rglob('*'))
+        result = subprocess.run([sys.executable, str(SPEC.origin), 'prepare', str(self.files['es']),
+                                 '--locale', 'es', '--base-ref', self.base, '--plan', str(plan_path),
+                                 '--additions', str(additions_path), '--output', str(target)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(set(self.root.rglob('*')) - before, {target})
+        m.validate_transition(self.family['es'], m.load(target))
+
+    def test_git_cli_rejects_forged_locale_and_never_overwrites_an_existing_output(self):
+        target = self.root/'prepared-lesson.json'; target.write_text('KEEP')
+        for locale in ('es', 'fr'):
+            result = subprocess.run([sys.executable, str(SPEC.origin), 'prepare', str(self.files['es']),
+                                     '--locale', locale, '--base-ref', self.base, '--output', str(target)],
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(target.read_text(), 'KEEP')
+
+    def valid_curriculum(self):
+        source = {'id': 'cpp_fundamentals__unit__fixture', 'title': 'Fixture', 'pages': [
+            {'title': 'A', 'blocks': [
+                {'type': 'paragraph', 'text': 'A complete explanation'},
+                {'type': 'cpp_compiler', 'initialCode': 'int main() {}'},
+                {'type': 'output_prediction', 'id': 'prior_prediction', 'language': 'cpp',
+                 'question': 'Which output?', 'code': 'int main() {}', 'answers': ['Empty'],
+                 'explanation': 'This program sends no text.'}]}]}
+        family = {locale: deepcopy(source) for locale in ('es', 'en', 'fr')}
+        for locale, document in family.items(): self.write(self.files[locale], document)
+        content = self.files['es'].parents[1]
+        self.write(content/'unit/unit_fixture.json', {
+            'courseId': 'cpp_fundamentals', 'unitId': 'cpp_fundamentals__unit', 'title': 'Unit',
+            'lessons': [{'number': 1, 'id': source['id'], 'title': 'Fixture'}]})
+        self.write(content/'course_cpp_fundamentals.json', {
+            'units': [{'number': 1, 'id': 'cpp_fundamentals__unit', 'title': 'Unit'}]})
+        published = self.commit()
+        return source, family, content, published
+
+    def test_existing_validator_checks_new_blocks_before_projecting_historical_ones(self):
+        import validar_json_programacion as contract
+        source, family, content, published = self.valid_curriculum()
+        prepared = m.prepare_v2(source, 'es', family)
+        plan = deepcopy(prepared['stateLayout']['current'])
+        plan[0]['blocks'].insert(0, 'new_original_execution')
+        for malformed in (False, True):
+            with self.subTest(malformed=malformed):
+                addition = new_activity(page=1); addition['progressPage'] = 'page_0000'
+                if malformed: addition['block']['initialCode'] = 42
+                added = m.reorder(prepared, plan, [addition])
+                self.write(self.files['es'], added)
+                output = io.StringIO()
+                with mock.patch.object(contract, 'ROOT', self.root), mock.patch.object(contract, 'CONTENT', content), \
+                        mock.patch.object(contract, 'ERRORS', []), redirect_stderr(output), \
+                        redirect_stdout(output):
+                    if malformed:
+                        with self.assertRaises(SystemExit): contract.main(['--base-ref', published])
+                    else:
+                        contract.main(['--base-ref', published])
+                if malformed:
+                    self.assertIn('initialCode debe ser texto', output.getvalue())
+                else:
+                    self.assertIn('posiciones previas correctos', output.getvalue())
+
+    def test_existing_editorial_authorizations_follow_original_coordinates_after_an_earlier_move(self):
+        import validar_json_programacion as contract
+        source, family, content, _ = self.valid_curriculum()
+        prepared = m.prepare_v2(source, 'es', family)
+        plan = deepcopy(prepared['stateLayout']['current'])
+        plan[0]['blocks'] = [plan[0]['blocks'][2], plan[0]['blocks'][0], plan[0]['blocks'][1]]
+        moved = m.reorder(prepared, plan)
+        self.write(self.files['es'], moved); published = self.commit()
+        edited = deepcopy(moved)
+        old_question = edited['pages'][0]['blocks'][0]['question']
+        edited['pages'][0]['blocks'][0]['question'] = 'An approved, clearer question'
+        previous, actual_family = m.published_family(self.files['es'], 'es', published)
+        revised = m.prepare_v2(edited, 'es', actual_family, previous)
+        self.write(self.files['es'], revised)
+        digest = lambda text: hashlib.sha256(text.encode('utf-8')).hexdigest()
+        approval = {('unit/lesson_fixture.json', 1, 3, 'output_prediction', 'question'):
+                    (digest(old_question), digest(edited['pages'][0]['blocks'][0]['question']))}
+        with mock.patch.object(contract, 'ROOT', self.root), mock.patch.object(contract, 'CONTENT', content), \
+                mock.patch.object(contract, 'ERRORS', []), \
+                mock.patch.object(contract, 'APPROVED_EDITORIAL_REVISIONS', approval), \
+                redirect_stdout(io.StringIO()):
+            contract.main(['--base-ref', published])
 
 if __name__ == '__main__': unittest.main(verbosity=2)

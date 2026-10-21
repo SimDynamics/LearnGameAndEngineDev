@@ -1327,8 +1327,7 @@ object ProgressRepository {
         pageIndex: Int,
         blockIndex: Int
     ): String {
-        val origin = LessonStateCoordinates.block(context, lessonId, pageIndex, blockIndex)
-        return "exercise_${lessonId}_page_${origin.page}_block_${origin.block}"
+        return LessonStateCoordinates.exerciseKey(context, lessonId, pageIndex, blockIndex)
     }
 
     private data class LessonLocation(

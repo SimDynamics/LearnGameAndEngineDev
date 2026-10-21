@@ -22,13 +22,13 @@ de lugar dentro de un ejercicio, ni sustituir el programa de un laboratorio.
 Esas operaciones necesitan una migración diferente y explícita. Los corazones,
 las compras y los archivos de audio no forman parte de este contrato.
 
-La primera adopción y cada reordenamiento conservan el contenido completo de
-los bloques, incluidas sus explicaciones. Las revisiones editoriales se publican
+En versión 1, la primera adopción y cada reordenamiento conservan el contenido
+completo de los bloques, incluidas sus explicaciones. Las revisiones editoriales se publican
 antes o después, con el orden estable. Separar esas transiciones evita que dos
 párrafos con la misma forma intercambien por accidente su cobertura de lectura;
 sus firmas de estado excluyen el texto para admitir correcciones posteriores.
 
-## Formato e invariantes
+## Contrato v1 e invariantes compartidas
 
 El objeto de lección conserva sus campos anteriores y añade `stateLayout` con
 estas tres claves:
@@ -89,7 +89,7 @@ se demuestra esa correspondencia, se conserva la posición anterior sin inventar
 un tiempo de reproducción para un audio distinto. Este mecanismo no amplía la
 cuota de posiciones ni borra audios.
 
-## Idiomas
+## Idiomas en v1
 
 Todos los archivos de idioma que se distribuyan para una misma lección deben
 adoptar el mapa en la misma publicación. El origen de ES, EN y FR debe describir
@@ -104,51 +104,119 @@ archivo artificial. Cuando se añada su traducción, debe heredar el mismo orige
 que los idiomas ya publicados. Una traducción nueva sin mapa se rechaza si la
 familia ya lo utiliza.
 
-## Procedimiento para Work
+## Ampliación v2: idiomas históricos, altas y revisión editorial
 
-1. Leer las instrucciones vigentes del proyecto, actualizar la referencia remota
-   de `codex-chat/app` e inspeccionar el trabajo local. Anotar el SHA exacto que
-   estaba publicado. No sustituir archivos de Work o Codex ni usar un push
-   forzado.
-2. Extraer desde ese SHA una copia UTF-8 de cada lección publicada que se va a
-   mover. Esa copia es `publicada.json` en los ejemplos. Conservar una copia por
-   idioma. Si ya existía `stateLayout`, conservarlo completo.
-3. Preparar una copia nueva del archivo que se está revisando. El comando no
-   sobrescribe ni el origen ni un destino que ya exista:
+La versión 2 permite adoptar el mapa en español conservando intactos los archivos
+ingleses y franceses publicados, aunque históricamente tengan otras actividades.
+No se reconstruyen traducciones ni se rellenan sus orígenes para hacerlos coincidir.
+La primera familia se ancla al SHA publicado; al adoptar después otro idioma se
+reutiliza esa misma familia, sin cambiar la referencia histórica.
 
-   ```sh
-   python scripts/curriculum/stable_state_layout.py prepare leccion.json --previous publicada.json --output preparada.json
-   ```
+El objeto `stateLayout` v2 contiene exactamente estos campos:
 
-4. Copiar `stateLayout.current` de `preparada.json` a un archivo `plan.json`.
-   Cambiar exclusivamente el orden de las páginas y de los identificadores de
-   bloque. Cada identificador debe aparecer exactamente una vez. Por ejemplo,
-   para intercambiar dos páginas se intercambian sus objetos completos en esa
-   lista; no se renombra `page_0000` a `page_0001`.
-5. Generar la propuesta sin modificar el archivo de partida:
+| Campo | Contrato |
+| --- | --- |
+| `version` | Entero `2`. |
+| `locale` | Idioma real del asset: `es`, `en` o `fr`. El respaldo español sigue siendo español aunque la interfaz use otro idioma. |
+| `origin` | Origen inmutable del idioma seleccionado, con el formato v1. |
+| `current` | Páginas originales y bloques visibles; incluye explícitamente los bloques nuevos. |
+| `family` | Por idioma publicado: `sha256` del documento histórico sin `stateLayout` y su propio `origin`. Se calculan desde Git, sin exportar copias históricas. |
+| `additions` | Altas con `id`, `sha256`, `storage: {page, block}` y `progressPage`. |
+| `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
 
-   ```sh
-   python scripts/curriculum/stable_state_layout.py reorder preparada.json --plan plan.json --previous publicada.json --output reordenada.json
-   python scripts/curriculum/stable_state_layout.py check reordenada.json --previous publicada.json
-   ```
+Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
+deben conservar exactamente su documento publicado; la puerta verifica esa
+condición. Las fijaciones de identidad y la cobertura de lectura son independientes
+por idioma real. Un mapa retirado de su idioma o un origen incompatible se rechaza
+sin reinterpretar datos. Los mapas v1 siguen funcionando y pueden adoptar v2 sólo
+si se demuestra su origen anterior; sus metadatos se conservan.
 
-6. Revisar e incorporar las propuestas de todos los idiomas distribuidos.
-   Ejecutar las puertas de publicación desde la raíz del repositorio, usando el
-   SHA publicado real en lugar del marcador:
+Cada alta tiene identidad y dirección reservadas, fuera de las páginas históricas
+de todos los idiomas de la familia. Las altas son acumulativas: no se pueden
+retirar, reasignar ni reciclar sus direcciones. `progressPage` asigna el bloque
+a un grupo de progreso original. El peso de las páginas originales se conserva;
+una actividad nueva comienza pendiente y puede añadir un requisito a su grupo.
+Esta ampliación no añade, divide ni fusiona páginas.
 
-   ```sh
-   python scripts/curriculum/stable_state_layout.py check-tree . --base-ref SHA_PUBLICADO
-   python scripts/curriculum/validar_json_programacion.py --base-ref SHA_PUBLICADO
-   python -m unittest discover -s scripts/curriculum -p "test_*.py"
-   ```
+Las respuestas, intentos y borradores de las altas usan además un espacio de
+claves derivado de la familia, idioma e identidad de alta. Ni siquiera un dato
+posicional antiguo en su dirección reservada se hereda. Los editores históricos
+mantienen exactamente sus claves, incluido el propietario del historial de proyecto.
 
-`prepare`, `reorder` y `check` exigen `--previous`; una comprobación interna de
-consistencia no acredita que el origen provenga de lo publicado. `check-tree`
-exige `--base-ref`, lo resuelve una vez a un commit y compara los mapas con ese
-árbol. También detecta lecciones o mapas retirados y archivos de idioma sin
-mapa. El validador curricular exige la misma referencia explícita cuando hay
-metadatos de estado actuales o en el HEAD local. Un commit local posterior no
-reemplaza el SHA publicado usado como referencia.
+V2 permite revisión editorial y permutación en una misma entrega. El generador
+relaciona cada bloque con su identidad anterior y registra hashes completos antes
+y después. La puerta exige una cadena continua, conserva las pruebas anteriores
+y contrasta el resultado con el archivo publicado. La firma de estado del bloque
+debe permanecer igual. El validador curricular sigue autorizando las revisiones:
+no se flexibilizan respuestas, código ni huellas matemáticas.
+
+## Procedimiento v2 para Work
+
+Usar el SHA publicado verificado, no un commit que ya contenga el mapa que se
+quiere aprobar. El generador lee las versiones publicadas de los idiomas desde
+Git en memoria. No necesita respaldos de lecciones, otra rama ni publicaciones
+intermedias. Las modificaciones se guardan localmente; el usuario publica.
+
+El plan es una lista con el formato de `current`. Los identificadores históricos
+se derivan de sus índices originales desde cero: `page_0000`, `block_0000_0000`.
+No se renombran al moverlos. Para un bloque nuevo, el plan incluye también el
+identificador que Work elija. Su entrada de autoría en la lista de altas es:
+
+```json
+{
+  "id": "ejecucion_original",
+  "storage": {"page": 6, "block": 0},
+  "progressPage": "page_0004",
+  "block": {"type": "cpp_compiler", "initialCode": "PROGRAMA_DE_LA_ACTIVIDAD"}
+}
+```
+
+El ejemplo sólo describe la forma de la entrada; Work define el programa,
+objetivo y contrato real de la actividad. El `sha256` lo calcula la herramienta.
+El índice reservado `6` sólo es válido si ninguna variante histórica tiene más
+de seis páginas. Se comprueban los bloques añadidos con el validador completo.
+
+```sh
+python scripts/curriculum/stable_state_layout.py prepare RUTA_DEL_ASSET.json --locale es --base-ref SHA_PUBLICADO --plan plan.json --additions altas.json --output propuesta.json
+python scripts/curriculum/stable_state_layout.py check RUTA_DEL_ASSET.json --locale es --base-ref SHA_PUBLICADO
+python scripts/curriculum/stable_state_layout.py check-tree . --base-ref SHA_PUBLICADO
+python scripts/curriculum/validar_json_programacion.py --base-ref SHA_PUBLICADO
+python -m unittest discover -s scripts/curriculum -p "test_*.py"
+```
+
+`--additions` es opcional; `--plan` permite preparar y permutar en una operación.
+El destino nuevo contiene la propuesta para incorporar al asset original; no es
+un respaldo histórico. Después de incorporarla se ejecutan `check`, `check-tree`
+y el validador contra el mismo SHA. Las puertas no acreditan ejecución Android.
+No se deben generar archivos de traducción cuando no se esté traduciendo.
+
+## Lectura y alcance de la recuperación
+
+El lector sigue usando tres posiciones recientes, incluidas las finalizadas,
+y pausa liberando `MediaPlayer`. El orden nuevo no cambia el audio ni su caché.
+Un bloque añadido no hereda lectura ni crédito de retroalimentación antigua.
+
+Las posiciones con identidad estable pueden seguir al mismo bloque y audio
+cuando cambian otras partes de la página. Una posición muy antigua sólo contiene
+la huella de la página completa, segmento y desplazamiento. Si también cambia
+su texto hablado, los hashes no permiten reconstruir el guion anterior: se
+conserva ese registro sin aplicarlo a otro audio ni inventar milisegundos. Para
+una página hablada intacta se puede verificar el guion de origen y recuperar
+exactamente su pausa después de moverla. No se duplica texto curricular para
+sortear esta limitación ni se modifica la política de posiciones.
+
+## Compatibilidad de herramientas v1
+
+La API v1 y su opción `--previous` permanecen compatibles para las herramientas
+que ya disponen de un documento anterior verificado. No se deben crear ni
+conservar respaldos históricos para adoptar v2: se utiliza el procedimiento
+anterior con `--locale` y `--base-ref`, que también admite un origen v1 publicado.
+
+`check-tree` exige `--base-ref`, lo resuelve una vez a un commit y compara los
+mapas con ese árbol. Detecta lecciones o mapas retirados y familias incompatibles.
+El validador curricular exige la misma referencia explícita cuando hay metadatos
+de estado actuales o en el HEAD local. Un commit local posterior no reemplaza
+el SHA publicado usado como referencia.
 
 El generador no consulta la red. Obtener y comprobar el HEAD remoto corresponde
 al flujo de integración. Si otro trabajo publica antes de terminar, hay que

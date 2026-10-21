@@ -115,11 +115,11 @@ object LessonRepository {
                 lessonId
             )
 
-        val json = CurriculumAssetLocale.read(context, path)
+        val asset = CurriculumAssetLocale.readResolved(context, path)
 
         return JSONObject(
-            json
-        ).also { LessonStateCoordinates.register(context, lessonId, it) }
+            asset.text
+        ).also { LessonStateCoordinates.register(context, lessonId, it, asset.language) }
     }
 
     /*

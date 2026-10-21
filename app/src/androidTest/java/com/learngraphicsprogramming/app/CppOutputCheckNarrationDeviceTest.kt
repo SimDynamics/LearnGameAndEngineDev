@@ -66,6 +66,202 @@ class CppOutputCheckNarrationDeviceTest : CppOutputCheckQaSupport() {
         instrumentation.runOnMainSync { UiLanguageSettings.select(context, originalLocale) }
     }
 
+    @Test fun firstLocalizedStateAdoptionReusesTheRealMovedPageAudioAndItsReleasedPause() {
+        val family = LocalizedStableLessonQaFixture.realFamily(context)
+        val original = family.getValue("es")
+        val mapped = LocalizedStableLessonQaFixture.mapped(family, secondPermutation = true)
+        val lessonId = LocalizedStableLessonQaFixture.REAL_LESSON
+        val route = LocalizedStableLessonQaFixture.ROUTE
+        val originalScript = LessonNarrationScript.page(original, 5, NarrationLanguage.SPANISH, true)
+        val movedScript = LessonNarrationScript.page(mapped, 4, NarrationLanguage.SPANISH, true)
+        assertEquals("The original sixth page has moved, without changing any of its spoken content",
+            originalScript.texts, movedScript.texts)
+        assertEquals(originalScript.gates, movedScript.gates)
+        val settings = NarrationSettingsRepository.forLanguage(context, NarrationLanguage.SPANISH)
+        fun playbackKey(page: Int, script: LessonNarrationScript) = NarrationResumePolicy.key(
+            "$route/$lessonId/$page", settings.language.tag, settings.engine.name, settings.kokoroVoice,
+            NarrationSegments.sentences(script.texts))
+        val resume = context.getSharedPreferences("lesson_narration_resume_bounded_v1", Context.MODE_PRIVATE)
+        assertTrue(resume.edit().clear().commit())
+        val store = NarrationResumeStore(context)
+        val previousScript = LessonNarrationScript.page(original, 0, NarrationLanguage.SPANISH, true)
+        val previousKey = playbackKey(0, previousScript)
+        val completedPoint = NarrationResumePoint(NarrationSegments.sentences(previousScript.texts).lastIndex,
+            1234L, finished = true)
+        val completedOwner = store.begin(previousKey, completedPoint)
+        store.save(previousKey, completedOwner, completedPoint)
+        val pausedScript = LessonNarrationScript.page(original, 1, NarrationLanguage.SPANISH, true)
+        val pausedKey = playbackKey(1, pausedScript)
+        val pausedPoint = NarrationResumePoint(1, 567L)
+        val pausedOwner = store.begin(pausedKey, pausedPoint)
+        store.save(pausedKey, pausedOwner, pausedPoint)
+        val errors = mutableListOf<String>()
+        val progressEvents = mutableListOf<NarrationPlaybackProgress>()
+        val hostFixture = fixture(CppOutputCheckDeviceTest.LOCATIONS.first(), null)
+        lateinit var before: LessonNarrationController
+        lateinit var after: LessonNarrationController
+        var savedIndex = -1
+        var savedOffset = -1L
+        var originalKey = ""
+        var movedKey = ""
+        var sentence = ""
+        var audioHash = ""
+        var originalFile: File? = null
+        var originalBytes = ByteArray(0)
+        var originalAudioSha = ""
+        var originalBookmarks = emptyList<String>()
+        var generationEvents = 0
+        var exerciseStates: Map<String, *> = emptyMap<String, Any?>()
+        val diagnostics = File(context.filesDir, KokoroNarrationDiagnostics.EVENTS_FILE)
+        fun generationsOfCurrentRecording(): Int = if (!diagnostics.isFile) 0 else
+            diagnostics.readLines().count { line -> runCatching { JSONObject(line) }.getOrNull()?.let {
+                it.optString("event") == "Page sentence generated" && it.optString("hash") == audioHash
+            } == true }
+        fun keys() = (0 until 3).mapNotNull { resume.getString("key_$it", null) }
+        val caches = field<java.util.WeakHashMap<android.content.res.AssetManager, MutableMap<Any, Any>>>(
+            LessonStateCoordinates, "layouts")
+        val previousCache = synchronized(LessonStateCoordinates) {
+            caches[context.assets].orEmpty().filterKeys { key ->
+                field<String>(key, "lesson") == lessonId && field<String>(key, "language") == "es" }
+        }
+        try {
+            LessonStateCoordinates.register(context, lessonId, original, "es")
+            withFixture(hostFixture) { host ->
+            host.onActivity {
+                NarrationSettingsRepository.saveEnabled(context, true)
+                exerciseStates = context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all
+                    .filterKeys { key -> key.startsWith("exercise_${lessonId}_") }
+                before = LessonNarrationController(context, {}, { errors += it }, { progressEvents += it })
+                readers += before
+                before.bindStableLesson(original, route, lessonId, 5, originalScript,
+                    NarrationLanguage.SPANISH, true) { "" }
+                before.toggle(originalScript.texts, NarrationLanguage.SPANISH, "$route/$lessonId/5",
+                    originalScript.gates, emptySet())
+            }
+            await(host, "The real original sixth page plays a long Kokoro sentence before migration", 180_000L) {
+                val player = field<MediaPlayer?>(before, "player")
+                before.isPlaying && field<Int>(before, "index") >= 1 &&
+                    field<Boolean>(before, "playerReady") && player != null && player.isPlaying &&
+                    player.duration > 4000 && player.currentPosition in 351..(player.duration - 1800)
+            }
+            host.onActivity {
+                before.pauseKeepingPosition()
+                assertNull("Pause must release the original MediaPlayer", field<MediaPlayer?>(before, "player"))
+                savedIndex = field(before, "index")
+                savedOffset = field(before, "offset")
+                assertTrue(savedOffset >= 350L)
+                originalKey = requireNotNull(field<String?>(before, "resumeKey"))
+                assertEquals(playbackKey(5, originalScript), originalKey)
+                val part = field<List<Any>>(before, "segments")[savedIndex]
+                assertFalse("This evidence requires real Kokoro, never an Android fallback", field<Boolean>(part, "usedAndroidTts"))
+                sentence = field(part, "text")
+                originalFile = requireNotNull(field<File?>(part, "file"))
+                originalBytes = requireNotNull(originalFile).readBytes()
+                originalAudioSha = MessageDigest.getInstance("SHA-256").digest(originalBytes)
+                    .joinToString("") { byte -> "%02x".format(byte) }
+                audioHash = KokoroNarrationCache.key(settings.language.tag, settings.kokoroVoice, sentence)
+                assertEquals(requireNotNull(originalFile).canonicalPath,
+                    requireNotNull(KokoroNarrationCache.lookup(context, settings.language.tag, settings.kokoroVoice, sentence)).canonicalPath)
+                assertEquals(NarrationResumePoint(savedIndex, savedOffset),
+                    store.restore(originalKey, field<List<Any>>(before, "segments").size))
+                originalBookmarks = keys()
+                assertEquals(listOf(originalKey, pausedKey, previousKey), originalBookmarks)
+                generationEvents = generationsOfCurrentRecording()
+                before.close()
+            }
+            awaitWorkerStop("The old controller releases its native worker before reopening the page", 30_000L) {
+                !field<Thread>(before, "workerThread").isAlive
+            }
+            assertArrayEquals("Closing the old reader preserves the installed recording", originalBytes,
+                requireNotNull(originalFile).readBytes())
+            host.onActivity {
+                LessonStateCoordinates.register(context, lessonId, mapped, "es")
+                val identity = LessonStateCoordinates.narrationPageIdentity(context, route, lessonId, 4)
+                after = LessonNarrationController(context, {}, { errors += it }, { progressEvents += it })
+                readers += after
+                after.bindStableLesson(mapped, route, lessonId, 4, movedScript,
+                    NarrationLanguage.SPANISH, true) { "" }
+                after.toggle(movedScript.texts, NarrationLanguage.SPANISH, identity, movedScript.gates, emptySet())
+                movedKey = requireNotNull(field<String?>(after, "resumeKey"))
+                assertNotEquals("The visible page identity changes while its bookmark is adopted", originalKey, movedKey)
+                assertEquals("Adoption retains the exact original segment", savedIndex, field<Int>(after, "index"))
+                assertEquals("Adoption retains the exact millisecond position", savedOffset, field<Long>(after, "offset"))
+                assertEquals(listOf(movedKey, pausedKey, previousKey), keys())
+                assertEquals(completedPoint, store.restore(previousKey, completedPoint.segment + 1))
+                assertEquals(pausedPoint, store.restore(pausedKey, NarrationSegments.sentences(pausedScript.texts).size))
+                val stable = requireNotNull(field<NarrationStablePage?>(after, "activeStablePage"))
+                val layout = requireNotNull(LessonStateLayoutJson.read(mapped))
+                val expected = requireNotNull(NarrationStableLesson.page(layout, route, lessonId, 4, movedScript,
+                    NarrationSettingsRepository.forLanguage(context, NarrationLanguage.SPANISH))).stable
+                assertEquals(expected.parts[savedIndex], stable.parts[savedIndex])
+                assertTrue("The original block identity remains on historical page six",
+                    stable.parts[savedIndex].block.startsWith("block_0005_"))
+            }
+            await(host, "The moved page resumes the same cached audio beyond its previous offset", 60_000L) {
+                val player = field<MediaPlayer?>(after, "player")
+                after.isPlaying && field<Int>(after, "index") == savedIndex &&
+                    field<Boolean>(after, "playerReady") && player != null && player.isPlaying &&
+                    player.currentPosition > savedOffset + 120L && player.currentPosition < savedOffset + 1700L
+            }
+            var secondPause = -1L
+            host.onActivity {
+                val part = field<List<Any>>(after, "segments")[savedIndex]
+                assertFalse(field<Boolean>(part, "usedAndroidTts"))
+                assertEquals(sentence, field<String>(part, "text"))
+                assertEquals(requireNotNull(originalFile).canonicalPath, requireNotNull(field<File?>(part, "file")).canonicalPath)
+                assertArrayEquals(originalBytes, requireNotNull(field<File?>(part, "file")).readBytes())
+                after.pauseKeepingPosition()
+                assertNull("The relocated pause also releases MediaPlayer", field<MediaPlayer?>(after, "player"))
+                secondPause = field(after, "offset")
+                assertTrue(secondPause > savedOffset)
+                assertEquals(NarrationResumePoint(savedIndex, secondPause),
+                    store.restore(movedKey, field<List<Any>>(after, "segments").size))
+                assertEquals(listOf(movedKey, pausedKey, previousKey), keys())
+                after.toggle(movedScript.texts, NarrationLanguage.SPANISH,
+                    field(after, "activePageIdentity"), movedScript.gates, emptySet())
+                assertEquals(secondPause, field<Long>(after, "offset"))
+            }
+            await(host, "A second real resume advances from the relocated released pause", 60_000L) {
+                val player = field<MediaPlayer?>(after, "player")
+                after.isPlaying && field<Int>(after, "index") == savedIndex &&
+                    field<Boolean>(after, "playerReady") && player != null && player.isPlaying &&
+                    player.currentPosition > secondPause + 120L
+            }
+            host.onActivity {
+                after.pauseKeepingPosition()
+                assertTrue(errors.toString(), errors.isEmpty())
+                assertNull(field<MediaPlayer?>(after, "player"))
+                assertFalse(field<Boolean>(after, "finished"))
+                assertEquals(listOf(movedKey, pausedKey, previousKey), keys())
+                assertEquals(completedPoint, store.restore(previousKey, completedPoint.segment + 1))
+                assertEquals(pausedPoint, store.restore(pausedKey, NarrationSegments.sentences(pausedScript.texts).size))
+                assertArrayEquals(originalBytes, requireNotNull(originalFile).readBytes())
+                assertEquals(audioHash, KokoroNarrationCache.key(settings.language.tag, settings.kokoroVoice, sentence))
+                assertEquals("The original recording was reused without another inference", generationEvents,
+                    generationsOfCurrentRecording())
+                assertEquals(exerciseStates, context.getSharedPreferences("learning_progress", Context.MODE_PRIVATE).all
+                    .filterKeys { key -> key.startsWith("exercise_${lessonId}_") })
+                assertEquals(0, field<NarrationExerciseGate>(after, "playbackGate").heardThrough)
+                assertTrue(progressEvents.any { event -> event.phase == NarrationPlaybackPhase.PREPARED &&
+                    event.segmentIndex == savedIndex && event.positionMs == savedOffset })
+                android.util.Log.i("StableLessonState", "Real Kokoro v2 first adoption: originalPage=5 visiblePage=4; " +
+                    "segment=$savedIndex offsetMs=$savedOffset resumedPauseMs=$secondPause; audioSha256=$originalAudioSha; " +
+                    "threeBookmarks=true playerReleased=true cacheReused=true puzzlesUnchanged=true")
+            }
+            }
+        } finally {
+            // The preference guard restores disk state; restore this fixture's cache
+            // entry as well so later tests cannot seed its opted-in map accidentally.
+            synchronized(LessonStateCoordinates) {
+                caches[context.assets]?.let { cache ->
+                    cache.keys.filter { key -> field<String>(key, "lesson") == lessonId &&
+                        field<String>(key, "language") == "es" }.forEach(cache::remove)
+                    cache.putAll(previousCache)
+                }
+            }
+        }
+    }
+
     @Test fun naturallyFinishedCorrectVerdictReturnsToPlayingPageAfterAResourceReleasingPause() {
         verifyCorrectVerdictReturnsToItsSource(initiallyPaused = false, pauseVerdict = true)
     }

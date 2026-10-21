@@ -1177,6 +1177,9 @@ def main(argv=None):
         parser.exit(1, f"Conservación de estado no verificada: {error}\n")
     lessons = {}
     blocks = 0
+    # Check the complete visible document first, including v2 additions. The
+    # later historical projection only compares existing state; it must never
+    # hide a malformed newly authored activity from these structural checks.
     for path in sorted(CONTENT.glob("*/lesson_*.json")):
         doc = load(path)
         try:
@@ -1261,6 +1264,8 @@ def main(argv=None):
                 continue
             new = load(ROOT / relative)
             try:
+                historical_positions = _state_layout.validate(old)
+                historical_lesson = _state_layout.original_projection(old)
                 new = _state_layout.align_for_previous_validation(old, new)
             except (ValueError, KeyError, TypeError) as error:
                 require(False, relative, f"traslado de estado no verificado: {error}")
@@ -1277,14 +1282,17 @@ def main(argv=None):
                         require(False, relative, f"bloque previo perdido p{pn+1} b{bn+1}")
                         continue
                     require(current["type"] == kind and current.get("id") == block.get("id"), relative, f"posición/ID previo modificado p{pn+1} b{bn+1}")
+                    # Editorial authorizations belong to immutable coordinates,
+                    # even when the published baseline was already rearranged.
+                    origin_p, origin_b = historical_positions[pn, bn]
                     if kind == "cpp_compiler":
-                        require(preserves_previous_compiler(relative, pn, bn, block, current, old), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
+                        require(preserves_previous_compiler(relative, origin_p, origin_b, block, current, historical_lesson), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
                     elif kind != "multiple_choice" or (
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
-                        pn + 1,
-                        bn + 1,
+                        origin_p + 1,
+                        origin_b + 1,
                     ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS):
-                        require(preserves_previous_exercise(relative, pn, bn, block, current), relative,
+                        require(preserves_previous_exercise(relative, origin_p, origin_b, block, current), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
 
     if ERRORS:

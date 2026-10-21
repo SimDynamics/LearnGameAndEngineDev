@@ -99,10 +99,26 @@ class StableLessonRepositoryDeviceTest {
         assertFalse(saved(3, 2).getBoolean("correct"))
         originalAnswers.forEach { (key, value) -> assertEquals(value, progress.getString(key, null)) }
         assertEquals(DRAFT_KEY, LessonStateCoordinates.draftKey(context, ROUTE, LESSON, 1, 3))
+        assertEquals("Reordering alone never rewrites or relocates a draft", originalDrafts, drafts.all)
         assertEquals("// Mi borrador sin compilar\nint answer = 42;\n",
             CppLessonSourceDraft.read(drafts,
                 LessonStateCoordinates.draftKey(context, ROUTE, LESSON, 1, 3), "initial code"))
-        assertEquals(originalDrafts, drafts.all)
+        assertEquals("Rita 4\n", CppLessonInputDraft.read(drafts,
+            LessonStateCoordinates.draftKey(context, ROUTE, LESSON, 1, 3), "initial input"))
+        // The independent persistence repair escapes legacy LF-ending strings in their EXISTING
+        // keys. That protection is expected when the draft is first read; accepting a different
+        // stored format must not conceal changed text, moved keys, tab provenance or project data.
+        val protectedDrafts = buildMap<String, Any?> {
+            putAll(originalDrafts)
+            put("$DRAFT_KEY/source", CppDraftTextCodec.encode(originalDrafts.getValue("$DRAFT_KEY/source") as String, "code"))
+            put("$DRAFT_KEY/sourceEncoding", CppDraftTextCodec.ENCODING)
+            put("$DRAFT_KEY/input", CppDraftTextCodec.encode(originalDrafts.getValue("$DRAFT_KEY/input") as String, "input"))
+            put("$DRAFT_KEY/inputEncoding", CppDraftTextCodec.ENCODING)
+        }
+        assertEquals(protectedDrafts, drafts.all)
+        assertFalse("Protection cannot invent proof of the historical input", drafts.contains("$DRAFT_KEY/inputSha256"))
+        assertFalse("The displayed position cannot receive a copy of the historical draft",
+            drafts.all.keys.any { it.startsWith("$ROUTE/$LESSON/1/3/") })
 
         // Two visited theory groups plus the original solved group: mixing its two solved puzzles
         // with pending puzzles on different visible pages must preserve 3/5 (60%), not produce 2/5.
@@ -112,7 +128,7 @@ class StableLessonRepositoryDeviceTest {
         loadReorderedLesson()
         assertProgress(3)
         assertEquals(firstLoad, progress.all)
-        assertEquals(originalDrafts, drafts.all)
+        assertEquals("Reopening preserves the exact protected draft without another migration", protectedDrafts, drafts.all)
     }
 
     @Test fun savingAndResettingMovedExercisesUsesOriginalKeysAndRecomputesAllCompletionFlags() {

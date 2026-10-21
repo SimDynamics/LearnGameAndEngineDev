@@ -27,18 +27,27 @@ internal object CurriculumAssetLocale {
         return languageFor(UiLanguageSettings.selectedTag(context), systemLanguage)
     }
 
-    fun open(context: Context, relativePath: String): InputStream {
+    data class ResolvedText(val text: String, val language: String)
+    private data class ResolvedStream(val input: InputStream, val language: String)
+
+    private fun openResolved(context: Context, relativePath: String): ResolvedStream {
         val language = current(context)
         if (language != "es") {
             try {
-                return context.assets.open("content/$language/$relativePath")
+                return ResolvedStream(context.assets.open("content/$language/$relativePath"), language)
             } catch (_: FileNotFoundException) {
                 // Not every course has been translated. Do not hide other I/O failures.
             }
         }
-        return context.assets.open("content/es/$relativePath")
+        return ResolvedStream(context.assets.open("content/es/$relativePath"), "es")
     }
 
-    fun read(context: Context, relativePath: String): String =
-        open(context, relativePath).bufferedReader(Charsets.UTF_8).use { it.readText() }
+    fun open(context: Context, relativePath: String): InputStream = openResolved(context, relativePath).input
+
+    fun readResolved(context: Context, relativePath: String): ResolvedText {
+        val asset = openResolved(context, relativePath)
+        return ResolvedText(asset.input.bufferedReader(Charsets.UTF_8).use { it.readText() }, asset.language)
+    }
+
+    fun read(context: Context, relativePath: String): String = readResolved(context, relativePath).text
 }

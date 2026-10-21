@@ -1,6 +1,43 @@
 # Verificación de conservación de estado — 20 de octubre de 2026
 
-## Estado de la entrega
+## Ampliación v2 comprobada en el entorno local actual
+
+Base de esta ampliación: `882400602048f459e6460ddf0c6a34710ba33f3d`,
+rama `codex-chat/app`. No se modificaron los JSON curriculares ES/EN/FR.
+El nuevo orden y la aceptación curricular de Work continúan pendientes.
+
+- 188 pruebas Python y 133 JVM aprobadas, sin omisiones ni fallos.
+- APK y APK de pruebas compilados con las herramientas nativas locales existentes.
+- LDPlayer `emulator-5554`, x86_64, paquete aislado `realdownloadsqa`: 26 pruebas
+  de estado/repositorios y una prueba adicional con Kokoro real aprobadas.
+- Familia real U1L2 ES34/EN29/FR29 evaluada sólo en memoria: traducciones intactas,
+  respuestas, borradores, entrada y progreso conservados, altas aisladas, idiomas,
+  segunda permutación, reapertura, reinicios y compatibilidad v1 comprobados.
+- Reproducción real p6→p5: segmento 2 y 398 ms recuperados exactamente; segunda
+  pausa a 573 ms, `MediaPlayer` liberado, tres posiciones conservadas y la misma
+  grabación reutilizada sin nueva inferencia. SHA-256 de esa grabación:
+  `7c370e48eba03363f2af016f1d4b478d9c344f74805eec044ceea697e09a1b2b`.
+- Validador actual aprobado: 152 lecciones, 6025 bloques. Puerta de familias:
+  cero mapas de producción, porque la incorporación curricular sigue pendiente.
+- Una expectativa Android antigua comparaba el formato raw de borrador después
+  de la protección `json-v1` ya existente. Se corrigió la expectativa manteniendo
+  la comprobación exacta de todos los caracteres, claves históricas y metadatos;
+  la repetición final pasó los 26 casos.
+
+Logs en `.gradle/cmake-input-edit-assist-20261020/`:
+`python-localized-state-v2-final.log`, `build-localized-state-v2-final.log`, `jvm-localized-state-v2-final.log`,
+`android-localized-state-v2-final.log`, `android-localized-state-v2-kokoro.log`.
+Los XML JVM están en `app/build/test-results/testDebugUnitTest/`.
+No se usó Honor ni se repitió la suite general histórica o la generación Ogg.
+Las limitaciones de posiciones antiguas con audio editado se describen en el
+contrato. No se presenta esta prueba como aceptación del recorrido aún no integrado.
+
+## Resultados históricos de la entrega v1
+
+Lo siguiente describe la ejecución anterior sobre `617f0347`; sus limitaciones
+de entorno y resultados de suite general no son resultados de la ampliación v2.
+
+### Estado de aquella entrega
 
 La integración y el contrato de `stateLayout` están implementados. La compilación
 Kotlin utiliza el SDK de Android real. **No se ha completado la construcción del

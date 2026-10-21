@@ -11,40 +11,73 @@ internal object LessonStateLayoutJson {
         if (!lesson.has("stateLayout")) return null
         try {
             val metadata = lesson.getJSONObject("stateLayout")
-            require(metadata.get("version") == 1)
-            require(metadata.keys().asSequence().toSet() == setOf("version", "origin", "current"))
-            val original = metadata.getJSONArray("origin")
+            val version = metadata.get("version") as? Int ?: error("Invalid version")
+            val expected = if (version == 1) setOf("version", "origin", "current") else
+                setOf("version", "locale", "origin", "current", "family", "additions", "editorial")
+            require(version in 1..2 && metadata.keys().asSequence().toSet() == expected)
+            val (origin, signatures) = readOrigin(metadata.getJSONArray("origin"))
             val current = metadata.getJSONArray("current")
-            val signatures = linkedMapOf<String, String>()
-            val origin = (0 until original.length()).map { p ->
-                val page = original.getJSONObject(p)
-                require(page.keys().asSequence().toSet() == setOf("id", "blocks"))
-                val blocks = page.getJSONArray("blocks")
-                LessonStatePage(strictString(page, "id"), (0 until blocks.length()).map { b ->
-                    val block = blocks.getJSONObject(b)
-                    require(block.keys().asSequence().toSet() == setOf("id", "sha256"))
-                    val id = strictString(block, "id")
-                    val digest = strictString(block, "sha256")
-                    require(Regex("[0-9a-f]{64}").matches(digest))
-                    require(signatures.put(id, digest) == null)
-                    id
-                })
-            }
             val positions = (0 until current.length()).map { p ->
                 val page = current.getJSONObject(p)
                 require(page.keys().asSequence().toSet() == setOf("id", "blocks"))
                 val blocks = page.getJSONArray("blocks")
-                LessonStatePage(strictString(page, "id"), (0 until blocks.length()).map { b -> (blocks.get(b) as? String ?: throw IllegalArgumentException("Non-string identity")) })
+                LessonStatePage(strictString(page, "id"), (0 until blocks.length()).map { b ->
+                    blocks.get(b) as? String ?: error("Non-string identity") })
             }
-            val layout = StableLessonStateLayout(origin, positions)
+            val family = linkedMapOf<String, LessonStateFamily>()
+            val additions = mutableListOf<LessonStateAddition>()
+            val editorial = linkedMapOf<String, String>()
+            val locale = if (version == 2) strictString(metadata, "locale") else null
+            if (version == 2) {
+                val variants = metadata.getJSONObject("family")
+                require(variants.length() in 1..3)
+                variants.keys().forEach { language ->
+                    val record = variants.getJSONObject(language)
+                    require(record.keys().asSequence().toSet() == setOf("sha256", "origin"))
+                    val (pages, hashes) = readOrigin(record.getJSONArray("origin"))
+                    family[language] = LessonStateFamily(strictString(record, "sha256"), pages, hashes)
+                }
+                require(family[locale]?.signatures == signatures)
+                val extra = metadata.getJSONArray("additions")
+                require(extra.length() <= 100_000)
+                for (index in 0 until extra.length()) {
+                    val addition = extra.getJSONObject(index)
+                    require(addition.keys().asSequence().toSet() == setOf("id", "sha256", "storage", "progressPage"))
+                    val storage = addition.getJSONObject("storage")
+                    require(storage.keys().asSequence().toSet() == setOf("page", "block"))
+                    additions += LessonStateAddition(strictString(addition, "id"), strictString(addition, "sha256"),
+                        LessonStatePosition(storage.get("page") as Int, storage.get("block") as Int),
+                        strictString(addition, "progressPage"))
+                }
+                val changes = metadata.getJSONArray("editorial")
+                require(changes.length() <= 100_000)
+                val editorialSeen = mutableMapOf<String, MutableSet<String>>()
+                for (index in 0 until changes.length()) {
+                    val change = changes.getJSONObject(index)
+                    require(change.keys().asSequence().toSet() == setOf("id", "beforeSha256", "afterSha256"))
+                    val id = strictString(change, "id")
+                    val before = strictString(change, "beforeSha256")
+                    val after = strictString(change, "afterSha256")
+                    require((id in signatures || additions.any { it.id == id }) &&
+                        HASH.matches(before) && HASH.matches(after) && before != after)
+                    val seen = editorialSeen.getOrPut(id) { linkedSetOf(before) }
+                    require((editorial[id] == null || editorial[id] == before) && after !in seen)
+                    seen += after
+                    editorial[id] = after
+                }
+            }
+            val layout = StableLessonStateLayout(origin, positions, version, locale, family, additions)
+            val expectedSignatures = signatures + additions.associate { it.id to it.sha256 }
             val pages = lesson.getJSONArray("pages")
             require(pages.length() == positions.size)
             positions.forEachIndexed { p, position ->
                 val blocks = pages.getJSONObject(p).optJSONArray("blocks") ?: JSONArray()
                 require(blocks.length() == position.blocks.size)
                 position.blocks.forEachIndexed { b, id ->
-                    // A matching ID must not transfer an answer to a changed problem.
-                    require(stateFingerprint(blocks.getJSONObject(b)) == signatures.getValue(id))
+                    val block = blocks.getJSONObject(b)
+                    // Editorial changes never replace an activity's state-bearing payload.
+                    require(stateFingerprint(block) == expectedSignatures.getValue(id))
+                    editorial[id]?.let { require(fingerprint(block) == it) }
                 }
             }
             return layout
@@ -53,6 +86,28 @@ internal object LessonStateLayoutJson {
         } catch (_: Exception) {
             throw LessonStateLayoutException("Invalid or stale lesson state layout; keep saved data")
         }
+    }
+
+    private val HASH = Regex("[0-9a-f]{64}")
+
+    private fun readOrigin(original: JSONArray): Pair<List<LessonStatePage>, Map<String, String>> {
+        require(original.length() in 1..2048)
+        val signatures = linkedMapOf<String, String>()
+        val pages = (0 until original.length()).map { p ->
+            val page = original.getJSONObject(p)
+            require(page.keys().asSequence().toSet() == setOf("id", "blocks"))
+            val blocks = page.getJSONArray("blocks")
+            require(blocks.length() <= 100_000)
+            LessonStatePage(strictString(page, "id"), (0 until blocks.length()).map { b ->
+                val block = blocks.getJSONObject(b)
+                require(block.keys().asSequence().toSet() == setOf("id", "sha256"))
+                val id = strictString(block, "id")
+                val digest = strictString(block, "sha256")
+                require(HASH.matches(digest) && signatures.put(id, digest) == null)
+                id
+            })
+        }
+        return pages to signatures
     }
 
     fun stateFingerprint(block: JSONObject): String = fingerprint(statePayload(block))

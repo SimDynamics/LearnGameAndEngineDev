@@ -22,6 +22,10 @@ class LayoutError(ValueError):
     pass
 
 
+LOCALES = frozenset({"es", "en", "fr"})
+V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise LayoutError(message)
@@ -136,12 +140,193 @@ def prepare(document: dict) -> dict:
     return result
 
 
+def _without_layout(document: dict) -> dict:
+    return {key: value for key, value in document.items() if key != "stateLayout"}
+
+
+def _identity(value: object) -> str:
+    require(type(value) is str and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value) is not None,
+            "Invalid stable identity")
+    return value
+
+
+def _digest(value: object) -> str:
+    require(type(value) is str and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+            "Invalid block digest")
+    return value
+
+
+def _origin(origin: object) -> tuple[list[str], dict[str, tuple[int, int]], dict[str, str]]:
+    require(type(origin) is list and 0 < len(origin) <= 2048, "Invalid historical origin")
+    pages, blocks, digests = [], {}, {}
+    for p, page in enumerate(origin):
+        require(type(page) is dict and set(page) == {"id", "blocks"}, "Malformed original page")
+        pages.append(_identity(page["id"]))
+        require(type(page["blocks"]) is list, "Malformed original blocks")
+        for b, block in enumerate(page["blocks"]):
+            require(type(block) is dict and set(block) == {"id", "sha256"}, "Malformed original block")
+            identity = _identity(block["id"])
+            require(identity not in blocks, "Duplicate original block identity")
+            blocks[identity] = (p, b)
+            digests[identity] = _digest(block["sha256"])
+    require(len(set(pages)) == len(pages), "Duplicate original page identity")
+    require(len(blocks) <= 100_000, "Too many original blocks")
+    return pages, blocks, digests
+
+
+def _blocks(document: dict) -> dict[str, dict]:
+    return {identity: block
+            for page, record in zip(document["pages"], document["stateLayout"]["current"])
+            for identity, block in zip(record["blocks"], page.get("blocks", []))}
+
+
+def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
+    pages = _pages(document)
+    meta = document["stateLayout"]
+    require(set(meta) == V2_FIELDS, "Invalid stateLayout v2 fields")
+    require(type(meta["locale"]) is str and meta["locale"] in LOCALES, "Unsupported stateLayout locale")
+    page_ids, historical, digests = _origin(meta["origin"])
+    family = meta["family"]
+    require(type(family) is dict and family and set(family) <= LOCALES,
+            "Malformed historical language family")
+    require(meta["locale"] in family, "The language family omits this locale")
+    family_ids = set()
+    for entry in family.values():
+        require(type(entry) is dict and set(entry) == {"sha256", "origin"}, "Malformed language source")
+        _digest(entry["sha256"])
+        _, identities, _ = _origin(entry["origin"])
+        family_ids.update(identities)
+    require(family[meta["locale"]]["origin"] == meta["origin"],
+            "This locale must keep its own historical origin")
+    reserved_pages = max(len(entry["origin"]) for entry in family.values())
+    additions = meta["additions"]
+    require(type(additions) is list and len(historical) + len(additions) <= 100_000,
+            "Malformed or excessive activity additions")
+    storage = dict(historical)
+    added_slots = set()
+    for addition in additions:
+        require(type(addition) is dict and set(addition) == {"id", "sha256", "storage", "progressPage"},
+                "Malformed activity addition")
+        identity = _identity(addition["id"])
+        require(identity not in storage and identity not in family_ids, "An addition reuses a historical identity")
+        slot = addition["storage"]
+        require(type(slot) is dict and set(slot) == {"page", "block"}, "Malformed new storage slot")
+        require(type(slot["page"]) is int and reserved_pages <= slot["page"] <= 1_000_000
+                and type(slot["block"]) is int and 0 <= slot["block"] <= 100_000,
+                "New activity storage must be outside every historical language origin")
+        position = slot["page"], slot["block"]
+        require(position not in added_slots, "Duplicate new storage slot")
+        require(addition["progressPage"] in page_ids, "Unknown addition progress page")
+        added_slots.add(position)
+        storage[identity] = position
+        digests[identity] = _digest(addition["sha256"])
+    current = meta["current"]
+    require(type(current) is list and len(current) == len(pages) == len(page_ids),
+            "This extension preserves historical pages")
+    seen_pages, seen_blocks, mapping = [], [], {}
+    for p, record in enumerate(current):
+        require(type(record) is dict and set(record) == {"id", "blocks"}, "Malformed current page")
+        seen_pages.append(_identity(record["id"]))
+        require(type(record["blocks"]) is list and len(record["blocks"]) == len(pages[p].get("blocks", [])),
+                "Current layout does not match the visible blocks")
+        for b, identity in enumerate(record["blocks"]):
+            identity = _identity(identity)
+            require(identity in storage, "Unknown block identity")
+            require(state_fingerprint(pages[p]["blocks"][b]) == digests[identity],
+                    "A response/code contract changed or belongs to another identity")
+            seen_blocks.append(identity)
+            mapping[p, b] = storage[identity]
+    require(len(set(seen_pages)) == len(seen_pages) and set(seen_pages) == set(page_ids), "Page identities changed")
+    require(len(set(seen_blocks)) == len(seen_blocks) and set(seen_blocks) == set(storage), "Block identities changed")
+    editorial = meta["editorial"]
+    require(type(editorial) is list and len(editorial) <= 100_000, "Malformed editorial proof")
+    chains = {}
+    for proof in editorial:
+        require(type(proof) is dict and set(proof) == {"id", "beforeSha256", "afterSha256"},
+                "Malformed editorial proof")
+        identity = _identity(proof["id"])
+        require(identity in storage, "Unknown editorial identity")
+        before, after = _digest(proof["beforeSha256"]), _digest(proof["afterSha256"])
+        require(before != after, "An editorial proof must describe a real revision")
+        if identity in chains:
+            require(chains[identity][-1] == before, "Broken editorial proof chain")
+        else:
+            chains[identity] = [before]
+        require(after not in chains[identity], "Cyclic editorial proof")
+        chains[identity].append(after)
+    actual = _blocks(document)
+    for identity, chain in chains.items():
+        require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
+    return mapping
+
+
+def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
+               previous: dict | None = None) -> dict:
+    """Anchor real language histories, without changing any translated source file.
+
+    Source prose may be revised in its published slots; all moves are an explicit
+    subsequent ID-only plan. Full before/after proofs make both one safe delivery.
+    """
+    require(type(document) is dict and type(family_documents) is dict
+            and all(type(source) is dict for source in family_documents.values()),
+            "Expected lesson objects for the published language family")
+    require(type(locale) is str and locale in LOCALES and locale in family_documents,
+            "Missing published locale source")
+    require(set(family_documents) <= LOCALES, "Unsupported language family")
+    previous = family_documents[locale] if previous is None else previous
+    anchored = [source["stateLayout"]["family"] for source in family_documents.values()
+                if type(source.get("stateLayout")) is dict and source["stateLayout"].get("version") == 2]
+    if anchored:
+        check_localized_family(list(family_documents.values()), list(family_documents))
+        family_manifest = deepcopy(anchored[0])
+    else:
+        family_manifest = {
+            language: {"sha256": fingerprint(_without_layout(source)),
+                       "origin": deepcopy(prepare(source)["stateLayout"]["origin"])}
+            for language, source in sorted(family_documents.items())}
+    if type(previous.get("stateLayout")) is dict and previous["stateLayout"].get("version") == 2:
+        require(type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2,
+                "Published v2 metadata cannot be removed or regenerated")
+        result = deepcopy(document)
+        if result["stateLayout"].get("editorial") == previous["stateLayout"]["editorial"]:
+            before, after = _blocks(previous), _blocks(result)
+            for identity, block in before.items():
+                require(identity in after, "An existing activity was removed")
+                if fingerprint(block) != fingerprint(after[identity]):
+                    result["stateLayout"]["editorial"].append({
+                        "id": identity, "beforeSha256": fingerprint(block),
+                        "afterSha256": fingerprint(after[identity])})
+        validate_transition(previous, result)
+        return result
+    baseline = prepare(previous)
+    require(len(_pages(document)) == len(baseline["pages"]), "Historical pages cannot be added or removed")
+    require(all(len(a.get("blocks", [])) == len(b.get("blocks", []))
+                for a, b in zip(document["pages"], baseline["pages"])),
+            "Prepare before adding blocks; use explicit additions with an ID plan")
+    result = deepcopy(document)
+    result["stateLayout"] = {
+        "version": 2, "locale": locale,
+        "origin": deepcopy(baseline["stateLayout"]["origin"]),
+        "current": deepcopy(baseline["stateLayout"]["current"]),
+        "family": family_manifest,
+        "additions": [], "editorial": [],
+    }
+    before, after = _blocks(baseline), _blocks(result)
+    result["stateLayout"]["editorial"] = [
+        {"id": identity, "beforeSha256": fingerprint(block), "afterSha256": fingerprint(after[identity])}
+        for identity, block in before.items() if fingerprint(block) != fingerprint(after[identity])]
+    validate_transition(previous, result)
+    return result
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return current coordinates -> original immutable coordinates, or fail closed."""
     pages = _pages(document)
     if "stateLayout" not in document:
         return {(p, b): (p, b) for p, page in enumerate(pages) for b in range(len(page.get("blocks", [])))}
     meta = document["stateLayout"]
+    if type(meta) is dict and type(meta.get("version")) is int and meta["version"] == 2:
+        return _validate_v2(document)
     require(type(meta) is dict and set(meta) == {"version", "origin", "current"}, "Invalid stateLayout fields")
     require(type(meta["version"]) is int and meta["version"] == 1, "Unsupported stateLayout version")
     origin, current = meta["origin"], meta["current"]
@@ -189,7 +374,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     return mapping
 
 
-def reorder(document: dict, plan: list[dict]) -> dict:
+def reorder(document: dict, plan: list[dict], additions: list[dict] | None = None) -> dict:
     """Move existing page shells and blocks according to an explicit ID-only plan."""
     before = prepare(document)
     pages_by_id, blocks_by_id = {}, {}
@@ -197,6 +382,19 @@ def reorder(document: dict, plan: list[dict]) -> dict:
         pages_by_id[identity["id"]] = {key: deepcopy(value) for key, value in page.items() if key != "blocks"}
         blocks_by_id.update(zip(identity["blocks"], deepcopy(page.get("blocks", []))))
     result = deepcopy(before)
+    if additions is not None:
+        require(before["stateLayout"]["version"] == 2, "Activity additions require stateLayout v2")
+        require(type(additions) is list, "Expected an activity-addition list")
+        for addition in additions:
+            require(type(addition) is dict and set(addition) == {"id", "storage", "progressPage", "block"},
+                    "An authoring addition needs id, storage, progressPage and block")
+            identity = _identity(addition["id"])
+            require(identity not in blocks_by_id, "An addition cannot replace an existing block")
+            require(type(addition["block"]) is dict, "A new block must be an object")
+            blocks_by_id[identity] = deepcopy(addition["block"])
+            result["stateLayout"]["additions"].append({
+                "id": identity, "sha256": state_fingerprint(addition["block"]),
+                "storage": deepcopy(addition["storage"]), "progressPage": addition["progressPage"]})
     require(type(plan) is list, "Expected a page-layout list")
     result["pages"] = []
     for identity in plan:
@@ -210,9 +408,69 @@ def reorder(document: dict, plan: list[dict]) -> dict:
     return result
 
 
+def _validate_transition_v2(previous: dict, current: dict) -> None:
+    validate(current)
+    baseline = prepare(previous)
+    old_meta, meta = baseline["stateLayout"], current["stateLayout"]
+    require(meta["origin"] == old_meta["origin"], "The immutable origin was changed; do not reset the baseline")
+    old_v2 = old_meta["version"] == 2
+    if old_v2:
+        require(meta["locale"] == old_meta["locale"], "The historical locale cannot be renamed")
+        require(meta["family"] == old_meta["family"], "The immutable historical language family changed")
+    else:
+        own = meta["family"][meta["locale"]]
+        require(own["sha256"] == fingerprint(_without_layout(previous)) and own["origin"] == old_meta["origin"],
+                "The historical locale is not anchored to the published source")
+    require({k: v for k, v in baseline.items() if k not in {"pages", "stateLayout"}}
+            == {k: v for k, v in current.items() if k not in {"pages", "stateLayout"}},
+            "A reorder cannot modify lesson metadata")
+    def shells(document):
+        return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
+                for page, record in zip(document["pages"], document["stateLayout"]["current"])}
+    require(shells(baseline) == shells(current), "Page metadata was changed")
+    old_additions = old_meta["additions"] if old_v2 else []
+    require(meta["additions"][:len(old_additions)] == old_additions,
+            "Activity additions are append-only; identities and storage cannot be recycled")
+    old_editorial = old_meta["editorial"] if old_v2 else []
+    require(meta["editorial"][:len(old_editorial)] == old_editorial,
+            "Editorial proof is append-only; the published provenance cannot be replaced")
+    before, after = _blocks(baseline), _blocks(current)
+    require(before.keys() <= after.keys(), "An existing activity was removed")
+    appended = {}
+    for proof in meta["editorial"][len(old_editorial):]:
+        require(proof["id"] in before, "New activities cannot claim historical editorial provenance")
+        appended.setdefault(proof["id"], []).append(proof)
+    owners = {}
+    for identity, block in before.items():
+        owners.setdefault(fingerprint(block), set()).add(identity)
+    for identity, block in before.items():
+        actual = after[identity]
+        require(state_fingerprint(block) == state_fingerprint(actual),
+                "An existing response/code contract changed")
+        if str(block.get("type", "")).startswith("math_"):
+            serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+            require(serialize(block) == serialize(actual),
+                    "Mathematical payloads must preserve their historical JSON key order and values")
+        old_hash, new_hash = fingerprint(block), fingerprint(actual)
+        proofs = appended.get(identity, [])
+        if old_hash == new_hash:
+            require(not proofs, "An unchanged block cannot acquire an invented editorial history")
+        else:
+            require(proofs and proofs[0]["beforeSha256"] == old_hash
+                    and proofs[-1]["afterSha256"] == new_hash,
+                    "A simultaneous editorial revision needs its explicit published before/after proof")
+        require(new_hash not in owners or identity in owners[new_hash],
+                "Published content was assigned to another identity without a verified move")
+
+
 def validate_transition(previous: dict, current: dict) -> None:
     """Never authorize a renamed origin or changed answer while allowing a reorder."""
     require("stateLayout" in current, "A reordered lesson needs an identity manifest")
+    if type(current["stateLayout"]) is dict and current["stateLayout"].get("version") == 2:
+        _validate_transition_v2(previous, current)
+        return
+    require(not (type(previous.get("stateLayout")) is dict and previous["stateLayout"].get("version") == 2),
+            "Published v2 metadata cannot be removed or downgraded")
     baseline = prepare(previous)
     validate(current)
     require(current["stateLayout"]["origin"] == baseline["stateLayout"]["origin"],
@@ -277,15 +535,74 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     return result
 
 
+def original_projection(document: dict) -> dict:
+    """In-memory lookup of historical sources for existing curricular exceptions.
+
+    This is neither a new lesson nor a regenerated manifest. New activities are
+    intentionally absent from the original source lookup, never from validation.
+    """
+    if "stateLayout" not in document:
+        return document
+    validate(document)
+    blocks = _blocks(document)
+    shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
+              for page, record in zip(document["pages"], document["stateLayout"]["current"])}
+    result = deepcopy(_without_layout(document))
+    result["pages"] = [{**deepcopy(shells[record["id"]]),
+                        "blocks": [deepcopy(blocks[block["id"]]) for block in record["blocks"]]}
+                       for record in document["stateLayout"]["origin"]]
+    return result
+
+
 def lineage(document: dict) -> tuple:
     metadata = prepare(document)["stateLayout"]
     return tuple((page["id"], tuple(block["id"] for block in page["blocks"]))
                  for page in metadata["origin"])
 
 
-def check_localized_family(documents: list[dict]) -> None:
+def check_localized_family(documents: list[dict], locales: list[str] | None = None) -> None:
     """Call with every shipped translation before publishing the first adoption."""
     require(bool(documents), "No lessons to verify")
+    v2 = [d for d in documents if type(d.get("stateLayout")) is dict and d["stateLayout"].get("version") == 2]
+    if v2:
+        for document in documents:
+            validate(document)
+        require(len({d["id"] for d in documents}) == 1, "Not the same lesson")
+        family = v2[0]["stateLayout"]["family"]
+        require(all(d["stateLayout"]["family"] == family for d in v2),
+                "Localized v2 maps disagree on the historical language family")
+        if locales is None:
+            require(len(v2) == len(documents), "Historical translations need their explicit source locales")
+            locales = [d["stateLayout"]["locale"] for d in documents]
+        require(len(locales) == len(documents) and len(set(locales)) == len(locales),
+                "Duplicate or missing localized lesson source")
+        require(set(locales) == set(family), "The historical language family must include every shipped translation")
+        for locale, document in zip(locales, documents):
+            require(locale in LOCALES, "Unsupported historical locale")
+            meta = document.get("stateLayout")
+            if meta is None and "stateLayout" not in document:
+                require(fingerprint(document) == family[locale]["sha256"]
+                        and prepare(document)["stateLayout"]["origin"] == family[locale]["origin"],
+                        "An unmapped historical translation changed; keep it intact or adopt its own v2 map")
+            else:
+                require(meta["origin"] == family[locale]["origin"], "A translation rewrote its historical origin")
+                if meta["version"] == 2:
+                    require(meta["locale"] == locale, "The map locale does not match its lesson source")
+        # Slots of additions must not acquire independent owners in another map.
+        slots, owners = {}, {}
+        for document in v2:
+            blocks = _blocks(document)
+            for addition in document["stateLayout"]["additions"]:
+                slot = (addition["storage"]["page"], addition["storage"]["block"])
+                require(slot not in slots or slots[slot] == addition["id"],
+                        "Localized new activities collide in shared storage")
+                slots[slot] = addition["id"]
+                block = blocks[addition["id"]]
+                descriptor = slot, block.get("type"), block.get("id")
+                require(addition["id"] not in owners or owners[addition["id"]] == descriptor,
+                        "A localized new identity changed storage or activity ownership")
+                owners[addition["id"]] = descriptor
+        return
     require(all("stateLayout" in d for d in documents), "Every shipped translation needs a state map")
     for document in documents:
         validate(document)
@@ -414,11 +731,53 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
         if not any(path in mapped for path, _ in members):
             continue
         try:
-            check_localized_family([document for _, document in members])
+            locales = [PurePosixPath(path).relative_to(CONTENT_DIRECTORY).parts[0] for path, _ in members]
+            check_localized_family([document for _, document in members], locales)
+            v2 = [document for _, document in members
+                  if type(document.get("stateLayout")) is dict and document["stateLayout"].get("version") == 2]
+            if v2:
+                manifest = v2[0]["stateLayout"]["family"]
+                for locale, source in manifest.items():
+                    relative = f"{CONTENT_DIRECTORY}/{locale}/{family}"
+                    require(relative in prior_paths, "A historical language source is absent from the published baseline")
+                    previous = prior_mapped.get(relative) or _git_document(repository, commit, relative)
+                    old_meta = previous.get("stateLayout")
+                    if type(old_meta) is dict and old_meta.get("version") == 2:
+                        require(source == old_meta["family"][locale], "The published language provenance was replaced")
+                    else:
+                        require(source["sha256"] == fingerprint(_without_layout(previous))
+                                and source["origin"] == prepare(previous)["stateLayout"]["origin"],
+                                "A historical language source is not anchored to the published baseline")
         except (ValueError, KeyError, TypeError) as exc:
             raise LayoutError(family + ": " + str(exc)) from exc
         checked_families += 1
     return {"base_commit": commit, "mapped_lessons": len(mapped), "families": checked_families}
+
+
+def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, dict[str, dict]]:
+    """Read original assets directly from Git; do not export backup copies."""
+    source = source.resolve()
+    result = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=source.parent,
+                            capture_output=True, text=True, encoding="utf-8")
+    require(result.returncode == 0, "The source must be an asset in its existing Git checkout")
+    repository = Path(result.stdout.strip()).resolve()
+    try:
+        relative = source.relative_to(repository).as_posix()
+        asset = PurePosixPath(relative).relative_to(CONTENT_DIRECTORY)
+    except ValueError as exc:
+        raise LayoutError("The source must be a curricular lesson asset") from exc
+    require(len(asset.parts) >= 2 and asset.parts[0] == locale,
+            "--locale must match the curricular source path")
+    commit = resolve_base_commit(repository, base_ref)
+    tail = PurePosixPath(*asset.parts[1:]).as_posix()
+    existing = _lesson_paths_at(repository, commit)
+    family = {}
+    for language in sorted(LOCALES):
+        path = f"{CONTENT_DIRECTORY}/{language}/{tail}"
+        if path in existing:
+            family[language] = _git_document(repository, commit, path)
+    require(locale in family, "The published baseline does not contain this locale")
+    return family[locale], family
 
 
 def main() -> None:
@@ -429,6 +788,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
     parser.add_argument("--previous", type=Path, help="Required published lesson for prepare/reorder/check")
     parser.add_argument("--base-ref", help="Required verified remote HEAD for check-tree")
+    parser.add_argument("--locale", choices=sorted(LOCALES), help="Use v2 and read all published language assets from Git")
+    parser.add_argument("--additions", type=Path,
+                        help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
     args = parser.parse_args()
     try:
         if args.action == "check-tree":
@@ -438,15 +800,28 @@ def main() -> None:
                   f"{report['mapped_lessons']} mapped lessons in {report['families']} families. "
                   "This does not verify an Android build or device execution.")
             return
-        require(args.previous is not None,
-                "prepare/reorder/check requires --previous from the verified published commit")
-        previous = load(args.previous)
         source = load(args.source)
+        require(type(source) is dict, "A lesson must be a JSON object")
+        locale = args.locale
+        if locale is None and type(source.get("stateLayout")) is dict and source["stateLayout"].get("version") == 2:
+            locale = source["stateLayout"]["locale"]
+        if args.base_ref is not None and locale is not None:
+            require(args.previous is None, "Use either Git --base-ref or a manual --previous, not both")
+            previous, family = published_family(args.source, locale, args.base_ref)
+        else:
+            require(args.previous is not None,
+                    "prepare/reorder/check requires --previous from the verified published commit, "
+                    "or --locale with Git --base-ref")
+            require(args.locale is None, "First v2 adoption uses --locale and Git --base-ref")
+            previous, family = load(args.previous), None
+        require(args.additions is None or args.plan is not None, "Activity additions require an explicit --plan")
         if args.action == "prepare":
-            result = prepare(source)
+            result = prepare_v2(source, locale, family, previous) if family is not None else prepare(source)
+            if args.plan is not None:
+                result = reorder(result, load(args.plan), load(args.additions) if args.additions else None)
         elif args.action == "reorder":
             require(args.plan is not None, "reorder requires --plan")
-            result = reorder(source, load(args.plan))
+            result = reorder(source, load(args.plan), load(args.additions) if args.additions else None)
         else:
             validate(source)
             validate_transition(previous, source)
@@ -460,7 +835,7 @@ def main() -> None:
             json.dump(result, out, ensure_ascii=False, indent=2, allow_nan=False)
             out.write("\n")
         print("Prepared without changing the source; verify every shipped translation before publishing.")
-    except (LayoutError, OSError, ValueError) as exc:
+    except (LayoutError, OSError, ValueError, KeyError, TypeError) as exc:
         parser.exit(1, f"Not completed: {exc}\n")
 
 
