@@ -27,6 +27,15 @@ Herramientas seleccionadas y comprobadas: paquete MSVC v145 `14.51.36231`
 de Visual Studio 2026 instaladas; no se descargan otras. Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 
+**Actualización estable obligatoria del SDK:** `10.0.28000.2957` (septiembre de 2026).
+La carpeta de cabeceras, bibliotecas y herramientas continúa llamándose `10.0.28000.0`:
+el sufijo `.0` es el nombre de la familia, no identifica la actualización instalada.
+CMake comprueba la versión completa registrada en las aplicaciones instaladas de Windows,
+en ambas vistas del registro. Si no puede verificar `10.0.28000.2957`, se detiene con
+un diagnóstico; no se supone instalada ni se sustituye por una versión anterior.
+Instalador oficial: https://learn.microsoft.com/windows/apps/windows-sdk/downloads .
+La comprobación no instala ni modifica el SDK o Visual Studio.
+
 Cada preset genera sus propios archivos en `out/build/<preset>`; el ejecutable
 está en `bin/LearnGameAndEngineDev.exe` dentro de ese directorio. La instalación
 CMake, si se solicita posteriormente, utiliza `out/install/<preset>`.

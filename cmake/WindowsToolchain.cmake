@@ -5,6 +5,8 @@ if(NOT CMAKE_HOST_WIN32)
 endif()
 
 set(_lgaed_toolset "14.51.36231")
+# Windows Kits uses this directory for the fully serviced 10.0.28000.2957 SDK.
+# The full QFE is checked after project() in VerifyNativeToolchain.cmake.
 set(_lgaed_sdk "10.0.28000.0")
 foreach(_lgaed_env VCToolsInstallDir VSINSTALLDIR WindowsSdkDir)
     if(NOT DEFINED ENV{${_lgaed_env}} OR "$ENV{${_lgaed_env}}" STREQUAL "")
