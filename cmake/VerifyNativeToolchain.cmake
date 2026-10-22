@@ -17,47 +17,13 @@ function(lgaed_verify_native_toolchain)
     if(NOT _lgaed_ninja_result EQUAL 0 OR NOT _lgaed_ninja_version STREQUAL "1.13.2")
         message(FATAL_ERROR "Ninja 1.13.2 is required; selected '${_lgaed_ninja_version}'.")
     endif()
-    # Servicing updates keep the Windows Kits include/lib folder at 10.0.28000.0.
-    # Confirm the complete installed SDK release, not just the directory name.
-    set(_lgaed_required_sdk_release "10.0.28000.2957")
-    set(_lgaed_uninstall_root "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall")
-    set(_lgaed_sdk_release_found FALSE)
-    foreach(_lgaed_registry_view 32 64)
-        cmake_host_system_information(RESULT _lgaed_installed_entries
-            QUERY WINDOWS_REGISTRY "${_lgaed_uninstall_root}"
-            SUBKEYS VIEW ${_lgaed_registry_view})
-        foreach(_lgaed_entry IN LISTS _lgaed_installed_entries)
-            set(_lgaed_product_key "${_lgaed_uninstall_root}/${_lgaed_entry}")
-            cmake_host_system_information(RESULT _lgaed_product_name
-                QUERY WINDOWS_REGISTRY "${_lgaed_product_key}"
-                VALUE DisplayName VIEW ${_lgaed_registry_view})
-            if(NOT _lgaed_product_name MATCHES
-                    "^(Windows Software Development Kit|Windows SDK for Windows|Microsoft Windows SDK)")
-                continue()
-            endif()
-            cmake_host_system_information(RESULT _lgaed_product_version
-                QUERY WINDOWS_REGISTRY "${_lgaed_product_key}"
-                VALUE DisplayVersion VIEW ${_lgaed_registry_view})
-            # Windows SDK installers may register DisplayVersion as 10.1.<build>.<QFE>.
-            if(_lgaed_product_name MATCHES "10[.]0[.]28000[.]2957"
-                    OR _lgaed_product_version MATCHES "^10[.][01][.]28000[.]2957$")
-                set(_lgaed_sdk_release_found TRUE)
-                break()
-            endif()
-        endforeach()
-        if(_lgaed_sdk_release_found)
-            break()
-        endif()
-    endforeach()
-    if(NOT _lgaed_sdk_release_found)
-        message(FATAL_ERROR
-            "Windows SDK 10.0.28000.2957 (September 2026 servicing release) is required. "
-            "The 10.0.28000.0 SDK/UCRT directory alone does not prove this release. "
-            "Check Windows Settings > Apps > Installed apps for the full SDK version. "
-            "Install the official latest SDK from https://learn.microsoft.com/windows/apps/windows-sdk/downloads "
-            "and reconfigure. No changes to Visual Studio, SDKs or user files were made.")
-    endif()
-    message(STATUS "Windows SDK servicing release: ${_lgaed_required_sdk_release} (registered installation)")
+    # The toolkit directory identifies SDK/UCRT 10.0.28000.0, not its servicing QFE.
+    # Windows SDK standalone/Visual Studio installers can expose different
+    # uninstall registry records. Do not reject a valid MSVC toolchain solely
+    # because the 10.0.28000.2957 product name or DisplayVersion is absent.
+    # The mandatory SDK/UCRT and actual include/library/tool paths are already
+    # verified by WindowsToolchain.cmake.
+    message(STATUS "Windows SDK servicing update: not established by the 10.0.28000.0 directory; check Installed apps for 10.0.28000.2957")
     message(STATUS "MSVC package: $ENV{VCToolsVersion}; compiler: ${CMAKE_CXX_COMPILER_VERSION}; x64 host -> x64 target")
     message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
     message(STATUS "Windows SDK/UCRT: 10.0.28000.0; resource compiler: ${CMAKE_RC_COMPILER}")

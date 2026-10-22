@@ -58,7 +58,13 @@ LRESULT CALLBACK combo_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UIN
         auto measured=text_area;DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);text_area.top+=(bounds.bottom-(measured.bottom-measured.top))/2;
         DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&text_area,DT_WORDBREAK|DT_NOPREFIX);
         const auto x=bounds.right-inset*2,y=bounds.bottom/2;const int size=std::max(2,inset/3);POINT arrow[]{{x-size,y-size/2},{x+size,y-size/2},{x,y+size/2}};
-        const auto pen=CreatePen(PS_SOLID,1,colors.muted),fill=CreateSolidBrush(colors.muted);const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,fill);Polygon(dc,arrow,3);SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(pen);DeleteObject(fill);
+        const HPEN pen=CreatePen(PS_SOLID,1,colors.muted);
+        const HBRUSH fill=CreateSolidBrush(colors.muted);
+        const HGDIOBJ old_pen=SelectObject(dc,pen);
+        const HGDIOBJ old_brush=SelectObject(dc,fill);
+        Polygon(dc,arrow,3);
+        SelectObject(dc,old_pen);SelectObject(dc,old_brush);
+        DeleteObject(pen);DeleteObject(fill);
         if(GetFocus()==window){auto focus=bounds;InflateRect(&focus,-3,-3);DrawFocusRect(dc,&focus);}RestoreDC(dc,saved);if(message==WM_PAINT)EndPaint(window,&paint);return 0;}
     const auto result=DefSubclassProc(window,message,wp,lp);if(message==WM_SETFOCUS||message==WM_KILLFOCUS||message==CB_SETCURSEL||message==WM_ENABLE||message==WM_SETTEXT)InvalidateRect(window,nullptr,FALSE);return result;
 }
