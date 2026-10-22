@@ -2,6 +2,9 @@
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -17,6 +20,13 @@ template<class Action> void rejects(Action&& action, const char* message) {
 void replace_once(std::string& text, std::string_view old_value, std::string_view new_value) {
     const auto index = text.find(old_value); check(index != text.npos, "Test fixture target missing");
     text.replace(index, old_value.size(), new_value);
+}
+std::string root_property(std::string_view source, std::string_view name, std::string_view value) {
+    // Replace a property through the JSON object, including when Work has already
+    // integrated it. Appending another root key would make negative fixtures ambiguous.
+    auto root = winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(source));
+    root.Insert(winrt::to_hstring(name),winrt::Windows::Data::Json::JsonValue::Parse(winrt::to_hstring(value)));
+    return winrt::to_string(root.Stringify());
 }
 }
 int main() {
@@ -43,14 +53,18 @@ int main() {
         check(exercise_key(lesson, prediction).ends_with("_page_4_block_3"), "Exercise key no longer matches Android");
         check(original.initial_code == modification.initial_code && original.initial_code.ends_with("}\n"), "Source/indentation/LF was changed");
         const auto linked_json = [&](std::string_view relations) {
-            auto json = lesson.raw_json; const auto closing = json.find_last_of('}');
-            check(closing != json.npos,"Missing lesson root terminator");
-            json.insert(closing,",\"referenceAfter\":" + std::string(relations)); return json;
+            return root_property(lesson.raw_json,"referenceAfter",relations);
         };
-        const auto linked = parse_lesson_json(linked_json(R"([{"activity":"block_0004_0002","blocks":["block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])"));
+        check(reference_activity(lesson,lesson.pages[5].blocks[0]) == StatePosition{4,6},
+            "Integrated reference title is visible before its own compiler objective");
+        const auto linked_source = linked_json(R"([{"activity":"block_0004_0002","blocks":["block_0005_0000","block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])");
+        check(linked_source.find("\"referenceAfter\"") == linked_source.rfind("\"referenceAfter\""),
+            "Reference fixture duplicated an existing root property");
+        const auto linked = parse_lesson_json(linked_source);
         check(linked.state_layout.lineage == lesson.state_layout.lineage && linked.state_layout.signatures == lesson.state_layout.signatures,
             "Presentation-only references changed historical fingerprints or state lineage");
-        check(reference_activity(linked,linked.pages[5].blocks[2]) == StatePosition{4,6} &&
+        check(reference_activity(linked,linked.pages[5].blocks[0]) == StatePosition{4,6} &&
+              reference_activity(linked,linked.pages[5].blocks[2]) == StatePosition{4,6} &&
               reference_activity(linked,linked.pages[5].blocks[8]) == StatePosition{5,6} &&
               !reference_activity(linked,linked.pages[5].blocks[5]), "Reference points to a nearby quiz instead of its own compiler");
         auto changed_goal = linked.pages[5].blocks[6]; changed_goal.output_check->cases[0].outputs = {"Different exact goal"};
@@ -67,6 +81,53 @@ int main() {
                 R"([{"activity":"block_0005_0006","blocks":[]}])",
                 R"([{"activity":"block_0005_0006","blocks":["block_0005_0008"],"unknown":true}])"})
             rejects([&] { (void)parse_lesson_json(linked_json(invalid_relation)); }, "Malformed or unsafe reference relationship accepted");
+        check(parse_lesson_json(linked_json("[]")).reference_after.empty(), "Reference fixture failed to replace the integrated property");
+
+        const auto dependent_json = [&](std::string_view relations) {
+            return root_property(lesson.raw_json,"activityAfter",relations);
+        };
+        const auto dependent = parse_lesson_json(dependent_json(
+            R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]},{"activity":"block_0005_0006","requires":["ejecucion_original_editor","block_0004_0002"]}])"));
+        check(dependent.activity_after.size() == 2 &&
+              activity_prerequisites(dependent,dependent.pages[4].blocks[6]) == std::vector<StatePosition>{{4,3}} &&
+              activity_prerequisites(dependent,dependent.pages[5].blocks[6]) == std::vector<StatePosition>{{4,3},{4,6}} &&
+              activity_prerequisites(dependent,dependent.pages[4].blocks[3]).empty(),
+            "Activity dependencies lost their authored owners/order or changed an unrelated editor");
+        check(dependent.state_layout.lineage == lesson.state_layout.lineage &&
+              dependent.state_layout.legacy_lineage == lesson.state_layout.legacy_lineage &&
+              dependent.state_layout.signatures == lesson.state_layout.signatures &&
+              draft_key("programming",dependent,dependent.pages[4].blocks[3]) == draft_key("programming",lesson,original) &&
+              draft_key("programming",dependent,dependent.pages[4].blocks[6]) == draft_key("programming",lesson,modification) &&
+              reference_activity(dependent,dependent.pages[5].blocks[0]) == StatePosition{4,6},
+            "Activity-only metadata changed state fingerprints, historical draft owners or integrated references");
+        auto compiler_without_check = dependent;
+        compiler_without_check.pages[5].blocks[6].output_check.reset();
+        validate_activity_relationships(compiler_without_check);
+        compiler_without_check.pages[4].blocks[3].output_check.reset();
+        rejects([&] { validate_activity_relationships(compiler_without_check); },
+            "A prerequisite without a verifiable output objective can unlock another compiler");
+        auto unstable_activity = dependent; unstable_activity.state_layout.version = 0;
+        rejects([&] { validate_activity_relationships(unstable_activity); }, "Activity dependencies accepted transient display positions");
+        for (const auto invalid_relation : {
+                R"({"activity":"block_0004_0002","requires":["ejecucion_original_editor"]})",
+                R"([{"activity":"missing","requires":["ejecucion_original_editor"]}])",
+                R"([{"activity":"block_0004_0002","requires":["missing"]}])",
+                R"([{"activity":"block_0004_0004","requires":["ejecucion_original_editor"]}])",
+                R"([{"activity":"block_0004_0002","requires":["block_0004_0004"]}])",
+                R"([{"activity":"block_0004_0002","requires":["block_0004_0002"]}])",
+                R"([{"activity":"ejecucion_original_editor","requires":["block_0004_0002"]}])",
+                R"([{"activity":"block_0004_0002","requires":["block_0005_0006"]}])",
+                R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor","ejecucion_original_editor"]}])",
+                R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]},{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]}])",
+                R"([{"activity":"block_0004_0002","requires":[]}])",
+                R"([{"activity":"block_0004_0002","requires":[""]}])",
+                R"([{"activity":"block_0004_0002","requires":[3]}])",
+                R"([{"activity":"block_0004_0002","requires":"ejecucion_original_editor"}])",
+                R"([{"activity":"block_0004_0002"}])",
+                R"([{"requires":["ejecucion_original_editor"]}])",
+                R"([{"activity":"block_0004_0002","requires":["ejecucion_original_editor"],"unknown":true}])",
+                R"([{"activity":"ejecucion_original_editor","requires":["block_0004_0002"]},{"activity":"block_0004_0002","requires":["ejecucion_original_editor"]}])"})
+            rejects([&] { (void)parse_lesson_json(dependent_json(invalid_relation)); }, "Malformed or unsafe activity dependency accepted");
         check(!original.standard_input && !modification.standard_input, "Input invented for a lesson that does not require it");
         check(evaluate_text_answer(prediction, "Zona inicial").correct, "Exact authored prediction rejected");
         for (const auto value : {"\"Zona inicial\"", "Zona inicial ", "Zona inicial\n", " Zona inicial", "Zona  inicial"})
@@ -114,6 +175,10 @@ int main() {
         rejects([&] { (void)parse_lesson_json("{ malformed"); }, "Malformed JSON accepted");
         const auto basic = parse_lesson_json("{\"id\":\"demo\",\"title\":\"Demo\",\"pages\":[{\"blocks\":[{\"type\":\"output_prediction\",\"answers\":[\"ok\"]}]}]}");
         check(evaluate_text_answer(basic.pages[0].blocks[0], " ok\n").correct, "Legacy trimmed prediction tolerance regressed");
+        check(parse_lesson_json(root_property(basic.raw_json,"activityAfter","[]")).activity_after.empty(),
+            "Empty activity metadata requires an unnecessary legacy state migration");
+        rejects([&] { (void)parse_lesson_json(root_property(basic.raw_json,"activityAfter",
+            R"([{"activity":"block_0_0","requires":["block_0_0"]}])")); }, "Nonempty activity relationships without stable state identities accepted");
         const auto input_lesson = parse_lesson_json("{\"id\":\"stdin\",\"title\":\"Input\",\"pages\":[{\"blocks\":[{\"type\":\"cpp_compiler\",\"initialCode\":\"int main(){}\\n\",\"initialStandardInput\":\" \\t \\n\"}]}]}");
         check(input_lesson.pages[0].blocks[0].standard_input == " \t \n", "Explicit prepared input lost significant whitespace");
         for (const auto language : {"en", "fr"}) {

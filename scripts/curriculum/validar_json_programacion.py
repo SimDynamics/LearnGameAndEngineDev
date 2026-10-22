@@ -1164,6 +1164,15 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     return False
 
 
+def validate_lesson_state_contract(document, where):
+    # These optional Windows presentation relationships reuse the immutable
+    # layout map. This validator does not add them to the Android runtime.
+    try:
+        _state_layout.validate(document)
+    except (ValueError, KeyError, TypeError) as error:
+        require(False, where, f"identidad de estado o relación de presentación inválida: {error}")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-ref", help="Verified published commit; mandatory for stateLayout adoption/updates")
@@ -1182,10 +1191,7 @@ def main(argv=None):
     # hide a malformed newly authored activity from these structural checks.
     for path in sorted(CONTENT.glob("*/lesson_*.json")):
         doc = load(path)
-        try:
-            _state_layout.validate(doc)
-        except (ValueError, KeyError, TypeError) as error:
-            require(False, path, f"identidad de estado inválida: {error}")
+        validate_lesson_state_contract(doc, path)
         expected = "__".join(("cpp_fundamentals", path.parent.name, path.stem[7:]))
         require(doc["id"] == expected, path, "ID distinto de la ruta del loader")
         require(doc["id"] not in lessons, path, "ID de lección duplicado")

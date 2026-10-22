@@ -65,6 +65,12 @@ void wait_for(HWND host, const std::function<bool()>& ready, std::string_view me
     } while (GetTickCount64() < deadline);
     throw std::runtime_error(std::string(message));
 }
+thread_local bool menu_observed = false;
+void CALLBACK cancel_menu_timer(HWND,UINT,UINT_PTR timer,DWORD) {
+    GUITHREADINFO info{sizeof(info)};
+    menu_observed = GetGUIThreadInfo(GetCurrentThreadId(),&info) && (info.flags & GUI_INMENUMODE);
+    KillTimer(nullptr,timer); EndMenu();
+}
 
 LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
     return DefWindowProcW(window, message, wparam, lparam);
@@ -281,12 +287,26 @@ struct View {
     }
     HWND control(std::size_t block, int part) const { return control(block_id(block, part)); }
     void click(int id) {
+        if (id == 104) {
+            require(IsWindowEnabled(control(107)),"A disabled lesson menu cannot open import");
+            // Import is now a menu command, rather than an invisible button.
+            SendMessageW(view,WM_COMMAND,MAKEWPARAM(104,0),0); pump(host); return;
+        }
         const auto button = control(id);
         require(IsWindowEnabled(button), "A disabled import control cannot be activated");
         SendMessageW(button, BM_CLICK, 0, 0);
         if (id == 206)
             require(IsWindow(button), "Import navigation destroyed its button during the native BM_CLICK callback");
         pump(host);
+    }
+    void cancel_menu() {
+        const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
+        menu_observed = false;
+        const auto timer = SetTimer(nullptr,0,50,cancel_menu_timer);
+        require(timer != 0,"Cannot schedule native menu cancellation");
+        click(107); KillTimer(nullptr,timer);
+        require(menu_observed && !descendant(view,205),"The actual native menu did not open/cancel without choosing import");
+        if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
     }
     void path(const std::filesystem::path& folder) {
         require(SetWindowTextW(control(201), folder.c_str()) != FALSE, "Cannot enter the exported folder");
@@ -352,7 +372,7 @@ int main() {
         View view;
         ExportFixture exported(view.environment.paths.projects / L"exportación & revisión", view.lesson);
         const auto initial_hashes = hashes(exported.folder);
-
+        view.cancel_menu();
         view.click(104);
         require(!IsWindowEnabled(view.control(205)) && (GetWindowLongPtrW(view.control(204), GWL_STYLE) & ES_READONLY),
             "Import must start with a readonly summary and disabled confirmation");

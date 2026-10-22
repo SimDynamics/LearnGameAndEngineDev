@@ -394,6 +394,18 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             }
         }
         validate_reference_relationships(lesson);
+        if (root.HasKey(L"activityAfter")) {
+            const auto relationships = array(root,"activityAfter");
+            require(relationships.Size() <= 100000,"Too many activity relationships");
+            for (const auto& item : relationships) {
+                const auto relation = item.GetObject(); allowed_keys(relation,{"activity","requires"},true);
+                ActivityAfter record{text(relation,"activity"),strings(array(relation,"requires"),true,false)};
+                require(valid_id(record.activity),"Invalid dependent activity identity");
+                for (const auto& identity : record.prerequisites) require(valid_id(identity),"Invalid activity prerequisite identity");
+                lesson.activity_after.push_back(std::move(record));
+            }
+        }
+        validate_activity_relationships(lesson);
         return lesson;
     } catch (const winrt::hresult_error& error) {
         throw std::runtime_error("Curriculum JSON/contract error: " + utf8(error.message()));

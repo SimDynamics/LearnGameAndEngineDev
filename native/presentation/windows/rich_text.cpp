@@ -1,4 +1,5 @@
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/reader_theme.hpp"
 
 #include <richedit.h>
 #include <richole.h>
@@ -54,8 +55,10 @@ double luminance(COLORREF color) {
     const auto channel = [](unsigned value) { const auto scaled = value / 255.0; return scaled <= .04045 ? scaled / 12.92 : std::pow((scaled + .055) / 1.055, 2.4); };
     return .2126 * channel(GetRValue(color)) + .7152 * channel(GetGValue(color)) + .0722 * channel(GetBValue(color));
 }
-COLORREF accessible(COLORREF original) {
-    const auto background = luminance(GetSysColor(COLOR_WINDOW));
+COLORREF accessible(HWND edit, COLORREF original) {
+    if (reader_theme::applied(edit) && reader_theme::palette().high_contrast)
+        return reader_theme::foreground(edit);
+    const auto background = luminance(reader_theme::background(edit));
     // The Android console palette is retained on a dark system surface.
     if (background < .25) return original;
     auto color = original;
@@ -64,7 +67,7 @@ COLORREF accessible(COLORREF original) {
         if ((background + .05) / (light + .05) >= 4.5) return color;
         color = RGB(GetRValue(color) * 4 / 5, GetGValue(color) * 4 / 5, GetBValue(color) * 4 / 5);
     }
-    return GetSysColor(COLOR_WINDOWTEXT);
+    return reader_theme::foreground(edit);
 }
 void format(HWND edit, std::size_t start, std::size_t end, COLORREF color, const wchar_t* font = nullptr) {
     if (start >= end) return;
@@ -76,13 +79,13 @@ void format(HWND edit, std::size_t start, std::size_t end, COLORREF color, const
 bool identifier_start(wchar_t c) { return (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z') || c == L'_'; }
 bool identifier_part(wchar_t c) { return identifier_start(c) || (c >= L'0' && c <= L'9'); }
 struct Ink { std::size_t start, end; COLORREF color; };
-std::vector<Ink> cpp_ink(std::wstring_view text) {
-    const auto identifier_color = accessible(RGB(171,141,227));
-    const auto keyword_color = accessible(RGB(231,155,186));
-    const auto string_color = accessible(RGB(122,195,141));
-    const auto literal_color = accessible(RGB(224,151,109));
-    const auto preprocessor_color = accessible(RGB(92,156,231));
-    const auto comment_color = accessible(RGB(172,172,172));
+std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
+    const auto identifier_color = accessible(edit, RGB(171,141,227));
+    const auto keyword_color = accessible(edit, RGB(231,155,186));
+    const auto string_color = accessible(edit, RGB(122,195,141));
+    const auto literal_color = accessible(edit, RGB(224,151,109));
+    const auto preprocessor_color = accessible(edit, RGB(92,156,231));
+    const auto comment_color = accessible(edit, RGB(172,172,172));
     static const std::set<std::wstring_view> keywords{L"alignas",L"alignof",L"asm",L"break",L"case",L"catch",L"class",L"concept",L"const",L"consteval",L"constexpr",L"constinit",L"continue",L"co_await",L"co_return",L"co_yield",L"default",L"delete",L"do",L"else",L"enum",L"explicit",L"export",L"extern",L"for",L"friend",L"goto",L"if",L"inline",L"mutable",L"namespace",L"new",L"noexcept",L"operator",L"private",L"protected",L"public",L"register",L"requires",L"return",L"sizeof",L"static",L"static_assert",L"struct",L"switch",L"template",L"throw",L"try",L"typedef",L"typename",L"union",L"using",L"virtual",L"volatile",L"while",L"import",L"module"};
     std::vector<Ink> result;
     auto index = std::size_t{0};
@@ -131,7 +134,7 @@ std::vector<Ink> cpp_ink(std::wstring_view text) {
     return result;
 }
 void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false) {
-    for (const auto& ink : cpp_ink(source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? L"Consolas" : nullptr);
+    for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? L"Consolas" : nullptr);
 }
 struct Stream { const BYTE* bytes; std::size_t size, offset = 0; };
 DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG* copied) {
@@ -142,7 +145,7 @@ DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG
 void default_format(HWND edit, bool code) {
     select(edit, 0, static_cast<std::size_t>(GetWindowTextLengthW(edit)));
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
-    style.yHeight = code ? 220 : 240; style.crTextColor = GetSysColor(COLOR_WINDOWTEXT);
+    style.yHeight = code ? 220 : 240; style.crTextColor = reader_theme::foreground(edit);
     wcscpy_s(style.szFaceName, code ? L"Consolas" : L"Segoe UI");
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&style));
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_DEFAULT, reinterpret_cast<LPARAM>(&style));
@@ -206,7 +209,7 @@ void style_cpp(HWND edit) {
     // Editing controls own their font, measured tab stops and paragraph layout.
     // Recoloring must not replace those settings after every keystroke.
     CHARFORMAT2W base{}; base.cbSize = sizeof(base); base.dwMask = CFM_COLOR;
-    base.crTextColor = GetSysColor(COLOR_WINDOWTEXT);
+    base.crTextColor = reader_theme::foreground(edit);
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }
@@ -236,13 +239,13 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         static const std::wregex technical(LR"((#\s*include(?:[ \t]*(?:<[^>\r\n]+>|"[^"\r\n]*"))?)|(\bstd[ \t]*::[A-Za-z_0-9:]*)|(\bmain(?:\(\))?)|(\breturn[ \t]+[0-9]+[ \t]*;?)|([Cc]\+\+[0-9]*)|(<<|>>))");
         for (std::wsregex_iterator match(source.begin(), source.end(), technical), end; match != end; ++match) {
             const auto start = static_cast<std::size_t>(match->position()); const auto count = static_cast<std::size_t>(match->length());
-            format(edit, start, start + count, GetSysColor(COLOR_WINDOWTEXT), L"Consolas");
+            format(edit, start, start + count, reader_theme::foreground(edit), L"Consolas");
             apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true);
         }
         for (const auto& [start,end] : fragments) {
             const auto begin_wide = wide(std::string_view(displayed).substr(0,start)).size();
             const auto fragment = wide(std::string_view(displayed).substr(start,end-start));
-            format(edit, begin_wide, begin_wide + fragment.size(), GetSysColor(COLOR_WINDOWTEXT), L"Consolas");
+            format(edit, begin_wide, begin_wide + fragment.size(), reader_theme::foreground(edit), L"Consolas");
             apply_cpp(edit, fragment, begin_wide, true);
         }
     }

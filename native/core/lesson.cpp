@@ -128,6 +128,47 @@ std::optional<StatePosition> reference_activity(const Lesson& lesson, const Bloc
             return stable_block_position(lesson,relation.activity);
     return {};
 }
+void validate_activity_relationships(const Lesson& lesson) {
+    if (lesson.activity_after.empty()) return;
+    if (!lesson.state_layout.version) throw std::invalid_argument("Activity relationships require stable state-layout identities");
+    std::vector<std::string> activities;
+    for (const auto& relation : lesson.activity_after) {
+        if (std::ranges::find(activities,relation.activity) != activities.end())
+            throw std::invalid_argument("Duplicate dependent activity");
+        activities.push_back(relation.activity);
+        const auto target = stable_block_position(lesson,relation.activity);
+        if (!target) throw std::invalid_argument("Dependent activity does not exist");
+        if (lesson.pages[target->page].blocks[target->block].type != BlockType::cpp_compiler)
+            throw std::invalid_argument("Dependent activity requires a compiler");
+        if (relation.prerequisites.empty()) throw std::invalid_argument("Activity relationship has no prerequisites");
+        std::vector<std::string> prerequisites;
+        for (const auto& identity : relation.prerequisites) {
+            if (identity == relation.activity || std::ranges::find(prerequisites,identity) != prerequisites.end())
+                throw std::invalid_argument("Duplicate or self-referencing activity prerequisite");
+            prerequisites.push_back(identity);
+            const auto position = stable_block_position(lesson,identity);
+            if (!position) throw std::invalid_argument("Activity prerequisite does not exist");
+            const auto& activity = lesson.pages[position->page].blocks[position->block];
+            if (activity.type != BlockType::cpp_compiler || !activity.output_check)
+                throw std::invalid_argument("Activity prerequisite requires a compiler with an authored output check");
+            if (position->page > target->page || (position->page == target->page && position->block >= target->block))
+                throw std::invalid_argument("An activity prerequisite must precede its dependent activity in visual order");
+        }
+    }
+}
+std::vector<StatePosition> activity_prerequisites(const Lesson& lesson, const Block& activity) {
+    std::vector<StatePosition> result;
+    for (const auto& relation : lesson.activity_after) {
+        if (relation.activity != activity.stable_id) continue;
+        for (const auto& identity : relation.prerequisites) {
+            const auto position = stable_block_position(lesson,identity);
+            if (!position) throw std::invalid_argument("Activity prerequisite does not exist");
+            result.push_back(*position);
+        }
+        break;
+    }
+    return result;
+}
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
     if (activity.type != BlockType::cpp_compiler || !activity.output_check)
         throw std::invalid_argument("Only an authored compiler output check can unlock a reference");

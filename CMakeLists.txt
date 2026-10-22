@@ -54,9 +54,11 @@ target_link_libraries(lgaed_platform_windows PRIVATE shell32 ole32 oleaut32 adva
 add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/lesson_view.cpp
     native/presentation/windows/rich_text.cpp
+    native/presentation/windows/reader_theme.cpp
+    native/presentation/windows/editing_bar.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_host_options user32 gdi32 shell32 ole32 advapi32 comctl32 uuid)
+    lgaed_platform_windows lgaed_host_options user32 gdi32 shell32 ole32 oleacc advapi32 comctl32 uuid)
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
     native/presentation/windows/app.manifest)
@@ -84,12 +86,17 @@ if(BUILD_TESTING)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
-    add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp native/presentation/windows/rich_text.cpp)
-    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_core lgaed_host_options user32 gdi32 ole32 uuid)
+    add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
+        native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
+    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_core lgaed_host_options user32 gdi32 ole32 comctl32 uuid)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
     add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
     target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.code_editor COMMAND lgaed_code_editor_tests)
+    add_executable(lgaed_editing_bar_tests native/presentation/windows/editing_bar_tests.cpp)
+    target_link_libraries(lgaed_editing_bar_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.editing_bar COMMAND lgaed_editing_bar_tests)
+    set_tests_properties(native.editing_bar PROPERTIES TIMEOUT 20)
     add_executable(lgaed_lesson_view_tests native/presentation/windows/lesson_view_tests.cpp)
     target_link_libraries(lgaed_lesson_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.lesson_view COMMAND lgaed_lesson_view_tests)

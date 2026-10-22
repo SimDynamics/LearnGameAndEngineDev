@@ -7,6 +7,10 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <oleacc.h>
+#include <wrl/client.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Data.Json.h>
 
 #include <algorithm>
 #include <functional>
@@ -39,6 +43,24 @@ HWND descendant(HWND parent, int control) {
         return TRUE;
     }, reinterpret_cast<LPARAM>(&search));
     return search.result;
+}
+HWND descendant_class(HWND parent,std::wstring_view name) {
+    struct Search { std::wstring_view name; HWND result = nullptr; } search{name};
+    EnumChildWindows(parent,[](HWND item,LPARAM value) -> BOOL {
+        auto& current = *reinterpret_cast<Search*>(value); wchar_t type[128]{}; GetClassNameW(item,type,128);
+        if (std::wstring_view(type) == current.name) { current.result = item; return FALSE; }
+        return TRUE;
+    },reinterpret_cast<LPARAM>(&search));
+    return search.result;
+}
+std::string accessible_name(HWND item) {
+    Microsoft::WRL::ComPtr<IAccessible> accessible;
+    require(SUCCEEDED(AccessibleObjectFromWindow(item,static_cast<DWORD>(OBJID_CLIENT),IID_PPV_ARGS(accessible.GetAddressOf()))),
+        "A choice has no Windows accessibility object");
+    VARIANT child{}; child.vt = VT_I4; child.lVal = CHILDID_SELF;
+    BSTR name = nullptr; require(SUCCEEDED(accessible->get_accName(child,&name)),"A choice has no accessible name");
+    const auto value = name ? utf8(std::wstring_view(name,SysStringLen(name))) : std::string{};
+    SysFreeString(name); return value;
 }
 void pump(HWND host) {
     MSG message{};
@@ -183,12 +205,93 @@ struct Fixture {
             row_bottom = std::max(row_bottom,rectangle.bottom);
         }
     }
+    void viewport_layout() {
+        const auto pane = descendant_class(view,L"LearnGameAndEngineDev.LessonPane");
+        require(pane != nullptr,"Cannot locate the lesson viewport");
+        RECT viewport{}, header{}, footer{}, menu{};
+        GetWindowRect(pane,&viewport); GetWindowRect(control(105),&header);
+        GetWindowRect(control(101),&footer); GetWindowRect(control(107),&menu);
+        require(header.bottom < viewport.top && menu.bottom < viewport.top && viewport.bottom < footer.top,
+                "Fixed header, page navigation or menu covers lesson content");
+        require(!descendant(view,104),"A duplicate import button still occupies the lesson toolbar");
+        require(window_text(control(106)) == "Página " + std::to_string(page() + 1) + " de " + std::to_string(lesson.pages.size()),
+                "The fixed page progress does not match the current lesson page");
+    }
+    void scroll_repaint() {
+        const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
+        const auto pane = descendant_class(view,L"LearnGameAndEngineDev.LessonPane");
+        SendMessageW(view,WM_VSCROLL,SB_TOP,0); pump(host);
+        struct Snapshot { HWND item; std::string text; RECT bounds; };
+        std::vector<Snapshot> before;
+        for (auto item = GetWindow(pane,GW_CHILD); item; item = GetWindow(item,GW_HWNDNEXT)) {
+            RECT bounds{}; GetWindowRect(item,&bounds); before.push_back({item,window_text(item),bounds});
+        }
+        for (const auto delta : {-WHEEL_DELTA,-WHEEL_DELTA,WHEEL_DELTA,-WHEEL_DELTA,WHEEL_DELTA,WHEEL_DELTA}) {
+            SCROLLINFO initial{sizeof(initial),SIF_POS}; GetScrollInfo(pane,SB_VERT,&initial);
+            RedrawWindow(pane,nullptr,nullptr,RDW_VALIDATE | RDW_NOERASE | RDW_ALLCHILDREN);
+            SendMessageW(pane,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),0);
+            SCROLLINFO after{sizeof(after),SIF_POS}; GetScrollInfo(pane,SB_VERT,&after);
+            if (after.nPos != initial.nPos) {
+                RECT dirty{}, client{}; GetClientRect(pane,&client);
+                require(GetUpdateRect(pane,&dirty,FALSE) && EqualRect(&dirty,&client),
+                        "Moving rows did not invalidate the complete old viewport background");
+                RECT viewport{}; GetWindowRect(pane,&viewport);
+                for (const auto& snapshot : before) {
+                    RECT child{}, visible{}; GetWindowRect(snapshot.item,&child);
+                    if (IntersectRect(&visible,&viewport,&child) && child.bottom > child.top)
+                        require(GetUpdateRect(snapshot.item,nullptr,FALSE),"A moved visible child retained stale client pixels");
+                }
+            }
+            pump(host); non_overlapping_rows(); viewport_layout();
+            for (const auto& snapshot : before)
+                require(IsWindow(snapshot.item) && window_text(snapshot.item) == snapshot.text,
+                        "Wheel scrolling recreated controls, hid text or changed lesson content");
+        }
+        SendMessageW(view,WM_VSCROLL,SB_TOP,0); pump(host);
+        for (const auto& snapshot : before) {
+            RECT bounds{}; GetWindowRect(snapshot.item,&bounds);
+            require(EqualRect(&bounds,&snapshot.bounds),"Scrolling back to the top changed the layout or row dimensions");
+        }
+        if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
+    }
+    void contextual_editing(std::size_t block) {
+        const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
+        const auto bar = descendant_class(view,L"LearnGameAndEngineDev.EditingBar");
+        require(bar != nullptr,"The contextual editor shortcuts are missing");
+        const auto source = control(block,10); const auto before = text(block,10);
+        SetFocus(source); SendMessageW(bar,WM_TIMER,1,0); pump(host);
+        require(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE,"Focusing a code editor did not show its shortcuts");
+        RECT viewport{}, strip{}, navigation{};
+        GetWindowRect(GetParent(source),&viewport); GetWindowRect(bar,&strip); GetWindowRect(control(101),&navigation);
+        require(viewport.bottom < strip.top && strip.bottom < navigation.top,
+                "The editing shortcuts cover code or page navigation");
+        const auto tab = GetDlgItem(bar,9000); require(tab != nullptr,"Contextual TAB command missing");
+        SetFocus(tab); SendMessageW(tab,BM_CLICK,0,0); pump(host);
+        require(GetFocus() == source && text(block,10) != before,"Contextual TAB lost the editor or did not use its editing operation");
+        SendMessageW(source,WM_UNDO,0,0); pump(host);
+        require(text(block,10) == before,"Contextual TAB did not preserve the existing Undo history");
+        SetFocus(control(102)); SendMessageW(bar,WM_TIMER,1,0); pump(host);
+        require(!(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE),"Editor shortcuts remained visible outside code editing");
+        viewport_layout();
+        if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
+    }
 };
 std::string message_code(const curriculum::Block& block, std::string_view old_message, std::string_view new_message) {
     auto source = block.initial_code;
     const auto position = source.find(old_message); require(position != source.npos, "Authored literal fixture missing");
     source.replace(position,old_message.size(),new_message); return source;
 }
+curriculum::Lesson with_relationships(const curriculum::Lesson& source,std::string_view references,
+                                     std::string_view activities = "[]") {
+    // Replace the one root property through the same Windows JSON parser.
+    // Appending a second referenceAfter hid newly authored links in this test.
+    using namespace winrt::Windows::Data::Json;
+    auto object = JsonObject::Parse(winrt::to_hstring(source.raw_json));
+    object.Insert(L"referenceAfter",JsonArray::Parse(winrt::to_hstring(references)));
+    object.Insert(L"activityAfter",JsonArray::Parse(winrt::to_hstring(activities)));
+    return windows::parse_lesson_json(winrt::to_string(object.Stringify()));
+}
+constexpr std::string_view reference_links = R"([{"activity":"block_0004_0002","blocks":["block_0005_0000","block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])";
 }
 
 int main() {
@@ -210,6 +313,20 @@ int main() {
             state::StateStore untouched(view.environment.paths.root);
             require(untouched.empty(), "Reopening an untouched profile published personal state");
         }
+        view.viewport_layout(); view.scroll_repaint();
+        {
+            const int dpi = static_cast<int>(GetDpiForWindow(view.view));
+            MoveWindow(view.view,0,0,MulDiv(640,dpi,96),MulDiv(600,dpi,96),TRUE); pump(view.host);
+            view.viewport_layout(); view.non_overlapping_rows();
+            RECT host_area{}; GetClientRect(view.host,&host_area);
+            MoveWindow(view.view,0,0,host_area.right,host_area.bottom,TRUE); pump(view.host);
+        }
+        for (std::size_t option = 0; option < view.lesson.pages[0].blocks[4].options.size(); ++option) {
+            const auto radio = view.control(4,20 + static_cast<int>(option) * 2);
+            require(window_text(radio).empty() && accessible_name(radio) == view.lesson.pages[0].blocks[4].options[option],
+                    "A choice paints clipped duplicate text or lost its complete accessible label");
+        }
+        std::cout << "PASS Wheel repaint damage, stable text/geometry, fixed header/footer and unduplicated accessible choices\n" << std::flush;
         view.non_overlapping_rows(); view.solve(4); view.next();
         std::cout << "PASS Untouched profile remains importable after close/reopen; initial choice controls and forward gate\n" << std::flush;
 
@@ -249,6 +366,7 @@ int main() {
         const auto& original = view.lesson.pages[4].blocks[3];
         const auto& modified = view.lesson.pages[4].blocks[6];
         require(view.text(3,10) == original.initial_code && view.text(6,10) == modified.initial_code, "Original sources lost indentation or final LF");
+        view.contextual_editing(3);
         view.run(3);
         require(view.text(3,14) == "Zona inicial" && view.text(3,4) == "Correcto", "Original program did not produce/check its fresh exact output");
         const auto changed_source = message_code(modified,"Zona inicial","Caja recibida");
@@ -375,12 +493,11 @@ int main() {
             state::Response old_verdict; old_verdict.correct = true; old_verdict.answer = "Zona segura";
             state::put_response(data,curriculum::exercise_key(lesson,lesson.pages[5].blocks[6]),old_verdict);
         },[](const curriculum::Lesson& source) {
-            auto json = source.raw_json; const auto closing = json.find_last_of('}');
-            json.insert(closing,R"(,"referenceAfter":[{"activity":"block_0004_0002","blocks":["block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])");
-            return windows::parse_lesson_json(json);
+            return with_relationships(source,reference_links);
         });
         const auto previous_reference = [&] {
-            return descendant(references.view,id(1,0)) && descendant(references.view,id(2,1)) && descendant(references.view,id(3,0));
+            return descendant(references.view,id(0,0)) && descendant(references.view,id(1,0))
+                && descendant(references.view,id(2,1)) && descendant(references.view,id(3,0));
         };
         const auto current_reference = [&] {
             return descendant(references.view,id(7,0)) && descendant(references.view,id(8,1));
@@ -425,6 +542,185 @@ int main() {
         require(previous_reference() && !current_reference(),"Reset of one editor affected another activity's reference");
         references.non_overlapping_rows();
         std::cout << "PASS Explicit reference links: no early HWND/accessibility text, exact fresh-output gates, sealed reopening, edit/Undo/reset invalidation and independent cross-page targets\n"
+                  << std::flush;
+
+        const auto solved_compiler_page = [](state::StateData& data,const curriculum::Lesson& lesson) {
+            state::prepare_lesson_state(data,lesson); state::save_current_page(data,lesson,4);
+            for (const auto index : {std::size_t{1},std::size_t{7}}) {
+                const auto& block = lesson.pages[4].blocks[index]; state::Response response; response.correct = true;
+                if (block.correct_index) response.selected = static_cast<std::int64_t>(*block.correct_index);
+                else response.answer = block.answers.at(0);
+                state::put_response(data,curriculum::exercise_key(lesson,block),response);
+            }
+            // Imported markers/answers cannot impersonate an actual execution.
+            state::Response obsolete; obsolete.correct = true; obsolete.answer = "Caja recibida";
+            state::put_response(data,curriculum::exercise_key(lesson,lesson.pages[4].blocks[6]),obsolete);
+        };
+        const auto reject_forward_selector = [](Fixture& fixture,std::size_t target) {
+            const auto before = fixture.page(); const auto selector = fixture.control(102);
+            SendMessageW(selector,CB_SETCURSEL,target,0);
+            SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(102,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));
+            pump(fixture.host);
+            require(fixture.page() == before,"The selector bypassed an explicit compiler prerequisite");
+        };
+        Fixture dependencies(solved_compiler_page,[](const curriculum::Lesson& source) {
+            return with_relationships(source,reference_links,
+                R"([{"activity":"block_0005_0006","requires":["block_0004_0002"]}])");
+        });
+        require(!IsWindowEnabled(dependencies.control(103)),"A legacy correct marker unlocked the next independent activity");
+        reject_forward_selector(dependencies,5);
+        dependencies.run(3);
+        require(dependencies.text(3,4) == "Correcto" && !IsWindowEnabled(dependencies.control(103)),
+                "Successful execution of the original program satisfied another editor's prerequisite");
+        dependencies.run(6);
+        require(dependencies.text(6,4).starts_with("Incorrecto") && !IsWindowEnabled(dependencies.control(103)),
+                "An incorrect output unlocked its dependent page");
+        const auto prerequisite_source = message_code(dependencies.lesson.pages[4].blocks[6],"Zona inicial","Caja recibida");
+        dependencies.replace(6,10,prerequisite_source + "esto no compila\n"); dependencies.run(6);
+        require(dependencies.text(6,4).empty() && !IsWindowEnabled(dependencies.control(103)),
+                "A compiler error unlocked its dependent page");
+        dependencies.replace(6,10,prerequisite_source); dependencies.run(6);
+        require(IsWindowEnabled(dependencies.control(103)),"Fresh correct output did not update the next-page prerequisite");
+        const auto prerequisite_editor = dependencies.control(6,10);
+        dependencies.replace(6,10,prerequisite_source + "// cambio QA\n");
+        require(!IsWindowEnabled(dependencies.control(103)),"Source editing did not revoke forward access");
+        SendMessageW(prerequisite_editor,WM_UNDO,0,0); pump(dependencies.host);
+        require(dependencies.text(6,10) == prerequisite_source && !IsWindowEnabled(dependencies.control(103)),
+                "Undo resurrected a discarded prerequisite receipt");
+        dependencies.run(6); dependencies.next();
+        require(descendant(dependencies.view,id(0,0)) && descendant(dependencies.view,id(6,10)),
+                "A completed prerequisite did not expose its references and dependent editor");
+        const auto dependent_source = message_code(dependencies.lesson.pages[5].blocks[6],"Caja recibida","Zona segura");
+        dependencies.replace(6,10,dependent_source); dependencies.run(6);
+        require(descendant(dependencies.view,id(8,1)),"The dependent activity could not unlock its own reference");
+        dependencies.reopen();
+        require(dependencies.page() == 5 && dependencies.text(6,4).empty() && dependencies.text(6,14).empty(),
+                "Completed dependencies either lost the bookmark or revived an old console/verdict");
+        dependencies.select_page(4); dependencies.click(6,12);
+        require(!IsWindowEnabled(dependencies.control(103)),"Reset retained an obsolete prerequisite");
+        // Simulate an already-stored later bookmark without claiming completion.
+        dependencies.close();
+        {
+            state::StateStore store(dependencies.environment.paths.root); auto data = store.load();
+            state::save_current_page(data,dependencies.lesson,5); store.save(data);
+        }
+        dependencies.open();
+        require(dependencies.page() == 5 && descendant(dependencies.view,id(6,18))
+                && !descendant(dependencies.view,id(6,10)) && !descendant(dependencies.view,id(6,11))
+                && !descendant(dependencies.view,id(6,13)) && !descendant(dependencies.view,id(6,14))
+                && !descendant(dependencies.view,id(6,4)) && !descendant(dependencies.view,id(8,1)),
+                "An old bookmark exposed a blocked editor, its controls or its own reference");
+        require(dependencies.text(5,0).find("Zona segura") != std::string::npos,
+                "The blocked implementation hid the visible output objective");
+        const auto preserved = dependencies.saved();
+        require(state::get_draft(preserved,curriculum::draft_key("programming",dependencies.lesson,
+                    dependencies.lesson.pages[5].blocks[6]),"").source == dependent_source,
+                "Blocking an old bookmark deleted its independent compiler draft");
+        dependencies.select_page(4);
+        dependencies.replace(6,10,prerequisite_source); dependencies.run(6); dependencies.next();
+        require(dependencies.text(6,10) == dependent_source && dependencies.text(6,14).empty(),
+                "Reunlocking lost the dependent draft or reused an old console");
+        dependencies.non_overlapping_rows();
+        std::cout << "PASS Explicit cross-page activity prerequisites: fresh own output, forward/selector gates, Undo/reset invalidation, safe old bookmarks and preserved independent drafts\n" << std::flush;
+
+        std::string same_page_draft;
+        Fixture local_dependencies([&](state::StateData& data,const curriculum::Lesson& lesson) {
+            solved_compiler_page(data,lesson);
+            state::save_current_page(data,lesson,3);
+            for (const auto index : {std::size_t{2},std::size_t{3}}) {
+                const auto& block = lesson.pages[3].blocks[index]; state::Response response; response.correct = true;
+                if (block.correct_index) response.selected = static_cast<std::int64_t>(*block.correct_index);
+                else if (block.type == BlockType::order_code) response.order.assign(block.correct_order.begin(),block.correct_order.end());
+                else response.answer = block.answers.at(0);
+                state::put_response(data,curriculum::exercise_key(lesson,block),response);
+            }
+            const auto& target = lesson.pages[4].blocks[6];
+            same_page_draft = message_code(target,"Zona inicial","Caja recibida") + "// borrador independiente\n";
+            state::Draft draft; draft.source = same_page_draft;
+            state::put_draft(data,curriculum::draft_key("programming",lesson,target),draft);
+        },[](const curriculum::Lesson& source) {
+            const auto activity = source.pages[4].blocks[6].stable_id;
+            const auto prerequisite = source.pages[4].blocks[3].stable_id;
+            return with_relationships(source,reference_links,"[{\"activity\":\"" + activity
+                + "\",\"requires\":[\"" + prerequisite + "\"]}]");
+        });
+        require(local_dependencies.page() == 3 && IsWindowEnabled(local_dependencies.control(103)),
+                "A same-page prerequisite prevented entering the page where it must be completed");
+        local_dependencies.next();
+        require(descendant(local_dependencies.view,id(6,18)) && !descendant(local_dependencies.view,id(6,10)),
+                "A same-page dependent editor exposed its prepared implementation early");
+        const auto original_editor = local_dependencies.control(3,10);
+        const auto original_source = local_dependencies.text(3,10);
+        local_dependencies.replace(3,10,original_source + "// historial del editor libre\n");
+        local_dependencies.run(3);
+        require(local_dependencies.control(3,10) == original_editor && local_dependencies.text(3,4) == "Correcto"
+                && local_dependencies.text(6,10) == same_page_draft && local_dependencies.text(6,14).empty(),
+                "Additive unlocking recreated the prerequisite editor, verdict/history or dependent draft");
+        local_dependencies.run(6);
+        require(local_dependencies.text(6,4).starts_with("Correcto"),"The same-page dependent editor cannot execute its preserved draft");
+        const auto dependent_editor = local_dependencies.control(6,10);
+        local_dependencies.replace(3,10,original_source + "// revocación\n");
+        require(local_dependencies.control(3,10) == original_editor && !IsWindow(dependent_editor)
+                && !descendant(local_dependencies.view,id(6,10)) && descendant(local_dependencies.view,id(6,18)),
+                "Revocation retained the dependent controls or rebuilt an unrelated editor");
+        SendMessageW(original_editor,WM_UNDO,0,0); pump(local_dependencies.host);
+        require(!descendant(local_dependencies.view,id(6,10)),"Undo reused a previous prerequisite achievement");
+        local_dependencies.run(3);
+        require(local_dependencies.text(6,10) == same_page_draft && local_dependencies.text(6,4).empty(),
+                "Revealing a same-page editor lost its saved source or restored a stale verdict");
+        local_dependencies.replace(6,10,same_page_draft + "// edición que debe capturarse\n");
+        const auto last_dependent_source = local_dependencies.text(6,10);
+        local_dependencies.click(6,11);
+        local_dependencies.replace(3,10,original_source);
+        require(!descendant(local_dependencies.view,id(6,10)),"A running dependent editor remained available after revocation");
+        const auto hidden_state = local_dependencies.saved();
+        require(state::get_draft(hidden_state,curriculum::draft_key("programming",local_dependencies.lesson,
+                    local_dependencies.lesson.pages[4].blocks[6]),"").source == last_dependent_source,
+                "Hiding/cancelling the dependent editor failed to capture its latest source");
+        local_dependencies.run(3);
+        require(local_dependencies.text(6,10) == last_dependent_source && local_dependencies.text(6,14).empty(),
+                "Cancelled dependent execution later published stale output");
+        local_dependencies.non_overlapping_rows();
+        std::cout << "PASS Same-page prerequisites: additive controls, live Undo/verdict preservation, cancel-on-hide and independent draft recovery\n" << std::flush;
+
+        const auto graph_start = GetTickCount64();
+        Fixture graph([](state::StateData& data,const curriculum::Lesson& lesson) {
+            // Synthetic receipts exercise graph traversal only; this test does
+            // not claim that any C++ program was compiled or heard here.
+            for (const auto& current : lesson.pages[0].blocks) {
+                auto objective = curriculum::reference_objective_frame(lesson,current);
+                objective += "/source/" + std::to_string(current.initial_code.size()) + ':' + current.initial_code;
+                objective += "/input/0:";
+                const auto key = "reference-proof/v1/" + lesson.locale + '/' + curriculum::draft_key("programming",lesson,current);
+                data.preferences["native_windows"][key] = state::sha256(objective);
+            }
+        },[](const curriculum::Lesson& source) {
+            curriculum::Lesson result;
+            result.id = "qa_shared_prerequisite_graph"; result.title = "Grafo QA de requisitos compartidos"; result.locale = "es";
+            result.state_layout.version = 1; result.state_layout.locale = "es";
+            result.state_layout.lineage = state::sha256("qa-shared-prerequisite-layout-v1");
+            result.state_layout.legacy_lineage = result.state_layout.lineage;
+            curriculum::Page page; page.stable_id = "qa_graph_page";
+            curriculum::StatePage state_page; state_page.id = page.stable_id;
+            for (std::size_t index = 0; index < 35; ++index) {
+                auto current = source.pages[4].blocks[3]; current.stable_id = "qa_graph_" + std::to_string(index);
+                current.address = {0,index,"",""};
+                state_page.blocks.push_back(current.stable_id); page.blocks.push_back(std::move(current));
+                if (index > 1) result.activity_after.push_back({page.blocks[index].stable_id,
+                    {page.blocks[index-1].stable_id,page.blocks[index-2].stable_id}});
+            }
+            result.pages.push_back(std::move(page)); result.state_layout.origin.push_back(state_page);
+            result.state_layout.current.push_back(std::move(state_page));
+            return result;
+        });
+        require(GetTickCount64() - graph_start < 30000 && descendant(graph.view,id(34,10)),
+                "Shared prerequisite traversal became recursive/exponential or lost a valid transitive receipt");
+        const auto revoke_start = GetTickCount64();
+        graph.replace(0,10,graph.lesson.pages[0].blocks[0].initial_code + "// invalidación del grafo\n");
+        require(GetTickCount64() - revoke_start < 30000 && !descendant(graph.view,id(34,10))
+                && descendant(graph.view,id(34,18)) && descendant(graph.view,id(0,10)),
+                "Transitive graph invalidation hung or left a dependent editor open");
+        std::cout << "PASS Shared 35-node prerequisite DAG: bounded traversal and transitive invalidation without recursive rechecking\n"
                   << "Native lesson UI integration: PASS\n";
         return 0;
     } catch (const std::exception& error) {

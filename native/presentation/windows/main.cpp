@@ -2,6 +2,7 @@
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 #include "presentation/windows/lesson_view.hpp"
+#include "presentation/windows/reader_theme.hpp"
 
 #include <windows.h>
 #include <shellapi.h>
@@ -19,7 +20,7 @@ namespace {
 
 constexpr wchar_t window_class[] = L"LearnGameAndEngineDev.NativeShell";
 constexpr UINT_PTR smoke_timer = 1;
-constexpr DWORD window_style = WS_OVERLAPPEDWINDOW;
+constexpr DWORD window_style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 
 struct WindowState {
     lgaed::WindowsEnvironment environment;
@@ -85,7 +86,15 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
     if (!state) {
         return DefWindowProcW(window, message, wparam, lparam);
     }
+    LRESULT themed{};
+    if (lgaed::presentation::reader_theme::control_color(message, wparam, lparam, themed)) return themed;
     switch (message) {
+    case WM_ERASEBKGND: {
+        RECT area{}; GetClientRect(window, &area);
+        FillRect(reinterpret_cast<HDC>(wparam), &area,
+            lgaed::presentation::reader_theme::brush(lgaed::presentation::reader_theme::Surface::canvas));
+        return 1;
+    }
     case WM_GETMINMAXINFO: {
         const auto dpi = GetDpiForWindow(window);
         RECT minimum{0, 0, MulDiv(640, static_cast<int>(dpi), 96),
@@ -127,6 +136,8 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
             if (!control) {
                 return -1;
             }
+            lgaed::presentation::reader_theme::apply(control,
+                lgaed::presentation::reader_theme::Surface::canvas);
         }
         layout_controls(window, *state);
         return 0;
@@ -224,7 +235,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         definition.lpfnWndProc = window_procedure;
         definition.hInstance = instance;
         definition.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        definition.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        definition.hbrBackground = lgaed::presentation::reader_theme::brush(
+            lgaed::presentation::reader_theme::Surface::canvas);
         definition.lpszClassName = window_class;
         if (!RegisterClassExW(&definition)) {
             throw std::runtime_error("Cannot register the native application window");

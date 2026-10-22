@@ -10,7 +10,8 @@ namespace lgaed::presentation {
 // Plain editing preserves the original characters and exposes paragraph breaks as LF.
 [[nodiscard]] std::string edit_text(HWND edit);
 void set_edit_text(HWND edit, std::string_view text);
-// Applies syntax colors without changing text, selection, scroll or the undo history.
+// Uses the HWND's optional reader_theme surface; untouched controls keep their
+// system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);
 // Display-only inline delimiters are hidden; original lesson strings remain untouched.
 void set_rich_text(HWND edit, std::string_view text,

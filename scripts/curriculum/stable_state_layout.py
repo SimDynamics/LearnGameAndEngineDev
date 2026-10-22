@@ -24,6 +24,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
+PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 
 
 def require(condition: bool, message: str) -> None:
@@ -127,6 +128,9 @@ def prepare(document: dict) -> dict:
     if "stateLayout" in document:
         validate(document)
         return deepcopy(document)
+    # A relationship cannot manufacture its own historical identities merely
+    # by passing through the bootstrap helper.
+    validate(document)
     result = deepcopy(document)
     origin, current = [], []
     for p, page in enumerate(_pages(document)):
@@ -319,8 +323,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
     return result
 
 
-def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
-    """Return current coordinates -> original immutable coordinates, or fail closed."""
+def _validate_state_layout(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     pages = _pages(document)
     if "stateLayout" not in document:
         return {(p, b): (p, b) for p, page in enumerate(pages) for b in range(len(page.get("blocks", [])))}
@@ -374,6 +377,83 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     return mapping
 
 
+def _validate_presentation_relationships(document: dict) -> None:
+    """Windows presentation links use existing identities, never response payloads.
+
+    Empty optional lists retain the native parser's legacy no-op behavior. Any
+    actual link needs a fully validated stateLayout, and ordering always follows
+    visible positions rather than historical persistence addresses.
+    """
+    relations = {}
+    for field in PRESENTATION_FIELDS:
+        if field not in document:
+            continue
+        value = document[field]
+        require(type(value) is list and len(value) <= 100_000,
+                f"{field} must be a relationship list")
+        relations[field] = value
+    if not any(relations.values()):
+        return
+    require("stateLayout" in document, "Presentation relationships require stable state-layout identities")
+    blocks = _blocks(document)
+    positions = {identity: (p, b)
+                 for p, record in enumerate(document["stateLayout"]["current"])
+                 for b, identity in enumerate(record["blocks"])}
+    references = set()
+    for field, links in relations.items():
+        activities = set()
+        entries_key = "blocks" if field == "referenceAfter" else "requires"
+        for link in links:
+            require(type(link) is dict and set(link) == {"activity", entries_key},
+                    f"Malformed {field} relationship")
+            activity = _identity(link["activity"])
+            require(activity not in activities, f"Duplicate {field} activity")
+            activities.add(activity)
+            require(activity in blocks, f"{field} activity does not exist")
+            target = blocks[activity]
+            require(target.get("type") == "cpp_compiler", f"{field} activity must be a compiler")
+            if field == "referenceAfter":
+                require(type(target.get("outputCheck")) is dict,
+                        "Reference activity requires an authored output check")
+            entries = link[entries_key]
+            require(type(entries) is list and 0 < len(entries) <= 100_000,
+                    f"{field} relationship needs a nonempty {entries_key} list")
+            seen = set()
+            for value in entries:
+                identity = _identity(value)
+                require(identity != activity and identity not in seen,
+                        f"Duplicate or self-referencing {field} identity")
+                seen.add(identity)
+                require(identity in blocks, f"{field} block does not exist")
+                block = blocks[identity]
+                if field == "referenceAfter":
+                    require(identity not in references, "Duplicate reference presentation block")
+                    references.add(identity)
+                    require(block.get("type") in {"heading", "paragraph", "note", "code"},
+                            "An exercise or editor cannot be hidden as a reference")
+                    require(positions[identity] > positions[activity],
+                            "A reference must follow its activity in visual order")
+                else:
+                    require(block.get("type") == "cpp_compiler" and type(block.get("outputCheck")) is dict,
+                            "An activity prerequisite requires a compiler with an authored output check")
+                    require(positions[identity] < positions[activity],
+                            "An activity prerequisite must precede its activity in visual order")
+
+
+def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
+    """Return immutable storage coordinates after validating state and links."""
+    mapping = _validate_state_layout(document)
+    _validate_presentation_relationships(document)
+    return mapping
+
+
+def _transition_metadata(document: dict) -> dict:
+    # Only these validated root presentation extensions may change independently
+    # of an immutable origin. All other lesson metadata remains protected.
+    return {k: v for k, v in document.items()
+            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS}
+
+
 def reorder(document: dict, plan: list[dict], additions: list[dict] | None = None) -> dict:
     """Move existing page shells and blocks according to an explicit ID-only plan."""
     before = prepare(document)
@@ -421,8 +501,7 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         own = meta["family"][meta["locale"]]
         require(own["sha256"] == fingerprint(_without_layout(previous)) and own["origin"] == old_meta["origin"],
                 "The historical locale is not anchored to the published source")
-    require({k: v for k, v in baseline.items() if k not in {"pages", "stateLayout"}}
-            == {k: v for k, v in current.items() if k not in {"pages", "stateLayout"}},
+    require(_transition_metadata(baseline) == _transition_metadata(current),
             "A reorder cannot modify lesson metadata")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
@@ -475,8 +554,8 @@ def validate_transition(previous: dict, current: dict) -> None:
     validate(current)
     require(current["stateLayout"]["origin"] == baseline["stateLayout"]["origin"],
             "The immutable origin was changed; do not reset the baseline")
-    previous_other = {k: v for k, v in baseline.items() if k not in {"pages", "stateLayout"}}
-    current_other = {k: v for k, v in current.items() if k not in {"pages", "stateLayout"}}
+    previous_other = _transition_metadata(baseline)
+    current_other = _transition_metadata(current)
     require(previous_other == current_other, "A reorder cannot modify lesson metadata")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
@@ -522,6 +601,8 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     Legacy content without identity metadata retains the original position rules.
     """
     if "stateLayout" not in previous and "stateLayout" not in current:
+        validate(previous)
+        validate(current)
         return current
     validate_transition(previous, current)
     old = prepare(previous)
@@ -688,6 +769,12 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
     require(content.is_dir(), "Missing curriculum content directory")
     documents = {path.relative_to(repository).as_posix(): load(path)
                  for path in sorted(content.rglob("lesson_*.json"))}
+    for path, document in documents.items():
+        if PRESENTATION_FIELDS & document.keys():
+            try:
+                validate(document)
+            except (ValueError, KeyError, TypeError) as exc:
+                raise LayoutError(f"Invalid presentation relationships in {path}: {exc}") from exc
     mapped = {path for path, document in documents.items() if "stateLayout" in document}
     # A metadata-bearing tree cannot claim safety without its published history.
     require(not mapped or base_ref is not None,

@@ -1,6 +1,8 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/editing_bar.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/state_store.hpp"
@@ -10,10 +12,13 @@
 #include <richedit.h>
 #include <shobjidl.h>
 #include <wrl/client.h>
+#include <initguid.h>
+#include <oleacc.h>
 
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <map>
 #include <mutex>
 #include <numeric>
 #include <optional>
@@ -33,6 +38,7 @@ constexpr UINT flush_message = WM_APP + 72;
 constexpr UINT close_import_message = WM_APP + 74;
 constexpr UINT_PTR save_timer = 73;
 constexpr int previous_id = 101, page_id = 102, next_id = 103, import_id = 104;
+constexpr int page_status_id = 106, menu_id = 107, page_top_id = 108, page_bottom_id = 109;
 constexpr int import_prompt_id = 200, import_path_id = 201, import_browse_id = 202;
 constexpr int import_review_id = 203, import_summary_id = 204, import_commit_id = 205, import_cancel_id = 206;
 constexpr int import_label_id = 207;
@@ -57,6 +63,7 @@ struct BlockControls {
     std::vector<std::size_t> order;
     std::uint64_t revision = 0;
     std::string input_original, input_visual;
+    bool rendered = false, locked = false;
 };
 struct LessonView;
 LRESULT CALLBACK view_proc(HWND, UINT, WPARAM, LPARAM);
@@ -107,7 +114,8 @@ struct LessonView {
     state::StateStore store;
     state::StateData data;
     HWND window = nullptr, pane = nullptr, title = nullptr, previous = nullptr;
-    HWND selector = nullptr, next = nullptr, importer = nullptr;
+    HWND selector = nullptr, next = nullptr;
+    HWND menu = nullptr, page_status = nullptr;
     HWND import_prompt = nullptr, import_path = nullptr, import_browse = nullptr;
     HWND import_review = nullptr, import_summary = nullptr, import_commit = nullptr, import_cancel = nullptr;
     HWND import_label = nullptr;
@@ -121,6 +129,8 @@ struct LessonView {
     bool updating = false, laying_out = false, dirty = false, ready = false;
     HFONT button_font = nullptr;
     HMODULE rich_module = nullptr;
+    std::unique_ptr<EditingBar> editing_bar;
+    Microsoft::WRL::ComPtr<IAccPropServices> accessibility;
     std::jthread worker;
     std::mutex result_mutex;
     std::optional<windows::CppRunResult> completed;
@@ -132,6 +142,7 @@ struct LessonView {
         : environment(env), lesson(std::move(model)),
           store(env.paths.root), data(store.load()) {
         curriculum::validate_reference_relationships(lesson);
+        curriculum::validate_activity_relationships(lesson);
         state::validate_lesson_state(data, lesson);
         state::prepare_lesson_state(data, lesson);
         page = state::current_page(data, lesson);
@@ -145,6 +156,7 @@ struct LessonView {
         if (!rich_module) throw std::runtime_error("Windows Rich Edit is unavailable");
     }
     ~LessonView() {
+        editing_bar.reset();
         cancel_run();
         controls.clear();
         if (button_font) DeleteObject(button_font);
@@ -157,7 +169,10 @@ struct LessonView {
     std::string scroll_key() const { return "scroll/" + lesson.id + "/" + lesson.pages.at(page).stable_id; }
 
     bool has_references(const curriculum::Block& activity) const {
-        return std::ranges::any_of(lesson.reference_after,[&](const auto& relation) { return relation.activity == activity.stable_id; });
+        return std::ranges::any_of(lesson.reference_after,[&](const auto& relation) { return relation.activity == activity.stable_id; })
+            || std::ranges::any_of(lesson.activity_after,[&](const auto& relation) {
+                return std::ranges::find(relation.prerequisites,activity.stable_id) != relation.prerequisites.end();
+            });
     }
     std::string reference_key(const curriculum::Block& activity) const {
         return "reference-proof/v1/" + lesson.locale + '/' + curriculum::draft_key(route,lesson,activity);
@@ -171,20 +186,83 @@ struct LessonView {
         objective += "/input/" + std::to_string(input.size()) + ':' + input;
         return state::sha256(objective);
     }
+    using CompletionSnapshot = std::map<std::string,bool>;
+    CompletionSnapshot completion_snapshot() const {
+        // Validation guarantees that dependencies precede their targets.
+        // Evaluate each node once in that order; recursive DAG walks become
+        // exponential when several later editors share earlier prerequisites.
+        std::map<std::string,const std::vector<std::string>*> requirements;
+        for (const auto& relation : lesson.activity_after) requirements.emplace(relation.activity,&relation.prerequisites);
+        CompletionSnapshot result;
+        for (const auto& candidate : lesson.pages) for (const auto& current : candidate.blocks) {
+            if (current.type != BlockType::cpp_compiler) continue;
+            bool available = true;
+            if (const auto relation = requirements.find(current.stable_id); relation != requirements.end())
+                for (const auto& identity : *relation->second) {
+                    const auto found = result.find(identity);
+                    if (found == result.end() || !found->second) { available = false; break; }
+                }
+            const auto receipt = state::string_value(data,"native_windows",reference_key(current));
+            result[current.stable_id] = available && current.output_check && !receipt.empty()
+                && receipt == reference_seal(current);
+        }
+        return result;
+    }
+    bool activity_available(const curriculum::Block& activity,const CompletionSnapshot& proofs) const {
+        for (const auto& position : curriculum::activity_prerequisites(lesson,activity)) {
+            const auto& prerequisite = lesson.pages[position.page].blocks[position.block];
+            const auto found = proofs.find(prerequisite.stable_id);
+            if (found == proofs.end() || !found->second) return false;
+        }
+        return true;
+    }
+    bool activity_available(const curriculum::Block& activity) const {
+        return activity_available(activity,completion_snapshot());
+    }
+    bool activity_completed(const curriculum::Block& activity) const {
+        const auto proofs = completion_snapshot(); const auto found = proofs.find(activity.stable_id);
+        return found != proofs.end() && found->second;
+    }
     bool reference_available(const curriculum::Block& reference) const {
         const auto dependency = curriculum::reference_activity(lesson,reference);
-        if (!dependency) return true;
-        const auto& activity = lesson.pages[dependency->page].blocks[dependency->block];
-        const auto receipt = state::string_value(data,"native_windows",reference_key(activity));
-        return !receipt.empty() && receipt == reference_seal(activity);
+        return !dependency || activity_completed(lesson.pages[dependency->page].blocks[dependency->block]);
     }
     static std::size_t row_block(const Row& row) {
         return static_cast<std::size_t>((GetDlgCtrlID(row.cells.front()) - 1000) / 100);
     }
-    void reference_row(std::size_t index) {
-        const auto& current = block(index);
-        if (current.type == BlockType::code) text_row(current.code,control_id(index,1),true);
-        else text_row(current.text,control_id(index,0),false,current.emphasis,current.type == BlockType::heading);
+    void label_radio(HWND item,std::string_view text) {
+        if (!accessibility && FAILED(CoCreateInstance(__uuidof(CAccPropServices),nullptr,CLSCTX_INPROC_SERVER,
+                IID_PPV_ARGS(accessibility.GetAddressOf()))))
+            throw std::runtime_error("Cannot label an accessible lesson option");
+        if (FAILED(accessibility->SetHwndPropStr(item,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_NAME,wide(text).c_str())))
+            throw std::runtime_error("Cannot label an accessible lesson option");
+    }
+    void clear_accessible_names() {
+        if (!accessibility) return;
+        const MSAAPROPID property = PROPID_ACC_NAME;
+        for (const auto& row : rows) for (const auto item : row.cells)
+            if (IsWindow(item)) accessibility->ClearHwndProps(item,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,&property,1);
+    }
+    void destroy_control(HWND item) {
+        if (accessibility) {
+            const MSAAPROPID property = PROPID_ACC_NAME;
+            accessibility->ClearHwndProps(item,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,&property,1);
+        }
+        DestroyWindow(item);
+    }
+    void remove_block(std::size_t index) {
+        if (controls[index].source_editor) capture_draft(index);
+        if (running_block == index) cancel_run();
+        // Detach adapters before their HWNDs. Other editors and their Undo
+        // histories are left alive when a prerequisite reveals/hides this one.
+        controls[index] = BlockControls{};
+        std::erase_if(actions,[&](const auto& action) { return action.block == index; });
+        for (auto row = rows.begin(); row != rows.end();) {
+            if (row_block(*row) != index) { ++row; continue; }
+            auto cells = std::move(row->cells);
+            row = rows.erase(row);
+            for (const auto item : cells) destroy_control(item);
+        }
     }
     void refresh_references() {
         if (!pane || import_open) return;
@@ -192,29 +270,20 @@ struct LessonView {
         bool changed = false;
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index);
-            if (!curriculum::reference_activity(lesson,current)) continue;
-            const bool present = std::ranges::any_of(rows,[&](const auto& row) { return row_block(row) == index; });
             const bool available = reference_available(current);
-            if (present == available) continue;
+            const bool locked = available && current.type == BlockType::cpp_compiler && !activity_available(current);
+            if (controls[index].rendered == available && (!available || controls[index].locked == locked)) continue;
             changed = true;
-            if (available) reference_row(index);
-            else {
-                // Read the block identity while HWNDs are still valid, and
-                // detach each row before destruction sends window messages.
-                // A destroyed HWND no longer has a usable control ID.
-                for (auto row = rows.begin(); row != rows.end();) {
-                    if (row_block(*row) != index) { ++row; continue; }
-                    auto cells = std::move(row->cells);
-                    row = rows.erase(row);
-                    for (const auto item : cells) DestroyWindow(item);
-                }
-            }
+            remove_block(index);
+            if (available) render_block(index);
         }
         if (changed) {
             std::stable_sort(rows.begin(),rows.end(),[](const auto& left, const auto& right) { return row_block(left) < row_block(right); });
             update_fonts(); reflow();
         }
         updating = was_updating;
+        if (editing_bar) editing_bar->refresh();
+        update_navigation();
     }
     void clear_reference_completion(std::size_t index) {
         if (!has_references(block(index))) return;
@@ -232,13 +301,15 @@ struct LessonView {
             0, 0, 0, 0, parent ? parent : pane, reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),
             GetModuleHandleW(nullptr), nullptr);
         if (!result) throw std::runtime_error("Cannot create a lesson control");
+        reader_theme::apply(result,parent == window ? reader_theme::Surface::header : reader_theme::Surface::canvas);
         return result;
     }
     HWND rich(std::string_view text, int id, bool code = false,
               std::span<const curriculum::Emphasis> emphasis = {}, bool editable = false) {
         auto result = control(MSFTEDIT_CLASS, "", ES_MULTILINE | ES_AUTOVSCROLL | WS_TABSTOP
             | (editable ? WS_VSCROLL | WS_HSCROLL | ES_AUTOHSCROLL : ES_READONLY), id);
-        SendMessageW(result, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
+        reader_theme::apply(result,editable ? reader_theme::Surface::field
+            : code ? reader_theme::Surface::card : reader_theme::Surface::canvas);
         SendMessageW(result, EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE | ENM_CHANGE | ENM_SELCHANGE);
         SendMessageW(result, EM_EXLIMITTEXT, 0, 2 * 1024 * 1024);
         set_rich_text(result, text, emphasis, code);
@@ -268,7 +339,7 @@ struct LessonView {
             FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
         if (!font) return;
-        for (auto item : {previous, selector, next, importer}) if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+        for (auto item : {previous, selector, next, menu, page_status}) if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
         for (auto item : {import_label, import_path, import_browse, import_review, import_commit, import_cancel})
             if (item) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
         for (const auto& row : rows) for (auto item : row.cells) {
@@ -280,12 +351,21 @@ struct LessonView {
     }
     void initialize(HWND target) {
         window = target;
+        reader_theme::apply(window,reader_theme::Surface::canvas);
         title = control(MSFTEDIT_CLASS, "", ES_READONLY | ES_MULTILINE, 105, window);
         set_rich_text(title, lesson.title);
+        CHARFORMAT2W heading{}; heading.cbSize = sizeof(heading); heading.dwMask = CFM_SIZE | CFM_BOLD;
+        heading.yHeight = 15 * 20; heading.dwEffects = CFE_BOLD;
+        SendMessageW(title,EM_SETSEL,0,-1);
+        SendMessageW(title,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&heading));
+        SendMessageW(title,EM_SETSEL,0,0);
+        page_status = control(L"STATIC","",SS_LEFT,page_status_id,window);
+        menu = control(L"BUTTON","Menú",WS_TABSTOP | BS_PUSHBUTTON,menu_id,window);
         previous = control(L"BUTTON", "Anterior", WS_TABSTOP | BS_PUSHBUTTON, previous_id, window);
         selector = control(L"COMBOBOX", "", WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, page_id, window);
+        reader_theme::apply(selector,reader_theme::Surface::field);
         next = control(L"BUTTON", "Siguiente", WS_TABSTOP | BS_PUSHBUTTON, next_id, window);
-        importer = control(L"BUTTON", "Importar estado Android…", WS_TABSTOP | BS_PUSHBUTTON, import_id, window);
+        reader_theme::primary_button(next);
         for (std::size_t index = 0; index < lesson.pages.size(); ++index) {
             auto label = L"Página " + std::to_wstring(index + 1) + L" de " + std::to_wstring(lesson.pages.size());
             SendMessageW(selector, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(label.c_str()));
@@ -294,6 +374,17 @@ struct LessonView {
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_CLIPCHILDREN, 0, 0, 0, 0,
             window, nullptr, GetModuleHandleW(nullptr), this);
         if (!pane) throw std::runtime_error("Cannot create the lesson viewport");
+        reader_theme::apply(pane,reader_theme::Surface::canvas);
+        editing_bar = std::make_unique<EditingBar>(window,[this](HWND focused) -> CodeEditor* {
+            if (import_open || updating) return nullptr;
+            for (std::size_t index = 0; index < controls.size(); ++index) {
+                auto& vm = controls[index];
+                if (focused == vm.source && vm.source_editor) return vm.source_editor.get();
+                if (focused == vm.answer && vm.answer_editor && block(index).type == BlockType::fill_code)
+                    return vm.answer_editor.get();
+            }
+            return nullptr;
+        },[this] { if (ready) resize(); });
         render_page(); ready = true; resize();
     }
     void mark_dirty() { dirty = true; SetTimer(window, save_timer, 300, nullptr); }
@@ -346,10 +437,12 @@ struct LessonView {
         const auto previous_update = updating; updating = true;
         set_rich_text(controls.at(index).feedback, text);
         CHARFORMAT2W format{}; format.cbSize = sizeof(format); format.dwMask = CFM_COLOR;
-        const auto bg = GetSysColor(COLOR_WINDOW);
+        const auto colors = reader_theme::palette();
+        const auto bg = reader_theme::background(controls.at(index).feedback);
         const bool dark = GetRValue(bg) + GetGValue(bg) + GetBValue(bg) < 384;
-        format.crTextColor = correct ? (dark ? RGB(122, 195, 141) : RGB(20, 112, 48))
-                                    : (dark ? RGB(245, 150, 150) : RGB(160, 35, 35));
+        format.crTextColor = colors.high_contrast ? colors.text
+            : correct ? (dark ? RGB(122, 195, 141) : RGB(20, 112, 48))
+                      : (dark ? RGB(245, 150, 150) : RGB(160, 35, 35));
         const auto label_end = text.find('\n');
         SendMessageW(controls[index].feedback, EM_SETSEL, 0,
             static_cast<LPARAM>(wide(text.substr(0, label_end)).size()));
@@ -359,15 +452,36 @@ struct LessonView {
     }
     bool can_advance(std::size_t index) const {
         const auto& candidate = lesson.pages.at(index);
+        const auto proofs = completion_snapshot();
         for (const auto& item : candidate.blocks) {
+            if (item.type == BlockType::cpp_compiler && !activity_available(item,proofs)) return false;
             if (!exercise(item.type)) continue;
             const auto response = state::get_response(data, curriculum::exercise_key(lesson, item));
             if (!response || !response->correct) return false;
         }
         return true;
     }
+    bool can_enter(std::size_t index) const {
+        const auto proofs = completion_snapshot();
+        return std::ranges::all_of(lesson.pages.at(index).blocks,[&](const auto& item) {
+            // A same-page prerequisite must remain reachable so the student
+            // can complete it there. Only earlier pages gate page entry;
+            // can_advance still requires every declared prerequisite.
+            for (const auto& position : curriculum::activity_prerequisites(lesson,item)) {
+                if (position.page < index) {
+                    const auto found = proofs.find(lesson.pages[position.page].blocks[position.block].stable_id);
+                    if (found == proofs.end() || !found->second) return false;
+                }
+            }
+            return true;
+        });
+    }
     void update_navigation() {
-        if (next) EnableWindow(next, page + 1 < lesson.pages.size() && can_advance(page));
+        if (next) EnableWindow(next, page + 1 < lesson.pages.size() && can_advance(page) && can_enter(page + 1));
+        if (page_status) {
+            const auto caption = "Página " + std::to_string(page + 1) + " de " + std::to_string(lesson.pages.size());
+            SetWindowTextW(page_status,wide(caption).c_str());
+        }
     }
     void sync_quiz_controls(std::size_t index) {
         auto& vm = controls.at(index);
@@ -405,110 +519,147 @@ struct LessonView {
         }
         sync_quiz_controls(index);
     }
+    void render_block(std::size_t index) {
+        const auto& current = block(index); auto& vm = controls[index];
+        // Locked references have no HWND, text provider or scrollable row.
+        if (!reference_available(current)) return;
+        vm.rendered = true;
+        if (current.type == BlockType::cpp_compiler && !activity_available(current)) {
+            vm.locked = true;
+            text_row("Completa y comprueba correctamente la actividad anterior requerida para abrir este editor.",control_id(index,18));
+            return;
+        }
+        if (exercise(current.type))
+            if (const auto saved = state::get_response(data, key(index))) vm.response = *saved;
+        if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, true); return; }
+        if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); return; }
+        if (current.type == BlockType::code) { text_row(current.code, control_id(index, 1), true); return; }
+        if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis);
+        if (!current.code.empty()) text_row(current.code, control_id(index, 1), true);
+        if (current.type == BlockType::cpp_compiler) {
+            auto caption = rich("C++", control_id(index, 16));
+            auto reset = button("Reiniciar código", control_id(index, 12), {0, ActionType::reset, index});
+            auto tab = button("TAB", control_id(index, 13), {0, ActionType::tab, index});
+            rows.push_back({{caption, reset, tab}, {0, 150, 64}, 36, false});
+            const auto saved = state::get_draft(data, draft_key(index), current.initial_code, current.standard_input.value_or(""));
+            auto document = saved.has_saved
+                ? windows::EditorDocument{saved.source, state::indentation_units(saved.source, saved.indentation_json), saved.selection_start, saved.selection_end}
+                : windows::predefined_code_document(current.initial_code);
+            vm.source = rich("", control_id(index, 10), true, {}, true);
+            vm.source_editor = std::make_unique<CodeEditor>(vm.source, std::move(document), true);
+            style_cpp(vm.source);
+            const int lines = 1 + static_cast<int>(std::count(saved.source.begin(), saved.source.end(), '\n'));
+            rows.push_back({{vm.source}, {0}, std::clamp(lines * 19 + 16, 128, 320), false});
+            if (current.standard_input) {
+                text_row("Entrada", control_id(index, 17));
+                vm.input = rich("", control_id(index, 15), false, {}, true);
+                set_edit_text(vm.input, saved.input);
+                vm.input_original = saved.input; vm.input_visual = edit_text(vm.input);
+                rows.push_back({{vm.input}, {0}, 74, false});
+            }
+            vm.compile = button(current.output_check ? "Compilar, ejecutar y comprobar" : "Compilar y ejecutar", control_id(index, 11), {0, ActionType::run, index});
+            rows.push_back({{vm.compile}, {280}, 36, false});
+            vm.console = rich("", control_id(index, 14), true);
+            rows.push_back({{vm.console}, {0}, 0, true});
+            create_feedback(index); return;
+        }
+        if (current.type == BlockType::multiple_choice) {
+            for (std::size_t option = 0; option < current.options.size(); ++option) {
+                const auto radio = control(L"BUTTON", "", BS_RADIOBUTTON | WS_TABSTOP,
+                    control_id(index, 20 + static_cast<int>(option) * 2));
+                label_radio(radio,current.options[option]);
+                actions.push_back({control_id(index, 20 + static_cast<int>(option) * 2), ActionType::choose, index, option});
+                SendMessageW(radio, BM_SETCHECK, vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
+                vm.choices.push_back(radio);
+                auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2));
+                rows.push_back({{radio, label}, {28, 0}, 28, true});
+            }
+        } else if (current.type == BlockType::order_code) {
+            vm.order.resize(current.fragments.size()); std::iota(vm.order.begin(), vm.order.end(), 0);
+            if (vm.response.order.size() == vm.order.size()) {
+                auto candidate = vm.response.order; std::ranges::sort(candidate);
+                bool valid = true;
+                for (std::size_t i = 0; i < candidate.size(); ++i) valid = valid && candidate[i] == static_cast<std::int64_t>(i);
+                if (valid) for (std::size_t i = 0; i < vm.order.size(); ++i) vm.order[i] = static_cast<std::size_t>(vm.response.order[i]);
+            }
+            for (std::size_t position = 0; position < vm.order.size(); ++position) {
+                auto up = button("↑", control_id(index, 20 + static_cast<int>(position) * 3), {0, ActionType::move_up, index, position});
+                auto down = button("↓", control_id(index, 21 + static_cast<int>(position) * 3), {0, ActionType::move_down, index, position});
+                EnableWindow(up, position > 0); EnableWindow(down, position + 1 < vm.order.size());
+                auto fragment = rich(current.fragments.at(vm.order[position]), control_id(index, 22 + static_cast<int>(position) * 3), true);
+                rows.push_back({{up, down, fragment}, {40, 40, 0}, 32, true});
+            }
+        } else {
+            vm.answer = rich("", control_id(index, 2), false, {}, true);
+            const bool multiline = !curriculum::uses_single_line_answer(current);
+            vm.answer_editor = std::make_unique<CodeEditor>(vm.answer, windows::EditorDocument{vm.response.answer}, multiline,
+                [this, index] { check_answer(index); }, current.type == BlockType::fill_code);
+            rows.push_back({{vm.answer}, {0}, multiline ? 82 : 36, false});
+        }
+        auto check = button("Comprobar", control_id(index, 3), {0, ActionType::check, index});
+        rows.push_back({{check}, {150}, 34, false}); create_feedback(index);
+    }
     void render_page() {
         updating = true;
         controls.clear();
-        for (const auto& row : rows) for (auto item : row.cells) DestroyWindow(item);
+        for (const auto& row : rows) for (auto item : row.cells) destroy_control(item);
         rows.clear(); actions.clear();
         controls.resize(lesson.pages.at(page).blocks.size());
         SendMessageW(selector, CB_SETCURSEL, page, 0);
         EnableWindow(previous, page > 0); EnableWindow(next, page + 1 < lesson.pages.size());
-        for (std::size_t index = 0; index < controls.size(); ++index) {
-            const auto& current = block(index); auto& vm = controls[index];
-            // Locked references have no HWND, text provider or scrollable row.
-            if (!reference_available(current)) continue;
-            if (exercise(current.type))
-                if (const auto saved = state::get_response(data, key(index))) vm.response = *saved;
-            if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, true); continue; }
-            if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); continue; }
-            if (current.type == BlockType::code) { text_row(current.code, control_id(index, 1), true); continue; }
-            if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis);
-            if (!current.code.empty()) text_row(current.code, control_id(index, 1), true);
-            if (current.type == BlockType::cpp_compiler) {
-                auto caption = rich("C++", control_id(index, 16));
-                auto reset = button("Reiniciar código", control_id(index, 12), {0, ActionType::reset, index});
-                auto tab = button("TAB", control_id(index, 13), {0, ActionType::tab, index});
-                rows.push_back({{caption, reset, tab}, {0, 150, 64}, 36, false});
-                const auto saved = state::get_draft(data, draft_key(index), current.initial_code, current.standard_input.value_or(""));
-                auto document = saved.has_saved
-                    ? windows::EditorDocument{saved.source, state::indentation_units(saved.source, saved.indentation_json), saved.selection_start, saved.selection_end}
-                    : windows::predefined_code_document(current.initial_code);
-                vm.source = rich("", control_id(index, 10), true, {}, true);
-                vm.source_editor = std::make_unique<CodeEditor>(vm.source, std::move(document), true);
-                style_cpp(vm.source);
-                const int lines = 1 + static_cast<int>(std::count(saved.source.begin(), saved.source.end(), '\n'));
-                rows.push_back({{vm.source}, {0}, std::clamp(lines * 19 + 16, 128, 320), false});
-                if (current.standard_input) {
-                    text_row("Entrada", control_id(index, 17));
-                    vm.input = rich("", control_id(index, 15), false, {}, true);
-                    set_edit_text(vm.input, saved.input);
-                    vm.input_original = saved.input; vm.input_visual = edit_text(vm.input);
-                    rows.push_back({{vm.input}, {0}, 74, false});
-                }
-                vm.compile = button(current.output_check ? "Compilar, ejecutar y comprobar" : "Compilar y ejecutar", control_id(index, 11), {0, ActionType::run, index});
-                rows.push_back({{vm.compile}, {280}, 36, false});
-                vm.console = rich("", control_id(index, 14), true);
-                rows.push_back({{vm.console}, {0}, 0, true});
-                create_feedback(index); continue;
-            }
-            if (current.type == BlockType::multiple_choice) {
-                for (std::size_t option = 0; option < current.options.size(); ++option) {
-                    const auto radio = control(L"BUTTON", current.options[option], BS_RADIOBUTTON | WS_TABSTOP,
-                        control_id(index, 20 + static_cast<int>(option) * 2));
-                    actions.push_back({control_id(index, 20 + static_cast<int>(option) * 2), ActionType::choose, index, option});
-                    SendMessageW(radio, BM_SETCHECK, vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
-                    vm.choices.push_back(radio);
-                    auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2));
-                    rows.push_back({{radio, label}, {28, 0}, 28, true});
-                }
-            } else if (current.type == BlockType::order_code) {
-                vm.order.resize(current.fragments.size()); std::iota(vm.order.begin(), vm.order.end(), 0);
-                if (vm.response.order.size() == vm.order.size()) {
-                    auto candidate = vm.response.order; std::ranges::sort(candidate);
-                    bool valid = true;
-                    for (std::size_t i = 0; i < candidate.size(); ++i) valid = valid && candidate[i] == static_cast<std::int64_t>(i);
-                    if (valid) for (std::size_t i = 0; i < vm.order.size(); ++i) vm.order[i] = static_cast<std::size_t>(vm.response.order[i]);
-                }
-                for (std::size_t position = 0; position < vm.order.size(); ++position) {
-                    auto up = button("↑", control_id(index, 20 + static_cast<int>(position) * 3), {0, ActionType::move_up, index, position});
-                    auto down = button("↓", control_id(index, 21 + static_cast<int>(position) * 3), {0, ActionType::move_down, index, position});
-                    EnableWindow(up, position > 0); EnableWindow(down, position + 1 < vm.order.size());
-                    auto fragment = rich(current.fragments.at(vm.order[position]), control_id(index, 22 + static_cast<int>(position) * 3), true);
-                    rows.push_back({{up, down, fragment}, {40, 40, 0}, 32, true});
-                }
-            } else {
-                vm.answer = rich("", control_id(index, 2), false, {}, true);
-                const bool multiline = !curriculum::uses_single_line_answer(current);
-                vm.answer_editor = std::make_unique<CodeEditor>(vm.answer, windows::EditorDocument{vm.response.answer}, multiline,
-                    [this, index] { check_answer(index); }, current.type == BlockType::fill_code);
-                rows.push_back({{vm.answer}, {0}, multiline ? 82 : 36, false});
-            }
-            auto check = button("Comprobar", control_id(index, 3), {0, ActionType::check, index});
-            rows.push_back({{check}, {150}, 34, false}); create_feedback(index);
-        }
+        for (std::size_t index = 0; index < controls.size(); ++index) render_block(index);
         scroll = px(static_cast<int>(state::integer_value(data, "native_windows", scroll_key())));
         updating = false; update_fonts(); update_navigation(); reflow();
+        if (editing_bar) editing_bar->refresh();
     }
     void resize() {
         if (!ready) return;
         RECT area{}; GetClientRect(window, &area);
         const int margin = px(18), available = static_cast<int>(area.right) - margin * 2;
-        MoveWindow(title, margin, px(10), available, px(34), TRUE);
-        MoveWindow(previous, margin, px(53), px(94), px(34), TRUE);
-        MoveWindow(selector, margin + px(104), px(53), px(144), px(250), TRUE);
-        MoveWindow(next, margin + px(258), px(53), px(94), px(34), TRUE);
-        MoveWindow(importer, std::max(margin + px(362), static_cast<int>(area.right) - margin - px(235)), px(53), px(235), px(34), TRUE);
-        MoveWindow(pane, 0, px(100), static_cast<int>(area.right), std::max(px(60), static_cast<int>(area.bottom) - px(100)), TRUE);
+        MoveWindow(title, margin, px(12), std::max(px(100),available - px(104)), px(34), TRUE);
+        MoveWindow(page_status, margin, px(53), std::max(px(100),available - px(104)), px(24), TRUE);
+        MoveWindow(menu, static_cast<int>(area.right) - margin - px(84), px(18), px(84), px(36), TRUE);
+        const int navigation_width = std::min(available,px(390));
+        const int navigation_left = std::max(margin,(static_cast<int>(area.right) - navigation_width) / 2);
+        const int nav_top = std::max(px(100),static_cast<int>(area.bottom) - px(58));
+        const int arrow_width = px(100), selector_width = std::max(px(100),navigation_width - arrow_width * 2 - px(16));
+        MoveWindow(previous,navigation_left,nav_top,arrow_width,px(38),TRUE);
+        MoveWindow(selector,navigation_left + arrow_width + px(8),nav_top,selector_width,px(250),TRUE);
+        MoveWindow(next,navigation_left + arrow_width + selector_width + px(16),nav_top,arrow_width,px(38),TRUE);
+        const bool assisted = editing_bar && editing_bar->visible() && !import_open;
+        const int editing_height = assisted ? px(62) : 0;
+        if (editing_bar) editing_bar->place(std::max(margin,(static_cast<int>(area.right) - std::min(available,px(1050))) / 2),
+            nav_top - px(66),std::min(available,px(1050)),px(54));
+        MoveWindow(pane,0,px(88),static_cast<int>(area.right),std::max(px(30),nav_top - px(100) - editing_height),TRUE);
         if (import_open) layout_import();
         reflow();
+    }
+    void open_menu() {
+        const auto popup = CreatePopupMenu();
+        if (!popup) throw std::runtime_error("Cannot open the lesson menu");
+        AppendMenuW(popup,MF_STRING,import_id,L"Importar estado Android…");
+        AppendMenuW(popup,MF_SEPARATOR,0,nullptr);
+        AppendMenuW(popup,MF_STRING,page_top_id,L"Ir al principio de la página");
+        AppendMenuW(popup,MF_STRING,page_bottom_id,L"Ir al final de la página");
+        RECT bounds{}; GetWindowRect(menu,&bounds);
+        const auto selected = TrackPopupMenuEx(popup,TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_TOPALIGN,
+            bounds.right,bounds.bottom,window,nullptr);
+        DestroyMenu(popup);
+        if (selected) command(static_cast<int>(selected),BN_CLICKED,menu);
     }
     void reflow() {
         if (!pane || laying_out) return;
         laying_out = true;
+        struct LayoutGuard { bool& value; ~LayoutGuard() { value = false; } } guard{laying_out};
         RECT area{}; GetClientRect(pane, &area);
         const int margin = px(20), gap = px(8);
         const int width = std::max(px(100), std::min(px(1050), static_cast<int>(area.right) - margin * 2));
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
+        struct Placement { HWND item; int x, y, width, height; };
+        std::vector<Placement> placements;
+        // A RichEdit's requested height depends on its final width. Measure
+        // without moving/painting provisional rectangles over adjacent rows.
+        constexpr UINT placement_flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW;
         int top = px(12);
         for (auto& row : rows) {
             int fixed = 0; for (auto value : row.widths) if (value) fixed += px(value);
@@ -517,7 +668,8 @@ struct LessonView {
             const auto provisional = std::max(px(row.logical_height), row.requested_height);
             for (std::size_t i = 0; i < row.cells.size(); ++i) {
                 const int cell_width = row.widths[i] ? px(row.widths[i]) : remaining;
-                MoveWindow(row.cells[i], x, top - scroll, cell_width, std::max(px(1), provisional), TRUE);
+                SetWindowPos(row.cells[i], nullptr, 0, 0, cell_width, std::max(px(1), provisional),
+                    placement_flags | SWP_NOMOVE);
                 if (row.size_to_text) SendMessageW(row.cells[i], EM_REQUESTRESIZE, 0, 0);
                 x += cell_width + gap;
             }
@@ -525,19 +677,31 @@ struct LessonView {
             x = left;
             for (std::size_t i = 0; i < row.cells.size(); ++i) {
                 const int cell_width = row.widths[i] ? px(row.widths[i]) : remaining;
-                MoveWindow(row.cells[i], x, top - scroll, cell_width, std::max(0, height), TRUE);
+                placements.push_back({row.cells[i],x,top,cell_width,std::max(0,height)});
                 x += cell_width + gap;
             }
             top += height + (height ? px(12) : 0);
         }
         extent = top + px(16);
-        const int old_scroll = scroll;
         scroll = std::clamp(scroll, 0, std::max(0, extent - static_cast<int>(area.bottom)));
+        // Commit only final, clamped positions. Suppress the default bit-copy:
+        // reused client pixels are stale when several child rows move past
+        // one another. Repaint parent and children once after every move.
+        auto deferred = placements.empty() ? nullptr : BeginDeferWindowPos(static_cast<int>(placements.size()));
+        if (deferred) {
+            for (const auto& item : placements) {
+                deferred = DeferWindowPos(deferred,item.item,nullptr,item.x,item.y - scroll,
+                    item.width,item.height,placement_flags);
+                if (!deferred) break;
+            }
+            if (deferred && !EndDeferWindowPos(deferred)) deferred = nullptr;
+        }
+        if (!deferred) for (const auto& item : placements)
+            SetWindowPos(item.item,nullptr,item.x,item.y - scroll,item.width,item.height,placement_flags);
         SCROLLINFO info{sizeof(info), SIF_RANGE | SIF_PAGE | SIF_POS};
         info.nMin = 0; info.nMax = std::max(0, extent - 1); info.nPage = static_cast<UINT>(std::max<LONG>(0, area.bottom)); info.nPos = scroll;
         SetScrollInfo(pane, SB_VERT, &info, TRUE);
-        laying_out = false;
-        if (old_scroll != scroll) reflow();
+        RedrawWindow(pane,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
     }
     void scroll_to(int position) {
         RECT area{}; GetClientRect(pane, &area);
@@ -547,6 +711,12 @@ struct LessonView {
     }
     void change_page(std::size_t value) {
         if (value == page || value >= lesson.pages.size()) return;
+        // A selector jump cannot bypass a declared prerequisite, even when
+        // old progress or an imported bookmark already reaches a later page.
+        if (value > page) for (std::size_t required = page; required <= value; ++required) {
+            if (can_enter(required)) continue;
+            SendMessageW(selector, CB_SETCURSEL, page, 0); update_navigation(); return;
+        }
         for (std::size_t required = page; required < value; ++required) if (!can_advance(required)) {
             SendMessageW(selector, CB_SETCURSEL, page, 0);
             MessageBoxW(window, L"Completa los ejercicios pendientes antes de continuar.", L"Continuar", MB_OK | MB_ICONINFORMATION);
@@ -689,7 +859,7 @@ struct LessonView {
     }
     HWND import_text(int id, std::string_view text, bool scrollable = true) {
         auto item = control(MSFTEDIT_CLASS, "", ES_MULTILINE | ES_READONLY | (scrollable ? WS_VSCROLL : 0), id, window);
-        SendMessageW(item, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
+        reader_theme::apply(item,reader_theme::Surface::canvas);
         set_rich_text(item, text);
         return item;
     }
@@ -717,15 +887,18 @@ struct LessonView {
         import_prompt = import_text(import_prompt_id, "Importar estado Android\nSelecciona o escribe la carpeta exportada que contiene shared_prefs y, si corresponde, files.", false);
         import_label = control(L"STATIC", "Carpeta exportada:", SS_LEFT, import_label_id, window);
         import_path = control(L"EDIT", "", ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP, import_path_id, window);
+        reader_theme::apply(import_path,reader_theme::Surface::field);
         import_browse = control(L"BUTTON", "Examinar…", BS_PUSHBUTTON | WS_TABSTOP, import_browse_id, window);
         import_review = control(L"BUTTON", "Revisar", BS_PUSHBUTTON | WS_TABSTOP, import_review_id, window);
         import_summary = import_text(import_summary_id, "");
         import_commit = control(L"BUTTON", "Confirmar importación", BS_PUSHBUTTON | WS_TABSTOP, import_commit_id, window);
         import_cancel = control(L"BUTTON", "Cancelar", BS_PUSHBUTTON | WS_TABSTOP, import_cancel_id, window);
         import_open = true;
+        if (editing_bar) editing_bar->refresh();
         invalidate_import();
         ShowWindow(pane, SW_HIDE);
-        for (auto item : {previous, selector, next, importer}) EnableWindow(item, FALSE);
+        for (auto item : {previous,selector,next}) ShowWindow(item,SW_HIDE);
+        for (auto item : {previous, selector, next, menu}) EnableWindow(item, FALSE);
         update_fonts(); layout_import(); SetFocus(import_path);
     }
     void browse_import() {
@@ -787,10 +960,11 @@ struct LessonView {
         for (auto* item : {&import_prompt, &import_label, &import_path, &import_browse, &import_review, &import_summary, &import_commit, &import_cancel}) {
             DestroyWindow(*item); *item = nullptr;
         }
-        EnableWindow(selector, TRUE); EnableWindow(importer, TRUE);
+        EnableWindow(selector, TRUE); EnableWindow(menu,TRUE);
         if (import_done) { scroll = 0; render_page(); }
         else { EnableWindow(previous, page > 0); update_navigation(); }
         ShowWindow(pane, SW_SHOW); SetFocus(selector);
+        for (auto item : {previous,selector,next}) ShowWindow(item,SW_SHOW);
     }
     void command(int id, int notification, HWND sender) {
         if (import_open) {
@@ -812,6 +986,7 @@ struct LessonView {
             return;
         }
         if (notification == EN_CHANGE) { edit_changed(sender); return; }
+        if ((notification == EN_SETFOCUS || notification == EN_KILLFOCUS) && editing_bar) editing_bar->refresh();
         if (notification == EN_KILLFOCUS) {
             for (std::size_t i = 0; i < controls.size(); ++i) if (sender == controls[i].source && !updating) { capture_draft(i); mark_dirty(); }
         }
@@ -820,6 +995,9 @@ struct LessonView {
         if (id == previous_id) { if (page) change_page(page - 1); return; }
         if (id == next_id) { change_page(page + 1); return; }
         if (id == import_id) { import_state(); return; }
+        if (id == menu_id) { open_menu(); return; }
+        if (id == page_top_id) { scroll_to(0); return; }
+        if (id == page_bottom_id) { scroll_to(extent); return; }
         auto found = std::ranges::find_if(actions, [id](const auto& action) { return action.control == id; });
         if (found == actions.end()) return;
         const auto action = *found; auto& vm = controls.at(action.block);
@@ -862,6 +1040,13 @@ LRESULT CALLBACK pane_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         view = static_cast<LessonView*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams);
         SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(view));
     }
+    LRESULT themed{};
+    if (reader_theme::control_color(message,wparam,lparam,themed)) return themed;
+    if (message == WM_DRAWITEM && reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam))) return TRUE;
+    if (message == WM_ERASEBKGND) {
+        RECT area{}; GetClientRect(window,&area);
+        FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::canvas)); return TRUE;
+    }
     if (view && (message == WM_COMMAND || message == WM_NOTIFY || message == WM_VSCROLL || message == WM_MOUSEWHEEL))
         return SendMessageW(view->window, message, wparam, lparam);
     return DefWindowProcW(window, message, wparam, lparam);
@@ -875,10 +1060,22 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
     }
     if (!view) return DefWindowProcW(window, message, wparam, lparam);
     try {
+        LRESULT themed{};
+        if (reader_theme::control_color(message,wparam,lparam,themed)) return themed;
+        if (message == WM_DRAWITEM && reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam))) return TRUE;
         switch (message) {
         case WM_CREATE: view->initialize(window); return 0;
         case WM_SIZE: view->resize(); return 0;
         case WM_DPICHANGED_AFTERPARENT: view->update_fonts(); view->resize(); return 0;
+        case WM_ERASEBKGND: {
+            const auto dc = reinterpret_cast<HDC>(wparam); RECT area{}; GetClientRect(window,&area);
+            FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::canvas));
+            auto header = area; header.bottom = view->px(88);
+            FillRect(dc,&header,reader_theme::brush(reader_theme::Surface::header));
+            auto footer = area; footer.top = std::max(view->px(88),static_cast<int>(area.bottom) - view->px(72)
+                - (view->editing_bar && view->editing_bar->visible() ? view->px(62) : 0));
+            FillRect(dc,&footer,reader_theme::brush(reader_theme::Surface::header)); return TRUE;
+        }
         case WM_COMMAND: view->command(LOWORD(wparam), HIWORD(wparam), reinterpret_cast<HWND>(lparam)); return 0;
         case WM_NOTIFY: {
             const auto* header = reinterpret_cast<NMHDR*>(lparam);
@@ -913,7 +1110,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case result_message: view->finish_run(); return 0;
         case close_import_message: if (view->import_open) view->close_import(); return 0;
         case flush_message: view->flush_selection(); return 1;
-        case WM_DESTROY: view->cancel_run(); KillTimer(window, save_timer); return 0;
+        case WM_DESTROY: view->clear_accessible_names(); view->cancel_run(); KillTimer(window, save_timer); return 0;
         case WM_NCDESTROY:
             SetWindowLongPtrW(window, GWLP_USERDATA, 0); delete view; return DefWindowProcW(window, message, wparam, lparam);
         }
@@ -938,7 +1135,7 @@ HWND create_lesson_view(HWND parent, const WindowsEnvironment& environment, curr
         for (const auto& entry : std::array<std::pair<const wchar_t*, WNDPROC>, 2>{{{view_class, view_proc}, {pane_class, pane_proc}}}) {
             WNDCLASSEXW definition{}; definition.cbSize = sizeof(definition);
             definition.hInstance = GetModuleHandleW(nullptr); definition.lpfnWndProc = entry.second;
-            definition.hCursor = LoadCursorW(nullptr, IDC_ARROW); definition.hbrBackground = GetSysColorBrush(COLOR_WINDOW);
+            definition.hCursor = LoadCursorW(nullptr, IDC_ARROW); definition.hbrBackground = reader_theme::brush(reader_theme::Surface::canvas);
             definition.lpszClassName = entry.first;
             if (!RegisterClassExW(&definition)) throw std::runtime_error("Cannot register the native lesson window");
         }

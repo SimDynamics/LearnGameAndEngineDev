@@ -85,17 +85,23 @@ struct Page { std::string stable_id; std::vector<Block> blocks; };
 // Presentation-only relationships, authored at the lesson root so no historical
 // block fingerprint, answer or storage slot changes when a reference is linked.
 struct ReferenceAfter { std::string activity; std::vector<std::string> blocks; };
+// Compiler dependencies use the same stable owners and completion evidence as
+// references. They do not allocate progress slots or change block fingerprints.
+struct ActivityAfter { std::string activity; std::vector<std::string> prerequisites; };
 struct Lesson {
     std::string id, title, locale, raw_json;
     std::filesystem::path source_path;
     std::vector<Page> pages;
     StateLayout state_layout;
     std::vector<ReferenceAfter> reference_after;
+    std::vector<ActivityAfter> activity_after;
 };
 
 void validate_reference_relationships(const Lesson&);
+void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);
 [[nodiscard]] std::optional<StatePosition> reference_activity(const Lesson&, const Block& reference);
+[[nodiscard]] std::vector<StatePosition> activity_prerequisites(const Lesson&, const Block& activity);
 // Deterministic framing of the authored objective, independent of prose or an
 // imported exercise response. The platform hashes this with the executed draft.
 [[nodiscard]] std::string reference_objective_frame(const Lesson&, const Block& activity);
