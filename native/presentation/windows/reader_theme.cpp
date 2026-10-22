@@ -2,6 +2,7 @@
 
 #include <richedit.h>
 #include <commctrl.h>
+#include <windowsx.h>
 
 #include <algorithm>
 #include <array>
@@ -13,6 +14,7 @@ namespace {
 constexpr wchar_t surface_property[] = L"LGAED.ReaderSurface";
 constexpr wchar_t primary_property[] = L"LGAED.ReaderPrimaryButton";
 constexpr UINT_PTR radio_subclass_id = 0x4C475244;
+constexpr UINT_PTR combo_subclass_id = 0x4C47434F;
 unsigned surface_index(HWND window) {
     const auto value = reinterpret_cast<ULONG_PTR>(GetPropW(window, surface_property));
     return value >= 1 && value <= 4 ? static_cast<unsigned>(value) - 1 : 0;
@@ -41,6 +43,24 @@ bool radio_button(HWND window) {
     if (_wcsicmp(name, L"BUTTON") != 0) return false;
     const auto type = GetWindowLongPtrW(window, GWL_STYLE) & BS_TYPEMASK;
     return type == BS_RADIOBUTTON || type == BS_AUTORADIOBUTTON;
+}
+bool combo_box(HWND window) {wchar_t name[32]{};GetClassNameW(window,name,32);return _wcsicmp(name,L"COMBOBOX")==0
+    &&(GetWindowLongPtrW(window,GWL_STYLE)&3)==CBS_DROPDOWNLIST;}
+LRESULT CALLBACK combo_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
+    if(message==WM_NCDESTROY){RemoveWindowSubclass(window,combo_subclass,combo_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    if(message==WM_MOUSEWHEEL&&!SendMessageW(window,CB_GETDROPPEDSTATE,0,0))return SendMessageW(GetParent(window),message,wp,lp);
+    if(message==WM_ERASEBKGND)return 1;
+    if(message==WM_PAINT||message==WM_PRINTCLIENT){PAINTSTRUCT paint{};const auto dc=message==WM_PAINT?BeginPaint(window,&paint):reinterpret_cast<HDC>(wp);const auto saved=SaveDC(dc);
+        RECT bounds{};GetClientRect(window,&bounds);FillRect(dc,&bounds,brush(Surface::card));const auto colors=palette();const auto dpi=GetDpiForWindow(window);const int inset=MulDiv(18,static_cast<int>(dpi),96);
+        auto text_area=bounds;text_area.left+=inset;text_area.right-=inset*3;
+        const auto font=reinterpret_cast<HFONT>(SendMessageW(window,WM_GETFONT,0,0));SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));SetBkMode(dc,TRANSPARENT);SetTextColor(dc,IsWindowEnabled(window)?colors.text:colors.muted);
+        std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(window,text.data(),static_cast<int>(text.size()))));
+        auto measured=text_area;DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);text_area.top+=(bounds.bottom-(measured.bottom-measured.top))/2;
+        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&text_area,DT_WORDBREAK|DT_NOPREFIX);
+        const auto x=bounds.right-inset*2,y=bounds.bottom/2;const int size=std::max(2,inset/3);POINT arrow[]{{x-size,y-size/2},{x+size,y-size/2},{x,y+size/2}};
+        const auto pen=CreatePen(PS_SOLID,1,colors.muted),fill=CreateSolidBrush(colors.muted);const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,fill);Polygon(dc,arrow,3);SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(pen);DeleteObject(fill);
+        if(GetFocus()==window){auto focus=bounds;InflateRect(&focus,-3,-3);DrawFocusRect(dc,&focus);}RestoreDC(dc,saved);if(message==WM_PAINT)EndPaint(window,&paint);return 0;}
+    const auto result=DefSubclassProc(window,message,wp,lp);if(message==WM_SETFOCUS||message==WM_KILLFOCUS||message==CB_SETCURSEL||message==WM_ENABLE||message==WM_SETTEXT)InvalidateRect(window,nullptr,FALSE);return result;
 }
 void paint_radio(HWND window, HDC dc) {
     if (!dc) return;
@@ -143,8 +163,8 @@ Palette palette() {
             GetSysColor(COLOR_WINDOW), GetSysColor(COLOR_WINDOWTEXT), GetSysColor(COLOR_WINDOWTEXT),
             GetSysColor(COLOR_HIGHLIGHT), GetSysColor(COLOR_WINDOWTEXT), true};
     }
-    return {RGB(16,16,16), RGB(23,23,23), RGB(28,28,28), RGB(37,37,37),
-        RGB(218,221,228), RGB(167,171,180), RGB(89,240,252), RGB(70,74,83), false};
+    return {RGB(30,31,33), RGB(37,40,45), RGB(40,41,45), RGB(38,41,46),
+        RGB(222,223,225), RGB(158,163,173), RGB(77,211,224), RGB(70,74,83), false};
 }
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }
@@ -161,6 +181,7 @@ void apply(HWND window, Surface surface) {
         SetWindowLongPtrW(window, GWL_STYLE, (original & ~static_cast<LONG_PTR>(BS_TYPEMASK)) | BS_OWNERDRAW);
     }
     if (radio_button(window)) SetWindowSubclass(window,radio_subclass,radio_subclass_id,0);
+    if (combo_box(window)) {SetWindowSubclass(window,combo_subclass,combo_subclass_id,0);COMBOBOXINFO info{sizeof(info)};if(GetComboBoxInfo(window,&info)&&info.hwndList)SetPropW(info.hwndList,surface_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(Surface::card)+1));}
     InvalidateRect(window, nullptr, TRUE);
 }
 void primary_button(HWND button, bool primary) {

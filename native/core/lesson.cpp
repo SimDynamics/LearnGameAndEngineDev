@@ -58,7 +58,8 @@ std::size_t token_end(std::string_view text, std::size_t index) {
         (text[index] == '.' && index + 1 < text.size() && text[index + 1] >= '0' && text[index + 1] <= '9')) return number_end(text, index);
     return index + 1;
 }
-bool hole_inside_literal(std::string_view text) {
+std::vector<bool> literal_holes(std::string_view text,std::string_view marker) {
+    std::vector<std::pair<std::size_t,std::size_t>> ranges;
     auto i = std::size_t{0};
     while (i < text.size()) {
         if (text.substr(i).starts_with("//")) {
@@ -68,11 +69,95 @@ bool hole_inside_literal(std::string_view text) {
         } else {
             const bool literal = raw_end(text, i).has_value() || text[i] == '"' || text[i] == '\'';
             const auto end = token_end(text, i);
-            if (literal && text.substr(i, end - i).find("___") != text.npos) return true;
+            if (literal) ranges.emplace_back(i,end);
             i = end;
         }
     }
-    return false;
+    std::vector<bool> result;
+    auto hole = text.find(marker);
+    while (hole != text.npos) {
+        result.push_back(std::ranges::any_of(ranges,[&](const auto& range) { return hole >= range.first && hole < range.second; }));
+        hole = text.find(marker,hole + marker.size());
+    }
+    return result;
+}
+std::string decimal_magnitude(std::string_view value) {
+    const auto first = value.find_first_not_of('0');
+    return first == value.npos ? "0" : std::string(value.substr(first));
+}
+std::string add_magnitudes(std::string_view left,std::string_view right) {
+    std::string result; int carry = 0;
+    auto a = left.size(), b = right.size();
+    while (a || b || carry) {
+        auto sum = carry;
+        if (a) sum += left[--a] - '0';
+        if (b) sum += right[--b] - '0';
+        result += static_cast<char>('0' + sum % 10); carry = sum / 10;
+    }
+    std::ranges::reverse(result); return result;
+}
+std::string subtract_magnitudes(std::string_view left,std::string_view right) {
+    std::string result; int borrow = 0; auto a = left.size(), b = right.size();
+    while (a) {
+        int digit = left[--a] - '0' - borrow; if (b) digit -= right[--b] - '0';
+        borrow = digit < 0 ? 1 : 0; if (borrow) digit += 10; result += static_cast<char>('0' + digit);
+    }
+    std::ranges::reverse(result); return decimal_magnitude(result);
+}
+std::string shifted_exponent(std::string exponent,std::int64_t shift) {
+    bool negative = exponent.starts_with('-');
+    auto magnitude = negative ? exponent.substr(1) : exponent;
+    const bool shift_negative = shift < 0;
+    const auto addition = std::to_string(shift_negative ? -shift : shift);
+    if (negative == shift_negative) magnitude = add_magnitudes(magnitude,addition);
+    else if (magnitude.size() > addition.size() || (magnitude.size() == addition.size() && magnitude >= addition))
+        magnitude = subtract_magnitudes(magnitude,addition);
+    else { magnitude = subtract_magnitudes(addition,magnitude); negative = shift_negative; }
+    return magnitude == "0" ? "0" : (negative ? "-" : "") + magnitude;
+}
+struct DecimalValue {
+    std::string significand,exponent;
+    bool operator==(const DecimalValue&) const = default;
+};
+std::optional<DecimalValue> decimal_literal(std::string_view answer) {
+    const auto text = trimmed(answer);
+    // Same resource bound and exact decimal profile as Android CppDecimalLiteral.
+    // No IEEE conversion or allocation proportional to an exponent's value.
+    if (text.size() > 16384) throw std::length_error("C++ decimal literal exceeds the parser limit of 16384 characters");
+    if (text.empty()) return {};
+    std::size_t cursor = 0;
+    const auto digit = [](char c) { return c >= '0' && c <= '9'; };
+    const auto digits = [&]() {
+        std::string result;
+        while (cursor < text.size()) {
+            const auto c = text[cursor];
+            if (digit(c)) { result += c; ++cursor; }
+            else if (!result.empty() && c == '\'' && cursor + 1 < text.size() && digit(text[cursor + 1])) ++cursor;
+            else break;
+        }
+        return result;
+    };
+    const auto integral = digits();
+    const bool point = cursor < text.size() && text[cursor] == '.';
+    if (point) ++cursor;
+    const auto fraction = point ? digits() : std::string{};
+    if (integral.empty() && fraction.empty()) return {};
+    const bool has_exponent = cursor < text.size() && (text[cursor] == 'e' || text[cursor] == 'E');
+    std::string exponent = "0";
+    if (has_exponent) {
+        ++cursor; bool negative = false;
+        if (cursor < text.size() && (text[cursor] == '+' || text[cursor] == '-')) negative = text[cursor++] == '-';
+        const auto value = digits(); if (value.empty()) return {};
+        exponent = decimal_magnitude(value); if (negative && exponent != "0") exponent = '-' + exponent;
+    }
+    if (cursor != text.size()) return {};
+    if (!point && !has_exponent && ((integral.front() == '0' && integral.size() != 1) || integral.size() > 10 ||
+        (integral.size() == 10 && integral > "2147483647"))) return {};
+    const auto value = integral + fraction; const auto first = value.find_first_not_of('0');
+    if (first == value.npos) return DecimalValue{"0","0"};
+    const auto last = value.find_last_not_of('0');
+    const auto shift = static_cast<std::int64_t>(value.size() - last - 1) - static_cast<std::int64_t>(fraction.size());
+    return DecimalValue{value.substr(first,last - first + 1),shifted_exponent(std::move(exponent),shift)};
 }
 AnswerEvaluation verdict(const Block& block, bool correct) {
     return {correct, correct ? block.explanation : block.review_feedback};
@@ -256,7 +341,16 @@ std::string normalize_cpp_answer(std::string_view text) {
 AnswerEvaluation evaluate_text_answer(const Block& block, std::string_view answer) {
     if (block.type != BlockType::output_prediction && block.type != BlockType::fill_code)
         throw std::invalid_argument("Block has no text answer contract");
-    const bool literal_hole = block.type == BlockType::fill_code && hole_inside_literal(block.code);
+    if (block.type == BlockType::fill_code && block.answer_comparison == AnswerComparison::cpp_decimal_literal_value) {
+        if (block.answers.empty()) throw std::invalid_argument("Missing canonical decimal literals");
+        const auto expected = decimal_literal(block.answers.front());
+        if (!expected) throw std::invalid_argument("Accepted answer must be a decimal int/double literal");
+        for (const auto& candidate : block.answers)
+            if (decimal_literal(candidate) != expected) throw std::invalid_argument("Accepted decimal literals must have the same exact value");
+        return verdict(block,decimal_literal(answer) == expected);
+    }
+    const auto holes = block.type == BlockType::fill_code ? literal_holes(block.code,"___") : std::vector<bool>{};
+    const bool literal_hole = std::ranges::any_of(holes,[](bool literal) { return literal; });
     const auto normalize = [&](std::string_view value) -> std::string {
         if (block.type == BlockType::output_prediction)
             return std::string(block.output_comparison == TextComparison::exact ? value : trimmed(value));
@@ -280,6 +374,34 @@ AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t>
         seen[index] = true;
     }
     return verdict(block, std::ranges::equal(order, block.correct_order));
+}
+AnswerEvaluation evaluate_hole_answers(const Block& block,std::span<const std::string> answers) {
+    if (block.type != BlockType::inline_fill_code) throw std::invalid_argument("Invalid inline fill answer");
+    const auto holes = literal_holes(block.code_template,"[]");
+    if (holes.size() != block.answers.size() || (!block.answer_alternatives.empty() && block.answer_alternatives.size() != holes.size()))
+        throw std::invalid_argument("Invalid inline fill configuration");
+    if (answers.size() != holes.size()) return verdict(block,false);
+    for (std::size_t index = 0; index < holes.size(); ++index) {
+        const auto normalize = [&](std::string_view value) { return holes[index] ? std::string(value) : normalize_cpp_answer(value); };
+        const auto actual = normalize(answers[index]);
+        if (block.answer_alternatives.empty()) {
+            if (actual != normalize(block.answers[index])) return verdict(block,false);
+        } else {
+            const auto& accepted = block.answer_alternatives[index];
+            if (accepted.empty() || accepted.front() != block.answers[index]) throw std::invalid_argument("Canonical inline answer must remain first");
+            if (!std::ranges::any_of(accepted,[&](const auto& value) { return normalize(value) == actual; })) return verdict(block,false);
+        }
+    }
+    return verdict(block,true);
+}
+AnswerEvaluation evaluate_drag_answers(const Block& block,std::span<const std::size_t> choices) {
+    if (block.type != BlockType::drag_fill_code) throw std::invalid_argument("Invalid drag fill answer");
+    if (choices.size() != block.correct_order.size()) return verdict(block,false);
+    for (std::size_t index = 0; index < choices.size(); ++index) {
+        if (block.correct_order[index] >= block.choices.size()) throw std::invalid_argument("Invalid canonical drag choice");
+        if (choices[index] >= block.choices.size() || block.choices[choices[index]] != block.choices[block.correct_order[index]]) return verdict(block,false);
+    }
+    return verdict(block,true);
 }
 bool uses_single_line_answer(const Block& block) {
     return !block.answers.empty() && std::ranges::all_of(block.answers, [](const auto& text) { return text.find_first_of("\r\n") == text.npos; });

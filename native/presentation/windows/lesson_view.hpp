@@ -3,10 +3,51 @@
 #include "platform/windows/environment.hpp"
 #include <windows.h>
 #include <filesystem>
+#include <functional>
+#include <limits>
+#include <string>
+#include <vector>
 
 namespace lgaed::curriculum { struct Lesson; }
+namespace lgaed::state { struct StateData; }
 
 namespace lgaed::presentation {
+
+struct LessonPageState {
+    std::size_t index = 0, count = 0;
+    bool can_previous = false, can_next = false;
+    std::string lesson_id, page_id, locale;
+};
+struct LessonReadingRegion {
+    std::string key, source_text;
+    HWND target = nullptr;
+    std::size_t block_index = std::numeric_limits<std::size_t>::max();
+    bool feedback = false, correct = false, is_exercise = false, solved = false;
+};
+struct LessonViewHooks {
+    std::string lesson_label = "Lección";
+    std::function<void(HWND)> back_to_catalog, content_changed, before_page_change, before_destroy;
+    std::function<void(HWND,std::size_t,bool)> feedback_changed;
+    std::function<void(HWND)> reader_requested, language_requested, attempts_requested, settings_requested;
+};
+// Page actions share exactly the gates used by gestures and the native Pages
+// menu. These messages carry no fake/hidden navigation controls.
+inline constexpr UINT lesson_page_query_message = WM_APP + 180;
+inline constexpr UINT lesson_page_navigate_message = WM_APP + 181;
+inline constexpr UINT lesson_reading_regions_message = WM_APP + 182;
+inline constexpr UINT lesson_view_hooks_message = WM_APP + 183;
+inline constexpr UINT lesson_reader_bar_message = WM_APP + 184;
+inline constexpr UINT lesson_state_read_message = WM_APP + 185;
+inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
+[[nodiscard]] LessonPageState lesson_page_state(HWND window);
+[[nodiscard]] bool navigate_lesson_view(HWND window,std::size_t page);
+[[nodiscard]] std::vector<LessonReadingRegion> lesson_reading_regions(HWND window);
+void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
+// The caller owns the reader bar. It must be a child of the lesson view; the
+// viewport reserves its height rather than drawing educational text beneath it.
+void attach_lesson_reader_bar(HWND window,HWND reader_bar,int logical_height);
+[[nodiscard]] state::StateData read_lesson_state(HWND window);
+void update_lesson_preferences(HWND window,const std::function<void(state::StateData&)>& update);
 
 // A native child window owns the lesson, controls and its cancellable execution worker.
 // Content is read directly from the existing JSON; no second curriculum is generated.

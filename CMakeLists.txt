@@ -39,26 +39,37 @@ target_include_directories(lgaed_host_options INTERFACE
     "${CMAKE_SOURCE_DIR}/native"
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp)
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp
+    native/core/catalog.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
 add_library(lgaed_platform_windows STATIC
     native/platform/windows/environment.cpp
     native/platform/windows/content_loader.cpp
+    native/platform/windows/catalog_loader.cpp
+    native/platform/windows/narration_worker.cpp
+    native/platform/windows/narration_player.cpp
+    native/platform/windows/system_speech.cpp
     native/platform/windows/state_store.cpp
     native/platform/windows/android_import.cpp
     native/platform/windows/cpp_runner.cpp)
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
-target_link_libraries(lgaed_platform_windows PRIVATE shell32 ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
+target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
 add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/lesson_view.cpp
+    native/presentation/windows/catalog_view.cpp
+    native/presentation/windows/tools_view.cpp
+    native/presentation/windows/settings_view.cpp
+    native/presentation/windows/reading_shade.cpp
+    native/presentation/windows/lesson_reader.cpp
+    native/presentation/windows/icons.cpp
     native/presentation/windows/rich_text.cpp
     native/presentation/windows/reader_theme.cpp
     native/presentation/windows/editing_bar.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_host_options user32 gdi32 shell32 ole32 oleacc advapi32 comctl32 uuid)
+    lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus d3d11 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 uuid)
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
     native/presentation/windows/app.manifest)
@@ -69,6 +80,32 @@ set_target_properties(LearnGameAndEngineDev PROPERTIES
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(lgaed_system_speech_tests native/platform/windows/system_speech_tests.cpp)
+    target_link_libraries(lgaed_system_speech_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.system_speech COMMAND lgaed_system_speech_tests "${CMAKE_SOURCE_DIR}/out/qa/system-speech")
+    set_tests_properties(native.system_speech PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+    add_executable(lgaed_reading_shade_tests native/presentation/windows/reading_shade_tests.cpp)
+    target_link_libraries(lgaed_reading_shade_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.reading_shade COMMAND lgaed_reading_shade_tests)
+    set_tests_properties(native.reading_shade PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_calculator_tests native/core/scientific_calculator_tests.cpp)
+    target_link_libraries(lgaed_calculator_tests PRIVATE lgaed_core)
+    add_test(NAME native.calculator COMMAND lgaed_calculator_tests)
+    add_executable(lgaed_tools_view_tests native/presentation/windows/tools_view_tests.cpp)
+    target_link_libraries(lgaed_tools_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.tools_view COMMAND lgaed_tools_view_tests)
+    set_tests_properties(native.tools_view PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_catalog_tests native/core/catalog_tests.cpp)
+    target_link_libraries(lgaed_catalog_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.catalog COMMAND lgaed_catalog_tests)
+    set_tests_properties(native.catalog PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_catalog_view_tests native/presentation/windows/catalog_view_tests.cpp)
+    target_link_libraries(lgaed_catalog_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.catalog_view COMMAND lgaed_catalog_view_tests)
+    set_tests_properties(native.catalog_view PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_narration_state_tests native/core/narration_state_tests.cpp)
+    target_link_libraries(lgaed_narration_state_tests PRIVATE lgaed_core)
+    add_test(NAME native.narration_state COMMAND lgaed_narration_state_tests)
     add_executable(lgaed_profile_tests native/core/profile_tests.cpp)
     target_link_libraries(lgaed_profile_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.profile COMMAND lgaed_profile_tests)

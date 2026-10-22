@@ -209,6 +209,71 @@ int main(int argc, char** argv) {
         rejects([&] { commit_android_import(preview, base / "imported-profile"); });
         require(imported_store.load() == preview.data, "Duplicate import changed real state"); ++groups;
 
+        StateData navigation_only;
+        navigation_only.preferences["native_windows"]["catalog/route"] = std::string("programming");
+        navigation_only.preferences["native_windows"]["catalog/course"] = std::string("cpp_fundamentals");
+        navigation_only.preferences["native_windows"]["catalog/v1/es/programming/cpp_fundamentals///selection"] = std::int64_t{4};
+        navigation_only.preferences["native_windows"]["ui_language"] = std::string("fr");
+        navigation_only.preferences["native_windows"]["content_language"] = std::string("es");
+        require(can_import_android_profile({}) && can_import_android_profile(navigation_only), "Untouched/catalog-only profile cannot import");
+        for (const auto domain : {"learning_progress","cpp_lesson_drafts","narration_settings","unknown"}) {
+            auto real_data = navigation_only; real_data.preferences[domain]["preserve"] = std::string("user data");
+            require(!can_import_android_profile(real_data), "Import eligibility silently permits a non-UI domain");
+            const auto target = base / (std::string("blocked-ui-") + domain);
+            StateStore seed(target); (void)seed.load(); seed.save(real_data);
+            const auto before = sha256(read_bytes(target / "state/active/state.bin"));
+            rejects([&] { commit_android_import(preview,target); });
+            require(sha256(read_bytes(target / "state/active/state.bin")) == before && seed.load() == real_data,
+                    "Refusing a non-UI domain changed previous student data");
+        }
+        auto unknown_ui = navigation_only; unknown_ui.preferences["native_windows"]["reference-proof/v1/es/programming/test/0/0"] = std::string("not UI");
+        require(!can_import_android_profile(unknown_ui), "An unknown native key qualified as navigation-only"); ++groups;
+
+        const auto navigated_target = base / "navigated-import-profile";
+        StateStore navigated_seed(navigated_target); (void)navigated_seed.load(); navigated_seed.save(navigation_only);
+        commit_android_import(preview,navigated_target);
+        auto merged_expected = preview.data; merged_expected.preferences["native_windows"] = navigation_only.preferences.at("native_windows");
+        StateStore navigated_store(navigated_target);
+        require(navigated_store.load() == merged_expected, "Import after browsing lost UI preferences or changed imported progress/drafts");
+        for (const auto& file : preview.files)
+            require(sha256(read_bytes(navigated_target / "state/active/android" / file.relative_path)) == file.sha256,
+                    "Import after browsing changed archived Android bytes");
+        require(sha256(read_bytes(source / "shared_prefs/learning_progress.xml")) == xml_before, "Navigated import changed Android source");
+        // Recreate the precise on-disk state of a crash between publishing the
+        // verified archive and replacing state.bin. No student data is used.
+        const auto archived_file = navigated_target / "state/active/android/files/cpp_projects/saved-source.cpp";
+        const auto archived_time = std::filesystem::last_write_time(archived_file);
+        navigated_store.save(navigation_only);
+        commit_android_import(preview,navigated_target);
+        require(navigated_store.load() == merged_expected && std::filesystem::last_write_time(archived_file) == archived_time,
+                "Interrupted import did not reuse its exact verified archive or restore UI/progress atomically");
+        rejects([&] { commit_android_import(preview,navigated_target); });
+        require(navigated_store.load() == merged_expected, "A repeated navigated import replaced real imported state"); ++groups;
+
+        const auto foreign_target = base / "navigated-foreign-file";
+        StateStore foreign_store(foreign_target); (void)foreign_store.load(); foreign_store.save(navigation_only);
+        text_file(foreign_target / "state/active/personal.txt","unrelated user file");
+        rejects([&] { commit_android_import(preview,foreign_target); });
+        require(foreign_store.load() == navigation_only && sha256(read_bytes(foreign_target / "state/active/personal.txt")) == sha256("unrelated user file"),
+                "Import replaced an unknown file in a navigation-only profile"); ++groups;
+
+        const auto modified_export = base / "navigated-changed-source"; fixture(modified_export);
+        const auto modified_preview = inspect_android_export(modified_export);
+        text_file(modified_export / "files/cpp_projects/saved-source.cpp","changed after preview");
+        const auto changed_ui_target = base / "changed-ui-target";
+        StateStore changed_ui_store(changed_ui_target); (void)changed_ui_store.load(); changed_ui_store.save(navigation_only);
+        rejects([&] { commit_android_import(modified_preview,changed_ui_target); });
+        require(changed_ui_store.load() == navigation_only && !std::filesystem::exists(changed_ui_target / "state/active/android"),
+                "Changed source partially published over previous UI preferences"); ++groups;
+
+        // An archive that changed after an interrupted transaction is not ours
+        // to clean or overwrite, even though its old marker remains present.
+        navigated_store.save(navigation_only);
+        text_file(archived_file,"later external edit");
+        rejects([&] { commit_android_import(preview,navigated_target); });
+        require(navigated_store.load() == navigation_only && sha256(read_bytes(archived_file)) == sha256("later external edit"),
+                "Retry discarded a changed archive or replaced prior navigation state"); ++groups;
+
         text_file(source / "files" / "cpp_projects" / "saved-source.cpp", "changed");
         rejects([&] { commit_android_import(preview, base / "changed-target"); });
         require(!std::filesystem::exists(base / "changed-target" / "state" / "active"), "Partial import became active"); ++groups;

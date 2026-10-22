@@ -315,7 +315,7 @@ struct View {
     }
     std::string summary() const { return edit_text(control(204)); }
     bool empty() const { return state::StateStore(environment.paths.root).empty(); }
-    std::size_t page() const { return static_cast<std::size_t>(SendMessageW(control(102), CB_GETCURSEL, 0, 0)); }
+    std::size_t page() const { return lesson_page_state(view).index; }
     state::StateData saved() const {
         require(flush_lesson_view(view), "Cannot save the restored lesson");
         state::StateStore reader(environment.paths.root); return reader.load();
@@ -330,7 +330,7 @@ void no_pending_transaction(const View& view) {
 }
 
 void assert_restored(View& view, const ExportFixture& exported) {
-    require(view.page() == 4, "The real selector did not restore the historical page-five bookmark");
+    require(view.page() == 4, "The lesson did not restore the historical page-five bookmark");
     const auto data = view.saved();
     const auto& prediction = view.lesson.pages[4].blocks[exported.prediction];
     const auto answer = state::get_response(data, curriculum::exercise_key(view.lesson, prediction));
@@ -433,11 +433,10 @@ int main() {
         view.click(206);
         require(!descendant(view.view, 201), "Returning to the lesson left the import controls active");
         assert_restored(view, exported);
-        const auto selector = view.control(102);
-        SendMessageW(selector, CB_SETCURSEL, 3, 0);
-        SendMessageW(view.view, WM_COMMAND, MAKEWPARAM(102, CBN_SELCHANGE), reinterpret_cast<LPARAM>(selector));
+        require(navigate_lesson_view(view.view,3),"Backward page navigation after import was blocked");
         pump(view.host); require(view.page() == 3, "Backward page navigation after import failed");
-        view.click(103); assert_restored(view, exported);
+        require(navigate_lesson_view(view.view,4),"Forward page navigation after import was blocked");
+        pump(view.host); assert_restored(view, exported);
         view.reopen(); assert_restored(view, exported);
         require(hashes(exported.folder) == changed_hashes, "Native lesson reopen changed the Android source export");
         std::cout << "PASS Real page-five restoration, independent legacy/JSON-v1 drafts, exact whitespace and unsubmitted answers\n" << std::flush;

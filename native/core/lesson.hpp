@@ -13,8 +13,9 @@
 namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
-                       fill_code, order_code, cpp_compiler };
+                       fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle };
 enum class TextComparison { trimmed, exact, tokens };
+enum class AnswerComparison { code, cpp_decimal_literal_value };
 
 struct StatePosition {
     std::size_t page = 0;
@@ -72,11 +73,15 @@ struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
     std::string explanation, review_feedback, raw_json;
+    std::string code_template, prompt, math_type;
     std::vector<Emphasis> emphasis;
     std::vector<std::string> options, answers, fragments;
+    std::vector<std::string> choices;
+    std::vector<std::vector<std::string>> answer_alternatives;
     std::optional<std::size_t> correct_index;
     std::vector<std::size_t> correct_order;
     TextComparison output_comparison = TextComparison::trimmed;
+    AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
     std::optional<std::string> standard_input;
     StateAddress address;
@@ -116,6 +121,8 @@ struct AnswerEvaluation { bool correct = false; std::string feedback; };
 [[nodiscard]] AnswerEvaluation evaluate_text_answer(const Block&, std::string_view answer);
 [[nodiscard]] AnswerEvaluation evaluate_choice(const Block&, std::size_t option);
 [[nodiscard]] AnswerEvaluation evaluate_order(const Block&, std::span<const std::size_t> order);
+[[nodiscard]] AnswerEvaluation evaluate_hole_answers(const Block&, std::span<const std::string> answers);
+[[nodiscard]] AnswerEvaluation evaluate_drag_answers(const Block&, std::span<const std::size_t> choices);
 [[nodiscard]] std::string normalize_cpp_answer(std::string_view answer);
 [[nodiscard]] bool uses_single_line_answer(const Block&);
 

@@ -1,0 +1,215 @@
+"""Real Windows Kokoro regression tests; no Android device or curricular edits."""
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+import queue
+import struct
+import subprocess
+import threading
+import time
+import unittest
+import wave
+
+ROOT = Path(__file__).resolve().parents[3]
+RUNTIME = ROOT / "out/narration/runtime.json"
+CACHE = ROOT / "out/qa/narration-worker-tests"
+
+
+class Worker:
+    def __init__(self, missing_resources=False):
+        self.config = json.loads(RUNTIME.read_text(encoding="utf-8"))
+        arguments = list(self.config["arguments"])
+        if missing_resources:
+            for key in ("--resources", "--english-resources"):
+                arguments[arguments.index(key) + 1] = str(CACHE / "not-installed")
+            index = arguments.index("--original-wavs")
+            del arguments[index:index + 2]
+        self.process = subprocess.Popen([self.config["java"], *arguments], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
+            creationflags=subprocess.CREATE_NO_WINDOW)
+        self.responses = queue.Queue()
+        self.errors = []
+        self.sequence = 0
+        def stdout():
+            try:
+                for line in self.process.stdout:
+                    try:
+                        self.responses.put(json.loads(line))
+                    except ValueError:
+                        self.responses.put({"protocol_error": line})
+            finally:
+                self.responses.put({"eof": True})
+        def stderr():
+            for line in self.process.stderr:
+                self.errors.append(line.rstrip())
+        self.threads = [threading.Thread(target=stdout, daemon=True), threading.Thread(target=stderr, daemon=True)]
+        for thread in self.threads:
+            thread.start()
+
+    def send(self, command, **fields):
+        self.sequence += 1
+        identity = str(fields.pop("id", f"request-{self.sequence}"))
+        self.process.stdin.write(json.dumps({"id": identity, "command": command, **fields}, ensure_ascii=False) + "\n")
+        self.process.stdin.flush()
+        return identity
+
+    def receive(self, timeout=90):
+        result = self.responses.get(timeout=timeout)
+        if "eof" in result or "protocol_error" in result:
+            raise AssertionError(f"Worker exited or violated JSONL: {result}; stderr={self.errors}")
+        return result
+
+    def ask(self, command, **fields):
+        identity = self.send(command, **fields)
+        result = self.receive()
+        if result.get("id") != identity or result.get("command") != command:
+            raise AssertionError(f"Unexpected response identity: {result}")
+        if "error" in result:
+            raise AssertionError(f"Narration failed: {result}; stderr={self.errors}")
+        return result
+
+    def close(self):
+        if self.process.poll() is None:
+            self.ask("shutdown")
+            self.process.stdin.close()
+            self.process.wait(timeout=30)
+        for thread in self.threads:
+            thread.join(timeout=2)
+        self.process.stdout.close()
+        self.process.stderr.close()
+        if self.process.returncode:
+            raise AssertionError(f"Worker exit {self.process.returncode}: {self.errors}")
+
+
+class WindowsNarrationWorkerTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not RUNTIME.is_file():
+            raise AssertionError("Build the real Windows worker with scripts/windows/Build-NarrationWorker.ps1 first")
+        cls.worker = Worker()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.worker.close()
+
+    def prepare(self, source, language, voice, directory=None):
+        plan = self.worker.ask("plan", text=source, language=language, voice=voice)
+        self.assertEqual(1, len(plan["segments"]))
+        segment = plan["segments"][0]
+        result = self.worker.ask("prepare", text=segment["text"], preparedText=segment["preparedText"],
+            language=language, voice=voice, threads=2, outputDirectory=str(directory or CACHE / "audio"))
+        self.assertEqual(segment["key"], result["key"])
+        self.assertEqual(source, result["sourceText"])
+        self.assertEqual(24000, result["sampleRate"])
+        self.assertGreater(result["durationMs"], 200)
+        with wave.open(result["wav"], "rb") as audio:
+            self.assertEqual((1, 24000, 2), (audio.getnchannels(), audio.getframerate(), audio.getsampwidth()))
+            self.assertEqual(result["sampleCount"], audio.getnframes())
+            samples = struct.unpack("<" + "h" * audio.getnframes(), audio.readframes(audio.getnframes()))
+            self.assertGreater(max(map(abs, samples)), 50)
+        return segment, result
+
+    def test_01_plan_uses_original_source_offsets_and_exact_stable_identity(self):
+        source = "¿Qué muestra C++? La línea #include conserva std::cout."
+        plan = self.worker.ask("plan", text=source, language="es", voice="ef_dora")
+        self.assertEqual(2, len(plan["segments"]))
+        cursor = 0
+        for segment in plan["segments"]:
+            self.assertGreaterEqual(segment["sourceStart"], cursor)
+            self.assertEqual(source[segment["sourceStart"]:segment["sourceEnd"]], segment["text"])
+            self.assertRegex(segment["key"], r"^[0-9a-f]{64}$")
+            self.assertEqual(len(segment["spokenRanges"]),len(segment["displayedRanges"]))
+            for spoken,displayed in zip(segment["spokenRanges"],segment["displayedRanges"]):
+                self.assertTrue(0 <= spoken["start"] < spoken["end"] <= len(segment["spokenText"]))
+                self.assertTrue(0 <= displayed["start"] < displayed["end"] <= len(segment["text"]))
+            cursor = segment["sourceEnd"]
+        identity = dict(page="fixture-page", language="es", voice="ef_dora",
+                        texts=[item["preparedText"] for item in plan["segments"]])
+        first = self.worker.ask("identity", **identity)["key"]
+        self.assertEqual(first, self.worker.ask("identity", **identity)["key"])
+        self.assertNotEqual(first, self.worker.ask("identity", **{**identity, "page": "another-page"})["key"])
+        self.assertNotEqual(first, self.worker.ask("identity", **identity, engine="ANDROID")["key"])
+
+    def test_02_real_kokoro_all_four_languages_unknown_words_and_reuse(self):
+        cases = [
+            ("es", "ef_dora", "La línea #include y std::cout muestran una salida."),
+            ("fr", "ff_siwis", "La directive #include et std::cout affichent un zorbulateur."),
+            ("en-US", "af_heart", "The #include directive and std::cout display a zorbulator."),
+            ("en-GB", "bf_emma", "The #include directive and std::cout display a zorbulator."),
+        ]
+        keys = set()
+        for language, voice, source in cases:
+            with self.subTest(language=language, voice=voice):
+                segment, result = self.prepare(source, language, voice)
+                self.assertTrue(result["alignmentAvailable"], result)
+                self.assertGreater(len(result["timings"]), 4)
+                self.assertEqual(0, min(row["start"] for row in result["timings"]))
+                self.assertEqual(len(source), max(row["end"] for row in result["timings"]))
+                starts = [row["startMs"] for row in result["timings"]]
+                self.assertEqual(sorted(starts), starts)
+                self.assertGreater(len(set(round(b - a, 4) for a, b in zip(starts, starts[1:]))), 2,
+                    "Word timing must follow the actual model durations, not uniform intervals")
+                for row in result["timings"]:
+                    self.assertTrue(0 <= row["start"] < row["end"] <= len(source))
+                    self.assertTrue(0 <= row["startMs"] < row["endMs"] <= result["durationMs"])
+                path = Path(result["wav"])
+                before = (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest())
+                repeated = self.worker.ask("prepare", text=segment["text"], preparedText=segment["preparedText"],
+                    language=language, voice=voice, threads=2, outputDirectory=str(CACHE / "audio"))
+                self.assertTrue(repeated["cacheHit"])
+                self.assertEqual(before, (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest()))
+                self.assertEqual(result["timings"], repeated["timings"])
+                keys.add(result["key"])
+        self.assertEqual(4, len(keys))
+
+    def test_03_spanish_math_is_progressive_through_numbers_and_operators(self):
+        source = "En nuestro sistema, 6 × 100 = 600 representa seis centenas."
+        _, result = self.prepare(source, "es", "ef_dora")
+        self.assertTrue(result["alignmentAvailable"], result)
+        for operator in ("×", "="):
+            position = source.index(operator)
+            self.assertTrue(any(row["start"] <= position < row["end"] for row in result["timings"]))
+        self.assertLess(max(row["endMs"] for row in result["timings"] if row["end"] <= source.index("representa")),
+                        result["durationMs"])
+
+    def test_04_real_historical_dora_audio_is_reused_without_resynthesis(self):
+        source = "¿Qué es la programación?"
+        segment, result = self.prepare(source, "es", "ef_dora", CACHE / "historical")
+        self.assertTrue((ROOT / "app/src/main/assets/narration/prerendered" / (segment["key"] + ".ogg")).is_file())
+        self.assertTrue(result["cacheHit"])
+        self.assertIn(result["audioOrigin"], ("existing-recording", "packaged-recording", "cache"))
+
+    def test_05_packaged_recording_remains_playable_without_installed_models(self):
+        offline = Worker(missing_resources=True)
+        try:
+            segment = offline.ask("plan", text="¿Qué es la programación?", language="es")["segments"][0]
+            result = offline.ask("prepare", text=segment["text"], preparedText=segment["preparedText"], language="es",
+                voice="ef_dora", outputDirectory=str(CACHE / "offline-pack"), threads=2)
+            self.assertTrue(result["cacheHit"])
+            self.assertIn(result["audioOrigin"], ("packaged-recording", "cache"))
+            self.assertGreater(result["sampleCount"], 24000)
+            self.assertFalse(result["alignmentAvailable"])
+        finally:
+            offline.close()
+
+    def test_06_cancel_is_received_while_an_actual_prepare_job_is_pending(self):
+        source = ("La biblioteca reúne recursos ya preparados para todas las operaciones y los cálculos, " * 9).rstrip(", ") + "."
+        segment = self.worker.ask("plan", text=source, language="es")["segments"][0]
+        identity = self.worker.send("prepare", text=segment["text"], preparedText=segment["preparedText"],
+            language="es", voice="ef_dora", threads=2, outputDirectory=str(CACHE / "cancelled"))
+        time.sleep(.1)
+        self.worker.send("cancel", id=identity)
+        responses = [self.worker.receive(), self.worker.receive()]
+        self.assertEqual({"cancel", "prepare"}, {item["command"] for item in responses})
+        failure = next(item for item in responses if item["command"] == "prepare")
+        self.assertTrue(failure.get("cancelled"), failure)
+        self.assertIn("error", failure)
+        self.assertFalse((CACHE / "cancelled" / (segment["key"] + ".wav")).exists())
+        self.assertEqual([], list((CACHE / "cancelled").glob("*.part")))
+        self.assertIn("segments", self.worker.ask("plan", text="La lectura continúa.", language="es"))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

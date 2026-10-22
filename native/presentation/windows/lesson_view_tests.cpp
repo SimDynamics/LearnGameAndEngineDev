@@ -128,7 +128,7 @@ struct Fixture {
     }
     HWND control(std::size_t block, int part) const { return control(id(block,part)); }
     std::string text(std::size_t block, int part) const { return edit_text(control(block,part)); }
-    std::size_t page() const { return static_cast<std::size_t>(SendMessageW(control(102), CB_GETCURSEL, 0, 0)); }
+    std::size_t page() const { return lesson_page_state(view).index; }
     void click(int value) {
         const auto item = control(value); require(IsWindowEnabled(item), "Attempted a disabled control");
         SendMessageW(item, BM_CLICK, 0, 0); pump(host);
@@ -149,13 +149,11 @@ struct Fixture {
         SendMessageW(field, WM_KEYUP, VK_RETURN, 1); pump(host);
     }
     void next() {
-        const auto previous = page(); click(103); require(page() == previous + 1, "Next did not advance one page");
+        const auto previous = page(); require(navigate_lesson_view(view,previous + 1), "Next page was unexpectedly blocked"); pump(host); require(page() == previous + 1, "Next did not advance one page");
     }
     void select_page(std::size_t value) {
-        const auto selector = control(102);
-        SendMessageW(selector, CB_SETCURSEL, value, 0);
-        SendMessageW(view, WM_COMMAND, MAKEWPARAM(102,CBN_SELCHANGE), reinterpret_cast<LPARAM>(selector));
-        pump(host); require(page() == value, "Page selector did not restore the requested unlocked page");
+        require(navigate_lesson_view(view,value), "The Pages command rejected an unlocked page");
+        pump(host); require(page() == value, "Page navigation did not restore the requested unlocked page");
     }
     void solve(std::size_t block) {
         const auto& current = lesson.pages.at(page()).blocks.at(block);
@@ -194,6 +192,7 @@ struct Fixture {
         require(pane != nullptr, "Lesson pane missing");
         std::vector<RECT> rectangles;
         for (auto child = GetWindow(pane,GW_CHILD); child; child = GetWindow(child,GW_HWNDNEXT)) {
+            if (!(GetWindowLongPtrW(child,GWL_STYLE) & WS_VISIBLE)) continue;
             RECT rect{}; GetWindowRect(child,&rect); if (rect.bottom > rect.top && rect.right > rect.left) rectangles.push_back(rect);
         }
         std::ranges::sort(rectangles,[](const RECT& left, const RECT& right) { return left.top < right.top; });
@@ -208,13 +207,15 @@ struct Fixture {
     void viewport_layout() {
         const auto pane = descendant_class(view,L"LearnGameAndEngineDev.LessonPane");
         require(pane != nullptr,"Cannot locate the lesson viewport");
-        RECT viewport{}, header{}, footer{}, menu{};
+        RECT viewport{}, header{}, frame{}, menu{};
         GetWindowRect(pane,&viewport); GetWindowRect(control(105),&header);
-        GetWindowRect(control(101),&footer); GetWindowRect(control(107),&menu);
-        require(header.bottom < viewport.top && menu.bottom < viewport.top && viewport.bottom < footer.top,
-                "Fixed header, page navigation or menu covers lesson content");
+        GetWindowRect(view,&frame); GetWindowRect(control(107),&menu);
+        require(header.bottom < viewport.top && menu.bottom < viewport.top && viewport.bottom <= frame.bottom,
+                "The compact header or its menu covers lesson content");
+        require(!descendant(view,101) && !descendant(view,102) && !descendant(view,103),
+                "Removed previous/next/selector navigation still exists as a hidden or visible control");
         require(!descendant(view,104),"A duplicate import button still occupies the lesson toolbar");
-        require(window_text(control(106)) == "Página " + std::to_string(page() + 1) + " de " + std::to_string(lesson.pages.size()),
+        require(SendMessageW(control(106),PBM_GETPOS,0,0) == static_cast<LRESULT>(page() + 1),
                 "The fixed page progress does not match the current lesson page");
     }
     void scroll_repaint() {
@@ -261,19 +262,93 @@ struct Fixture {
         const auto source = control(block,10); const auto before = text(block,10);
         SetFocus(source); SendMessageW(bar,WM_TIMER,1,0); pump(host);
         require(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE,"Focusing a code editor did not show its shortcuts");
-        RECT viewport{}, strip{}, navigation{};
-        GetWindowRect(GetParent(source),&viewport); GetWindowRect(bar,&strip); GetWindowRect(control(101),&navigation);
-        require(viewport.bottom < strip.top && strip.bottom < navigation.top,
+        RECT viewport{}, strip{}, frame{};
+        GetWindowRect(GetParent(source),&viewport); GetWindowRect(bar,&strip); GetWindowRect(view,&frame);
+        require(viewport.bottom <= strip.top && strip.bottom < frame.bottom,
                 "The editing shortcuts cover code or page navigation");
         const auto tab = GetDlgItem(bar,9000); require(tab != nullptr,"Contextual TAB command missing");
         SetFocus(tab); SendMessageW(tab,BM_CLICK,0,0); pump(host);
         require(GetFocus() == source && text(block,10) != before,"Contextual TAB lost the editor or did not use its editing operation");
         SendMessageW(source,WM_UNDO,0,0); pump(host);
         require(text(block,10) == before,"Contextual TAB did not preserve the existing Undo history");
-        SetFocus(control(102)); SendMessageW(bar,WM_TIMER,1,0); pump(host);
+        SetFocus(control(107)); SendMessageW(bar,WM_TIMER,1,0); pump(host);
         require(!(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE),"Editor shortcuts remained visible outside code editing");
         viewport_layout();
         if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
+    }
+    void drag_control(HWND item,POINT start,POINT delta) {
+        POINT origin = start; ClientToScreen(item,&origin);
+        SendMessageW(item,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(start.x,start.y));
+        for (int step = 1; step <= 3; ++step) {
+            POINT point{origin.x + delta.x * step / 3,origin.y + delta.y * step / 3}; ScreenToClient(item,&point);
+            SendMessageW(item,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(point.x,point.y));
+        }
+        POINT end{origin.x + delta.x,origin.y + delta.y}; ScreenToClient(item,&end);
+        SendMessageW(item,WM_LBUTTONUP,0,MAKELPARAM(end.x,end.y)); pump(host);
+    }
+    void gesture_navigation(bool unlocked) {
+        const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
+        const auto pane = descendant_class(view,L"LearnGameAndEngineDev.LessonPane");
+        const auto before = page();
+        SendMessageW(view,WM_VSCROLL,SB_TOP,0); pump(host);
+        drag_control(pane,{8,160},{0,-100});
+        SCROLLINFO position{sizeof(position),SIF_POS}; GetScrollInfo(pane,SB_VERT,&position);
+        require(position.nPos > 0 && page() == before,"A vertical reading drag did not scroll only the current lesson");
+        drag_control(pane,{300,160},{-180,0});
+        require(page() == before + (unlocked ? 1 : 0),"Horizontal page drag bypassed a gate or failed to navigate an unlocked page");
+        if (unlocked) {
+            drag_control(pane,{180,160},{180,0});
+            require(page() == before,"Backward page dragging did not preserve the previous page");
+        }
+        if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
+    }
+    void editor_gestures(std::size_t block) {
+        const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
+        const auto source = control(block,10); const auto before = text(block,10); const auto old_page = page();
+        auto expanded = before + "//" + std::string(400,'x') + "\n";
+        for (int line = 0; line < 60; ++line) expanded += "// línea de desplazamiento\n";
+        replace(block,10,expanded); pump(host);
+        const auto scrolls = [&](int axis) {
+            SCROLLINFO value{sizeof(value),SIF_RANGE | SIF_PAGE}; GetScrollInfo(source,axis,&value);
+            return value.nMax - value.nMin + 1 > static_cast<int>(value.nPage);
+        };
+        require(scrolls(SB_HORZ) && scrolls(SB_VERT),"The real editor fixture has no two-axis overflow");
+        CHARRANGE selection{0,0}; SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        POINT initial{}, after{}; SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&initial));
+        RECT bounds{}; GetClientRect(source,&bounds);
+        // The first line is short. Its far-right blank area remains empty
+        // after horizontal scrolling; the bottom row can contain the long line.
+        const POINT empty_start{bounds.right - 12,8};
+        drag_control(source,empty_start,{-100,0});
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+        require(after.x > initial.x && page() == old_page && text(block,10) == expanded,
+                "An empty-editor horizontal drag navigated the lesson or changed source text");
+        initial = after;
+        drag_control(source,empty_start,{0,-80});
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+        require(after.y > initial.y && page() == old_page && text(block,10) == expanded,
+                "An editor with vertical overflow handed its drag to the lesson");
+        selection = {0,4}; SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        drag_control(source,{20,20},{-160,0});
+        require(page() == old_page && text(block,10) == expanded,"Native selection/cursor dragging changed page or source");
+        SendMessageW(source,WM_UNDO,0,0); pump(host);
+        require(text(block,10) == before,"Gesture ownership interfered with the existing source Undo history");
+        if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
+    }
+    void compiler_menus(std::size_t block) {
+        const auto source = control(block,10); const auto before = text(block,10); const auto verdict = text(block,4);
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,75),0),0); pump(host);
+        require(control(block,10) == source && text(block,10) == before,
+                "Editor fullscreen recreated the document or changed the code");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,76),0),0); pump(host);
+        require(!(GetWindowLongPtrW(source,GWL_STYLE) & WS_VISIBLE) && lesson_reading_regions(view).empty(),
+                "Console fullscreen still exposed hidden lesson/source text to the reader");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,72),0),0); pump(host);
+        require(text(block,14).empty() && text(block,10) == before && text(block,4) == verdict,
+                "Clearing console output cleared code, answers or the feedback verdict");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,76),0),0); pump(host);
+        require(GetWindowLongPtrW(source,GWL_STYLE) & WS_VISIBLE,"Leaving console fullscreen did not restore its exact editor");
+        non_overlapping_rows(); viewport_layout();
     }
 };
 std::string message_code(const curriculum::Block& block, std::string_view old_message, std::string_view new_message) {
@@ -301,19 +376,20 @@ int main() {
     if (!RegisterClassW(&host)) return 2;
     try {
         Fixture view;
-        require(view.page() == 0 && !IsWindowEnabled(view.control(103)), "A fresh profile bypassed initial page exercises");
+        require(view.page() == 0 && !lesson_page_state(view.view).can_next, "A fresh profile bypassed initial page exercises");
         view.close();
         {
             state::StateStore untouched(view.environment.paths.root);
             require(untouched.empty(), "Closing an untouched first page made a fresh profile ineligible for import");
         }
         view.open();
-        require(view.page() == 0 && !IsWindowEnabled(view.control(103)), "An untouched reopen changed the initial bookmark or exercise gate");
+        require(view.page() == 0 && !lesson_page_state(view.view).can_next, "An untouched reopen changed the initial bookmark or exercise gate");
         {
             state::StateStore untouched(view.environment.paths.root);
             require(untouched.empty(), "Reopening an untouched profile published personal state");
         }
         view.viewport_layout(); view.scroll_repaint();
+        view.gesture_navigation(false);
         {
             const int dpi = static_cast<int>(GetDpiForWindow(view.view));
             MoveWindow(view.view,0,0,MulDiv(640,dpi,96),MulDiv(600,dpi,96),TRUE); pump(view.host);
@@ -327,12 +403,12 @@ int main() {
                     "A choice paints clipped duplicate text or lost its complete accessible label");
         }
         std::cout << "PASS Wheel repaint damage, stable text/geometry, fixed header/footer and unduplicated accessible choices\n" << std::flush;
-        view.non_overlapping_rows(); view.solve(4); view.next();
+        view.non_overlapping_rows(); view.solve(4); view.gesture_navigation(true); view.next();
         std::cout << "PASS Untouched profile remains importable after close/reopen; initial choice controls and forward gate\n" << std::flush;
 
         const auto& first_prediction = view.lesson.pages[1].blocks[3];
         view.replace(3,2,first_prediction.answers.at(0) + ' '); view.enter(3);
-        require(view.page() == 1 && view.text(3,4).starts_with("Incorrecto") && !IsWindowEnabled(view.control(103)), "Wrong exact prediction did not stay on its page");
+        require(view.page() == 1 && view.text(3,4).starts_with("Incorrecto") && !lesson_page_state(view.view).can_next, "Wrong exact prediction did not stay on its page");
         view.reopen();
         require(view.page() == 1 && view.text(3,4).starts_with("Incorrecto"), "Reviewed incorrect feedback did not reopen");
         view.replace(3,2,first_prediction.answers.at(0));
@@ -344,14 +420,14 @@ int main() {
         view.click(3,3);
         require(IsWindowEnabled(view.control(3,2)) && view.text(3,2).empty() && view.text(3,4).empty(), "Reset did not restore an editable unanswered quiz");
         view.solve(3); view.solve(4);
-        require(view.page() == 1 && IsWindowEnabled(view.control(103)), "Last Enter auto-advanced instead of enabling Next");
+        require(view.page() == 1 && lesson_page_state(view.view).can_next, "Last Enter auto-advanced instead of enabling Next");
         view.next(); std::cout << "PASS Exact prediction, reviewed feedback, single-line Enter and explicit reset\n" << std::flush;
 
         view.solve(3); view.solve(4); view.solve(5); view.non_overlapping_rows(); view.next();
         view.solve(2); view.solve(3); view.non_overlapping_rows(); view.next();
         require(view.page() == 4, "Six-page sequence did not reach the authored compiler activities");
         view.solve(1);
-        require(!IsWindowEnabled(view.control(103)), "Page 5 concept question was bypassed");
+        require(!lesson_page_state(view.view).can_next, "Page 5 concept question was bypassed");
         require(!descendant(view.view,id(3,15)) && !descendant(view.view,id(6,15)), "Unrequested stdin fields are visible");
         RECT caption{}, reset{}, source{};
         GetWindowRect(view.control(3,16), &caption); GetWindowRect(view.control(3,12), &reset);
@@ -367,8 +443,10 @@ int main() {
         const auto& modified = view.lesson.pages[4].blocks[6];
         require(view.text(3,10) == original.initial_code && view.text(6,10) == modified.initial_code, "Original sources lost indentation or final LF");
         view.contextual_editing(3);
+        view.editor_gestures(3);
         view.run(3);
         require(view.text(3,14) == "Zona inicial" && view.text(3,4) == "Correcto", "Original program did not produce/check its fresh exact output");
+        view.compiler_menus(3);
         const auto changed_source = message_code(modified,"Zona inicial","Caja recibida");
         view.replace(6,10,changed_source);
         require(view.text(3,10) == original.initial_code, "Modification editor changed the independent original draft");
@@ -410,7 +488,7 @@ int main() {
         view.solve(7); view.non_overlapping_rows(); view.next();
         std::cout << "PASS Compilation diagnostics, edit/reset invalidation, targeted reviews and persistent independent drafts\n" << std::flush;
 
-        require(view.page() == 5 && !IsWindowEnabled(view.control(103)), "Final page navigation escaped the lesson");
+        require(view.page() == 5 && !lesson_page_state(view.view).can_next, "Final page navigation escaped the lesson");
         const auto& independent = view.lesson.pages[5].blocks[6];
         view.replace(6,10,message_code(independent,"Caja recibida","Zona segura")); view.run(6);
         require(view.text(6,14) == "Zona segura" && view.text(6,4) == "Correcto", "Page 6 did not keep its independent target");
@@ -556,36 +634,82 @@ int main() {
             state::Response obsolete; obsolete.correct = true; obsolete.answer = "Caja recibida";
             state::put_response(data,curriculum::exercise_key(lesson,lesson.pages[4].blocks[6]),obsolete);
         };
+        {
+            int contents = 0, verdicts = 0, leaving = 0, destroying = 0;
+            Fixture preferences(solved_compiler_page);
+            LessonViewHooks hooks; hooks.lesson_label = "Lección QA";
+            hooks.content_changed = [&](HWND) { ++contents; };
+            hooks.feedback_changed = [&](HWND,std::size_t index,bool correct) {
+                require(index == 3 && correct,"Feedback hooks changed activity identity or correctness"); ++verdicts;
+            };
+            hooks.before_page_change = [&](HWND) { ++leaving; };
+            hooks.before_destroy = [&](HWND) { ++destroying; };
+            set_lesson_view_hooks(preferences.view,hooks);
+            require(contents > 0,"The reader did not receive the initial visible content");
+            for (const auto& region : lesson_reading_regions(preferences.view)) {
+                require(region.target && !region.source_text.empty(),"A reading region has no original visible source");
+                require(region.target != preferences.control(3,10) && region.target != preferences.control(3,14)
+                        && region.target != preferences.control(3,11),"Compiler code, console or buttons entered the reading source");
+            }
+            update_lesson_preferences(preferences.view,[](state::StateData& data) {
+                data.preferences["lesson_narration_settings"]["enabled"] = true;
+                data.preferences["lesson_narration_resume_bounded_v1"]["qa_slot"] = std::string("qa");
+                data.preferences["native_windows"]["code_wrap"] = true;
+            });
+            const auto preference_source = preferences.text(3,10);
+            preferences.replace(3,10,preference_source + "// borrador tras preferencias\n");
+            const auto preference_state = preferences.saved();
+            require(state::get_draft(preference_state,curriculum::draft_key("programming",preferences.lesson,
+                        preferences.lesson.pages[4].blocks[3]),"","").source == preference_source + "// borrador tras preferencias\n",
+                    "Sharing reader preferences caused a stale StateStore write or lost the editor draft");
+            bool rejected = false;
+            try { update_lesson_preferences(preferences.view,[](state::StateData& data) {
+                data.preferences["learning_progress"]["qa_unauthorized_progress"] = true;
+            }); } catch (const std::invalid_argument&) { rejected = true; }
+            require(rejected && !state::find(read_lesson_state(preferences.view),"learning_progress","qa_unauthorized_progress"),
+                    "The reader preference API can overwrite student progress");
+            update_lesson_preferences(preferences.view,[](state::StateData& data) {
+                data.preferences["lesson_narration_resume_bounded_v1"].erase("qa_slot");
+                data.preferences["native_windows"]["code_wrap"] = false;
+            });
+            require(!state::find(read_lesson_state(preferences.view),"lesson_narration_resume_bounded_v1","qa_slot"),
+                    "The bounded reader history cannot delete an evicted position through the shared store");
+            preferences.run(3); require(verdicts == 1,"A fresh compiler verdict did not reach the reader hook exactly once");
+            preferences.reopen();
+            require(verdicts == 1 && destroying == 1,"Reopening replayed a feedback submission or missed lifecycle cleanup");
+            set_lesson_view_hooks(preferences.view,hooks); preferences.next();
+            require(leaving == 1,"Page changes did not release the old reader position before replacing controls");
+        }
+        std::cout << "PASS Shared reader preference store, protected progress/drafts, bounded-history deletion and visible-source/lifecycle/feedback hooks\n" << std::flush;
         const auto reject_forward_selector = [](Fixture& fixture,std::size_t target) {
-            const auto before = fixture.page(); const auto selector = fixture.control(102);
-            SendMessageW(selector,CB_SETCURSEL,target,0);
-            SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(102,CBN_SELCHANGE),reinterpret_cast<LPARAM>(selector));
+            const auto before = fixture.page();
+            require(!navigate_lesson_view(fixture.view,target),"The Pages command bypassed a prerequisite");
             pump(fixture.host);
-            require(fixture.page() == before,"The selector bypassed an explicit compiler prerequisite");
+            require(fixture.page() == before,"The Pages command bypassed an explicit compiler prerequisite");
         };
         Fixture dependencies(solved_compiler_page,[](const curriculum::Lesson& source) {
             return with_relationships(source,reference_links,
                 R"([{"activity":"block_0005_0006","requires":["block_0004_0002"]}])");
         });
-        require(!IsWindowEnabled(dependencies.control(103)),"A legacy correct marker unlocked the next independent activity");
+        require(!lesson_page_state(dependencies.view).can_next,"A legacy correct marker unlocked the next independent activity");
         reject_forward_selector(dependencies,5);
         dependencies.run(3);
-        require(dependencies.text(3,4) == "Correcto" && !IsWindowEnabled(dependencies.control(103)),
+        require(dependencies.text(3,4) == "Correcto" && !lesson_page_state(dependencies.view).can_next,
                 "Successful execution of the original program satisfied another editor's prerequisite");
         dependencies.run(6);
-        require(dependencies.text(6,4).starts_with("Incorrecto") && !IsWindowEnabled(dependencies.control(103)),
+        require(dependencies.text(6,4).starts_with("Incorrecto") && !lesson_page_state(dependencies.view).can_next,
                 "An incorrect output unlocked its dependent page");
         const auto prerequisite_source = message_code(dependencies.lesson.pages[4].blocks[6],"Zona inicial","Caja recibida");
         dependencies.replace(6,10,prerequisite_source + "esto no compila\n"); dependencies.run(6);
-        require(dependencies.text(6,4).empty() && !IsWindowEnabled(dependencies.control(103)),
+        require(dependencies.text(6,4).empty() && !lesson_page_state(dependencies.view).can_next,
                 "A compiler error unlocked its dependent page");
         dependencies.replace(6,10,prerequisite_source); dependencies.run(6);
-        require(IsWindowEnabled(dependencies.control(103)),"Fresh correct output did not update the next-page prerequisite");
+        require(lesson_page_state(dependencies.view).can_next,"Fresh correct output did not update the next-page prerequisite");
         const auto prerequisite_editor = dependencies.control(6,10);
         dependencies.replace(6,10,prerequisite_source + "// cambio QA\n");
-        require(!IsWindowEnabled(dependencies.control(103)),"Source editing did not revoke forward access");
+        require(!lesson_page_state(dependencies.view).can_next,"Source editing did not revoke forward access");
         SendMessageW(prerequisite_editor,WM_UNDO,0,0); pump(dependencies.host);
-        require(dependencies.text(6,10) == prerequisite_source && !IsWindowEnabled(dependencies.control(103)),
+        require(dependencies.text(6,10) == prerequisite_source && !lesson_page_state(dependencies.view).can_next,
                 "Undo resurrected a discarded prerequisite receipt");
         dependencies.run(6); dependencies.next();
         require(descendant(dependencies.view,id(0,0)) && descendant(dependencies.view,id(6,10)),
@@ -597,7 +721,7 @@ int main() {
         require(dependencies.page() == 5 && dependencies.text(6,4).empty() && dependencies.text(6,14).empty(),
                 "Completed dependencies either lost the bookmark or revived an old console/verdict");
         dependencies.select_page(4); dependencies.click(6,12);
-        require(!IsWindowEnabled(dependencies.control(103)),"Reset retained an obsolete prerequisite");
+        require(!lesson_page_state(dependencies.view).can_next,"Reset retained an obsolete prerequisite");
         // Simulate an already-stored later bookmark without claiming completion.
         dependencies.close();
         {
@@ -644,7 +768,7 @@ int main() {
             return with_relationships(source,reference_links,"[{\"activity\":\"" + activity
                 + "\",\"requires\":[\"" + prerequisite + "\"]}]");
         });
-        require(local_dependencies.page() == 3 && IsWindowEnabled(local_dependencies.control(103)),
+        require(local_dependencies.page() == 3 && lesson_page_state(local_dependencies.view).can_next,
                 "A same-page prerequisite prevented entering the page where it must be completed");
         local_dependencies.next();
         require(descendant(local_dependencies.view,id(6,18)) && !descendant(local_dependencies.view,id(6,10)),

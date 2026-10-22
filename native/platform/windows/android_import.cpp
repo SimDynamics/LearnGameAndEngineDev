@@ -318,6 +318,42 @@ void write_synced(const std::filesystem::path& path, std::span<const std::uint8_
     CloseHandle(handle);
     if (!okay) throw std::runtime_error("No se pudo confirmar la importacion en disco.");
 }
+void verify_import_archive(const std::filesystem::path& directory,const std::map<std::filesystem::path,std::string>& expected,
+                           std::string_view manifest) {
+    require_safe_path(directory);
+    const auto marker = read_bytes(directory / ".import-manifest.txt");
+    if (std::string_view(reinterpret_cast<const char*>(marker.data()),marker.size()) != manifest)
+        throw std::runtime_error("La copia Android existente no pertenece a esta importacion; se conserva intacta.");
+    std::set<std::filesystem::path> directories;
+    for (const auto& [file,hash] : expected) {
+        (void)hash;
+        for (auto parent = file.parent_path(); !parent.empty(); parent = parent.parent_path()) directories.insert(parent);
+    }
+    std::size_t files = 0; const auto native_directory = native_io_path(directory);
+    for (const auto& item : std::filesystem::recursive_directory_iterator(native_directory)) {
+        require_safe_path(item.path()); const auto relative = item.path().lexically_relative(native_directory);
+        if (relative == ".import-manifest.txt") continue;
+        if (item.is_directory()) {
+            if (!directories.contains(relative)) throw std::runtime_error("La copia Android contiene una carpeta ajena; no se reemplaza.");
+            continue;
+        }
+        if (!item.is_regular_file() || !expected.contains(relative) || sha256(read_bytes(item.path())) != expected.at(relative))
+            throw std::runtime_error("La copia Android existente cambio o contiene archivos ajenos; se conserva intacta.");
+        ++files;
+    }
+    if (files != expected.size()) throw std::runtime_error("La copia Android existente esta incompleta; se conserva intacta.");
+}
+}
+
+bool can_import_android_profile(const StateData& data) {
+    for (const auto& [domain,values] : data.preferences) {
+        if (domain != "native_windows") return false;
+        for (const auto& [key,value] : values) {
+            (void)value;
+            if (!key.starts_with("catalog/") && key != "ui_language" && key != "content_language") return false;
+        }
+    }
+    return true;
 }
 
 AndroidImportPreview inspect_android_export(const std::filesystem::path& folder) try {
@@ -387,17 +423,28 @@ void commit_android_import(const AndroidImportPreview& preview, const std::files
                                  nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (lock == INVALID_HANDLE_VALUE) throw std::runtime_error("Otra instancia esta guardando este perfil.");
     struct Lock { HANDLE handle; ~Lock() { CloseHandle(handle); } } held{lock};
-    if (std::filesystem::exists(native_io_path(root / "active"))) throw std::runtime_error("El perfil ya contiene estado: no se reemplaza ni fusiona progreso real.");
+    const auto active = root / "active";
+    const bool existing_active = std::filesystem::exists(native_io_path(active));
+    StateStore prior_store(profile_root); const auto prior = prior_store.load();
+    if (!can_import_android_profile(prior)) throw std::runtime_error("El perfil ya contiene estado: no se reemplaza ni fusiona progreso real.");
+    const auto prior_hash = existing_active ? sha256(read_bytes(active / "state.bin")) : std::string{};
+    if (existing_active) for (const auto& entry : std::filesystem::directory_iterator(native_io_path(active))) {
+        require_safe_path(entry.path()); const auto name = entry.path().filename();
+        if (name != "state.bin" && name != "android")
+            throw std::runtime_error("El perfil contiene archivos ajenos a la navegacion; no se reemplaza nada.");
+    }
     const auto pending = root / (L"import-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()) + L".pending");
     if (!std::filesystem::create_directory(native_io_path(pending))) throw std::runtime_error("No se pudo preparar la transaccion de importacion.");
+    bool published_archive = false;
+    std::map<std::filesystem::path,std::string> expected;
+    std::string manifest = "LearnGameAndEngineDev.android-import.v1\n";
     try {
         // Fresh inspection catches source changes, including added or removed files, after confirmation.
         const auto checked = inspect_android_export(preview.source);
         if (checked.files.size() != preview.files.size() || checked.data != preview.data)
             throw std::runtime_error("El origen cambio desde la revision; vuelve a inspeccionarlo.");
-        std::map<std::filesystem::path, std::string> expected;
         for (const auto& file : preview.files) expected[file.relative_path] = file.sha256;
-        std::string manifest = "LearnGameAndEngineDev.android-import.v1\n";
+        for (const auto& [file,hash] : expected) manifest += hash + " " + file.generic_string() + "\n";
         for (const auto& file : checked.files) {
             if (!expected.contains(file.relative_path) || expected.at(file.relative_path) != file.sha256)
                 throw std::runtime_error("El origen cambio desde la revision.");
@@ -406,7 +453,6 @@ void commit_android_import(const AndroidImportPreview& preview, const std::files
             const auto destination = pending / "android" / file.relative_path;
             std::filesystem::create_directories(native_io_path(destination.parent_path())); write_synced(destination, bytes);
             if (sha256(read_bytes(destination)) != file.sha256) throw std::runtime_error("La copia no coincide con el origen.");
-            manifest += file.sha256 + " " + file.relative_path.generic_string() + "\n";
         }
         const auto last_check = inspect_android_export(preview.source);
         if (last_check.files.size() != expected.size() || last_check.data != checked.data)
@@ -414,12 +460,50 @@ void commit_android_import(const AndroidImportPreview& preview, const std::files
         for (const auto& file : last_check.files)
             if (!expected.contains(file.relative_path) || expected.at(file.relative_path) != file.sha256)
                 throw std::runtime_error("El origen cambio durante la transaccion.");
-        auto bytes = encode(checked.data); const auto checksum = sha256(bytes);
+        auto imported = checked.data;
+        if (const auto native = prior.preferences.find("native_windows"); native != prior.preferences.end())
+            imported.preferences.emplace("native_windows",native->second);
+        auto bytes = encode(imported); const auto checksum = sha256(bytes);
         bytes.insert(bytes.end(), checksum.begin(), checksum.end()); write_synced(pending / "state.bin", bytes);
         write_synced(pending / "import-manifest.txt", std::span(reinterpret_cast<const std::uint8_t*>(manifest.data()), manifest.size()));
-        if (!MoveFileExW(native_io_path(pending).c_str(), native_io_path(root / "active").c_str(), MOVEFILE_WRITE_THROUGH))
-            throw std::runtime_error("No se pudo publicar la transaccion; el estado anterior permanece intacto.");
+        if (!existing_active) {
+            if (!MoveFileExW(native_io_path(pending).c_str(),native_io_path(active).c_str(),MOVEFILE_WRITE_THROUGH))
+                throw std::runtime_error("No se pudo publicar la transaccion; el estado anterior permanece intacto.");
+        } else {
+            write_synced(pending / "android" / ".import-manifest.txt",std::span(reinterpret_cast<const std::uint8_t*>(manifest.data()),manifest.size()));
+            verify_import_archive(pending / "android",expected,manifest);
+            if (sha256(read_bytes(active / "state.bin")) != prior_hash)
+                throw std::runtime_error("El perfil cambio durante la importacion; se conserva el estado anterior.");
+            if (std::filesystem::exists(native_io_path(active / "android"))) {
+                // A crash after archive publication, before the atomic state
+                // replacement, leaves the original UI-only state intact. The
+                // same verified export can resume without replacing files.
+                verify_import_archive(active / "android",expected,manifest);
+            } else {
+                if (!MoveFileExW(native_io_path(pending / "android").c_str(),native_io_path(active / "android").c_str(),MOVEFILE_WRITE_THROUGH))
+                    throw std::runtime_error("No se pudo publicar el archivo Android; el estado anterior permanece intacto.");
+                published_archive = true;
+            }
+            // Files are already complete and durable. Replacing this one file
+            // is the commit point; no old directory or backup is created.
+            if (!ReplaceFileW(native_io_path(active / "state.bin").c_str(),native_io_path(pending / "state.bin").c_str(),nullptr,
+                REPLACEFILE_IGNORE_MERGE_ERRORS,nullptr,nullptr))
+                throw std::runtime_error("No se pudo publicar el estado importado; la navegacion anterior permanece intacta.");
+            published_archive = false;
+            std::error_code error; std::filesystem::remove_all(native_io_path(pending),error);
+        }
     } catch (...) {
+        if (published_archive) {
+            // Only discard a directory created by this invocation, and only
+            // if every original copied byte is still demonstrably ours.
+            try {
+                if (sha256(read_bytes(active / "state.bin")) == prior_hash) {
+                    verify_import_archive(active / "android",expected,manifest);
+                    std::filesystem::remove_all(native_io_path(active / "android"));
+                }
+            }
+            catch (...) { /* Changed or unverified archive is preserved for explicit recovery. */ }
+        }
         // Only this invocation's unpublished transaction is disposable; source and active data are untouched.
         std::error_code error; std::filesystem::remove_all(native_io_path(pending), error); throw;
     }

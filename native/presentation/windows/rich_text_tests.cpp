@@ -67,10 +67,10 @@ int main() {
                 check(colors.canvas == GetSysColor(COLOR_WINDOW) && colors.text == GetSysColor(COLOR_WINDOWTEXT),
                     "High-contrast theme replaced the user's system colors");
             } else {
-                check(colors.canvas == RGB(16,16,16) && colors.header == RGB(23,23,23)
-                    && colors.card == RGB(28,28,28) && colors.field == RGB(37,37,37)
-                    && colors.text == RGB(218,221,228) && colors.accent == RGB(89,240,252),
-                    "Reader theme diverged from the existing Android palette");
+                check(colors.canvas == RGB(30,31,33) && colors.header == RGB(37,40,45)
+                    && colors.card == RGB(40,41,45) && colors.field == RGB(38,41,46)
+                    && colors.text == RGB(222,223,225) && colors.accent == RGB(77,211,224),
+                    "Reader theme diverged from the Android reference presentation");
             }
             set_edit_text(editor.value, original);
             SendMessageW(editor.value, EM_EMPTYUNDOBUFFER, 0, 0);
