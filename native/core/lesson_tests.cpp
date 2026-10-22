@@ -42,6 +42,31 @@ int main() {
         check(draft_key("programming", lesson, original) != draft_key("programming", lesson, modification), "Editor drafts collide");
         check(exercise_key(lesson, prediction).ends_with("_page_4_block_3"), "Exercise key no longer matches Android");
         check(original.initial_code == modification.initial_code && original.initial_code.ends_with("}\n"), "Source/indentation/LF was changed");
+        const auto linked_json = [&](std::string_view relations) {
+            auto json = lesson.raw_json; const auto closing = json.find_last_of('}');
+            check(closing != json.npos,"Missing lesson root terminator");
+            json.insert(closing,",\"referenceAfter\":" + std::string(relations)); return json;
+        };
+        const auto linked = parse_lesson_json(linked_json(R"([{"activity":"block_0004_0002","blocks":["block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])"));
+        check(linked.state_layout.lineage == lesson.state_layout.lineage && linked.state_layout.signatures == lesson.state_layout.signatures,
+            "Presentation-only references changed historical fingerprints or state lineage");
+        check(reference_activity(linked,linked.pages[5].blocks[2]) == StatePosition{4,6} &&
+              reference_activity(linked,linked.pages[5].blocks[8]) == StatePosition{5,6} &&
+              !reference_activity(linked,linked.pages[5].blocks[5]), "Reference points to a nearby quiz instead of its own compiler");
+        auto changed_goal = linked.pages[5].blocks[6]; changed_goal.output_check->cases[0].outputs = {"Different exact goal"};
+        check(reference_objective_frame(linked,changed_goal) != reference_objective_frame(linked,linked.pages[5].blocks[6]),
+            "Reference completion seal is not bound to its authored output objective");
+        for (const auto invalid_relation : {
+                R"([{"activity":"missing","blocks":["block_0005_0008"]}])",
+                R"([{"activity":"block_0005_0006","blocks":["missing"]}])",
+                R"([{"activity":"block_0004_0004","blocks":["block_0005_0008"]}])",
+                R"([{"activity":"block_0005_0006","blocks":["block_0005_0006"]}])",
+                R"([{"activity":"block_0004_0002","blocks":["block_0004_0004"]}])",
+                R"([{"activity":"block_0005_0006","blocks":["block_0005_0008","block_0005_0008"]}])",
+                R"([{"activity":"block_0004_0002","blocks":["block_0005_0008"]},{"activity":"block_0005_0006","blocks":["block_0005_0008"]}])",
+                R"([{"activity":"block_0005_0006","blocks":[]}])",
+                R"([{"activity":"block_0005_0006","blocks":["block_0005_0008"],"unknown":true}])"})
+            rejects([&] { (void)parse_lesson_json(linked_json(invalid_relation)); }, "Malformed or unsafe reference relationship accepted");
         check(!original.standard_input && !modification.standard_input, "Input invented for a lesson that does not require it");
         check(evaluate_text_answer(prediction, "Zona inicial").correct, "Exact authored prediction rejected");
         for (const auto value : {"\"Zona inicial\"", "Zona inicial ", "Zona inicial\n", " Zona inicial", "Zona  inicial"})

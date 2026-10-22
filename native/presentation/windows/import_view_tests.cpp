@@ -283,7 +283,10 @@ struct View {
     void click(int id) {
         const auto button = control(id);
         require(IsWindowEnabled(button), "A disabled import control cannot be activated");
-        SendMessageW(button, BM_CLICK, 0, 0); pump(host);
+        SendMessageW(button, BM_CLICK, 0, 0);
+        if (id == 206)
+            require(IsWindow(button), "Import navigation destroyed its button during the native BM_CLICK callback");
+        pump(host);
     }
     void path(const std::filesystem::path& folder) {
         require(SetWindowTextW(control(201), folder.c_str()) != FALSE, "Cannot enter the exported folder");

@@ -35,6 +35,7 @@ public:
     // are guarded, and each real edit creates one complete undo transaction.
     void capture_change();
     [[nodiscard]] EditorDocument document() const;
+    // Replaces the document/history without EN_CHANGE; the owner handles reset.
     void reset(EditorDocument document);
     void insert_tab();
     void undo();

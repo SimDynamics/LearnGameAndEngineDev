@@ -89,6 +89,66 @@ std::vector<std::string_view> tokens(std::string_view value) {
 }
 }
 
+std::optional<StatePosition> stable_block_position(const Lesson& lesson, std::string_view identity) {
+    for (std::size_t page = 0; page < lesson.pages.size(); ++page)
+        for (std::size_t block = 0; block < lesson.pages[page].blocks.size(); ++block)
+            if (lesson.pages[page].blocks[block].stable_id == identity) return StatePosition{page,block};
+    return {};
+}
+void validate_reference_relationships(const Lesson& lesson) {
+    if (lesson.reference_after.empty()) return;
+    if (!lesson.state_layout.version) throw std::invalid_argument("Reference relationships require stable state-layout identities");
+    std::vector<std::string> activities, references;
+    for (const auto& relation : lesson.reference_after) {
+        if (std::ranges::find(activities,relation.activity) != activities.end()) throw std::invalid_argument("Duplicate reference activity");
+        activities.push_back(relation.activity);
+        const auto target = stable_block_position(lesson,relation.activity);
+        if (!target) throw std::invalid_argument("Reference activity does not exist");
+        const auto& activity = lesson.pages[target->page].blocks[target->block];
+        if (activity.type != BlockType::cpp_compiler || !activity.output_check)
+            throw std::invalid_argument("Reference activity requires a compiler with an authored output check");
+        if (relation.blocks.empty()) throw std::invalid_argument("Reference relationship has no presentation blocks");
+        for (const auto& identity : relation.blocks) {
+            if (identity == relation.activity || std::ranges::find(references,identity) != references.end())
+                throw std::invalid_argument("Duplicate or self-referencing presentation block");
+            references.push_back(identity);
+            const auto position = stable_block_position(lesson,identity);
+            if (!position) throw std::invalid_argument("Reference presentation block does not exist");
+            const auto type = lesson.pages[position->page].blocks[position->block].type;
+            if (type != BlockType::heading && type != BlockType::paragraph && type != BlockType::note && type != BlockType::code)
+                throw std::invalid_argument("An exercise or editor cannot be hidden as a reference");
+            if (position->page < target->page || (position->page == target->page && position->block <= target->block))
+                throw std::invalid_argument("A reference must follow its activity in visual order");
+        }
+    }
+}
+std::optional<StatePosition> reference_activity(const Lesson& lesson, const Block& reference) {
+    for (const auto& relation : lesson.reference_after)
+        if (std::ranges::find(relation.blocks,reference.stable_id) != relation.blocks.end())
+            return stable_block_position(lesson,relation.activity);
+    return {};
+}
+std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
+    if (activity.type != BlockType::cpp_compiler || !activity.output_check)
+        throw std::invalid_argument("Only an authored compiler output check can unlock a reference");
+    std::string result = "reference-objective-v1/";
+    const auto token = [&](std::string_view text) { result += std::to_string(text.size()) + ':'; result += text; };
+    token(lesson.id); token(lesson.locale); token(activity.stable_id);
+    token(activity.address.addition_namespace);
+    token(std::to_string(activity.address.page)); token(std::to_string(activity.address.block));
+    token(activity.initial_code); token(activity.language);
+    token(activity.output_check->input_comparison == TextComparison::tokens ? "tokens" : "exact");
+    result += std::to_string(activity.output_check->cases.size()) + '[';
+    for (const auto& item : activity.output_check->cases) {
+        token(item.standard_input); token(item.executable.value_or(""));
+        result += std::to_string(item.outputs.size()) + '[';
+        for (const auto& output : item.outputs) token(output);
+        result += ']';
+    }
+    result += ']';
+    return result;
+}
+
 std::string exercise_key(const Lesson& lesson, const Block& block) {
     const auto& address = block.address;
     return "exercise_" + lesson.id + (address.addition_namespace.empty() ? "" : "_state_v2_" + address.addition_namespace) +

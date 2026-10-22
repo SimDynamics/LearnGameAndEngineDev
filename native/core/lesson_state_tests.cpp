@@ -9,8 +9,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 using namespace lgaed::state;
 namespace {
@@ -324,6 +326,44 @@ int main(int argc, char** argv) {
                 "U1L2 independent sources or exact hidden stdin changed during import");
         require(sha256(read_bytes(real_export / "shared_prefs" / "cpp_lesson_drafts.xml")) == real_before,
                 "U1L2 export source changed during compatibility checks"); ++groups;
+
+        const auto reserved_export_rejected = [&](std::string_view name, Value receipt) {
+            auto reserved_state = real_state;
+            reserved_state.preferences["native_windows"]["reference-proof/v1/es/" + modified_key] = std::move(receipt);
+            reserved_state.preferences["independent_android"]["retained"] = std::string(" \\t original Android preference ");
+            const auto reserved_source = base / ("reserved-windows-" + std::string(name));
+            export_preferences(reserved_source, reserved_state);
+            text_file(reserved_source / "files" / "cpp_projects" / "retained.cpp", "    return 0;\r\n");
+            const auto source_hashes = [&] {
+                std::map<std::filesystem::path, std::string> result;
+                for (const auto& file : std::filesystem::recursive_directory_iterator(native_io_path(reserved_source)))
+                    if (file.is_regular_file()) result.emplace(file.path(), sha256(read_bytes(file.path())));
+                return result;
+            };
+            const auto hashes_before = source_hashes();
+            StateStore destination(base / ("reserved-windows-profile-" + std::string(name)));
+            const auto destination_before = destination.load();
+            require(destination.empty() && destination_before.preferences.empty(), "Reserved-domain QA destination was not empty");
+            bool refused = false;
+            try { (void)inspect_android_export(reserved_source); }
+            catch (const std::runtime_error& error) {
+                const std::string message = error.what();
+                require(message.find("native_windows") != message.npos && message.find("reservado de Windows") != message.npos &&
+                        message.find("no se ha importado nada") != message.npos,
+                        "Reserved Windows domain did not produce its explicit pre-publication diagnostic");
+                refused = true;
+            }
+            require(refused, "Android import accepted the Windows-only completion domain");
+            require(source_hashes() == hashes_before, "Rejecting the Windows-only domain changed the export source");
+            require(destination.empty() && destination.load() == destination_before,
+                    "Rejecting the Windows-only domain published state or changed the empty profile");
+            ++groups;
+        };
+        auto reference_frame = lgaed::curriculum::reference_objective_frame(real_lesson, *editors[1]);
+        reference_frame += "/source/" + std::to_string(modified.source.size()) + ':' + modified.source;
+        reference_frame += "/input/0:";
+        reserved_export_rejected("reference-proof", sha256(reference_frame));
+        reserved_export_rejected("integer", std::int64_t{17});
 
         auto legacy_references = real_state;
         std::string legacy_source;

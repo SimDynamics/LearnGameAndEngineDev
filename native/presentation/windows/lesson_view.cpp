@@ -30,6 +30,7 @@ constexpr wchar_t view_class[] = L"LearnGameAndEngineDev.LessonView";
 constexpr wchar_t pane_class[] = L"LearnGameAndEngineDev.LessonPane";
 constexpr UINT result_message = WM_APP + 71;
 constexpr UINT flush_message = WM_APP + 72;
+constexpr UINT close_import_message = WM_APP + 74;
 constexpr UINT_PTR save_timer = 73;
 constexpr int previous_id = 101, page_id = 102, next_id = 103, import_id = 104;
 constexpr int import_prompt_id = 200, import_path_id = 201, import_browse_id = 202;
@@ -127,9 +128,10 @@ struct LessonView {
     std::optional<std::size_t> running_block;
     std::string running_input;
 
-    LessonView(const WindowsEnvironment& env, const std::filesystem::path& content)
-        : environment(env), lesson(windows::load_lesson(content / L"es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json")),
+    LessonView(const WindowsEnvironment& env, curriculum::Lesson model)
+        : environment(env), lesson(std::move(model)),
           store(env.paths.root), data(store.load()) {
+        curriculum::validate_reference_relationships(lesson);
         state::validate_lesson_state(data, lesson);
         state::prepare_lesson_state(data, lesson);
         page = state::current_page(data, lesson);
@@ -153,6 +155,73 @@ struct LessonView {
     std::string key(std::size_t index) const { return curriculum::exercise_key(lesson, block(index)); }
     std::string draft_key(std::size_t index) const { return curriculum::draft_key(route, lesson, block(index)); }
     std::string scroll_key() const { return "scroll/" + lesson.id + "/" + lesson.pages.at(page).stable_id; }
+
+    bool has_references(const curriculum::Block& activity) const {
+        return std::ranges::any_of(lesson.reference_after,[&](const auto& relation) { return relation.activity == activity.stable_id; });
+    }
+    std::string reference_key(const curriculum::Block& activity) const {
+        return "reference-proof/v1/" + lesson.locale + '/' + curriculum::draft_key(route,lesson,activity);
+    }
+    std::string reference_seal(const curriculum::Block& activity) const {
+        const auto draft = state::get_draft(data,curriculum::draft_key(route,lesson,activity),
+                                            activity.initial_code,activity.standard_input.value_or(""));
+        const auto input = activity.standard_input ? draft.input : std::string{};
+        auto objective = curriculum::reference_objective_frame(lesson,activity);
+        objective += "/source/" + std::to_string(draft.source.size()) + ':' + draft.source;
+        objective += "/input/" + std::to_string(input.size()) + ':' + input;
+        return state::sha256(objective);
+    }
+    bool reference_available(const curriculum::Block& reference) const {
+        const auto dependency = curriculum::reference_activity(lesson,reference);
+        if (!dependency) return true;
+        const auto& activity = lesson.pages[dependency->page].blocks[dependency->block];
+        const auto receipt = state::string_value(data,"native_windows",reference_key(activity));
+        return !receipt.empty() && receipt == reference_seal(activity);
+    }
+    static std::size_t row_block(const Row& row) {
+        return static_cast<std::size_t>((GetDlgCtrlID(row.cells.front()) - 1000) / 100);
+    }
+    void reference_row(std::size_t index) {
+        const auto& current = block(index);
+        if (current.type == BlockType::code) text_row(current.code,control_id(index,1),true);
+        else text_row(current.text,control_id(index,0),false,current.emphasis,current.type == BlockType::heading);
+    }
+    void refresh_references() {
+        if (!pane || import_open) return;
+        const auto was_updating = updating; updating = true;
+        bool changed = false;
+        for (std::size_t index = 0; index < controls.size(); ++index) {
+            const auto& current = block(index);
+            if (!curriculum::reference_activity(lesson,current)) continue;
+            const bool present = std::ranges::any_of(rows,[&](const auto& row) { return row_block(row) == index; });
+            const bool available = reference_available(current);
+            if (present == available) continue;
+            changed = true;
+            if (available) reference_row(index);
+            else {
+                // Read the block identity while HWNDs are still valid, and
+                // detach each row before destruction sends window messages.
+                // A destroyed HWND no longer has a usable control ID.
+                for (auto row = rows.begin(); row != rows.end();) {
+                    if (row_block(*row) != index) { ++row; continue; }
+                    auto cells = std::move(row->cells);
+                    row = rows.erase(row);
+                    for (const auto item : cells) DestroyWindow(item);
+                }
+            }
+        }
+        if (changed) {
+            std::stable_sort(rows.begin(),rows.end(),[](const auto& left, const auto& right) { return row_block(left) < row_block(right); });
+            update_fonts(); reflow();
+        }
+        updating = was_updating;
+    }
+    void clear_reference_completion(std::size_t index) {
+        if (!has_references(block(index))) return;
+        if (auto domain = data.preferences.find("native_windows"); domain != data.preferences.end())
+            if (domain->second.erase(reference_key(block(index)))) mark_dirty();
+        refresh_references();
+    }
 
     void show_error(std::string_view message) {
         MessageBoxW(window, wide(message).c_str(), L"LearnGameAndEngineDev", MB_OK | MB_ICONERROR);
@@ -346,6 +415,8 @@ struct LessonView {
         EnableWindow(previous, page > 0); EnableWindow(next, page + 1 < lesson.pages.size());
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index); auto& vm = controls[index];
+            // Locked references have no HWND, text provider or scrollable row.
+            if (!reference_available(current)) continue;
             if (exercise(current.type))
                 if (const auto saved = state::get_response(data, key(index))) vm.response = *saved;
             if (current.type == BlockType::heading) { text_row(current.text, control_id(index, 0), false, current.emphasis, true); continue; }
@@ -542,6 +613,7 @@ struct LessonView {
                 }
                 if (before.source == vm.source_editor->document().text && before.input == input) return;
                 ++vm.revision;
+                clear_reference_completion(index);
                 if (running_block == index) { worker.request_stop(); }
                 capture_draft(index); feedback(index, "", false);
                 updating = true; set_rich_text(vm.console, "El programa cambió. Ejecuta de nuevo para obtener una salida actual.");
@@ -551,7 +623,7 @@ struct LessonView {
         }
     }
     void run(std::size_t index) {
-        cancel_run(); capture_draft(index); mark_dirty(); flush();
+        cancel_run(); capture_draft(index); clear_reference_completion(index); mark_dirty(); flush();
         auto& vm = controls.at(index);
         windows::CppRunRequest request;
         request.request_id = ++request_id; request.revision = vm.revision;
@@ -607,6 +679,10 @@ struct LessonView {
                 auto text = correct ? std::string("Correcto") : std::string("Incorrecto");
                 if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
                 feedback(index, text, correct);
+                if (correct && has_references(block(index))) {
+                    data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
+                    mark_dirty(); flush(); refresh_references();
+                }
             }
         }
         reflow();
@@ -724,7 +800,12 @@ struct LessonView {
                 if (id == import_browse_id && !import_done) browse_import();
                 else if (id == import_review_id && !import_done) review_import();
                 else if (id == import_commit_id) confirm_import();
-                else if (id == import_cancel_id) close_import();
+                else if (id == import_cancel_id) {
+                    // BN_CLICKED is synchronous inside the button's BM_CLICK.
+                    // Keep its HWND alive until that native callback returns.
+                    if (!PostMessageW(window, close_import_message, 0, 0))
+                        throw std::runtime_error("No se pudo cerrar el panel de importacion; vuelve a intentarlo.");
+                }
             } catch (const std::exception& error) {
                 set_rich_text(import_summary, error.what());
             }
@@ -767,6 +848,7 @@ struct LessonView {
             vm.source_editor->reset(windows::predefined_code_document(block(action.block).initial_code));
             updating = false;
             ++vm.revision; capture_draft(action.block); feedback(action.block, "", false);
+            clear_reference_completion(action.block);
             updating = true; set_rich_text(vm.console, ""); style_cpp(vm.source); updating = false;
             EnableWindow(vm.compile, TRUE); mark_dirty(); break;
         case ActionType::tab: SetFocus(vm.source); vm.source_editor->insert_tab(); break;
@@ -829,6 +911,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             return 0;
         case WM_TIMER: if (wparam == save_timer) { view->flush(); return 0; } break;
         case result_message: view->finish_run(); return 0;
+        case close_import_message: if (view->import_open) view->close_import(); return 0;
         case flush_message: view->flush_selection(); return 1;
         case WM_DESTROY: view->cancel_run(); KillTimer(window, save_timer); return 0;
         case WM_NCDESTROY:
@@ -846,6 +929,11 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
 
 HWND create_lesson_view(HWND parent, const WindowsEnvironment& environment,
                         const std::filesystem::path& content_root) {
+    return create_lesson_view(parent,environment,windows::load_lesson(content_root /
+        L"es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json"));
+}
+
+HWND create_lesson_view(HWND parent, const WindowsEnvironment& environment, curriculum::Lesson lesson) {
     static const bool registered = [] {
         for (const auto& entry : std::array<std::pair<const wchar_t*, WNDPROC>, 2>{{{view_class, view_proc}, {pane_class, pane_proc}}}) {
             WNDCLASSEXW definition{}; definition.cbSize = sizeof(definition);
@@ -857,7 +945,7 @@ HWND create_lesson_view(HWND parent, const WindowsEnvironment& environment,
         return true;
     }();
     (void)registered;
-    auto view = std::make_unique<LessonView>(environment, content_root);
+    auto view = std::make_unique<LessonView>(environment,std::move(lesson));
     auto window = CreateWindowExW(WS_EX_CONTROLPARENT, view_class, L"Lección", WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,
         0, 0, 0, 0, parent, nullptr, GetModuleHandleW(nullptr), view.get());
     if (!window) { view.release(); throw std::runtime_error("Cannot open the lesson; see its content contract or saved-state diagnostic"); }

@@ -381,7 +381,20 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             Page page; for (const auto& block : array(value.GetObject(), "blocks")) page.blocks.push_back(read_block(block.GetObject()));
             lesson.pages.push_back(std::move(page));
         }
-        resolve_addresses(lesson); return lesson;
+        resolve_addresses(lesson);
+        if (root.HasKey(L"referenceAfter")) {
+            const auto relationships = array(root,"referenceAfter");
+            require(relationships.Size() <= 100000,"Too many reference relationships");
+            for (const auto& item : relationships) {
+                const auto relation = item.GetObject(); allowed_keys(relation,{"activity","blocks"},true);
+                ReferenceAfter record{text(relation,"activity"),strings(array(relation,"blocks"),true,false)};
+                require(valid_id(record.activity),"Invalid reference activity identity");
+                for (const auto& identity : record.blocks) require(valid_id(identity),"Invalid reference block identity");
+                lesson.reference_after.push_back(std::move(record));
+            }
+        }
+        validate_reference_relationships(lesson);
+        return lesson;
     } catch (const winrt::hresult_error& error) {
         throw std::runtime_error("Curriculum JSON/contract error: " + utf8(error.message()));
     }

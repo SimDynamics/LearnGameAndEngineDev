@@ -348,6 +348,8 @@ AndroidImportPreview inspect_android_export(const std::filesystem::path& folder)
             if (std::string(subtree) == "shared_prefs") {
                 if (relative.parent_path() != "shared_prefs" || relative.extension() != ".xml")
                     throw std::runtime_error("Archivo SharedPreferences no compatible; la importacion no omite archivos silenciosamente.");
+                if (relative.stem().native() == L"native_windows")
+                    throw std::runtime_error("La exportacion incluye el dominio reservado de Windows native_windows; no es una exportacion Android compatible y no se ha importado nada.");
                 auto preferences = parse_preferences(item.path());
                 preview.preference_count += preferences.size();
                 if (!preview.data.preferences.emplace(relative.stem().string(), std::move(preferences)).second)

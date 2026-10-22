@@ -64,14 +64,17 @@ struct Fixture {
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
     std::filesystem::path content;
+    bool supplied_model = false;
     HWND host = nullptr, view = nullptr;
-    explicit Fixture(const std::function<void(state::StateData&, const curriculum::Lesson&)>& initialize = {})
+    explicit Fixture(const std::function<void(state::StateData&, const curriculum::Lesson&)>& initialize = {},
+        const std::function<curriculum::Lesson(const curriculum::Lesson&)>& load_model = {})
         : environment(resolve_windows_environment({ProfileId::Codex,
             L"native-lesson-view-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()), false})),
         content(std::filesystem::path(build::source_root) / "app/src/main/assets/content") {
         require(!std::filesystem::exists(environment.paths.root), "QA instance unexpectedly already exists");
         initialize_profile_directories(environment.paths);
         lesson = windows::load_lesson(content / "es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
+        if (load_model) { lesson = load_model(lesson); supplied_model = true; }
         if (initialize) {
             state::StateStore seed_store(environment.paths.root); auto seed = seed_store.load();
             initialize(seed, lesson); seed_store.save(seed);
@@ -87,7 +90,7 @@ struct Fixture {
     }
     void open() {
         require(!view, "Lesson view already open");
-        view = create_lesson_view(host, environment, content);
+        view = supplied_model ? create_lesson_view(host,environment,lesson) : create_lesson_view(host, environment, content);
         require(view != nullptr, "Cannot create real lesson view");
         RECT area{}; GetClientRect(host, &area);
         MoveWindow(view, 0, 0, area.right, area.bottom, TRUE); pump(host);
@@ -189,6 +192,7 @@ std::string message_code(const curriculum::Block& block, std::string_view old_me
 }
 
 int main() {
+    std::cout << std::unitbuf; std::cerr << std::unitbuf;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
@@ -356,7 +360,71 @@ int main() {
             curriculum::exercise_key(legacy.lesson,legacy.lesson.pages[4].blocks[1])) == partial_answer,
                 "An unchanged partial historical answer lost opaque metadata");
         require(legacy.text(6,4).empty(),"An imported compiler draft reopened with a stale execution verdict");
-        std::cout << "PASS Historical v1 state adoption, partial answers, independent added editor, CRLF/Unicode/caret and unrequested input preservation\n"
+        legacy.close();
+        std::cout << "PASS Historical v1 state adoption, partial answers, independent added editor, CRLF/Unicode/caret and unrequested input preservation\n" << std::flush;
+
+        Fixture references([](state::StateData& data,const curriculum::Lesson& lesson) {
+            state::prepare_lesson_state(data,lesson); state::save_current_page(data,lesson,5);
+            for (const auto index : {std::size_t{1},std::size_t{7}}) {
+                const auto& block = lesson.pages[4].blocks[index]; state::Response response; response.correct = true;
+                if (block.correct_index) response.selected = static_cast<std::int64_t>(*block.correct_index);
+                else response.answer = block.answers.at(0);
+                state::put_response(data,curriculum::exercise_key(lesson,block),response);
+            }
+            // A formerly imported "correct" field is not proof of a fresh compiler run.
+            state::Response old_verdict; old_verdict.correct = true; old_verdict.answer = "Zona segura";
+            state::put_response(data,curriculum::exercise_key(lesson,lesson.pages[5].blocks[6]),old_verdict);
+        },[](const curriculum::Lesson& source) {
+            auto json = source.raw_json; const auto closing = json.find_last_of('}');
+            json.insert(closing,R"(,"referenceAfter":[{"activity":"block_0004_0002","blocks":["block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])");
+            return windows::parse_lesson_json(json);
+        });
+        const auto previous_reference = [&] {
+            return descendant(references.view,id(1,0)) && descendant(references.view,id(2,1)) && descendant(references.view,id(3,0));
+        };
+        const auto current_reference = [&] {
+            return descendant(references.view,id(7,0)) && descendant(references.view,id(8,1));
+        };
+        require(references.page() == 5 && !previous_reference() && !current_reference(),
+                "A page bookmark, conceptual answer or imported correct field exposed an unattempted implementation");
+        SendMessageW(references.view,WM_VSCROLL,SB_BOTTOM,0); pump(references.host);
+        require(!descendant(references.view,id(7,0)) && !descendant(references.view,id(8,1)),
+                "Scrolling created hidden reference text providers before a correct execution");
+        require(references.text(5,0).find("Zona segura") != std::string::npos,
+                "The requested output was hidden together with its implementation");
+        references.run(6); require(!current_reference(),"An incorrect program output unlocked its reference");
+        auto invalid_source = references.lesson.pages[5].blocks[6].initial_code;
+        const auto invalid_at = invalid_source.find("return 0;"); invalid_source.erase(invalid_at + 8,1);
+        references.replace(6,10,invalid_source); references.run(6);
+        require(references.text(6,4).empty() && !current_reference(),"A compiler diagnostic unlocked the implementation");
+        const auto accepted = message_code(references.lesson.pages[5].blocks[6],"Caja recibida","Zona segura");
+        references.replace(6,10,accepted); references.run(6);
+        require(current_reference() && !previous_reference(),"Correct output unlocked the wrong activity's reference");
+        require(references.text(8,1) == references.lesson.pages[5].blocks[8].code,
+                "The unlocked reference did not retain its exact original code");
+        references.reopen();
+        require(current_reference() && references.text(6,4).empty(),
+                "Reopening lost a sealed completion or revived a current compiler verdict");
+        references.replace(6,10,accepted + "// edición después del acierto\n");
+        require(!current_reference(),"Editing kept an obsolete reference completion available");
+        SendMessageW(references.control(6,10),WM_UNDO,0,0);
+        pump(references.host);
+        require(references.text(6,10) == accepted && !current_reference(),
+                "Undo either lost source history or revived a discarded completion ticket");
+        references.run(6); require(current_reference(),"A new correct run did not restore its own reference");
+        references.select_page(4); references.run(3); references.next();
+        require(!previous_reference() && current_reference(),"The original Zona inicial editor unlocked the Caja recibida reference");
+        references.select_page(4);
+        references.replace(6,10,message_code(references.lesson.pages[4].blocks[6],"Zona inicial","Caja recibida"));
+        references.run(6); references.next();
+        require(previous_reference() && current_reference(),"A previous-page correct compiler run did not unlock only its linked references");
+        references.reopen();
+        require(previous_reference() && current_reference() && references.text(6,4).empty(),
+                "Cross-page completion proofs did not reopen independently of current output verdicts");
+        references.click(6,12);
+        require(previous_reference() && !current_reference(),"Reset of one editor affected another activity's reference");
+        references.non_overlapping_rows();
+        std::cout << "PASS Explicit reference links: no early HWND/accessibility text, exact fresh-output gates, sealed reopening, edit/Undo/reset invalidation and independent cross-page targets\n"
                   << "Native lesson UI integration: PASS\n";
         return 0;
     } catch (const std::exception& error) {

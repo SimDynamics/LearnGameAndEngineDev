@@ -1,4 +1,5 @@
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/rich_text.hpp"
 
 #include <commctrl.h>
 #include <richedit.h>
@@ -16,10 +17,45 @@ void require(bool condition, std::string_view message) {
     if (!condition) throw std::runtime_error(std::string(message));
 }
 
+struct ChangeProbe {
+    bool streaming = false;
+    unsigned notifications = 0;
+    unsigned notifications_during_stream = 0;
+    bool callback_failed = false;
+    EditorDocument observed;
+    std::string visible;
+};
+
+LRESULT CALLBACK stream_probe(HWND window, UINT message, WPARAM wparam, LPARAM lparam,
+    UINT_PTR, DWORD_PTR data) {
+    auto& probe = *reinterpret_cast<ChangeProbe*>(data);
+    if (message == WM_NCDESTROY) RemoveWindowSubclass(window, stream_probe, 2);
+    if (message != EM_STREAMIN) return DefSubclassProc(window, message, wparam, lparam);
+    const auto previous = probe.streaming;
+    probe.streaming = true;
+    const auto result = DefSubclassProc(window, message, wparam, lparam);
+    probe.streaming = previous;
+    return result;
+}
+
 LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
     if (message == WM_COMMAND && HIWORD(wparam) == EN_CHANGE && lparam) {
-        if (const auto editor = reinterpret_cast<CodeEditor*>(GetPropW(
-                reinterpret_cast<HWND>(lparam), L"lgaed.test.editor"))) editor->capture_change();
+        const auto control = reinterpret_cast<HWND>(lparam);
+        const auto probe = reinterpret_cast<ChangeProbe*>(GetPropW(control, L"lgaed.test.change-probe"));
+        // Fail the unsafe notification without hanging this regression inside
+        // RichEdit. On a complete snapshot, run the parent's real read/format path.
+        if (probe && probe->streaming) { ++probe->notifications_during_stream; return 0; }
+        if (const auto editor = reinterpret_cast<CodeEditor*>(GetPropW(control, L"lgaed.test.editor"))) {
+            try {
+                editor->capture_change();
+                if (probe) {
+                    ++probe->notifications;
+                    probe->observed = editor->document();
+                    probe->visible = lgaed::presentation::edit_text(control);
+                    lgaed::presentation::style_cpp(control);
+                }
+            } catch (...) { if (probe) probe->callback_failed = true; }
+        } else if (probe) ++probe->notifications;
     }
     return DefWindowProcW(window, message, wparam, lparam);
 }
@@ -31,7 +67,7 @@ struct Fixture {
     std::unique_ptr<CodeEditor> adapter;
 
     Fixture(EditorDocument document = {}, bool multiline = true,
-        std::function<void()> submit = {}, bool code_assistance = true) {
+        std::function<void()> submit = {}, bool code_assistance = true, ChangeProbe* probe = nullptr) {
         host = CreateWindowExW(0, L"LgaedCodeEditorTestHost", L"Hidden editor QA",
             WS_OVERLAPPEDWINDOW, 0, 0, 640, 300, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         if (!host) throw std::runtime_error("Cannot create editor test host");
@@ -42,11 +78,19 @@ struct Fixture {
         input = CreateWindowExW(0, L"EDIT", L"Entrada intacta", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
             0, 210, 600, 25, host, reinterpret_cast<HMENU>(101), GetModuleHandleW(nullptr), nullptr);
         if (!edit || !input) throw std::runtime_error("Cannot create native edit controls");
+        if (probe) {
+            require(SetPropW(edit, L"lgaed.test.change-probe", reinterpret_cast<HANDLE>(probe)) != FALSE,
+                "Attach parent-change observer");
+            require(SetWindowSubclass(edit, stream_probe, 2, reinterpret_cast<DWORD_PTR>(probe)) != FALSE,
+                "Observe real native stream boundaries");
+        }
         adapter = std::make_unique<CodeEditor>(edit, std::move(document), multiline,
             std::move(submit), code_assistance);
         SetPropW(edit, L"lgaed.test.editor", reinterpret_cast<HANDLE>(adapter.get()));
     }
     ~Fixture() {
+        RemovePropW(edit, L"lgaed.test.change-probe");
+        if (edit) RemoveWindowSubclass(edit, stream_probe, 2);
         RemovePropW(edit, L"lgaed.test.editor");
         adapter.reset();
         if (host) DestroyWindow(host);
@@ -408,6 +452,111 @@ int main() {
                 require(field.adapter->document().text.starts_with("x" + prefix),
                     "Redo cannot reinterpret a draft as formatted RTF");
             }
+        }
+    });
+
+    test("Snapshot notifications let the parent read and recolor only after the stream completes", [] {
+        const std::string source = "\r\n    std::cout << \"Zona inicial\";\r\n    return 0;\r\n";
+        auto original = predefined_code_document(source);
+        original.selection_start = original.selection_end = 6;
+        ChangeProbe probe;
+        Fixture field(original, true, {}, true, &probe);
+        require(probe.notifications == 0 && probe.notifications_during_stream == 0,
+            "Initial loading must not notify a parent before its adapter is assigned");
+        const auto events = SendMessageW(field.edit, EM_GETEVENTMASK, 0, 0) |
+            static_cast<LRESULT>(ENM_KEYEVENTS | ENM_SELCHANGE);
+        SendMessageW(field.edit, EM_SETEVENTMASK, 0, events);
+        field.cursor(5);
+        field.key(VK_BACK, L'\b');
+        const auto edited = field.adapter->document();
+        require(probe.notifications == 1 && probe.notifications_during_stream == 0 && !probe.callback_failed,
+            "A completed unit deletion sends exactly one safe parent notification");
+        require(probe.observed.text == edited.text && probe.observed.selection_start == 1 &&
+            probe.observed.indentation_starts == edited.indentation_starts,
+            "The parent sees completed text, selection and indentation identity");
+        require(probe.visible == edited.text, "The native text read during notification is complete");
+        for (unsigned round = 0; round != 4; ++round) {
+            SendMessageW(field.edit, WM_UNDO, 0, 0);
+            require(probe.notifications == 2 + round * 2 && probe.notifications_during_stream == 0 &&
+                !probe.callback_failed, "Undo notifies once after all streaming and formatting finish");
+            require(probe.observed.text == source && probe.observed.indentation_starts == original.indentation_starts &&
+                probe.observed.selection_start == 6, "Undo observers see exact CRLF, origin and original caret");
+            SendMessageW(field.edit, EM_REDO, 0, 0);
+            require(probe.notifications == 3 + round * 2 && probe.observed.text == edited.text &&
+                probe.observed.indentation_starts == edited.indentation_starts &&
+                probe.observed.selection_start == edited.selection_start, "Redo remains identity aware after syntax styling");
+        }
+        require(SendMessageW(field.edit, EM_GETEVENTMASK, 0, 0) == events,
+            "Snapshot loading and parent syntax styling preserve the complete event mask");
+        field.adapter->reset(original);
+        require(probe.notifications == 9 && probe.notifications_during_stream == 0,
+            "Owner-driven reset is silent even after editing and undo");
+    });
+
+    test("A snapshot load exception restores notification masking and edit capture", [] {
+        ChangeProbe probe;
+        Fixture field({"x", {}, 1, 1}, true, {}, true, &probe);
+        const auto events = SendMessageW(field.edit, EM_GETEVENTMASK, 0, 0) |
+            static_cast<LRESULT>(ENM_KEYEVENTS | ENM_SELCHANGE);
+        SendMessageW(field.edit, EM_SETEVENTMASK, 0, events);
+        bool rejected = false;
+        try { field.adapter->reset({std::string("a\0b", 3), {}, 0, 0}); }
+        catch (const std::runtime_error&) { rejected = true; }
+        require(rejected && SendMessageW(field.edit, EM_GETEVENTMASK, 0, 0) == events,
+            "Even a rejected plain-text load restores the exact event mask");
+        require(probe.notifications == 0 && probe.notifications_during_stream == 0,
+            "An incomplete or rejected snapshot never notifies the parent");
+        field.adapter->reset({"x", {}, 1, 1});
+        field.character(L'y');
+        require(field.adapter->document().text == "xy" && !probe.callback_failed,
+            "The applying guard is restored so subsequent native edits are captured");
+        field.adapter->undo();
+        require(field.adapter->document().text == "x" && probe.observed.text == "x",
+            "Undo remains observable and functional after a rejected load");
+    });
+
+    test("Select All and native replacement never persist the implicit final paragraph mark", [] {
+        for (const std::string source : {"#include <iostream>\nint main() {\n    std::cout << \"Zona segura\";\n    return 0;\n}\n",
+                                        "    return 0;", "\r\n    std::cout << \"🧪\";\r    return 0;\r\n"}) {
+            const auto original = predefined_code_document(source);
+            ChangeProbe probe;
+            Fixture field(original, true, {}, true, &probe);
+            const auto length = lgaed::presentation::wide(source).size();
+            const auto visible_length = lgaed::presentation::wide(lgaed::presentation::edit_text(field.edit)).size();
+            SendMessageW(field.edit, EM_SETSEL, 0, -1);
+            CHARRANGE native{};
+            SendMessageW(field.edit, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&native));
+            require(native.cpMin == 0 && native.cpMax == static_cast<LONG>(visible_length + 1),
+                "Native Select All includes RichEdit's synthetic final paragraph mark");
+            const auto selected = field.adapter->document();
+            require(selected.text == source && selected.selection_start == 0 &&
+                selected.selection_end == static_cast<std::int64_t>(length),
+                "The document maps only the synthetic boundary while preserving original CRLF and Unicode");
+            const auto replacement = lgaed::presentation::wide(source + "// edición después del acierto\n");
+            SendMessageW(field.edit, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(replacement.c_str()));
+            const auto edited = field.adapter->document();
+            require(edited.text != source && edited.selection_start == edited.selection_end &&
+                edited.selection_end == static_cast<std::int64_t>(lgaed::presentation::wide(edited.text).size()),
+                "A native replacement captures its real final insertion position");
+            SendMessageW(field.edit, WM_UNDO, 0, 0);
+            const auto undone = field.adapter->document();
+            require(undone.text == source && undone.indentation_starts == original.indentation_starts &&
+                undone.selection_start == 0 && undone.selection_end == static_cast<std::int64_t>(length),
+                "Undo restores source identity and a full selection of source characters, not the hidden CR");
+            require(!probe.callback_failed && probe.notifications_during_stream == 0 &&
+                probe.observed.selection_end == static_cast<std::int64_t>(length),
+                "The actual parent callback observes valid source offsets during Undo");
+            SendMessageW(field.edit, EM_REDO, 0, 0);
+            require(field.adapter->document().text == edited.text &&
+                field.adapter->document().selection_end == edited.selection_end,
+                "Redo retains the exact replacement and valid cursor");
+            field.adapter->undo();
+            field.key(VK_BACK, L'\b');
+            require(field.adapter->document().text.empty(), "Deleting the restored full selection removes exactly the source");
+            field.adapter->undo();
+            require(field.adapter->document().text == source &&
+                field.adapter->document().indentation_starts == original.indentation_starts,
+                "Undo after full deletion still restores the complete original indentation identity");
         }
     });
 

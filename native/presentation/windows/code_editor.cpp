@@ -85,6 +85,16 @@ std::wstring control_text(HWND control) {
 CHARRANGE selection(HWND control) {
     CHARRANGE range{};
     SendMessageW(control, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&range));
+    GETTEXTLENGTHEX length{GTL_NUMCHARS | GTL_PRECISE, 1200};
+    const auto characters = SendMessageW(control, EM_GETTEXTLENGTHEX, reinterpret_cast<WPARAM>(&length), 0);
+    if (characters < 0 || characters > 4 * 1024 * 1024)
+        throw std::runtime_error("Editor text length is invalid");
+    // RichEdit's Select All may include its undeletable final paragraph CR.
+    // GT_RAWTEXT excludes that synthetic mark. Translate only its boundary to
+    // the end of the actual source before saving history or editing a range.
+    // This is not a clamp: other invalid offsets are deliberately unchanged.
+    if (range.cpMin == characters + 1) range.cpMin = static_cast<LONG>(characters);
+    if (range.cpMax == characters + 1) range.cpMax = static_cast<LONG>(characters);
     return range;
 }
 
@@ -258,20 +268,39 @@ struct CodeEditor::Impl {
         applying = was_applying;
     }
 
-    void apply(const Snapshot& value) {
-        struct Restore {
-            bool& target;
-            bool previous;
-            ~Restore() { target = previous; }
-        } restore{applying, std::exchange(applying, true)};
-        // EM_SETTEXTEX recognizes an RTF header even with codepage 1200.
-        // Use the existing explicit SF_TEXT | SF_UNICODE stream instead;
-        // drafts and response text must never be interpreted as formatting.
-        presentation::set_edit_text(window, utf8(value.text));
-        tab_stops();
-        select(window, value.cursor.cpMin, value.cursor.cpMax);
-        SendMessageW(window, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&value.scroll));
-        SendMessageW(window, EM_EMPTYUNDOBUFFER, 0, 0);
+    void apply(const Snapshot& value, bool notify_parent = true) {
+        const auto previous_applying = applying;
+        const auto events = SendMessageW(window, EM_GETEVENTMASK, 0, 0);
+        {
+            struct Restore {
+                HWND window;
+                bool& target;
+                bool previous;
+                LRESULT events;
+                ~Restore() {
+                    SendMessageW(window, EM_SETEVENTMASK, 0, events);
+                    target = previous;
+                }
+            } restore{window, applying, previous_applying, events};
+            applying = true;
+            // EN_CHANGE can synchronously reenter the parent during EM_STREAMIN.
+            // Its syntax formatter must see a completed snapshot, never a stream
+            // whose text, selection and indentation identity are still loading.
+            SendMessageW(window, EM_SETEVENTMASK, 0, events & ~static_cast<LRESULT>(ENM_CHANGE));
+            // EM_SETTEXTEX recognizes an RTF header even with codepage 1200.
+            // Keep the existing explicit SF_TEXT | SF_UNICODE plain-text load.
+            presentation::set_edit_text(window, utf8(value.text));
+            tab_stops();
+            select(window, value.cursor.cpMin, value.cursor.cpMax);
+            SendMessageW(window, EM_SETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&value.scroll));
+            SendMessageW(window, EM_EMPTYUNDOBUFFER, 0, 0);
+        }
+        if (notify_parent && !previous_applying && (events & ENM_CHANGE)) {
+            if (const auto parent = GetParent(window)) {
+                SendMessageW(parent, WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(window), EN_CHANGE),
+                    reinterpret_cast<LPARAM>(window));
+            }
+        }
     }
 
     void capture() {
@@ -568,7 +597,9 @@ void CodeEditor::reset(EditorDocument document) {
     impl_->history.clear();
     impl_->history.push_back(std::move(snapshot));
     impl_->current = 0;
-    impl_->apply(impl_->now());
+    // Initialization/reset is owned by the caller; the adapter may not yet be
+    // attached to the parent's model. Only actual edits and undo/redo notify it.
+    impl_->apply(impl_->now(), false);
 }
 void CodeEditor::insert_tab() { impl_->insert_tab(); }
 void CodeEditor::undo() { impl_->undo(); }

@@ -82,12 +82,23 @@ struct Block {
     StateAddress address;
 };
 struct Page { std::string stable_id; std::vector<Block> blocks; };
+// Presentation-only relationships, authored at the lesson root so no historical
+// block fingerprint, answer or storage slot changes when a reference is linked.
+struct ReferenceAfter { std::string activity; std::vector<std::string> blocks; };
 struct Lesson {
     std::string id, title, locale, raw_json;
     std::filesystem::path source_path;
     std::vector<Page> pages;
     StateLayout state_layout;
+    std::vector<ReferenceAfter> reference_after;
 };
+
+void validate_reference_relationships(const Lesson&);
+[[nodiscard]] std::optional<StatePosition> stable_block_position(const Lesson&, std::string_view stable_id);
+[[nodiscard]] std::optional<StatePosition> reference_activity(const Lesson&, const Block& reference);
+// Deterministic framing of the authored objective, independent of prose or an
+// imported exercise response. The platform hashes this with the executed draft.
+[[nodiscard]] std::string reference_objective_frame(const Lesson&, const Block& activity);
 
 // These keys deliberately retain the Android lesson identity and original slots.
 [[nodiscard]] std::string exercise_key(const Lesson&, const Block&);
