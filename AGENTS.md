@@ -14,6 +14,7 @@ Lee íntegramente `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt`
 - `PENDIENTES_RECURSOS_CURRICULARES.md` es el único registro de pedidos y capacidades pendientes. Work lo crea y modifica, incluidos los encargos de Windows.
 - Codex consulta ese archivo, implementa y verifica los componentes técnicos y comunica únicamente en el chat qué pedidos puede retirar Work y qué comprobaciones quedan pendientes.
 - Codex no modifica el registro de Work ni crea registros paralelos, informes o reportes de avance. Los cambios de la aplicación y sus pruebas se guardan directamente en los archivos técnicos.
+- `PENDIENTES_WORK.md`, si se conserva, es una nota interna de Work; no contiene pedidos activos ni es un canal de encargos o actualizaciones de Codex. No recrear `ACTUALIZACIONES_CODEX.md`.
 - Conservar las fichas, identificadores y evidencias existentes. Distinguir implementación técnica, integración curricular y aceptación comprobada en Windows: las pruebas Android mantienen su alcance original y no acreditan Windows.
 
 ## Conservación y prioridad de migración
