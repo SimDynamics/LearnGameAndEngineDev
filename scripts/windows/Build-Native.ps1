@@ -44,7 +44,7 @@ $cleanArgument = if ($CleanFirst) { ' --clean-first' } else { '' }
 $targetArgument = if ($Target) { " --target $Target" } else { '' }
 $commands = @(
     'chcp 65001 >nul',
-    "call `"$vcvars`" x64 10.0.26100.0 -vcvars_ver=14.51.36231",
+    "call `"$vcvars`" x64 10.0.28000.0 -vcvars_ver=14.51.36231",
     "`"$cmake`" ${freshArgument}--preset $Preset -DLGAED_DEFAULT_PROFILE=$Profile",
     "`"$cmake`" --build --preset $Preset$cleanArgument$targetArgument"
 )

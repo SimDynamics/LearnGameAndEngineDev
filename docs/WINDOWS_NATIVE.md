@@ -23,7 +23,7 @@ recompilar; sirve para comprobar un enlace real, sin modificar el otro checkout.
 
 Herramientas seleccionadas y comprobadas: paquete MSVC v145 `14.51.36231`
 (compilador instalado `19.51.36260.0`), host/destino x64, Windows SDK y UCRT
-`10.0.26100.0`, CMake `4.3.1-msvc1` y Ninja `1.13.2`. Se utilizan las herramientas
+`10.0.28000.0`, CMake `4.3.1-msvc1` y Ninja `1.13.2`. Se utilizan las herramientas
 de Visual Studio 2026 instaladas; no se descargan otras. Una selección incompatible
 falla con un diagnóstico, en lugar de cambiar silenciosamente de herramientas.
 

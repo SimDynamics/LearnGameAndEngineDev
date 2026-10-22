@@ -5,7 +5,7 @@ if(NOT CMAKE_HOST_WIN32)
 endif()
 
 set(_lgaed_toolset "14.51.36231")
-set(_lgaed_sdk "10.0.26100.0")
+set(_lgaed_sdk "10.0.28000.0")
 foreach(_lgaed_env VCToolsInstallDir VSINSTALLDIR WindowsSdkDir)
     if(NOT DEFINED ENV{${_lgaed_env}} OR "$ENV{${_lgaed_env}}" STREQUAL "")
         message(FATAL_ERROR "Missing ${_lgaed_env}. Run scripts/windows/Build-Native.ps1 or select the pinned MSVC environment in Visual Studio.")
