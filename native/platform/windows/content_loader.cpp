@@ -37,6 +37,52 @@ std::string text(const JsonObject& value, std::string_view name) {
 std::string optional_text(const JsonObject& value, std::string_view name) {
     return value.HasKey(key(name)) ? text(value, name) : std::string{};
 }
+bool narration_space(wchar_t value) {
+    // Kotlin Char.isWhitespace also includes Unicode space characters. This is
+    // metadata normalization, independent of the Windows/device locale.
+    return (value >= L'\t' && value <= L'\r') || (value >= 0x1c && value <= 0x20) ||
+        value == 0xa0 || value == 0x1680 || (value >= 0x2000 && value <= 0x200a) ||
+        value == 0x2028 || value == 0x2029 || value == 0x202f || value == 0x205f || value == 0x3000;
+}
+std::optional<std::string> narration_tag(const winrt::hstring& authored) {
+    std::wstring_view tag(authored.c_str(), authored.size());
+    while (!tag.empty() && narration_space(tag.front())) tag.remove_prefix(1);
+    while (!tag.empty() && narration_space(tag.back())) tag.remove_suffix(1);
+    if (tag.empty()) return std::nullopt;
+    std::wstring normalized(tag);
+    for (auto& character : normalized) {
+        if (character >= L'A' && character <= L'Z') character = static_cast<wchar_t>(character + L'a' - L'A');
+        else if (character == L'\u00d1') character = L'\u00f1';
+        else if (character == L'\u00c7') character = L'\u00e7';
+        else if (character == L'_') character = L'-';
+    }
+    // Same aliases and order as Android NarrationLanguage.fromTag. In particular
+    // only en-GB-* and the exact en-UK alias select the British pronunciation.
+    if (normalized == L"es" || normalized == L"espa\u00f1ol" || normalized == L"spanish" || normalized.starts_with(L"es-")) return "es";
+    if (normalized == L"en-gb" || normalized == L"en-uk" || normalized.starts_with(L"en-gb-")) return "en-GB";
+    if (normalized == L"en" || normalized == L"english" || normalized.starts_with(L"en-")) return "en-US";
+    if (normalized == L"fr" || normalized == L"fran\u00e7ais" || normalized == L"french" || normalized.starts_with(L"fr-")) return "fr";
+    return std::nullopt;
+}
+std::optional<std::string> direct_narration_language(const JsonObject& source) {
+    for (const auto name : {L"language", L"locale", L"lang", L"idioma"}) {
+        if (!source.HasKey(name)) continue;
+        const auto value = source.GetNamedValue(name);
+        // Android optString treats other JSON values as unrecognized aliases;
+        // they must not hide a valid subsequent key or lower-priority source.
+        if (value.ValueType() == JsonValueType::String)
+            if (auto language = narration_tag(value.GetString())) return language;
+    }
+    return std::nullopt;
+}
+std::optional<std::string> explicit_narration_language(const JsonObject& source) {
+    if (auto language = direct_narration_language(source)) return language;
+    if (source.HasKey(L"metadata")) {
+        const auto metadata = source.GetNamedValue(L"metadata");
+        if (metadata.ValueType() == JsonValueType::Object) return direct_narration_language(metadata.GetObject());
+    }
+    return std::nullopt;
+}
 JsonArray array(const JsonObject& value, std::string_view name) { return value.GetNamedArray(key(name)); }
 std::size_t integer(const IJsonValue& value, std::size_t maximum = 1000000) {
     require(value.ValueType() == JsonValueType::Number, "Expected an integer");
@@ -188,6 +234,70 @@ void require_integer_json_numbers(std::string_view source) {
         }
     }
 }
+// Windows.Data.Json validates the document, but its Stringify round-trips
+// decimals through double. Slice the already validated UTF-8 source instead so
+// the shared mathematical backend receives the exact authored number tokens.
+class OriginalJson {
+public:
+    struct Slice { std::size_t begin = 0,end = 0; };
+    explicit OriginalJson(std::string_view source) : source_(source) {}
+    [[nodiscard]] Slice root() const { auto cursor = std::size_t{0}; space(cursor); const auto begin = cursor; return {begin,value(cursor)}; }
+    [[nodiscard]] std::string_view text(Slice item) const { return source_.substr(item.begin,item.end - item.begin); }
+    [[nodiscard]] Slice member(Slice object,std::string_view key_name) const {
+        auto cursor = object.begin; space(cursor); require(source_.at(cursor++) == '{',"Expected original JSON object");
+        std::optional<Slice> found;
+        for (;;) {
+            space(cursor); if (source_.at(cursor) == '}') break;
+            const auto key_start = cursor; const auto key_end = string_end(cursor);
+            const auto name = utf8(JsonValue::Parse(winrt::to_hstring(source_.substr(key_start,key_end - key_start))).GetString());
+            cursor = key_end; space(cursor); require(source_.at(cursor++) == ':',"Expected original JSON property"); space(cursor);
+            const auto begin = cursor; const auto end = value(cursor);
+            if (name == key_name) { require(!found,"Duplicate structural JSON property"); found = Slice{begin,end}; }
+            cursor = end; space(cursor); if (source_.at(cursor) == '}') break;
+            require(source_.at(cursor++) == ',',"Expected original JSON object separator");
+        }
+        require(found.has_value(),"Missing original JSON property"); return *found;
+    }
+    [[nodiscard]] std::vector<Slice> elements(Slice array_value) const {
+        auto cursor = array_value.begin; space(cursor); require(source_.at(cursor++) == '[',"Expected original JSON array");
+        std::vector<Slice> result;
+        for (;;) {
+            space(cursor); if (source_.at(cursor) == ']') break;
+            const auto begin = cursor; cursor = value(cursor); result.push_back({begin,cursor});
+            space(cursor); if (source_.at(cursor) == ']') break;
+            require(source_.at(cursor++) == ',',"Expected original JSON array separator");
+        }
+        return result;
+    }
+private:
+    std::string_view source_;
+    void space(std::size_t& cursor) const { while (cursor < source_.size() && std::string_view(" \t\r\n").find(source_[cursor]) != std::string_view::npos) ++cursor; }
+    std::size_t string_end(std::size_t cursor) const {
+        require(source_.at(cursor++) == '"',"Expected original JSON string");
+        while (cursor < source_.size()) {
+            const auto character = source_[cursor++];
+            if (character == '\\') { require(cursor < source_.size(),"Incomplete original JSON escape"); ++cursor; }
+            else if (character == '"') return cursor;
+        }
+        invalid("Incomplete original JSON string");
+    }
+    std::size_t value(std::size_t cursor) const {
+        if (source_.at(cursor) == '"') return string_end(cursor);
+        if (source_[cursor] == '{' || source_[cursor] == '[') {
+            unsigned depth = 0;
+            do {
+                const auto character = source_.at(cursor);
+                if (character == '"') { cursor = string_end(cursor); continue; }
+                if (character == '{' || character == '[') { ++depth; require(depth <= 64,"JSON nesting too deep"); }
+                else if (character == '}' || character == ']') --depth;
+                ++cursor;
+            } while (depth);
+            return cursor;
+        }
+        while (cursor < source_.size() && std::string_view(" \t\r\n,]}").find(source_[cursor]) == std::string_view::npos) ++cursor;
+        return cursor;
+    }
+};
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -303,13 +413,18 @@ OutputCheck read_output_check(const JsonObject& value) {
     }
     return result;
 }
-Block read_block(const JsonObject& value) {
-    Block result; result.raw_json = utf8(value.Stringify());
+Block read_block(const JsonObject& value,std::string_view original) {
+    Block result; result.raw_json = original;
     const auto type = text(value, "type");
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
         {"multiple_choice", BlockType::multiple_choice}, {"output_prediction", BlockType::output_prediction}, {"fill_code", BlockType::fill_code},
-        {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler}};
-    require(types.contains(type), "Unsupported block type: " + type); result.type = types.at(type);
+        {"order_code", BlockType::order_code}, {"cpp_compiler", BlockType::cpp_compiler},
+        {"inline_fill_code",BlockType::inline_fill_code}, {"drag_fill_code",BlockType::drag_fill_code}};
+    const std::set<std::string> mathematics{"math_puzzle","math_multiple_choice_single","math_multiple_choice_multi","math_numeric_input",
+        "math_multi_input","math_expression_input","math_structured_answer","math_equation_fill_blanks","math_ordering_drag","math_number_line",
+        "math_slider_interaction","math_matching_drag","math_coordinate_graph_builder","math_geometry_builder","math_rigid_angle_copy"};
+    require(types.contains(type) || mathematics.contains(type), "Unsupported block type: " + type);
+    result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
     result.id = optional_text(value, "id"); result.text = optional_text(value, "text"); result.question = optional_text(value, "question");
     result.code = optional_text(value, "code"); result.initial_code = optional_text(value, "initialCode"); result.language = optional_text(value, "language");
     result.explanation = optional_text(value, "explanation"); result.review_feedback = optional_text(value, "reviewFeedback");
@@ -326,7 +441,39 @@ Block read_block(const JsonObject& value) {
     } else if (result.type == BlockType::output_prediction || result.type == BlockType::fill_code) {
         result.answers = strings(array(value, "answers"), true, false);
         if (value.HasKey(L"outputComparison")) result.output_comparison = comparison(text(value, "outputComparison"));
-        if (value.HasKey(L"answerComparison")) invalid("Numeric fill comparison is outside the initial Windows lesson contract");
+        if (value.HasKey(L"answerComparison")) {
+            require(result.type == BlockType::fill_code && text(value,"answerComparison") == "cpp_decimal_literal_value","Invalid fill comparison profile");
+            result.answer_comparison = AnswerComparison::cpp_decimal_literal_value;
+            (void)evaluate_text_answer(result,result.answers.front());
+        }
+    } else if (result.type == BlockType::inline_fill_code || result.type == BlockType::drag_fill_code) {
+        result.code_template = text(value,"template");
+        std::size_t holes = 0, position = 0;
+        while ((position = result.code_template.find("[]",position)) != std::string::npos) { ++holes; position += 2; }
+        require(holes > 0,"A fill template needs at least one hole");
+        if (result.type == BlockType::inline_fill_code) {
+            result.answers = strings(array(value,"answers"),true,false);
+            require(result.answers.size() == holes,"Inline fill holes and canonical answers differ");
+            if (value.HasKey(L"answerAlternatives")) {
+                const auto groups = array(value,"answerAlternatives"); require(groups.Size() == holes,"Inline alternatives must belong to individual holes");
+                for (unsigned index = 0; index < groups.Size(); ++index) {
+                    auto accepted = strings(groups.GetAt(index).GetArray(),true,false);
+                    require(accepted.front() == result.answers[index],"Canonical inline answer must remain first");
+                    result.answer_alternatives.push_back(std::move(accepted));
+                }
+            }
+        } else {
+            result.choices = strings(array(value,"choices"),true,false);
+            std::set<std::size_t> used;
+            for (const auto& item : array(value,"correctOrder")) {
+                const auto index = integer(item);
+                require(index < result.choices.size() && used.insert(index).second,"A drag fill choice is invalid or reused"); result.correct_order.push_back(index);
+            }
+            require(result.correct_order.size() == holes,"Drag fill holes and answers differ");
+        }
+    } else if (result.type == BlockType::math_puzzle) {
+        result.math_type = type; result.prompt = value.HasKey(L"prompt") ? text(value,"prompt") : text(value,"question");
+        require(!result.prompt.empty(),"Math puzzle requires its visible prompt");
     } else if (result.type == BlockType::order_code) {
         result.fragments = strings(array(value, "fragments"), true);
         std::set<std::size_t> seen;
@@ -371,14 +518,26 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
     try {
         if (source.starts_with("\xEF\xBB\xBF")) source.remove_prefix(3);
         require(source.size() <= 32 * 1024 * 1024, "Lesson file too large");
-        require_integer_json_numbers(source);
         const auto root = JsonObject::Parse(winrt::to_hstring(source));
         Lesson lesson; lesson.id = text(root, "id"); lesson.title = text(root, "title"); lesson.locale = expected_locale;
+        lesson.narration_language = explicit_narration_language(root);
         require(!lesson.id.empty() && !lesson.title.empty(), "Lesson identity/title missing"); lesson.raw_json = source;
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
-        if (root.HasKey(L"stateLayout")) lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale);
-        for (const auto& value : pages) {
-            Page page; for (const auto& block : array(value.GetObject(), "blocks")) page.blocks.push_back(read_block(block.GetObject()));
+        if (root.HasKey(L"stateLayout")) {
+            require_integer_json_numbers(source);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale);
+        }
+        const OriginalJson original(source);
+        const auto original_pages = original.elements(original.member(original.root(),"pages"));
+        require(original_pages.size() == pages.Size(),"Original JSON page ownership mismatch");
+        for (unsigned p = 0; p < pages.Size(); ++p) {
+            const auto page_source = pages.GetAt(p).GetObject();
+            const auto blocks = array(page_source,"blocks");
+            const auto original_blocks = original.elements(original.member(original_pages[p],"blocks"));
+            require(original_blocks.size() == blocks.Size(),"Original JSON block ownership mismatch");
+            Page page; page.narration_language = explicit_narration_language(page_source);
+            if (!page.narration_language) page.narration_language = lesson.narration_language;
+            for (unsigned b = 0; b < blocks.Size(); ++b) page.blocks.push_back(read_block(blocks.GetAt(b).GetObject(),original.text(original_blocks[b])));
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);

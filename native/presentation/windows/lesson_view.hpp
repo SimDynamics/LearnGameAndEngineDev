@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <functional>
 #include <limits>
+#include <stop_token>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@ struct LessonPageState {
     std::size_t index = 0, count = 0;
     bool can_previous = false, can_next = false;
     std::string lesson_id, page_id, locale;
+    std::string narration_scope,narration_page_identity,narration_language;
 };
 struct LessonReadingRegion {
     std::string key, source_text;
@@ -29,6 +31,8 @@ struct LessonViewHooks {
     std::function<void(HWND)> back_to_catalog, content_changed, before_page_change, before_destroy;
     std::function<void(HWND,std::size_t,bool)> feedback_changed;
     std::function<void(HWND)> reader_requested, language_requested, attempts_requested, settings_requested;
+    std::function<void(HWND)> lesson_completed;
+    std::function<std::string(std::string_view,std::string_view,std::string_view,std::stop_token)> validate_math;
 };
 // Page actions share exactly the gates used by gestures and the native Pages
 // menu. These messages carry no fake/hidden navigation controls.

@@ -221,11 +221,26 @@ std::string quote_android_json(std::string_view text) {
 std::string response_identity(const Response& response, const curriculum::Block& block) {
     std::string canonical;
     switch (block.type) {
+    case curriculum::BlockType::math_puzzle: {
+        const auto source=response.raw_json.empty()?JsonObject():object(response.raw_json);
+        canonical=source.HasKey(L"responses")?utf8(source.GetNamedObject(L"responses").Stringify()):"{}";break;
+    }
     case curriculum::BlockType::multiple_choice: canonical = std::to_string(response.selected); break;
     case curriculum::BlockType::order_code:
         canonical = "[";
         for (auto item : response.order) { if (canonical.size() > 1) canonical += ','; canonical += std::to_string(item); }
         canonical += ']'; break;
+    case curriculum::BlockType::inline_fill_code:
+    case curriculum::BlockType::drag_fill_code: {
+        const auto source = response.raw_json.empty() ? JsonObject() : object(response.raw_json);
+        const auto name = block.type == curriculum::BlockType::inline_fill_code ? L"answers" : L"slots";
+        canonical = "[";
+        if (source.HasKey(name)) for (const auto& item : source.GetNamedArray(name)) {
+            if (canonical.size() > 1) canonical += ',';
+            canonical += block.type == curriculum::BlockType::inline_fill_code ? quote_android_json(utf8(item.GetString())) : std::to_string(json_integer(item.GetNumber()));
+        }
+        canonical += ']'; break;
+    }
     default: canonical = quote_android_json(response.answer); break;
     }
     return sha256(canonical);
@@ -453,7 +468,7 @@ void prepare_lesson_state(StateData& data, const curriculum::Lesson& lesson) try
 } catch (const winrt::hresult_error&) {
     throw std::runtime_error("Los metadatos del progreso no son compatibles; no se usan direcciones visibles.");
 }
-void validate_lesson_state(const StateData& data, const curriculum::Lesson& lesson, std::string_view route_id) {
+void validate_lesson_state(const StateData& data, const curriculum::Lesson& lesson, std::string_view route_id) try {
     auto metadata = data;
     prepare_lesson_state(metadata, lesson);
     (void)current_page(metadata, lesson);
@@ -464,7 +479,8 @@ void validate_lesson_state(const StateData& data, const curriculum::Lesson& less
             continue;
         }
         if (block.type != curriculum::BlockType::multiple_choice && block.type != curriculum::BlockType::order_code &&
-            block.type != curriculum::BlockType::output_prediction && block.type != curriculum::BlockType::fill_code) continue;
+            block.type != curriculum::BlockType::output_prediction && block.type != curriculum::BlockType::fill_code &&
+            block.type != curriculum::BlockType::inline_fill_code && block.type != curriculum::BlockType::drag_fill_code) continue;
         const auto response = get_response(data, curriculum::exercise_key(lesson, block));
         if (!response) continue;
         bool correct = false;
@@ -486,10 +502,34 @@ void validate_lesson_state(const StateData& data, const curriculum::Lesson& less
                 for (const auto index : response->order) order.push_back(static_cast<std::size_t>(index));
                 correct = curriculum::evaluate_order(block, order).correct;
             }
+        } else if (block.type == curriculum::BlockType::inline_fill_code || block.type == curriculum::BlockType::drag_fill_code) {
+            const auto raw = response->raw_json.empty() ? JsonObject() : object(response->raw_json);
+            const auto inline_fill = block.type == curriculum::BlockType::inline_fill_code;
+            const auto field = inline_fill ? L"answers" : L"slots";
+            const auto values = raw.HasKey(field) ? raw.GetNamedArray(field) : JsonArray{};
+            const auto expected_count = inline_fill ? block.answers.size() : block.correct_order.size();
+            if (values.Size() && values.Size() != expected_count)
+                throw std::runtime_error("La cantidad de huecos guardados no coincide con esta actividad; se conserva el origen.");
+            if (inline_fill) {
+                std::vector<std::string> answers;
+                for (const auto& item : values) answers.push_back(utf8(item.GetString()));
+                if (response->correct) correct = curriculum::evaluate_hole_answers(block,answers).correct;
+            } else {
+                std::vector<std::size_t> selected; std::set<std::int64_t> used;
+                for (const auto& item : values) {
+                    const auto slot = json_integer(item.GetNumber());
+                    if (slot < -1 || (slot >= 0 && (static_cast<std::uint64_t>(slot) >= block.choices.size() || !used.insert(slot).second)))
+                        throw std::runtime_error("Los huecos guardados contienen fichas ajenas o repetidas; se conserva el origen.");
+                    selected.push_back(slot < 0 ? std::numeric_limits<std::size_t>::max() : static_cast<std::size_t>(slot));
+                }
+                if (response->correct) correct = curriculum::evaluate_drag_answers(block,selected).correct;
+            }
         } else if (response->correct) correct = curriculum::evaluate_text_answer(block, response->answer).correct;
         if (response->correct && !correct)
             throw std::runtime_error("Una respuesta marcada correcta no es compatible con el contrato de esta actividad; sus datos no se han reemplazado.");
     }
+} catch (const winrt::hresult_error&) {
+    throw std::runtime_error("La respuesta guardada contiene huecos o tipos incompatibles; sus datos se conservan.");
 }
 void save_current_page(StateData& data, const curriculum::Lesson& lesson, std::size_t page) {
     prepare_lesson_state(data, lesson);

@@ -1,4 +1,5 @@
 #include "presentation/windows/editing_bar.hpp"
+#include "core/lesson_state.hpp"
 
 #include <commctrl.h>
 #include <richedit.h>
@@ -54,7 +55,7 @@ struct Fixture {
             if (control == answer) return answer_editor.get();
             return nullptr;
         },[&] { ++changes; });
-        bar->place(12,325,680,48);
+        bar->place(12,310,680,bar->logical_height());
         ShowWindow(host,SW_SHOWNOACTIVATE);
     }
     ~Fixture() {
@@ -70,10 +71,12 @@ struct Fixture {
         CHARRANGE range{begin,end}; SendMessageW(control,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
     }
     HWND shortcut(std::wstring_view label) const {
-        for (auto button = GetWindow(bar->window(),GW_CHILD); button; button = GetWindow(button,GW_HWNDNEXT)) {
-            wchar_t text[64]{}; GetWindowTextW(button,text,64);
-            if (label == text) return button;
-        }
+        struct Search{std::wstring_view label;HWND result=nullptr;} search{label};
+        EnumChildWindows(bar->window(),[](HWND item,LPARAM context)->BOOL{auto& current=*reinterpret_cast<Search*>(context);
+            wchar_t type[32]{};GetClassNameW(item,type,32);if(_wcsicmp(type,L"BUTTON")!=0)return TRUE;
+            std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(item))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(item,text.data(),static_cast<int>(text.size()))));
+            if(current.label==text){current.result=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));
+        if(search.result)return search.result;
         throw std::runtime_error("Missing contextual shortcut");
     }
     void click(std::wstring_view label) {
@@ -140,7 +143,7 @@ int main() {
         for (const auto control : {field.source,field.answer}) {
             auto& adapter = control == field.source ? field.source_editor : field.answer_editor;
             adapter->reset({"abc",{},0,3}); field.focus(control);
-            field.click(L"( )");
+            field.click(L"(");
             auto document = adapter->document();
             require(document.text == "(abc)" && document.selection_start == 1 && document.selection_end == 4,"Wrap the exact selected source once");
             require(GetFocus() == control,"Restore the original assisted field");
@@ -148,7 +151,7 @@ int main() {
             require(document.text == "abc" && document.selection_start == 0 && document.selection_end == 3,"Undo restores selection and source");
             field.click(L"Rehacer"); require(adapter->document().text == "(abc)","Redo uses the original editor history");
             for (const auto& [label,expected] : {
-                std::pair{L"{ }","{}"},std::pair{L"[ ]","[]"},std::pair{L"\" \"","\"\""},std::pair{L"' '","''"}}) {
+                std::pair{L"{","{}"},std::pair{L"[","[]"},std::pair{L"\"","\"\""},std::pair{L"'","''"}}) {
                 adapter->reset({}); field.focus(control); field.click(label); document = adapter->document();
                 require(document.text == expected && document.selection_start == 1 && document.selection_end == 1,"Use automatic pairs and place caret inside");
             }
@@ -193,6 +196,43 @@ int main() {
         SetFocus(field.input);
         require(pump_until([&] { return !field.bar->visible(); }),"Timer hides when focus enters stdin");
         require(GetFocus() == field.input && field.input_editor->document().text.empty(),"stdin contents and focus remain intact");
+    });
+    test("Original 44 defaults and personal JSON arrays retain exact order and content",[] {
+        lgaed::state::StateData data;const auto defaults=lgaed::presentation::parse_state_shortcuts(data);
+        require(defaults.size()==44&&defaults.front()=="("&&defaults.back()==".*"&&defaults[25]=="::"&&defaults[26]=="<<"&&defaults[41]=="...",
+            "Native defaults lost the original Android technical shortcut list");
+        data.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"]=std::string(R"json([" std::cout ","<<","<<","", ")"])json");const auto before=data;
+        require(lgaed::presentation::parse_state_shortcuts(data)==std::vector<std::string>({" std::cout ","<<","<<","",")"})&&data==before,
+            "Personal shortcuts were trimmed, deduplicated, extended or persisted while being read");
+        data.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"]=std::string("[]");
+        require(lgaed::presentation::parse_state_shortcuts(data).empty(),"An intentional empty personal list was replaced by defaults");
+        data.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"]=std::string("{bad JSON");
+        require(lgaed::presentation::parse_state_shortcuts(data)==defaults,"A malformed stored array did not use the existing default policy");
+    });
+    test("Shortcut viewport scrolls naturally while TAB Undo and Redo stay fixed",[] {
+        Fixture field;field.focus(field.source);field.bar->place(12,310,400,field.bar->logical_height());
+        const auto first=field.shortcut(L"("),last=field.shortcut(L".*"),tab=field.shortcut(L"TAB"),viewport=GetParent(first);
+        RECT first_before{},tab_before{},last_after{},viewport_area{};GetWindowRect(first,&first_before);GetWindowRect(tab,&tab_before);
+        SCROLLINFO scroll{sizeof(scroll),SIF_RANGE|SIF_PAGE|SIF_POS};require(GetScrollInfo(viewport,SB_HORZ,&scroll)&&scroll.nPage>0&&scroll.nMax>=static_cast<int>(scroll.nPage),
+            "The configured list has no real horizontal scrolling range");
+        require(first_before.right-first_before.left>=MulDiv(36,static_cast<int>(GetDpiForWindow(viewport)),96),"All 44 shortcuts were compressed into tiny buttons");
+        SendMessageW(viewport,WM_HSCROLL,SB_RIGHT,0);GetScrollInfo(viewport,SB_HORZ,&scroll);GetWindowRect(last,&last_after);MapWindowPoints(nullptr,viewport,reinterpret_cast<POINT*>(&last_after),2);GetClientRect(viewport,&viewport_area);
+        RECT tab_after{};GetWindowRect(tab,&tab_after);
+        require(scroll.nPos>0&&last_after.left>=0&&last_after.right<=viewport_area.right&&EqualRect(&tab_before,&tab_after),
+            "Horizontal scrolling did not expose the final shortcut independently of fixed controls");
+        require(field.source_editor->document().text.empty()&&GetFocus()==field.source,"Scrolling the shortcut list edited code or moved its focus");
+        field.bar->set_shortcuts({});require(field.shortcut(L"TAB")&&field.shortcut(L"Deshacer")&&field.shortcut(L"Rehacer"),"An empty personal list removed fixed editing actions");
+    });
+    test("Multi-character shortcuts are one transaction and single-line macros never submit",[] {
+        Fixture field;field.bar->set_shortcuts({"std::cout","<<","(\n)"});field.answer_editor->reset({"abc",{},0,3});field.focus(field.answer);
+        field.click(L"std::cout");require(field.answer_editor->document().text=="std::cout"&&field.submitted==0,"A configured token was split, changed or submitted");
+        field.click(L"Deshacer");auto original=field.answer_editor->document();require(original.text=="abc"&&original.selection_start==0&&original.selection_end==3,"One Undo did not restore the entire replaced selection");
+        field.click(L"Deshacer");require(field.answer_editor->document().text=="abc","A multi-character shortcut introduced intermediate history items");
+        field.click(L"Rehacer");require(field.answer_editor->document().text=="std::cout","Redo did not restore one full configured token");
+        const auto before=field.answer_editor->document();field.click(L"(\n)");const auto rejected=field.answer_editor->document();
+        require(before.text==rejected.text&&before.selection_start==rejected.selection_start&&before.selection_end==rejected.selection_end&&field.submitted==0,
+            "A shortcut inserted a forbidden line break or invoked single-line Enter checking");
+        field.source_editor->reset({});field.focus(field.source);field.click(L"(\n)");require(field.source_editor->document().text=="(\n)","Multiline code rejected a deliberate multiline snippet");
     });
     UnregisterClassW(type.lpszClassName,type.hInstance); FreeLibrary(rich_edit);
     std::cout << passed << " contextual editing groups passed; " << failed << " failed\n";

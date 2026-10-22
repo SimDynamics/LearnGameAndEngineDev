@@ -1,11 +1,13 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "core/lesson_state.hpp"
 
 #include <richedit.h>
 #include <algorithm>
 #include <array>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 void check(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
@@ -30,6 +32,40 @@ int main() {
         Window editor{CreateWindowExW(0, MSFTEDIT_CLASS, L"", WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
             0, 0, 500, 300, parent.value, nullptr, GetModuleHandleW(nullptr), nullptr)};
         check(editor.value != nullptr, "Cannot create real RichEdit");
+        {
+            const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"prosa",0,"bold_italic"}}};
+            set_rich_text(editor.value,"Una prosa con `std::cout`.",emphasis);
+            check(character(editor.value,0).yHeight==360
+                && std::wstring(character(editor.value,0).szFaceName)==L"Segoe UI",
+                "Lesson prose does not use the Android-derived native 18-point base");
+            const auto emphasized=character(editor.value,4),technical=character(editor.value,14);
+            check(emphasized.yHeight==360&&(emphasized.dwEffects&CFE_BOLD)&&(emphasized.dwEffects&CFE_ITALIC)
+                && technical.yHeight==360&&std::wstring(technical.szFaceName)==L"Consolas",
+                "Readable body typography flattened emphasis or changed the inline code face/size");
+            set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::heading);
+            check(character(editor.value,0).yHeight==460&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "Headings and questions lost the 23-point bold hierarchy");
+            set_rich_text(editor.value,"Una pregunta matemática",{},false,RichTextRole::prompt);
+            check(character(editor.value,0).yHeight==360&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "Mathematical prompts must be bold without increasing their 18-point body size");
+            set_rich_text(editor.value,"Título de lección",{},false,RichTextRole::lesson_title);
+            check(character(editor.value,0).yHeight==640&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "The 32-point lesson title was flattened into an ordinary heading");
+            set_rich_text(editor.value,"std::cout << 2;",{},true);
+            check(character(editor.value,0).yHeight==360&&std::wstring(character(editor.value,0).szFaceName)==L"Consolas",
+                "Displayed code is still smaller than the original source editor");
+            SendMessageW(editor.value,EM_SETZOOM,150,100);
+            const int dpi=static_cast<int>(GetDpiForWindow(editor.value));
+            POINTL text_at{},space_at{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&text_at),1);
+            SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_at),9);
+            CHARRANGE preserved{2,4};SendMessageW(editor.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&preserved));
+            check(rich_text_hit_test(editor.value,{text_at.x+1,text_at.y+MulDiv(27,dpi,96)})
+                &&!rich_text_hit_test(editor.value,{space_at.x+1,space_at.y+MulDiv(27,dpi,96)}),
+                "Actual font/zoom geometry confuses enlarged glyphs or real whitespace with a fixed-height gesture area");
+            CHARRANGE after_hit{};SendMessageW(editor.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after_hit));
+            check(after_hit.cpMin==preserved.cpMin&&after_hit.cpMax==preserved.cpMax,"Pure text hit testing changed the source selection");
+            SendMessageW(editor.value,EM_SETZOOM,0,0);
+        }
         const std::string original = "#include <iostream>\n\nint main() {\n\tstd::cout << \"área  A\";  \n}\n";
         set_edit_text(editor.value, original);
         check(edit_text(editor.value) == original, "RichEdit did not preserve exact indentation, spaces or final LF");
@@ -56,6 +92,11 @@ int main() {
         check(SendMessageW(editor.value, EM_REDO, 0, 0) != 0 && edit_text(editor.value) == original + 'X', "Syntax formatting broke redo history");
         set_rich_text(editor.value, "El `std::cout` conserva su texto.", {}, false);
         check(edit_text(editor.value) == "El std::cout conserva su texto.", "Inline code delimiters were displayed or text was lost");
+        ShowWindow(editor.value,SW_HIDE);
+        style_cpp(editor.value);
+        check(!(GetWindowLongPtrW(editor.value,GWL_STYLE) & WS_VISIBLE),"Syntax formatting revealed a hidden editor");
+        set_rich_text(editor.value,"Un párrafo oculto.");
+        check(!(GetWindowLongPtrW(editor.value,GWL_STYLE) & WS_VISIBLE),"Rich text formatting revealed a hidden paragraph");
         check(utf8(wide("Acentos áéíóú y carácter 𐐀")) == "Acentos áéíóú y carácter 𐐀", "UTF-8/UTF-16 conversion lost Unicode");
         {
             const auto colors = reader_theme::palette();
@@ -69,7 +110,7 @@ int main() {
             } else {
                 check(colors.canvas == RGB(30,31,33) && colors.header == RGB(37,40,45)
                     && colors.card == RGB(40,41,45) && colors.field == RGB(38,41,46)
-                    && colors.text == RGB(222,223,225) && colors.accent == RGB(77,211,224),
+                    && colors.text == RGB(222,223,225) && colors.accent == RGB(89,240,252),
                     "Reader theme diverged from the Android reference presentation");
             }
             set_edit_text(editor.value, original);
@@ -210,7 +251,79 @@ int main() {
             check(std::wstring(caption) == L"Una opción"
                 && (GetWindowLongPtrW(radio.value,GWL_STYLE) & BS_TYPEMASK) == BS_AUTORADIOBUTTON,
                 "Radio drawing changed the original caption or native control type");
+            Window checkbox{CreateWindowExW(0,L"BUTTON",L"Activar lectura",WS_CHILD | WS_TABSTOP | BS_AUTOCHECKBOX | BS_MULTILINE,
+                0,80,130,36,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(checkbox.value != nullptr,"Cannot create a real automatic checkbox");
+            const auto checkbox_dialog=SendMessageW(checkbox.value,WM_GETDLGCODE,0,0);reader_theme::apply(checkbox.value,reader_theme::Surface::card);
+            SendMessageW(checkbox.value,BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(checkbox.value,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);
+            check(GetPixel(memory,glyph_center_x,glyph_center_y)==colors.card&&glyph_pixels(colors.muted)>=24,
+                "The native checkbox has no empty, clearly drawn square glyph");
+            SendMessageW(checkbox.value,BM_CLICK,0,0);SendMessageW(checkbox.value,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);
+            check(SendMessageW(checkbox.value,BM_GETCHECK,0,0)==BST_CHECKED&&glyph_pixels(colors.accent)>=32,
+                "The checkbox lost native automatic state or its visible checked square");
+            check((GetWindowLongPtrW(checkbox.value,GWL_STYLE)&BS_TYPEMASK)==BS_AUTOCHECKBOX
+                && SendMessageW(checkbox.value,WM_GETDLGCODE,0,0)==checkbox_dialog,"Checkbox painting changed its native type or keyboard dialog behavior");
+            GetWindowTextW(checkbox.value,caption,64);check(std::wstring(caption)==L"Activar lectura","Checkbox painting replaced its accessible native caption");
             SelectObject(memory,previous_bitmap); DeleteObject(bitmap); DeleteDC(memory); ReleaseDC(parent.value,screen);
+        }
+        {
+            lgaed::state::StateData preferences;
+            check(reader_theme::appearance_accent(preferences) == RGB(89,240,252)
+                && reader_theme::appearance_accent(preferences,"programming") == RGB(228,50,72)
+                && reader_theme::appearance_accent(preferences,"math_physics") == RGB(108,209,92),
+                "Appearance defaults differ from the original Android repository");
+            auto& appearance = preferences.preferences["appearance_settings"];
+            appearance["accent_red"] = std::int64_t{10}; appearance["accent_green"] = std::int64_t{20}; appearance["accent_blue"] = std::int64_t{30};
+            appearance["route_accent_green_programming"] = std::int64_t{88};
+            const auto unchanged = preferences;
+            check(reader_theme::appearance_accent(preferences) == RGB(10,20,30)
+                && reader_theme::appearance_accent(preferences,"programming") == RGB(228,88,72)
+                && reader_theme::appearance_accent(preferences,"math_physics") == RGB(108,209,92)
+                && reader_theme::appearance_accent(preferences,"other") == RGB(10,20,30) && preferences == unchanged,
+                "Reading local appearance lost original per-component overrides, changed another route or mutated preferences");
+            Window branch{CreateWindowExW(0,L"STATIC",L"Scoped theme QA",WS_CHILD,0,0,500,200,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            Window formula{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD | ES_MULTILINE,0,0,450,160,branch.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            Window other{CreateWindowExW(0,L"STATIC",L"Unrelated theme QA",WS_OVERLAPPEDWINDOW,0,0,400,200,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(branch.value && formula.value && other.value,"Cannot create isolated per-window theme controls");
+            reader_theme::apply(formula.value,reader_theme::Surface::card);
+            const std::string source="Negrita con `std::cout` y 6 × 100 = 600.";
+            const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"Negrita",0,"bold_italic"}}};
+            set_rich_text(formula.value,source,emphasis); const auto displayed = edit_text(formula.value);
+            std::vector<CHARFORMAT2W> original_ink;
+            for (std::size_t index=0;index<wide(displayed).size();++index) original_ink.push_back(character(formula.value,static_cast<LONG>(index)));
+            const auto events=SendMessageW(formula.value,EM_GETEVENTMASK,0,0),original_modified=SendMessageW(formula.value,EM_GETMODIFY,0,0);
+            reader_theme::set_accent(parent.value,reader_theme::appearance_accent(preferences,"programming"));
+            reader_theme::set_accent(branch.value,reader_theme::appearance_accent(preferences,"math_physics"));
+            const auto system = reader_theme::palette();
+            check(reader_theme::palette(editor.value).accent == (system.high_contrast ? system.accent : RGB(228,88,72))
+                && reader_theme::palette(formula.value).accent == (system.high_contrast ? system.accent : RGB(108,209,92))
+                && reader_theme::palette(other.value).accent == system.accent && reader_theme::palette().accent == system.accent,
+                "A local route accent leaked globally, ignored its nearest parent or replaced high-contrast system colors");
+            reader_theme::set_accent(branch.value,RGB(0,0,0));
+            check(reader_theme::palette(formula.value).accent == (system.high_contrast ? system.accent : RGB(0,0,0)),"A valid black accent was confused with an absent property");
+            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):system.text),"A black primary accent chose an unreadable dark foreground");
+            for(const auto surface:{system.canvas,system.header,system.card,system.field})
+                check(reader_theme::accent_ink(formula.value,surface)==system.text,"A black accent disappeared as icon/text ink on a real themed surface");
+            check(reader_theme::palette(formula.value).accent==(system.high_contrast?system.accent:RGB(0,0,0))&&preferences==unchanged,
+                "Contrast-safe ink rewrote a valid configured RGB or stored preference");
+            for(const auto normal:{RGB(89,240,252),RGB(228,50,72),RGB(108,209,92)}){
+                reader_theme::set_accent(branch.value,normal);
+                for(const auto surface:{system.canvas,system.header,system.card,system.field})
+                    check(reader_theme::accent_ink(formula.value,surface)==(system.high_contrast?GetSysColor(COLOR_WINDOWTEXT):normal),
+                        "Contrast-safe accent ink changed an original Android accent or ignored actual system high contrast");
+            }
+            reader_theme::set_accent(branch.value,RGB(255,255,255));
+            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):system.canvas),"A white primary accent chose an unreadable light foreground");
+            reader_theme::set_accent(branch.value,std::nullopt);
+            check(reader_theme::palette(formula.value).accent == (system.high_contrast ? system.accent : RGB(228,88,72)),"Removing a local accent did not restore parent inheritance");
+            for (std::size_t index=0;index<original_ink.size();++index) {
+                const auto current_format=character(formula.value,static_cast<LONG>(index));const auto& original_format=original_ink[index];
+                check(original_format.crTextColor == current_format.crTextColor && original_format.dwEffects == current_format.dwEffects && original_format.yHeight == current_format.yHeight
+                    && std::wstring_view(original_format.szFaceName) == current_format.szFaceName,"Changing a route accent recolored syntax/formulas or altered an original emphasis span");
+            }
+            check(edit_text(formula.value) == displayed && events == SendMessageW(formula.value,EM_GETEVENTMASK,0,0)
+                && original_modified == SendMessageW(formula.value,EM_GETMODIFY,0,0),"Local appearance changed original text, edit events or modified state");
+            reader_theme::set_accent(parent.value,std::nullopt);
         }
         std::cout << "Real RichEdit: exact source/LF, RTF safety, selection/Undo/Redo, inline spans, local Android theme and native contrast/buttons: PASS\n";
     } catch (const std::exception& error) {

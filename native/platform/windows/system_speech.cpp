@@ -14,7 +14,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <optional>
 #include <set>
@@ -66,7 +66,9 @@ std::string framing(const NarrationSegment& segment,std::string_view language,co
     }
     return result;
 }
-struct Wave { double duration = 0; std::string hash; };
+struct Boundary { std::size_t start = 0,end = 0; double time = 0; };
+std::vector<NarrationTiming> project(const NarrationSegment&,std::string_view,const std::vector<Boundary>&,double);
+struct Wave { double duration = 0; std::string hash; std::vector<Boundary> words; };
 Wave wave(const std::filesystem::path& file) {
     const auto bytes = state::read_bytes(file,128 * 1024 * 1024);
     const auto word = [&](std::size_t start) -> std::uint32_t { require(start + 4 <= bytes.size(),"WAV SAPI incompleto."); return
@@ -74,7 +76,7 @@ Wave wave(const std::filesystem::path& file) {
         (static_cast<std::uint32_t>(bytes[start + 2]) << 16) | (static_cast<std::uint32_t>(bytes[start + 3]) << 24); };
     const auto marker = [&](std::size_t start,std::string_view name) { return start + name.size() <= bytes.size() && std::equal(name.begin(),name.end(),bytes.begin() + static_cast<std::ptrdiff_t>(start)); };
     require(bytes.size() >= 44 && marker(0,"RIFF") && marker(8,"WAVE") && word(4) + 8ULL == bytes.size(),"SAPI no produjo un archivo WAV íntegro.");
-    bool format = false; std::size_t samples = 0;
+    bool format = false; std::size_t samples = 0; std::vector<Boundary> words;
     for (std::size_t offset = 12; offset + 8 <= bytes.size();) {
         const auto length = word(offset + 4); require(length <= bytes.size() - offset - 8,"El WAV contiene un bloque incompleto.");
         if (marker(offset,"fmt ")) {
@@ -82,9 +84,25 @@ Wave wave(const std::filesystem::path& file) {
                 word(offset + 12) == 24000 && word(offset + 16) == 48000 && bytes[offset + 20] == 2 && bytes[offset + 21] == 0 &&
                 bytes[offset + 22] == 16 && bytes[offset + 23] == 0,"La voz no respetó PCM de 24 kHz, mono y 16 bits."); format = true;
         } else if (marker(offset,"data")) { require(length % 2 == 0,"Datos WAV incompletos."); samples += length / 2; }
+        else if (marker(offset,"EVNT")) {
+            // SAPI file output serializes the requested events instead of
+            // notifying the voice. The WAV chunk uses the SDK's fixed-width
+            // SPSERIALIZEDEVENT, including on a 64-bit host.
+            static_assert(sizeof(SPSERIALIZEDEVENT) == 24);
+            require(length % sizeof(SPSERIALIZEDEVENT) == 0,"Eventos WAV SAPI incompletos.");
+            for (std::size_t position = 0; position < length; position += sizeof(SPSERIALIZEDEVENT)) {
+                SPSERIALIZEDEVENT serialized{}; std::memcpy(&serialized,bytes.data() + offset + 8 + position,sizeof(serialized));
+                require(serialized.elParamType == SPET_LPARAM_IS_UNDEFINED,"El WAV contiene eventos no solicitados.");
+                CSpEvent event; checked(event.Deserialize(&serialized,nullptr,sizeof(serialized)),"No se pudo recuperar un límite de palabra SAPI.");
+                if (event.eEventId == SPEI_WORD_BOUNDARY) {
+                    const auto start = static_cast<std::size_t>(event.InputWordPos()), count = static_cast<std::size_t>(event.InputWordLen());
+                    words.push_back({start,start + count,static_cast<double>(event.ullAudioStreamOffset) / 48});
+                }
+            }
+        }
         offset += 8 + static_cast<std::size_t>(length) + length % 2;
     }
-    require(format && samples > 0,"La voz no produjo muestras de audio."); return {static_cast<double>(samples) / 24,state::sha256(bytes)};
+    require(format && samples > 0,"La voz no produjo muestras de audio."); return {static_cast<double>(samples) / 24,state::sha256(bytes),std::move(words)};
 }
 void write_metadata(const std::filesystem::path& path,const std::string& text) {
     const auto handle = CreateFileW(state::native_io_path(path).c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_FLAG_WRITE_THROUGH,nullptr);
@@ -110,14 +128,16 @@ NarrationAudio reuse(const std::filesystem::path& directory,std::string_view key
             "La alineación SAPI guardada no es válida; se conserva sin reemplazar.");
         result.timings.push_back({static_cast<std::size_t>(from),static_cast<std::size_t>(to),start,end}); previous_time = start; previous_start = static_cast<std::size_t>(from);
     }
+    // An earlier compatible WAV may already contain the real event chunk but
+    // have an empty sidecar. Recover its alignment without touching the audio.
+    if (result.timings.empty() && !actual.words.empty()) result.timings = project(segment,spoken,actual.words,actual.duration);
     return result;
 }
-struct Boundary { std::size_t start = 0,end = 0; double time = 0; };
 std::vector<NarrationTiming> project(const NarrationSegment& segment,std::string_view spoken,const std::vector<Boundary>& boundaries,double duration) {
     std::vector<NarrationTiming> result; const bool identity = spoken == segment.text && segment.spoken_ranges.empty();
     for (std::size_t index = 0; index < boundaries.size(); ++index) {
         const auto& word = boundaries[index]; const auto end_time = index + 1 < boundaries.size() ? boundaries[index + 1].time : duration;
-        if (end_time <= word.time || word.time < 0 || end_time > duration + .1) continue;
+        if (word.start >= word.end || word.end > utf16_size(spoken) || end_time <= word.time || word.time < 0 || end_time > duration + .1) continue;
         std::optional<SpeechRange> owner;
         if (identity) owner = SpeechRange{word.start,word.end};
         else for (std::size_t range = 0; range < segment.spoken_ranges.size(); ++range) {
@@ -136,9 +156,10 @@ bool system_voice_matches(std::string_view voice,std::string_view request) {
     const auto actual = normalized(voice), wanted = normalized(request);
     return !wanted.empty() && (actual == wanted || (wanted.find('-') == wanted.npos && actual.starts_with(wanted + '-')));
 }
-std::vector<SystemVoice> system_voices() { ensure_winrt_apartment(); return voices(); }
+std::vector<SystemVoice> system_voices() try { ensure_winrt_apartment(); return voices(); }
+catch (const winrt::hresult_error& error) { throw std::runtime_error("Voces del sistema: " + winrt::to_string(error.message())); }
 NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::string_view language,std::string_view voice_id,
-    const std::filesystem::path& output_directory,std::stop_token stop) {
+    const std::filesystem::path& output_directory,std::stop_token stop) try {
     ensure_winrt_apartment(); cancelled(stop);
     const auto spoken = segment.spoken.empty() ? segment.text : segment.spoken;
     const auto speech = winrt::to_hstring(spoken); const auto source_length = utf16_size(segment.text);
@@ -165,9 +186,14 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         checked(voice->SetVoice(token.Get()),"No se pudo seleccionar la voz del sistema.");
         ComPtr<ISpStream> stream; checked(CoCreateInstance(CLSID_SpStream,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(stream.GetAddressOf())),"No se pudo preparar el WAV del sistema.");
         struct ReleaseSpeech {
-            ISpVoice* voice; ISpStream* stream;
-            ~ReleaseSpeech() { if (voice) (void)voice->Speak(nullptr,SPF_PURGEBEFORESPEAK,nullptr); if (stream) (void)stream->Close(); }
-        } release{voice.Get(),stream.Get()};
+            ComPtr<ISpVoice>& voice; ComPtr<ISpStream>& stream;
+            ~ReleaseSpeech() {
+                if (voice) (void)voice->Speak(nullptr,SPF_PURGEBEFORESPEAK,nullptr);
+                // The output stream is still owned by SpVoice until release.
+                // Closing it first can wait on that same voice during cancel.
+                voice.Reset(); if (stream) (void)stream->Close(); stream.Reset();
+            }
+        } release{voice,stream};
         WAVEFORMATEX format{WAVE_FORMAT_PCM,1,24000,48000,2,16,0};
         const auto interest = SPFEI(SPEI_WORD_BOUNDARY) | SPFEI(SPEI_END_INPUT_STREAM);
         checked(stream->BindToFile(state::native_io_path(pending / "audio.wav").c_str(),SPFM_CREATE_ALWAYS,&SPDFID_WaveFormatEx,&format,interest),"No se pudo abrir la grabación del sistema.");
@@ -178,7 +204,7 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         std::vector<Boundary> boundaries; const auto deadline = std::chrono::steady_clock::now() + std::chrono::minutes(3);
         for (;;) {
             if (stop.stop_requested() || std::chrono::steady_clock::now() >= deadline) {
-                (void)voice->Speak(nullptr,SPF_PURGEBEFORESPEAK,nullptr); (void)stream->Close(); cancelled(stop);
+                cancelled(stop);
                 throw std::runtime_error("La voz del sistema superó el tiempo de síntesis.");
             }
             const auto done = voice->WaitUntilDone(20);
@@ -189,7 +215,6 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
                     // position=lParam, length=wParam (some old web tables invert them).
                     const auto start = static_cast<std::size_t>(event.InputWordPos()), length = static_cast<std::size_t>(event.InputWordLen());
                     const auto milliseconds = static_cast<double>(event.ullAudioStreamOffset) / 48;
-                    std::fprintf(stderr,"SAPI diagnostic boundary: %zu..%zu, byte offset %llu, time %.3f ms\n",start,start + length,event.ullAudioStreamOffset,milliseconds);
                     if (length && start < speech.size() && length <= speech.size() - start &&
                         (boundaries.empty() || (start >= boundaries.back().start && milliseconds >= boundaries.back().time)))
                         boundaries.push_back({start,start + length,milliseconds});
@@ -199,10 +224,10 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         }
         // Release the engine, not SetOutput(nullptr), which would select the
         // machine's default speaker and needlessly require an audio device.
-        release.voice = nullptr; voice.Reset(); checked(stream->Close(),"No se pudo cerrar la grabación del sistema.");
-        release.stream = nullptr; stream.Reset(); token.Reset(); cancelled(stop);
-        const auto actual = wave(pending / "audio.wav"); const auto timings = project(segment,spoken,boundaries,actual.duration);
-        std::fprintf(stderr,"SAPI diagnostic completed: %zu boundaries, %zu projected, %.3f ms\n",boundaries.size(),timings.size(),actual.duration);
+        voice.Reset(); checked(stream->Close(),"No se pudo cerrar la grabación del sistema.");
+        stream.Reset(); token.Reset(); cancelled(stop);
+        const auto actual = wave(pending / "audio.wav");
+        const auto timings = project(segment,spoken,actual.words.empty() ? boundaries : actual.words,actual.duration);
         JsonObject metadata; metadata.Insert(L"key",JsonValue::CreateStringValue(winrt::to_hstring(key)));
         metadata.Insert(L"source",JsonValue::CreateStringValue(winrt::to_hstring(segment.text))); metadata.Insert(L"spoken",JsonValue::CreateStringValue(speech));
         metadata.Insert(L"provider",JsonValue::CreateStringValue(L"windows-sapi5")); metadata.Insert(L"sha256",JsonValue::CreateStringValue(winrt::to_hstring(actual.hash)));
@@ -218,5 +243,9 @@ NarrationAudio synthesize_system_speech(const NarrationSegment& segment,std::str
         }
         auto result = reuse(final,key,segment,spoken); result.cache_hit = false; return result;
     } catch (...) { std::error_code error; std::filesystem::remove_all(state::native_io_path(pending),error); throw; }
+} catch (const winrt::hresult_error& error) {
+    // C++/WinRT errors do not derive from std::exception. Keep the native
+    // provider's error contract so a corrupt sidecar cannot terminate the host.
+    throw std::runtime_error("Voz del sistema: " + winrt::to_string(error.message()));
 }
 } // namespace lgaed::windows

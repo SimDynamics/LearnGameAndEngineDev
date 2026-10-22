@@ -2,6 +2,7 @@
 #include "platform/windows/state_store.hpp"
 
 #include <windows.h>
+#include <objbase.h>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -24,6 +25,10 @@ bool has_pending(const std::filesystem::path& directory) {
         if (entry.path().extension() == ".pending") return true;
     return false;
 }
+void dispatch_com_messages() {
+    MSG message{};
+    while (PeekMessageW(&message,nullptr,0,0,PM_REMOVE)) { TranslateMessage(&message); DispatchMessageW(&message); }
+}
 void validate(const NarrationAudio& audio,std::size_t source_length,bool words) {
     require(audio.provider == "windows-sapi5" && audio.duration_ms > 100 && !audio.key.empty(),"The provider must produce real SAPI audio");
     const auto bytes = lgaed::state::read_bytes(audio.wav);
@@ -40,6 +45,7 @@ void validate(const NarrationAudio& audio,std::size_t source_length,bool words) 
 int main(int argc,char** argv) {
     unsigned groups = 0, skipped = 0;
     try {
+        std::cout << std::unitbuf;
         require(argc == 2,"Supply an isolated QA output directory");
         const auto root = std::filesystem::absolute(argv[1]) / ("sapi-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
         require(!std::filesystem::exists(root),"QA output may not replace an existing directory");
@@ -80,6 +86,7 @@ int main(int argc,char** argv) {
         technical.spoken_ranges = {{0,1},{2,3},{4,5},{6,11},{12,22},{23,31},{32,41},{42,45},{46,54},{55,64}};
         technical.displayed_ranges = {{0,3},{0,3},{0,3},{3,5},{3,5},{3,5},{6,15},{16,19},{20,28},{29,38}};
         const auto mapped = synthesize_system_speech(technical,voice.language,voice.id,root);
+        std::cout << "Mapped technical WAV produced.\n";
         validate(mapped,technical.text.size(),true);
         require(std::ranges::any_of(mapped.timings,[](const auto& row) { return row.start == 0 && row.end == 3; }) &&
             std::ranges::any_of(mapped.timings,[](const auto& row) { return row.start == 3 && row.end == 5; }) &&
@@ -87,6 +94,7 @@ int main(int argc,char** argv) {
         require(std::ranges::none_of(mapped.timings,[&](const auto& row) { return row.start == 0 && row.end == technical.text.size(); }),"A technical token may not illuminate the whole paragraph"); ++groups;
         auto unmapped = technical; unmapped.spoken_ranges.clear(); unmapped.displayed_ranges.clear();
         const auto conservative = synthesize_system_speech(unmapped,voice.language,voice.id,root);
+        std::cout << "Conservative unmapped WAV produced.\n";
         validate(conservative,unmapped.text.size(),false);
         require(conservative.timings.empty() && conservative.key != mapped.key,"Changed spoken text without source mapping must not invent timings or reuse another projection"); ++groups;
 
@@ -98,13 +106,27 @@ int main(int argc,char** argv) {
         const auto in_progress = root / "cancel-during"; std::atomic<bool> finished = false, was_cancelled = false;
         std::jthread task([&](std::stop_token stop) {
             try { (void)synthesize_system_speech(long_text,voice.language,voice.id,in_progress,stop); }
-            catch (const std::exception&) { was_cancelled = stop.stop_requested(); }
+            catch (const std::exception& error) { was_cancelled = stop.stop_requested(); std::cout << "Cancellation returned: " << error.what() << '\n'; }
             finished = true;
         });
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-        while (!finished && !has_pending(in_progress / "windows_tts") && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        require(!finished && has_pending(in_progress / "windows_tts"),"Cancellation fixture must enter a real synthesis operation");
-        task.request_stop(); task.join();
+        // The host UI normally pumps its STA. This console fixture must do the
+        // same while a SAPI engine created earlier on that STA is marshalled.
+        while (!finished && !has_pending(in_progress / "windows_tts") && std::chrono::steady_clock::now() < deadline) {
+            dispatch_com_messages(); std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        const bool entered = !finished && has_pending(in_progress / "windows_tts");
+        std::cout << "SAPI cancellation fixture entered: " << entered << ".\n";
+        task.request_stop();
+        HANDLE thread = task.native_handle();
+        while (WaitForSingleObject(thread,0) == WAIT_TIMEOUT) {
+            DWORD signaled = 0;
+            (void)CoWaitForMultipleHandles(COWAIT_DISPATCH_CALLS | COWAIT_DISPATCH_WINDOW_MESSAGES,20,1,&thread,&signaled);
+            dispatch_com_messages();
+        }
+        task.join();
+        std::cout << "SAPI cancellation thread released.\n";
+        require(entered,"Cancellation fixture must enter a real synthesis operation");
         require(was_cancelled && !has_pending(in_progress / "windows_tts"),"Cancellation must purge SAPI, close the stream and remove its pending files"); ++groups;
 
         const auto before = lgaed::state::read_bytes(mapped.wav);

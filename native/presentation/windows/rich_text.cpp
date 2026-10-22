@@ -4,6 +4,7 @@
 #include <richedit.h>
 #include <richole.h>
 #include <tom.h>
+#include <wrl/client.h>
 
 #include <algorithm>
 #include <cmath>
@@ -21,14 +22,15 @@ struct FormatTransaction {
     POINT scroll{};
     LRESULT events = 0, modified = 0;
     ITextDocument* document = nullptr;
-    bool suspended = false;
+    bool suspended = false, visible = false;
     explicit FormatTransaction(HWND target) : edit(target) {
         SendMessageW(edit, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&selection));
         SendMessageW(edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
         events = SendMessageW(edit, EM_GETEVENTMASK, 0, 0);
         modified = SendMessageW(edit, EM_GETMODIFY, 0, 0);
         SendMessageW(edit, EM_SETEVENTMASK, 0, 0);
-        SendMessageW(edit, WM_SETREDRAW, FALSE, 0);
+        visible = (GetWindowLongPtrW(edit,GWL_STYLE) & WS_VISIBLE) != 0;
+        if (visible) SendMessageW(edit, WM_SETREDRAW, FALSE, 0);
         IRichEditOle* rich = nullptr;
         SendMessageW(edit, EM_GETOLEINTERFACE, 0, reinterpret_cast<LPARAM>(&rich));
         if (rich) {
@@ -42,7 +44,7 @@ struct FormatTransaction {
         SendMessageW(edit, EM_SETMODIFY, static_cast<WPARAM>(modified), 0);
         if (document) { if (suspended) { long count = 0; document->Undo(tomResume, &count); } document->Release(); }
         SendMessageW(edit, EM_SETEVENTMASK, 0, events);
-        SendMessageW(edit, WM_SETREDRAW, TRUE, 0);
+        if (visible) SendMessageW(edit, WM_SETREDRAW, TRUE, 0);
         InvalidateRect(edit, nullptr, FALSE);
     }
 };
@@ -142,18 +144,20 @@ DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG
     const auto count = std::min(source.size - source.offset, static_cast<std::size_t>(requested));
     std::memcpy(buffer, source.bytes + source.offset, count); source.offset += count; *copied = static_cast<LONG>(count); return 0;
 }
-void default_format(HWND edit, bool code) {
+void default_format(HWND edit, bool code, RichTextRole role) {
     select(edit, 0, static_cast<std::size_t>(GetWindowTextLengthW(edit)));
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
-    style.yHeight = code ? 220 : 240; style.crTextColor = reader_theme::foreground(edit);
+    style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(edit);
+    style.dwEffects = role == RichTextRole::body ? 0 : CFE_BOLD;
     wcscpy_s(style.szFaceName, code ? L"Consolas" : L"Segoe UI");
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&style));
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_DEFAULT, reinterpret_cast<LPARAM>(&style));
     PARAFORMAT2 paragraph{}; paragraph.cbSize = sizeof(paragraph);
     paragraph.dwMask = PFM_SPACEBEFORE | PFM_SPACEAFTER | PFM_TABSTOPS;
     paragraph.dySpaceAfter = code ? 0 : 100; paragraph.cTabCount = MAX_TAB_STOPS;
-    // Consolas at 11 pt: four advances of its 0.55 em character cell.
-    for (int tab = 0; tab < MAX_TAB_STOPS; ++tab) paragraph.rgxTabs[tab] = (tab + 1) * 484;
+    // Four Consolas advances at the base size. Editable code replaces these
+    // with its measured tab stops, preserving real tabs and indentation units.
+    for (int tab = 0; tab < MAX_TAB_STOPS; ++tab) paragraph.rgxTabs[tab] = (tab + 1) * 792;
     SendMessageW(edit, EM_SETPARAFORMAT, 0, reinterpret_cast<LPARAM>(&paragraph));
 }
 }
@@ -173,6 +177,46 @@ std::string utf8(std::wstring_view source) {
     if (!length) throw std::runtime_error("Invalid UTF-16 text");
     std::string result(static_cast<std::size_t>(length), '\0');
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source.data(), static_cast<int>(source.size()), result.data(), length, nullptr, nullptr); return result;
+}
+bool rich_text_hit_test(HWND edit,POINT point) {
+    const auto px=[&](int dip){return MulDiv(dip,static_cast<int>(GetDpiForWindow(edit)),96);};
+    POINTL location{point.x,point.y};
+    const auto character=static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&location)));
+    if(character<0)return false;
+    wchar_t value[2]{};TEXTRANGEW range{{character,character+1},value};
+    SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));
+    if(!value[0]||value[0]==L'\r'||value[0]==L'\n'||value[0]==L' '||value[0]==L'\t')return false;
+    POINTL start{},end{};
+    SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&start),character);
+    SendMessageW(edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),character+1);
+    // Read this character's actual font without selecting it. Selecting a
+    // range would change the caret/history while deciding gesture ownership.
+    int height=px(24),advance=px(14);
+    Microsoft::WRL::ComPtr<IRichEditOle> ole;
+    SendMessageW(edit,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(ole.GetAddressOf()));
+    Microsoft::WRL::ComPtr<ITextDocument> document;
+    Microsoft::WRL::ComPtr<ITextRange> text_range;
+    Microsoft::WRL::ComPtr<ITextFont> text_font;
+    if(ole&&SUCCEEDED(ole.As(&document))&&SUCCEEDED(document->Range(character,character+1,&text_range))
+        &&SUCCEEDED(text_range->GetFont(&text_font))){
+        float points=18;BSTR face=nullptr;
+        text_font->GetSize(&points);text_font->GetName(&face);
+        int numerator=0,denominator=0;
+        SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        const int zoom=denominator>0?MulDiv(numerator,100,denominator):100;
+        const auto font=CreateFontW(-MulDiv(static_cast<int>(points*20+.5f)*zoom,
+            static_cast<int>(GetDpiForWindow(edit)),1440*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,face?face:L"Segoe UI");
+        if(font){
+            const auto dc=GetDC(edit);const auto previous=SelectObject(dc,font);TEXTMETRICW metrics{};SIZE glyph{};
+            if(GetTextMetricsW(dc,&metrics))height=metrics.tmHeight+metrics.tmExternalLeading;
+            if(GetTextExtentPoint32W(dc,value,1,&glyph))advance=glyph.cx;
+            SelectObject(dc,previous);ReleaseDC(edit,dc);DeleteObject(font);
+        }
+        SysFreeString(face);
+    }
+    const int right=end.y==start.y&&end.x>start.x?end.x:start.x+advance;
+    return point.x>=start.x&&point.x<right&&point.y>=start.y&&point.y<start.y+height;
 }
 std::string edit_text(HWND edit) {
     GETTEXTLENGTHEX length{GTL_PRECISE | GTL_NUMCHARS, 1200};
@@ -213,7 +257,7 @@ void style_cpp(HWND edit) {
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }
-void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code) {
+void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum::Emphasis> emphasis, bool code, RichTextRole role) {
     std::string displayed;
     std::vector<std::size_t> mapping(text.size() + 1);
     std::vector<std::pair<std::size_t,std::size_t>> fragments;
@@ -232,7 +276,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
     mapping[text.size()] = displayed.size();
     set_edit_text(edit, displayed);
     FormatTransaction transaction(edit);
-    default_format(edit, code);
+    default_format(edit, code, role);
     const auto source = wide(displayed);
     if (code) apply_cpp(edit, source);
     else {
@@ -254,7 +298,7 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         const auto end = wide(std::string_view(displayed).substr(0, mapping[range.end])).size();
         select(edit,start,end);
         CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_BOLD | CFM_ITALIC;
-        style.dwEffects = (range.style == "bold" || range.style == "bold_italic" ? CFE_BOLD : 0) |
+        style.dwEffects = (role != RichTextRole::body || range.style == "bold" || range.style == "bold_italic" ? CFE_BOLD : 0) |
                           (range.style == "italic" || range.style == "bold_italic" ? CFE_ITALIC : 0);
         SendMessageW(edit, EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&style));
     }

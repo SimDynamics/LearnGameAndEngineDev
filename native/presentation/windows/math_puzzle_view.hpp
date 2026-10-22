@@ -31,6 +31,7 @@ public:
     [[nodiscard]] std::string answers_json() const;
     [[nodiscard]] std::vector<MathReadingRegion> reading_regions() const;
     void set_enabled(bool);
+    void set_text_scale(int percentage);
     void reset();
 private:
     struct Impl;

@@ -115,4 +115,50 @@ curriculum::CatalogScope catalog_scope(const std::filesystem::path& root,const c
     }
     return result;
 }
+std::optional<curriculum::CatalogLocation> next_catalog_lesson(const std::filesystem::path& root,
+    const curriculum::CatalogLocation& current,bool between_units,bool between_courses) {
+    validate_catalog_location(current); require(!current.lesson.empty(),"la continuación necesita una lección publicada.");
+    auto unit = current; unit.lesson.clear(); const auto lessons = load_catalog(root,unit);
+    const auto selected = std::ranges::find_if(lessons.entries,[&](const auto& entry) { return entry.id == current.lesson; });
+    require(selected != lessons.entries.end() && selected->available,"la lección actual no está disponible en su índice.");
+    for (auto entry = std::next(selected); entry != lessons.entries.end(); ++entry)
+        if (entry->available) { auto result = unit; result.lesson = entry->id; return result; }
+    auto course = unit; course.unit.clear(); const auto units = load_catalog(root,course);
+    const auto selected_unit = std::ranges::find_if(units.entries,[&](const auto& entry) { return entry.id == current.unit; });
+    require(selected_unit != units.entries.end(),"la unidad actual no pertenece a su curso.");
+    const auto first_lesson = [&](const curriculum::CatalogLocation& target_course,const curriculum::CatalogEntry& entry)
+        -> std::optional<curriculum::CatalogLocation> {
+        if (!entry.available) return {};
+        const auto target_unit = catalog_child(target_course,entry.id); const auto page = load_catalog(root,target_unit);
+        for (const auto& lesson : page.entries) if (lesson.available) { auto result = target_unit; result.lesson = lesson.id; return result; }
+        return {};
+    };
+    for (auto entry = std::next(selected_unit); entry != units.entries.end(); ++entry) {
+        if (!entry->available) continue;
+        const auto next = first_lesson(course,*entry);
+        if (next) return between_units ? next : std::nullopt;
+    }
+    if (!between_courses) return {};
+    auto route = course; route.course.clear(); const auto courses = load_catalog(root,route);
+    const auto selected_course = std::ranges::find_if(courses.entries,[&](const auto& entry) { return entry.id == current.course; });
+    require(selected_course != courses.entries.end(),"el curso actual no pertenece a su ruta.");
+    for (auto entry = std::next(selected_course); entry != courses.entries.end(); ++entry) {
+        if (!entry->available) continue;
+        const auto target_course = catalog_child(route,entry->id); const auto target_units = load_catalog(root,target_course);
+        for (const auto& target_unit : target_units.entries) if (const auto next = first_lesson(target_course,target_unit)) return next;
+    }
+    return {};
+}
+std::optional<curriculum::CatalogEntry> active_catalog_lesson(const std::filesystem::path& root,
+    const curriculum::CatalogLocation& current,std::string_view active_lesson_id) {
+    auto listing = current; listing.lesson.clear();
+    validate_catalog_location(listing);
+    if (catalog_level(listing) != curriculum::CatalogLevel::lessons || active_lesson_id.empty()) return {};
+    const auto lessons = load_catalog(root,listing);
+    const auto selected = std::ranges::find_if(lessons.entries,[&](const auto& entry) {
+        return entry.id == active_lesson_id && entry.available;
+    });
+    if (selected == lessons.entries.end()) return {};
+    return *selected;
+}
 } // namespace lgaed::windows

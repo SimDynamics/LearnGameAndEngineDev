@@ -1,5 +1,6 @@
 #include "presentation/windows/tools_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/icons.hpp"
 #include "core/scientific_calculator.hpp"
@@ -95,7 +96,7 @@ struct Tool {
     Tool(std::optional<WindowsEnvironment> env,std::function<void()> callback,bool rendering)
         : environment(std::move(env)),on_back(std::move(callback)),graphics(rendering) {
         locale = system_language();
-        if (environment) { state::StateStore store(environment->paths.root); const auto data = store.load(); locale = state::string_value(data,"native_windows","ui_language",locale); }
+        if (environment) { state::StateStore store(environment->paths.root); const auto data = store.load(); locale = interface_language(data); }
     }
     ~Tool() {
         if (window) KillTimer(window,frame_timer);
@@ -269,6 +270,7 @@ struct Tool {
         MoveWindow(history_list,px(24),history_top - calculator_scroll,width,history_height,TRUE);
         SCROLLINFO info{sizeof(info),SIF_RANGE | SIF_PAGE | SIF_POS}; info.nMax = calculator_extent - 1; info.nPage = static_cast<UINT>(body_height); info.nPos = calculator_scroll;
         SetScrollInfo(body,SB_VERT,&info,TRUE);
+        reader_theme::refresh_scrollbars(body);
     }
     void render(bool present = true) {
         if (!graphics || !target || !IsWindowVisible(window)) return;

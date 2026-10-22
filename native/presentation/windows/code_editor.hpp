@@ -38,6 +38,10 @@ public:
     // Replaces the document/history without EN_CHANGE; the owner handles reset.
     void reset(EditorDocument document);
     void insert_tab();
+    // Inserts one configured shortcut as one existing editor transaction.
+    // Single-character pairs retain the same assistance as physical typing.
+    // Single-line fields reject line breaks without invoking their submit action.
+    [[nodiscard]] bool insert_shortcut(std::string_view text);
     void undo();
     void redo();
 private:

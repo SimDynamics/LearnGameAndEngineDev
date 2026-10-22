@@ -9,7 +9,7 @@ struct Position {
     bool finished=false;
     bool operator==(const Position&)const=default;
 };
-struct Bookmark { std::string key,stable;Position position;bool operator==(const Bookmark&)const=default; };
+struct Bookmark { std::string key,stable;Position position;std::string page;bool operator==(const Bookmark&)const=default; };
 struct History {
     std::vector<Bookmark> entries;
     std::string active_key,active_owner;
@@ -20,7 +20,7 @@ struct History {
 [[nodiscard]] History read_history(const state::StateData&);
 void write_history(state::StateData&,const History&);
 [[nodiscard]] std::optional<Position> restore(const History&,std::string_view key,std::size_t segments);
-[[nodiscard]] History begin(History,std::string key,std::string owner,Position,std::string stable={});
+[[nodiscard]] History begin(History,std::string key,std::string owner,Position,std::string stable={},std::string page={});
 [[nodiscard]] History checkpoint(History,std::string_view key,std::string_view owner,Position);
 // A seek changes visual position, never evidence that feedback was listened to.
 [[nodiscard]] Position seek(Position,std::int64_t segment,std::int64_t milliseconds);

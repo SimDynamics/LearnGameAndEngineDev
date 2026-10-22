@@ -40,7 +40,7 @@ target_include_directories(lgaed_host_options INTERFACE
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp
-    native/core/catalog.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
+    native/core/catalog.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
 add_library(lgaed_platform_windows STATIC
@@ -58,28 +58,97 @@ target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 
 
 add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/lesson_view.cpp
+    native/presentation/windows/cpp_fill_view.cpp
+    native/presentation/windows/math_puzzle_view.cpp
+    native/presentation/windows/native_math_text.cpp
     native/presentation/windows/catalog_view.cpp
+    native/presentation/windows/card_list.cpp
     native/presentation/windows/tools_view.cpp
     native/presentation/windows/settings_view.cpp
     native/presentation/windows/reading_shade.cpp
     native/presentation/windows/lesson_reader.cpp
     native/presentation/windows/icons.cpp
+    native/presentation/windows/native_menu.cpp
     native/presentation/windows/rich_text.cpp
     native/presentation/windows/reader_theme.cpp
     native/presentation/windows/editing_bar.cpp
+    native/presentation/windows/code_gutter.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus d3d11 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 uuid)
+    lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus d3d11 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid)
+# Standard controls and trackbars require the official v6 activation context.
+# Propagate it to every consumer, including the actual UI regression hosts.
+target_link_options(lgaed_presentation_windows INTERFACE
+    "/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'")
 add_executable(LearnGameAndEngineDev WIN32
     native/presentation/windows/main.cpp
     native/presentation/windows/app.manifest)
 target_link_libraries(LearnGameAndEngineDev PRIVATE
     lgaed_presentation_windows)
+# The normal native build prepares the shared linguistic runtime too. Its
+# source/hash check is idempotent and never synthesizes or replaces recordings.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_custom_target(lgaed_narration_runtime
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/build_worker.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Preparing the shared Kokoro and mathematical runtime"
+    VERBATIM)
+add_dependencies(LearnGameAndEngineDev lgaed_narration_runtime)
 set_target_properties(LearnGameAndEngineDev PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(lgaed_scrollbar_tests native/presentation/windows/scrollbar_tests.cpp)
+    target_link_libraries(lgaed_scrollbar_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.scrollbars COMMAND lgaed_scrollbar_tests)
+    set_tests_properties(native.scrollbars PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_native_menu_tests native/presentation/windows/native_menu_tests.cpp)
+    target_link_libraries(lgaed_native_menu_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.native_menu COMMAND lgaed_native_menu_tests)
+    set_tests_properties(native.native_menu PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_view_preferences_tests native/core/view_preferences_tests.cpp)
+    target_link_libraries(lgaed_view_preferences_tests PRIVATE lgaed_core)
+    add_test(NAME native.view_preferences COMMAND lgaed_view_preferences_tests)
+    add_executable(lgaed_learning_flow_tests native/core/learning_flow_tests.cpp)
+    target_link_libraries(lgaed_learning_flow_tests PRIVATE lgaed_core)
+    add_test(NAME native.learning_flow COMMAND lgaed_learning_flow_tests)
+    add_executable(lgaed_card_list_tests native/presentation/windows/card_list_tests.cpp)
+    target_link_libraries(lgaed_card_list_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.card_list COMMAND lgaed_card_list_tests)
+    set_tests_properties(native.card_list PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_code_gutter_tests native/presentation/windows/code_gutter_tests.cpp)
+    target_link_libraries(lgaed_code_gutter_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.code_gutter COMMAND lgaed_code_gutter_tests)
+    set_tests_properties(native.code_gutter PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_settings_view_tests native/presentation/windows/settings_view_tests.cpp)
+    target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_settings_view_tests lgaed_narration_runtime)
+    add_test(NAME native.settings_view COMMAND lgaed_settings_view_tests)
+    set_tests_properties(native.settings_view PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_lesson_composition_tests native/presentation/windows/lesson_composition_tests.cpp)
+    target_link_libraries(lgaed_lesson_composition_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_lesson_composition_tests lgaed_narration_runtime)
+    add_test(NAME native.lesson_composition COMMAND lgaed_lesson_composition_tests)
+    set_tests_properties(native.lesson_composition PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_cpp_fill_view_tests native/presentation/windows/cpp_fill_view_tests.cpp)
+    target_link_libraries(lgaed_cpp_fill_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.cpp_fill_view COMMAND lgaed_cpp_fill_view_tests)
+    set_tests_properties(native.cpp_fill_view PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
+    target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime)
+    add_test(NAME native.lesson_reader COMMAND lgaed_lesson_reader_tests)
+    set_tests_properties(native.lesson_reader PROPERTIES TIMEOUT 240)
+    add_executable(lgaed_math_puzzle_view_tests native/presentation/windows/math_puzzle_view_tests.cpp)
+    target_link_libraries(lgaed_math_puzzle_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.math_puzzle_view COMMAND lgaed_math_puzzle_view_tests)
+    set_tests_properties(native.math_puzzle_view PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_narration_worker_tests native/platform/windows/narration_worker_tests.cpp)
+    target_link_libraries(lgaed_narration_worker_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_narration_worker_tests lgaed_narration_runtime)
+    add_test(NAME native.narration_worker COMMAND lgaed_narration_worker_tests)
+    set_tests_properties(native.narration_worker PROPERTIES TIMEOUT 180)
     add_executable(lgaed_system_speech_tests native/platform/windows/system_speech_tests.cpp)
     target_link_libraries(lgaed_system_speech_tests PRIVATE lgaed_platform_windows)
     add_test(NAME native.system_speech COMMAND lgaed_system_speech_tests "${CMAKE_SOURCE_DIR}/out/qa/system-speech")
@@ -125,7 +194,7 @@ if(BUILD_TESTING)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
-    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_core lgaed_host_options user32 gdi32 ole32 comctl32 uuid)
+    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_core lgaed_host_options user32 gdi32 ole32 oleaut32 comctl32 uuid)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
     add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
     target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_presentation_windows)

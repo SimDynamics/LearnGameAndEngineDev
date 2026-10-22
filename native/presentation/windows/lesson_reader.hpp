@@ -2,10 +2,15 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/narration_worker.hpp"
 #include <windows.h>
+#include <cstdint>
 #include <functional>
 #include <memory>
 
 namespace lgaed::presentation {
+// Layouts the compact floating controls inside client coordinates. A manually
+// dragged position is retained and only clamped when the available area shrinks.
+// This changes geometry only; it never updates playback or narration history.
+void layout_lesson_reader_bar(HWND bar,const RECT& available);
 struct LessonReaderSegmentSnapshot {
     std::string region,source,spoken;
     HWND target = nullptr;
@@ -30,6 +35,11 @@ public:
     void feedback(std::size_t block,bool correct);
     void toggle();
     void pause();
+    // Header action: hide pauses/releases through the existing pause policy;
+    // showing controls never starts or restarts playback.
+    void set_controls_visible(bool);
+    void toggle_controls();
+    [[nodiscard]] bool controls_visible() const;
     void settings_changed();
     void seek_seconds(int);
     void restart();

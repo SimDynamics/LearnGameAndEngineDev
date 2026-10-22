@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 from fractions import Fraction
 import json
 import math
@@ -172,6 +173,26 @@ class WindowsMathBridgeTest(unittest.TestCase):
                 responsesJson=json.dumps({"response":{"type":"text","value":value}}),language="es")
             self.assertTrue(result["evaluable"])
             self.assertEqual(expected,result["correct"])
+
+    def test_08_android_fingerprint_keeps_source_order_escaping_and_review_compatibility(self):
+        # Golden serialization follows the official Android SDK35 JSONStringer:
+        # insertion order, slash escaping and non-ASCII text are significant.
+        legacy = {"type":"math_puzzle","prompt":"¿6 / 2?\nElige.","responses":[{
+            "id":"n","type":"math_multiple_choice_single","options":[
+                {"id":"three","label":"Tres"},{"id":"four","label":"Cuatro"}],
+            "validator":{"type":"choice","expected":["three"]}}]}
+        canonical = json.dumps(legacy,ensure_ascii=False,separators=(",",":")).replace("/","\\/")
+        expected = hashlib.sha256(canonical.encode()).hexdigest()
+        answers = {"n":{"type":"choice","selected":["three"]}}
+        original = self.worker.ask("validate_math",blockJson=json.dumps(legacy,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
+        self.assertEqual(expected,original["contentFingerprint"])
+        enhanced = copy.deepcopy(legacy)
+        enhanced["responses"][0]["options"][0]["reviewFeedback"]="Revisa la división."
+        current = self.worker.ask("validate_math",blockJson=json.dumps(enhanced,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
+        self.assertEqual(expected,current["contentFingerprint"])
+        reordered = {"prompt":legacy["prompt"],"type":legacy["type"],"responses":legacy["responses"]}
+        changed = self.worker.ask("validate_math",blockJson=json.dumps(reordered,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
+        self.assertNotEqual(expected,changed["contentFingerprint"],"A sorted-key replacement silently changed Android's historical hash contract")
 
 
 if __name__ == "__main__":

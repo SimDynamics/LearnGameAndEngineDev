@@ -397,9 +397,12 @@ AnswerEvaluation evaluate_hole_answers(const Block& block,std::span<const std::s
 AnswerEvaluation evaluate_drag_answers(const Block& block,std::span<const std::size_t> choices) {
     if (block.type != BlockType::drag_fill_code) throw std::invalid_argument("Invalid drag fill answer");
     if (choices.size() != block.correct_order.size()) return verdict(block,false);
+    std::vector<std::size_t> used;
     for (std::size_t index = 0; index < choices.size(); ++index) {
         if (block.correct_order[index] >= block.choices.size()) throw std::invalid_argument("Invalid canonical drag choice");
-        if (choices[index] >= block.choices.size() || block.choices[choices[index]] != block.choices[block.correct_order[index]]) return verdict(block,false);
+        if (choices[index] >= block.choices.size() || std::ranges::find(used,choices[index]) != used.end() ||
+            block.choices[choices[index]] != block.choices[block.correct_order[index]]) return verdict(block,false);
+        used.push_back(choices[index]);
     }
     return verdict(block,true);
 }

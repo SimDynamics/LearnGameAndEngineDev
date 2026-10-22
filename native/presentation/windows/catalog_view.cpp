@@ -1,7 +1,10 @@
 #include "presentation/windows/catalog_view.hpp"
+#include "presentation/windows/card_list.hpp"
+#include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/icons.hpp"
+#include "presentation/windows/native_menu.hpp"
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
 
@@ -23,45 +26,11 @@ constexpr int reset_id = 4112;
 constexpr int routes_heading_id = 4113;
 constexpr UINT activate_message = WM_APP + 141;
 struct CatalogView;
-struct ListGesture { bool down = false, dragging = false; POINT start{}; int top = 0, item = -1; };
 LRESULT CALLBACK catalog_proc(HWND,UINT,WPARAM,LPARAM);
-LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR data) {
-    auto& gesture = *reinterpret_cast<ListGesture*>(data);
-    if (message == WM_KEYDOWN && wparam == VK_RETURN) { PostMessageW(GetParent(window),activate_message,0,0); return 0; }
-    if (message == WM_LBUTTONDOWN) {
-        const auto hit = SendMessageW(window,LB_ITEMFROMPOINT,0,lparam);
-        if (HIWORD(hit)) return DefSubclassProc(window,message,wparam,lparam);
-        gesture = {true,false,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},static_cast<int>(SendMessageW(window,LB_GETTOPINDEX,0,0)),LOWORD(hit)};
-        SetFocus(window); SetCapture(window); SendMessageW(window,LB_SETCURSEL,gesture.item,0);
-        SendMessageW(GetParent(window),WM_COMMAND,MAKEWPARAM(list_id,LBN_SELCHANGE),reinterpret_cast<LPARAM>(window));
-        return 0;
-    }
-    if (message == WM_MOUSEMOVE && gesture.down) {
-        const auto displacement = gesture.start.y - GET_Y_LPARAM(lparam);
-        if (std::abs(displacement) > GetSystemMetrics(SM_CYDRAG) ||
-            std::abs(gesture.start.x - GET_X_LPARAM(lparam)) > GetSystemMetrics(SM_CXDRAG)) gesture.dragging = true;
-        if (gesture.dragging) {
-            const auto height = std::max<LRESULT>(1,SendMessageW(window,LB_GETITEMHEIGHT,gesture.top,0));
-            const auto count = SendMessageW(window,LB_GETCOUNT,0,0);
-            if (count > 0) SendMessageW(window,LB_SETTOPINDEX,std::clamp(static_cast<int>(gesture.top) + static_cast<int>(displacement) / static_cast<int>(height),0,static_cast<int>(count - 1)),0);
-        }
-        return 0;
-    }
-    if (message == WM_LBUTTONUP && gesture.down) {
-        const auto hit = SendMessageW(window,LB_ITEMFROMPOINT,0,lparam);
-        const bool click = !gesture.dragging && !HIWORD(hit) && LOWORD(hit) == gesture.item;
-        gesture.down = false; if (GetCapture() == window) ReleaseCapture();
-        if (click) PostMessageW(GetParent(window),activate_message,0,0);
-        return 0;
-    }
-    if (message == WM_CAPTURECHANGED || message == WM_CANCELMODE || message == WM_MOUSEWHEEL) gesture.down = false;
-    if (message == WM_NCDESTROY) RemoveWindowSubclass(window,list_proc,1);
-    return DefSubclassProc(window,message,wparam,lparam);
-}
 struct CatalogView {
     HWND window = nullptr, title = nullptr, status = nullptr, list = nullptr, back = nullptr, home = nullptr;
     HWND menu = nullptr, language = nullptr, open_button = nullptr, info_button = nullptr, routes_heading = nullptr;
-    HFONT font = nullptr, heading_font = nullptr;
+    HFONT font = nullptr, heading_font = nullptr,card_font = nullptr,section_font = nullptr,action_font = nullptr,route_font = nullptr,subtitle_font = nullptr;
     WindowsEnvironment environment;
     std::filesystem::path root;
     CatalogPage page;
@@ -75,20 +44,18 @@ struct CatalogView {
     std::vector<CatalogScope> scopes;
     std::string ui_locale = "es";
     CatalogLocation menu_context;
-    ListGesture gesture;
 
     CatalogView(const WindowsEnvironment& env,std::filesystem::path content,
         std::function<void(const std::filesystem::path&)> callback,CatalogActionHandler action,CatalogActionAvailability availability)
         : environment(env),root(std::move(content)),on_open(std::move(callback)),on_action(std::move(action)),can_action(std::move(availability)) {
         if (!on_open) throw std::invalid_argument("El catálogo necesita una acción para abrir lecciones.");
     }
-    ~CatalogView() { if (font) DeleteObject(font); if (heading_font) DeleteObject(heading_font); }
+    ~CatalogView() { for(auto face:{font,heading_font,card_font,section_font,action_font,route_font,subtitle_font})if(face)DeleteObject(face); }
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
     std::string ui(std::string_view es,std::string_view en,std::string_view fr) const {
         return std::string(ui_locale == "fr" ? fr : ui_locale == "en" ? en : es);
     }
-    COLORREF accent() const { return reader_theme::palette().high_contrast ? reader_theme::palette().accent :
-        page.location.route == "programming" ? RGB(217,43,70) : RGB(77,211,224); }
+    COLORREF accent() const { return reader_theme::palette(window).accent; }
     std::string action_label(CatalogAction action) const {
         switch (action) {
         case CatalogAction::settings: return ui("Opciones globales","Global options","Options générales");
@@ -167,12 +134,10 @@ struct CatalogView {
         auto loaded = windows::load_catalog(root,location);
         if (remember && list) write_position(false);
         updating = true; page = std::move(loaded); progress = load_state();
+        reader_theme::set_accent(window,reader_theme::appearance_accent(progress,page.location.route));
         struct Restore { bool& updating; ~Restore() { updating = false; } } restore{updating};
         home_actions.clear(); completion.clear(); scopes.clear();
-        wchar_t system[LOCALE_NAME_MAX_LENGTH]{}; GetUserDefaultLocaleName(system,LOCALE_NAME_MAX_LENGTH);
-        const auto system_language = utf8(system).substr(0,2);
-        ui_locale = state::string_value(progress,"native_windows","ui_language",system_language == "es" || system_language == "fr" ? system_language : "en");
-        if (ui_locale != "es" && ui_locale != "fr" && ui_locale != "en") ui_locale = "en";
+        ui_locale = interface_language(progress);
         menu_context = page.location;
         for (const auto& entry : page.entries) {
             CatalogScope scope;
@@ -227,34 +192,49 @@ struct CatalogView {
         for (const auto text : {L"Español",L"English",L"Français"}) SendMessageW(language,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(text));
         title = control(L"STATIC",L"",SS_LEFT,title_id); status = control(L"STATIC",L"",SS_LEFT,status_id);
         routes_heading = control(L"STATIC",L"",SS_LEFT,routes_heading_id);
-        list = control(L"LISTBOX",L"",WS_TABSTOP | WS_VSCROLL | LBS_NOTIFY | LBS_HASSTRINGS | LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT,list_id);
-        reader_theme::apply(list,reader_theme::Surface::field);
-        SetWindowSubclass(list,list_proc,1,reinterpret_cast<DWORD_PTR>(&gesture));
+        list = create_card_list(window,list_id,activate_message);
+        reader_theme::apply(list,reader_theme::Surface::canvas);
         open_button = control(L"BUTTON",L"Abrir",WS_TABSTOP | BS_PUSHBUTTON,open_id); reader_theme::primary_button(open_button);
         info_button = control(L"BUTTON",L"Información",WS_TABSTOP | BS_PUSHBUTTON,info_id);
         ShowWindow(open_button,SW_HIDE); ShowWindow(info_button,SW_HIDE); ShowWindow(language,SW_HIDE);
         update_font(); resize(); render(restored_location(),false);
     }
     void update_font() {
-        const auto next = CreateFontW(-MulDiv(12,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+        const auto next = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
             DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
         if (!next) return;
         for (const auto item : {back,home,menu,language,title,status,list,open_button,info_button,routes_heading}) if (item)
             SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),TRUE);
         if (font) DeleteObject(font); font = next;
-        const auto heading = CreateFontW(-px(28),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+        const auto heading = CreateFontW(-MulDiv(32,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
             CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
         if (heading) { SendMessageW(title,WM_SETFONT,reinterpret_cast<WPARAM>(heading),TRUE); if (heading_font) DeleteObject(heading_font); heading_font = heading; }
+        const auto face=[&](HFONT& target,int size,int weight){const auto next_face=CreateFontW(-MulDiv(size,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,weight,FALSE,FALSE,FALSE,
+            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+            if(next_face){if(target)DeleteObject(target);target=next_face;}};
+        face(card_font,22,FW_BOLD);face(section_font,22,FW_BOLD);face(action_font,18,FW_MEDIUM);face(route_font,20,FW_MEDIUM);face(subtitle_font,17,FW_NORMAL);
+        SendMessageW(routes_heading,WM_SETFONT,reinterpret_cast<WPARAM>(section_font),TRUE);
+        SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(subtitle_font),TRUE);
+    }
+    int text_height(HFONT face,std::wstring_view text,int width) const {
+        const auto dc=GetDC(window);const auto previous=SelectObject(dc,face?face:font);
+        RECT measured{0,0,std::max(1,width),0};DrawTextW(dc,text.data(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);
+        TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SelectObject(dc,previous);ReleaseDC(window,dc);
+        return std::max(static_cast<int>(metrics.tmHeight),static_cast<int>(measured.bottom));
+    }
+    int caption_height(HWND control,HFONT face,int width) const {
+        std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(control))+1,L'\0');text.resize(GetWindowTextW(control,text.data(),static_cast<int>(text.size())));
+        return text_height(face,text,width);
     }
     int row_height(std::size_t index) const {
-        if (catalog_level(page.location) == CatalogLevel::routes) return px(index < page.entries.size() ? 96 : 68);
+        RECT area{};GetClientRect(list,&area);const auto width=std::max(px(80),static_cast<int>(area.right)-px(48));
+        if (catalog_level(page.location) == CatalogLevel::routes) {
+            const bool route=index<page.entries.size();const auto caption=wide(route?page.entries[index].title:action_label(home_actions[index-page.entries.size()]));
+            return std::max(px(route?120:75),text_height(route?route_font:action_font,caption,width)+px(48))+px(route?32:18);
+        }
         if (index >= page.entries.size()) return px(78);
-        RECT area{}; GetClientRect(list,&area); area.right = std::max(px(80),static_cast<int>(area.right) - px(36)); area.left = 0;
-        const auto dc = GetDC(list); const auto previous = SelectObject(dc,font);
-        const auto text = wide(label(page.entries[index]));
-        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&area,DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
-        SelectObject(dc,previous); ReleaseDC(list,dc);
-        return std::max(px(130),static_cast<int>(area.bottom) + px(85));
+        return std::max(px(210),px(48+7+16+9+6+14)+text_height(font,L"0",width)+
+            text_height(card_font,wide(page.entries[index].title),width)+text_height(font,wide(detail(page.entries[index])),std::max(px(40),width-px(86))));
     }
     void resize() {
         if (!list) return;
@@ -262,18 +242,24 @@ struct CatalogView {
         const bool root_page = catalog_level(page.location) == CatalogLevel::routes;
         ShowWindow(back,root_page ? SW_HIDE : SW_SHOW); ShowWindow(home,SW_HIDE); ShowWindow(menu,root_page ? SW_HIDE : SW_SHOW);
         ShowWindow(routes_heading,root_page ? SW_SHOW : SW_HIDE);
-        MoveWindow(back,margin,px(20),px(72),px(42),TRUE); MoveWindow(home,margin + px(94),px(16),px(84),px(36),TRUE);
-        MoveWindow(menu,static_cast<int>(area.right) - margin - px(84),px(16),px(84),px(36),TRUE);
+        MoveWindow(back,margin,px(20),px(72),px(50),TRUE); MoveWindow(home,margin + px(94),px(16),px(84),px(50),TRUE);
+        MoveWindow(menu,static_cast<int>(area.right) - margin - px(104),px(20),px(104),px(50),TRUE);
         MoveWindow(language,static_cast<int>(area.right) - margin - px(225),px(18),px(130),px(180),TRUE);
-        MoveWindow(title,margin,root_page ? px(70) : px(90),available,px(70),TRUE); MoveWindow(status,margin,root_page ? px(145) : px(165),available,px(48),TRUE);
-        MoveWindow(routes_heading,margin,px(205),available,px(32),TRUE);
-        const int list_top = root_page ? px(250) : px(225);
+        const int lift=root_page?std::clamp(px(720)-static_cast<int>(area.bottom),0,px(48)):0;
+        const int title_top=root_page?px(82)-lift:px(100),title_height=caption_height(title,heading_font,available);
+        const int status_top=std::max(root_page?px(149)-lift:0,title_top+title_height+px(8)),status_height=caption_height(status,subtitle_font,available);
+        const int heading_top=std::max(px(224)-lift,status_top+status_height+px(36)),heading_height=caption_height(routes_heading,section_font,available);
+        MoveWindow(title,margin,title_top,available,title_height,TRUE);MoveWindow(status,margin,status_top,available,status_height,TRUE);
+        MoveWindow(routes_heading,margin,heading_top,available,heading_height,TRUE);
+        const int list_top=root_page?std::max(px(283)-lift,heading_top+heading_height+px(16)):status_top+status_height+px(24);
         SetWindowPos(list,nullptr,margin,list_top,available,std::max(px(40),static_cast<int>(area.bottom) - list_top - px(24)),
             SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW);
         MoveWindow(open_button,margin,std::max(px(200),static_cast<int>(area.bottom) - px(56)),px(150),px(38),TRUE);
         MoveWindow(info_button,margin + px(162),std::max(px(200),static_cast<int>(area.bottom) - px(56)),px(150),px(38),TRUE);
         for (std::size_t index = 0; index < page.entries.size() + home_actions.size(); ++index) SendMessageW(list,LB_SETITEMHEIGHT,index,row_height(index));
-        RedrawWindow(list,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+        // Moving the list between course and home layouts exposes part of its
+        // old client rectangle. Repaint that parent area as well as the rows.
+        RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
     }
     void information() {
         const auto index = selected();
@@ -321,6 +307,7 @@ struct CatalogView {
         if (on_action && can_action && can_action(CatalogAction::audio,menu_context)) AppendMenuW(handle,MF_STRING,audio_id,L"Audio");
         if (!menu_context.route.empty())
             AppendMenuW(handle,MF_STRING,reset_id,wide(ui("Reiniciar progreso…","Reset progress…","Réinitialiser la progression…")).c_str());
+        const auto style = prepare_native_menu(handle,window);
         const auto id = TrackPopupMenuEx(handle,TPM_RETURNCMD | TPM_RIGHTBUTTON,point.x,point.y,window,nullptr); DestroyMenu(handle);
         if (id) command(static_cast<int>(id),BN_CLICKED);
     }
@@ -349,40 +336,50 @@ struct CatalogView {
     }
     void draw(const DRAWITEMSTRUCT& item) {
         if (item.itemID >= page.entries.size() + home_actions.size()) return;
-        const auto palette = reader_theme::palette(); const bool selected = (item.itemState & ODS_SELECTED) != 0;
+        const auto palette = reader_theme::palette(window); const bool selected = (item.itemState & ODS_SELECTED) != 0;
         if (catalog_level(page.location) == CatalogLevel::routes) {
-            auto card = item.rcItem; InflateRect(&card,-px(4),-px(9));
-            const auto fill = CreateSolidBrush(palette.high_contrast ? palette.card : RGB(77,211,224)); FillRect(item.hDC,&card,fill); DeleteObject(fill);
-            const auto old_font = SelectObject(item.hDC,font); SetBkMode(item.hDC,TRANSPARENT);
-            SetTextColor(item.hDC,palette.high_contrast ? palette.text : RGB(10,15,17));
+            FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::canvas));
+            const bool route=item.itemID<page.entries.size();auto card=item.rcItem;card.bottom-=px(route?32:18);
+            const auto fill = CreateSolidBrush(palette.high_contrast ? palette.card : palette.accent); FillRect(item.hDC,&card,fill); DeleteObject(fill);
+            const auto face=route?route_font:action_font;const auto old_font = SelectObject(item.hDC,face?face:font); SetBkMode(item.hDC,TRANSPARENT);
+            SetTextColor(item.hDC,reader_theme::accent_foreground(window));
             const auto text = wide(item.itemID < page.entries.size() ? page.entries[item.itemID].title : action_label(home_actions[item.itemID - page.entries.size()]));
-            InflateRect(&card,-px(14),-px(8)); DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&card,DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+            InflateRect(&card,-px(24),-px(24));auto measured=card;
+            DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);
+            card.top+=std::max<LONG>(0,(card.bottom-card.top-(measured.bottom-measured.top))/2);
+            DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&card,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);
             if (selected && (item.itemState & ODS_FOCUS)) DrawFocusRect(item.hDC,&card);
             SelectObject(item.hDC,old_font); return;
         }
         FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::canvas));
-        auto card = item.rcItem; card.top += px(6); card.bottom -= px(6);
+        auto card = item.rcItem;card.bottom-=px(14);
         const auto background = CreateSolidBrush(palette.card); FillRect(item.hDC,&card,background); DeleteObject(background);
         const auto old_font = SelectObject(item.hDC,font); SetBkMode(item.hDC,TRANSPARENT); SetTextColor(item.hDC,palette.text);
-        auto bounds = card; InflateRect(&bounds,-px(14),-px(10));
+        auto bounds = card; InflateRect(&bounds,-px(24),-px(24));
         const auto entry = page.entries[item.itemID];
-        SetTextColor(item.hDC,accent());
+        SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));
         const auto ordinal = wide((catalog_level(page.location) == CatalogLevel::courses ? ui("Curso ","Course ","Cours ") :
             catalog_level(page.location) == CatalogLevel::units ? ui("Unidad ","Unit ","Unité ") : ui("Lección ","Lesson ","Leçon ")) +
             std::to_string(entry.number) + ui(" de "," of "," sur ") + std::to_string(page.entries.size()));
         DrawTextW(item.hDC,ordinal.c_str(),static_cast<int>(ordinal.size()),&bounds,DT_SINGLELINE | DT_NOPREFIX);
-        bounds.top += px(26); SetTextColor(item.hDC,palette.text);
+        bounds.top += text_height(font,ordinal,bounds.right-bounds.left)+px(7); SetTextColor(item.hDC,palette.text);
+        SelectObject(item.hDC,card_font?card_font:font);
         const auto entry_title = wide(entry.title);
+        const auto title_height=text_height(card_font,entry_title,bounds.right-bounds.left);
+        bounds.bottom=bounds.top+title_height;
         DrawTextW(item.hDC,entry_title.c_str(),static_cast<int>(entry_title.size()),&bounds,DT_WORDBREAK | DT_NOPREFIX);
-        bounds = card; bounds.left += px(14); bounds.right -= px(14); bounds.top = bounds.bottom - px(43);
-        SetTextColor(item.hDC,palette.muted);
+        const auto title_bottom=bounds.bottom;
+        bounds=card;InflateRect(&bounds,-px(24),-px(24));bounds.right-=px(86);
         const auto description = wide(detail(page.entries[item.itemID]));
-        bounds.right -= px(52);
-        DrawTextW(item.hDC,description.c_str(),static_cast<int>(description.size()),&bounds,DT_SINGLELINE | DT_NOPREFIX);
+        const auto detail_height=text_height(font,description,bounds.right-bounds.left);
+        bounds.top=std::max(title_bottom+px(16),card.bottom-px(24+6+9)-detail_height);bounds.bottom=bounds.top+detail_height;
+        SelectObject(item.hDC,font);
+        SetTextColor(item.hDC,palette.muted);
+        DrawTextW(item.hDC,description.c_str(),static_cast<int>(description.size()),&bounds,DT_WORDBREAK | DT_NOPREFIX);
         const auto snapshot = completion[item.itemID]; const auto percentage = snapshot.total ? snapshot.completed * 100 / snapshot.total : 0;
-        bounds.right += px(52); const auto percent = std::to_wstring(percentage) + L"%";
+        bounds.left=bounds.right+px(14);bounds.right=card.right-px(24);const auto percent = std::to_wstring(percentage) + L"%";
         DrawTextW(item.hDC,percent.c_str(),static_cast<int>(percent.size()),&bounds,DT_SINGLELINE | DT_RIGHT | DT_NOPREFIX);
-        auto meter = card; meter.left += px(14); meter.right -= px(14); meter.top = meter.bottom - px(12); meter.bottom = meter.top + px(3);
+        auto meter = card; meter.left += px(24); meter.right -= px(24);meter.bottom-=px(24);meter.top=meter.bottom-px(6);
         const auto track = CreateSolidBrush(palette.outline); FillRect(item.hDC,&meter,track); DeleteObject(track);
         meter.right = meter.left + MulDiv(meter.right - meter.left,static_cast<int>(percentage),100);
         const auto fill = CreateSolidBrush(accent()); FillRect(item.hDC,&meter,fill); DeleteObject(fill);
@@ -407,16 +404,23 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
         case activate_message: self->activate(); return 0;
         case WM_MEASUREITEM: {
             auto& item = *reinterpret_cast<MEASUREITEMSTRUCT*>(lparam);
+            if (measure_native_menu(item)) return TRUE;
             if (item.CtlID == list_id) { item.itemHeight = self->row_height(item.itemID); return TRUE; } break;
         }
         case WM_DRAWITEM: {
             const auto& item = *reinterpret_cast<DRAWITEMSTRUCT*>(lparam);
+            if (draw_native_menu(item)) return TRUE;
             if (item.CtlID == list_id) { self->draw(item); return TRUE; }
             if (item.CtlID == back_id) {
                 const auto fill = CreateSolidBrush(self->accent()); FillRect(item.hDC,&item.rcItem,fill); DeleteObject(fill);
-                auto bounds = item.rcItem; InflateRect(&bounds,-self->px(20),-self->px(10)); draw_icon(item.hDC,bounds,Icon::back,reader_theme::palette().text); return TRUE;
+                auto bounds = item.rcItem; InflateRect(&bounds,-self->px(20),-self->px(10)); draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_foreground(window)); return TRUE;
             }
             if (reader_theme::draw_button(item)) return TRUE; break;
+        }
+        case WM_MENUCHAR: {
+            LRESULT result = 0;
+            if (native_menu_character(reinterpret_cast<HMENU>(lparam),static_cast<wchar_t>(LOWORD(wparam)),result)) return result;
+            break;
         }
         case WM_CONTEXTMENU: {
             POINT point{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};

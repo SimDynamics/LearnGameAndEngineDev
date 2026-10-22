@@ -145,6 +145,11 @@ def math_host_sources() -> list[Path]:
     code = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', code)
     sources.append(generated("MathUiMessage.kt", code))
 
+    state = (APP / "math/MathPuzzleState.kt").read_text(encoding="utf-8-sig")
+    state = exact(state,"import org.json.JSONObject","import lgaed.narration.androidjson.JSONObject")
+    state = state[:state.index("    fun isCurrentCorrect(")] + "}\n"
+    sources.append(generated("MathPuzzleState.kt",state))
+
     # Resource names replace Android's generated integers without a fake R class.
     # Learner-facing strings remain the original, translated Android resources.
     def kotlin(value: str) -> str:
@@ -298,16 +303,26 @@ def build() -> None:
                 cached_jar("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0"),
                 cached_jar("org.jetbrains", "annotations", "23.0.0")]
     sources = host_sources()
+    java_sources = sorted((ROOT / "native/narration/worker/androidjson").glob("*.java"))
+    java_classes = OUT / "android-json-classes"
+    java_stamp = OUT / "android-json-build.sha256"
+    java_signature = "".join(digest(source) for source in java_sources)
+    if not java_stamp.is_file() or java_stamp.read_text() != java_signature:
+        java_classes.mkdir(parents=True,exist_ok=True)
+        subprocess.run([str(java.parent / "javac.exe"),"-encoding","UTF-8","--release","17","-d",str(java_classes),
+                        *map(str,java_sources)],check=True,cwd=ROOT)
+        java_stamp.write_text(java_signature,encoding="ascii")
     jar = OUT / "kokoro-worker.jar"
-    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)).encode()).hexdigest()
+    signature = hashlib.sha256(("\n".join(str(p) + ":" + digest(p) for p in sources + runtime)+java_signature).encode()).hexdigest()
     stamp = OUT / "worker-build.sha256"
     if not jar.is_file() or not stamp.is_file() or stamp.read_text() != signature:
         command = [str(java), "-cp", os.pathsep.join(map(str, compiler)),
             "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-jvm-target", "17",
-            "-classpath", os.pathsep.join(map(str, runtime)), "-d", str(jar), *map(str, sources)]
+            "-classpath", os.pathsep.join(map(str, [*runtime,java_classes])), "-d", str(jar), *map(str, sources)]
         result = subprocess.run(command, cwd=ROOT)
         if result.returncode:
             raise SystemExit(result.returncode)
+        subprocess.run([str(java.parent / "jar.exe"),"uf",str(jar),"-C",str(java_classes),"."],check=True,cwd=ROOT)
         stamp.write_text(signature, encoding="ascii")
     origin = ROOT.parent / "LearnGraphicsProgramming/build/kokoro"
     resources = (args.resources or origin / "downloads/1939ad2a8e416c0acfeecc08a694d14ef25f2231").resolve()
@@ -323,12 +338,19 @@ def build() -> None:
         "--profile","Work" if ROOT.name.endswith("-Work") else "Codex"]
     if ffmpeg:
         arguments += ["--ffmpeg",ffmpeg]
+    voice_catalog = (ROOT / "app/src/main/java/com/learngraphicsprogramming/app/narration/KokoroVoiceCatalog.kt").read_text(encoding="utf-8")
+    languages = {"SPANISH": "es", "FRENCH": "fr", "AMERICAN_ENGLISH": "en-US", "BRITISH_ENGLISH": "en-GB"}
+    voices = [{"id": name, "language": languages[language], "sha256": sha}
+              for name, language, sha in re.findall(r'KokoroVoice\("([a-z_]+)",\s*NarrationLanguage\.([A-Z_]+),\s*"([0-9a-f]{64})"\)', voice_catalog)
+              if language in languages]
+    if len(voices) != 32:
+        raise RuntimeError("The original Kokoro catalogue changed; check its explicit Windows language coverage")
     config = {"java": str(native_host), "javaExecutable": str(java), "jvm": str(jvm),
         "classpath": classpath, "arguments": arguments,
         "mainClass": "lgaed.narration.windows.WindowsNarrationWorkerKt",
         "assets": str(ROOT / "app/src/main/assets"), "resources": str(resources),
         "englishResources": str(english), "ffmpeg": ffmpeg or "",
-        "originalWavs": str(original_wavs)}
+        "originalWavs": str(original_wavs), "voices": voices}
     config_path = OUT / "runtime.json"
     content = json.dumps(config, ensure_ascii=False, indent=2)
     if not config_path.is_file() or config_path.read_text(encoding="utf-8") != content:

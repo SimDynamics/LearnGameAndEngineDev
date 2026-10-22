@@ -1,5 +1,6 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/environment.hpp"
+#include "native_build_config.hpp"
 
 #include <windows.h>
 
@@ -85,7 +86,7 @@ int main() {
         require(read(first.run_directory / L"main.cpp") == first_request.source_utf8,
             "Exact source including indent and LF final");
         require(std::filesystem::is_regular_file(second.run_directory / L"program.exe"), "Real PE executable");
-        require(read(second.run_directory / L"toolchain.txt").find("SDK=10.0.26100.0") != std::string::npos,
+        require(read(second.run_directory / L"toolchain.txt").find("SDK=" + std::filesystem::path(lgaed::build::educational_sdk_version).string()) != std::string::npos,
             "Pinned Windows SDK provenance");
     });
 

@@ -348,7 +348,7 @@ fun main(arguments: Array<String>) {
                             "identity" -> backend.identity(request)
                             "prepare" -> backend.prepare(request,job)
                             "describe_math" -> WindowsMathBridge.describe(request)
-                            "validate_math" -> WindowsMathBridge.validate(request)
+                            "validate_math" -> WindowsMathBridge.validate(request,line)
                             else -> error("Unknown narration command: $command")
                         }
                         respond(id,command,result)

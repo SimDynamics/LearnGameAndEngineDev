@@ -86,7 +86,13 @@ struct Block {
     std::optional<std::string> standard_input;
     StateAddress address;
 };
-struct Page { std::string stable_id; std::vector<Block> blocks; };
+struct Page {
+    std::string stable_id;
+    std::vector<Block> blocks;
+    // Explicit authored narration metadata, resolved with the lesson fallback.
+    // An absent value means the reader's preference remains authoritative.
+    std::optional<std::string> narration_language;
+};
 // Presentation-only relationships, authored at the lesson root so no historical
 // block fingerprint, answer or storage slot changes when a reference is linked.
 struct ReferenceAfter { std::string activity; std::vector<std::string> blocks; };
@@ -100,6 +106,7 @@ struct Lesson {
     StateLayout state_layout;
     std::vector<ReferenceAfter> reference_after;
     std::vector<ActivityAfter> activity_after;
+    std::optional<std::string> narration_language;
 };
 
 void validate_reference_relationships(const Lesson&);

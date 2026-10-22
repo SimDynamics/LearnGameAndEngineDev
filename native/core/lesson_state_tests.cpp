@@ -147,6 +147,34 @@ int main(int argc, char** argv) {
         Response order; order.order = {2, 0, 1}; mark_response_reviewed(order, review_block);
         require(order.reviewed_answer_identity == "a50c12ec8e20411bc79e811c15b13a8ea16e58f08d1c8015c257f83f6bc1c3fd", "Order review identity changed"); ++groups;
 
+        const auto fills = lgaed::windows::parse_lesson_json(R"({"id":"fill-state","title":"Fill","pages":[{"blocks":[{"type":"inline_fill_code","template":"std::cout << \"[]\" << [];","answers":["a  b","!="] ,"answerAlternatives":[["a  b"],["!=","not_eq"]]},{"type":"drag_fill_code","template":"int a = 0[] int b = 1[]","choices":[";",";","}"],"correctOrder":[0,1]}]}]})");
+        const auto& inline_block = fills.pages[0].blocks[0]; const auto& drag_block = fills.pages[0].blocks[1];
+        Response inline_review; inline_review.raw_json = R"({"answers":[" a  b","<<"],"correct":false,"opaque":{"original":"metadata"}})";
+        mark_response_reviewed(inline_review,inline_block);
+        require(inline_review.reviewed_answer_identity == sha256(R"([" a  b","<<"])"),"Inline review identity does not match Android answers-array framing");
+        StateData fill_state; const auto inline_key = lgaed::curriculum::exercise_key(fills,inline_block), drag_key = lgaed::curriculum::exercise_key(fills,drag_block);
+        put_response(fill_state,inline_key,inline_review);
+        auto inline_restored = *get_response(fill_state,inline_key);
+        require(response_reviewed(inline_restored,inline_block) && inline_restored.raw_json.find("metadata") != std::string::npos,"Inline review/opaque metadata was not preserved");
+        inline_restored.raw_json = R"({"answers":["a  b","<<"],"correct":false})";
+        require(!response_reviewed(inline_restored,inline_block),"Editing one inline hole reused previous incorrect feedback");
+        Response drag_review; drag_review.raw_json = R"({"slots":[-1,0],"correct":false})";
+        mark_response_reviewed(drag_review,drag_block);
+        require(drag_review.reviewed_answer_identity == sha256("[-1,0]"),"Drag review identity does not match Android slots-array framing");
+        put_response(fill_state,drag_key,drag_review); const auto fill_before = fill_state;
+        validate_lesson_state(fill_state,fills); require(fill_state == fill_before,"Partial fill validation changed original data");
+        fill_state.preferences["learning_progress"][inline_key] = std::string(R"({"answers":["a  b","not_eq"],"correct":true,"opaque":{"original":"metadata"}})");
+        fill_state.preferences["learning_progress"][drag_key] = std::string(R"({"slots":[1,0],"correct":true})");
+        validate_lesson_state(fill_state,fills);
+        auto invalid_fill = fill_state; invalid_fill.preferences["learning_progress"][inline_key] = std::string(R"({"answers":["a b","not_eq"],"correct":true})");
+        rejects([&] { validate_lesson_state(invalid_fill,fills); });
+        for (const auto malformed : {R"({"slots":[0,0],"correct":false})", R"({"slots":[-2,1],"correct":false})", R"({"slots":[3,1],"correct":false})", R"({"slots":[-1,0],"correct":true})", R"({"slots":[0.5,1],"correct":false})"}) {
+            invalid_fill = fill_state; invalid_fill.preferences["learning_progress"][drag_key] = std::string(malformed);
+            const auto preserved = invalid_fill; rejects([&] { validate_lesson_state(invalid_fill,fills); });
+            require(invalid_fill == preserved,"Invalid imported physical card data was silently rewritten");
+        }
+        ++groups;
+
         Draft draft{"    return 0;\n", " \t \n", make_indentation_metadata("    return 0;\n", {0}), 4, 4};
         const auto key = "programming/test__unit__lesson/4/7";
         put_draft(initial, key, draft);

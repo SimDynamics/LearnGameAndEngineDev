@@ -560,6 +560,27 @@ int main() {
         }
     });
 
+    test("Configured multi-character tokens preserve indentation origin and one complete undo",[] {
+        const auto original=predefined_code_document("    return 0;");Fixture field(original);field.cursor(4);
+        require(field.adapter->insert_shortcut("std::"),"A valid technical token was declined");
+        require(field.adapter->document().text=="    std::return 0;"&&field.adapter->document().indentation_starts==original.indentation_starts,
+            "A configured token changed adjacent predefined tab identities");
+        field.adapter->undo();require(field.adapter->document().text==original.text&&field.adapter->document().indentation_starts==original.indentation_starts,
+            "One Undo did not restore the full token and its original indentation metadata");
+        field.key(VK_BACK,L'\b');require(field.adapter->document().text=="return 0;","Backspace after token Undo lost a predefined TAB unit");
+        field.adapter->undo();require(field.adapter->document().indentation_starts==original.indentation_starts,"Undo did not restore a predefined unit after shortcut editing");
+        Fixture manual(EditorDocument{"    return 0;"});manual.cursor(4);require(manual.adapter->insert_shortcut("<<"),"Insert a configured operator into manual spaces");
+        manual.adapter->undo();manual.key(VK_BACK,L'\b');require(manual.adapter->document().text=="   return 0;"&&manual.adapter->document().indentation_starts.empty(),
+            "A multi-character shortcut inferred a TAB from four deliberate manual spaces");
+    });
+    test("Shortcut line breaks are literal only in multiline code and never invoke submit",[] {
+        unsigned submits=0;Fixture single(EditorDocument{"abc",{},1,2},false,[&]{++submits;});
+        require(!single.adapter->insert_shortcut("x\ny")&&!single.adapter->insert_shortcut("\r\n")&&single.adapter->document().text=="abc"&&submits==0,
+            "A single-line shortcut inserted a line break or simulated Enter checking");
+        Fixture multi;require(multi.adapter->insert_shortcut("x\ny")&&multi.adapter->document().text=="x\ny","A multiline shortcut was not inserted as a literal snippet");
+        multi.adapter->undo();require(multi.adapter->document().text.empty(),"A multiline snippet required more than one Undo");
+        multi.adapter->redo();require(multi.adapter->document().text=="x\ny","A multiline snippet did not redo as one transaction");
+    });
     UnregisterClassW(type.lpszClassName, type.hInstance);
     FreeLibrary(rich_edit);
     std::cout << "Native code editor: " << passed << " passed, " << failed << " failed.\n";

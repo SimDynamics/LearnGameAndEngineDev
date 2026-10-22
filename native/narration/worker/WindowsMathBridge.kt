@@ -20,7 +20,7 @@ internal object WindowsMathBridge {
             if (it is MathUiMessage) uiJson(it) else it
         }))
 
-    fun validate(request: JSONObject): JSONObject {
+    fun validate(request: JSONObject, originalRequest: String): JSONObject {
         val spec = MathPuzzleParser.parse(block(request))
         val language = language(request)
         fun text(code: String, vararg values: Any) = originalStrings(language,code,*values)
@@ -83,7 +83,10 @@ internal object WindowsMathBridge {
                 (listOf("✗ $heading")+visible).filter { it.isNotBlank() }.joinToString("\n")
             }
         }
-        return JSONObject().put("correct",correct).put("evaluable",evaluable)
+        val originalBlock = if(request.has("blockJson")) request.getString("blockJson")
+            else lgaed.narration.androidjson.JSONObject(originalRequest).getJSONObject("block").toString()
+        val fingerprint = MathPuzzleState.fingerprint(lgaed.narration.androidjson.JSONObject(originalBlock))
+        return JSONObject().put("correct",correct).put("evaluable",evaluable).put("contentFingerprint",fingerprint)
             .put("feedback",feedback).put("feedbackKind",if (!evaluable) "error" else if (correct) "correct" else "incorrect")
             .put("results",JSONArray(results.map { (response,result) ->
                 JSONObject().put("id",response.id).put("correct",result.correct).put("evaluable",result.evaluable)

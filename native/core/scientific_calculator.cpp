@@ -38,7 +38,6 @@ struct Parser {
         for (;;) {
             if (take("*") || take("×")) result = checked(result * unary());
             else if (take("/") || take("÷")) { const auto value = unary(); if (value == 0) error("No se puede dividir entre cero"); result = checked(result / value); }
-            else if (take("%")) { const auto value = unary(); if (value == 0) error("El divisor del resto no puede ser cero"); result = checked(std::fmod(result,value)); }
             else return result;
         }
     }
@@ -48,10 +47,15 @@ struct Parser {
         if (take("+")) return unary();
         if (take("-") || take("−")) return checked(-unary());
         auto result = primary();
-        while (take("!")) {
-            if (result < 0 || result != std::trunc(result) || result > 170) error("El factorial requiere un entero entre 0 y 170");
-            auto factorial = 1.0; for (unsigned value = 2; value <= static_cast<unsigned>(result); ++value) factorial *= value;
-            result = checked(factorial);
+        // CalculatorExpressionCompiler.postfix: % always divides the preceding
+        // value by 100, before exponentiation; it is not C++'s binary remainder.
+        for (;;) {
+            if (take("%")) result = checked(result / 100.0);
+            else if (take("!")) {
+                if (result < 0 || result != std::trunc(result) || result > 170) error("El factorial requiere un entero entre 0 y 170");
+                auto factorial = 1.0; for (unsigned value = 2; value <= static_cast<unsigned>(result); ++value) factorial *= value;
+                result = checked(factorial);
+            } else break;
         }
         if (take("^")) result = checked(std::pow(result,unary()));
         return result;

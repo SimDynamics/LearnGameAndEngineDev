@@ -3,6 +3,7 @@
 #include "native_build_config.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 
 namespace {
@@ -27,6 +28,45 @@ int main() {
         location = catalog_child(location,units.entries[0].id); const auto lessons = windows::load_catalog(root,location);
         check(lessons.entries.size() == 5 && lessons.entries[1].id == "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida","Lesson order differs from unit index");
         check(lessons.entries[1].available && lessons.entries[1].asset.filename() == "lesson_primer_programa_y_salida.json","An indexed lesson points to another source");
+        auto first_lesson = location; first_lesson.lesson = lessons.entries.front().id;
+        const auto same_unit = windows::next_catalog_lesson(root,first_lesson,false,false);
+        check(same_unit && same_unit->lesson == lessons.entries[1].id && same_unit->unit == location.unit && same_unit->locale == location.locale,
+            "Next lesson did not follow the actual indexed order and content language");
+        auto unit_end = location; unit_end.lesson = lessons.entries.back().id;
+        check(!windows::next_catalog_lesson(root,unit_end,false,false) && !windows::next_catalog_lesson(root,unit_end,false,true),
+            "Automatic continuation crossed an unapproved unit or skipped it to another course");
+        const auto next_unit = windows::next_catalog_lesson(root,unit_end,true,false);
+        check(next_unit && next_unit->course == location.course && next_unit->unit == units.entries[1].id && next_unit->route == location.route,
+            "Unit continuation skipped its indexed parent or changed routes");
+        auto course_end = catalog_parent(location); course_end = catalog_child(course_end,units.entries.back().id);
+        const auto final_lessons = windows::load_catalog(root,course_end); course_end.lesson = final_lessons.entries.back().id;
+        check(!windows::next_catalog_lesson(root,course_end,true,false),"Course continuation ignored its disabled setting");
+        const auto next_course = windows::next_catalog_lesson(root,course_end,true,true);
+        check(next_course && next_course->route == location.route && next_course->course == courses.entries[1].id && next_course->locale == location.locale,
+            "Course continuation did not preserve indexed route/course ownership");
+        const auto location_before_restore = location;
+        const auto read_index = [&] {
+            std::ifstream source(root / location.locale / catalog_index_path(location),std::ios::binary);
+            check(source.good(),"Cannot read the original indexed lesson source");
+            return std::string(std::istreambuf_iterator<char>(source),std::istreambuf_iterator<char>());
+        };
+        const auto original_index = read_index();
+        const auto active = windows::active_catalog_lesson(root,location,lessons.entries[1].id);
+        check(active && active->id == lessons.entries[1].id && active->asset == lessons.entries[1].asset &&
+            active->asset_locale == lessons.entries[1].asset_locale && active->available,
+            "Restoring an active lesson changed its exact published identity/asset");
+        check(!windows::active_catalog_lesson(root,location,next_unit->lesson) &&
+            !windows::active_catalog_lesson(root,location,next_course->lesson),
+            "Restoring navigation searched another unit or course for the saved lesson");
+        for (const auto id : {"","missing","../lesson.json","C:\\other\\lesson.json","a/b","a\\b","wrong__unit__lesson"})
+            check(!windows::active_catalog_lesson(root,location,id),"An absent or malformed active ID escaped the current index");
+        check(!windows::active_catalog_lesson(root,CatalogLocation{},lessons.entries[1].id) &&
+            !windows::active_catalog_lesson(root,catalog_parent(location),lessons.entries[1].id),
+            "Restoring an active lesson invented missing current course/unit parents");
+        check(location == location_before_restore && read_index() == original_index,
+            "Reading the active lesson mutated current navigation or the curricular index");
+        auto unpublished = first_lesson; unpublished.lesson = unpublished.unit + "__unindexed";
+        rejects([&] { (void)windows::next_catalog_lesson(root,unpublished,true,true); },"Automatic continuation activated an unindexed lesson");
         check(catalog_parent(location).course == "cpp_fundamentals" && catalog_parent(catalog_parent(location)).route == "programming","Back navigation lost real parents");
         check(catalog_parent(catalog_parent(catalog_parent(location))) == CatalogLocation{},"Home does not preserve the route stack");
         check(catalog_lesson_path(location,lessons.entries[1].id).generic_string() == "programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json","Historical lesson path was renamed");
@@ -34,6 +74,9 @@ int main() {
             auto translated = location; translated.locale = locale;
             const auto page = windows::load_catalog(root,translated);
             check(!page.entries.empty() && page.entries[1].id == lessons.entries[1].id,"Translation changed lesson ownership");
+            const auto restored = windows::active_catalog_lesson(root,translated,lessons.entries[1].id);
+            check(restored && restored->asset == page.entries[1].asset && restored->asset_locale == page.entries[1].asset_locale &&
+                translated.locale == locale,"Restoring active navigation substituted another content language");
         }
         auto math = catalog_child(CatalogLocation{},"math_physics");
         const auto math_courses = windows::load_catalog(root,math);

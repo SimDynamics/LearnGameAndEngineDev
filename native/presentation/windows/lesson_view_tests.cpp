@@ -1,8 +1,10 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/android_import.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -34,6 +36,12 @@ std::string window_text(HWND window) {
     std::wstring value(static_cast<std::size_t>(size) + 1,L'\0');
     value.resize(static_cast<std::size_t>(GetWindowTextW(window,value.data(),static_cast<int>(value.size()))));
     return utf8(value);
+}
+CHARFORMAT2W character_format(HWND edit,LONG character = 0) {
+    CHARRANGE previous{}; SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+    CHARRANGE range{character,character+1};SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+    CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
+    SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));return format;
 }
 HWND descendant(HWND parent, int control) {
     struct Search { int id; HWND result = nullptr; } search{control};
@@ -85,6 +93,7 @@ LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
 struct Fixture {
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
+    state::StateData initial_data;
     std::filesystem::path content;
     bool supplied_model = false;
     HWND host = nullptr, view = nullptr;
@@ -97,10 +106,12 @@ struct Fixture {
         initialize_profile_directories(environment.paths);
         lesson = windows::load_lesson(content / "es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json");
         if (load_model) { lesson = load_model(lesson); supplied_model = true; }
-        if (initialize) {
-            state::StateStore seed_store(environment.paths.root); auto seed = seed_store.load();
-            initialize(seed, lesson); seed_store.save(seed);
-        }
+        state::StateStore seed_store(environment.paths.root); initial_data=seed_store.load();
+        // Spanish expectations below are explicit test choices, independent of
+        // the PC language. Individual language cases override this preference.
+        initial_data.preferences["native_windows"]["ui_language"]=std::string("es");
+        if (initialize) initialize(initial_data,lesson);
+        seed_store.save(initial_data);
         host = CreateWindowExW(WS_EX_CONTROLPARENT, L"LgaedLessonViewTests", L"Native lesson integration QA",
             WS_OVERLAPPEDWINDOW, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         require(host != nullptr, "Cannot create native QA host");
@@ -367,6 +378,277 @@ curriculum::Lesson with_relationships(const curriculum::Lesson& source,std::stri
     return windows::parse_lesson_json(winrt::to_string(object.Stringify()));
 }
 constexpr std::string_view reference_links = R"([{"activity":"block_0004_0002","blocks":["block_0005_0000","block_0005_0001","block_0005_0002","block_0005_0003"]},{"activity":"block_0005_0006","blocks":["block_0005_0007","block_0005_0008"]}])";
+
+struct PopupCapture {
+    HWND owner;
+    HHOOK hook = nullptr;
+    std::vector<std::string> captions;
+    bool native_styles = true;
+    std::string error;
+    static inline PopupCapture* active = nullptr;
+    explicit PopupCapture(HWND target) : owner(target) {
+        require(active == nullptr,"A popup capture is already active"); active = this;
+        hook = SetWindowsHookExW(WH_CALLWNDPROC,[](int code,WPARAM wp,LPARAM lp) -> LRESULT {
+            auto* self = active;
+            if (code >= 0 && self) {
+                const auto& message = *reinterpret_cast<CWPSTRUCT*>(lp);
+                if (message.hwnd == self->owner && message.message == WM_INITMENUPOPUP && self->captions.empty()) {
+                    try {
+                        const auto menu = reinterpret_cast<HMENU>(message.wParam);
+                        for (int index = 0; index < GetMenuItemCount(menu); ++index) {
+                            MENUITEMINFOW item{}; item.cbSize = sizeof(item); item.fMask = MIIM_STRING | MIIM_FTYPE;
+                            require(GetMenuItemInfoW(menu,static_cast<UINT>(index),TRUE,&item),"Cannot inspect the real popup");
+                            if (item.fType & MFT_SEPARATOR) continue;
+                            self->native_styles = self->native_styles && (item.fType & MFT_OWNERDRAW) != 0;
+                            std::wstring caption(static_cast<std::size_t>(item.cch)+1,L'\0');
+                            item.dwTypeData = caption.data(); item.cch = static_cast<UINT>(caption.size());
+                            require(GetMenuItemInfoW(menu,static_cast<UINT>(index),TRUE,&item),"Cannot read the real popup caption");
+                            caption.resize(item.cch); self->captions.push_back(utf8(caption));
+                        }
+                    } catch (const std::exception& failure) { self->error = failure.what(); }
+                    // Cancel only this test's own native popup through its
+                    // actual owner; no global keyboard/mouse input is emitted.
+                    PostMessageW(self->owner,WM_CANCELMODE,0,0);
+                }
+            }
+            return CallNextHookEx(nullptr,code,wp,lp);
+        },nullptr,GetCurrentThreadId());
+        if (!hook) { active = nullptr; throw std::runtime_error("Cannot observe the native popup lifecycle"); }
+    }
+    ~PopupCapture() { if(hook)UnhookWindowsHookEx(hook); active=nullptr; }
+    void verified() const {
+        require(error.empty(),error); require(!captions.empty(),"The actual native popup did not initialize");
+        require(native_styles || reader_theme::palette(owner).high_contrast,"The actual popup bypassed the native dark-menu helper");
+    }
+};
+
+void lesson_interface_languages() {
+    for (const auto locale : {"es","en","fr"}) {
+        Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {
+            data.preferences["native_windows"]["ui_language"] = std::string(locale);
+        },[](const curriculum::Lesson&) {
+            return windows::parse_lesson_json(R"({"id":"qa_interface_labels","title":"Título curricular intacto","pages":[{"blocks":[
+                {"type":"note","text":"Nota curricular intacta."},
+                {"type":"fill_code","id":"answer","question":"Pregunta curricular intacta.","code":"[]","answers":["int"],"explanation":"Explicación curricular intacta.","reviewFeedback":"Guía curricular intacta."},
+                {"type":"cpp_compiler","initialCode":"int main() { return 0; }\n","initialStandardInput":"","outputCheck":{"cases":[{"standardInput":"","outputs":[""]}]}},
+                {"type":"cpp_compiler","initialCode":"int main() { return 0; }\n"}
+                ]}]})");
+        });
+        const auto pick = [locale](const char* es,const char* en,const char* fr) {
+            return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);
+        };
+        ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
+        require(accessible_name(fixture.control(111)) == pick("Lector","Reader","Lecteur") &&
+                accessible_name(fixture.control(112)) == pick("Idioma","Language","Langue") &&
+                accessible_name(fixture.control(113)) == pick("Progreso de la lección","Lesson progress","Progression de la leçon"),
+                "Lesson header labels ignored the independent interface language");
+        require(window_text(fixture.control(2,11)) == pick("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier") &&
+                window_text(fixture.control(3,11)) == pick("Compilar y ejecutar","Compile and run","Compiler et exécuter") &&
+                fixture.text(2,17) == pick("Entrada","Input","Entrée") && fixture.text(2,30) == pick("Salida del programa","Program output","Sortie du programme"),
+                "Compiler/check/input/output labels did not follow the interface language");
+        require(fixture.text(0,0) == "Nota curricular intacta." && fixture.text(1,0) == "Pregunta curricular intacta." &&
+                fixture.text(2,10) == "int main() { return 0; }\n", "Interface localization changed authored text or C++");
+        const auto regions = lesson_reading_regions(fixture.view);
+        require(std::ranges::any_of(regions,[&](const auto& region) { return region.source_text == pick("Nota","Note","Note"); }),
+                "The localized note heading and narration source disagree");
+        {
+            PopupCapture capture(fixture.view); fixture.click(107); capture.verified();
+            require(capture.captions.front() == pick("Importar estado Android…","Import Android state…","Importer l'état Android…") &&
+                    capture.captions[1] == pick("Páginas","Pages","Pages"), "The real lesson popup remained in another language");
+        }
+        {
+            PopupCapture capture(fixture.view); fixture.click(2,19); capture.verified();
+            require(capture.captions.front() == pick("Deshacer","Undo","Annuler"),"The real editor popup ignored the interface language");
+        }
+        {
+            PopupCapture capture(fixture.view); fixture.click(2,31); capture.verified();
+            require(capture.captions.front() == pick("Copiar salida","Copy output","Copier la sortie"),"The real console popup ignored the interface language");
+        }
+        fixture.replace(1,2,"void"); fixture.enter(1);
+        require(fixture.text(1,4) == pick("Incorrecto","Incorrect","Incorrect") + "\nGuía curricular intacta.",
+                "The wrong verdict was not localized or rewrote authored feedback");
+        fixture.replace(1,2,"int"); fixture.enter(1);
+        require(fixture.text(1,4) == pick("Correcto","Correct","Correct") + "\nExplicación curricular intacta.",
+                "The correct verdict was not localized or rewrote authored feedback");
+        const auto source = fixture.control(2,10); const auto original = fixture.text(2,10);
+        fixture.replace(2,10,original+"// historial QA\n");
+        CHARRANGE selection{4,8}; SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        update_lesson_preferences(fixture.view,[](state::StateData& data) { data.preferences["native_windows"]["ui_language"]=std::string("fr"); });
+        CHARRANGE restored{}; SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored));
+        require(fixture.control(2,10)==source && restored.cpMin==selection.cpMin && restored.cpMax==selection.cpMax &&
+                fixture.text(1,4)=="Correct\nExplicación curricular intacta." && fixture.text(2,17)=="Entrée",
+                "Refreshing interface labels recreated editors, moved the selection or changed authored feedback");
+        SendMessageW(source,WM_UNDO,0,0); pump(fixture.host);
+        require(fixture.text(2,10)==original,"Changing interface language discarded the editor's existing Undo history");
+    }
+    std::cout << "PASS ES/EN/FR real lesson/editor/console popups, generated verdicts, original curriculum, selection and Undo\n";
+}
+void native_page_progress_theme() {
+    Fixture fixture;const auto progress=fixture.control(106);
+    wchar_t class_name[64]{};GetClassNameW(progress,class_name,64);
+    require(std::wstring_view(class_name)==PROGRESS_CLASSW,"The lesson progress ceased to be the real native progress control");
+    PBRANGE original{};SendMessageW(progress,PBM_GETRANGE,FALSE,reinterpret_cast<LPARAM>(&original));
+    const auto original_position=SendMessageW(progress,PBM_GETPOS,0,0);
+    require(original.iLow==0&&original.iHigh==static_cast<int>(fixture.lesson.pages.size())&&original_position==1,
+        "The original native progress range/position differ from the lesson");
+    RECT bounds{};GetClientRect(progress,&bounds);
+    require(bounds.right>=8&&bounds.bottom>0,"The real lesson progress has no drawable client area");
+    const auto screen=GetDC(progress),memory=CreateCompatibleDC(screen);
+    const auto bitmap=CreateCompatibleBitmap(screen,bounds.right,bounds.bottom);ReleaseDC(progress,screen);
+    require(memory&&bitmap,"Create the real progress-control GDI regression surface");
+    const auto previous=SelectObject(memory,bitmap);
+    const auto assert_paint=[&](int expected_position,int numerator,int denominator,COLORREF accent){
+        PBRANGE before{};SendMessageW(progress,PBM_GETRANGE,FALSE,reinterpret_cast<LPARAM>(&before));
+        const auto position=SendMessageW(progress,PBM_GETPOS,0,0);
+        require(before.iLow==-100&&before.iHigh==300&&static_cast<int>(position)==expected_position,"The native progress messages lost their original range/position semantics");
+        FillRect(memory,&bounds,reinterpret_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));
+        SendMessageW(progress,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);GdiFlush();
+        const auto colors=reader_theme::palette(progress);
+        if(!colors.high_contrast){
+            const auto filled=static_cast<int>((static_cast<long long>(bounds.right)*numerator)/denominator);
+            if(filled>0)require(GetPixel(memory,filled/2,bounds.bottom/2)==accent,
+                "The real lesson progress did not paint its inherited route accent");
+            if(filled<bounds.right)require(GetPixel(memory,(filled+bounds.right)/2,bounds.bottom/2)==colors.outline,
+                "The real lesson progress did not paint the unfilled native range with the theme outline");
+        }
+        PBRANGE after{};SendMessageW(progress,PBM_GETRANGE,FALSE,reinterpret_cast<LPARAM>(&after));
+        require(before.iLow==after.iLow&&before.iHigh==after.iHigh&&SendMessageW(progress,PBM_GETPOS,0,0)==position,
+            "Painting the progress changed its native range or position");
+    };
+    SendMessageW(progress,PBM_SETRANGE32,static_cast<WPARAM>(-100),300);
+    SendMessageW(progress,PBM_SETPOS,100,0);assert_paint(100,1,2,RGB(228,50,72));
+    reader_theme::set_accent(fixture.view,RGB(108,209,92));assert_paint(100,1,2,RGB(108,209,92));
+    reader_theme::set_accent(fixture.view,RGB(0,0,0));assert_paint(100,1,2,RGB(0,0,0));
+    reader_theme::set_accent(fixture.view,RGB(228,50,72));
+    require(SendMessageW(progress,PBM_DELTAPOS,50,0)==100,"PBM_DELTAPOS no longer returns its native previous position");
+    assert_paint(150,5,8,RGB(228,50,72));
+    SendMessageW(progress,PBM_SETSTEP,50,0);SendMessageW(progress,PBM_STEPIT,0,0);assert_paint(200,3,4,RGB(228,50,72));
+    SendMessageW(progress,PBM_SETPOS,1000,0);assert_paint(300,1,1,RGB(228,50,72));
+    SendMessageW(progress,PBM_SETPOS,static_cast<WPARAM>(-1000),0);assert_paint(-100,0,1,RGB(228,50,72));
+    SelectObject(memory,previous);DeleteObject(bitmap);DeleteDC(memory);
+    SendMessageW(progress,PBM_SETRANGE32,original.iLow,original.iHigh);SendMessageW(progress,PBM_SETPOS,original_position,0);
+    std::cout<<"PASS Native lesson progress route colors, real GDI rendering, unchanged range/position, delta/step/clamping and actual high-contrast delegation\n";
+}
+
+void simulated_exercise_code_cards() {
+    Fixture fixture({},[](const curriculum::Lesson&){
+        return windows::parse_lesson_json(R"json({"id":"qa_simulated_exercise_headers","title":"Cabeceras de ejercicios","pages":[{"blocks":[
+            {"type":"output_prediction","question":"Predice el mensaje.","code":"std::cout << \"Listo\";","answers":["Listo"]},
+            {"type":"fill_code","question":"Completa el operador.","code":"std::cout [] \"Listo\";","answers":["<<"]},
+            {"type":"order_code","question":"Ordena las líneas.","fragments":["return 0;","int main() {","}"],"correctOrder":[1,0,2]},
+            {"type":"inline_fill_code","question":"Completa el código.","template":"std::cout [] \"Listo\";","answers":["<<"]},
+            {"type":"drag_fill_code","question":"Coloca la función.","template":"int []() { return 0[] }","choices":["main",";","Main"],"correctOrder":[0,1]}
+            ]}]})json");
+    });
+    const auto original_json=fixture.lesson.raw_json;
+    for(std::size_t index=0;index<5;++index){
+        require(fixture.text(index,16)=="</> C++"&&accessible_name(fixture.control(index,12))=="Reiniciar respuesta"&&
+            accessible_name(fixture.control(index,18))=="Copiar ejercicio"&&accessible_name(fixture.control(index,13))=="Pantalla completa",
+            "A simulated programming response lost its actual language/reset/copy/fullscreen header");
+        require(!IsWindowEnabled(fixture.control(index,12)),"A fresh simulated response gained a resettable hidden answer");
+    }
+    const auto output_code=fixture.control(0,1),output_answer=fixture.control(0,2),fill_answer=fixture.control(1,2);
+    const auto inline_host=fixture.control(3,5),drag_host=fixture.control(4,5);
+    const auto inline_answer=GetDlgItem(inline_host,100),drag_slot=GetDlgItem(drag_host,100);
+    require(inline_answer&&drag_slot&&edit_text(inline_answer).empty()&&edit_text(drag_slot)=="…",
+        "Adding code headers revealed the internal inline/drag expected answers");
+    const auto regions=lesson_reading_regions(fixture.view);
+    require(std::ranges::none_of(regions,[&](const auto& region){
+        return region.target==output_code||region.target==fixture.control(0,16)||region.target==fixture.control(1,16);
+    }),"A decorative simulated header started narrating excluded console code or buttons");
+    {
+        PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
+        require(popup.captions==std::vector<std::string>{"Copiar ejercicio","Reiniciar respuesta","Pantalla completa"},
+            "The simulated response menu does not expose its real copy/reset/fullscreen operations");
+    }
+    fixture.replace(0,2,"Respuesta personal");fixture.replace(1,2,"<<");
+    require(IsWindowEnabled(fixture.control(0,12))&&IsWindowEnabled(fixture.control(1,12)),"Typing a simulated answer did not update its real header reset");
+    fixture.click(0,13);
+    require(fixture.control(0,1)==output_code&&fixture.control(0,2)==output_answer&&fixture.text(0,2)=="Respuesta personal"&&
+        (GetWindowLongPtrW(output_answer,GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(0,3),GWL_STYLE)&WS_VISIBLE)&&
+        !(GetWindowLongPtrW(fixture.control(1,2),GWL_STYLE)&WS_VISIBLE),
+        "Simulated response fullscreen recreated fields, hid its answer or retained unrelated/check controls");
+    fixture.click(110);fixture.click(0,12);
+    require(fixture.text(0,2).empty()&&fixture.control(1,2)==fill_answer&&fixture.text(1,2)=="<<"&&
+        fixture.text(0,1)==fixture.lesson.pages[0].blocks[0].code,
+        "Resetting a response modified immutable code, another answer or its HWND");
+    fixture.enter(1);require(fixture.text(1,4).starts_with("Correcto")&&fixture.page()==0,"The decorated fill no longer checks with Enter without navigation");
+    fixture.click(1,12);require(fixture.text(1,2).empty()&&fixture.text(1,4).empty(),"The fill header did not reuse the existing correct-answer reset");
+    fixture.click(2,21);require(fixture.text(2,22)=="int main() {"&&IsWindowEnabled(fixture.control(2,12)),"The order header collided with the actual first movement control");
+    fixture.click(2,12);require(fixture.text(2,22)=="return 0;"&&!IsWindowEnabled(fixture.control(2,12)),"Resetting order did not restore its original unsolved presentation");
+    SendMessageW(inline_answer,EM_SETSEL,0,-1);SendMessageW(inline_answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);
+    fixture.click(3,13);require(fixture.control(3,5)==inline_host&&GetDlgItem(inline_host,100)==inline_answer&&edit_text(inline_answer)=="<<",
+        "Inline fullscreen recreated the existing hole/editor or discarded its draft");
+    fixture.click(110);fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
+    SendMessageW(GetDlgItem(drag_host,2000),BM_CLICK,0,0);SendMessageW(drag_slot,WM_LBUTTONUP,0,0);pump(fixture.host);
+    require(edit_text(drag_slot)=="main"&&IsWindowEnabled(fixture.control(4,12)),"The decorated drag card no longer places a visible choice");
+    fixture.click(4,12);require(edit_text(drag_slot)=="…"&&fixture.lesson.raw_json==original_json&&fixture.control(4,5)==drag_host,
+        "Resetting the drag header changed source curriculum or recreated its controls");
+    fixture.non_overlapping_rows();fixture.reopen();
+    require(fixture.text(0,1)==fixture.lesson.pages[0].blocks[0].code&&fixture.lesson.raw_json==original_json,
+        "Reopening the new simulated headers changed immutable source or authored content");
+    std::cout<<"PASS All five simulated C++ response headers, real menus, same-HWND fullscreen, isolated reset, Enter, order/holes/drag and source preservation\n";
+}
+
+void simulated_code_and_choice_cards() {
+    Fixture fixture({},[](const curriculum::Lesson&){
+        auto model=windows::parse_lesson_json(R"json({"id":"qa_simulated_cards","title":"Tarjetas de ejemplo y respuesta","pages":[{"blocks":[
+            {"type":"code","language":"cpp","code":"#include <iostream>\nint main() {\n    std::cout << \"Zona inicial\";\n}\n"},
+            {"type":"multiple_choice","id":"qa_choice","question":"¿Qué opción respeta el objetivo?","options":["Primera opción visible.","Segunda opción visible."],"correctIndex":1,"explanation":"Explicación original.","reviewFeedback":"Guía original."},
+            {"type":"cpp_compiler","initialCode":"int main() { return 0; }\n"}
+            ]}]})json");
+        for(unsigned line=0;line<60;++line)model.pages[0].blocks[0].code+="// Línea del ejemplo para comprobar el desplazamiento.\n";
+        return model;
+    });
+    const auto code=fixture.control(0,1),first=fixture.control(1,20),second=fixture.control(1,22),editor=fixture.control(2,10);
+    const auto original=fixture.lesson.pages[0].blocks[0].code,raw=fixture.lesson.raw_json;
+    require(fixture.text(0,16)=="</> C++"&&fixture.text(1,16)=="</> C++"&&fixture.text(0,1)==original,
+            "Simulated card headers changed source text or omitted their original language label");
+    require(!descendant(fixture.view,id(0,12))&&accessible_name(fixture.control(0,18))=="Copiar código"&&
+            accessible_name(fixture.control(1,18))=="Copiar ejercicio"&&!IsWindowEnabled(fixture.control(1,12)),
+            "Immutable code gained a fake reset or the exercise header lost its real copy/reset contract");
+    const auto original_regions=lesson_reading_regions(fixture.view);
+    require(std::ranges::any_of(original_regions,[&](const auto& region){return region.target==fixture.control(1,21);})&&
+            std::ranges::none_of(original_regions,[&](const auto& region){return region.target==code||region.target==fixture.control(1,16);}),
+            "Card decoration changed narratable answer targets or started narrating console code/buttons");
+    {
+        const auto pane=GetParent(code);const auto screen=GetDC(pane),memory=CreateCompatibleDC(screen);RECT client{};GetClientRect(pane,&client);
+        const auto bitmap=CreateCompatibleBitmap(screen,client.right,client.bottom);ReleaseDC(pane,screen);
+        require(memory&&bitmap,"Create an isolated native card drawing surface");const auto previous=SelectObject(memory,bitmap);
+        SendMessageW(pane,WM_ERASEBKGND,reinterpret_cast<WPARAM>(memory),0);
+        const auto sample=[&](HWND target,int inset){RECT bounds{};GetWindowRect(target,&bounds);MapWindowPoints(nullptr,pane,reinterpret_cast<POINT*>(&bounds),2);
+            return GetPixel(memory,bounds.left-MulDiv(inset,static_cast<int>(GetDpiForWindow(pane)),96),bounds.top+2);};
+        const auto header=sample(fixture.control(0,16),7),body=sample(code,9);
+        SelectObject(memory,previous);DeleteObject(bitmap);DeleteDC(memory);
+        const auto colors=reader_theme::palette(pane);
+        require(header==colors.header&&body==colors.card,"The simulated code card did not paint an actual header and body around its unchanged controls");
+    }
+    {
+        PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
+        require(popup.captions==std::vector<std::string>{"Copiar código","Pantalla completa"},
+                "The immutable code menu exposed editing actions or lost its original copy/fullscreen actions");
+    }
+    fixture.click(0,20);
+    require(fixture.control(0,1)==code&&fixture.text(0,1)==original&&!(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE)&&
+            lesson_reading_regions(fixture.view).empty()&&(GetWindowLongPtrW(code,GWL_STYLE)&WS_VSCROLL),
+            "Readonly fullscreen recreated code, exposed hidden exercise text or has no real internal scrolling");
+    fixture.click(110);
+    require(fixture.control(0,1)==code&&fixture.control(1,20)==first&&(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE),
+            "Leaving simulated-code fullscreen replaced controls or lost the exercise");
+    const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
+    fixture.click(1,20);require(IsWindowEnabled(fixture.control(1,12)),"Selecting an option did not enable its header reset");
+    fixture.click(1,3);require(fixture.text(1,4).starts_with("Incorrecto"),"The real incorrect-choice path did not execute");
+    fixture.click(1,12);
+    require(fixture.text(1,4).empty()&&!SendMessageW(first,BM_GETCHECK,0,0)&&!IsWindowEnabled(fixture.control(1,12))&&
+            fixture.control(2,10)==editor&&fixture.text(2,10)==draft,"Header reset changed another editor or retained a stale wrong attempt");
+    fixture.click(1,22);fixture.click(1,3);require(fixture.text(1,4).starts_with("Correcto")&&!IsWindowEnabled(second),"Correct choice did not retain the existing lock/verdict policy");
+    fixture.click(1,12);require(IsWindowEnabled(first)&&IsWindowEnabled(second)&&fixture.text(1,4).empty(),"Header reset did not reuse the ordinary correct-answer reset policy");
+    SendMessageW(editor,WM_UNDO,0,0);pump(fixture.host);require(fixture.text(2,10)==source,"Resetting a simulated puzzle destroyed an independent editor's Undo history");
+    fixture.non_overlapping_rows();fixture.scroll_repaint();fixture.reopen();
+    require(fixture.text(0,1)==original&&!IsWindowEnabled(fixture.control(1,12))&&fixture.lesson.raw_json==raw,
+            "Reopening simulated cards changed curriculum, restored a stale attempt or fabricated a resettable immutable program");
+    std::cout<<"PASS Simulated code/choice cards, native popup, exact text/reading targets, fullscreen, wrong/correct reset and independent editor history\n";
+}
 }
 
 int main() {
@@ -375,20 +657,35 @@ int main() {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        native_page_progress_theme();
+        simulated_exercise_code_cards();
+        simulated_code_and_choice_cards();
+        lesson_interface_languages();
         Fixture view;
         require(view.page() == 0 && !lesson_page_state(view.view).can_next, "A fresh profile bypassed initial page exercises");
         view.close();
         {
             state::StateStore untouched(view.environment.paths.root);
-            require(untouched.empty(), "Closing an untouched first page made a fresh profile ineligible for import");
+            require(untouched.load()==view.initial_data && state::can_import_android_profile(untouched.load()),
+                "Closing an untouched first page changed the UI-only profile or made it ineligible for import");
         }
         view.open();
         require(view.page() == 0 && !lesson_page_state(view.view).can_next, "An untouched reopen changed the initial bookmark or exercise gate");
         {
             state::StateStore untouched(view.environment.paths.root);
-            require(untouched.empty(), "Reopening an untouched profile published personal state");
+            require(untouched.load()==view.initial_data && state::can_import_android_profile(untouched.load()),
+                "Reopening an untouched profile published personal state or changed its explicit UI preference");
         }
         view.viewport_layout(); view.scroll_repaint();
+        require(character_format(descendant(view.view,990)).yHeight==640,
+            "The lesson title did not retain its native 32-point hierarchy");
+        for(std::size_t index=0;index<view.lesson.pages.front().blocks.size();++index){
+            const auto& item=view.lesson.pages.front().blocks[index];
+            if(item.type==BlockType::paragraph)
+                require(character_format(view.control(index,0)).yHeight==360,"Lesson prose remains below the readable 18-point base");
+            else if(item.type==BlockType::heading||!item.question.empty())
+                require(character_format(view.control(index,0)).yHeight==460,"A question/heading lost its distinct 23-point size");
+        }
         view.gesture_navigation(false);
         {
             const int dpi = static_cast<int>(GetDpiForWindow(view.view));
@@ -651,11 +948,120 @@ int main() {
                 require(region.target != preferences.control(3,10) && region.target != preferences.control(3,14)
                         && region.target != preferences.control(3,11),"Compiler code, console or buttons entered the reading source");
             }
-            update_lesson_preferences(preferences.view,[](state::StateData& data) {
+            const auto course=preferences.lesson.id.substr(0,preferences.lesson.id.find("__"));
+            const auto scale_source = preferences.text(3,10);
+            const auto scale_editor = preferences.control(3,10);
+            preferences.replace(3,10,scale_source + "// historial previo a escala y ajuste\n");
+            CHARRANGE scale_selection{4,9};
+            SendMessageW(scale_editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&scale_selection));
+            update_lesson_preferences(preferences.view,[&](state::StateData& data) {
                 data.preferences["lesson_narration_settings"]["enabled"] = true;
                 data.preferences["lesson_narration_resume_bounded_v1"]["qa_slot"] = std::string("qa");
                 data.preferences["native_windows"]["code_wrap"] = true;
+                data.preferences["appearance_settings"]["route_accent_blue_programming"] = std::int64_t{123};
+                data.preferences["lesson_text_size_settings"]["global_scale"] = std::int64_t{150};
+                data.preferences["lesson_text_size_settings"]["course_scale_"+course] = std::int64_t{125};
+                data.preferences["lesson_text_size_settings"]["course_use_global_"+course] = false;
+                data.preferences["code_wrap_settings"]["global_wrap"] = true;
+                data.preferences["code_wrap_settings"]["course_wrap_"+course] = false;
+                data.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"] = std::string(R"(["std::cout","<<",";"])" );
             });
+            int zoom_numerator=0,zoom_denominator=0;const auto source_control=preferences.control(3,10);
+            SendMessageW(source_control,EM_GETZOOM,reinterpret_cast<WPARAM>(&zoom_numerator),reinterpret_cast<LPARAM>(&zoom_denominator));
+            require(zoom_denominator>0&&zoom_numerator*100==125*zoom_denominator
+                && (GetWindowLongPtrW(source_control,GWL_STYLE)&ES_AUTOHSCROLL),
+                "A lesson ignored its original per-course text size or code-wrap override");
+            require(character_format(source_control).yHeight==360,
+                "The source editor still uses the old small type or a live zoom rewrote its base formatting");
+            // A touch in the lower part of an enlarged glyph is still text,
+            // not blank editor space that may be handed to page scrolling.
+            update_lesson_preferences(preferences.view,[&](state::StateData& data){
+                data.preferences["lesson_text_size_settings"]["course_scale_"+course]=std::int64_t{150};
+            });
+            const bool gesture_host_shown=IsWindowVisible(preferences.host);
+            if(!gesture_host_shown){ShowWindow(preferences.host,SW_SHOWNOACTIVATE);pump(preferences.host);}
+            SetFocus(source_control);pump(preferences.host);
+            // The enlarged lesson has substantial content above this editor.
+            // Use the actual lesson wheel path to expose its first source line
+            // before testing native pointer selection, rather than sending a
+            // synthetic drag to a child clipped far outside its viewport.
+            for(int wheel=0;wheel<96;++wheel){
+                RECT source_bounds{},pane_bounds{};GetWindowRect(source_control,&source_bounds);GetWindowRect(GetParent(source_control),&pane_bounds);
+                if(source_bounds.top>=pane_bounds.top&&source_bounds.top+100<pane_bounds.bottom)break;
+                const auto delta=source_bounds.top<pane_bounds.top?WHEEL_DELTA:-WHEEL_DELTA;
+                SendMessageW(preferences.view,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(delta)),0);pump(preferences.host);
+            }
+            CHARRANGE gesture_cursor{0,0};SendMessageW(source_control,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&gesture_cursor));
+            POINT zero_scroll{};SendMessageW(source_control,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&zero_scroll));
+            POINTL glyph_origin{};SendMessageW(source_control,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&glyph_origin),1);
+            const int gesture_dpi=static_cast<int>(GetDpiForWindow(source_control));
+            const POINT glyph_probe{glyph_origin.x+1,glyph_origin.y+MulDiv(27,gesture_dpi,96)};
+            POINTL glyph_character_point{glyph_probe.x,glyph_probe.y};
+            const auto glyph_character=SendMessageW(source_control,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&glyph_character_point));
+            RECT glyph_control_bounds{},glyph_pane_bounds{};GetWindowRect(source_control,&glyph_control_bounds);GetWindowRect(GetParent(source_control),&glyph_pane_bounds);
+            auto glyph_screen=glyph_probe;ClientToScreen(source_control,&glyph_screen);
+            const auto glyph_hit=WindowFromPoint(glyph_screen);
+            require(PtInRect(&glyph_pane_bounds,glyph_screen)&&glyph_hit==source_control,
+                "The large-text pointer fixture did not expose its real editor glyph inside the visible viewport");
+            require(rich_text_hit_test(source_control,glyph_probe),
+                "The actual glyph/font/zoom hit test treats the lower part of 150-percent code as empty space");
+            CHARRANGE after_hit{};SendMessageW(source_control,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after_hit));
+            require(after_hit.cpMin==gesture_cursor.cpMin&&after_hit.cpMax==gesture_cursor.cpMax,
+                "Observing actual text geometry changed the editor selection");
+            // Compare the same sent mouse messages with a plain, visible
+            // system RichEdit. Some versions consult physical button state
+            // rather than growing a selection from synthetic MK_LBUTTON.
+            auto native_bounds=glyph_control_bounds;
+            MapWindowPoints(HWND_DESKTOP,GetParent(source_control),reinterpret_cast<POINT*>(&native_bounds),2);
+            const auto native_edit=CreateWindowExW(0,MSFTEDIT_CLASS,L"",
+                static_cast<DWORD>(GetWindowLongPtrW(source_control,GWL_STYLE)),native_bounds.left,native_bounds.top,
+                native_bounds.right-native_bounds.left,native_bounds.bottom-native_bounds.top,GetParent(source_control),
+                reinterpret_cast<HMENU>(49999),GetModuleHandleW(nullptr),nullptr);
+            require(native_edit!=nullptr,"Cannot create a real native-only drag baseline");
+            set_rich_text(native_edit,preferences.text(3,10),{},true);SendMessageW(native_edit,EM_SETZOOM,150,100);
+            RECT native_format{};SendMessageW(source_control,EM_GETRECT,0,reinterpret_cast<LPARAM>(&native_format));
+            SendMessageW(native_edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&native_format));
+            SetFocus(native_edit);pump(preferences.host);
+            POINTL native_glyph{};SendMessageW(native_edit,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&native_glyph),1);
+            preferences.drag_control(native_edit,{native_glyph.x+1,native_glyph.y+MulDiv(27,gesture_dpi,96)},
+                {MulDiv(100,gesture_dpi,96),0});
+            CHARRANGE native_selection{};SendMessageW(native_edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&native_selection));
+            DestroyWindow(native_edit);SetFocus(source_control);pump(preferences.host);
+            SCROLLINFO lesson_scroll_before{sizeof(lesson_scroll_before),SIF_POS};GetScrollInfo(GetParent(source_control),SB_VERT,&lesson_scroll_before);
+            POINT editor_scroll_before{};SendMessageW(source_control,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&editor_scroll_before));
+            preferences.drag_control(source_control,{glyph_origin.x+1,glyph_origin.y+MulDiv(27,gesture_dpi,96)},
+                {MulDiv(100,gesture_dpi,96),0});
+            CHARRANGE gesture_selection{};SendMessageW(source_control,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&gesture_selection));
+            SCROLLINFO lesson_scroll_after{sizeof(lesson_scroll_after),SIF_POS};GetScrollInfo(GetParent(source_control),SB_VERT,&lesson_scroll_after);
+            POINT editor_scroll_after{};SendMessageW(source_control,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&editor_scroll_after));
+            std::cout<<"INFO native-only sent drag selection="<<native_selection.cpMin<<','<<native_selection.cpMax
+                <<"; assisted editor="<<gesture_selection.cpMin<<','<<gesture_selection.cpMax<<'\n';
+            require(gesture_selection.cpMin==native_selection.cpMin&&gesture_selection.cpMax==native_selection.cpMax
+                &&gesture_selection.cpMin==glyph_character&&preferences.page()==4
+                &&lesson_scroll_before.nPos==lesson_scroll_after.nPos&&editor_scroll_before.x==editor_scroll_after.x
+                &&editor_scroll_before.y==editor_scroll_after.y&&preferences.text(3,10)==scale_source+"// historial previo a escala y ajuste\n",
+                "A real glyph hit did not preserve native mouse routing, source/cursor and independent scroll ownership");
+            if(!gesture_host_shown){ShowWindow(preferences.host,SW_HIDE);pump(preferences.host);}
+            SendMessageW(source_control,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&scale_selection));
+            update_lesson_preferences(preferences.view,[&](state::StateData& data){
+                data.preferences["lesson_text_size_settings"]["global_scale"] = std::int64_t{75};
+                data.preferences["lesson_text_size_settings"]["course_use_global_"+course] = true;
+            });
+            SendMessageW(source_control,EM_GETZOOM,reinterpret_cast<WPARAM>(&zoom_numerator),reinterpret_cast<LPARAM>(&zoom_denominator));
+            require(zoom_denominator>0&&zoom_numerator*100==75*zoom_denominator&&preferences.control(3,10)==source_control,
+                "A live inherited scale did not update the existing editor in place");
+            CHARRANGE preserved_selection{};
+            SendMessageW(source_control,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&preserved_selection));
+            require(preserved_selection.cpMin==scale_selection.cpMin&&preserved_selection.cpMax==scale_selection.cpMax,
+                "Changing scale/wrap moved the editor's cursor or selection");
+            SendMessageW(source_control,WM_UNDO,0,0);pump(preferences.host);
+            require(preferences.text(3,10)==scale_source,"Changing scale/wrap discarded the existing source Undo history");
+            const auto shortcuts = descendant_class(preferences.view,L"LearnGameAndEngineDev.EditingBar");
+            require(shortcuts&&window_text(descendant(shortcuts,9003))=="std::cout"&&window_text(descendant(shortcuts,9004))=="<<",
+                "Saving shortcut preferences did not update the existing contextual bar");
+            const auto theme = reader_theme::palette(preferences.view);
+            require(theme.accent == (theme.high_contrast ? GetSysColor(COLOR_HIGHLIGHT) : RGB(228,50,123)),
+                "A permitted appearance update did not refresh the lesson's own route accent");
             const auto preference_source = preferences.text(3,10);
             preferences.replace(3,10,preference_source + "// borrador tras preferencias\n");
             const auto preference_state = preferences.saved();
@@ -668,6 +1074,18 @@ int main() {
             }); } catch (const std::invalid_argument&) { rejected = true; }
             require(rejected && !state::find(read_lesson_state(preferences.view),"learning_progress","qa_unauthorized_progress"),
                     "The reader preference API can overwrite student progress");
+            rejected = false;
+            try { update_lesson_preferences(preferences.view,[](state::StateData& data) {
+                data.preferences["appearance_settings"]["route_accent_red_unknown_route"] = std::int64_t{7};
+            }); } catch (const std::invalid_argument&) { rejected = true; }
+            require(rejected && !state::find(read_lesson_state(preferences.view),"appearance_settings","route_accent_red_unknown_route"),
+                "Appearance settings can mutate a domain/key outside the exact supported RGB contracts");
+            rejected=false;
+            try { update_lesson_preferences(preferences.view,[](state::StateData& data) {
+                data.preferences["keyboard_shortcut_settings"]["unknown_shortcuts"] = std::string("must remain protected");
+            }); } catch(const std::invalid_argument&) { rejected=true; }
+            require(rejected&&!state::find(read_lesson_state(preferences.view),"keyboard_shortcut_settings","unknown_shortcuts"),
+                "Shortcut settings can modify keys outside the exact Android cpp_shortcuts contract");
             update_lesson_preferences(preferences.view,[](state::StateData& data) {
                 data.preferences["lesson_narration_resume_bounded_v1"].erase("qa_slot");
                 data.preferences["native_windows"]["code_wrap"] = false;
@@ -681,6 +1099,15 @@ int main() {
             require(leaving == 1,"Page changes did not release the old reader position before replacing controls");
         }
         std::cout << "PASS Shared reader preference store, protected progress/drafts, bounded-history deletion and visible-source/lifecycle/feedback hooks\n" << std::flush;
+        {
+            Fixture languages({},[](const curriculum::Lesson& source){auto model=source;model.narration_language="fr";model.pages.front().narration_language="en-GB";return model;});
+            require(lesson_page_state(languages.view).narration_language=="en-GB","The page's explicit narration language did not reach the reader boundary");
+            languages.lesson.pages.front().narration_language.reset();languages.reopen();
+            require(lesson_page_state(languages.view).narration_language=="fr","An absent page language lost the original lesson fallback");
+            languages.lesson.narration_language.reset();languages.reopen();
+            require(lesson_page_state(languages.view).narration_language.empty(),"Absent authored narration metadata overrode the reader's own preference");
+        }
+        std::cout << "PASS Authored page narration language, lesson fallback and absent-metadata preference compatibility\n" << std::flush;
         const auto reject_forward_selector = [](Fixture& fixture,std::size_t target) {
             const auto before = fixture.page();
             require(!navigate_lesson_view(fixture.view,target),"The Pages command bypassed a prerequisite");

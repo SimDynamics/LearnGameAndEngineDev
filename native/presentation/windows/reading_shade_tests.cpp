@@ -1,6 +1,7 @@
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/native_math_text.hpp"
 
 #include <richedit.h>
 #include <algorithm>
@@ -47,9 +48,14 @@ void styles_equal(const CHARFORMAT2W& before,const CHARFORMAT2W& after) {
     require(before.yHeight == after.yHeight && std::wstring_view(before.szFaceName) == after.szFaceName,
             "Reading ranges changed font dimensions or typeface");
 }
-void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t boundary) {
+void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t boundary,bool native_math = false) {
     const auto after = ink(edit); require(after.size() == before.size(),"Shading changed the original displayed text length");
+    const auto native = native_math ? wide(edit_text(edit)) : std::wstring{};
     for (std::size_t index = 0; index < after.size(); ++index) {
+        // OfficeMath's noncharacter delimiters have object-level formatting;
+        // they are not displayed glyphs. Inspect each actual letter, number
+        // and operator, including both UTF16 units of mathematical letters.
+        if (native_math && native[index] >= 0xFDD0 && native[index] <= 0xFDEF) continue;
         styles_equal(before[index],after[index]);
         if (index < boundary) {
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
@@ -112,6 +118,26 @@ int main() {
         prefix(field.edit,before,wide(displayed).find(L'='));
         shade.read_through(shade.length()); prefix(field.edit,before,before.size());
         require(edit_text(field.edit) == displayed,"Technical tokens changed while applying reading ranges");
+    });
+    test("Native mathematical alphabet scalars retain distinct source ranges and backward shading",[] {
+        const std::string source = R"(\frac{x}{x}+x^{2}+y)"; Field field(source);
+        require(set_native_math_text(field.edit,source),"The real native mathematical fixture was not built up");
+        const auto mapping = native_math_text_mapping(field.edit,source); require(mapping.has_value(),"A built native formula lost its source mapping");
+        const auto first = source.find('x'),second = source.find('x',first + 1),third = source.find('x',second + 1),last = source.find('y');
+        const auto a = mapping->source_to_native[first],b = mapping->source_to_native[second],c = mapping->source_to_native[third],d = mapping->source_to_native[last];
+        require(a < b && b < c && c < d,"Repeated mathematical identifiers collapsed into one rendered occurrence");
+        for (const auto start : {a,b,c,d}) {
+            require(start + 1 < mapping->native_text.size() && mapping->native_text[start] >= 0xD800 && mapping->native_text[start] <= 0xDBFF
+                && mapping->native_text[start + 1] >= 0xDC00 && mapping->native_text[start + 1] <= 0xDFFF,
+                "A mathematical ASCII identifier mapped to a delimiter or half of a native supplementary scalar");
+        }
+        const auto before = ink(field.edit); ReadingShade shade(field.edit,source);
+        require(shade.matches(field.edit,source),"The native formula cannot use original narration offsets");
+        shade.read_through(second); prefix(field.edit,before,b,true);
+        shade.read_through(last); prefix(field.edit,before,d,true);
+        shade.read_through(first); prefix(field.edit,before,a,true);
+        shade.read_through(source.size()); prefix(field.edit,before,before.size(),true);
+        require(native_math_text_mapping(field.edit,source)->native_text == mapping->native_text,"Shading changed a mathematical glyph or operator");
     });
     test("Original bold italic underline fonts and syntax colors survive pending and read ranges",[] {
         const std::string source = "Negrita cursiva y `std::cout << \"área\";` final.";

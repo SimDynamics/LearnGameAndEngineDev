@@ -1,4 +1,5 @@
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/code_gutter.hpp"
 #include "presentation/windows/rich_text.hpp"
 
 #include <commctrl.h>
@@ -204,6 +205,7 @@ struct CodeEditor::Impl {
     bool pending_backspace = false;
     std::vector<Snapshot> history;
     std::size_t current = 0;
+    std::unique_ptr<CodeGutter> gutter;
 
     Impl(HWND control, bool lines, std::function<void()> action, bool assistance)
         : window(control), multiline(lines), code_assistance(assistance), submit(std::move(action)) {}
@@ -438,6 +440,18 @@ struct CodeEditor::Impl {
         return true;
     }
 
+    bool insert_shortcut(std::string_view text) {
+        if (text.empty() || !IsWindow(window) || !IsWindowEnabled(window) || (GetWindowLongPtrW(window,GWL_STYLE)&ES_READONLY)) return false;
+        const auto supplied=wide(text);
+        if(supplied.find(L'\0')!=supplied.npos||(!multiline&&supplied.find_first_of(L"\r\n")!=supplied.npos))return false;
+        capture();
+        if(supplied==L"\t"&&code_assistance){insert_tab();return true;}
+        if(supplied.size()==1&&code_assistance&&pair(supplied.front()))return true;
+        const auto value=lf(supplied);const auto range=selection(window);
+        const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
+        replace(start,end,value,start+value.size(),start+value.size());return true;
+    }
+
     void undo() {
         if (current == 0) return;
         cursor_snapshot();
@@ -553,6 +567,8 @@ CodeEditor::CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
     reset(std::move(document));
     if (!SetWindowSubclass(rich_edit, Impl::subclass, 1, reinterpret_cast<DWORD_PTR>(impl_.get())))
         throw std::runtime_error("Cannot attach code editing behavior");
+    try{if(multiline&&code_assistance)impl_->gutter=std::make_unique<CodeGutter>(rich_edit);}
+    catch(...){RemoveWindowSubclass(rich_edit,Impl::subclass,1);throw;}
 }
 
 CodeEditor::~CodeEditor() {
@@ -602,6 +618,7 @@ void CodeEditor::reset(EditorDocument document) {
     impl_->apply(impl_->now(), false);
 }
 void CodeEditor::insert_tab() { impl_->insert_tab(); }
+bool CodeEditor::insert_shortcut(std::string_view text) { return impl_->insert_shortcut(text); }
 void CodeEditor::undo() { impl_->undo(); }
 void CodeEditor::redo() { impl_->redo(); }
 
