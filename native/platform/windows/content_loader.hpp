@@ -1,8 +1,13 @@
 #pragma once
 
 #include "core/lesson.hpp"
+#include <optional>
 
 namespace lgaed::windows {
+
+// Same explicit aliases/normalization as Android NarrationLanguage.fromTag.
+// Content loading, preparation and the visible reader share this one contract.
+[[nodiscard]] std::optional<std::string> narration_language_tag(std::string_view authored);
 
 // Windows' complete JSON parser; malformed or unsupported contracts throw.
 [[nodiscard]] curriculum::Lesson load_lesson(

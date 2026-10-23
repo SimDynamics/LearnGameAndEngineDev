@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <stop_token>
 #include <string>
 #include <vector>
@@ -33,6 +34,7 @@ struct LessonViewHooks {
     std::function<void(HWND,std::size_t,bool)> feedback_changed;
     std::function<void(HWND)> reader_requested, language_requested, attempts_requested, settings_requested;
     std::function<void(HWND)> lesson_completed;
+    std::function<std::shared_ptr<void>(std::stop_token)> priority_work;
     std::function<std::string(std::string_view,std::string_view,std::string_view,std::stop_token)> validate_math;
     std::function<std::string(std::string_view)> math_editor_request;
     std::function<void(HWND,HWND)> calculator_requested;

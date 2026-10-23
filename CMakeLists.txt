@@ -40,14 +40,17 @@ target_include_directories(lgaed_host_options INTERFACE
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp
-    native/core/catalog.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
+    native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
 add_library(lgaed_platform_windows STATIC
     native/platform/windows/environment.cpp
     native/platform/windows/content_loader.cpp
+    native/platform/windows/narration_preferences.cpp
     native/platform/windows/catalog_loader.cpp
+    native/platform/windows/audio_generation.cpp
     native/platform/windows/narration_worker.cpp
+    native/platform/windows/narration_cpu_policy.cpp
     native/platform/windows/narration_player.cpp
     native/platform/windows/system_speech.cpp
     native/platform/windows/state_store.cpp
@@ -100,6 +103,24 @@ set_target_properties(LearnGameAndEngineDev PROPERTIES
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(lgaed_audio_schedule_tests native/core/audio_schedule_tests.cpp)
+    target_link_libraries(lgaed_audio_schedule_tests PRIVATE lgaed_core)
+    add_test(NAME native.audio_schedule COMMAND lgaed_audio_schedule_tests)
+    add_test(NAME native.background_narration_plan COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/native/narration/worker/test_background_plan.py")
+    set_tests_properties(native.background_narration_plan PROPERTIES TIMEOUT 240)
+    add_executable(lgaed_narration_cpu_policy_tests native/platform/windows/narration_cpu_policy_tests.cpp)
+    target_link_libraries(lgaed_narration_cpu_policy_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.narration_cpu_policy COMMAND lgaed_narration_cpu_policy_tests)
+    set_tests_properties(native.narration_cpu_policy PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_audio_generation_tests native/platform/windows/audio_generation_tests.cpp)
+    target_link_libraries(lgaed_audio_generation_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_audio_generation_tests lgaed_narration_runtime)
+    add_test(NAME native.audio_generation COMMAND lgaed_audio_generation_tests "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(native.audio_generation PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_narration_preferences_tests native/platform/windows/narration_preferences_tests.cpp)
+    target_link_libraries(lgaed_narration_preferences_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_narration_preferences_tests lgaed_narration_runtime)
+    add_test(NAME native.narration_preferences COMMAND lgaed_narration_preferences_tests)
     add_executable(lgaed_scrollbar_tests native/presentation/windows/scrollbar_tests.cpp)
     target_link_libraries(lgaed_scrollbar_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.scrollbars COMMAND lgaed_scrollbar_tests)

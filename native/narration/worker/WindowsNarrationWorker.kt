@@ -46,8 +46,10 @@ private class Backend(private val resources: File, private val englishResources:
     private var french: FrenchFluidG2P? = null
     @Volatile private var english: EnglishMisakiG2P? = null
     @Volatile private var engine: KokoroOnnxEngine? = null
+    // Two lazy CPU profiles, serialized on the existing inference lane. A
+    // foreground/background transition must not repeatedly reload the model.
+    private val engineProfiles = LinkedHashMap<Int,KokoroOnnxEngine>(2,0.75f,true)
     @Volatile private var duration: KokoroDurationModel? = null
-    private var engineThreads = 0
     private var durationDirectory: File? = null
     @Volatile var active: Request? = null
 
@@ -125,6 +127,22 @@ private class Backend(private val resources: File, private val englishResources:
         require(engine in setOf("KOKORO","ANDROID")) { "Unsupported original narration identity provider" }
         return JSONObject().put("key",NarrationResumePolicy.key(request.getString("page"),language(request).tag,
             engine,request.getString("voice"),(0 until texts.length()).map { texts.getString(it) }))
+    }
+    fun curriculumPlan(request: JSONObject): JSONObject {
+        val lang = language(request)
+        val uiLanguage = request.optString("uiLanguage",lang.tag)
+        val script = LessonNarrationScript.page(JSONObject(request.getString("lessonJson")),request.getInt("page"),
+            lang,forKokoro=MixedSpanishG2P.productionEnabled) { WindowsNarrationInstructions.resolve(it,uiLanguage) }
+        val segments = NarrationSegments.sentences(script.texts).map { prepared ->
+            // Background preparation uses the canonical already-normalized script.
+            // It writes audio only. The visible reader retains its own exact
+            // source projection and derives timings against that unchanged audio.
+            val segment = Segment(ManualEnglishSpeech.strip(prepared),prepared,emptyList(),emptyList())
+            plans[planKey(lang,segment.source,prepared)] = segment
+            JSONObject().put("text",segment.source).put("preparedText",prepared)
+                .put("key",KokoroNarrationCache.key(lang.tag,request.getString("voice"),prepared))
+        }
+        return JSONObject().put("segments",JSONArray(segments))
     }
     fun cancel(request: Request) {
         request.cancelled.set(true)
@@ -234,6 +252,7 @@ private class Backend(private val resources: File, private val englishResources:
         try {
             val language = language(request)
             val source = request.getString("text")
+            val audioOnly = request.optBoolean("audioOnly",false)
             val selected = if (request.has("preparedText")) {
                 plans[planKey(language,source,request.getString("preparedText"))]
                     ?: error("Prepared text has no current original-source plan; request plan first")
@@ -259,15 +278,17 @@ private class Backend(private val resources: File, private val englishResources:
             // Compatible recordings remain playable without installed synthesis
             // resources. Missing optional alignment never invalidates that audio.
             // Valid audio plus exact existing timings need no G2P or neural work.
-            val phone = if (cachedTimings != null) null else if (cacheHit) runCatching { phones(selected.prepared,language,job) }
+            val phone = if ((audioOnly && cacheHit) || cachedTimings != null) null else if (cacheHit) runCatching { phones(selected.prepared,language,job) }
                 .onFailure { if (it !is InterruptedException) System.err.println("Cached Kokoro audio needs no new synthesis: ${it.message}") }.getOrNull()
                 else phones(selected.prepared,language,job)
             val chunks = phone?.let { KokoroPhonemeChunks.split(it.text) }.orEmpty()
             if (!cacheHit) {
                 val threads = request.optInt("threads",Runtime.getRuntime().availableProcessors()).coerceIn(1,Runtime.getRuntime().availableProcessors())
-                if (engine == null || engineThreads != threads) {
-                    engine?.close(); engine = KokoroOnnxEngine(resources,preferAccelerator = false,cpuThreads = threads)
-                    engineThreads = threads
+                engine = engineProfiles.getOrPut(threads) {
+                    if(engineProfiles.size >= 2) {
+                        val oldest=engineProfiles.entries.first();oldest.value.close();engineProfiles.remove(oldest.key)
+                    }
+                    KokoroOnnxEngine(resources,preferAccelerator = false,cpuThreads = threads)
                 }
                 val generated = chunks.map { chunk -> current(job); engine!!.synthesizePhonemes(chunk,voice,1f) { job.cancelled.get() } }
                 current(job)
@@ -281,7 +302,7 @@ private class Backend(private val resources: File, private val englishResources:
             }
             val samples = requireNotNull(cachedSamples ?: sampleCount(audio)) { "Narration audio has no valid sample count" }
             val audioHash = cachedAudioHash ?: sha256(audio)
-            val timings = cachedTimings ?: runCatching {
+            val timings = if(audioOnly) JSONArray() else cachedTimings ?: runCatching {
                 if (phone == null || phone.sources.isEmpty() || selected.spoken.isEmpty()) return@runCatching JSONArray()
                 val derived = File(cache,"duration-model")
                 if (duration == null || durationDirectory != derived) {
@@ -316,7 +337,7 @@ private class Backend(private val resources: File, private val englishResources:
                 .put("provider",if (engine?.usesXnnpack == true) "Kokoro/ONNX Runtime XNNPACK Windows" else "Kokoro/ONNX Runtime CPU Windows")
         } finally { active = null }
     }
-    fun close() { engine?.close(); duration?.close(); english?.close() }
+    fun close() { engineProfiles.values.forEach { it.close() };engineProfiles.clear();engine=null;duration?.close();english?.close() }
 }
 
 fun main(arguments: Array<String>) {
@@ -372,6 +393,7 @@ fun main(arguments: Array<String>) {
                         if (job.cancelled.get()) throw InterruptedException("Narration request cancelled")
                         val result = when (command) {
                             "plan" -> backend.plan(request)
+                            "curriculum_plan" -> backend.curriculumPlan(request)
                             "identity" -> backend.identity(request)
                             "prepare" -> backend.prepare(request,job)
                             "describe_math" -> WindowsMathBridge.describe(request)

@@ -1972,7 +1972,15 @@ struct LessonView {
         if(laboratory()){laboratory_status=LaboratoryStatus::running;refresh_laboratory_status();}
         updating = true; set_rich_text(vm.console,laboratory()?"":ui("Compilando…","Compiling…","Compilation…")); updating = false;
         worker = std::jthread([this, request = std::move(request)](std::stop_token stop) {
-            auto result = windows::run_cpp(request, stop);
+            windows::CppRunResult result;
+            try{
+                auto priority=hooks.priority_work?hooks.priority_work(stop):std::shared_ptr<void>{};
+                if(stop.stop_requested())return;
+                result=windows::run_cpp(request, stop);
+            }catch(const std::exception& error){
+                if(stop.stop_requested())return;
+                result.request_id=request.request_id;result.revision=request.revision;result.error_utf8=error.what();
+            }
             { std::lock_guard guard(result_mutex); completed = std::move(result); }
             PostMessageW(window, result_message, 0, 0);
         });

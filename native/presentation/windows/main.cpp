@@ -15,6 +15,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/audio_generation.hpp"
 #include "presentation/windows/rich_text.hpp"
 
 #include <windows.h>
@@ -35,6 +36,7 @@ namespace {
 
 constexpr wchar_t window_class[] = L"LearnGameAndEngineDev.NativeShell";
 constexpr UINT_PTR smoke_timer = 1;
+constexpr UINT_PTR audio_context_timer = 2;
 constexpr DWORD window_style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 constexpr UINT open_lesson_message=WM_APP+230,return_message=WM_APP+231,settings_message=WM_APP+232,close_settings_message=WM_APP+233,tool_message=WM_APP+234;
 constexpr UINT lesson_finished_message=WM_APP+235;
@@ -46,6 +48,11 @@ struct WindowState {
     HWND lesson = nullptr;
     HWND catalog = nullptr,settings=nullptr,tool=nullptr;
     std::shared_ptr<lgaed::windows::NarrationWorker> narrator;
+    std::unique_ptr<lgaed::windows::AudioGeneration> generation;
+    bool graphics_active=false;
+    std::optional<lgaed::curriculum::CatalogLocation> audio_location;
+    std::optional<std::size_t> audio_page;
+    bool audio_graphics=false;
     std::unique_ptr<lgaed::presentation::LessonReader> reader;
     std::filesystem::path pending_lesson;
     lgaed::curriculum::CatalogLocation context;
@@ -57,9 +64,27 @@ lgaed::state::StateData preferences(WindowState& state){
     if(state.lesson)return lgaed::presentation::read_lesson_state(state.lesson);
     lgaed::state::StateStore store(state.environment.paths.root);return store.load();
 }
+void update_audio_context(WindowState&,bool force=false);
 void update_preferences(WindowState& state,const lgaed::presentation::PreferencesMutation& change){
     if(state.lesson)lgaed::presentation::update_lesson_preferences(state.lesson,change);
     else{lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();change(data);store.save(data);}
+    update_audio_context(state,true);
+}
+void update_audio_context(WindowState& state,bool force){
+    if(!state.generation||!state.catalog)return;
+    auto where=lgaed::presentation::catalog_location(state.catalog);
+    std::optional<std::size_t> page;
+    if(state.lesson){const auto current=lgaed::presentation::lesson_page_state(state.lesson);
+        if(current.lesson_id!="native_cpp_laboratory"){where.lesson=current.lesson_id;page=current.index;}}
+    // Navigation polling is only an inexpensive HWND/context comparison. Do not
+    // reread/hash the student's complete store on every UI timer tick.
+    if(!force&&state.audio_location==where&&state.audio_page==page&&state.audio_graphics==state.graphics_active)return;
+    state.audio_location=where;state.audio_page=page;state.audio_graphics=state.graphics_active;
+    const auto data=preferences(state);
+    where.locale=lgaed::state::string_value(data,"native_windows","content_language",where.locale);
+    auto selection=lgaed::windows::audio_generation_selection(data,std::move(where),page);
+    if(state.graphics_active)selection.enabled=false;
+    state.generation->update(std::move(selection));
 }
 
 std::wstring widen_error(const std::exception& error) {
@@ -91,6 +116,7 @@ void remember_open_lesson(WindowState& state,std::string_view lesson_id){
 }
 
 void show_catalog(HWND window,WindowState& state){
+    state.graphics_active=false;
     if(state.settings){DestroyWindow(state.settings);state.settings=nullptr;}
     if(state.tool){DestroyWindow(state.tool);state.tool=nullptr;}
     if(state.lesson){state.reader.reset();if(!lgaed::presentation::flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
@@ -133,7 +159,9 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     LessonViewHooks hooks;hooks.lesson_label=lesson_label;hooks.back_to_catalog=[window](HWND){PostMessageW(window,return_message,0,0);};
     hooks.validate_math=[backend=state.narrator](std::string_view block,std::string_view answers,std::string_view locale,std::stop_token stop){
         return backend->validate_math(block,answers,locale,stop);};
-    hooks.content_changed=[&state](HWND){if(state.reader)state.reader->content_changed();};
+    hooks.content_changed=[&state](HWND){if(state.reader)state.reader->content_changed();update_audio_context(state);};
+    hooks.priority_work=[backend=state.narrator](std::stop_token stop)->std::shared_ptr<void>{
+        return std::make_shared<lgaed::windows::NarrationPriorityLease>(backend->heavy_work_lease(stop));};
     hooks.feedback_changed=[&state](HWND,std::size_t block,bool correct){if(state.reader)state.reader->feedback(block,correct);};
     hooks.before_page_change=[&state](HWND){if(state.reader)state.reader->pause();};
     hooks.before_destroy=[&state](HWND){if(state.reader)state.reader->pause();};
@@ -180,7 +208,7 @@ void open_settings(HWND window,WindowState& state){
     using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_RESTORE);SetForegroundWindow(state.settings);return;}
     if(state.lesson&&!flush_lesson_view(state.lesson))return;
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
-    access.changed=[&state]{if(state.reader)state.reader->settings_changed();};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
+    access.changed=[&state]{update_audio_context(state);if(state.reader)state.reader->settings_changed();};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
     const auto context=state.context;
     access.course_id=context.course;access.route_id=context.route;access.programming=context.route=="programming";
     const auto locale=interface_language(preferences(state));
@@ -275,6 +303,9 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                     if(!lgaed::state::find(defaults,"native_windows",key))defaults.preferences["native_windows"][key]=fallback;
                 if(defaults!=original)initial.save(defaults);
                 state->narrator=std::make_shared<lgaed::windows::NarrationWorker>(std::filesystem::path(lgaed::build::source_root)/L"out/narration/runtime.json");
+                state->generation=std::make_unique<lgaed::windows::AudioGeneration>(state->narrator,
+                    std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",state->environment.paths.cache/L"kokoro",state->environment.paths.root);
+                SetTimer(window,audio_context_timer,400,nullptr);
                 state->catalog=lgaed::presentation::create_catalog_view(window,state->environment,
                     std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",
                     [window,state](const auto& path){state->pending_lesson=path;PostMessageW(window,open_lesson_message,0,0);},
@@ -350,6 +381,8 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         layout_controls(window,*state);return 0;}
     case tool_message:
         try{using lgaed::presentation::CatalogAction;
+            state->graphics_active=state->pending_action==CatalogAction::graphics;
+            update_audio_context(*state);
             if(state->tool){DestroyWindow(state->tool);state->tool=nullptr;}
             if(state->pending_action==CatalogAction::compiler){lgaed::curriculum::Lesson lab;lab.id="native_cpp_laboratory";
                 const auto data=preferences(*state);const auto ui=lgaed::presentation::interface_language(data);
@@ -394,6 +427,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         return 0;
     }
     case WM_TIMER:
+        if(wparam==audio_context_timer){try{update_audio_context(*state);}catch(const std::exception& error){OutputDebugStringW(widen_error(error).c_str());}return 0;}
         if (wparam == smoke_timer) {
             KillTimer(window, smoke_timer);
             DestroyWindow(window);
@@ -403,6 +437,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
     case WM_CLOSE:
         if(state->reader)state->reader->pause();
         if (state->lesson && !lgaed::presentation::flush_lesson_view(state->lesson)) return 0;
+        KillTimer(window,audio_context_timer);state->generation.reset();
         state->reader.reset();
         DestroyWindow(window);
         return 0;

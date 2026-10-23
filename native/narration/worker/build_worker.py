@@ -382,7 +382,7 @@ internal object WindowsMathActions {
             tree = ET.parse(path)
             for element in tree.findall("string"):
                 name = element.attrib["name"]
-                if not name.startswith("math_"):
+                if not name.startswith(("math_", "exercise_")) and name != "lesson_note":
                     continue
                 text = re.sub(r"[\t\r\n ]+", " ", "".join(element.itertext())).strip()
                 text = re.sub(r"\\([nt'\"\\])", lambda m: {"n": "\n", "t": "\t"}.get(m[1], m[1]), text)
@@ -448,6 +448,23 @@ def host_sources() -> list[Path]:
     parser = re.sub(r"^\s*fun resolveMessage\(context: android\.content\.Context\): String = uiMessage\.resolve\(context\)\n", "\n", parser, flags=re.MULTILINE)
     sources.append(generated("MathLatexParser.kt", parser))
     sources += math_host_sources()
+    sources += [APP / "CodeExerciseLanguage.kt", APP / "math/MathPuzzleUiInstructions.kt",
+                APP / "narration/LessonNarrationText.kt"]
+    script = (APP / "narration/LessonNarrationScript.kt").read_text(encoding="utf-8-sig")
+    sources.append(generated("LessonNarrationScript.kt", script[:script.index("internal object NarrationScriptSegments")]))
+    instructions = (APP / "narration/NarrationUiInstructions.kt").read_text(encoding="utf-8-sig")
+    mapping = dict(re.findall(r'"([^"]+)" -> R.string.([a-z_]+)', instructions))
+    for key, value in re.findall(r'MathPuzzleUiInstructions\.([A-Z_]+) -> R.string.([a-z_]+)', instructions):
+        constant = re.search(rf'const val {key} = "([^"]+)"',
+            (APP / "math/MathPuzzleUiInstructions.kt").read_text(encoding="utf-8-sig"))
+        mapping[constant[1]] = value
+    body = 'package lgaed.narration.windows\ninternal object WindowsNarrationInstructions {\n'
+    body += '    fun resolve(type: String, language: String): String {\n'
+    body += '        if(type == "note") return MathLocaleResources.resolve("lesson_note",listOf(""),language)\n'
+    body += '        val resource = when(type) {\n' + ''.join(
+        f'            "{key}" -> "{value}"\n' for key,value in mapping.items())
+    body += '            else -> return ""\n        }\n        return MathLocaleResources.resolve(resource,language=language)\n    }\n}\n'
+    sources.append(generated("WindowsNarrationInstructions.kt", body))
 
     projection = (APP / "narration/NarrationSourceProjection.kt").read_text(encoding="utf-8-sig")
     projection = exact(projection, "import com.learngraphicsprogramming.app.math.MathTextRenderer\n", "")

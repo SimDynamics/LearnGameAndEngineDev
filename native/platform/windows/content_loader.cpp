@@ -523,6 +523,10 @@ void resolve_addresses(Lesson& lesson) {
 }
 }
 
+std::optional<std::string> narration_language_tag(std::string_view authored) {
+    return narration_tag(winrt::to_hstring(authored));
+}
+
 curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
     ensure_winrt_apartment();

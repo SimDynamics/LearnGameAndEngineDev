@@ -13,6 +13,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 
 namespace lgaed::windows {
 namespace {
@@ -22,9 +23,70 @@ std::wstring quote(std::wstring_view text){std::wstring result=L"\"";std::size_t
 void put(JsonObject& value,std::wstring_view key,std::string_view text){value.Insert(winrt::hstring(key),JsonValue::CreateStringValue(winrt::to_hstring(text)));}
 std::string string(const JsonObject& object,const wchar_t* key){return winrt::to_string(object.GetNamedString(key,L""));}
 std::size_t index(const JsonObject& object,const wchar_t* key){const auto value=object.GetNamedNumber(key,0);if(value<0||value>20000000||std::trunc(value)!=value)throw std::runtime_error("Invalid narration offset");return static_cast<std::size_t>(value);}
+struct PriorityState {
+    std::mutex mutex;
+    std::condition_variable_any changed;
+    unsigned current=0,heavy=0;
+    bool background=false,inference=false;
+    std::stop_source cancel_background,cancel_inference;
+};
+std::function<void()> take_current(const std::shared_ptr<PriorityState>& state,std::stop_token stop) {
+    std::stop_source cancel;
+    {const std::lock_guard lock(state->mutex);if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+        ++state->current;if(state->background)cancel=state->cancel_background;}
+    // Cancellation callbacks can write to the worker; never invoke them while
+    // holding the arbitration lock needed by the acknowledgement cleanup.
+    cancel.request_stop();
+    std::unique_lock lock(state->mutex);
+    if(!state->changed.wait(lock,stop,[&]{return !state->background;})||stop.stop_requested()) {
+        --state->current;state->changed.notify_all();throw std::runtime_error("Lectura cancelada");
+    }
+    return [state]{const std::lock_guard release(state->mutex);--state->current;state->changed.notify_all();};
+}
+std::function<void()> take_heavy(const std::shared_ptr<PriorityState>& state,std::stop_token stop) {
+    std::stop_source cancel_background,cancel_inference;
+    {const std::lock_guard lock(state->mutex);if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+        ++state->heavy;if(state->background)cancel_background=state->cancel_background;
+        if(state->inference)cancel_inference=state->cancel_inference;}
+    cancel_background.request_stop();cancel_inference.request_stop();
+    std::unique_lock lock(state->mutex);
+    if(!state->changed.wait(lock,stop,[&]{return !state->inference&&!state->background;})||stop.stop_requested()) {
+        --state->heavy;state->changed.notify_all();throw std::runtime_error("Lectura cancelada");
+    }
+    return [state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();};
+}
+struct BackgroundReservation {
+    std::shared_ptr<PriorityState> state;
+    std::stop_token stop;
+    BackgroundReservation(std::shared_ptr<PriorityState> value,std::stop_token cancelled):state(std::move(value)) {
+        std::unique_lock lock(state->mutex);
+        if(!state->changed.wait(lock,cancelled,[&]{return !state->current&&!state->heavy&&!state->background;}))
+            throw std::runtime_error("Lectura cancelada");
+        state->background=true;state->cancel_background=std::stop_source{};stop=state->cancel_background.get_token();
+    }
+    ~BackgroundReservation(){const std::lock_guard lock(state->mutex);state->background=false;state->changed.notify_all();}
+};
+struct InferenceReservation {
+    std::shared_ptr<PriorityState> state;
+    std::stop_token stop;
+    InferenceReservation(std::shared_ptr<PriorityState> value,std::stop_token cancelled):state(std::move(value)) {
+        std::unique_lock lock(state->mutex);
+        if(!state->changed.wait(lock,cancelled,[&]{return !state->heavy&&!state->inference;})||cancelled.stop_requested())
+            throw std::runtime_error("Lectura cancelada");
+        state->inference=true;state->cancel_inference=std::stop_source{};stop=state->cancel_inference.get_token();
+    }
+    ~InferenceReservation(){const std::lock_guard lock(state->mutex);state->inference=false;state->changed.notify_all();}
+};
+}
+NarrationPriorityLease::~NarrationPriorityLease(){if(release_)release_();}
+NarrationPriorityLease::NarrationPriorityLease(NarrationPriorityLease&& other) noexcept:release_(std::exchange(other.release_,{})){}
+NarrationPriorityLease& NarrationPriorityLease::operator=(NarrationPriorityLease&& other) noexcept {
+    if(this!=&other){if(release_)release_();release_=std::exchange(other.release_,{});}return *this;
 }
 struct NarrationWorker::Impl {
     std::filesystem::path runtime;Handle process,job,input,output,error;
+    std::unique_ptr<NarrationCpuPolicy> cpu;
+    std::shared_ptr<PriorityState> priority=std::make_shared<PriorityState>();
     // Inference still has its original serialized lane. The single process's
     // lightweight editor lane can exchange replies without waiting for ONNX.
     std::mutex request_mutex,write_mutex,start_mutex,response_mutex;
@@ -61,6 +123,8 @@ struct NarrationWorker::Impl {
         if(!CreateProcessW(java.c_str(),command.data(),nullptr,nullptr,TRUE,CREATE_NO_WINDOW|CREATE_SUSPENDED|EXTENDED_STARTUPINFO_PRESENT,nullptr,runtime.parent_path().c_str(),&startup.StartupInfo,&info))throw std::runtime_error("No se pudo iniciar Kokoro para Windows.");
         process.value=info.hProcess;Handle thread{info.hThread};
         if(!AssignProcessToJobObject(job.value,process.value)){TerminateProcess(process.value,1);throw std::runtime_error("No se pudo vincular el proceso de Kokoro.");}
+        try{cpu=std::make_unique<NarrationCpuPolicy>(process.value,job.value);}
+        catch(...){TerminateProcess(process.value,1);process.close();throw;}
         ResumeThread(thread.value);
         pump=std::jthread([this](std::stop_token stop){read_replies(stop);});
     }
@@ -85,9 +149,36 @@ struct NarrationWorker::Impl {
             }
         }}catch(const std::exception& error){const std::lock_guard lock(response_mutex);failure=error.what();responses.notify_all();}
     }
-    JsonObject call(JsonObject request,std::stop_token stop,std::string* original_reply=nullptr,bool lightweight=false){
+    JsonObject call(JsonObject request,std::stop_token stop,std::string* original_reply=nullptr,bool lightweight=false,
+                    NarrationCpuClass work=NarrationCpuClass::current_page,bool inference=false){
+        const bool background=work==NarrationCpuClass::background;
+        NarrationPriorityLease reservation(background?std::function<void()>{}:take_current(priority,stop));
+        std::unique_ptr<BackgroundReservation> background_slot;
+        if(background)background_slot=std::make_unique<BackgroundReservation>(priority,stop);
+        const auto caller_stop=stop;
+        std::stop_source operation;
+        std::stop_callback external_cancel(stop,[&]{operation.request_stop();});
+        std::stop_callback preempt(background_slot?background_slot->stop:std::stop_token{},[&]{operation.request_stop();});
+        std::unique_ptr<InferenceReservation> inference_slot;
+        if(inference)try{inference_slot=std::make_unique<InferenceReservation>(priority,operation.get_token());}
+            catch(...){if(background_slot&&background_slot->stop.stop_requested()&&!caller_stop.stop_requested())throw NarrationPreempted{};throw;}
+        std::stop_callback heavy_preempt(inference_slot?inference_slot->stop:std::stop_token{},[&]{operation.request_stop();});
+        stop=operation.get_token();
+        const auto cancelled=[&]() {
+            if(!caller_stop.stop_requested()&&((background_slot&&background_slot->stop.stop_requested())||
+                (inference_slot&&inference_slot->stop.stop_requested())))throw NarrationPreempted{};
+            throw std::runtime_error("Lectura cancelada");
+        };
         std::unique_lock serialized(request_mutex,std::defer_lock);if(!lightweight)serialized.lock();
-        ensure_winrt_apartment();if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");start();
+        ensure_winrt_apartment();if(stop.stop_requested())cancelled();start();
+        std::unique_ptr<NarrationCpuScope> cpu_scope;
+        if(inference||background)cpu_scope=std::make_unique<NarrationCpuScope>(*cpu,work);
+        else cpu->apply(NarrationCpuClass::current_page);
+        if(inference) {
+            const auto requested=static_cast<unsigned>(request.GetNamedNumber(L"threads",0));
+            const auto capacity=cpu->inference_threads(work);
+            request.Insert(L"threads",JsonValue::CreateNumberValue(requested?std::clamp(requested,1u,capacity):capacity));
+        }
         const auto id=std::to_string(++serial);put(request,L"id",id);
         const auto response=std::make_shared<Pending>();response->command=string(request,L"command");response->lightweight=lightweight;
         {const std::lock_guard lock(response_mutex);pending.emplace(id,response);}
@@ -105,10 +196,11 @@ struct NarrationWorker::Impl {
         {std::unique_lock lock(response_mutex);
             if(!responses.wait_for(lock,std::chrono::minutes(5),[&]{return (lightweight&&stop.stop_requested())||!response->reply.empty()||!failure.empty();})){
                 TerminateJobObject(job.value,1);throw std::runtime_error("Kokoro excedió el tiempo de preparación.");}
-            if(lightweight&&stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+            if(lightweight&&stop.stop_requested())cancelled();
             if(response->reply.empty())throw std::runtime_error(failure);line=response->reply;
         }
-        if(stop.stop_requested())throw std::runtime_error("Lectura cancelada");
+        if(cpu_scope)cpu_scope->finish();
+        if(stop.stop_requested())cancelled();
         const auto reply=JsonObject::Parse(winrt::to_hstring(line));
         if(reply.HasKey(L"error"))throw std::runtime_error("Kokoro: "+string(reply,L"error"));
         if(original_reply)*original_reply=line;return reply;
@@ -116,6 +208,8 @@ struct NarrationWorker::Impl {
 };
 NarrationWorker::NarrationWorker(std::filesystem::path runtime):impl_(std::make_unique<Impl>(std::move(runtime))){}
 NarrationWorker::~NarrationWorker()=default;
+NarrationPriorityLease NarrationWorker::current_page_lease(std::stop_token stop){return NarrationPriorityLease(take_current(impl_->priority,stop));}
+NarrationPriorityLease NarrationWorker::heavy_work_lease(std::stop_token stop){return NarrationPriorityLease(take_heavy(impl_->priority,stop));}
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop){ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");
@@ -127,12 +221,21 @@ std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::s
         for(std::size_t i=0;i<segment.spoken_ranges.size();++i){const auto a=segment.spoken_ranges[i],b=segment.displayed_ranges[i];
             if(a.start>=a.end||a.end>spoken_size||b.start>=b.end||b.end>displayed_size)throw std::runtime_error("Invalid narration source projection");}
         result.push_back(std::move(segment));}return result;}
-NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::string_view language,std::string_view voice,const std::filesystem::path& output,unsigned threads,std::stop_token stop){
+NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::string_view language,std::string_view voice,const std::filesystem::path& output,unsigned threads,std::stop_token stop,NarrationCpuClass work){
     ensure_winrt_apartment();JsonObject request;put(request,L"command","prepare");put(request,L"text",segment.text);put(request,L"preparedText",segment.prepared);put(request,L"language",language);put(request,L"voice",voice);
-    put(request,L"outputDirectory",winrt::to_string(output.native()));request.Insert(L"threads",JsonValue::CreateNumberValue(std::clamp(threads,1u,64u)));const auto reply=impl_->call(request,stop);
+    if(work==NarrationCpuClass::background)request.Insert(L"audioOnly",JsonValue::CreateBooleanValue(true));
+    put(request,L"outputDirectory",winrt::to_string(output.native()));request.Insert(L"threads",JsonValue::CreateNumberValue(threads));
+    JsonObject reply;
+    for(;;)try{reply=impl_->call(request,stop,nullptr,false,work,true);break;}
+        catch(const NarrationPreempted&){if(work==NarrationCpuClass::background)throw;}
     NarrationAudio audio;audio.key=string(reply,L"key");audio.source=string(reply,L"sourceText");audio.spoken=string(reply,L"spokenText");audio.provider=string(reply,L"provider");audio.wav=std::filesystem::path(reply.GetNamedString(L"wav").c_str());audio.duration_ms=reply.GetNamedNumber(L"durationMs");audio.cache_hit=reply.GetNamedBoolean(L"cacheHit",false);
     for(const auto& item:reply.GetNamedArray(L"timings")){const auto timing=item.GetObject();audio.timings.push_back({index(timing,L"start"),index(timing,L"end"),timing.GetNamedNumber(L"startMs"),timing.GetNamedNumber(L"endMs")});}
     if(!std::filesystem::is_regular_file(audio.wav)||audio.duration_ms<=0)throw std::runtime_error("Kokoro no produjo una grabación válida.");return audio;
+}
+std::string NarrationWorker::curriculum_plan(std::string_view raw_lesson,std::size_t page,std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token stop){
+    ensure_winrt_apartment();JsonObject request;put(request,L"command","curriculum_plan");put(request,L"lessonJson",raw_lesson);
+    request.Insert(L"page",JsonValue::CreateNumberValue(static_cast<double>(page)));put(request,L"language",language);put(request,L"voice",voice);put(request,L"uiLanguage",ui_language);
+    std::string reply;(void)impl_->call(request,stop,&reply,false,NarrationCpuClass::background);return reply;
 }
 std::string NarrationWorker::identity(std::string_view page,std::string_view language,std::string_view voice,const std::vector<NarrationSegment>& segments,std::stop_token stop,std::string_view engine){
     ensure_winrt_apartment();JsonObject request;put(request,L"command","identity");put(request,L"page",page);put(request,L"language",language);put(request,L"voice",voice);put(request,L"engine",engine);JsonArray texts;
@@ -151,6 +254,7 @@ std::string NarrationWorker::math_editor(std::string_view request_json,std::stop
     std::string reply;(void)impl_->call(request,stop,&reply,true);return reply;
 }
 std::string NarrationWorker::math_calculate(std::string_view request_json,std::stop_token stop){
+    auto heavy=heavy_work_lease(stop);
     ensure_winrt_apartment();auto request=JsonObject::Parse(winrt::to_hstring(request_json));put(request,L"command","math_calculate");
     std::string reply;(void)impl_->call(request,stop,&reply,true);return reply;
 }

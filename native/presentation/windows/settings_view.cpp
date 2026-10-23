@@ -5,6 +5,7 @@
 #include "presentation/windows/editing_bar.hpp"
 #include "platform/windows/system_speech.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/narration_preferences.hpp"
 #include "native_build_config.hpp"
 #include "core/learning_flow.hpp"
 #include "core/view_preferences.hpp"
@@ -353,18 +354,20 @@ struct Settings {
         else {
         voices.clear();
         try{
-            const auto bytes=state::read_bytes(std::filesystem::path(build::source_root)/"out/narration/runtime.json",1024*1024);
-            const auto config=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));
-            for(const auto& entry:config.GetNamedArray(L"voices")){
-                const auto voice=entry.GetObject();if(voice.GetNamedString(L"language")==winrt::to_hstring(tags[std::clamp(index,0,3)]))voices.push_back(winrt::to_string(voice.GetNamedString(L"id")));
-            }
+            for(const auto& entry:windows::kokoro_voice_catalog(std::filesystem::path(build::source_root)/"out/narration/runtime.json"))
+                if(entry.language==tags[std::clamp(index,0,3)])voices.push_back(entry.id);
         }catch(...){voices.clear();voice_error=tr("No se pudo cargar el catálogo de voces de Kokoro.","The Kokoro voice catalogue could not be loaded.","Impossible de charger le catalogue de voix Kokoro.");}
         const std::string preferred=index==0?"ef_dora":index==1?"af_heart":index==2?"bf_emma":"ff_siwis";
         if(const auto found=std::ranges::find(voices,preferred);found!=voices.end())std::rotate(voices.begin(),found,found+1);
         voice_names.clear();for(const auto& id:voices){auto label=id.substr(id.find('_')+1);
             if(!label.empty()&&label.front()>='a'&&label.front()<='z')label.front()=static_cast<char>(label.front()-'a'+'A');
             voice_names.push_back(std::move(label));}}
-        const auto selected=state::string_value(data,"lesson_narration_settings",std::string(system?"windows_voice:":"kokoro_voice:")+tags[std::clamp(index,0,3)],voices.empty()?"":voices.front());
+        std::string selected;
+        if(system)selected=state::string_value(data,"lesson_narration_settings",std::string("windows_voice:")+tags[std::clamp(index,0,3)],voices.empty()?"":voices.front());
+        else if(!voices.empty()){
+            try{selected=windows::selected_kokoro_voice(data,tags[std::clamp(index,0,3)],std::filesystem::path(build::source_root)/"out/narration/runtime.json");}
+            catch(...){voices.clear();voice_names.clear();voice_error=tr("No se pudo cargar el catálogo de voces de Kokoro.","The Kokoro voice catalogue could not be loaded.","Impossible de charger le catalogue de voix Kokoro.");}
+        }
         const auto control=GetDlgItem(window,voice);SendMessageW(control,CB_RESETCONTENT,0,0);
         for(const auto& name:voice_names)SendMessageW(control,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(wide(name).c_str()));
         if(voices.empty())SendMessageW(control,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(wide(voice_error.empty()?tr("No hay voces instaladas para este idioma","No installed voices for this language","Aucune voix installée pour cette langue"):voice_error).c_str()));

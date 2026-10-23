@@ -50,6 +50,106 @@ void cancelled_inflight_protocol(const std::filesystem::path& root,const std::fi
     }
     std::cout<<"PASS controlled IPC in-flight mathematical cancellation, withheld late reply and subsequent request identities (not an audio benchmark)\n";
 }
+void priority_protocol(const std::filesystem::path& build_directory) {
+    using namespace lgaed::windows;
+    NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    const auto name=L"Local\\LGAED-Narration-Priority-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64());
+    struct Event{HANDLE value;~Event(){if(value)CloseHandle(value);}} observed{CreateEventW(nullptr,TRUE,FALSE,name.c_str())};
+    check(observed.value!=nullptr,"Cannot create the controlled inference observation event");
+    NarrationSegment segment;segment.text="cpu-priority-event:"+winrt::to_string(name);segment.prepared=segment.text;
+    auto generate=[&](std::stop_token stop={}) {
+        return std::async(std::launch::async,[&,stop]{try {
+            (void)worker.prepare(segment,"es","ef_dora",build_directory,0,stop,NarrationCpuClass::background);return false;
+        }catch(const NarrationPreempted&){return !stop.stop_requested();
+        }catch(const std::exception& error){return std::string_view(error.what())=="Lectura cancelada";}});
+    };
+    auto page=worker.current_page_lease();
+    auto background=generate();
+    check(json(worker.math_editor(R"({"action":"echo","marker":"current-page-owned"})")).GetNamedString(L"marker")==L"current-page-owned", "Current page reservation blocked the independent mathematical channel");
+    check(WaitForSingleObject(observed.value,0)==WAIT_TIMEOUT,"Background inference ran while a current page reservation was held");
+    page={};
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Background inference did not resume after page preparation released priority");
+    page=worker.current_page_lease();
+    check(background.wait_for(std::chrono::seconds(1))==std::future_status::ready&&background.get(),"Current page preemption did not cancel and acknowledge the actual background request");
+    check(json(worker.math_editor(R"({"action":"echo","marker":"after-current-preemption"})")).GetNamedString(L"marker")==L"after-current-preemption", "Background cancellation corrupted the following foreground request");
+
+    std::stop_source abandoned;
+    auto cancelled_waiter=generate(abandoned.get_token());
+    abandoned.request_stop();
+    check(cancelled_waiter.wait_for(std::chrono::seconds(1))==std::future_status::ready&&cancelled_waiter.get(),"A queued background request could not be cancelled while a current page retained priority");
+    page={};
+    check(ResetEvent(observed.value),"Cannot reset the controlled observation event");
+    auto before_math=generate();
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Background inference did not recover after a cancelled queued request");
+    check(json(worker.math_editor(R"({"action":"echo","marker":"math-preemption"})")).GetNamedString(L"marker")==L"math-preemption", "Interactive mathematics did not preempt background synthesis");
+    check(before_math.wait_for(std::chrono::seconds(1))==std::future_status::ready&&before_math.get(),"Interactive mathematics did not acknowledge background cancellation");
+    check(json(worker.curriculum_plan("{}",0,"es","ef_dora","es")).GetNamedArray(L"segments").Size()==0,"Background curriculum planning did not recover after foreground work");
+    std::cout<<"PASS controlled IPC current-page reservation, background resume, acknowledged foreground/mathematical preemption and cancellable queued work (not an audio benchmark)\n";
+}
+void heavy_priority_protocol(const std::filesystem::path& build_directory) {
+    using namespace lgaed::windows;
+    NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    const auto name=L"Local\\LGAED-Narration-Heavy-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64());
+    struct Event{HANDLE value;~Event(){if(value)CloseHandle(value);}} observed{CreateEventW(nullptr,TRUE,FALSE,name.c_str())};
+    check(observed.value!=nullptr,"Cannot observe controlled heavy-work exclusion");
+    NarrationSegment segment;segment.text="cpu-priority-event:"+winrt::to_string(name);segment.prepared=segment.text;
+    auto page=worker.current_page_lease();std::stop_source cancel_page;
+    auto foreground=std::async(std::launch::async,[&]{try {
+        (void)worker.prepare(segment,"es","ef_dora",build_directory,0,cancel_page.get_token());return false;
+    }catch(const NarrationPreempted&){return false; // internal preemption must never escape the current page
+    }catch(const std::exception& error){return std::string_view(error.what())=="Lectura cancelada";}});
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Controlled current-page inference never started");
+    auto heavy=worker.heavy_work_lease(); // must not wait for the retained page lease
+    check(foreground.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready,"Heavy work leaked a preparation error to the current-page reader");
+    check(ResetEvent(observed.value),"Cannot reset the heavy-work observation event");
+    auto nested=worker.heavy_work_lease();heavy={};
+    check(WaitForSingleObject(observed.value,0)==WAIT_TIMEOUT,"Inference resumed while a nested heavy-work exclusion remained active");
+    nested={};
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Current-page inference did not resume automatically after heavy work released exclusion");
+    cancel_page.request_stop();
+    check(foreground.wait_for(std::chrono::seconds(1))==std::future_status::ready&&foreground.get(),"Cancelling the resumed page did not preserve its original cancellation contract");
+    page={};
+    check(ResetEvent(observed.value),"Cannot reset the background heavy-work observation event");
+    auto background=std::async(std::launch::async,[&]{try {
+        (void)worker.prepare(segment,"es","ef_dora",build_directory,0,{},NarrationCpuClass::background);return false;
+    }catch(const NarrationPreempted&){return true;}});
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Background inference did not start before heavy work");
+    heavy=worker.heavy_work_lease();
+    check(background.wait_for(std::chrono::seconds(1))==std::future_status::ready&&background.get(),"Heavy work did not cancel and acknowledge active background inference");
+    heavy={};
+    check(json(worker.math_editor(R"({"action":"echo","marker":"after-heavy-work"})")).GetNamedString(L"marker")==L"after-heavy-work", "Heavy-work cleanup left subsequent mathematical requests blocked");
+    std::cout<<"PASS controlled IPC heavy-work exclusion cancels/acknowledges actual inference, does not wait for page leases, suspends foreground retry, preserves nested exclusion and resumes without a reader error (not an audio benchmark)\n";
+}
+void calculator_heavy_protocol(const std::filesystem::path& build_directory) {
+    using namespace lgaed::windows;
+    NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    const auto name=L"Local\\LGAED-Narration-Calculator-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64());
+    struct Event{HANDLE value;~Event(){if(value)CloseHandle(value);}} observed{CreateEventW(nullptr,TRUE,FALSE,name.c_str())};
+    check(observed.value!=nullptr,"Cannot observe calculator synthesis exclusion");
+    NarrationSegment segment;segment.text="cpu-priority-event:"+winrt::to_string(name);segment.prepared=segment.text;
+    std::stop_source stop;
+    auto foreground=std::async(std::launch::async,[&]{try {
+        (void)worker.prepare(segment,"es","ef_dora",build_directory,0,stop.get_token());return false;
+    }catch(const std::exception& error){return std::string_view(error.what())=="Lectura cancelada";}});
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Controlled inference did not start before calculator evaluation");
+    auto calculation=std::async(std::launch::async,[&]{return worker.math_calculate(R"({"latex":"1+1"})");});
+    const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+    bool calculating=false;
+    do{calculating=json(worker.math_editor(R"({"action":"probe"})")).GetNamedString(L"pendingCommand")==L"math_calculate";}
+    while(!calculating&&std::chrono::steady_clock::now()<end);
+    check(calculating,"Mathematical evaluation did not acquire acknowledged heavy-work exclusion");
+    check(foreground.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready,"Calculator preemption leaked a current-page reader error");
+    check(ResetEvent(observed.value),"Cannot reset the calculator inference observation event");
+    check(json(worker.math_editor(R"({"action":"echo","marker":"editor-during-calculation"})")).GetNamedString(L"marker")==L"editor-during-calculation", "Heavy calculator evaluation blocked the independent structured editor");
+    check(WaitForSingleObject(observed.value,0)==WAIT_TIMEOUT,"Inference resumed while calculator evaluation still held exclusion");
+    (void)worker.math_editor(R"({"action":"release"})");
+    check(calculation.wait_for(std::chrono::seconds(1))==std::future_status::ready,"Controlled calculator evaluation did not finish");
+    (void)calculation.get();
+    check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Current-page synthesis did not resume after mathematical evaluation");
+    stop.request_stop();
+    check(foreground.wait_for(std::chrono::seconds(1))==std::future_status::ready&&foreground.get(),"Resumed synthesis could not be cancelled after mathematical evaluation");
+    std::cout<<"PASS controlled IPC calculator exclusion pauses current synthesis, preserves independent expression editing and resumes the same page after evaluation (not an audio benchmark)\n";
+}
 }
 
 int wmain(int argc,wchar_t** argv) {
@@ -59,6 +159,9 @@ int wmain(int argc,wchar_t** argv) {
         const auto root = std::filesystem::path(build::source_root);
         check(argc==3,"The narration test requires CMake's Python executable and existing build directory arguments");
         cancelled_inflight_protocol(root,argv[1],argv[2]);
+        priority_protocol(argv[2]);
+        heavy_priority_protocol(argv[2]);
+        calculator_heavy_protocol(argv[2]);
         windows::NarrationWorker worker(root / "out/narration/runtime.json");
         const std::string source = "La línea #include y std::cout muestran una salida.";
         const auto segments = worker.plan(source,"es");

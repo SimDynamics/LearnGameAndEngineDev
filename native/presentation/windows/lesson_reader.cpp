@@ -8,6 +8,9 @@
 #include "platform/windows/narration_player.hpp"
 #include "platform/windows/system_speech.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/narration_preferences.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "native_build_config.hpp"
 #include "core/narration_state.hpp"
 #include <commctrl.h>
 #include <objbase.h>
@@ -63,12 +66,19 @@ struct LessonReader::Impl {
         advance_generation.store(setting_bool(preferences,"kokoro_advance_generation",true));generation_changed.notify_all();
         engine=state::string_value(preferences,"lesson_narration_settings","engine","KOKORO");
         const auto page=lesson_page_state(view);
-        language=page.narration_language.empty()?state::string_value(preferences,"lesson_narration_settings","language",page.locale):page.narration_language;
-        if(language!="es"&&language!="fr"&&language!="en-US"&&language!="en-GB")language=language=="en"?"en-US":"es";
-        const auto fallback=language=="fr"?"ff_siwis":language=="en-US"?"af_heart":language=="en-GB"?"bf_emma":"ef_dora";
-        voice=engine=="WINDOWS"||engine=="ANDROID"?state::string_value(preferences,"lesson_narration_settings","windows_voice:"+language):
-            state::string_value(preferences,"lesson_narration_settings","kokoro_voice:"+language,fallback);
+        language=windows::narration_language_tag(page.narration_language).value_or(
+            windows::selected_narration_language(preferences,page.locale));
         configuration_error.clear();
+        if(engine=="WINDOWS"||engine=="ANDROID")
+            voice=state::string_value(preferences,"lesson_narration_settings","windows_voice:"+language);
+        else {
+            try{voice=windows::selected_kokoro_voice(preferences,language,std::filesystem::path(build::source_root)/L"out/narration/runtime.json");}
+            catch(const std::exception& failure){
+                voice.clear();
+                configuration_error=tr("No se pudo cargar el catálogo de voces de Kokoro.","The Kokoro voice catalogue could not be loaded.","Impossible de charger le catalogue de voix Kokoro.");
+                OutputDebugStringW(wide(failure.what()).c_str());
+            }
+        }
         if(engine=="WINDOWS"||engine=="ANDROID"){
             const auto installed=windows::system_voices();const auto selected=std::ranges::find_if(installed,[&](const auto& item){
                 return (voice.empty()||item.id==voice)&&windows::system_voice_matches(item.language,language);});
@@ -155,7 +165,8 @@ struct LessonReader::Impl {
         const auto history=narration::read_history(data());
         const auto legacy_title=page.index>0&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.page==current_page;})?page.lesson_title:std::string{};
         generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title](std::stop_token stop){
-            try{std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
+            try{auto page_priority=backend->current_page_lease(stop);
+                std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
                 for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
                     const auto occurrence=occurrences[sentence.prepared]++;sentences.push_back(sentence);planned.push_back({region,std::move(sentence),{},occurrence});} }
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
@@ -168,14 +179,15 @@ struct LessonReader::Impl {
                     plan.legacy_key=backend->identity(current_page,lang,selected_voice,legacy,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 }
                 push(std::move(plan));
-                std::vector<bool> ready(planned.size(),false);const auto cores=std::max(1u,std::thread::hardware_concurrency());
+                std::vector<bool> ready(planned.size(),false);
                 while(!stop.stop_requested()){const auto requested=std::min(priority.load(),planned.size()-1);auto index=requested;
                     if(ready[index]){const auto found=std::ranges::find(ready,false);if(found==ready.end())break;
-                        if(!advance_generation.load()){std::unique_lock lock(generation_mutex);generation_changed.wait(lock,[&]{return stop.stop_requested()||advance_generation.load()||!ready[std::min(priority.load(),planned.size()-1)];});continue;}
+                        if(!advance_generation.load()){page_priority={};std::unique_lock lock(generation_mutex);generation_changed.wait(lock,[&]{return stop.stop_requested()||advance_generation.load()||!ready[std::min(priority.load(),planned.size()-1)];});
+                            lock.unlock();if(!stop.stop_requested())page_priority=backend->current_page_lease(stop);continue;}
                         index=static_cast<std::size_t>(found-ready.begin());}
                     auto audio=selected_engine=="WINDOWS"||selected_engine=="ANDROID"?
                         windows::synthesize_system_speech(planned[index].sentence,lang,selected_voice,environment.paths.cache,stop):
-                        backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",std::max(1u,cores>2?cores-1:cores),stop);ready[index]=true;
+                        backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",0,stop);ready[index]=true;
                     Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
             }catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });update_buttons();}
