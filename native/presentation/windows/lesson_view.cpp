@@ -77,6 +77,7 @@ constexpr int finish_id=115;
 thread_local std::string lesson_creation_error;
 constexpr int fullscreen_close_id=116;
 constexpr int continue_id=117;
+constexpr int fullscreen_palette_id=118;
 constexpr UINT attempts_state_message=WM_APP+187;
 constexpr UINT enter_key_message=WM_APP+188;
 struct AttemptsState { int available=8, maximum=8; double progress=1; bool premium=false; };
@@ -110,6 +111,8 @@ struct Row {
     int padding_before=0,padding_after=12;
     bool toolbar=false;
     int horizontal_inset=0;
+    int column_gap=8;
+    int empty_padding_after=0;
 };
 struct BlockControls {
     HWND answer = nullptr, source = nullptr, input = nullptr, feedback = nullptr;
@@ -140,6 +143,7 @@ LRESULT CALLBACK view_proc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK pane_proc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK gesture_proc(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
 LRESULT CALLBACK console_icon_proc(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
+LRESULT CALLBACK quiz_answer_proc(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
 
 int control_id(std::size_t block, int part) { return 1000 + static_cast<int>(block) * 100 + part; }
 bool exercise(BlockType type) {
@@ -229,7 +233,9 @@ struct LessonView {
     HWND window = nullptr, pane = nullptr, fullscreen_header = nullptr, title = nullptr;
     HWND menu = nullptr, page_status = nullptr;
     HWND back = nullptr, reader = nullptr, language = nullptr, attempts = nullptr, settings = nullptr, reader_bar = nullptr;
-    HWND fullscreen_close = nullptr;
+    HWND fullscreen_close = nullptr,fullscreen_palette = nullptr;
+    std::optional<std::size_t> fullscreen_palette_block;
+    int fullscreen_palette_height=0,fullscreen_palette_max_height=0;
     AttemptsState attempt_state;
     lgaed::attempts::ExerciseAttemptLedger attempt_ledger;
     int reader_height = 0;
@@ -264,6 +270,7 @@ struct LessonView {
     std::map<HWND,bool> wrap_modes;
     struct ConsoleFocus { HWND editor=nullptr;CHARRANGE selection{};bool native_selection=false; };
     std::map<HWND,ConsoleFocus> icon_focus;
+    std::map<HWND,bool> answer_disabled_readonly;
     std::map<HWND,HWND> choice_labels;
     std::optional<std::size_t> selected_puzzle;
     bool enter_held=false;
@@ -566,6 +573,29 @@ struct LessonView {
         if(focus&&IsWindow(focus))SetFocus(focus);
         ShowWindow(fullscreen_header,SW_HIDE);
     }
+    void restore_fullscreen_palette() {
+        if(!fullscreen_palette)return;
+        const auto focused=GetFocus();
+        for(auto& vm:controls)if(vm.fill&&vm.fill->palette_window()&&GetParent(vm.fill->palette_window())==fullscreen_palette)
+            vm.fill->set_palette_host();
+        fullscreen_palette_block.reset();fullscreen_palette_height=0;
+        ShowWindow(fullscreen_palette,SW_HIDE);
+        if(focused&&IsWindow(focused)&&IsWindowEnabled(focused)&&IsWindowVisible(focused)&&GetFocus()!=focused)SetFocus(focused);
+    }
+    bool sync_fullscreen_palette() {
+        std::optional<std::size_t> next;
+        if(fullscreen_block&&!fullscreen_output&&*fullscreen_block<controls.size()&&block(*fullscreen_block).type==BlockType::drag_fill_code
+            &&controls[*fullscreen_block].fill&&controls[*fullscreen_block].fill->palette_window())next=*fullscreen_block;
+        bool reparented=false;
+        for(std::size_t index=0;index<controls.size();++index)if(auto& vm=controls[index];vm.fill&&vm.fill->palette_window()){
+            const auto bank=vm.fill->palette_window();
+            if(next==index&&GetParent(bank)!=fullscreen_palette){vm.fill->set_palette_host(fullscreen_palette);reparented=true;}
+            else if(next!=index&&GetParent(bank)==fullscreen_palette){vm.fill->set_palette_host();reparented=true;}
+        }
+        fullscreen_palette_block=next;
+        if(!next){fullscreen_palette_height=0;ShowWindow(fullscreen_palette,SW_HIDE);}
+        return reparented;
+    }
     std::vector<LessonReadingRegion> reading_regions(int script_version=0) const {
         const bool legacy_programming=script_version==1;
         std::vector<LessonReadingRegion> result;
@@ -578,9 +608,14 @@ struct LessonView {
             // siblings remain part of the same narration script and bookmark.
             if (!target || source.empty() || (!fullscreen_block&&!(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE))) return;
             const auto& current = block(index); const auto& vm = controls[index];
+            // A compiler stays editable and does not persist a puzzle answer.
+            // Its fresh verdict nevertheless owns the same listening boundary
+            // as other feedback, including the incorrect-feedback stop.
+            const bool compiler_feedback=is_feedback&&current.type==BlockType::cpp_compiler;
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
-                is_feedback,is_feedback && vm.feedback_correct,exercise(current.type),vm.response.correct});
+                is_feedback,is_feedback && vm.feedback_correct,exercise(current.type)||compiler_feedback,
+                compiler_feedback?vm.feedback_correct:vm.response.correct});
         };
         for (std::size_t index = 0; index < controls.size(); ++index) {
             const auto& current = block(index); const auto& vm = controls[index];
@@ -712,17 +747,26 @@ struct LessonView {
         const auto colors = reader_theme::palette(item.hwndItem);
         auto bounds = item.rcItem;
         if(item.hwndItem==attempts) {
-            const auto ink=attempt_state.premium?RGB(243,197,78):colors.accent;
+            const auto ink=colors.accent;
             const int side=px(34);const int x=(bounds.right-side)/2;
             const RECT glyph{x,bounds.bottom-side-px(12),x+side,bounds.bottom-px(12)};
             const auto route_icon=route=="math_physics"?Icon::attempt_math:Icon::terminal;
             draw_icon(item.hDC,glyph,route_icon,colors.high_contrast?colors.text:RGB(255,255,255));
-            const auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,glyph.left+static_cast<int>(side*std::clamp(attempt_state.progress,0.,1.)),glyph.bottom);
+            const auto progress=attempt_state.premium?1.:std::clamp(attempt_state.progress,0.,1.);
+            const auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,glyph.left+static_cast<int>(side*progress),glyph.bottom);
             draw_icon(item.hDC,glyph,route_icon,ink);RestoreDC(item.hDC,clipped);
+            if(attempt_state.premium){
+                // The original 30x26dp ImageView sits at (8,-1) inside the
+                // 80%-scaled Android attempt indicator; it replaces both labels.
+                const int left=bounds.left+MulDiv(px(8),4,5),top=bounds.top-MulDiv(px(1),4,5);
+                const RECT infinity{left,top,left+MulDiv(px(30),4,5),top+MulDiv(px(26),4,5)};
+                draw_icon(item.hDC,infinity,Icon::infinity_premium,colors.high_contrast?colors.text:ink);
+                return true;
+            }
             const auto badge=CreateFontW(-px(12),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             const auto old=SelectObject(item.hDC,badge);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,ink);
             auto left=bounds;left.right=bounds.right/2;left.bottom=left.top+px(15);
-            const auto count=attempt_state.premium?L"∞":std::to_wstring(attempt_state.available);
+            const auto count=std::to_wstring(attempt_state.available);
             DrawTextW(item.hDC,count.c_str(),-1,&left,DT_CENTER|DT_SINGLELINE);
             auto right=bounds;right.left=bounds.right/2;right.bottom=right.top+px(15);
             const auto percent=std::to_wstring(static_cast<int>(std::round(attempt_state.progress*100)))+L"%";
@@ -929,6 +973,17 @@ struct LessonView {
         format.crTextColor=reader_theme::palette(target).high_contrast?reader_theme::foreground(target):RGB(225,228,235);
         wcscpy_s(format.szFaceName,L"Roboto");SendMessageW(target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));
     }
+    int toolbar_caption_width(HWND target) const {
+        CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(target,EM_GETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));
+        const auto font=CreateFontW(-MulDiv(format.yHeight,static_cast<int>(GetDpiForWindow(window))*content_text_scale(),1440*100),0,0,0,
+            (format.dwEffects&CFE_BOLD)?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY,DEFAULT_PITCH,format.szFaceName);
+        const auto dc=GetDC(target);if(!dc){if(font)DeleteObject(font);return std::max(112,MulDiv(112,content_text_scale(),100));}
+        const auto old=font?SelectObject(dc,font):nullptr;
+        const auto label=wide(edit_text(target));SIZE size{};GetTextExtentPoint32W(dc,label.c_str(),static_cast<int>(label.size()),&size);
+        if(font){SelectObject(dc,old);DeleteObject(font);}ReleaseDC(target,dc);
+        return std::max(1,MulDiv(size.cx+px(4),96,static_cast<int>(GetDpiForWindow(window))));
+    }
     void simulated_header(std::size_t index,bool response) {
         const auto& current=block(index);auto code_language=current.language;
         const bool separate=current.type==BlockType::fill_code||current.type==BlockType::output_prediction;
@@ -958,6 +1013,7 @@ struct LessonView {
             rows.push_back({{caption,wrap,copy,expand},{0,44,44,44},48});
         }
         rows.back().simulated_card=index*2+(response?1:0);rows.back().card_header=true;
+        rows.back().column_gap=0;
         for(const auto item:rows.back().cells)reader_theme::apply(item,reader_theme::Surface::card_header);
         toolbar_caption(caption,"</> "+code_language);
     }
@@ -1085,6 +1141,7 @@ struct LessonView {
         auto focused=capture_console_focus();
         if(!focused.editor)for(const auto& [icon,snapshot]:icon_focus)if(snapshot.editor){focused=snapshot;break;}
         end_drag();
+        restore_fullscreen_palette();
         restore_fullscreen_header();
         if (fullscreen_block == index && fullscreen_output == output) {
             fullscreen_block.reset();scroll=fullscreen_lesson_scroll.value_or(scroll);fullscreen_lesson_scroll.reset();
@@ -1214,6 +1271,10 @@ struct LessonView {
             0,0,0,0,window,nullptr,GetModuleHandleW(nullptr),this);
         if(!fullscreen_header)throw std::runtime_error("Cannot create the fixed fullscreen header");
         reader_theme::apply(fullscreen_header,reader_theme::Surface::card_header);
+        fullscreen_palette=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"",WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,
+            0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(fullscreen_palette_id)),GetModuleHandleW(nullptr),nullptr);
+        if(!fullscreen_palette)throw std::runtime_error("Cannot create the fullscreen code-card bank");
+        reader_theme::apply(fullscreen_palette,reader_theme::Surface::inset);
         SetWindowTextW(pane,wide(ui("Contenido de la lección","Lesson content","Contenu de la leçon")).c_str());
         attach_gestures(pane);
         reader_theme::apply(pane,laboratory()?reader_theme::Surface::screen:reader_theme::Surface::canvas);
@@ -1788,8 +1849,11 @@ struct LessonView {
         vm.feedback = rich("", control_id(index, 4));
         if(block(index).type==BlockType::math_puzzle)reader_theme::apply(vm.feedback,reader_theme::Surface::card);
         rows.push_back({{vm.feedback}, {0}, 0, true});
-        if(block(index).type==BlockType::math_puzzle)rows.back().horizontal_inset=8;
-        rows.back().padding_before=12;rows.back().padding_after=24;
+        const bool mathematical=block(index).type==BlockType::math_puzzle;
+        if(mathematical){rows.back().horizontal_inset=6;rows.back().empty_padding_after=36;}
+        // MathPuzzleRenderer owns 12dp inside its card and a separate 24dp
+        // bottomMargin. The contour below closes after only the inner 12dp.
+        rows.back().padding_before=12;rows.back().padding_after=mathematical?36:24;
         if (vm.response.correct) {
             auto explanation = block(index).explanation;
             feedback(index, verdict_text(true) + (explanation.empty() ? "" : "\n" + explanation), true, true);
@@ -1850,8 +1914,9 @@ struct LessonView {
             SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
             SetWindowSubclass(vm.math->fullscreen_button(),console_icon_proc,21,reinterpret_cast<DWORD_PTR>(this));
             rows.push_back({{vm.math->window()},{0},40,false});
+            rows.back().padding_after=0;
             auto check=button(ui("Comprobar","Check","Vérifier"),control_id(index,3),{0,ActionType::check,index});
-            rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=8;create_feedback(index);return;
+            rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=6;rows.back().padding_after=0;create_feedback(index);return;
         }
         if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
         if(const auto instruction=secondary_instruction(current.type);!instruction.empty()){
@@ -1882,6 +1947,7 @@ struct LessonView {
                 rows.push_back({{caption,reset,spacer,wrap,copy,expand},{std::max(112,MulDiv(112,content_text_scale(),100)),44,0,44,44,44},48,false});
             }
             rows.back().toolbar=true;
+            if(!laboratory()){rows.back().column_gap=0;rows.back().horizontal_inset=14;}
             if(laboratory())rows.back().padding_after=0;
             for(const auto item:rows.back().cells)reader_theme::apply(item,laboratory()?reader_theme::Surface::compiler_header:reader_theme::Surface::card_header);
             toolbar_caption(caption,"</> C++");
@@ -1930,6 +1996,13 @@ struct LessonView {
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                 : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter"), control_id(index, 11), {0, ActionType::run, index});
             rows.push_back({{vm.compile}, {0}, 48, false});
+            if(!laboratory()){rows.back().padding_before=8;rows.back().padding_after=0;}
+            if(!laboratory()&&!vm.status){
+                vm.status=rich("",control_id(index,34));rows.push_back({{vm.status},{0},0,true});
+                rows.back().padding_before=8;rows.back().padding_after=8;
+                reader_theme::set_text_color(vm.status,reader_theme::palette(window).high_contrast?reader_theme::foreground(vm.status):RGB(174,180,190));
+                set_rich_text(vm.status,ui("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution."));
+            }
             for (const auto& [part,type] : std::array<std::pair<int,ActionType>,9>{{
                 {70,ActionType::copy_source},{71,ActionType::copy_console},{72,ActionType::clear_console},
                 {73,ActionType::undo},{74,ActionType::redo},{75,ActionType::fullscreen_source},{76,ActionType::fullscreen_console},
@@ -1955,7 +2028,7 @@ struct LessonView {
             reader_theme::apply(vm.console,reader_theme::Surface::compiler_output);
             SetWindowLongPtrW(vm.console,GWL_STYLE,GetWindowLongPtrW(vm.console,GWL_STYLE) | WS_VSCROLL | WS_HSCROLL | ES_AUTOHSCROLL);
             SendMessageW(vm.console,EM_SETTARGETDEVICE,0,1);
-            rows.push_back({{vm.console}, {0}, 72, true,0,240});rows.back().horizontal_inset=16;rows.back().padding_after=16;
+            rows.push_back({{vm.console}, {0}, 72, true,0,240});rows.back().horizontal_inset=16;rows.back().padding_after=0;
             reader_theme::set_text_color(vm.console,RGB(121,226,157));
             create_feedback(index);refresh_project_actions(index); return;
         }
@@ -2006,6 +2079,7 @@ struct LessonView {
             const bool multiline = !curriculum::uses_single_line_answer(current);
             vm.answer_editor = std::make_unique<CodeEditor>(vm.answer, windows::EditorDocument{vm.response.answer}, multiline,
                 [this, index] { check_answer(index); }, true, current.type == BlockType::fill_code, false);
+            SetWindowSubclass(vm.answer,quiz_answer_proc,24,reinterpret_cast<DWORD_PTR>(this));
             set_edit_hint(vm.answer,current.type==BlockType::fill_code
                 ?ui("Escribe el código faltante","Enter the Missing Code","Saisissez le code manquant")
                 :ui("Escribe la salida","Enter the Output","Saisissez la sortie"));
@@ -2023,7 +2097,7 @@ struct LessonView {
     void render_page() {
         cancel_math();
         choice_labels.clear();selected_puzzle.reset();
-        end_drag();restore_fullscreen_header(); fullscreen_block.reset();fullscreen_lesson_scroll.reset();
+        end_drag();restore_fullscreen_palette();restore_fullscreen_header(); fullscreen_block.reset();fullscreen_lesson_scroll.reset();
         updating = true;
         controls.clear();
         for (const auto& row : rows) for (auto item : row.cells) destroy_control(item);
@@ -2052,6 +2126,10 @@ struct LessonView {
         if(!reader_bar||!IsWindow(reader_bar)||!pane)return;
         RECT area{},viewport{};GetClientRect(window,&area);GetWindowRect(pane,&viewport);MapWindowPoints(nullptr,window,reinterpret_cast<POINT*>(&viewport),2);
         int bottom=static_cast<int>(area.bottom)-px(4);
+        if(fullscreen_palette&&IsWindowVisible(fullscreen_palette)){
+            RECT bank{};GetWindowRect(fullscreen_palette,&bank);MapWindowPoints(nullptr,window,reinterpret_cast<POINT*>(&bank),2);
+            bottom=std::min(bottom,static_cast<int>(bank.top)-px(4));
+        }
         if(const auto keyboard=math_keyboard_window(GetAncestor(window,GA_ROOT));keyboard&&IsWindowVisible(keyboard)){
             RECT bounds{};GetWindowRect(keyboard,&bounds);MapWindowPoints(nullptr,window,reinterpret_cast<POINT*>(&bounds),2);
             if(bounds.left<area.right&&bounds.right>0&&bounds.bottom>viewport.top)bottom=std::min(bottom,static_cast<int>(bounds.top)-px(4));
@@ -2061,6 +2139,7 @@ struct LessonView {
     }
     void resize() {
         if (!ready) return;
+        const auto focused=GetFocus();const bool palette_reparented=sync_fullscreen_palette();
         RECT area{}; GetClientRect(window, &area);
         const int margin = px(4), available = static_cast<int>(area.right) - margin * 2;
         MoveWindow(back,margin,px(12),px(48),px(48),TRUE);
@@ -2086,16 +2165,25 @@ struct LessonView {
         if(laboratory())MoveWindow(back,px(4),0,px(48),px(48),TRUE);
         ShowWindow(fullscreen_close,fullscreen_block?SW_SHOWNOACTIVATE:SW_HIDE);
         SetWindowPos(fullscreen_close,HWND_TOP,area.right-px(52),px(4),px(48),px(48),SWP_NOACTIVATE);
-        const int nav_top = static_cast<int>(area.bottom);
+        int nav_top = static_cast<int>(area.bottom);
         const bool assisted = editing_bar && editing_bar->visible() && !import_open;
         const int bar_height = editing_bar ? editing_bar->logical_height() : 0;
         const int editing_height = assisted ? px(bar_height + 8) : 0;
+        fullscreen_palette_max_height=std::max(0,nav_top-viewport_top-editing_height-px(18));
+        if(fullscreen_palette_block){
+            auto& fill=*controls[*fullscreen_palette_block].fill;
+            fullscreen_palette_height=std::min(fullscreen_palette_max_height,fill.palette_height_for_width(area.right));
+            nav_top-=fullscreen_palette_height;
+            SetWindowPos(fullscreen_palette,HWND_TOP,0,nav_top,area.right,fullscreen_palette_height,SWP_NOACTIVATE|SWP_SHOWWINDOW|SWP_NOCOPYBITS);
+            SetWindowPos(fill.palette_window(),nullptr,0,0,area.right,fullscreen_palette_height,SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOCOPYBITS);
+        }
         if (editing_bar) editing_bar->place(std::max(margin,(static_cast<int>(area.right) - std::min(available,px(1050))) / 2),
             nav_top - px(bar_height + 12),std::min(available,px(1050)),px(bar_height));
         MoveWindow(pane,0,viewport_top,static_cast<int>(area.right),std::max(px(18),nav_top - viewport_top - editing_height),TRUE);
         if(fullscreen_block)SetWindowPos(fullscreen_close,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
         if (import_open) layout_import();
         reflow();
+        if(palette_reparented&&focused&&IsWindow(focused)&&IsWindowEnabled(focused)&&IsWindowVisible(focused)&&GetFocus()!=focused)SetFocus(focused);
     }
     void open_menu() {
         const auto popup = CreatePopupMenu();
@@ -2126,10 +2214,15 @@ struct LessonView {
     void reflow() {
         if (!pane) return;
         if (laying_out) { layout_pending = true; return; }
+        if(fullscreen_palette_block&&*fullscreen_palette_block<controls.size()&&controls[*fullscreen_palette_block].fill){
+            RECT area{};GetClientRect(window,&area);
+            const auto height=std::min(fullscreen_palette_max_height,controls[*fullscreen_palette_block].fill->palette_height_for_width(area.right));
+            if(height!=fullscreen_palette_height){resize();return;}
+        }
         laying_out = true;
         struct LayoutGuard { bool& value; ~LayoutGuard() { value = false; } } guard{laying_out};
         RECT area{}; GetClientRect(pane, &area);
-        const int margin = 0, gap = px(8);
+        const int margin = 0;
         const int width = std::max(px(100), static_cast<int>(area.right) - margin * 2);
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
         struct Placement { HWND item; int x, y, width, height; bool fixed=false; HWND parent=nullptr;int origin=0; };
@@ -2142,6 +2235,7 @@ struct LessonView {
         const auto pinned=fixed_header_row();
         int top = fullscreen_block?(pinned?0:px(56)):px(24);
         for (auto& row : rows) {
+            const int gap=px(row.column_gap);
             const bool fixed=&row==pinned;
             const int body_top=top;
             if(fixed)top=0;
@@ -2166,9 +2260,16 @@ struct LessonView {
             if (!shown) continue;
             if(!laboratory()&&(row.card_header||row.toolbar)&&!row.widths.empty()&&row.widths[0]>0
                 &&((GetDlgCtrlID(row.cells.front())-1000)%100==16||(GetDlgCtrlID(row.cells.front())-1000)%100==38))
-                row.widths[0]=std::max(112,MulDiv(112,content_text_scale(),100));
+            {
+                // Android places Reset immediately after the intrinsic label,
+                // rather than reserving a fixed, scaled caption column.
+                row.widths[0]=toolbar_caption_width(row.cells.front());
+            }
             if(row.padding_before&&(!row.size_to_text||GetWindowTextLengthW(row.cells.front())>0))top+=px(row.padding_before);
-            const int inset=row.simulated_card?px(row.card_header?14:18):px(row.horizontal_inset),row_width=width-inset*2;
+            const auto block_index=row_block(row);
+            const bool order_body=block_index<controls.size()&&controls[block_index].order_view&&row.cells.size()==1
+                &&row.cells.front()==controls[block_index].order_view->window();
+            const int inset=row.simulated_card?px(row.card_header?14:order_body?0:18):px(row.horizontal_inset),row_width=width-inset*2;
             int fixed_width = 0; for (auto value : row.widths) if (value) fixed_width += px(value);
             const int remaining = std::max(px(30), row_width - fixed_width - gap * (static_cast<int>(row.cells.size()) - 1));
             if(row.cells.size()==1){
@@ -2246,6 +2347,10 @@ struct LessonView {
             int height = row.size_to_text ? std::max(px(row.logical_height), row.requested_height) : px(row.logical_height);
             height+=readonly_nonclient_height;
             height=std::max(height,control_height);
+            // Android's empty verdict/status TextViews are gone until they
+            // own text. RichEdit still requests a blank line for an empty
+            // document; do not turn that native request into visible spacing.
+            if(row.size_to_text&&row.logical_height==0&&GetWindowTextLengthW(row.cells.front())==0)height=0;
             if (row.max_logical_height) height = std::min(height,px(row.max_logical_height));
             if (fullscreen_block && GetDlgCtrlID(row.cells.front()) == control_id(*fullscreen_block,14) && fullscreen_output)
                 height = std::max(px(80),static_cast<int>(area.bottom) - top - px(16));
@@ -2285,7 +2390,7 @@ struct LessonView {
                     simulated_card_surfaces[found->second].bounds.bottom=top+height+(row.card_end?px(16):0);
             }
             if(fixed)top=body_top;
-            else top += height + (height ? px(row.simulated_card?(row.card_end?16:row.card_header?8:8):row.padding_after) : 0);
+            else top += height + (height ? px(row.simulated_card?(row.card_end?16:row.card_header?8:8):row.padding_after) : px(row.empty_padding_after));
         }
         const auto math_keyboard=math_keyboard_window(GetAncestor(window,GA_ROOT));RECT keyboard_area{};
         if(math_keyboard&&IsWindowVisible(math_keyboard))GetWindowRect(math_keyboard,&keyboard_area);
@@ -2366,6 +2471,14 @@ struct LessonView {
             SendMessageW(vm.answer,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
             (void)update_answer_scrollbars(vm.answer);
         }
+        if(!laboratory())for(const auto& vm:controls)if(vm.console&&std::ranges::find(placements,vm.console,&Placement::item)!=placements.end()){
+            RECT content{};GetClientRect(vm.console,&content);
+            int numerator=0,denominator=0;SendMessageW(vm.console,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            content.top=numerator>0&&denominator>0?MulDiv(px(12),denominator,numerator):px(12);
+            content.bottom=std::max(content.top+1,content.bottom-px(16));
+            SendMessageW(vm.console,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+            (void)update_answer_scrollbars(vm.console);
+        }
         for(std::size_t index=0;index<controls.size();++index)if(const auto source=controls[index].simulated_code;source){
             const auto placed=std::ranges::find(placements,source,&Placement::item);
             if(placed==placements.end())continue;
@@ -2389,7 +2502,7 @@ struct LessonView {
                 vm.math->layout(placed->x,placed->y-(placed->origin?placed->origin:scroll),placed->width);
                 RECT bounds{placed->x,placed->y,placed->x+placed->width,placed->y+placed->height};
                 const auto feedback=std::ranges::find(placements,vm.feedback,&Placement::item);
-                if(feedback!=placements.end())bounds.bottom=feedback->y+feedback->height+(feedback->height?px(12):0);
+                if(feedback!=placements.end())bounds.bottom=feedback->y+feedback->height+px(12);
                 math_card_surfaces.push_back(bounds);
                 // The host already pads its contents. Leave just the outer
                 // contour to the parent; inset check/feedback stay untouched.
@@ -2582,11 +2695,12 @@ struct LessonView {
         running_block = index; running_input = request.stdin_utf8;refresh_project_actions(index);
         EnableWindow(vm.compile, FALSE); feedback(index, "", false);
         if(laboratory()){laboratory_status=LaboratoryStatus::running;refresh_laboratory_status();}
-        updating = true; set_rich_text(vm.console,laboratory()||block(index).cmake?"":ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours...")); updating = false;
+        updating = true;set_rich_text(vm.console,"");updating = false;
         if(block(index).cmake&&vm.status)set_rich_text(vm.status,action==windows::CppRunRequest::Action::configure?ui("Configurando y generando el proyecto…","Configuring and generating the project…","Configuration et génération du projet…")
             :action==windows::CppRunRequest::Action::build?ui("Construyendo el objetivo…","Building the target…","Construction de la cible…")
             :action==windows::CppRunRequest::Action::compile_run?ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours...")
             :ui("Ejecutando el objetivo construido…","Running the built target…","Exécution de la cible construite…"));
+        else if(!laboratory()&&vm.status)set_rich_text(vm.status,ui("Compilando y ejecutando...","Compiling and running...","Compilation et exécution en cours..."));
         worker = std::jthread([this, request = std::move(request)](std::stop_token stop) {
             windows::CppRunResult result;
             try{
@@ -2634,14 +2748,21 @@ struct LessonView {
             output = diagnostic_text(result->execution.stdout_bytes);
             if (!result->execution.stderr_bytes.empty()) output += '\n' + console_label(1) + '\n' + diagnostic_text(result->execution.stderr_bytes);
         }
-        if(cmake&&vm.status){
+        if(vm.status&&!laboratory()){
             const auto failed=[&](std::string name,const windows::CppPhaseResult& phase){
                 if(phase.status==windows::CppPhaseStatus::timed_out)return ui("La fase excedió el tiempo disponible.","The phase exceeded the time limit.","La phase a dépassé le délai disponible.");
                 if(phase.exit_code)return name+ui(": la fase terminó con código ",": the phase exited with code "," : la phase a terminé avec le code ")+std::to_string(*phase.exit_code)+'.';
                 return ui("La fase no terminó correctamente.","The phase did not finish successfully.","La phase ne s’est pas terminée correctement.");
             };
             std::string status;
-            if(configuration_failed)status=failed(ui("Configuración y generación","Configuration and generation","Configuration et génération"),result->configuration);
+            if(!cmake){
+                if(result->compilation.exit_code&&!result->compilation.succeeded())status=ui("La compilación falló (código ","Compilation failed (code ","Échec de la compilation (code ")+std::to_string(*result->compilation.exit_code)+").";
+                else if(result->execution.exit_code)status=(result->execution.succeeded()
+                    ?ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")
+                    :ui("La ejecución falló (código ","Execution failed (code ","L’exécution a échoué (code "))+std::to_string(*result->execution.exit_code)+").";
+                else status=ui("No se pudo ejecutar.","Could not execute.","Impossible d’exécuter.");
+            }
+            else if(configuration_failed)status=failed(ui("Configuración y generación","Configuration and generation","Configuration et génération"),result->configuration);
             else if(running_action==windows::CppRunRequest::Action::configure)status=result->configuration.succeeded()?ui(
                 "Configuración y generación completadas. El programa todavía no se ha construido.","Configuration and generation completed. The program has not been built yet.","Configuration et génération terminées. Le programme n’a pas encore été construit.")
                 :failed(ui("Configuración y generación","Configuration and generation","Configuration et génération"),result->configuration);
@@ -2863,6 +2984,7 @@ struct LessonView {
         }
         if(id==back_id){(void)navigate_back();return;}
         if (id == reader_id || id == language_id || id == attempts_id || id == settings_id) {
+            if(id==attempts_id&&attempt_state.premium)return;
             PostMessageW(window,header_action_message,static_cast<WPARAM>(id),0); return;
         }
         if (id == page_top_id) { scroll_to(0); return; }
@@ -2963,6 +3085,31 @@ LRESULT CALLBACK console_icon_proc(HWND item,UINT message,WPARAM wparam,LPARAM l
     if(message==WM_NCDESTROY){view->icon_focus.erase(item);RemoveWindowSubclass(item,console_icon_proc,21);}
     return result;
 }
+LRESULT CALLBACK quiz_answer_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
+    auto& view=*reinterpret_cast<LessonView*>(value);
+    if(message==WM_ENABLE){
+        if(wparam){
+            if(const auto before=view.answer_disabled_readonly.find(item);before!=view.answer_disabled_readonly.end()){
+                SendMessageW(item,EM_SETREADONLY,before->second,0);view.answer_disabled_readonly.erase(before);
+            }
+        }else if(!reader_theme::palette(item).high_contrast){
+            // WS_DISABLED is already real. Avoid RichEdit's disabled system
+            // fill while keeping native read-only text services and glyphs.
+            view.answer_disabled_readonly.try_emplace(item,(GetWindowLongPtrW(item,GWL_STYLE)&ES_READONLY)!=0);
+            SendMessageW(item,EM_SETREADONLY,TRUE,0);SendMessageW(item,EM_SETBKGNDCOLOR,0,reader_theme::background(item));
+            InvalidateRect(item,nullptr,TRUE);return 0;
+        }
+        const auto result=DefSubclassProc(item,message,wparam,lparam);
+        if(!reader_theme::palette(item).high_contrast)SendMessageW(item,EM_SETBKGNDCOLOR,0,reader_theme::background(item));
+        return result;
+    }
+    // This runs above the code-assistance adapter: completed answers cannot
+    // accept a pair, Tab, Enter, clipboard edit or Undo through its shortcuts.
+    if(!IsWindowEnabled(item)&&(message==WM_CHAR||message==WM_KEYDOWN||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR
+        ||message==WM_UNDO||message==EM_UNDO||message==EM_REDO||message==EM_REPLACESEL))return 0;
+    if(message==WM_NCDESTROY){view.answer_disabled_readonly.erase(item);RemoveWindowSubclass(item,quiz_answer_proc,24);}
+    return DefSubclassProc(item,message,wparam,lparam);
+}
 LRESULT CALLBACK gesture_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
     auto* view = reinterpret_cast<LessonView*>(value);
     if(message==WM_SETFOCUS&&GetWindowTextLengthW(item)==0&&std::ranges::any_of(view->controls,[item](const auto& block){return block.answer==item;})){
@@ -3051,7 +3198,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if (wparam == back_id) action = view->hooks.back_to_catalog;
             else if (wparam == reader_id) action = view->hooks.reader_requested;
             else if (wparam == language_id) action = view->hooks.language_requested;
-            else if (wparam == attempts_id) action = view->hooks.attempts_requested;
+            else if (wparam == attempts_id&&!view->attempt_state.premium) action = view->hooks.attempts_requested;
             else if (wparam == settings_id) action = view->hooks.settings_requested;
             if (action) action(window); return 0;
         }

@@ -6,6 +6,7 @@
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/icons.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
@@ -21,6 +22,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -466,6 +469,11 @@ void lesson_interface_languages() {
                 window_text(fixture.control(3,11)) == pick("Compilar y ejecutar","Compile and run","Compiler et exécuter") &&
                 fixture.text(2,17) == pick("Entrada","Input","Entrée") && fixture.text(2,30) == pick("Salida del programa (stdout)","Program output (stdout)","Sortie du programme (stdout)"),
                 "Compiler/check/input/output labels did not follow the interface language");
+        require(fixture.text(3,34)==pick("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution."),
+                "The ordinary compiler omitted Android's localized ready status");
+        fixture.click(3,11);wait_for(fixture.host,[&]{return IsWindowEnabled(fixture.control(3,11));},"The ordinary compiler did not finish its real locale-specific run");
+        require(fixture.text(3,34)==pick("Ejecución terminada (código 0).","Execution finished (code 0).","Exécution terminée (code 0).")
+                &&fixture.text(3,4).empty(),"An ordinary compiler lost its localized execution status or invented an output verdict");
         require(fixture.text(0,0) == "Nota curricular intacta." && fixture.text(1,0) == "Pregunta curricular intacta." &&
                 fixture.text(2,10) == "int main() { return 0; }\n", "Interface localization changed authored text or C++");
         const auto regions = lesson_reading_regions(fixture.view);
@@ -814,7 +822,7 @@ void mathematical_feedback_paragraph_spacing() {
         Fixture fixture([&](state::StateData& state,const curriculum::Lesson&){
             state.preferences["native_windows"]["ui_language"]=std::string(locale);
         },[&](const curriculum::Lesson&){
-            auto lesson=windows::parse_lesson_json(R"({"id":"qa_math_feedback_spacing","title":"Feedback","pages":[{"blocks":[{"type":"math_puzzle","schemaVersion":1,"prompt":"Completa la medida.","responses":[{"id":"number","type":"math_numeric_input","label":"Medida","validator":{"type":"numeric","expected":6}}],"feedback":{"correct":"6 × 100 = 600. Explicación intacta.","incorrect":"Revisa la medida."}}]}]})");
+            auto lesson=windows::parse_lesson_json(R"({"id":"qa_math_feedback_spacing","title":"Feedback","pages":[{"blocks":[{"type":"math_puzzle","schemaVersion":1,"prompt":"Completa la medida.","responses":[{"id":"number","type":"math_numeric_input","label":"Medida","validator":{"type":"numeric","expected":6}}],"feedback":{"correct":"6 × 100 = 600. Explicación intacta.","incorrect":"Revisa la medida."}},{"type":"paragraph","text":"Texto posterior intacto."}]}]})");
             lesson.locale=locale;return lesson;
         });
         std::string canonical_feedback;
@@ -831,6 +839,10 @@ void mathematical_feedback_paragraph_spacing() {
             if(!math_field_keyboard_context(candidate).empty()){*reinterpret_cast<HWND*>(output)=candidate;return FALSE;}return TRUE;
         },reinterpret_cast<LPARAM>(&field));
         require(field,"The real mathematical answer field is missing from feedback spacing regression");
+        RECT initial_host{},initial_check{},following{};GetWindowRect(fixture.control(0,5),&initial_host);
+        GetWindowRect(fixture.control(0,3),&initial_check);GetWindowRect(fixture.control(1,0),&following);
+        require(initial_check.top==initial_host.bottom&&following.top-initial_check.bottom==MulDiv(36,static_cast<int>(GetDpiForWindow(fixture.view)),96),
+            "An unanswered math card omitted its 12dp bottom inset plus Android's separate 24dp bottomMargin, or added a gap before Check");
         const auto original_json=fixture.lesson.raw_json;
         for(const auto answer:{L"5",L"6"}) {
             CHARRANGE all{0,-1};SendMessageW(field,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
@@ -882,10 +894,11 @@ void mathematical_feedback_paragraph_spacing() {
             RECT host_bounds{},check_bounds{},feedback_bounds{},canvas{};GetWindowRect(math_host,&host_bounds);
             GetWindowRect(fixture.control(0,3),&check_bounds);GetWindowRect(target,&feedback_bounds);
             for(const auto rect:{&host_bounds,&check_bounds,&feedback_bounds})MapWindowPoints(nullptr,pane,reinterpret_cast<POINT*>(rect),2);
-            const auto inset=MulDiv(8,static_cast<int>(GetDpiForWindow(pane)),96);
+            const auto inset=MulDiv(6,static_cast<int>(GetDpiForWindow(pane)),96);
             require(check_bounds.left==host_bounds.left+inset&&feedback_bounds.left==host_bounds.left+inset&&
                 check_bounds.right==host_bounds.right-inset&&feedback_bounds.right==host_bounds.right-inset,
                 "The mathematical group contour clips its check/feedback instead of retaining Android's internal padding");
+            require(check_bounds.top==host_bounds.bottom,"The mathematical host added an extra gap before its external Check button");
             GetClientRect(pane,&canvas);const auto screen=GetDC(pane),memory=CreateCompatibleDC(screen);
             const auto bitmap=CreateCompatibleBitmap(screen,canvas.right,canvas.bottom);ReleaseDC(pane,screen);
             require(memory&&bitmap,"Cannot create the mathematical group's actual native drawing surface");const auto old=SelectObject(memory,bitmap);
@@ -994,6 +1007,71 @@ void native_answer_overflow_bars(){
     require(fixture.text(1,2)==lines&&visible(vertical,SB_VERT),"Undo did not restore the original multiline text and real overflow");
     std::cout<<"PASS answer native scrollbars: empty/clear hidden, genuine horizontal and vertical overflow, unchanged text and Undo\n";
 }
+void native_solved_answer_style(){
+    Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_solved_answer_surface","title":"Respuestas legibles","pages":[{"blocks":[
+        {"type":"output_prediction","question":"Escribe la salida.","code":"std::cout << \"Archivo preparado\";","answers":["Archivo preparado"]},
+        {"type":"fill_code","question":"Completa el operador.","code":"std::cout [] \"Listo\";","answers":["<<"]}]}]})json");});
+    struct Raster{COLORREF background;std::size_t ink;};
+    const auto raster=[](HWND field){
+        CHARRANGE selection{};SendMessageW(field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(field,EM_SETSEL,0,0);
+        RECT area{};GetClientRect(field,&area);const auto screen=GetDC(field),dc=CreateCompatibleDC(screen);
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=area.right;info.bmiHeader.biHeight=-area.bottom;
+        info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        void* pixels=nullptr;const auto bitmap=CreateDIBSection(screen,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(field,screen);
+        require(dc&&bitmap&&pixels&&area.right>4&&area.bottom>4,"Cannot capture the real programming answer raster");
+        const auto previous=SelectObject(dc,bitmap);const auto sentinel=CreateSolidBrush(RGB(1,2,3));FillRect(dc,&area,sentinel);DeleteObject(sentinel);
+        SendMessageW(field,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);GdiFlush();
+        const auto background=GetPixel(dc,area.right-3,area.bottom-3),expected=reader_theme::background(field);
+        std::size_t ink=0;const auto values=static_cast<const std::uint32_t*>(pixels);
+        for(int y=0;y<area.bottom;++y)for(int x=0;x<area.right;++x){const auto value=values[static_cast<std::size_t>(y)*area.right+x];
+            const int red=(value>>16)&255,green=(value>>8)&255,blue=value&255;
+            if(red+green+blue>250&&std::abs(red-GetRValue(expected))+std::abs(green-GetGValue(expected))+std::abs(blue-GetBValue(expected))>=96)++ink;
+        }
+        SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);SendMessageW(field,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));return Raster{background,ink};
+    };
+    const auto legible=[&](HWND field){const auto captured=raster(field);if(!reader_theme::palette(field).high_contrast)
+        require(captured.background==reader_theme::background(field)&&captured.ink>8,
+            "A real programming answer lost its dark background or legible native glyphs when completed/reopened");};
+    for(std::size_t index=0;index<2;++index){
+        const auto expected=index==0?"Archivo preparado":"<<";fixture.replace(index,2,expected);SetFocus(fixture.view);legible(fixture.control(index,2));
+        const auto undo=SendMessageW(fixture.control(index,2),EM_CANUNDO,0,0);fixture.enter(index);const auto field=fixture.control(index,2);
+        require(!IsWindowEnabled(field)&&(GetWindowLongPtrW(field,GWL_STYLE)&WS_DISABLED)&&fixture.text(index,2)==expected,
+            "Completing a programming answer changed its text or removed its real disabled state");
+        if(!reader_theme::palette(field).high_contrast)require(GetWindowLongPtrW(field,GWL_STYLE)&ES_READONLY,"A disabled programming answer lost its native readonly protection");
+        legible(field);SendMessageW(field,WM_CHAR,L'(',1);SendMessageW(field,WM_KEYDOWN,VK_BACK,1);SendMessageW(field,WM_UNDO,0,0);
+        require(fixture.text(index,2)==expected&&SendMessageW(field,EM_CANUNDO,0,0)==undo,
+            "A completed programming answer accepted code assistance or modified its preserved Undo history");
+    }
+    fixture.reopen();
+    for(std::size_t index=0;index<2;++index){const auto field=fixture.control(index,2);
+        require(!IsWindowEnabled(field)&&fixture.text(index,2)==(index==0?"Archivo preparado":"<<"),"Reopening did not restore the same completed programming answer");
+        legible(field);fixture.click(index,12);require(IsWindowEnabled(field)&&!(GetWindowLongPtrW(field,GWL_STYLE)&ES_READONLY)&&fixture.text(index,2).empty(),
+            "Reset did not restore the original editable state of the same programming answer HWND");
+        fixture.replace(index,2,"Personal");SendMessageW(field,EM_SETSEL,static_cast<WPARAM>(-1),-1);SendMessageW(field,WM_CHAR,L'(',1);pump(fixture.host);
+        require(fixture.text(index,2)=="Personal()","Unlocking a completed answer lost its original code-pair assistance");legible(field);
+    }
+    std::cout<<"PASS actual output-prediction/fill rasters: dark readable completed/reopened answers, real disabled/readonly protection, preserved Undo and editable reset\n";
+}
+void native_compiler_output_overflow_bars(){
+    Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_compiler_console_overflow","title":"Salida real","pages":[{"blocks":[
+        {"type":"cpp_compiler","initialCode":"#include <iostream>\n#include <string>\nint main() { for (int i=0;i<40;++i) std::cout << std::string(400,'x') << '\\n'; }\n"}]}]})json");});
+    const auto console=fixture.control(0,14),action=fixture.control(0,11);
+    require(!(GetWindowLongPtrW(console,GWL_STYLE)&(WS_HSCROLL|WS_VSCROLL)),"An empty compiler console reserves native scrollbars");
+    fixture.click(0,11);wait_for(fixture.host,[&]{return IsWindowEnabled(action);},"Large real compiler output did not finish");
+    require(fixture.text(0,14).size()==std::size_t{40*401}&&(GetWindowLongPtrW(console,GWL_STYLE)&WS_HSCROLL)&&(GetWindowLongPtrW(console,GWL_STYLE)&WS_VSCROLL),
+        "Genuine horizontal and vertical program output did not regain native scrollbars or preserved output bytes");
+    SendMessageW(console,WM_VSCROLL,SB_BOTTOM,0);SendMessageW(console,EM_SETSEL,3,9);
+    POINT before{},after{};CHARRANGE selection{};SendMessageW(console,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+    SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,0);pump(fixture.host);SendMessageW(console,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+    SendMessageW(console,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    require(before.y>0&&after.y==before.y&&selection.cpMin==3&&selection.cpMax==9,"Console reflow changed its existing native scroll or selection");
+    fixture.replace(0,10,"#include <iostream>\nint main() { std::cout << \"Una línea\"; }\n");
+    fixture.click(0,11);wait_for(fixture.host,[&]{return IsWindowEnabled(action);},"Short replacement program did not finish");
+    require(fixture.text(0,14)=="Una línea"&&!(GetWindowLongPtrW(console,GWL_STYLE)&(WS_HSCROLL|WS_VSCROLL)),
+        "A new short execution retained scrollbars from an older overflowing output");
+    require(fixture.text(0,4).empty(),"A console-only compiler invented a checked response");
+    std::cout<<"PASS real compiler output scrollbars: no empty/one-line bars, genuine two-axis overflow, stable reflow and fresh shortened output\n";
+}
 void simulated_exercise_code_cards(bool caret_only=false) {
     struct DpiScope{DPI_AWARENESS_CONTEXT previous=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         ~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}} dpi_scope;
@@ -1073,7 +1151,7 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{100};});
     const auto inline_host=fixture.control(3,5),drag_host=fixture.control(4,5);
     const auto inline_answer=GetDlgItem(inline_host,100),drag_slot=GetDlgItem(drag_host,100);
-    require(inline_answer&&drag_slot&&edit_text(inline_answer).empty()&&edit_text(drag_slot)=="…",
+    require(inline_answer&&drag_slot&&edit_text(inline_answer).empty()&&edit_text(drag_slot).empty(),
         "Adding code headers revealed the internal inline/drag expected answers");
     fixture.click(3,35);
     require(accessible_name(fixture.control(4,35))=="Ajuste de línea activado"&&
@@ -1125,9 +1203,32 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     fixture.click(3,13);require(fixture.control(3,5)==inline_host&&GetDlgItem(inline_host,100)==inline_answer&&edit_text(inline_answer)=="<<",
         "Inline fullscreen recreated the existing hole/editor or discarded its draft");
     fixture.click(116);fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
-    SendMessageW(GetDlgItem(drag_host,2000),BM_CLICK,0,0);SendMessageW(drag_slot,WM_LBUTTONUP,0,0);pump(fixture.host);
+    const auto bank=GetDlgItem(drag_host,3000),first_card=GetDlgItem(bank,2000),second_card=GetDlgItem(bank,2001);
+    require(bank&&first_card&&second_card,"The drag-fill palette or its real available choices are missing");
+    RECT first_normal{},second_normal{};GetWindowRect(first_card,&first_normal);GetWindowRect(second_card,&second_normal);
+    require(second_normal.top>first_normal.top,"The normal drag-fill palette no longer uses Android's vertical stack");
+    const auto drag_script=reading_script(fixture.view);fixture.click(4,13);
+    const auto tray=fixture.control(118);RECT tray_bounds{},body_bounds{},first_full{},second_full{},view_bounds{};
+    GetWindowRect(tray,&tray_bounds);GetWindowRect(GetParent(drag_host),&body_bounds);GetWindowRect(first_card,&first_full);GetWindowRect(second_card,&second_full);
+    GetClientRect(fixture.view,&view_bounds);POINT bottom{0,view_bounds.bottom};ClientToScreen(fixture.view,&bottom);
+    require(fixture.control(4,5)==drag_host&&GetDlgItem(drag_host,100)==drag_slot&&GetParent(bank)==tray&&IsWindowVisible(bank)
+            &&GetDlgItem(bank,2000)==first_card&&first_full.top==second_full.top&&second_full.left>first_full.left,
+        "Drag-fill fullscreen duplicated the palette/cards or failed to arrange the existing choices horizontally");
+    require(tray_bounds.bottom==bottom.y&&body_bounds.bottom==tray_bounds.top&&reading_script(fixture.view)==drag_script
+            &&!IsWindowVisible(fixture.control(4,3)),"The fullscreen bank is not anchored below its own reserved viewport, or changed the narration/Check policy");
+    SendMessageW(first_card,BM_CLICK,0,0);pump(fixture.host);
+    require(GetDlgItem(bank,2000)==first_card&&edit_text(drag_slot)=="main",
+        "The same floating bank choice stopped writing into the existing authored hole");
+    SetFocus(drag_slot);PostMessageW(drag_slot,WM_KEYDOWN,VK_ESCAPE,1);pump(fixture.host);
+    require(GetParent(bank)==drag_host&&!IsWindowVisible(tray)&&fixture.control(4,5)==drag_host&&GetDlgItem(bank,2000)==first_card
+            &&edit_text(drag_slot)=="main"&&reading_script(fixture.view)==drag_script,
+        "Physical Escape failed to return the original vertical bank and its unchanged answer to the lesson");
+    RECT second_restored{},third_restored{};GetWindowRect(second_card,&second_restored);GetWindowRect(GetDlgItem(bank,2002),&third_restored);
+    require(third_restored.top>second_restored.top,"Leaving fullscreen retained the horizontal palette in normal lesson layout");
+    fixture.click(4,12);
+    SendMessageW(first_card,BM_CLICK,0,0);pump(fixture.host);
     require(edit_text(drag_slot)=="main"&&IsWindowEnabled(fixture.control(4,12)),"The decorated drag card no longer places a visible choice");
-    fixture.click(4,12);require(edit_text(drag_slot)=="…"&&fixture.lesson.raw_json==original_json&&fixture.control(4,5)==drag_host,
+    fixture.click(4,12);require(edit_text(drag_slot).empty()&&fixture.lesson.raw_json==original_json&&fixture.control(4,5)==drag_host,
         "Resetting the drag header changed source curriculum or recreated its controls");
     fixture.non_overlapping_rows();fixture.reopen();
     require(fixture.text(0,1)==fixture.lesson.pages[0].blocks[0].code&&fixture.lesson.raw_json==original_json,
@@ -1392,8 +1493,8 @@ void incomplete_puzzles_do_not_consume_attempts(){
     auto before=read_lesson_state(f.view);queued(2);
     require(read_lesson_state(f.view)==before&&f.text(2,4).empty(),"A partially filled inline puzzle consumed a heart or published incorrect feedback");
     const auto drag_host=f.control(3,5),first_slot=GetDlgItem(drag_host,100);
-    SendMessageW(GetDlgItem(drag_host,2000),BM_CLICK,0,0);SendMessageW(first_slot,WM_LBUTTONUP,0,0);pump(f.host);
-    require(IsWindowEnabled(f.control(3,3)),"A partially placed drag puzzle lost its Check action");
+    SendMessageW(GetDlgItem(GetDlgItem(drag_host,3000),2000),BM_CLICK,0,0);pump(f.host);
+    require(first_slot&&!edit_text(first_slot).empty()&&edit_text(first_slot)!="…"&&IsWindowEnabled(f.control(3,3)),"A real first-card placement did not fill its existing slot or enable Check");
     before=read_lesson_state(f.view);queued(3);
     require(read_lesson_state(f.view)==before&&f.text(3,4).empty(),"A partially filled drag puzzle consumed a heart or published incorrect feedback");
     for(const auto index:{4u,5u}){
@@ -1453,6 +1554,88 @@ void physical_enter_and_attempt_fill(){
     SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);
     std::cout<<"PASS real physical Enter: editor/stdin exclusions, selected puzzle, held-key suppression, separate advance, and horizontal white-empty life icon\n";
 }
+void premium_attempt_indicator(){
+    struct Raster {
+        HDC dc=nullptr;HBITMAP bitmap=nullptr;HGDIOBJ previous=nullptr;std::uint32_t* pixels=nullptr;int width=0,height=0;
+        Raster(HWND owner,int w,int h):width(w),height(h){
+            BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=w;info.bmiHeader.biHeight=-h;
+            info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+            const auto screen=GetDC(owner);dc=CreateCompatibleDC(screen);void* bits=nullptr;
+            bitmap=CreateDIBSection(screen,&info,DIB_RGB_COLORS,&bits,nullptr,0);ReleaseDC(owner,screen);
+            if(!dc||!bitmap||!bits){if(bitmap)DeleteObject(bitmap);if(dc)DeleteDC(dc);throw std::runtime_error("Cannot capture the actual Premium indicator");}
+            previous=SelectObject(dc,bitmap);pixels=static_cast<std::uint32_t*>(bits);
+        }
+        ~Raster(){SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);}
+        Raster(const Raster&)=delete;Raster& operator=(const Raster&)=delete;
+        std::vector<std::uint32_t> snapshot()const{GdiFlush();return {pixels,pixels+static_cast<std::size_t>(width)*height};}
+        COLORREF color(const std::vector<std::uint32_t>& image,int x,int y)const{
+            const auto raw=image.at(static_cast<std::size_t>(y)*width+x);return RGB((raw>>16)&255,(raw>>8)&255,raw&255);
+        }
+    };
+    for(const auto awareness:{DPI_AWARENESS_CONTEXT_UNAWARE,DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2}){
+        struct DpiScope{DPI_AWARENESS_CONTEXT previous;~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}}
+            dpi_scope{SetThreadDpiAwarenessContext(awareness)};
+        require(dpi_scope.previous!=nullptr,"Cannot exercise the real attempt indicator in both DPI contexts");
+        for(const auto route:{"programming","math_physics"}){
+            Fixture f({},[&](const curriculum::Lesson&){auto model=windows::parse_lesson_json(R"json({"id":"qa_premium_indicator","title":"Intentos","pages":[{"blocks":[{"type":"paragraph","text":"Indicador de intentos."}]}]})json");
+                model.source_path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es"/route/"qa_premium_indicator.json";return model;});
+            int opened=0;LessonViewHooks hooks;hooks.attempts_requested=[&](HWND){++opened;};set_lesson_view_hooks(f.view,std::move(hooks));
+            const auto before=read_lesson_state(f.view);const auto button=f.control(113);RECT bounds{};GetClientRect(button,&bounds);
+            const auto scale=[&](int n){return MulDiv(n,static_cast<int>(GetDpiForWindow(button)),96);};
+            Raster raster(button,bounds.right,bounds.bottom);DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=113;
+            draw.hwndItem=button;draw.hDC=raster.dc;draw.rcItem=bounds;
+            const auto paint=[&](double progress,bool premium){set_lesson_attempts_state(f.view,4,8,progress,premium);
+                SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));return raster.snapshot();};
+            const auto free_half=paint(.5,false),free_full=paint(1.,false),premium=paint(.25,true);
+            const auto colors=reader_theme::palette(button);
+            const int side=scale(34),left=(bounds.right-side)/2,top=bounds.bottom-side-scale(12);
+            int accent=0,free_percentage=0;
+            const auto background=reader_theme::background(button);
+            for(int y=top;y<top+side;++y)for(int x=left;x<left+side;++x){
+                require(raster.color(premium,x,y)==raster.color(free_full,x,y),
+                    "Premium changed the original route glyph/tint or left it partially empty");
+                if(raster.color(premium,x,y)==colors.accent)++accent;
+            }
+            require(accent>0,"Premium lost its original Programming/Mathematics accent fill");
+            for(int y=0;y<scale(15);++y)for(int x=bounds.right/2;x<bounds.right;++x){
+                require(raster.color(premium,x,y)==background,"Premium still paints the recovery percentage beside infinity");
+                if(raster.color(free_half,x,y)!=background)++free_percentage;
+            }
+            require(free_percentage>0,"The free indicator lost its visible recovery percentage");
+            require(paint(.5,false)==free_half,"Returning to free mode changed the original count, percentage or refill drawing");
+
+            // Read the original vector through the production renderer at
+            // 100% and 225% raster sizes; sample interiors of its actual path.
+            const std::array<std::pair<int,int>,6> points{{{220,280},{80,348},{40,445},{40,502},{80,603},{220,680}}};
+            const std::array<double,6> offsets{0.,.20,.42,.55,.78,1.};
+            const std::array<COLORREF,6> stops{RGB(118,80,31),RGB(183,134,54),RGB(255,240,187),RGB(225,182,95),RGB(163,115,45),RGB(98,64,22)};
+            for(const int resolution:{384,864}){
+                Raster vector(button,resolution,resolution);const RECT rectangle{0,0,resolution,resolution};
+                FillRect(vector.dc,&rectangle,reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+                const auto contrast_ink=RGB(19,231,217);draw_icon(vector.dc,rectangle,Icon::infinity_premium,contrast_ink);
+                const auto image=vector.snapshot();
+                for(const auto [source_x,source_y]:points){
+                    const int x=source_x*resolution/960,y=source_y*resolution/960;const auto actual=vector.color(image,x,y);
+                    if(colors.high_contrast){require(actual==contrast_ink,"Premium ignored the actual system high-contrast icon tint");continue;}
+                    const double t=((y+.5)*960/resolution-260)/440;
+                    const auto end=static_cast<std::size_t>(std::upper_bound(offsets.begin(),offsets.end(),t)-offsets.begin());
+                    require(end>0&&end<stops.size(),"Original gradient sample is outside the drawable stops");
+                    const auto start=end-1;const double fraction=(t-offsets[start])/(offsets[end]-offsets[start]);
+                    const auto channel=[&](int a,int b){return static_cast<int>(std::lround(a+(b-a)*fraction));};
+                    const auto expected=RGB(channel(GetRValue(stops[start]),GetRValue(stops[end])),channel(GetGValue(stops[start]),GetGValue(stops[end])),channel(GetBValue(stops[start]),GetBValue(stops[end])));
+                    require(std::abs(static_cast<int>(GetRValue(actual))-GetRValue(expected))<=5&&
+                        std::abs(static_cast<int>(GetGValue(actual))-GetGValue(expected))<=5&&
+                        std::abs(static_cast<int>(GetBValue(actual))-GetBValue(expected))<=5,
+                        "Premium infinity differs from the original six-stop Android gold gradient");
+                }
+            }
+            (void)paint(.25,true);f.click(113);require(opened==0,"Premium still opens the free-life recovery panel");
+            (void)paint(.5,false);f.click(113);require(opened==1,"The free-life recovery panel no longer opens");
+            require(read_lesson_state(f.view)==before,"Rendering Premium through the existing indicator API persisted an entitlement or changed student data");
+        }
+    }
+    std::cout<<"PASS Programming/Math free and Premium indicators: original full route accent, no Premium percentage, XML six-stop infinity gradient, DPI/contrast and free-panel semantics\n";
+}
 }
 
 int main(int argc,char* argv[]) {
@@ -1478,6 +1661,9 @@ int main(int argc,char* argv[]) {
         edited_composition_owns_enter();
         incomplete_puzzles_do_not_consume_attempts();
         physical_enter_and_attempt_fill();
+        premium_attempt_indicator();
+        native_solved_answer_style();
+        native_compiler_output_overflow_bars();
         lesson_interface_languages();
         laboratory_interface_parity();
         back_navigation_tests();
@@ -1550,7 +1736,7 @@ int main(int argc,char* argv[]) {
         RECT caption{}, reset{}, source{};
         GetWindowRect(view.control(3,16), &caption); GetWindowRect(view.control(3,12), &reset);
         GetWindowRect(view.control(3,10), &source);
-        require(caption.top == reset.top && reset.left >= caption.right && source.top > caption.bottom,
+        require(caption.top == reset.top && reset.left == caption.right && source.top > caption.bottom,
                 "Reset control is not beside C++ as specified by the existing lesson");
         SCROLLINFO wheel_before{sizeof(wheel_before), SIF_POS}, wheel_after = wheel_before;
         const auto pane = GetParent(view.control(3,10)); GetScrollInfo(pane, SB_VERT, &wheel_before);
@@ -1564,6 +1750,12 @@ int main(int argc,char* argv[]) {
         view.editor_gestures(3);
         view.run(3);
         require(view.text(3,14) == "Zona inicial" && view.text(3,4) == "✓ Correcto", "Original program did not produce/check its fresh exact output");
+        require(view.text(3,34)=="Ejecución terminada (código 0).","The real compiler did not expose Android's ordinary execution status");
+        require(!(GetWindowLongPtrW(view.control(3,14),GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL)),
+                "A short one-line program output reserves native scrollbars without overflow");
+        RECT console{},verdict{};GetWindowRect(view.control(3,14),&console);GetWindowRect(view.control(3,4),&verdict);
+        require(verdict.top-console.bottom==MulDiv(12,static_cast<int>(GetDpiForWindow(view.view)),96),
+                "Compiler output added an extra gap before its ordinary feedback padding");
         view.compiler_menus(3);
         const auto changed_source = message_code(modified,"Zona inicial","Caja recibida");
         view.replace(6,10,changed_source);

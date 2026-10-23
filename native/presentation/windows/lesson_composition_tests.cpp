@@ -88,8 +88,15 @@ int main(){
         close();open();check(lesson_page_state(view).index==1,"The stable current page was not restored");
         check(edit_text(GetDlgItem(child(view,1005),101))=="\"Listo\"","A native inline draft was not restored");
         check(navigate_lesson_view(view,2),"A restored inline answer lost correctness");pump();
-        auto drag=child(view,1005);
-        for(const auto pair:{std::pair{2000,100},std::pair{2001,101}}){SendMessageW(GetDlgItem(drag,pair.first),BM_CLICK,0,0);SendMessageW(GetDlgItem(drag,pair.second),WM_LBUTTONUP,0,0);}
+        auto drag=child(view,1005);const auto bank=GetDlgItem(drag,3000);
+        check(bank&&GetParent(bank)==drag,"The real drag composition lost its original token-bank container");
+        for(int at=0;at<2;++at){const auto card=GetDlgItem(bank,2000+at),slot=GetDlgItem(drag,100+at);
+            check(card&&slot&&GetParent(card)==bank,"A stable drag choice or authored slot is missing from its actual container");
+            // Android's bank tap fills the first empty slot directly. There is
+            // no synthetic second click/up on the destination text control.
+            SendMessageW(card,BM_CLICK,0,0);pump();
+            check(edit_text(slot)==lesson.pages[2].blocks[0].choices[static_cast<std::size_t>(at)]&&
+                !(GetWindowLongPtrW(card,GWL_STYLE)&WS_VISIBLE),"A real bank tap failed to move its exact token into the authored slot without duplication");}
         SendMessageW(child(view,1003),BM_CLICK,0,0);pump();
         if(!edit_text(child(view,1004)).starts_with("✓ Correcto")){
             const auto actual=state::get_response(read_lesson_state(view),curriculum::exercise_key(lesson,lesson.pages[2].blocks[0]));

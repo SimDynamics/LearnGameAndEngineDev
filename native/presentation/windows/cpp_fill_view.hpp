@@ -23,6 +23,11 @@ public:
     [[nodiscard]] std::vector<std::size_t> slots() const;
     [[nodiscard]] std::string response_json() const;
     [[nodiscard]] windows::CodeEditor* editor(HWND focused);
+    // Reparent the same token bank into the fullscreen tray. nullptr restores
+    // its original vertical layout; no card, listener or draft is recreated.
+    [[nodiscard]] HWND palette_window() const;
+    void set_palette_host(HWND parent = nullptr);
+    [[nodiscard]] int palette_height_for_width(int width);
     void set_enabled(bool);
     void set_text_scale(int percentage);
     void set_wrap(bool);

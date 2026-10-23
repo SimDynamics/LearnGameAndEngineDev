@@ -10,12 +10,18 @@
 #include <map>
 #include <mutex>
 #include <numbers>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace lgaed::presentation {
 namespace {
-struct Layer { std::string path; bool fill = true; float stroke = 0; };
+struct Gradient {
+    float start_x=0,start_y=0,end_x=0,end_y=0;
+    std::vector<Gdiplus::Color> colors;
+    std::vector<float> offsets;
+};
+struct Layer { std::string path; bool fill = true; float stroke = 0; std::optional<Gradient> gradient; };
 struct Vector { float width=24,height=24; std::vector<Layer> layers; };
 std::string attr(const std::string& xml,const std::string& key) {
     const auto at=xml.find("android:"+key+"=\"");
@@ -32,6 +38,7 @@ Vector load(Icon icon) {
     case Icon::language:file=L"ic_lesson_language.xml";break;
     case Icon::terminal:file=L"ic_attempt_programming.xml";break;
     case Icon::attempt_math:file=L"ic_attempt_math.xml";break;
+    case Icon::infinity_premium:file=L"ic_infinity_premium.xml";break;
     case Icon::copy:file=L"ic_code_copy.xml";break;
     case Icon::reset:file=L"ic_code_reset.xml";break;
     case Icon::expand:file=L"ic_code_fullscreen.xml";break;
@@ -55,8 +62,33 @@ Vector load(Icon icon) {
             const auto end=xml.find('>',at);if(end==std::string::npos)break;
             const auto tag=xml.substr(at,end-at+1); at=end+1;
             const auto fill=attr(tag,"fillColor"),stroke=attr(tag,"strokeWidth");
-            result.layers.push_back({attr(tag,"pathData"),!fill.empty()&&fill.find("transparent")==std::string::npos,
-                stroke.empty()?0:std::strtof(stroke.c_str(),nullptr)});
+            Layer layer{attr(tag,"pathData"),!fill.empty()&&fill.find("transparent")==std::string::npos,
+                stroke.empty()?0:std::strtof(stroke.c_str(),nullptr)};
+            if(end>0&&xml[end-1]!='/') {
+                const auto close=xml.find("</path>",at);
+                const auto gradient_at=xml.find("<gradient",at);
+                if(close!=std::string::npos&&gradient_at<close) {
+                    const auto gradient_end=xml.find('>',gradient_at);
+                    const auto gradient_close=xml.find("</gradient>",gradient_end);
+                    if(gradient_end<close&&gradient_close<close) {
+                        const auto gradient_tag=xml.substr(gradient_at,gradient_end-gradient_at+1);
+                        const auto coordinate=[&](const char* name){const auto value=attr(gradient_tag,name);return std::strtof(value.c_str(),nullptr);};
+                        Gradient gradient{coordinate("startX"),coordinate("startY"),coordinate("endX"),coordinate("endY")};
+                        auto stop=gradient_end;
+                        while((stop=xml.find("<item",stop))<gradient_close) {
+                            const auto stop_end=xml.find('>',stop);if(stop_end>=gradient_close)break;
+                            const auto stop_tag=xml.substr(stop,stop_end-stop+1);stop=stop_end+1;
+                            const auto color=attr(stop_tag,"color"),offset=attr(stop_tag,"offset");
+                            if(color.size()!=7||color.front()!='#'||offset.empty())continue;
+                            const auto rgb=std::strtoul(color.c_str()+1,nullptr,16);
+                            gradient.colors.emplace_back(static_cast<BYTE>(255),static_cast<BYTE>(rgb>>16),static_cast<BYTE>(rgb>>8),static_cast<BYTE>(rgb));
+                            gradient.offsets.push_back(std::strtof(offset.c_str(),nullptr));
+                        }
+                        if(gradient.colors.size()>=2){layer.fill=true;layer.gradient=std::move(gradient);}
+                    }
+                }
+            }
+            result.layers.push_back(std::move(layer));
         }
     }
     if(!result.layers.empty())return result;
@@ -144,7 +176,14 @@ void draw_icon(HDC dc,RECT bounds,Icon icon,COLORREF tint) {
     graphics.ScaleTransform(scale,scale);
     const Gdiplus::Color color(255,GetRValue(tint),GetGValue(tint),GetBValue(tint));
     for(const auto& layer:vector.layers){Gdiplus::GraphicsPath path(Gdiplus::FillModeAlternate);parse(path,layer.path);
-        if(layer.fill){Gdiplus::SolidBrush brush(color);graphics.FillPath(&brush,&path);}
+        if(layer.fill){
+            HIGHCONTRASTW contrast{sizeof(contrast)};
+            const bool high_contrast=layer.gradient&&SystemParametersInfoW(SPI_GETHIGHCONTRAST,sizeof(contrast),&contrast,0)&&(contrast.dwFlags&HCF_HIGHCONTRASTON);
+            if(layer.gradient&&!high_contrast){const auto& source=*layer.gradient;
+                Gdiplus::LinearGradientBrush brush(Gdiplus::PointF(source.start_x,source.start_y),Gdiplus::PointF(source.end_x,source.end_y),source.colors.front(),source.colors.back());
+                brush.SetInterpolationColors(source.colors.data(),source.offsets.data(),static_cast<INT>(source.colors.size()));
+                graphics.FillPath(&brush,&path);
+            }else{Gdiplus::SolidBrush brush(color);graphics.FillPath(&brush,&path);}}
         if(layer.stroke>0){Gdiplus::Pen pen(color,layer.stroke);pen.SetStartCap(Gdiplus::LineCapRound);pen.SetEndCap(Gdiplus::LineCapRound);pen.SetLineJoin(Gdiplus::LineJoinRound);graphics.DrawPath(&pen,&path);}}
     if(icon==Icon::rewind3||icon==Icon::rewind5||icon==Icon::forward3||icon==Icon::forward5){
         Gdiplus::FontFamily family(L"Segoe UI");Gdiplus::Font font(&family,11,Gdiplus::FontStyleBold,Gdiplus::UnitPixel);Gdiplus::SolidBrush brush(color);

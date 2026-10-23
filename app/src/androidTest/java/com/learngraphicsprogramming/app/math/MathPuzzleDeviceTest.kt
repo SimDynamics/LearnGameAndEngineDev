@@ -258,16 +258,22 @@ class MathPuzzleDeviceTest {
         val bitmap = instrumentation.uiAutomation.takeScreenshot() ?: error("No se pudo capturar la pantalla del sandbox")
         // Shell-owned QA captures survive removal of Gradle's temporary test installation.
         if (android.os.Build.VERSION.SDK_INT >= 31) {
+            require(name.matches(Regex("[A-Za-z0-9._-]+"))) { "Invalid screenshot file name" }
             android.os.ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(
                 "mkdir -p /data/local/tmp/math-puzzle-smoke"
             )).use { it.readBytes() }
+            // Some emulators expose a dd symlink without implementing the tool.
+            // UiAutomation starts the process directly; keep the shell command
+            // as one argument so its binary stdin reaches cat's redirection.
             val streams = instrumentation.uiAutomation.executeShellCommandRw(
-                "dd of=/data/local/tmp/math-puzzle-smoke/$name"
+                "/system/bin/sh -c /system/bin/cat>/data/local/tmp/math-puzzle-smoke/$name"
             )
-            android.os.ParcelFileDescriptor.AutoCloseOutputStream(streams[1]).use {
-                assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(streams[0]).use { output ->
+                android.os.ParcelFileDescriptor.AutoCloseOutputStream(streams[1]).use {
+                    assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+                }
+                output.readBytes()
             }
-            android.os.ParcelFileDescriptor.AutoCloseInputStream(streams[0]).use { it.readBytes() }
         }
         bitmap.recycle()
     }

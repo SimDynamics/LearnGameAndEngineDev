@@ -21,7 +21,10 @@ enum class RichTextRole { body, prompt, heading, lesson_title };
 void set_edit_text(HWND edit, std::string_view text);
 // Empty editable RichEdit hint only: never inserts text, changes selection,
 // participates in Undo or exposes a false value to the lesson narrator.
-void set_edit_hint(HWND edit, std::string_view text);
+void set_edit_hint(HWND edit, std::string_view text, COLORREF color = RGB(140,145,155));
+// Android's display-only compactCodeSpaces: narrow U+0020 visually, without
+// replacing characters, syntax spans, selection, scrolling or Undo.
+void compact_code_spaces(HWND edit);
 // Uses the HWND's optional reader_theme surface; untouched controls keep their
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);

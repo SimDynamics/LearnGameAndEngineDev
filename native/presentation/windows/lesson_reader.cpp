@@ -47,12 +47,20 @@ struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
     struct LegacyPlan{std::string key;std::vector<Part> parts;};
     struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
+    // Android's answered-block priority is playback permission, not listening
+    // evidence. It is reconstructed from the same bounded page bookmark.
+    struct AnswerPriority{std::size_t block=0,allowed_through=0;};
+    struct PriorityBoundary{std::size_t block=0;std::string part;bool after=false;};
     HWND view=nullptr,window=nullptr;WindowsEnvironment environment;std::shared_ptr<windows::NarrationWorker> backend;
     std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;
     std::vector<LessonReadingRegion> regions;std::vector<Part> parts;std::map<std::string,std::unique_ptr<ReadingShade>> shades;
+    std::map<std::string,std::size_t> shaded_ends;
+    std::string shaded_part;std::int64_t shaded_offset=0;
     std::string page_id,resume_page_id,signature,key,owner,language="es",voice="ef_dora",engine="KOKORO",error,configuration_error,ui_locale="es";
     std::string previous_part,previous_key;std::vector<std::string> previously_heard;double previous_offset=0;std::optional<std::size_t> feedback_target;
     std::vector<std::pair<std::string,double>> previous_positions;
+    std::optional<AnswerPriority> answer_priority;
+    std::optional<PriorityBoundary> previous_priority;
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
     double rate=1;std::uint64_t epoch=0;std::atomic<std::size_t> priority{0};std::jthread generation;
     std::atomic<bool> advance_generation{true};std::condition_variable generation_changed;std::mutex generation_mutex;
@@ -183,15 +191,24 @@ struct LessonReader::Impl {
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
         for(const auto& region:next_regions)next_signature+='\0'+region.key+'\0'+region.source_text;
         if(next_signature==signature){regions=next_regions;for(auto& part:parts)for(const auto& region:regions)if(region.key==part.region.key){part.region=region;break;}return;}
-        if(has_plan&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
+        if(has_plan&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();paint_progress();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
             previous_positions.clear();for(std::size_t i=0;i<=current();++i)previous_positions.emplace_back(part_id(parts[i]),i==current()?previous_offset:parts[i].audio?parts[i].audio->duration_ms:0.);
             previously_heard.clear();for(std::size_t i=0;i<parts.size()&&i<static_cast<std::size_t>(position.heard_through);++i)if(parts[i].region.feedback&&parts[i].region.correct)previously_heard.push_back(part_id(parts[i]));}
-        if(next_page!=page_id){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_offset=0;feedback_target.reset();listened.clear();}
+        if(has_plan&&answer_priority&&!parts.empty()){
+            const auto boundary=std::min(answer_priority->allowed_through,parts.size()-1);
+            previous_priority=PriorityBoundary{answer_priority->block,part_id(parts[boundary]),answer_priority->allowed_through>=parts.size()};
+        }
+        answer_priority.reset();const bool same_page=next_page==page_id;
+        if(!same_page){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();previous_offset=0;feedback_target.reset();listened.clear();shades.clear();shaded_ends.clear();shaded_part.clear();shaded_offset=0;}
         cancel_generation();++epoch;signature=next_signature;page_id=next_page;resume_page_id=page.narration_page_identity.empty()?next_page:page.narration_page_identity;regions=next_regions;parts.clear();key.clear();owner.clear();position={};finished=false;waiting_gate=false;has_plan=false;error.clear();planning=false;
-        std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text);});});
-        for(const auto& region:regions)if(!region.passive_label&&!shades.contains(region.key))shades.emplace(region.key,std::make_unique<ReadingShade>(region.target,region.source_text));
+        std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text)
+                &&!(feedback_target&&region.feedback&&region.block_index==*feedback_target);});});
+        std::erase_if(shaded_ends,[&](const auto& item){return !shades.contains(item.first);});
+        for(const auto& region:regions)if(!region.passive_label&&!shades.contains(region.key)){
+            auto shade=std::make_unique<ReadingShade>(region.target,region.source_text);shade->read_through(0);
+            shades.emplace(region.key,std::move(shade));shaded_ends[region.key]=0;
+        }
         configure();if(!enabled){for(auto& [id,shade]:shades)shade->restore();return;}
-        for(auto& [id,shade]:shades)shade->read_through(0);
         if(!configuration_error.empty()){error=configuration_error;update_buttons();return;}
         if(engine!="KOKORO"&&engine!="AUTO"&&engine!="WINDOWS"&&engine!="ANDROID"){error="Motor de narración no reconocido.";update_buttons();return;}
         if(regions.empty())return;planning=true;prioritize(0);const auto current_epoch=epoch;const auto snapshot=regions;const auto lang=language,selected_voice=voice;const auto current_page=resume_page_id;
@@ -292,18 +309,53 @@ struct LessonReader::Impl {
                     else for(auto& entry:old.entries)if(entry.key==previous_key){entry.key=key;entry.position=position;}
                     if(old.active_key==previous_key)old.active_key=key;narration::write_history(preferences,old);});
             }
-            if(feedback_target){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part.region.feedback&&part.region.block_index==*feedback_target;});if(found!=parts.end()){position.segment=found-parts.begin();position.milliseconds=0;position.finished=false;}feedback_target.reset();}
-            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
+            if(previous_priority){if(const auto first=correct_feedback_start(previous_priority->block)){
+                auto boundary=*first;
+                if(const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==previous_priority->part;});found!=parts.end())
+                    boundary=static_cast<std::size_t>(found-parts.begin())+(previous_priority->after?1:0);
+                answer_priority=AnswerPriority{previous_priority->block,std::max(*first,boundary)};
+            }}
+            if(!feedback_target&&!answer_priority)restore_answered_priority();
+            if(feedback_target){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part.region.feedback&&part.region.block_index==*feedback_target;});
+                if(found!=parts.end()){
+                    position.segment=found-parts.begin();position.milliseconds=0;position.finished=false;
+                    // Reuse the recording, never listening credit from an older
+                    // submission that happened to generate the same verdict.
+                    position.heard_through=std::min(position.heard_through,position.segment);
+                    for(const auto& part:parts)if(part.region.feedback&&part.region.block_index==*feedback_target)listened.erase(part_id(part));
+                    if(found->region.correct&&found->region.solved)answer_priority=AnswerPriority{*feedback_target,static_cast<std::size_t>(position.segment)};
+                    else if(answer_priority&&answer_priority->block==*feedback_target)answer_priority.reset();
+                }feedback_target.reset();}
+            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_priority.reset();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
         }else if(result.audio&&result.index<parts.size())parts[result.index].audio=std::move(result.audio);
         }paint_progress();update_buttons();}
     std::size_t current()const{return parts.empty()?0:std::min(static_cast<std::size_t>(std::max<std::int64_t>(0,position.segment)),parts.size()-1);}
-    bool can_enter(std::size_t destination)const{
-        if(destination<=current())return true;
+    std::optional<std::size_t> correct_feedback_start(std::size_t block)const{
+        for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.block_index==block&&parts[i].region.feedback&&parts[i].region.correct&&parts[i].region.solved)return i;
+        return {};
+    }
+    bool passes_prefix(std::size_t destination,bool manual_forward=false)const{
+        const auto active=answer_priority?correct_feedback_start(answer_priority->block):std::optional<std::size_t>{};
         for(std::size_t i=0;i<destination&&i<parts.size();++i){const auto& part=parts[i];if(!part.region.is_exercise)continue;
+            if(active&&i<*active)continue;
             const bool last=i+1>=parts.size()||parts[i+1].region.block_index!=part.region.block_index;
             if(!last)continue;if(!part.region.solved)return false;
-            if(part.region.feedback&&part.region.correct&&position.heard_through<=static_cast<std::int64_t>(i))return false;
+            const auto permitted=active?static_cast<std::int64_t>(answer_priority->allowed_through):position.heard_through;
+            if(part.region.feedback&&part.region.correct&&permitted<=static_cast<std::int64_t>(i)&&!(active&&manual_forward))return false;
         }return true;
+    }
+    bool can_enter(std::size_t destination,bool manual_forward=false)const{
+        return destination<=current()||passes_prefix(destination,manual_forward);
+    }
+    void restore_answered_priority(){
+        const auto at=current();if(passes_prefix(at))return;
+        std::optional<AnswerPriority> restored;
+        for(std::size_t i=0;i<=at&&i<parts.size();++i){const auto& part=parts[i];
+            if(part.region.feedback&&part.region.correct&&part.region.solved)restored=AnswerPriority{part.region.block_index,at};
+            const bool last=i+1>=parts.size()||parts[i+1].region.block_index!=part.region.block_index;
+            if(restored&&last&&part.region.is_exercise&&!part.region.solved&&i<at)restored.reset();
+        }
+        answer_priority=restored;
     }
     void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated())return;const auto at=current();prioritize(at);if(!parts[at].audio)return;
         if(!audio_file(*parts[at].audio)){recover_audio(at);return;}
@@ -328,40 +380,67 @@ struct LessonReader::Impl {
         if(wanted&&player.ended()){
             const auto at=current();heard_until(parts[at].audio->duration_ms);position.milliseconds=static_cast<std::int64_t>(std::llround(parts[at].audio->duration_ms));(void)player.release();
             credit_heard_feedback();
+            if(answer_priority&&parts[at].region.feedback&&parts[at].region.correct)
+                answer_priority->allowed_through=std::max(answer_priority->allowed_through,at+1);
             const bool wrong=parts[at].region.feedback&&!parts[at].region.correct;
             const bool end_of_wrong=wrong&&(at+1==parts.size()||!parts[at+1].region.feedback||parts[at+1].region.block_index!=parts[at].region.block_index);
             const bool pending_feedback=parts[at].region.feedback&&parts[at].region.correct&&position.heard_through<=static_cast<std::int64_t>(at);
             const bool unanswered=parts[at].region.is_exercise&&!parts[at].region.solved;
             if(end_of_wrong){wanted=false;waiting_gate=false;save();}
-            else if(at+1==parts.size()&&!pending_feedback&&!unanswered){finished=true;wanted=false;save(true);}
-            else if(at+1==parts.size()||!can_enter(at+1)){wanted=false;waiting_gate=true;save();}
+            else if(at+1==parts.size()&&(!pending_feedback||(answer_priority&&answer_priority->allowed_through>at))&&!unanswered){finished=true;wanted=false;save(true);}
+            else if(at+1==parts.size()||(!wrong&&!can_enter(at+1))){wanted=false;waiting_gate=true;save();}
             else{position.segment=static_cast<std::int64_t>(at+1);position.milliseconds=0;save();play_current();}
             paint_progress();update_buttons();}}
-    void paint_progress(){if(!enabled)return;std::map<std::string,std::size_t> ends;for(const auto& region:regions)ends[region.key]=0;
+    void paint_progress(){if(!enabled||!has_plan)return;std::map<std::string,std::size_t> ends;for(const auto& region:regions)ends[region.key]=0;
         if(has_plan&&!parts.empty()){const auto at=current();for(std::size_t i=0;i<at;++i)ends[parts[i].region.key]=std::max(ends[parts[i].region.key],parts[i].sentence.end);
             const auto& part=parts[at];auto end=part.sentence.start;
             if(part.audio){const auto offset=static_cast<double>(position.milliseconds);
                 for(const auto& timing:part.audio->timings)if(timing.start_ms<=offset)end=std::max(end,part.sentence.start+timing.end);
                 if(finished||offset+1>=part.audio->duration_ms)end=part.sentence.end;}
-            ends[part.region.key]=std::max(ends[part.region.key],end);}
-        for(auto& [id,shade]:shades)shade->read_through(ends[id]);}
+            else if(position.milliseconds>0&&shaded_part==part_id(part)&&shaded_offset==position.milliseconds)
+                if(const auto old=shaded_ends.find(part.region.key);old!=shaded_ends.end())
+                end=std::max(end,std::min(old->second,part.sentence.end));
+            ends[part.region.key]=std::max(ends[part.region.key],end);
+            shaded_part=part_id(part);shaded_offset=position.milliseconds;
+        }
+        for(auto& [id,shade]:shades){shade->read_through(ends[id]);shaded_ends[id]=ends[id];}}
     void toggle(){if(!enabled)return;if(wanted){pause();return;}if(finished){update_buttons();return;}
         if(!error.empty()){signature.clear();changed();if(!error.empty())return;}wanted=true;waiting_gate=false;if(has_plan){acquire();play_current();}update_buttons();}
     void seek(int seconds){if(!has_plan||parts.empty())return;const bool resume=wanted;release_player();
         auto at=current();double offset=static_cast<double>(position.milliseconds)+seconds*1000.;
+        auto last=parts.size()-1;
+        const bool guide=parts[at].region.feedback&&!parts[at].region.correct;
+        if(guide){
+            const auto block=parts[at].region.block_index;last=at;
+            while(last+1<parts.size()&&parts[last+1].region.feedback&&parts[last+1].region.block_index==block)++last;
+        }
         while(offset<0&&at>0){--at;if(!parts[at].audio){offset=0;break;}offset+=parts[at].audio->duration_ms;}
-        while(at<parts.size()&&parts[at].audio&&offset>=parts[at].audio->duration_ms){if(at+1==parts.size()){offset=parts[at].audio->duration_ms;break;}
-            if(!can_enter(at+1)){offset=std::min(offset,parts[at].audio->duration_ms);break;}offset-=parts[at].audio->duration_ms;++at;}
+        while(at<parts.size()&&parts[at].audio&&offset>=parts[at].audio->duration_ms){if(at==last){offset=parts[at].audio->duration_ms;break;}
+            if(!guide&&!can_enter(at+1,true)){offset=std::min(offset,parts[at].audio->duration_ms);break;}offset-=parts[at].audio->duration_ms;++at;}
+        if(answer_priority&&seconds>0)answer_priority->allowed_through=std::max(answer_priority->allowed_through,at);
         position=narration::seek(position,static_cast<std::int64_t>(at),static_cast<std::int64_t>(std::max(0.,offset)));finished=false;prioritize(at);wanted=resume;waiting_gate=false;
         if(owner.empty())acquire();save();paint_progress();play_current();update_buttons();}
-    void restart(){if(!has_plan)return;(void)player.release();listened.clear();position={};finished=false;wanted=true;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
-    void feedback(std::size_t block,bool){feedback_target=block;wanted=true;finished=false;signature.clear();changed();}
+    void restart(){if(!has_plan)return;(void)player.release();listened.clear();answer_priority.reset();previous_priority.reset();position={};finished=false;wanted=true;waiting_gate=false;acquire();save();paint_progress();play_current();update_buttons();}
+    void feedback(std::size_t block,bool correct){
+        // An incorrect guide interrupts the original permission; it does not
+        // revoke a different, previously answered block's valid priority.
+        if(!correct){if(answer_priority&&answer_priority->block==block)answer_priority.reset();
+            if(previous_priority&&previous_priority->block==block)previous_priority.reset();}
+        feedback_target=block;wanted=true;finished=false;signature.clear();changed();}
     void settings_changed(){const auto old_language=language,old_voice=voice,old_engine=engine;const auto old_enabled=enabled;configure();
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
-        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();listened.clear();signature.clear();changed();}
+        else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
     static LRESULT CALLBACK button_proc(HWND button,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR context){
         auto& self=*reinterpret_cast<Impl*>(context);
+        if(message==BM_CLICK){
+            // The floating bar owns mouse capture, so the BUTTON never receives
+            // the native pressed state used by BM_CLICK's simulated DOWN/UP.
+            // Deliver its one normal activation without re-entering that stream.
+            if(IsWindowEnabled(button)&&IsWindowEnabled(self.window))
+                SendMessageW(self.window,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(button),BN_CLICKED),reinterpret_cast<LPARAM>(button));
+            return 0;
+        }
         if(message==WM_LBUTTONDOWN){POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};MapWindowPoints(button,self.window,&point,1);
             SendMessageW(self.window,message,wp,MAKELPARAM(point.x,point.y));self.pressed_button=button;return 0;}
         if(message==WM_NCDESTROY)RemoveWindowSubclass(button,button_proc,1);

@@ -681,7 +681,7 @@ struct MathPuzzleView::Impl {
         if(!flag(config,L"calculator"))return;
         const auto item=CreateWindowExW(0,L"BUTTON",wide(tr("Abrir calculadora científica","Open Scientific Calculator","Ouvrir la calculatrice scientifique")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,0,0,1,1,field,reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),nullptr);
         if(!item)throw std::runtime_error("Cannot create the permitted mathematical calculator action");
-        reader_theme::apply(item,reader_theme::Surface::field);reader_theme::icon_button(item);calculator_buttons[field]=item;layout_calculator(field);
+        reader_theme::apply(item,reader_theme::Surface::card);reader_theme::icon_button(item);calculator_buttons[field]=item;layout_calculator(field);
     }
     void input_ink(HWND item,COLORREF color=RGB(235,239,245)){
         if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,color);
@@ -692,12 +692,12 @@ struct MathPuzzleView::Impl {
     }
     HWND input(const std::string& id,const std::string& field,JsonObject current,std::string hint = {},const JsonObject& config={},const JsonObject& validator={},std::string_view mode="NUMERIC") {
         const auto item = make(MSFTEDIT_CLASS,"",WS_TABSTOP | ES_AUTOHSCROLL);
-        reader_theme::apply(item,reader_theme::Surface::field);
+        reader_theme::apply(item,reader_theme::Surface::card);
         const auto values = field.empty() ? current : object(current,L"values");
         set_edit_text(item,text(values,field.empty() ? L"value" : winrt::to_hstring(field).c_str()));
         input_ink(item);
         if(hint.empty())hint=tr("Respuesta","Answer","Réponse");
-        set_edit_hint(item,hint);
+        set_edit_hint(item,hint,RGB(174,183,198));
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE);
         editors[item] = {id,field};keyboard_context(item,config,validator,false,mode);SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this));calculator(item,config);return item;
     }
@@ -857,10 +857,10 @@ struct MathPuzzleView::Impl {
             for(const auto item:buttons){bool checked=false;for(const auto& value:selected)if(value.ValueType()==JsonValueType::String&&value.GetString()==winrt::to_hstring(choice_options.at(item))){checked=true;break;}
                 SendMessageW(item,BM_SETCHECK,checked?BST_CHECKED:BST_UNCHECKED,0);}}
     }
-    void card_border(HWND item,bool selected)const{
-        const auto dc=GetDC(item);if(!dc)return;RECT area{};GetClientRect(item,&area);const auto colors=reader_theme::palette(item);
+    void card_border(HWND item,bool selected,int radius=10,HDC target=nullptr)const{
+        const auto dc=target?target:GetDC(item);if(!dc)return;RECT area{};GetClientRect(item,&area);const auto colors=reader_theme::palette(item);
         const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),selected?colors.accent:colors.outline);const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
-        RoundRect(dc,area.left,area.top,area.right,area.bottom,px(10),px(10));SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);ReleaseDC(item,dc);
+        RoundRect(dc,area.left,area.top,area.right,area.bottom,px(radius*2),px(radius*2));SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);if(!target)ReleaseDC(item,dc);
     }
     void paint_choice_cards(HDC dc)const{
         const auto colors=reader_theme::palette(host);
@@ -1264,7 +1264,7 @@ struct MathPuzzleView::Impl {
         if(move){for(const auto& plot:canvases)if(GetParent(plot->window)==container)plot->prepare_drawing();RedrawWindow(container,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);}
         return y+(container==host?0:px(padding_y));
     }
-    int arrange(int width,bool move=true){current_width=std::max(px(100),width);return arrange_rows(rows,host,current_width,move);}
+    int arrange(int width,bool move=true){current_width=std::max(px(100),width);return arrange_rows(rows,host,current_width,move,6,8);}
     static LRESULT CALLBACK field_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
         if(message==WM_ENABLE){
@@ -1281,6 +1281,14 @@ struct MathPuzzleView::Impl {
         }
         if(message==WM_SETFOCUS){const auto result=DefSubclassProc(item,message,wparam,lparam);SendMessageW(item,EM_SETSEL,0,-1);if(!self->initializing&&self->callbacks.expression_focus)self->callbacks.expression_focus(item,true);return result;}
         if(message==WM_SIZE){const auto result=DefSubclassProc(item,message,wparam,lparam);self->layout_calculator(item);return result;}
+        if(message==WM_PAINT||message==WM_PRINTCLIENT){
+            const auto result=DefSubclassProc(item,message,wparam,lparam);
+            // MathInputControls uses the same permanent accent/10dp outline
+            // for simple fields. The native RichEdit still paints every glyph,
+            // caret and selection; graph/number-line fields retain their own UI.
+            if(self->editors.contains(item))self->card_border(item,true,10,message==WM_PRINTCLIENT?reinterpret_cast<HDC>(wparam):nullptr);
+            return result;
+        }
         if(message==WM_DRAWITEM&&lparam){const auto& drawing=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);if(const auto button=self->calculator_buttons.find(item);button!=self->calculator_buttons.end()&&drawing.hwndItem==button->second){
             (void)reader_theme::draw_button(drawing);auto icon=drawing.rcItem;InflateRect(&icon,-self->px(4),-self->px(4));draw_icon(drawing.hDC,icon,Icon::calculator,IsWindowEnabled(item)?reader_theme::palette(item).accent:reader_theme::palette(item).muted);return TRUE;}}
         if(message==WM_COMMAND&&HIWORD(wparam)==BN_CLICKED){const auto button=self->calculator_buttons.find(item);if(button!=self->calculator_buttons.end()&&reinterpret_cast<HWND>(lparam)==button->second){if(!self->initializing&&IsWindowEnabled(item)&&self->callbacks.calculator_requested)self->callbacks.calculator_requested(item);return 0;}}
@@ -1323,7 +1331,7 @@ struct MathPuzzleView::Impl {
     }
     static LRESULT CALLBACK card_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
-        if(message==WM_PAINT){const auto result=DefSubclassProc(item,message,wparam,lparam);self->card_border(item,false);return result;}
+        if(message==WM_PAINT||message==WM_PRINTCLIENT){const auto result=DefSubclassProc(item,message,wparam,lparam);self->card_border(item,false,10,message==WM_PRINTCLIENT?reinterpret_cast<HDC>(wparam):nullptr);return result;}
         if (message == WM_LBUTTONDOWN && self->cards_enabled && IsWindowEnabled(item)) { self->drag = {item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},GetTickCount64(),false}; ClientToScreen(item,&self->drag.start); SetCapture(item); return 0; }
         if (message == WM_MOUSEMOVE && self->drag.window == item && (wparam & MK_LBUTTON) && GetTickCount64() - self->drag.since >= 20) {
             POINT at{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}; ClientToScreen(item,&at);
@@ -1349,10 +1357,10 @@ struct MathPuzzleView::Impl {
     }
     static LRESULT CALLBACK match_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
-        if(message==WM_PAINT){const auto result=DefSubclassProc(item,message,wparam,lparam);const auto& card=self->match_cards.at(item);bool selected=false;
+        if(message==WM_PAINT||message==WM_PRINTCLIENT){const auto result=DefSubclassProc(item,message,wparam,lparam);const auto& card=self->match_cards.at(item);bool selected=false;
             if(card.source){const auto at=self->selected_sources.find(card.response);selected=at!=self->selected_sources.end()&&at->second==card.id;}
             else for(const auto& pair:object(object(self->answers,winrt::to_hstring(card.response).c_str()),L"pairs"))if(pair.Value().ValueType()==JsonValueType::String&&pair.Value().GetString()==winrt::to_hstring(card.id)){selected=true;break;}
-            self->card_border(item,selected);return result;}
+            self->card_border(item,selected,10,message==WM_PRINTCLIENT?reinterpret_cast<HDC>(wparam):nullptr);return result;}
         if (message == WM_LBUTTONDOWN && self->cards_enabled && IsWindowEnabled(item)) {
             const auto& card = self->match_cards.at(item);
             if(card.source){const auto selected=self->selected_sources.find(card.response);if(selected!=self->selected_sources.end()&&selected->second==card.id)self->selected_sources.erase(selected);else self->selected_sources[card.response]=card.id;
@@ -1404,6 +1412,7 @@ struct MathPuzzleView::Impl {
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(window,message,wparam,lparam);
         LRESULT themed{};if(reader_theme::control_color(message,wparam,lparam,themed))return themed;
+        if(message==WM_PRINTCLIENT){RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::card));return 0;}
         if(message==WM_COMMAND||message==WM_NOTIFY||message==WM_DRAWITEM||message==WM_MEASUREITEM||message==WM_MENUCHAR||(message==WM_HSCROLL&&lparam))return SendMessageW(self->host,message,wparam,lparam);
         if(message==WM_ERASEBKGND){RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::card));return TRUE;}
         const auto found=self->contents.find(window);if(found!=self->contents.end()){

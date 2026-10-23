@@ -14,6 +14,7 @@
 #include <array>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -52,7 +53,70 @@ std::vector<PublishedLesson> published(const std::filesystem::path& root,const s
                 for(const auto& lesson:windows::load_catalog(root,unit_location).entries)if(lesson.available&&seen.insert(lesson.asset).second)result.push_back({route.id,course.id,lesson.asset,lesson.asset_locale});}}}
     require(!result.empty(),"The published curriculum census is empty");return result;
 }
-struct Counts{std::size_t lessons=0,pages=0,blocks=0,projects=0,cmake=0,stdin_fields=0,output_checks=0,math_containers=0,math_projections=0;std::map<BlockType,std::size_t> types;std::set<std::string> routes,asset_locales;};
+struct Counts{std::size_t lessons=0,pages=0,blocks=0,projects=0,cmake=0,stdin_fields=0,output_checks=0,math_containers=0,math_projections=0,
+    code_ink_surfaces=0,code_ink_characters=0,code_syntax_anchors=0,order_fragments=0,template_fragments=0,bank_labels=0;
+    std::map<BlockType,std::size_t> types;std::set<std::string> routes,asset_locales;};
+bool rich_edit(HWND item){wchar_t type[128]{};return GetClassNameW(item,type,128)>0&&_wcsicmp(type,MSFTEDIT_CLASS)==0;}
+std::vector<HWND> rich_children(HWND parent){std::vector<HWND> result;
+    EnumChildWindows(parent,[](HWND item,LPARAM raw)->BOOL{if(rich_edit(item))reinterpret_cast<std::vector<HWND>*>(raw)->push_back(item);return TRUE;},reinterpret_cast<LPARAM>(&result));return result;}
+// Read the real RichEdit character formats before any interaction. The former
+// controls had a correct accessible caption while WM_SETFONT had replaced the
+// actual code's size and syntax ink with the system's small black defaults.
+void first_code_ink(HWND item,std::string_view original,const std::string& role,Counts& counts){
+    require(rich_edit(item),role+" is not the RichEdit that actually paints the authored code");
+    require((GetWindowLongPtrW(item,GWL_STYLE)&ES_READONLY)!=0,role+" is not a read-only code display");
+    require(edit_text(item)==line_endings(original),role+" changed the original authored source characters");
+    GETTEXTLENGTHEX length{GTL_PRECISE|GTL_NUMCHARS,1200};const auto size=SendMessageW(item,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&length),0);
+    require(size>=0&&size<std::numeric_limits<LONG>::max(),role+" has an invalid native character count");
+    std::wstring raw(static_cast<std::size_t>(size)+1,L'\0');GETTEXTEX get{static_cast<DWORD>(raw.size()*sizeof(wchar_t)),GT_RAWTEXT,1200,nullptr,nullptr};
+    const auto copied=SendMessageW(item,EM_GETTEXTEX,reinterpret_cast<WPARAM>(&get),reinterpret_cast<LPARAM>(raw.data()));
+    require(copied>=0&&copied<=size,role+" cannot expose its actual displayed UTF16 source");raw.resize(static_cast<std::size_t>(copied));
+    struct Observe{
+        HWND item;CHARRANGE selection{};POINT scroll{};LRESULT events=0,modified=0,undo=0;
+        explicit Observe(HWND target):item(target){SendMessageW(item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            events=SendMessageW(item,EM_GETEVENTMASK,0,0);modified=SendMessageW(item,EM_GETMODIFY,0,0);undo=SendMessageW(item,EM_CANUNDO,0,0);SendMessageW(item,EM_SETEVENTMASK,0,0);}
+        ~Observe(){SendMessageW(item,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(item,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));SendMessageW(item,EM_SETEVENTMASK,0,events);}
+    } observation(item);
+    const auto format=[&](LONG first,LONG last){CHARRANGE range{first,last};SendMessageW(item,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));CHARFORMAT2W value{};value.cbSize=sizeof(value);
+        SendMessageW(item,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&value));return value;};
+    const auto all=format(0,static_cast<LONG>(raw.size()));
+    require((all.dwMask&(CFM_FACE|CFM_SIZE))==(CFM_FACE|CFM_SIZE)&&all.yHeight==270&&std::wstring_view(all.szFaceName)==L"Droid Sans Mono",
+        role+" lost its uniform original Droid Sans Mono18sp base font; twips="+std::to_string(all.yHeight)+"; face="+utf8(all.szFaceName));
+    const bool themed=!reader_theme::palette(item).high_contrast;
+    const auto explicit_ink=[&](const CHARFORMAT2W& value,LONG at){require((value.dwMask&CFM_COLOR)!=0&&!(value.dwEffects&CFE_AUTOCOLOR)&&value.crTextColor!=RGB(0,0,0),
+        role+" paints black/automatic/missing foreground ink at UTF16 character"+std::to_string(at));};
+    if(themed){
+        if(all.dwMask&CFM_COLOR)explicit_ink(all,0);
+        else for(LONG at=0;at<static_cast<LONG>(raw.size());++at)explicit_ink(format(at,at+1),at);
+        // These literal anchors are independent samples of Android's palette,
+        // not another C++ lexer. Only an unambiguous start of a fragment is
+        // inspected; strings/comments elsewhere cannot change their context.
+        const auto start=raw.find_first_not_of(L" \t\r\n");
+        if(start!=raw.npos){const auto text=std::wstring_view(raw).substr(start);
+            const auto anchor=[&](std::size_t offset,std::size_t count,COLORREF expected){const auto value=format(static_cast<LONG>(start+offset),static_cast<LONG>(start+offset+count));
+                require((value.dwMask&CFM_COLOR)&&!(value.dwEffects&CFE_AUTOCOLOR)&&value.crTextColor==expected,
+                    role+" lost original Android syntax ink for "+utf8(text.substr(offset,count)));++counts.code_syntax_anchors;};
+            if(text.starts_with(L"std::")){anchor(0,3,RGB(171,141,227));anchor(3,2,RGB(231,155,186));}
+            else if(text.starts_with(L"#include ")||text.starts_with(L"#include<")){anchor(0,8,RGB(92,156,231));
+                const auto header=text.find_first_not_of(L" \t",8);if(header!=text.npos&&text[header]==L'<'){const auto end=text.find(L'>',header+1);if(end!=text.npos)anchor(header,end-header+1,RGB(122,195,141));}}
+            else if(text.starts_with(L"return ")||text==L"return")anchor(0,6,RGB(231,155,186));
+            else if(text.starts_with(L"int ")||text==L"int")anchor(0,3,RGB(171,141,227));
+            else if(text.starts_with(L"const ")||text==L"const")anchor(0,5,RGB(231,155,186));
+            else if(text.starts_with(L"//")||text.starts_with(L"/*"))anchor(0,2,RGB(172,172,172));
+            else if(text.front()==L'"'||text.front()==L'\'')anchor(0,1,RGB(122,195,141));
+            else if(text.front()>=L'0'&&text.front()<=L'9')anchor(0,1,RGB(224,151,109));
+        }
+    }
+    require(edit_text(item)==line_endings(original)&&SendMessageW(item,EM_GETMODIFY,0,0)==observation.modified&&SendMessageW(item,EM_CANUNDO,0,0)==observation.undo,
+        role+" visual inspection changed the source or its edit history");
+    ++counts.code_ink_surfaces;counts.code_ink_characters+=raw.size();
+}
+std::vector<std::string> template_code_segments(std::string_view original){std::vector<std::string> result;std::size_t at=0;
+    while(at<original.size()){
+        if(original.substr(at).starts_with("[]")){at+=2;continue;}if(original[at]=='\n'){++at;continue;}
+        const auto end=original.find('\n',at),hole=original.find("[]",at);const auto last=std::min(end==original.npos?original.size():end,hole==original.npos?original.size():hole);
+        result.emplace_back(original.substr(at,last-at));at=last;
+    }return result;}
 void stdin_metadata_contract(){
     const auto parse=[](std::string_view fields){const auto json=std::string(R"json({"id":"qa_stdin_contract","title":"QA","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}")json")+std::string(fields)+"}]}]}";return windows::parse_lesson_json(json).pages.front().blocks.front();};
     require(!parse("").standard_input,"An activity without input metadata invented a stdin field");
@@ -122,9 +186,29 @@ void assert_page(HWND view,const curriculum::Lesson& model,const std::string& ui
                 if(!block.code.empty()){const auto source=required(index,1,"exercise source");exact(source,block.code,true);no_reading(source);}
                 if(block.type==BlockType::multiple_choice){for(std::size_t option=0;option<block.options.size();++option){const auto radio=required(index,20+static_cast<int>(option)*2,"answer radio"),text=required(index,21+static_cast<int>(option)*2,"answer option");exact(text,block.options[option],false);require(narrates(text,block.options[option]),"A visible answer option was omitted from narration");require(SendMessageW(radio,BM_GETCHECK,0,0)==BST_UNCHECKED,"A fresh exercise preselected a hidden solution");}}
                 else if(block.type==BlockType::inline_fill_code||block.type==BlockType::drag_fill_code){const auto fill=required(index,5,"code hole surface");std::size_t holes=0;for(std::size_t at=0;(at=block.code_template.find("[]",at))!=std::string::npos;at+=2)++holes;
-                    for(std::size_t hole=0;hole<holes;++hole)require(child(fill,100+static_cast<int>(hole))!=nullptr,"A template omitted an authored editable/drop hole");require(!child(fill,100+static_cast<int>(holes)),"A template invented an extra answer hole");
-                    if(block.type==BlockType::drag_fill_code)for(std::size_t choice=0;choice<block.choices.size();++choice){const auto card=child(fill,2000+static_cast<int>(choice));require(card&&caption(card)==block.choices[choice],"A code drop puzzle changed or omitted an authored choice");}}
-                else if(block.type==BlockType::order_code){const auto order=required(index,5,"code-order surface");for(std::size_t fragment=0;fragment<block.fragments.size();++fragment){const auto row=child(order,100+static_cast<int>(fragment));require(row!=nullptr,"A code-order surface omitted an original fragment");exact(row,block.fragments[fragment],true);no_reading(row);}}
+                    std::set<HWND> inspected;
+                    for(std::size_t hole=0;hole<holes;++hole){const auto field=child(fill,100+static_cast<int>(hole));require(field&&rich_edit(field),"A template omitted an authored native editable/drop hole");inspected.insert(field);}
+                    require(!child(fill,100+static_cast<int>(holes)),"A template invented an extra answer hole");
+                    const auto expected=template_code_segments(block.code_template);std::vector<HWND> actual;
+                    for(const auto item:rich_children(fill))if(GetParent(item)==fill&&GetDlgCtrlID(item)>=1000)actual.push_back(item);
+                    std::ranges::sort(actual,[](HWND left,HWND right){return GetDlgCtrlID(left)<GetDlgCtrlID(right);});
+                    require(actual.size()==expected.size(),"A code template omitted or invented a painted read-only source segment at block"+std::to_string(index));
+                    for(std::size_t piece=0;piece<expected.size();++piece){const auto label="Template block"+std::to_string(index)+" fragment"+std::to_string(piece);
+                        first_code_ink(actual[piece],expected[piece],label,counts);no_reading(actual[piece]);inspected.insert(actual[piece]);++counts.template_fragments;}
+                    if(block.type==BlockType::drag_fill_code)for(std::size_t choice=0;choice<block.choices.size();++choice){const auto card=child(fill,2000+static_cast<int>(choice));
+                        require(card&&caption(card)==block.choices[choice],"A code drop puzzle changed or omitted an authored choice");
+                        const auto labels=rich_children(card);require(labels.size()==1,"A bank card omitted its actual syntax-painted RichEdit label, or painted the same choice twice");
+                        require(GetDlgCtrlID(labels.front())==4000+static_cast<int>(choice),"A bank label lost its stable original choice identity");
+                        first_code_ink(labels.front(),block.choices[choice],"Bank block"+std::to_string(index)+" choice"+std::to_string(choice),counts);
+                        no_reading(labels.front());inspected.insert(labels.front());++counts.bank_labels;}
+                    const auto all=rich_children(fill);require(std::set<HWND>(all.begin(),all.end())==inspected,
+                        "A code-hole surface contains a real RichEdit whose source/role/first-open ink was not accounted for");}
+                else if(block.type==BlockType::order_code){const auto order=required(index,5,"code-order surface");std::set<HWND> inspected;
+                    for(std::size_t fragment=0;fragment<block.fragments.size();++fragment){const auto row=child(order,100+static_cast<int>(fragment));require(row!=nullptr,"A code-order surface omitted an original fragment");
+                        first_code_ink(row,block.fragments[fragment],"Order block"+std::to_string(index)+" fragment"+std::to_string(fragment),counts);
+                        no_reading(row);inspected.insert(row);++counts.order_fragments;}
+                    const auto all=rich_children(order);require(std::set<HWND>(all.begin(),all.end())==inspected,
+                        "A code-order surface contains an unverified or duplicated painted fragment");}
                 else{const auto answer=required(index,2,"answer field");require(edit_text(answer).empty(),"A fresh response disclosed an answer or retained another activity's draft");require((GetWindowLongPtrW(answer,GWL_STYLE)&ES_READONLY)==0,"A fresh response field is not editable");
                     if(!block.code.empty()){RECT source{},response{},viewport{};GetWindowRect(control(index,1),&source);GetWindowRect(answer,&response);GetWindowRect(pane,&viewport);
                         const auto bounds=[](RECT value){return std::to_string(value.left)+','+std::to_string(value.top)+','+std::to_string(value.right)+','+std::to_string(value.bottom);};
@@ -144,10 +228,21 @@ int main(int argc,char** argv){try{
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES|ICC_PROGRESS_CLASS};InitCommonControlsEx(&common);
     stdin_metadata_contract();
     const auto environment=resolve_windows_environment({ProfileId::Codex,L"composition-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});OwnedQa cleanup(environment.paths.root);initialize_profile_directories(environment.paths);
+    // NarrationWorker already derives its stderr file from the configuration
+    // directory. Keep the exact existing configuration in this owned profile,
+    // so parallel hidden census processes never write the same diagnostics.
+    const auto installed_runtime=std::filesystem::path(build::source_root)/"out/narration/runtime.json";
+    const auto runtime_bytes=state::read_bytes(installed_runtime,1024*1024);
+    const auto runtime=environment.paths.root/L"runtime.json";state::require_safe_path(runtime);
+    require(runtime.is_absolute()&&runtime.parent_path()==environment.paths.root&&!std::filesystem::exists(state::native_io_path(runtime)),
+        "The census must own its worker configuration inside the existing private QA profile");
+    require(std::filesystem::copy_file(state::native_io_path(installed_runtime),state::native_io_path(runtime))
+        &&state::read_bytes(runtime,1024*1024)==runtime_bytes&&state::read_bytes(installed_runtime,1024*1024)==runtime_bytes,
+        "The private worker configuration differs from or altered the installed runtime");
     state::StateStore store(environment.paths.root);auto initial=store.load();initial.preferences["native_windows"]["ui_language"]=locale;store.save(initial);
     Window host{CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Published curriculum composition QA",WS_OVERLAPPEDWINDOW,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr)};require(host.value!=nullptr,"Cannot create isolated composition QA host");
     const auto root=std::filesystem::path(build::source_root)/"app/src/main/assets/content";Counts counts;std::unique_ptr<windows::NarrationWorker> worker;
-    LessonViewHooks hooks;hooks.math_editor_request=[&](std::string_view request){if(!worker)worker=std::make_unique<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");return worker->math_editor(request);};
+    LessonViewHooks hooks;hooks.math_editor_request=[&](std::string_view request){if(!worker)worker=std::make_unique<windows::NarrationWorker>(runtime);return worker->math_editor(request);};
     const auto entries=published(root,locale);
     struct Authored{PublishedLesson entry;curriculum::Lesson model;};std::vector<Authored> models;models.reserve(entries.size());
     std::vector<std::pair<std::size_t,std::size_t>> pages;std::set<std::string> plan_routes;std::set<BlockType> plan_types;std::string frame="published-composition-v1/"+locale;
@@ -191,7 +286,11 @@ int main(int argc,char** argv){try{
         else if(elapsed>1500)std::cout<<"CENSUS slow "<<entry.path.filename().string()<<" page "<<page+1<<": "<<elapsed<<"ms\n";
     }
     require(counts.pages==last-first&&counts.blocks==expected_blocks,"The selected census partition did not construct every assigned page/block");
+    require(state::read_bytes(runtime,1024*1024)==runtime_bytes&&state::read_bytes(installed_runtime,1024*1024)==runtime_bytes,
+        "A census worker changed its configuration or the installed runtime");
     std::cout<<"PASS published "<<locale<<" partition "<<partition<<'/'<<partitions<<": "<<counts.lessons<<" lessons / "<<counts.pages<<" real LessonView pages / "<<counts.blocks<<" blocks; projects="<<counts.projects<<", CMake="<<counts.cmake<<", stdin="<<counts.stdin_fields<<", output checks="<<counts.output_checks<<", math containers="<<counts.math_containers<<", verified math projections="<<counts.math_projections<<'\n';
+    std::cout<<"FIRST-OPEN INK order fragments="<<counts.order_fragments<<", template fragments="<<counts.template_fragments<<", bank labels="<<counts.bank_labels
+        <<", actual RichEdit displays="<<counts.code_ink_surfaces<<", original UTF16 characters="<<counts.code_ink_characters<<", independent syntax anchors="<<counts.code_syntax_anchors<<'\n';
     for(const auto& [route,total]:route_counts)std::cout<<"COVERAGE "<<route<<": "<<total.first<<" pages / "<<total.second<<" blocks\n";
     for(const auto& [type,count]:counts.types)std::cout<<name(type)<<'='<<count<<' ';std::cout<<"\nConstruction checks original text, controls, roles and narration exclusions; it does not establish solutions, access gates, visual equivalence or audible narration. The dedicated mathematics suite checks every Spanish response composition.\n";
     return 0;

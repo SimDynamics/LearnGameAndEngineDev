@@ -52,6 +52,10 @@ int main() {
             check(hint!=empty&&edit_text(hinted.value).empty()&&GetWindowTextLengthW(hinted.value)==0&&
                 !SendMessageW(hinted.value,EM_CANUNDO,0,0)&&SendMessageW(hinted.value,EM_GETMODIFY,0,0)==modified,
                 "The empty hint was not painted, became false document text, changed Modify or entered Undo");
+            set_edit_hint(hinted.value,"Escribe el código faltante",RGB(174,183,198));
+            check(pixels()!=hint&&edit_text(hinted.value).empty()&&!SendMessageW(hinted.value,EM_CANUNDO,0,0),
+                "The mathematical hint color was ignored or changed the editable document");
+            set_edit_hint(hinted.value,"Escribe el código faltante");
             SetFocus(hinted.value);const auto focus=GetFocus();CHARRANGE before{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
             (void)pixels();CHARRANGE after{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
             check(focus==hinted.value&&GetFocus()==focus&&before.cpMin==after.cpMin&&before.cpMax==after.cpMax,
@@ -115,6 +119,32 @@ int main() {
         CHARRANGE before{3,8}; SendMessageW(editor.value, EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&before));
         const auto modified = SendMessageW(editor.value, EM_GETMODIFY, 0, 0);
         style_cpp(editor.value);
+        POINTL space_before{},next_before{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_before),8);
+        SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next_before),9);
+        POINTL first_before{},second_before{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first_before),0);
+        SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second_before),1);
+        const auto syntax_before=character(editor.value,0);POINT scroll_before{};SendMessageW(editor.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_before));
+        SendMessageW(editor.value,EM_SETREADONLY,TRUE,0);
+        compact_code_spaces(editor.value);
+        check((GetWindowLongPtrW(editor.value,GWL_STYLE)&ES_READONLY)!=0,"Compacting a real readonly code display left it editable");
+        POINTL space_after{},next_after{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_after),8);
+        SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next_after),9);
+        POINTL first_after{},second_after{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first_after),0);
+        SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second_after),1);
+        POINT scroll_after{};SendMessageW(editor.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_after));
+        const auto normal_width=next_before.x-space_before.x,compact_width=next_after.x-space_after.x;
+        // MSFTEDIT may return tomUndefined for GetScaling even when it draws
+        // the requested scale. Assert real advances, not format metadata.
+        check(normal_width>compact_width&&std::abs(compact_width-normal_width*.8)<=1&&
+            second_before.x-first_before.x==second_after.x-first_after.x&&
+            character(editor.value,8).yHeight==syntax_before.yHeight&&first_after.y==first_before.y,
+            "Display-only code spaces did not narrow their actual native advance independently of other characters");
+        compact_code_spaces(editor.value);
+        POINTL space_again{},next_again{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_again),8);
+        SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next_again),9);
+        check(next_again.x-space_again.x==compact_width&&character(editor.value,0).crTextColor==syntax_before.crTextColor&&
+            character(editor.value,0).yHeight==syntax_before.yHeight&&scroll_after.x==scroll_before.x&&scroll_after.y==scroll_before.y,
+            "Compacting code was cumulative or changed syntax, font or scrolling");
         CHARRANGE after{}; SendMessageW(editor.value, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&after));
         check(before.cpMin == after.cpMin && before.cpMax == after.cpMax, "Syntax formatting moved selection");
         check(SendMessageW(editor.value, EM_GETMODIFY, 0, 0) == modified, "Syntax formatting changed modified state");
@@ -122,6 +152,7 @@ int main() {
         SendMessageW(editor.value, EM_GETPARAFORMAT, 0, reinterpret_cast<LPARAM>(&after_tabs));
         check(after_tabs.cTabCount == 1 && after_tabs.rgxTabs[0] == 720, "Syntax formatting replaced the editor's measured tab stops");
         check(edit_text(editor.value) == original + 'X', "Syntax formatting changed source text");
+        SendMessageW(editor.value,EM_SETREADONLY,FALSE,0);
         check(SendMessageW(editor.value, EM_UNDO, 0, 0) != 0 && edit_text(editor.value) == original, "Syntax formatting entered the text undo history");
         check(SendMessageW(editor.value, EM_REDO, 0, 0) != 0 && edit_text(editor.value) == original + 'X', "Syntax formatting broke redo history");
         set_rich_text(editor.value, "El `std::cout` conserva su texto.", {}, false);

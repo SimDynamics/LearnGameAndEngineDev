@@ -111,6 +111,13 @@ void android_control_parity_tests(HWND host){
         MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","",std::move(callbacks));view.layout(0,0,650);
         const auto expand=caption_target(view.window(),L"Pantalla completa"),reset=caption_target(view.window(),L"Reiniciar");
         require(expand&&reset,"A mathematical card omitted its source fullscreen/reset toolbar actions");
+        RECT card_client{},reset_position{},prompt_position{};GetClientRect(view.window(),&card_client);GetWindowRect(reset,&reset_position);
+        const auto prompt=region_target(view,"prompt");require(prompt,"The mathematical card lost its authored prompt");GetWindowRect(prompt,&prompt_position);
+        MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&reset_position),2);MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&prompt_position),2);
+        const auto card_dpi=static_cast<int>(GetDpiForWindow(view.window()));
+        require(reset_position.top==MulDiv(8,card_dpi,96)&&reset_position.right==card_client.right-MulDiv(6,card_dpi,96)&&
+            prompt_position.left==MulDiv(6,card_dpi,96)&&prompt_position.right==card_client.right-MulDiv(6,card_dpi,96),
+            "A mathematical card lost Android's6dp horizontal and8dp top padding");
         SendMessageW(expand,BM_CLICK,0,0);SendMessageW(reset,BM_CLICK,0,0);require(expanded==1&&resets==1,"Mathematical toolbar actions bypassed the existing lesson controller");
         const auto option=region_target(view,"choice/option/first");require(option,"The original rich answer is absent");
         HWND radio=nullptr;for(const auto item:descendants(view.window())){wchar_t name[32]{};GetClassNameW(item,name,32);if(_wcsicmp(name,L"BUTTON")==0&&(GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK)==BS_RADIOBUTTON){radio=item;break;}}
@@ -141,16 +148,36 @@ void android_control_parity_tests(HWND host){
         MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,650);
         require(!caption_target(view.window(),L"↑")&&!caption_target(view.window(),L"↓"),"Mathematical cards introduced arrow controls absent from Android");
         require(region_target(view,"order/label")&&caption_target(view.window(),L"Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado."),"The original ordering instruction was replaced by another interaction");
+        const auto order_card=GetParent(region_target(view,"order/item/a"));RECT order_area{};GetClientRect(order_card,&order_area);
+        const auto order_frame=painted_points(order_card,{{order_area.right/2,0},{MulDiv(5,GetDpiForWindow(order_card),96),0}});
+        require(order_frame[0]==reader_theme::palette(order_card).outline&&order_frame[1]==reader_theme::background(order_card),
+            "An original mathematical ordering card lost its10dp rounded outline on first presentation");
         click_card(region_target(view,"order/item/a"));const auto saved=view.answers_json();
         MathPuzzleView reopened(host,winrt::to_string(raw.Stringify()),"es",saved);reopened.layout(0,0,650);click_card(region_target(reopened,"order/item/b"));
         auto values=JsonObject::Parse(winrt::to_hstring(reopened.answers_json())).GetNamedObject(L"order").GetNamedArray(L"ids");
         require(values.GetStringAt(0)==L"a"&&values.GetStringAt(1)==L"b"&&values.GetStringAt(2)==L"c","Tap order or its original draft position was lost when reopened");
         const auto identity=reopened.answer_identity_json();click_card(region_target(reopened,"order/item/c"));require(reopened.answer_identity_json()==identity,"Advancing the tap cursor manufactured a different answer identity");
         const auto before=reopened.answers_json();const auto card=region_target(reopened,"order/item/c");SendMessageW(card,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));SendMessageW(card,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(-WHEEL_DELTA)),0);SendMessageW(card,WM_LBUTTONUP,0,MAKELPARAM(4,4));require(reopened.answers_json()==before,"A wheel scroll executed a pending mathematical card tap");
+        MathPuzzleView dragged(host,winrt::to_string(raw.Stringify()),"es","");dragged.layout(0,0,650);
+        const auto source=region_target(dragged,"order/item/c"),destination=region_target(dragged,"order/item/a");
+        RECT destination_bounds{};GetWindowRect(destination,&destination_bounds);
+        const auto began=GetTickCount64();SendMessageW(source,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));
+        const auto capture=GetCapture();require(capture==GetParent(source),"Dragging a rich mathematical label did not capture its whole original card");
+        while(GetTickCount64()-began<20)Sleep(1);
+        POINT drop{(destination_bounds.left+destination_bounds.right)/2,(destination_bounds.top+destination_bounds.bottom)/2};ScreenToClient(capture,&drop);
+        SendMessageW(capture,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(drop.x,drop.y));SendMessageW(capture,WM_LBUTTONUP,0,MAKELPARAM(drop.x,drop.y));
+        values=JsonObject::Parse(winrt::to_hstring(dragged.answers_json())).GetNamedObject(L"order").GetNamedArray(L"ids");
+        require(values.GetStringAt(0)==L"b"&&values.GetStringAt(1)==L"a"&&values.GetStringAt(2)==L"c"&&
+            region_target(dragged,"order/item/c")==source&&edit_text(source)=="Tres"&&!GetCapture(),
+            "A20ms drag through the real captured card failed to move its original rich label or altered its content");
     }
     {
         const auto raw=simple_block(R"({"id":"pairs","type":"math_matching_drag","sources":[{"id":"a","label":"Uno"},{"id":"b","label":"Dos"}],"targets":[{"id":"x","label":"Primero"},{"id":"y","label":"Segundo"}]})");
         MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,650);const auto a=region_target(view,"pairs/source/a"),b=region_target(view,"pairs/source/b"),x=region_target(view,"pairs/target/x");
+        const auto matching_card=GetParent(a);RECT matching_area{};GetClientRect(matching_card,&matching_area);
+        const auto matching_frame=painted_points(matching_card,{{matching_area.right/2,0},{MulDiv(5,GetDpiForWindow(matching_card),96),0}});
+        require(matching_frame[0]==reader_theme::palette(matching_card).outline&&matching_frame[1]==reader_theme::background(matching_card),
+            "An original mathematical matching card lost its10dp rounded outline on first presentation");
         click_card(a);click_card(x);RECT target{},source{};GetWindowRect(x,&target);GetWindowRect(a,&source);require(source.top>=target.bottom,"A matched source was cloned/linked instead of moving its same card under the target");
         click_card(b);click_card(x);auto pairs=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"pairs").GetNamedObject(L"pairs");
         require(pairs.Size()==1&&!pairs.HasKey(L"a")&&pairs.GetNamedString(L"b")==L"x","Matching failed to release the source displaced from an occupied target");
@@ -364,8 +391,9 @@ void mathematical_input_hint_tests(HWND host){
     for(const auto& [language,hint]:std::vector<std::pair<std::string,std::string>>{{"es","Respuesta"},{"en","Answer"},{"fr","Réponse"}}){
         MathPuzzleView view(host,winrt::to_string(block.Stringify()),language,"");view.layout(0,0,650);const auto field=edits(view.window()).front();SetFocus(field);SendMessageW(field,EM_SETSEL,0,0);require(GetFocus()==field,"The mathematical hint fixture did not obtain real editing focus");const auto modified=SendMessageW(field,EM_GETMODIFY,0,0),undo=SendMessageW(field,EM_CANUNDO,0,0);const auto visible=canvas_pixels(field);
         set_edit_hint(field,"");const auto empty=canvas_pixels(field);require(visible!=empty&&edit_text(field).empty()&&GetWindowTextLengthW(field)==0&&SendMessageW(field,EM_GETMODIFY,0,0)==modified&&SendMessageW(field,EM_CANUNDO,0,0)==undo,"The original mathematical answer hint is invisible, became document text or changed Undo/Modify");
-        set_edit_hint(field,hint);require(canvas_pixels(field)==visible,"A mathematical answer field lost its original localized hint");
-        SendMessageW(field,WM_CHAR,L'7',1);const auto typed=canvas_pixels(field);require(edit_text(field)=="7"&&SendMessageW(field,EM_CANUNDO,0,0),"Typing into the hinted mathematical field changed its value or lost normal Undo");set_edit_hint(field,"");require(canvas_pixels(field)==typed,"The mathematical hint remained over the actual answer");set_edit_hint(field,hint);SendMessageW(field,WM_UNDO,0,0);require(edit_text(field).empty(),"A mathematical hint altered native Undo instead of restoring the empty answer");require(GetFocus()==field,"Undo or hint drawing moved the mathematical editing focus");const auto restored=canvas_pixels(field);if(restored!=visible){CHARRANGE selection{};SendMessageW(field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(field,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));std::cerr<<"INFO focused mathematical hint language="<<language<<" before="<<visible<<" after_undo="<<restored<<" selection="<<selection.cpMin<<","<<selection.cpMax<<" default_height="<<format.yHeight<<" default_color="<<format.crTextColor<<"\n";}require(restored==visible,"The original mathematical hint did not return in the same focused empty state after Undo");
+        set_edit_hint(field,hint);if(!reader_theme::palette(field).high_contrast)require(canvas_pixels(field)!=visible,"The mathematical hint retained the generic C++ placeholder color instead of Android's#AEB7C6");
+        set_edit_hint(field,hint,RGB(174,183,198));require(canvas_pixels(field)==visible,"A mathematical answer field lost its original localized hint and color");
+        SendMessageW(field,WM_CHAR,L'7',1);const auto typed=canvas_pixels(field);require(edit_text(field)=="7"&&SendMessageW(field,EM_CANUNDO,0,0),"Typing into the hinted mathematical field changed its value or lost normal Undo");set_edit_hint(field,"");require(canvas_pixels(field)==typed,"The mathematical hint remained over the actual answer");set_edit_hint(field,hint,RGB(174,183,198));SendMessageW(field,WM_UNDO,0,0);require(edit_text(field).empty(),"A mathematical hint altered native Undo instead of restoring the empty answer");require(GetFocus()==field,"Undo or hint drawing moved the mathematical editing focus");const auto restored=canvas_pixels(field);if(restored!=visible){CHARRANGE selection{};SendMessageW(field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(field,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));std::cerr<<"INFO focused mathematical hint language="<<language<<" before="<<visible<<" after_undo="<<restored<<" selection="<<selection.cpMin<<","<<selection.cpMax<<" default_height="<<format.yHeight<<" default_color="<<format.crTextColor<<"\n";}require(restored==visible,"The original mathematical hint did not return in the same focused empty state after Undo");
     }
     std::cout<<"PASS original localized mathematical hints, painted-only empty state, unchanged document/Modify/Undo and normal typing/Undo restoration\n";
 }
@@ -376,9 +404,16 @@ void mathematical_input_ink_tests(HWND host){
     const auto expected=reader_theme::foreground(field);CHARFORMAT2W insertion{};insertion.cbSize=sizeof(insertion);SendMessageW(field,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&insertion));require((insertion.dwMask&CFM_COLOR)&&!(insertion.dwEffects&CFE_AUTOCOLOR)&&insertion.crTextColor==expected,"The mathematical RichEdit insertion format retained automatic black text");
     SendMessageW(field,EM_SETSEL,0,2);CHARFORMAT2W typed{};typed.cbSize=sizeof(typed);SendMessageW(field,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&typed));require(!(typed.dwEffects&CFE_AUTOCOLOR)&&typed.crTextColor==expected,"Physical-style WM_CHAR insertion did not inherit the original mathematical text color");SendMessageW(field,EM_SETSEL,2,2);
     RECT bounds{};GetClientRect(field,&bounds);const std::vector<POINT> background_point{{bounds.right/2,std::max(1L,bounds.bottom-8)}};const auto background=reader_theme::background(field);require(painted_points(field,background_point).front()==background,"An editable numerical field did not retain its mathematical surface");
+    const auto field_colors=reader_theme::palette(field);if(!field_colors.high_contrast)require(background==RGB(28,28,28),"A simple mathematical input lost Android's original#1C1C1C card background");
+    const auto field_dpi=static_cast<int>(GetDpiForWindow(field));const std::vector<POINT> border_points{{bounds.right/2,0},{0,bounds.bottom/2},{MulDiv(5,field_dpi,96),0}};
+    const auto border=painted_points(field,border_points);require(border[0]==field_colors.accent&&border[1]==field_colors.accent&&border[2]==background,
+        "The simple mathematical input lost its permanent accent outline or original10dp corner radius");
+    CHARRANGE painted_selection{};SendMessageW(field,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&painted_selection));require(painted_selection.cpMin==2&&painted_selection.cpMax==2&&edit_text(field)=="60",
+        "Painting the original mathematical field outline moved the native caret or changed its value");
     const auto visible_ink=[&]{POINT first{},end{};SendMessageW(field,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);SendMessageW(field,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),2);const auto dc=GetDC(field);const auto before=SelectObject(dc,reinterpret_cast<HFONT>(SendMessageW(field,WM_GETFONT,0,0)));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SelectObject(dc,before);ReleaseDC(field,dc);std::vector<POINT> points;for(int y=std::max(1L,first.y);y<std::min(bounds.bottom-4,first.y+metrics.tmHeight);++y)for(int x=std::max(1L,first.x);x<std::min(bounds.right-4,end.x);++x)points.push_back({x,y});const auto pixels=painted_points(field,points);return std::ranges::count_if(pixels,[&](COLORREF color){return color!=background&&GetRValue(color)>128&&GetGValue(color)>128&&GetBValue(color)>128;});};
     if(!reader_theme::palette(field).high_contrast)require(visible_ink()>8,"The actual numeric glyphs were painted black on the dark mathematical input");
     const auto answers=view.answers_json();const auto undo_available=SendMessageW(field,EM_CANUNDO,0,0);view.set_enabled(false);require(!IsWindowEnabled(field)&&(GetWindowLongPtrW(field,GWL_STYLE)&WS_DISABLED)&&edit_text(field)=="60"&&view.answers_json()==answers&&painted_points(field,background_point).front()==background,"Completing a numerical response changed its value or replaced its dark field with a disabled system background");if(!reader_theme::palette(field).high_contrast){require(visible_ink()>8,"A disabled numerical field lost its legible original glyph color");require(GetWindowLongPtrW(field,GWL_STYLE)&ES_READONLY,"The disabled mathematical field did not retain native read-only protection");SendMessageW(field,WM_CHAR,L'9',1);require(edit_text(field)=="60"&&view.answers_json()==answers,"A disabled read-only mathematical field accepted a character or changed its response");}
+    require(painted_points(field,border_points)==border,"Completing a mathematical answer changed its original accent outline or corner surface");
     view.set_enabled(true);require(IsWindowEnabled(field)&&!(GetWindowLongPtrW(field,GWL_STYLE)&ES_READONLY)&&edit_text(field)=="60"&&painted_points(field,background_point).front()==background&&SendMessageW(field,EM_CANUNDO,0,0)==undo_available,"Re-enabling a mathematical field changed its original read-only state, data, undo availability or surface");
     MathPuzzleView reopened(host,winrt::to_string(block.Stringify()),"es",answers);reopened.layout(0,0,650);const auto restored=edits(reopened.window()).front();SendMessageW(restored,EM_SETSEL,0,2);typed={};typed.cbSize=sizeof(typed);SendMessageW(restored,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&typed));require(edit_text(restored)=="60"&&typed.crTextColor==reader_theme::foreground(restored)&&!(typed.dwEffects&CFE_AUTOCOLOR),"A restored numerical response reverted to automatic black text");SendMessageW(restored,EM_SETREADONLY,TRUE,0);reopened.set_enabled(false);reopened.set_enabled(true);require((GetWindowLongPtrW(restored,GWL_STYLE)&ES_READONLY)&&edit_text(restored)=="60","Restoring the original enabled state discarded a pre-existing native read-only restriction");
     std::cout<<"PASS numerical WM_CHAR insertion/restoration color, actual legible glyphs, disabled/enabled native surface and unchanged responses\n";
@@ -429,7 +464,7 @@ void rigid_angle_copy_tests(HWND host){
     view.set_enabled(false);require(!IsWindowEnabled(canvas)&&!IsWindowEnabled(moving)&&!IsWindowEnabled(rotating)&&!IsWindowEnabled(panning)&&!IsWindowEnabled(reset),"An evaluated rigid-angle response remained editable");
     std::cout<<"PASS original rigid-angle geometry, fixed reference, whole-copy translation/rotation, view mode, reset, saved placement, fullscreen controls and solved-state freeze\n";
 }
-RECT rectangle_fill_bounds(HWND canvas){
+RECT rectangle_fill_bounds(HWND canvas,SIZE* outline_size=nullptr){
     RECT bounds{};GetClientRect(canvas,&bounds);const auto dc=GetDC(canvas),buffer=CreateCompatibleDC(dc);
     BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bounds.right;info.bmiHeader.biHeight=-bounds.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
     void* pixels=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(canvas,dc);
@@ -438,6 +473,21 @@ RECT rectangle_fill_bounds(HWND canvas){
     const auto fill=RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas)));
     const auto expected=(static_cast<std::uint32_t>(GetRValue(fill))<<16)|(static_cast<std::uint32_t>(GetGValue(fill))<<8)|GetBValue(fill);const auto values=static_cast<const std::uint32_t*>(pixels);
     RECT content{bounds.right,bounds.bottom,-1,-1};for(int y=0;y<bounds.bottom;++y)for(int x=0;x<bounds.right;++x)if((values[static_cast<std::size_t>(y)*bounds.right+x]&0xFFFFFF)==expected){content.left=std::min<LONG>(content.left,x);content.top=std::min<LONG>(content.top,y);content.right=std::max<LONG>(content.right,x+1);content.bottom=std::max<LONG>(content.bottom,y+1);}
+    if(outline_size){
+        const auto stroke=(static_cast<std::uint32_t>(GetRValue(colors.accent))<<16)|(static_cast<std::uint32_t>(GetGValue(colors.accent))<<8)|GetBValue(colors.accent);
+        const auto axis=[&](bool horizontal){std::vector<int> ink;const auto count=horizontal?bounds.right:bounds.bottom;
+            for(int at=0;at<count;++at){const auto x=horizontal?at:(content.left+content.right)/2,y=horizontal?(content.top+content.bottom)/2:at;
+                if(x>=0&&x<bounds.right&&y>=0&&y<bounds.bottom&&(values[static_cast<std::size_t>(y)*bounds.right+x]&0xFFFFFF)==stroke)ink.push_back(at);}
+            require(ink.size()>=2,"The actual slider rectangle lost one of its outline edges");std::size_t first=0,last=ink.size()-1;
+            while(first+1<ink.size()&&ink[first+1]==ink[first]+1)++first;
+            while(last>0&&ink[last-1]==ink[last]-1)--last;
+            require(first<last,"The actual slider outline does not enclose a filled rectangle");
+            // Compare the vector edges, not the interior brush footprint:
+            // constant-width strokes do not scale with k. GDI Rectangle also
+            // excludes its right/bottom coordinate (Microsoft Rectangle docs).
+            return static_cast<LONG>(std::lround((ink[last]+ink.back()-ink.front()-ink[first])/2.0+1));};
+        outline_size->cx=axis(true);outline_size->cy=axis(false);
+    }
     SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);require(content.right>content.left&&content.bottom>content.top,"The parameter preview has no actual filled rectangle");return content;
 }
 void slider_and_coordinate_draft_tests(HWND host){
@@ -447,9 +497,9 @@ void slider_and_coordinate_draft_tests(HWND host){
         const auto canvases=class_targets(view.window(),L"LearnGameAndEngineDev.MathCanvas"),sliders=class_targets(view.window(),TRACKBAR_CLASSW);
         require(canvases.size()==1&&sliders.size()==1,"The actual uniform scale activity lost its preview or parameter");
         RECT visual{},control{};GetWindowRect(canvases.front(),&visual);GetWindowRect(sliders.front(),&control);require(visual.bottom<=control.top,"The parameter preview is below its controls instead of the original Android order");
-        const auto initial_rectangle=rectangle_fill_bounds(canvases.front());SendMessageW(sliders.front(),TBM_SETPOS,TRUE,2);SendMessageW(view.window(),WM_HSCROLL,TB_THUMBPOSITION,reinterpret_cast<LPARAM>(sliders.front()));
-        const auto scaled_rectangle=rectangle_fill_bounds(canvases.front());
-        require(std::abs((scaled_rectangle.right-scaled_rectangle.left)-3*(initial_rectangle.right-initial_rectangle.left))<=4&&std::abs((scaled_rectangle.bottom-scaled_rectangle.top)-3*(initial_rectangle.bottom-initial_rectangle.top))<=4,
+        SIZE initial_size{},scaled_size{};(void)rectangle_fill_bounds(canvases.front(),&initial_size);SendMessageW(sliders.front(),TBM_SETPOS,TRUE,2);SendMessageW(view.window(),WM_HSCROLL,TB_THUMBPOSITION,reinterpret_cast<LPARAM>(sliders.front()));
+        (void)rectangle_fill_bounds(canvases.front(),&scaled_size);
+        require(std::abs(scaled_size.cx-3*initial_size.cx)<=2&&std::abs(scaled_size.cy-3*initial_size.cy)<=2,
             "The authored scaleParameter did not multiply both original base dimensions against a fixed preview scale");
         require(caption_target(view.window(),L"Factor uniforme: 3"),"A parameter label did not retain Android's combined name and current value");
         const auto saved=view.answers_json();MathPuzzleView reopened(host,winrt::to_string(block.Stringify()),"es",saved);reopened.layout(0,0,650);
