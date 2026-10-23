@@ -18,6 +18,7 @@ import subprocess
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
 APP = ROOT / "app/src/main/java/com/learngraphicsprogramming/app"
@@ -101,6 +102,131 @@ def cached_jar(group: str, artifact: str, version: str) -> Path:
     return files[0]
 
 
+def cached_dependency_closure(group: str, artifact: str, version: str) -> list[Path]:
+    """Read the original Maven runtime graph from Gradle's existing cache only.
+
+    No repository-wide jar scan, downloads, dependency upgrades or Gradle build
+    is needed. Parent/BOM management and exclusions retain the original graph.
+    """
+    base = Path(os.environ.get("USERPROFILE", str(Path.home()))) / ".gradle/caches/modules-2/files-2.1"
+    models: dict[tuple[str, str, str], tuple[dict, dict, list, str]] = {}
+
+    def model(coordinate):
+        if coordinate in models:
+            return models[coordinate]
+        g, a, v = coordinate
+        files = sorted((base / g / a / v).glob(f"*/{a}-{v}.pom"))
+        if len(files) != 1:
+            # Gradle retains Guava's intentionally empty conflict-marker jar
+            # without a POM. Verify it contains no classes before treating that
+            # resource-only artifact as a leaf; never guess for real code jars.
+            jar_files = sorted((base / g / a / v).glob(f"*/{a}-{v}.jar"))
+            # Official versioned Maven Central POMs confirm these two jars have
+            # no runtime dependencies (JavaPoet lists test dependencies only).
+            # Gradle already holds the jars but not their POMs. Keep builds
+            # offline rather than downloading duplicate metadata each time.
+            # https://repo.maven.apache.org/maven2/org/jetbrains/annotations/23.0.0/annotations-23.0.0.pom
+            # https://repo.maven.apache.org/maven2/com/squareup/javapoet/1.13.0/javapoet-1.13.0.pom
+            leaves={("org.jetbrains","annotations","23.0.0"),("com.squareup","javapoet","1.13.0")}
+            if not files and (g,a,v) in leaves and len(jar_files)==1:
+                result=({}, {}, [], "jar");models[coordinate]=result;return result
+            if not files and len(jar_files)==1:
+                with zipfile.ZipFile(jar_files[0]) as archive:
+                    if not any(name.endswith(".class") for name in archive.namelist()):
+                        result=({}, {}, [], "jar");models[coordinate]=result;return result
+            raise RuntimeError(f"Missing original cached calculator metadata {g}:{a}:{v}")
+        tree = ET.parse(files[0]).getroot()
+        for element in tree.iter():
+            element.tag = element.tag.rsplit("}", 1)[-1]
+        properties, managed = {}, {}
+        parent = tree.find("parent")
+        if parent is not None:
+            inherited = model(tuple(parent.findtext(key, "") for key in ("groupId", "artifactId", "version")))
+            properties.update(inherited[0]); managed.update(inherited[1])
+            properties.update({f"project.parent.{key}":parent.findtext(key, "") for key in ("groupId","artifactId","version")})
+        properties.update({"project.groupId": g, "project.artifactId": a, "project.version": v,
+                           "pom.groupId": g, "pom.artifactId": a, "pom.version": v})
+        properties.update({child.tag: child.text or "" for child in tree.findall("properties/*")})
+
+        def expand(value, strict=True):
+            for _ in range(20):
+                changed = re.sub(r"\$\{([^}]+)\}", lambda found: properties.get(found[1], found[0]), value)
+                if changed == value:
+                    break
+                value = changed
+            if strict and "${" in value:
+                raise RuntimeError(f"Unresolved original calculator dependency version: {value}")
+            return value
+
+        for key, value in list(properties.items()):
+            properties[key] = expand(value, strict=False)
+
+        def dependency(element):
+            value = {key: expand(element.findtext(key, fallback)) for key, fallback in
+                     (("groupId", ""), ("artifactId", ""), ("version", ""), ("scope", "compile"),
+                      ("type", "jar"), ("optional", "false"))}
+            value["exclusions"] = {(expand(item.findtext("groupId", "")), expand(item.findtext("artifactId", "")))
+                                   for item in element.findall("exclusions/exclusion")}
+            value["scope_declared"] = element.find("scope") is not None
+            return value
+
+        for element in tree.findall("dependencyManagement/dependencies/dependency"):
+            item = dependency(element)
+            if item["type"] == "pom" and item["scope"] == "import":
+                managed.update(model((item["groupId"], item["artifactId"], item["version"]))[1])
+            else:
+                managed[(item["groupId"], item["artifactId"])] = item
+        result = properties, managed, [dependency(item) for item in tree.findall("dependencies/dependency")], tree.findtext("packaging", "jar")
+        models[coordinate] = result
+        return result
+
+    initial = (group, artifact, version)
+    root_managed = model(initial)[1]
+    selected: dict[tuple[str, str], Path] = {}
+
+    def runtime_jar(g,a,v):
+        try:
+            return cached_jar(g,a,v)
+        except RuntimeError:
+            # Gradle module metadata may select an alternate runtime artifact
+            # under the same coordinate (Guava's portable Android variant).
+            # Accept only the exact locally cached file explicitly declared by
+            # that metadata, not an arbitrary different/newer dependency.
+            candidates=set()
+            for metadata in (base/g/a/v).glob(f"*/{a}-{v}.module"):
+                for variant in json.loads(metadata.read_text(encoding="utf-8")).get("variants",[]):
+                    if variant.get("attributes",{}).get("org.gradle.usage")!="java-runtime":continue
+                    for file in variant.get("files",[]):
+                        name=file.get("name","")
+                        if Path(name).name==name and name.endswith(".jar"):
+                            candidates.update((base/g/a/v).glob(f"*/{name}"))
+            if len(candidates)==1:return candidates.pop()
+            raise
+
+    def visit(coordinate, excluded=frozenset()):
+        g, a, v = coordinate
+        if (g, a) in excluded or (g, "*") in excluded or ("*", a) in excluded or (g, a) in selected:
+            return
+        _, managed, dependencies, packaging = model(coordinate)
+        if packaging in ("jar","bundle"):
+            selected[(g, a)] = runtime_jar(g, a, v)
+        for item in dependencies:
+            key = item["groupId"], item["artifactId"]
+            selected_management = root_managed.get(key) or managed.get(key) or {}
+            scope=item["scope"] if item["scope_declared"] else selected_management.get("scope",item["scope"])
+            if scope not in ("compile", "runtime") or item["optional"] == "true" or item["type"] not in ("jar", "pom"):
+                continue
+            child_version = selected_management.get("version") or item["version"]
+            if not child_version:
+                raise RuntimeError(f"Missing original calculator dependency version {key}")
+            try:
+                visit((*key, child_version), excluded | item["exclusions"] | selected_management.get("exclusions",set()))
+            except RuntimeError as failure:
+                raise RuntimeError(f"{failure} (required by {g}:{a}:{v})") from failure
+    visit(initial)
+    return list(selected.values())
+
+
 def exact(source: str, old: str, new: str, count: int = 1) -> str:
     if source.count(old) != count:
         raise ValueError(f"Platform adaptation anchor changed: {old[:90]}")
@@ -118,6 +244,41 @@ def generated(name: str, source: str) -> Path:
     return path
 
 
+def remove_platform_method(source: str, marker: str) -> str:
+    """Remove an Android-only method while retaining its canonical class data."""
+    while marker in source:
+        start = source.index(marker)
+        # These canonical glue signatures contain no function-valued parameters.
+        end = source.index(")", start) + 1
+        while source[end].isspace():
+            end += 1
+        if source[end] == "=":
+            end = source.index("\n", end)
+        elif source[end] == "{":
+            depth, quoted, escaped = 1, False, False
+            end += 1
+            while depth:
+                char = source[end]
+                if quoted:
+                    if escaped:
+                        escaped = False
+                    elif char == "\\":
+                        escaped = True
+                    elif char == '"':
+                        quoted = False
+                elif char == '"':
+                    quoted = True
+                elif char == "{":
+                    depth += 1
+                elif char == "}":
+                    depth -= 1
+                end += 1
+        else:
+            raise ValueError(f"Unknown canonical Android method boundary: {marker}")
+        source = source[:start] + source[end:]
+    return source
+
+
 def math_host_sources() -> list[Path]:
     """Compile original evaluators; only resource resolution is platform-specific."""
     names = ("MathPuzzleSpec", "MathValidators", "MathAnswer", "MathShortcutResolver",
@@ -132,6 +293,67 @@ def math_host_sources() -> list[Path]:
         code = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', code)
         if name == "MathValidators":
             code = exact(code, "    fun resolveMessage(context: android.content.Context): String = uiMessage?.resolve(context) ?: message\n", "")
+        sources.append(generated(f"{name}.kt", code))
+    model = (APP / "math/MathExpressionModel.kt").read_text(encoding="utf-8-sig")
+    model = exact(model, "import com.learngraphicsprogramming.app.R\n", "")
+    model = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', model)
+    sources.append(generated("MathExpressionModel.kt", model))
+
+    # Reuse the actual structured-key dispatcher from the canonical Android
+    # editor. Only its Android action objects become named RPC actions; tree
+    # editing, wrapping, slot selection and rollback remain the original code.
+    editor = (APP / "math/MathExpressionEditor.kt").read_text(encoding="utf-8-sig")
+    first = editor.index("        val previousDraft = model.saveDraft()")
+    last = editor.index("        refresh()", first)
+    actions = editor[first:last]
+    actions = exact(actions, "        when (action) {", "        when (action) {")
+    actions = re.sub(r"is MathKeyboardAction\.([A-Za-z]+)", r'"\1"', actions)
+    actions = re.sub(r"MathKeyboardAction\.([A-Za-z]+)", r'"\1"', actions)
+    actions = actions.replace("action.name", "name").replace("action.label", "label")
+    actions = actions.replace("        if (!accepted) model.restoreDraft(previousDraft)",
+        "        if (!accepted) model.restoreDraft(previousDraft)\n        return accepted")
+    action_source = '''package lgaed.narration.windows
+import com.learngraphicsprogramming.app.math.*
+internal object WindowsMathActions {
+    fun apply(model: MathExpressionModel, action: String, name: String, label: String,
+              expectedTemplate: MathExpression.Sequence?): Boolean {
+        fun template(predicate: (MathExpression) -> Boolean): MathExpression? {
+            fun find(node: MathExpression): MathExpression? {
+                if (predicate(node)) return node
+                val children = if (node is MathExpression.Sequence) node.children else node.childSlots().map { it.second }
+                return children.firstNotNullOfOrNull(::find)
+            }
+            return expectedTemplate?.let(::find)
+        }
+'''+actions+'''    }
+}
+'''
+    sources.append(generated("WindowsMathActions.kt", action_source))
+    # Keyboard identity, labels, localized descriptions, shortcut mapping and
+    # shape-only previews are shared unchanged. Only EditText application belongs
+    # to Android; the canonical model dispatcher above performs Windows edits.
+    keyboard = (APP / "math/MathKeyboardAction.kt").read_text(encoding="utf-8-sig")
+    keyboard = exact(keyboard, "import android.widget.EditText\n", "")
+    keyboard = exact(keyboard, "import com.learngraphicsprogramming.app.R\n", "")
+    keyboard = exact(keyboard, "    fun localizedDescription(context: android.content.Context): String = description?.resolve(context) ?: contentDescription\n", "")
+    keyboard = re.sub(r"    abstract fun apply\([\s\S]*?\n    \)\n", "", keyboard, count=1)
+    keyboard = remove_platform_method(keyboard, "override fun apply(")
+    keyboard = remove_platform_method(keyboard, "private fun replaceSelection(")
+    keyboard = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', keyboard)
+    sources.append(generated("MathKeyboardAction.kt", keyboard))
+    sources.append(APP / "math/MathKeyboardActionPreviews.kt")
+    for name in ("CalculatorExpressionCompiler", "MathToolService", "MathCalculator", "CalculatorKeyOrder"):
+        code = (APP / "calculator" / f"{name}.kt").read_text(encoding="utf-8-sig")
+        if "import com.learngraphicsprogramming.app.R\n" in code:
+            code = exact(code, "import com.learngraphicsprogramming.app.R\n", "")
+        code = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', code)
+        if name == "MathCalculator":
+            code = exact(code, "        fun resolveMessage(context: android.content.Context): String = uiMessage?.resolve(context) ?: message\n", "")
+        if name == "MathToolService":
+            # Symja's per-engine diagnostics belong to stderr. stdout is the
+            # concurrent JSONL protocol, and redirecting System.out globally
+            # would corrupt unrelated narration/editor responses.
+            code = exact(code, "        val engine = evaluator.evalEngine\n", "        val engine = evaluator.evalEngine\n        engine.setOutPrintStream(System.err)\n        engine.setErrorPrintStream(System.err)\n")
         sources.append(generated(f"{name}.kt", code))
     code = (APP / "math/MathUiMessage.kt").read_text(encoding="utf-8-sig")
     for old in ("import android.content.Context\n", "import androidx.annotation.StringRes\n",
@@ -236,6 +458,14 @@ def host_sources() -> list[Path]:
         "else emptyList()")
     sources.append(generated("NarrationSourceProjection.kt", projection))
 
+    # Android's native verdict mark is presentation, not a spoken symbol. Reuse
+    # its exact prefix rule; lesson extraction itself belongs to the native host.
+    feedback = (APP / "narration/IncorrectFeedbackNarration.kt").read_text(encoding="utf-8-sig")
+    # prepare() alone depends on Android lesson extraction. The two pure prefix
+    # methods precede it in this canonical object; retain their source verbatim.
+    feedback = feedback[:feedback.index("    fun prepare(")] + "}\n"
+    sources.append(generated("IncorrectFeedbackNarration.kt", feedback))
+
     prefix = "package com.learngraphicsprogramming.app.narration\n"
     cache = (APP / "narration/KokoroNarrationCache.kt").read_text(encoding="utf-8-sig")
     cache = cache[cache.index("internal object KokoroNarrationCache {"):cache.index("    private fun root(context:")]
@@ -297,6 +527,10 @@ def build() -> None:
     ort = download_ort()
     runtime = [cached_jar("org.jetbrains.kotlin", "kotlin-stdlib", "2.2.10"),
                cached_jar("org.json", "json", "20240303"), cached_jar("com.google.code.gson", "gson", "2.11.0"), ort]
+    # Preserve existing speech dependency precedence. The calculator reuses the
+    # already-installed, original Symja3.2 runtime graph without replacing the
+    # tested speech jars or fetching unrelated cached libraries.
+    runtime += [path for path in cached_dependency_closure("org.matheclipse", "matheclipse-core", "3.2.0") if path not in runtime]
     compiler = [cached_jar("org.jetbrains.kotlin", "kotlin-compiler-embeddable", "2.2.10"),
                 runtime[0], cached_jar("org.jetbrains.kotlin", "kotlin-script-runtime", "2.2.10"),
                 cached_jar("org.jetbrains.kotlin", "kotlin-reflect", "1.6.10"),

@@ -30,13 +30,13 @@ constexpr wchar_t bar_class[]=L"LearnGameAndEngineDev.ReaderBar";
 constexpr UINT tick_timer=901;
 constexpr UINT layout_message=WM_APP+0x172;
 constexpr int button_base=6500;
-constexpr int bar_width=452,bar_height=76;
+constexpr int bar_width=344,bar_height=56;
 std::string guid(){GUID id{};CoCreateGuid(&id);wchar_t value[40]{};StringFromGUID2(id,value,40);return utf8(value);}
 bool setting_bool(const state::StateData& data,const char* key,bool fallback){const auto value=state::find(data,"lesson_narration_settings",key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
 }
 struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
-    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::string key,error;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
+    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::string key,error,legacy_key;std::size_t index=0,omitted_prefix=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
     HWND view=nullptr,window=nullptr;WindowsEnvironment environment;std::shared_ptr<windows::NarrationWorker> backend;
     std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;
     std::vector<LessonReadingRegion> regions;std::vector<Part> parts;std::map<std::string,std::unique_ptr<ReadingShade>> shades;
@@ -49,9 +49,12 @@ struct LessonReader::Impl {
     std::map<std::string,std::vector<std::pair<double,double>>> listened;
     double last_played_offset=0;
     POINT drag_start{},bar_start{},floating_position{};RECT floating_bounds{};
+    std::optional<bool> painted_playing;
+    double painted_rate=-1;
+    std::string status_text;
     ULONGLONG drag_at=0;bool dragging=false,positioned=false;
     Impl(HWND target,const WindowsEnvironment& env,std::shared_ptr<windows::NarrationWorker> worker,std::function<void()> action):view(target),environment(env),backend(std::move(worker)),settings(std::move(action)){}
-    ~Impl(){stop();if(window&&IsWindow(window))DestroyWindow(window);shades.clear();if(font)DeleteObject(font);}
+    ~Impl(){stop();if(status&&IsWindow(status))DestroyWindow(status);if(window&&IsWindow(window))DestroyWindow(window);shades.clear();if(font)DeleteObject(font);}
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(view)),96);}
     state::StateData data()const{return read_lesson_state(view);}
     std::string tr(const char* es,const char* en,const char* fr)const{return ui_locale=="fr"?fr:ui_locale=="en"?en:es;}
@@ -92,20 +95,20 @@ struct LessonReader::Impl {
         if(!show)pause();
         mutate([show](state::StateData& preferences){preferences.preferences["lesson_narration_settings"]["controls_visible"]=show;});
         visible=show;
+        ShowWindow(status,show&&!status_text.empty()?SW_SHOWNOACTIVATE:SW_HIDE);
         if(!show){dragging=false;if(GetCapture()==window)ReleaseCapture();}
         if(window){ShowWindow(window,show?SW_SHOWNOACTIVATE:SW_HIDE);attach_lesson_reader_bar(view,window,show?bar_height:0);}
     }
     void initialize(){WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=proc;cls.hInstance=GetModuleHandleW(nullptr);cls.lpszClassName=bar_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
-        window=CreateWindowExW(0,bar_class,L"Controles de lectura",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN,0,0,0,0,view,nullptr,cls.hInstance,this);
+        window=CreateWindowExW(0,bar_class,L"Controles de lectura",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,0,0,0,0,view,nullptr,cls.hInstance,this);
         if(!window)throw std::runtime_error("No se pudo abrir la barra de lectura.");
-        font=CreateFontW(-MulDiv(14,static_cast<int>(GetDpiForWindow(view)),72),0,0,0,FW_SEMIBOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+        font=CreateFontW(-px(16),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         static constexpr const wchar_t* labels[]{L"Retroceder 3 segundos",L"Retroceder 5 segundos",L"Adelantar 5 segundos",L"Adelantar 3 segundos",L"Reproducir o pausar",L"Velocidad de lectura",L"Reiniciar lectura"};
         for(std::size_t i=0;i<buttons.size();++i){buttons[i]=CreateWindowExW(0,L"BUTTON",labels[i],WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW,0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(button_base+i)),cls.hInstance,nullptr);SendMessageW(buttons[i],WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);}
-        status=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|WS_VISIBLE|SS_RIGHT,0,0,0,0,window,nullptr,cls.hInstance,nullptr);SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);reader_theme::apply(status,reader_theme::Surface::card);
+        status=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|SS_CENTER,0,0,0,0,view,nullptr,cls.hInstance,nullptr);SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);reader_theme::apply(status,reader_theme::Surface::card);
         SetTimer(window,tick_timer,30,nullptr);configure();changed();}
-    void layout(){RECT area{};GetClientRect(window,&area);const int gap=px(4),size=std::max(px(22),(static_cast<int>(area.right)-px(16)-gap*6)/7),width=size*7+gap*6,left=std::max(0,(static_cast<int>(area.right)-width)/2);
-        MoveWindow(status,px(16),px(3),std::max(1,static_cast<int>(area.right)-px(32)),px(22),TRUE);
-        for(std::size_t i=0;i<buttons.size();++i)MoveWindow(buttons[i],left+static_cast<int>(i)*(size+gap),px(27),size,std::max(1,static_cast<int>(area.bottom)-px(33)),TRUE);
+    void layout(){RECT area{};GetClientRect(window,&area);const int size=std::max(px(22),(static_cast<int>(area.right)-px(8))/7),width=size*7,left=std::max(0,(static_cast<int>(area.right)-width)/2);
+        for(std::size_t i=0;i<buttons.size();++i)MoveWindow(buttons[i],left+static_cast<int>(i)*size,px(4),size,std::max(1,static_cast<int>(area.bottom)-px(8)),TRUE);
         const auto shape=CreateRoundRectRgn(0,0,area.right+1,area.bottom+1,area.bottom,area.bottom);
         if(shape&&!SetWindowRgn(window,shape,TRUE))DeleteObject(shape);}
     void place(const RECT& available){floating_bounds=available;const auto width=std::min<LONG>(px(bar_width),std::max<LONG>(1,available.right-available.left));
@@ -114,15 +117,23 @@ struct LessonReader::Impl {
         point.x=std::clamp<LONG>(point.x,available.left,std::max(available.left,available.right-width));
         point.y=std::clamp<LONG>(point.y,available.top,std::max(available.top,available.bottom-height));
         if(positioned)floating_position=point;
-        SetWindowPos(window,HWND_TOP,point.x,point.y,width,height,SWP_NOACTIVATE|SWP_NOCOPYBITS);}
+        RECT before{};GetWindowRect(window,&before);MapWindowPoints(nullptr,view,reinterpret_cast<POINT*>(&before),2);
+        if(before.left!=point.x||before.top!=point.y||before.right-before.left!=width||before.bottom-before.top!=height)
+            SetWindowPos(window,HWND_TOP,point.x,point.y,width,height,SWP_NOACTIVATE|SWP_NOCOPYBITS);
+        else SetWindowPos(window,HWND_TOP,0,0,0,0,SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOSIZE);
+        MoveWindow(status,point.x,std::max<LONG>(available.top,point.y-px(32)),width,px(28),FALSE);
+        ShowWindow(status,visible&&enabled&&!status_text.empty()?SW_SHOWNOACTIVATE:SW_HIDE);}
     void paint(){PAINTSTRUCT update{};const auto dc=BeginPaint(window,&update);RECT area{};GetClientRect(window,&area);const auto palette=reader_theme::palette(window);
-        const auto fill=CreateSolidBrush(palette.card);const auto border=CreatePen(PS_SOLID,px(1),palette.outline);
+        const auto fill=CreateSolidBrush(palette.card);const auto border=GetStockObject(NULL_PEN);
         const auto old_fill=SelectObject(dc,fill),old_pen=SelectObject(dc,border);
         RoundRect(dc,area.left,area.top,area.right,area.bottom,area.bottom,area.bottom);
-        SelectObject(dc,old_fill);SelectObject(dc,old_pen);DeleteObject(fill);DeleteObject(border);EndPaint(window,&update);}
-    void update_buttons(){if(!window)return;for(const auto button:buttons)InvalidateRect(button,nullptr,FALSE);
+        SelectObject(dc,old_fill);SelectObject(dc,old_pen);DeleteObject(fill);EndPaint(window,&update);}
+    void update_buttons(){if(!window)return;
+        if(!painted_playing||*painted_playing!=wanted){InvalidateRect(buttons[4],nullptr,FALSE);painted_playing=wanted;}
+        if(painted_rate!=rate){InvalidateRect(buttons[5],nullptr,FALSE);painted_rate=rate;}
         const auto label=!error.empty()?error:planning?tr("Preparando lectura…","Preparing narration…","Préparation de la lecture…"):finished?tr("Lectura finalizada","Reading complete","Lecture terminée"):waiting_gate?tr("Responde el ejercicio para continuar","Answer the exercise to continue","Répondez à l’exercice pour continuer"):wanted&&!player.ready()?tr("Preparando audio…","Preparing audio…","Préparation de l’audio…"):std::string{};
-        SetWindowTextW(status,wide(label).c_str());}
+        if(label!=status_text){status_text=label;SetWindowTextW(status,wide(label).c_str());
+            ShowWindow(status,enabled&&visible&&!label.empty()?SW_SHOWNOACTIVATE:SW_HIDE);}}
     void push(Result result){const std::lock_guard lock(result_mutex);results.push_back(std::move(result));}
     static std::string part_id(const Part& part){return part.region.key+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
@@ -141,12 +152,22 @@ struct LessonReader::Impl {
         if(engine!="KOKORO"&&engine!="AUTO"&&engine!="WINDOWS"&&engine!="ANDROID"){error="Motor de narración no reconocido.";update_buttons();return;}
         if(regions.empty())return;planning=true;prioritize(0);const auto current_epoch=epoch;const auto snapshot=regions;const auto lang=language,selected_voice=voice;const auto current_page=resume_page_id;
         const auto selected_engine=engine;
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine](std::stop_token stop){
+        const auto history=narration::read_history(data());
+        const auto legacy_title=page.index>0&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.page==current_page;})?page.lesson_title:std::string{};
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title](std::stop_token stop){
             try{std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
                 for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
                     const auto occurrence=occurrences[sentence.prepared]++;sentences.push_back(sentence);planned.push_back({region,std::move(sentence),{},occurrence});} }
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
-                Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;push(std::move(plan));
+                Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;
+                // Older Windows builds incorrectly repeated the lesson title on
+                // every page. Only an exact old script-key match permits the
+                // removal of that prefix from an existing bounded bookmark.
+                if(!legacy_title.empty()){
+                    auto legacy=backend->plan(legacy_title,lang,stop);plan.omitted_prefix=legacy.size();legacy.insert(legacy.end(),sentences.begin(),sentences.end());
+                    plan.legacy_key=backend->identity(current_page,lang,selected_voice,legacy,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
+                }
+                push(std::move(plan));
                 std::vector<bool> ready(planned.size(),false);const auto cores=std::max(1u,std::thread::hardware_concurrency());
                 while(!stop.stop_requested()){const auto requested=std::min(priority.load(),planned.size()-1);auto index=requested;
                     if(ready[index]){const auto found=std::ranges::find(ready,false);if(found==ready.end())break;
@@ -158,10 +179,18 @@ struct LessonReader::Impl {
                     Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
             }catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });update_buttons();}
-    void receive(){std::vector<Result> pending;{const std::lock_guard lock(result_mutex);pending.swap(results);}for(auto& result:pending){if(result.epoch!=epoch)continue;
+    void receive(){std::vector<Result> pending;{const std::lock_guard lock(result_mutex);pending.swap(results);}if(pending.empty())return;for(auto& result:pending){if(result.epoch!=epoch)continue;
         if(!result.error.empty()){error=result.error;planning=false;wanted=false;(void)player.release();continue;}
         if(result.planned){parts=std::move(result.parts);key=result.key;has_plan=true;planning=false;position={};
             const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size()))position=*saved;
+            else if(!result.legacy_key.empty())if(const auto legacy_saved=narration::restore(history,result.legacy_key,parts.size()+result.omitted_prefix)){
+                position=*legacy_saved;const auto removed=static_cast<std::int64_t>(result.omitted_prefix);
+                if(position.segment<removed){position.milliseconds=0;position.finished=false;}
+                position.segment=std::max<std::int64_t>(0,position.segment-removed);position.heard_through=std::max<std::int64_t>(0,position.heard_through-removed);
+                mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);
+                    for(auto& entry:old.entries)if(entry.key==result.legacy_key){entry.key=key;entry.position=position;}
+                    if(old.active_key==result.legacy_key)old.active_key=key;narration::write_history(preferences,old);});
+            }
             if(!previous_part.empty()){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==previous_part;});if(found!=parts.end()){position.segment=found-parts.begin();position.milliseconds=static_cast<std::int64_t>(previous_offset);position.finished=false;}}
             if(!previous_key.empty()&&previous_key!=key){
                 position.heard_through=0;for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.feedback&&parts[i].region.correct){if(std::ranges::find(previously_heard,part_id(parts[i]))==previously_heard.end())break;position.heard_through=static_cast<std::int64_t>(i+1);}
@@ -250,11 +279,11 @@ struct LessonReader::Impl {
             case 5:{static constexpr double values[]{.5,1,1.5,2};auto it=std::ranges::find(values,self->rate);const auto index=it==std::end(values)?1:static_cast<std::size_t>(it-std::begin(values));self->rate=values[(index+1)%4];self->mutate([&](state::StateData& preferences){preferences.preferences["lesson_narration_settings"]["rate"]=self->rate;});if(self->player.allocated())self->player.set_rate(self->rate);self->update_buttons();break;}
             case 6:self->restart();break;default:break;}return 0;}break;
         case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);const auto index=static_cast<std::size_t>(item.CtlID-button_base);if(index>=self->buttons.size())return FALSE;
-            auto bounds=item.rcItem;const auto palette=reader_theme::palette(window);FillRect(item.hDC,&bounds,reader_theme::brush(reader_theme::Surface::card));InflateRect(&bounds,-self->px(8),-self->px(6));
+            auto bounds=item.rcItem;const auto palette=reader_theme::palette(window);FillRect(item.hDC,&bounds,reader_theme::brush(reader_theme::Surface::card));InflateRect(&bounds,-self->px(11),-self->px(11));
             static constexpr Icon icons[]{Icon::rewind3,Icon::rewind5,Icon::forward5,Icon::forward3,Icon::speaker,Icon::play,Icon::reset};
-            if(index==5){const auto previous=SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));const auto caption=self->rate==.5?L"½×":self->rate==1?L"1×":self->rate==1.5?L"1½×":L"2×";DrawTextW(item.hDC,caption,-1,&bounds,DT_SINGLELINE|DT_CENTER|DT_VCENTER);SelectObject(item.hDC,previous);}
-            else draw_icon(item.hDC,bounds,index==4&&self->wanted?Icon::pause:icons[index],index==4?reader_theme::accent_ink(window,palette.card):palette.text);
-            if(item.itemState&ODS_FOCUS){auto focus=item.rcItem;InflateRect(&focus,-2,-2);DrawFocusRect(item.hDC,&focus);}return TRUE;}
+            if(index==5){const auto previous=SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));const auto caption=self->rate==.5?L"0.5X":self->rate==1?L"1X":self->rate==1.5?L"1.5X":L"2X";auto caption_bounds=item.rcItem;DrawTextW(item.hDC,caption,-1,&caption_bounds,DT_SINGLELINE|DT_CENTER|DT_VCENTER);SelectObject(item.hDC,previous);}
+            else draw_icon(item.hDC,bounds,icons[index],index==4?(self->wanted?palette.accent:RGB(255,255,255)):index==6?RGB(170,174,183):RGB(255,255,255));
+            if(item.itemState&ODS_FOCUS)reader_theme::paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,palette.muted);return TRUE;}
         case WM_LBUTTONDOWN:{self->drag_start={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&self->drag_start);RECT rect{};GetWindowRect(window,&rect);self->bar_start={rect.left,rect.top};ScreenToClient(self->view,&self->bar_start);self->drag_at=GetTickCount64();self->dragging=true;SetCapture(window);return 0;}
         case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)&&GetTickCount64()-self->drag_at>=90){POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&point);RECT bar{};GetWindowRect(window,&bar);const auto x=self->bar_start.x+point.x-self->drag_start.x,y=self->bar_start.y+point.y-self->drag_start.y;
             const auto& area=self->floating_bounds;

@@ -13,6 +13,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 
 private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(bytes)
@@ -29,7 +30,11 @@ private fun language(request: JSONObject): NarrationLanguage =
     NarrationLanguage.fromTag(request.getString("language")) ?: error("Unsupported narration language")
 private data class Segment(val source: String, val prepared: String, val spoken: List<ReadingTextRange>,
                            val displayed: List<ReadingTextRange>)
-private class Request(val id: String) { val cancelled = AtomicBoolean(false) }
+private class Request(val id: String) {
+    val cancelled = AtomicBoolean(false)
+    val calculatorReplied = AtomicBoolean(false)
+    @Volatile var calculatorTask: Future<*>? = null
+}
 
 private class Backend(private val resources: File, private val englishResources: File,
                       private val assets: File, private val originalWavs: File?, private val ffmpeg: String?,
@@ -73,18 +78,25 @@ private class Backend(private val resources: File, private val englishResources:
     private fun planned(source: String, language: NarrationLanguage, mode: String): List<Pair<IntRange,Segment>> {
         require(source.length in 1..32768 && '\u0000' !in source) { "Narration text must contain 1–32768 original UTF-16 characters" }
         require(mode in setOf("auto","text","inline","block")) { "Invalid mathematical reading mode" }
-        val projection = NarrationSourceProjection.forLanguage(source,mode,language)
+        // The Android feedback presentation omits only its leading native
+        // verdict mark. Keep that exact rule and map all speech back onto the
+        // original visible text, including the mark with the first real word.
+        val iconPrefix = IncorrectFeedbackNarration.verdictIconPrefix(source)
+        val speechSource = IncorrectFeedbackNarration.visibleSpeech(source)
+        val projection = NarrationSourceProjection.forLanguage(speechSource,mode,language)
             ?: error("The existing frontend cannot safely project this text")
         val prepared = NarrationSegments.sentences(listOf(projection.text))
-        val mappings = NarrationWordMappings.forBlock(0,source,prepared.withIndex().associate { it.index to it.value },language)
+        val mappings = NarrationWordMappings.forBlock(0,speechSource,prepared.withIndex().associate { it.index to it.value },language)
+        fun original(range: ReadingTextRange) = ReadingTextRange(
+            if (range.start == 0) 0 else range.start + iconPrefix, range.endExclusive + iconPrefix)
         var cursor = 0
         return prepared.mapIndexed { index, sentence ->
             val body = sentence.removePrefix(ManualEnglishSpeech.PREPARED.toString())
             val start = projection.text.indexOf(body,cursor)
             check(start >= cursor) { "Sentence split no longer matches original normalization" }
             cursor = start + body.length
-            val owner = NarrationSourceProjection.owner(projection.owners.subList(start,cursor))
-            val mapping = mappings[index]
+            val owner = original(NarrationSourceProjection.owner(projection.owners.subList(start,cursor)))
+            val mapping = mappings[index]?.let { value -> value.copy(displayed = value.displayed.map(::original)) }
             val first = mapping?.displayed?.minOfOrNull { it.start } ?: owner.start
             val last = mapping?.displayed?.maxOfOrNull { it.endExclusive } ?: owner.endExclusive
             require(first in 0 until source.length && last in first + 1..source.length) { "Sentence has no original visible owner" }
@@ -317,7 +329,18 @@ fun main(arguments: Array<String>) {
     fun respond(id: String, command: String, payload: JSONObject) = synchronized(writer) {
         writer.write(payload.put("id",id).put("command",command).toString()); writer.newLine(); writer.flush()
     }
+    fun cancelRequest(job: Request) {
+        backend.cancel(job)
+        // Only the calculator uses Java interruption, exactly as its Android
+        // activity. Kokoro keeps its existing cooperative RunOptions cancellation.
+        job.calculatorTask?.cancel(true)
+    }
     val executor = Executors.newSingleThreadExecutor { work -> Thread(work,"windows-kokoro-worker") }
+    // Structured editing must not queue behind a neural run. These lanes own
+    // only the canonical math model/evaluator; inference stays on its original
+    // executor with the existing cancellation and CPU policy.
+    val editorExecutor = Executors.newSingleThreadExecutor { work -> Thread(work,"windows-math-editor") }
+    val calculatorExecutor = Executors.newSingleThreadExecutor { work -> Thread(work,"windows-math-calculator") }
     System.`in`.bufferedReader(Charsets.UTF_8).use { input ->
         while (true) {
             val line = input.readLine() ?: break
@@ -331,16 +354,20 @@ fun main(arguments: Array<String>) {
                 replyId = id; replyCommand = command
                 if (command == "cancel") {
                     val target = request.optString("targetId",id)
-                    requests[target]?.let(backend::cancel)
+                    requests[target]?.let(::cancelRequest)
                     respond(id,command,JSONObject().put("cancelled",true)); continue
                 }
                 if (command == "shutdown") {
-                    requests.values.forEach(backend::cancel)
+                    requests.values.forEach(::cancelRequest)
                     respond(id,command,JSONObject().put("shutdown",true)); break
                 }
                 val job = Request(id)
                 require(requests.putIfAbsent(id,job) == null) { "Duplicate active narration request id" }
-                executor.submit {
+                val lane=when(command){"math_editor","math_keyboard"->editorExecutor;"math_calculate"->calculatorExecutor;else->executor}
+                fun reply(payload: JSONObject) {
+                    if(command!="math_calculate"||job.calculatorReplied.compareAndSet(false,true))respond(id,command,payload)
+                }
+                val work=Runnable {
                     try {
                         if (job.cancelled.get()) throw InterruptedException("Narration request cancelled")
                         val result = when (command) {
@@ -349,19 +376,35 @@ fun main(arguments: Array<String>) {
                             "prepare" -> backend.prepare(request,job)
                             "describe_math" -> WindowsMathBridge.describe(request)
                             "validate_math" -> WindowsMathBridge.validate(request,line)
+                            "math_editor" -> WindowsMathBridge.editor(request)
+                            "math_keyboard" -> WindowsMathBridge.keyboard(request)
+                            "math_calculate" -> WindowsMathBridge.calculate(request)
                             else -> error("Unknown narration command: $command")
                         }
-                        respond(id,command,result)
+                        if(command=="math_calculate"&&job.cancelled.get())throw InterruptedException("Mathematical calculation cancelled")
+                        reply(result)
                     } catch (error: Throwable) {
-                        respond(id,command,JSONObject().put("error",error.message ?: error.javaClass.simpleName)
+                        reply(JSONObject().put("error",error.message ?: error.javaClass.simpleName)
                             .put("cancelled",job.cancelled.get() || error is InterruptedException))
                     } finally { requests.remove(id,job) }
                 }
+                if(command=="math_calculate") {
+                    // Input dispatch assigns this Future before reading a later
+                    // cancel line, including when the task is still queued.
+                    val task=WindowsCalculatorTask(work,
+                        cancelled={reply(JSONObject().put("error","Mathematical calculation cancelled").put("cancelled",true))},
+                        completed={requests.remove(id,job)})
+                    job.calculatorTask=task
+                    calculatorExecutor.execute(task)
+                } else lane.submit(work)
             } catch (error: Throwable) { respond(replyId,replyCommand,JSONObject().put("error",error.message ?: "Invalid narration request")) }
         }
     }
-    requests.values.forEach(backend::cancel)
+    requests.values.forEach(::cancelRequest)
     executor.submit { backend.close() }
     executor.shutdown()
+    editorExecutor.shutdown();calculatorExecutor.shutdown()
+    editorExecutor.awaitTermination(30,java.util.concurrent.TimeUnit.SECONDS)
+    calculatorExecutor.awaitTermination(30,java.util.concurrent.TimeUnit.SECONDS)
     executor.awaitTermination(30,java.util.concurrent.TimeUnit.SECONDS)
 }

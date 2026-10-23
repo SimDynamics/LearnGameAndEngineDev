@@ -210,6 +210,40 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
         self.assertEqual([], list((CACHE / "cancelled").glob("*.part")))
         self.assertIn("segments", self.worker.ask("plan", text="La lectura continúa.", language="es"))
 
+    def test_07_verdict_icons_reuse_spoken_audio_and_follow_first_word(self):
+        cases = [
+            ("es", "ef_dora", "Correcto", "Incorrecto", "La expresión 6 × 100 = 600 conserva su valor."),
+            ("fr", "ff_siwis", "Correct", "Incorrect", "La ligne #include conserve std::cout."),
+            ("en-US", "af_heart", "Correct", "Incorrect", "The #include directive preserves std::cout."),
+            ("en-GB", "bf_emma", "Correct", "Incorrect", "The #include directive preserves std::cout."),
+        ]
+        for language, voice, correct, incorrect, explanation in cases:
+            for icon, verdict in (("✓", correct), ("✗", incorrect)):
+                with self.subTest(language=language, icon=icon):
+                    plain = f"{verdict}.\n\n{explanation}"
+                    visible = f"{icon} {plain}"
+                    baseline = self.worker.ask("plan", text=plain, language=language, voice=voice)["segments"]
+                    decorated = self.worker.ask("plan", text=visible, language=language, voice=voice)["segments"]
+                    self.assertEqual(len(baseline), len(decorated))
+                    for before, after in zip(baseline, decorated):
+                        # Only presentation differs: existing recordings remain
+                        # reusable and the actual frontend phones are unchanged.
+                        for field in ("preparedText", "spokenText", "spokenRanges", "key"):
+                            self.assertEqual(before[field], after[field], field)
+                        self.assertNotIn(icon, after["spokenText"])
+                        self.assertEqual(visible[after["sourceStart"]:after["sourceEnd"]], after["text"])
+                        self.assertTrue(after["displayedRanges"], "The verdict must retain word alignment")
+                    first = decorated[0]
+                    self.assertEqual(0, first["sourceStart"])
+                    self.assertTrue(first["text"].startswith(f"{icon} {verdict}"))
+                    self.assertEqual(0, first["displayedRanges"][0]["start"])
+                    self.assertGreaterEqual(first["displayedRanges"][0]["end"], len(verdict) + 2)
+                    # The rule is precisely Android's leading-icon rule; marks
+                    # embedded in source are not silently discarded.
+                    embedded = self.worker.ask("plan", text=f"{verdict} {icon} {explanation}",
+                                               language=language, voice=voice)["segments"]
+                    self.assertTrue(any(icon in part["preparedText"] for part in embedded))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

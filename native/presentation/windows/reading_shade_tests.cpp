@@ -5,6 +5,7 @@
 
 #include <richedit.h>
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -39,9 +40,10 @@ std::vector<CHARFORMAT2W> ink(HWND edit) {
     for (std::size_t index = 0; index < length; ++index) result.push_back(character(edit,static_cast<LONG>(index)));
     return result;
 }
-COLORREF pending() {
-    return reader_theme::palette().high_contrast ? GetSysColor(COLOR_GRAYTEXT) : RGB(135,139,148);
+COLORREF pending(HWND target) {
+    return reader_theme::unread_color(reader_theme::background(target));
 }
+double contrast(COLORREF first,COLORREF second){const auto luminance=[](COLORREF value){const auto linear=[](BYTE channel){const auto fraction=channel/255.;return fraction<=.04045?fraction/12.92:std::pow((fraction+.055)/1.055,2.4);};return .2126*linear(GetRValue(value))+.7152*linear(GetGValue(value))+.0722*linear(GetBValue(value));};const auto a=luminance(first),b=luminance(second);return(std::max(a,b)+.05)/(std::min(a,b)+.05);}
 void styles_equal(const CHARFORMAT2W& before,const CHARFORMAT2W& after) {
     constexpr DWORD styles = CFE_BOLD | CFE_ITALIC | CFE_UNDERLINE | CFE_STRIKEOUT | CFE_PROTECTED;
     require((before.dwEffects & styles) == (after.dwEffects & styles),"Reading ranges changed emphasis/underline effects");
@@ -61,7 +63,7 @@ void prefix(HWND edit,const std::vector<CHARFORMAT2W>& before,std::size_t bounda
             require(after[index].crTextColor == before[index].crTextColor,"A read token did not recover its original syntax color");
             require((after[index].dwEffects & CFE_AUTOCOLOR) == (before[index].dwEffects & CFE_AUTOCOLOR),
                     "A read token lost its automatic color identity");
-        } else require(after[index].crTextColor == pending() && !(after[index].dwEffects & CFE_AUTOCOLOR),
+        } else require(after[index].crTextColor == pending(edit) && !(after[index].dwEffects & CFE_AUTOCOLOR),
                        "An unread word, operator or punctuation mark escaped the pending gray");
     }
 }
@@ -76,6 +78,18 @@ int main() {
         try { action(); ++passed; std::cout << "PASS " << name << '\n'; }
         catch (const std::exception& error) { ++failed; std::cerr << "FAIL " << name << ": " << error.what() << '\n'; }
     };
+    test("Android neutral pending gray follows real surfaces and preserves green feedback",[]{
+        require(reader_theme::unread_color(RGB(0,0,0))==RGB(122,122,122)&&reader_theme::unread_color(RGB(255,255,255))==RGB(80,80,80),"Pending gray no longer uses Android's original dark/light preferences");
+        for(int channel=0;channel<=255;++channel){const auto background=RGB(channel,channel,channel);const auto gray=reader_theme::unread_color(background);require(GetRValue(gray)==GetGValue(gray)&&GetGValue(gray)==GetBValue(gray)&&contrast(gray,background)>=4.5,"An intermediate surface lacks opaque neutral pending ink with4.5contrast");}
+        for(const auto background:{RGB(16,17,20),RGB(28,31,36),RGB(38,35,48),RGB(49,56,66),RGB(250,250,250),RGB(238,238,238),GetSysColor(COLOR_WINDOW)})
+            require(contrast(reader_theme::unread_color(background),background)>=4.5,"An actual lesson or system-contrast surface lost its readable pending ink");
+        for(const auto surface:{reader_theme::Surface::canvas,reader_theme::Surface::card,reader_theme::Surface::field}){
+            Field field("Correcto. Conserva la explicación.");reader_theme::apply(field.edit,surface);reader_theme::set_text_color(field.edit,RGB(180,220,190));set_rich_text(field.edit,"Correcto. Conserva la explicación.");
+            const auto before=ink(field.edit);ReadingShade shade(field.edit,"Correcto. Conserva la explicación.");shade.read_through(0);prefix(field.edit,before,0);shade.read_through(10);prefix(field.edit,before,10);
+            require(contrast(pending(field.edit),reader_theme::background(field.edit))>=4.5,"A real themed control chose pending ink for another surface");shade.restore();prefix(field.edit,before,before.size());
+            require(reader_theme::palette().high_contrast||character(field.edit,0).crTextColor==RGB(180,220,190),"Completing feedback did not restore its original Android green");
+        }
+    });
     test("Forward and backward range application coexists inside one paragraph",[] {
         const std::string source = "Uno dos tres, cuatro. ¿Cinco?"; Field field(source); const auto before = ink(field.edit);
         ReadingShade shade(field.edit,source); require(shade.matches(field.edit,source),"The original displayed source was not matched");
@@ -200,11 +214,11 @@ int main() {
         Field another(source); require(edit_text(another.edit) == "Original con std::cout.","Destroyed-target cleanup changed another control");
     });
     test("Pending ink follows the actual Windows contrast mode without changing system settings",[] {
-        HIGHCONTRASTW contrast{}; contrast.cbSize = sizeof(contrast);
-        const bool system = SystemParametersInfoW(SPI_GETHIGHCONTRAST,sizeof(contrast),&contrast,0) && (contrast.dwFlags & HCF_HIGHCONTRASTON);
+        HIGHCONTRASTW system_contrast{}; system_contrast.cbSize = sizeof(system_contrast);
+        const bool system = SystemParametersInfoW(SPI_GETHIGHCONTRAST,sizeof(system_contrast),&system_contrast,0) && (system_contrast.dwFlags & HCF_HIGHCONTRASTON);
         require(reader_theme::palette().high_contrast == system,"The palette disagrees with the actual Windows contrast mode");
         Field field("Texto pendiente."); ReadingShade shade(field.edit,"Texto pendiente."); shade.read_through(0);
-        require(character(field.edit,0).crTextColor == pending(),"Pending ink ignored the actual system mode");
+        require(character(field.edit,0).crTextColor == pending(field.edit)&&contrast(pending(field.edit),reader_theme::background(field.edit))>=4.5,"Pending ink ignored the actual system mode or contrast floor");
         std::cout << "INFO Actual high contrast: " << (system ? "enabled" : "disabled; enabled-mode visual validation not claimed") << '\n';
     });
     FreeLibrary(module);

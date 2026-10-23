@@ -1,5 +1,6 @@
 #include "presentation/windows/cpp_fill_view.hpp"
 #include "presentation/windows/rich_text.hpp"
+#include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "native_build_config.hpp"
 #include <commctrl.h>
@@ -28,8 +29,8 @@ int main(){
             check(first&&second,"Authored holes did not become independent fields");
             CHARFORMAT2W hole_font{};hole_font.cbSize=sizeof(hole_font);
             SendMessageW(first,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&hole_font));
-            check(hole_font.yHeight==360&&std::wstring_view(hole_font.szFaceName)==L"Consolas",
-                "Code-hole text does not share the readable 18-point code font used for its measured template");
+            check(hole_font.yHeight==270&&std::wstring_view(hole_font.szFaceName)==reader_theme::code_font_face(),
+                "Code-hole text does not share the Android 18-sp code font used for its measured template");
             replace(first,"<<");replace(second,"\"Carga lista\"s");
             check(changed>0&&curriculum::evaluate_hole_answers(block,view.answers()).correct,"Independent equivalent hole answers failed through native controls");
             SendMessageW(first,WM_KEYDOWN,VK_RETURN,1);SendMessageW(first,WM_KEYUP,VK_RETURN,1);

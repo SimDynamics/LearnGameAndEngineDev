@@ -99,6 +99,15 @@ int main() {
         const auto path = root / "app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json";
         const auto lesson = lgaed::windows::load_lesson(path);
         narration_metadata_tests(lesson);
+        {
+            const auto reviewed=parse_lesson_json(R"({"id":"reviews","title":"Reviews","pages":[{"blocks":[{"type":"multiple_choice","question":"Q","options":["A","B","C"],"correctIndex":1,"explanation":"Success","reviewFeedback":["Review A","Review B","Review C"]}]}]})");
+            const auto& choice=reviewed.pages[0].blocks[0];
+            check(!evaluate_choice(choice,0).correct&&evaluate_choice(choice,0).feedback=="Review A"
+                &&evaluate_choice(choice,2).feedback=="Review C"&&evaluate_choice(choice,1).feedback=="Success",
+                "Per-option authored feedback was lost or exposed a success explanation before a correct answer");
+            check(incorrect_feedback(choice,0)=="Review A"&&incorrect_feedback(choice).empty(),
+                "Restoring an incorrect selection lost its own review or invented one without a selection");
+        }
         check(lesson.id == "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida", "Original lesson ID changed");
         check(lesson.pages.size() == 6 && lesson.pages[4].blocks.size() == 8, "Real lesson structure differs");
         check(lesson.state_layout.version == 2 && lesson.state_layout.family.size() == 3, "Historical language families were lost");

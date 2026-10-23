@@ -8,6 +8,7 @@
 #include "native_build_config.hpp"
 #include "core/learning_flow.hpp"
 #include "core/view_preferences.hpp"
+#include "core/attempts.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -20,19 +21,23 @@
 #include <optional>
 #include <cstdio>
 #include <cstddef>
+#include <exception>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace lgaed::presentation {
 namespace {
 constexpr wchar_t class_name[]=L"LearnGameAndEngineDev.SettingsView";
 constexpr UINT close_message=WM_APP+222;
+constexpr UINT refresh_language_message=WM_APP+224;
 enum {back=5100,ui_language,content_language,enabled,engine,language,voice,rate,advance,controls,
     auto_lesson,auto_unit,auto_course,swipe_finish,code_wrap,reset,use_global,save_flow,swipe_navigation};
 enum {text_scale=5120,text_preview,text_inherit,save_appearance,wrap_overwrite,global_color,programming_color,math_color,
     programming_color_overwrite,math_color_overwrite,global_color_reset,programming_color_reset,math_color_reset,
     reset_wrap_exceptions,reset_programming,reset_math,edit_shortcuts,reset_math_wrap_exceptions};
+constexpr int premium_action=5138;
 constexpr UINT_PTR combo_size_subclass_id=0x4C475348;
 int measured_text_height(HWND control,int width){
     const auto dc=GetDC(control);if(!dc)return 0;
@@ -122,7 +127,7 @@ struct ShortcutDialog {
     }
     void initialize(HWND target){
         window=target;SetWindowTextW(window,wide(tr("Atajos de programación","Programming shortcuts","Raccourcis de programmation")).c_str());
-        font=CreateFontW(-MulDiv(12,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+        font=CreateFontW(-MulDiv(16,static_cast<int>(GetDpiForWindow(window)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(!font)throw std::runtime_error("Cannot create the shortcut dialog font");
         const auto help=tr("TAB permanece fijo. Puedes configurar 20 teclas, compartidas por todos los ejercicios de Programación. Deja una posición vacía para ocultarla.","TAB remains fixed. Configure 20 keys shared by all Programming exercises. Leave a slot empty to hide it.","TAB reste fixe. Configurez 20 touches communes à tous les exercices de Programmation. Laissez une position vide pour la masquer.");
         control(window,L"STATIC",help,help_id,SS_LEFT);
@@ -195,6 +200,8 @@ struct Settings {
     std::array<COLORREF,16> custom_colors{};
     HFONT preview_font=nullptr;
     std::vector<RECT> selector_cards;
+    std::vector<std::pair<std::size_t,std::size_t>> card_ranges;
+    std::size_t card_begin=0;
     bool laying_out=false;
     explicit Settings(SettingsAccess value):access(std::move(value)){}
     ~Settings(){if(preview_font)DeleteObject(preview_font);for(auto font:fonts)DeleteObject(font);}
@@ -207,11 +214,22 @@ struct Settings {
         if(!control)throw std::runtime_error("Cannot create a native settings control");
         const bool dropdown=wcscmp(cls,L"COMBOBOX")==0;
         reader_theme::apply(control,dropdown?reader_theme::Surface::card:reader_theme::Surface::canvas);
-        const auto font=CreateFontW(-MulDiv(size,static_cast<int>(GetDpiForWindow(window)),72),0,0,0,bold?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,
-            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+        const auto font=CreateFontW(-MulDiv(size,static_cast<int>(GetDpiForWindow(window)),96),0,0,0,bold?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,
+            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         fonts.push_back(font);SendMessageW(control,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);rows.push_back({control,y,height,dropdown});return control;
     }
-    void label(std::string text,int y,int size=16,bool bold=false,int height=34){item(L"STATIC",std::move(text),0,y,height,SS_LEFT,size,bold);}
+    HWND label(std::string text,int y,int size=16,bool bold=false,int height=34){
+        const auto control=item(L"STATIC",std::move(text),0,y,height,SS_LEFT,size,bold);
+        if(!bold)reader_theme::set_text_color(control,size==18?RGB(174,180,190):RGB(143,149,159));
+        return control;
+    }
+    void begin_card(int& y){card_begin=rows.size();y+=18;}
+    void end_card(int& y){
+        if(rows.size()>card_begin){card_ranges.emplace_back(card_begin,rows.size());
+            for(std::size_t index=card_begin;index<rows.size();++index)reader_theme::apply(rows[index].window,reader_theme::Surface::card);}
+        y+=18;
+    }
+    bool in_card(std::size_t index)const{return std::ranges::any_of(card_ranges,[index](const auto& range){return index>=range.first&&index<range.second;});}
     void combo(int id,std::initializer_list<const char*> values,int y,int selection){
         const auto control=item(L"COMBOBOX","",id,y,64,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL,18);
         for(auto text:values)SendMessageW(control,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(wide(text).c_str()));
@@ -256,8 +274,8 @@ struct Settings {
         const auto slider=GetDlgItem(window,text_scale),preview=GetDlgItem(window,text_preview);
         if(slider){EnableWindow(slider,access.scope!=SettingsScope::lesson||!inherits_scale);
             const auto effective=access.scope==SettingsScope::lesson&&inherits_scale?appearance::global_text_scale(access.read()):scale_draft;
-            const auto font=CreateFontW(-MulDiv(18*effective,static_cast<int>(GetDpiForWindow(window)),7200),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
-                DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+            const auto font=CreateFontW(-MulDiv(18*effective,static_cast<int>(GetDpiForWindow(window)),9600),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+                DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             if(font){SendMessageW(preview,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);if(preview_font)DeleteObject(preview_font);preview_font=font;}
             const auto sample=std::to_string(effective)+"% — "+tr("Así se verá el texto de las lecciones.","This is how lesson text will look.","Voici l’apparence du texte des leçons.");
             SetWindowTextW(preview,wide(sample).c_str());
@@ -271,10 +289,10 @@ struct Settings {
         if(!binding)layout();
     }
     void text_controls(int& y){
-        label(tr("Tamaño del texto","Text size","Taille du texte"),y,23,true);y+=46;
+        label(tr("Tamaño del contenido","Content size","Taille du contenu"),y,access.scope==SettingsScope::lesson?21:23,true);y+=46;
         if(access.scope==SettingsScope::lesson){
             label(tr("Se aplica a todas las lecciones de este curso.","Applies to every lesson in this course.","S’applique à toutes les leçons de ce cours."),y,16,false,44);y+=52;
-            checkbox(text_inherit,tr("Usar el tamaño global","Use the global text size","Utiliser la taille globale"),y,inherits_scale);y+=50;
+            checkbox(text_inherit,tr("Usar tamaño global","Use global size","Utiliser la taille globale"),y,inherits_scale);y+=50;
         }
         const auto slider=item(TRACKBAR_CLASSW,"",text_scale,y,48,WS_TABSTOP|TBS_HORZ|TBS_NOTICKS);y+=56;
         SendMessageW(slider,TBM_SETRANGE,TRUE,MAKELPARAM(75,150));SendMessageW(slider,TBM_SETLINESIZE,0,1);SendMessageW(slider,TBM_SETPAGESIZE,0,5);SendMessageW(slider,TBM_SETPOS,TRUE,scale_draft);
@@ -329,7 +347,8 @@ struct Settings {
         std::string voice_error;
         const auto index=static_cast<int>(SendDlgItemMessageW(window,language,CB_GETCURSEL,0,0));
         static constexpr const char* tags[]{"es","en-US","en-GB","fr"};
-        const bool system=SendDlgItemMessageW(window,engine,CB_GETCURSEL,0,0)==1;
+        const bool system=GetDlgItem(window,engine)?SendDlgItemMessageW(window,engine,CB_GETCURSEL,0,0)==1:
+            state::string_value(data,"lesson_narration_settings","engine","KOKORO")=="WINDOWS";
         if(system){voices.clear();voice_names.clear();for(const auto& value:windows::system_voices())if(windows::system_voice_matches(value.language,tags[std::clamp(index,0,3)])){voices.push_back(value.id);voice_names.push_back(value.name);}}
         else {
         voices.clear();
@@ -357,11 +376,13 @@ struct Settings {
         const auto route=access.route_id.empty()?(access.programming?"programming":access.scope==SettingsScope::course||access.scope==SettingsScope::unit||access.scope==SettingsScope::lesson?"math_physics":""):access.route_id;
         reader_theme::set_accent(window,reader_theme::appearance_accent(data,route));
         const auto code=state::string_value(data,"native_windows","content_language","es");
-        auto button=item(L"BUTTON",tr("Volver","Back","Retour"),back,20,44,WS_TABSTOP|BS_OWNERDRAW);reader_theme::primary_button(button);
+        auto button=item(L"BUTTON",tr("Volver","Back","Retour"),back,20,56,WS_TABSTOP|BS_OWNERDRAW);reader_theme::primary_button(button);
         const bool scoped=!access.eyebrow.empty();
         if(scoped)eyebrow_label=item(L"STATIC",access.eyebrow,0,94,30,SS_LEFT,16,true);
-        label(access.title.empty()?tr("Opciones","Options","Options"):access.title,scoped?132:94,32,true,68);
-        label(access.subtitle.empty()?tr("Configuración general de LearnGameAndEngineDev","General LearnGameAndEngineDev settings","Configuration générale de LearnGameAndEngineDev"):access.subtitle,scoped?210:150,18,false,44);
+        const bool lesson_scope=access.scope==SettingsScope::lesson;
+        label(lesson_scope?tr("Ajustes de la lección","Lesson settings","Réglages de la leçon"):access.title.empty()?tr("Opciones","Options","Options"):access.title,scoped?132:96,lesson_scope?30:(access.scope==SettingsScope::course||access.scope==SettingsScope::unit)?28:32,true,68);
+        label(lesson_scope?(access.programming?tr("Configura la experiencia de esta lección y las herramientas de programación.","Configure this lesson’s experience and programming tools.","Configurez cette leçon et les outils de programmation."):tr("Configura el tamaño del contenido y el progreso de esta lección.","Configure this lesson’s content size and progress.","Configurez la taille du contenu et la progression de cette leçon.")):
+            access.subtitle.empty()?tr("Configuración general de LearnGameAndEngineDev","General LearnGameAndEngineDev settings","Configuration générale de LearnGameAndEngineDev"):access.subtitle,scoped?210:150,lesson_scope?16:18,false,44);
         int y=scoped?298:222;
         if(access.scope==SettingsScope::unit){progress(y);extent=y+20;binding=false;layout();return;}
         flow_draft=original_flow=curriculum::learning_flow(data,access.scope==SettingsScope::course?access.course_id:std::string{});
@@ -373,18 +394,45 @@ struct Settings {
             reader_theme::primary_button(save);EnableWindow(save,FALSE);y+=100;progress(y);
             extent=y+20;binding=false;layout();return;
         }
+        if(lesson_scope){
+            label(tr("Narración","Narration","Narration"),y,21,true);y+=40;begin_card(y);
+            label(tr("Idioma de lectura","Reading language","Langue de lecture"),y,17);y+=30;
+            const auto lang=state::string_value(data,"lesson_narration_settings","language",code=="en"?"en-US":code);
+            combo(language,{"Español","English · US","English · GB","Français"},y,lang=="en-US"?1:lang=="en-GB"?2:lang=="fr"?3:0);y+=86;
+            label(tr("Voz instalada","Installed voice","Voix installée"),y,17);y+=30;combo(voice,{},y,0);fill_voices(data);y+=86;end_card(y);y+=32;
+            label(tr("Navegación de páginas","Page navigation","Navigation des pages"),y,21,true);y+=40;begin_card(y);
+            checkbox(swipe_navigation,tr("Deslizar para cambiar de página","Swipe to change page","Balayer pour changer de page"),y,boolean(data,"app_settings","swipeNavigationEnabled",true));y+=58;
+            label(tr("Permite pasar entre páginas de la lección deslizando horizontalmente.","Move between lesson pages by dragging horizontally.","Passez d’une page de la leçon à l’autre en balayant horizontalement."),y,14,false,44);y+=52;end_card(y);y+=40;
+            if(!access.course_id.empty()){text_controls(y);y+=32;}
+            if(access.programming){
+                label(tr("Ajuste de línea","Line wrapping","Retour à la ligne"),y,21,true);y+=40;begin_card(y);
+                checkbox(wrap_overwrite,tr("Permitir que el ajuste global sobrescriba este curso","Allow global settings to overwrite this course","Autoriser le réglage global à remplacer celui de ce cours"),y,wrap_allowed);y+=62;
+                label(tr("Activado por defecto. Permite que los cambios realizados en el ajuste de línea predeterminado sobrescriban este curso. Desactivarlo no bloquea el botón de ajuste de línea de las consolas.","Enabled by default. Allows changes to the default line wrapping to overwrite this course. Disabling it does not block the consoles’ line-wrap button.","Activé par défaut. Autorise le retour à la ligne global à remplacer celui de ce cours. Le désactiver ne bloque pas le bouton de retour à la ligne des consoles."),y,14,false,78);y+=88;end_card(y);y+=16;
+            }
+            if(!access.course_id.empty())appearance_save_button(y);
+            progress(y);extent=y+24;refresh_appearance();binding=false;layout();return;
+        }
         if(access.scope==SettingsScope::global){
         label(tr("Idioma de la aplicación","Application language","Langue de l’application"),y,23,true);y+=44;
-        label(tr("Los menús, el contenido y la narración se configuran de forma independiente.","Menus, lesson content and narration can be configured independently.","Les menus, le contenu et la narration se configurent indépendamment."),y,16,false,48);y+=58;
+        label(tr("Selecciona el idioma de los menús y controles. El contenido y la narración se configuran de forma independiente.","Choose the language of menus and controls. Content and narration are configured independently.","Choisissez la langue des menus et des commandes. Le contenu et la narration sont configurés indépendamment."),y,16,false,48);y+=58;
         const auto selected_ui=state::string_value(data,"native_windows","ui_language","auto");
-        const auto automatic=tr("Automático (Windows)","Automatic (Windows)","Automatique (Windows)");
-        combo(ui_language,{"Español","English","Français",automatic.c_str()},y,selected_ui=="en"?1:selected_ui=="fr"?2:selected_ui=="es"?0:3);y+=100;
-        label(tr("Idioma del contenido","Lesson content language","Langue du contenu"),y,23,true);y+=44;
-        combo(content_language,{"Español","English","Français"},y,code=="en"?1:code=="fr"?2:0);y+=100;
-        text_controls(y);
+        const auto automatic=tr("Automático (idioma del dispositivo)","Automatic (device language)","Automatique (langue de l’appareil)");
+        combo(ui_language,{automatic.c_str(),"Español","English","Français"},y,selected_ui=="en"?2:selected_ui=="fr"?3:selected_ui=="es"?1:0);y+=100;
+        label("Premium",y,23,true);y+=44;
+        begin_card(y);
+        label(tr("Aprende sin límites","Learn Without Limits","Apprenez sans limites"),y,19,true);y+=32;
+        label(tr("Comprobaciones ilimitadas, sin consumir corazones.","Unlimited answer checks without using hearts.","Vérifications illimitées des réponses, sans consommer de cœurs."),y,16,false,40);y+=56;
+        const bool active=attempts::premium(data);
+        if(active){const auto premium=item(L"BUTTON",tr("Usuario Premium","Premium User","Utilisateur Premium"),premium_action,y,58,BS_PUSHBUTTON,18,true);
+            reader_theme::premium_button(premium,true);EnableWindow(premium,FALSE);y+=94;}
+        else y+=0; // Android's purchase/payment controls do not apply to this personal Windows build.
+        end_card(y);y+=36;
         }
         label(tr("Lectura en voz alta","Read aloud","Lecture à voix haute"),y,23,true);y+=48;
-        checkbox(enabled,tr("Activar la lectura de las lecciones","Enable lesson narration","Activer la lecture des leçons"),y,boolean(data,"lesson_narration_settings","enabled",true));y+=52;
+        label(tr("Configura la lectura de las lecciones, el motor, las voces y sus recursos.","Configure lesson reading, the engine, voices and their resources.","Configurez la lecture des leçons, le moteur, les voix et leurs ressources."),y,16,false,48);y+=66;
+        begin_card(y);
+        label(tr("Ajustes generales de narración","General narration settings","Réglages généraux de narration"),y,17,true);y+=42;
+        checkbox(enabled,tr("Activar narración de las lecciones","Enable lesson narration","Activer la narration des leçons"),y,boolean(data,"lesson_narration_settings","enabled",true));y+=52;
         label(tr("Motor de voz","Speech engine","Moteur vocal"),y);y+=34;
         const auto chosen_engine=state::string_value(data,"lesson_narration_settings","engine","KOKORO");
         combo(engine,{"Kokoro", "Windows TTS"},y,chosen_engine=="WINDOWS"||chosen_engine=="ANDROID"?1:0);y+=86;
@@ -396,8 +444,14 @@ struct Settings {
         const auto stored=state::find(data,"lesson_narration_settings","rate");const auto value=stored&&std::holds_alternative<double>(*stored)?std::get<double>(*stored):1.0;
         combo(rate,{"0.5×","1×","1.5×","2×"},y,value<.75?0:value<1.25?1:value<1.75?2:3);y+=88;
         checkbox(controls,tr("Mostrar la barra flotante del lector","Show floating reading controls","Afficher les commandes de lecture flottantes"),y,boolean(data,"lesson_narration_settings","controls_visible",true));y+=50;
-        checkbox(advance,tr("Preparar audio anticipadamente","Prepare upcoming audio","Préparer l’audio à l’avance"),y,boolean(data,"lesson_narration_settings","kokoro_advance_generation",true));y+=94;
+        checkbox(advance,tr("Preparar audio anticipadamente","Prepare upcoming audio","Préparer l’audio à l’avance"),y,boolean(data,"lesson_narration_settings","kokoro_advance_generation",true));y+=58;
+        end_card(y);y+=36;
         if(access.scope!=SettingsScope::audio){
+        if(access.scope==SettingsScope::global){
+            label(tr("Idioma del contenido","Lesson content language","Langue du contenu"),y,23,true);y+=44;
+            combo(content_language,{"Español","English","Français"},y,code=="en"?1:code=="fr"?2:0);y+=100;
+            text_controls(y);
+        }
         if(access.scope==SettingsScope::lesson&&!access.course_id.empty())text_controls(y);
         label(tr("Navegación y código","Navigation and code","Navigation et code"),y,23,true);y+=52;
         if(access.scope==SettingsScope::global)flow_controls(y);
@@ -406,11 +460,6 @@ struct Settings {
             checkbox(code_wrap,tr("Ajustar las líneas de código al ancho disponible","Wrap code lines to the available width","Adapter les lignes de code à la largeur disponible"),y,wrap_draft);y+=60;
             if(access.scope==SettingsScope::lesson&&!access.course_id.empty()){
                 checkbox(wrap_overwrite,tr("Permitir que el ajuste global sobrescriba este curso","Allow global wrapping changes to overwrite this course","Autoriser le réglage global à remplacer celui de ce cours"),y,wrap_allowed);y+=62;}
-        }
-        if(access.scope==SettingsScope::lesson&&access.programming){
-            label(tr("Atajos de programación","Programming shortcuts","Raccourcis de programmation"),y,23,true);y+=48;
-            item(L"BUTTON",tr("Editar los 20 atajos…","Edit the 20 shortcuts…","Modifier les 20 raccourcis…"),edit_shortcuts,y,60,WS_TABSTOP|BS_PUSHBUTTON,18,true);y+=76;
-            label(tr("TAB permanece fijo. Los atajos se comparten entre todos los ejercicios de Programación.","TAB remains fixed. Shortcuts are shared by all Programming exercises.","TAB reste fixe. Les raccourcis sont partagés par tous les exercices de Programmation."),y,16,false,56);y+=72;
         }
         if(access.scope==SettingsScope::global){
             if(!access.programming_course_ids.empty()){
@@ -430,11 +479,33 @@ struct Settings {
     void paint_background(HDC dc)const{
         if(!dc)return;
         RECT area{};GetClientRect(window,&area);FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::canvas));
-        const auto saved=SaveDC(dc);const auto palette=reader_theme::palette(window);
-        const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),palette.high_contrast?GetSysColor(COLOR_WINDOWTEXT):palette.outline);
-        SelectObject(dc,pen);SelectObject(dc,reader_theme::brush(reader_theme::Surface::card));
-        for(const auto& bounds:selector_cards)RoundRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom,px(8),px(8));
-        RestoreDC(dc,saved);DeleteObject(pen);
+        for(const auto& bounds:selector_cards)FillRect(dc,&bounds,reader_theme::brush(reader_theme::Surface::card));
+    }
+    void refresh_language(){
+        if(locale==interface_language(access.read()))return;
+        // Rebuild only the settings controls. Buffered course/global edits are
+        // retained separately from persisted state, exactly as before Save.
+        const auto pending=std::tuple{flow_draft,original_flow,flow_uses_global,scale_draft,original_scale,inherits_scale,original_inherits_scale,
+            wrap_draft,original_wrap,wrap_allowed,original_wrap_allowed,colors,original_colors,default_colors,color_overwrite,original_color_overwrite,custom_colors};
+        const auto previous_scroll=scroll;const auto focus=GetFocus();const auto focused_id=focus&&IsChild(window,focus)?GetDlgCtrlID(focus):0;
+        SendMessageW(window,WM_SETREDRAW,FALSE,0);binding=true;
+        for(const auto& row:rows)DestroyWindow(row.window);rows.clear();card_ranges.clear();selector_cards.clear();eyebrow_label=nullptr;
+        if(preview_font){DeleteObject(preview_font);preview_font=nullptr;}for(const auto font:fonts)DeleteObject(font);fonts.clear();
+        build();binding=true;
+        std::tie(flow_draft,original_flow,flow_uses_global,scale_draft,original_scale,inherits_scale,original_inherits_scale,
+            wrap_draft,original_wrap,wrap_allowed,original_wrap_allowed,colors,original_colors,default_colors,color_overwrite,original_color_overwrite,custom_colors)=pending;
+        const auto set_check=[&](int id,bool value){if(const auto control=GetDlgItem(window,id))SendMessageW(control,BM_SETCHECK,value?BST_CHECKED:BST_UNCHECKED,0);};
+        set_check(auto_lesson,flow_draft.between_lessons);set_check(auto_unit,flow_draft.between_units);set_check(auto_course,flow_draft.between_courses);set_check(swipe_finish,flow_draft.swipe_finish);
+        set_check(use_global,flow_uses_global);set_check(code_wrap,wrap_draft);set_check(text_inherit,inherits_scale);set_check(wrap_overwrite,wrap_allowed);
+        set_check(programming_color_overwrite,color_overwrite[0]);set_check(math_color_overwrite,color_overwrite[1]);
+        if(const auto slider=GetDlgItem(window,text_scale))SendMessageW(slider,TBM_SETPOS,TRUE,scale_draft);
+        if(access.scope==SettingsScope::course){for(const auto id:{auto_lesson,auto_unit,auto_course,swipe_finish})EnableWindow(GetDlgItem(window,id),!flow_uses_global);
+            EnableWindow(GetDlgItem(window,save_flow),flow_draft!=original_flow||flow_uses_global==curriculum::has_course_flow(access.read(),access.course_id));}
+        scroll=previous_scroll;binding=false;refresh_appearance();
+        if(focused_id)if(const auto control=GetDlgItem(window,focused_id))SetFocus(control);
+        const auto parent=GetParent(window);wchar_t name[80]{};GetClassNameW(parent,name,80);
+        if(std::wstring_view(name)==L"LearnGameAndEngineDev.SettingsWindow"&&access.title.empty())SetWindowTextW(parent,wide(tr("Opciones","Options","Options")).c_str());
+        SendMessageW(window,WM_SETREDRAW,TRUE,0);RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
     }
     void layout(){
         if(laying_out||!window)return;laying_out=true;struct LayoutGuard{bool& value;~LayoutGuard(){value=false;}} guard{laying_out};
@@ -442,8 +513,9 @@ struct Settings {
         const auto width=std::max(1,static_cast<int>(area.right)-2*margin),padding=px(18);
         int cursor=0,authored_end=0;
         for(auto& row:rows){
+            const auto row_index=static_cast<std::size_t>(&row-rows.data());const auto inner=in_card(row_index);
             const auto id=GetDlgCtrlID(row.window);const int gap=row.y-authored_end;
-            row.actual_top=rows.data()==&row?px(row.y):cursor+px(std::max(8,gap));row.actual_width=id==back?px(56):width;
+            row.actual_top=rows.data()==&row?px(row.y):cursor+px(std::max(8,gap));row.actual_width=id==back?px(56):inner?std::max(1,width-2*padding):width;
             if(row.dropdown){
                 const auto inner_width=std::max(1,width-2*padding);RECT native{};GetWindowRect(row.window,&native);
                 const auto selection=static_cast<int>(SendMessageW(row.window,CB_GETITEMHEIGHT,static_cast<WPARAM>(-1),0));
@@ -456,20 +528,21 @@ struct Settings {
                     const auto type=GetWindowLongPtrW(row.window,GWL_STYLE)&BS_TYPEMASK;
                     const bool check=type==BS_AUTOCHECKBOX||type==BS_CHECKBOX;
                     const auto inset=check?px(40):(id>=global_color&&id<=math_color?px(76):px(28));
-                    row.actual_height=std::max(px(check?58:62),measured_text_height(row.window,std::max(1,width-inset))+px(check?12:16));
-                }else if(_wcsicmp(name,L"STATIC")==0)row.actual_height=std::max(px(24),measured_text_height(row.window,width)+px(4));
+                    row.actual_height=std::max(px(check?58:62),measured_text_height(row.window,std::max(1,row.actual_width-inset))+px(check?12:16));
+                }else if(_wcsicmp(name,L"STATIC")==0)row.actual_height=std::max(px(24),measured_text_height(row.window,row.actual_width)+px(4));
                 else row.actual_height=px(row.height);
             }
             cursor=row.actual_top+row.actual_height;authored_end=row.y+row.height;
         }
         const auto content_height=cursor+px(24);scroll=std::clamp(scroll,0,std::max(0,content_height-static_cast<int>(area.bottom)));
         SendMessageW(window,WM_SETREDRAW,FALSE,0);selector_cards.clear();
-        for(const auto& row:rows){const auto top=row.actual_top-scroll;
+        for(const auto& range:card_ranges)selector_cards.push_back({margin,rows[range.first].actual_top-scroll-padding,margin+width,rows[range.second-1].actual_top+rows[range.second-1].actual_height-scroll+padding});
+        for(const auto& row:rows){const auto top=row.actual_top-scroll;const auto inner=in_card(static_cast<std::size_t>(&row-rows.data()));
             if(row.dropdown){
-                selector_cards.push_back({margin,top,margin+width,top+row.actual_height});
+                if(!inner)selector_cards.push_back({margin,top,margin+width,top+row.actual_height});
                 const auto inner_width=std::max(1,width-2*padding),field=combo_selection_height(row.window,inner_width);
                 MoveWindow(row.window,margin+padding,top+padding,inner_width,field+px(210),FALSE);size_combo(row.window);
-            }else MoveWindow(row.window,margin,top,row.actual_width,row.actual_height,FALSE);
+            }else MoveWindow(row.window,margin+(inner?padding:0),top,row.actual_width,row.actual_height,FALSE);
         }
         SendMessageW(window,WM_SETREDRAW,TRUE,0);SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,content_height-1),static_cast<UINT>(area.bottom),scroll,0};SetScrollInfo(window,SB_VERT,&info,TRUE);reader_theme::refresh_scrollbars(window);
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
@@ -478,6 +551,7 @@ struct Settings {
     void change(int id,int notification){if(id==back){PostMessageW(window,close_message,0,0);return;}if(binding)return;if(id==reset){if(access.reset_scope)access.reset_scope();return;}
         if((id==reset_programming||id==reset_math)&&access.reset_route){access.reset_route(id==reset_programming?"programming":"math_physics");return;}
         if(notification!=CBN_SELCHANGE&&notification!=BN_CLICKED)return;
+        if(id==premium_action)return;
         const auto selection=static_cast<int>(SendDlgItemMessageW(window,id,CB_GETCURSEL,0,0));
         const bool checked=SendDlgItemMessageW(window,id,BM_GETCHECK,0,0)==BST_CHECKED;
         if(id==save_appearance){save_appearance_settings();return;}
@@ -509,12 +583,12 @@ struct Settings {
         access.update([&](state::StateData& data){auto& native=data.preferences["native_windows"];auto& speech=data.preferences["lesson_narration_settings"];
             static constexpr const char* ui_tags[]{"es","en","fr"};static constexpr const char* tags[]{"es","en-US","en-GB","fr"};
             switch(id){
-            case ui_language:native["ui_language"]=std::string(selection==3?"auto":ui_tags[std::clamp(selection,0,2)]);break;
+            case ui_language:native["ui_language"]=std::string(selection<=0?"auto":ui_tags[std::clamp(selection-1,0,2)]);break;
             case content_language:native["content_language"]=std::string(ui_tags[std::clamp(selection,0,2)]);break;
             case enabled:speech["enabled"]=checked;break;
             case engine:speech["engine"]=std::string(selection==1?"WINDOWS":"KOKORO");break;
             case language:speech["language"]=std::string(tags[std::clamp(selection,0,3)]);break;
-            case voice:if(selection>=0&&static_cast<std::size_t>(selection)<voices.size()){const auto lang=state::string_value(data,"lesson_narration_settings","language","es");const bool system=SendDlgItemMessageW(window,engine,CB_GETCURSEL,0,0)==1;speech[std::string(system?"windows_voice:":"kokoro_voice:")+lang]=voices[selection];if(!system)speech["kokoro_voice"]=voices[selection];}break;
+            case voice:if(selection>=0&&static_cast<std::size_t>(selection)<voices.size()){const auto lang=state::string_value(data,"lesson_narration_settings","language","es");const bool system=GetDlgItem(window,engine)?SendDlgItemMessageW(window,engine,CB_GETCURSEL,0,0)==1:state::string_value(data,"lesson_narration_settings","engine","KOKORO")=="WINDOWS";speech[std::string(system?"windows_voice:":"kokoro_voice:")+lang]=voices[selection];if(!system)speech["kokoro_voice"]=voices[selection];}break;
             case rate:speech["rate"]=std::array{.5,1.,1.5,2.}[std::clamp(selection,0,3)];break;
             case controls:speech["controls_visible"]=checked;break;
             case advance:speech["kokoro_advance_generation"]=checked;break;
@@ -529,6 +603,7 @@ struct Settings {
         if(id==language||id==engine){binding=true;fill_voices(access.read());binding=false;}
         layout();
         if(access.changed)access.changed();
+        if(id==ui_language)PostMessageW(window,refresh_language_message,0,0);
     }
 };
 LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
@@ -544,6 +619,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     case WM_PRINTCLIENT:self->paint_background(reinterpret_cast<HDC>(wp));return 0;
     case WM_COMMAND:self->change(LOWORD(wp),HIWORD(wp));return 0;
     case close_message:if(self->access.close)self->access.close();return 0;
+    case refresh_language_message:self->refresh_language();return 0;
     case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);
         if(item.CtlID>=global_color&&item.CtlID<=math_color){
             const auto palette=reader_theme::palette(window);FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::card));
@@ -552,9 +628,9 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
             auto text=item.rcItem;text.left+=self->px(60);text.right-=self->px(12);text.top+=self->px(8);text.bottom-=self->px(8);
             const auto previous=SelectObject(item.hDC,reinterpret_cast<HFONT>(SendMessageW(item.hwndItem,WM_GETFONT,0,0)));SetTextColor(item.hDC,palette.text);SetBkMode(item.hDC,TRANSPARENT);
             wchar_t caption[180]{};GetWindowTextW(item.hwndItem,caption,180);DrawTextW(item.hDC,caption,-1,&text,DT_LEFT|DT_WORDBREAK|DT_NOPREFIX);SelectObject(item.hDC,previous);
-            if(item.itemState&ODS_FOCUS){auto focus=item.rcItem;InflateRect(&focus,-3,-3);DrawFocusRect(item.hDC,&focus);}return TRUE;
+            return TRUE;
         }
-        if((item.CtlID==back||item.CtlID==reset)&&self->access.programming&&!reader_theme::palette(window).high_contrast){
+        if((item.CtlID==back||item.CtlID==reset)&&!reader_theme::palette(window).high_contrast){
             const auto brush=CreateSolidBrush(reader_theme::palette(window).accent);FillRect(item.hDC,&item.rcItem,brush);DeleteObject(brush);
             auto bounds=item.rcItem;
             if(item.CtlID==back){InflateRect(&bounds,-self->px(18),-self->px(8));draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_foreground(window));}
@@ -563,7 +639,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
                 DrawTextW(item.hDC,text,-1,&measured,DT_CENTER|DT_WORDBREAK|DT_CALCRECT|DT_NOPREFIX);
                 bounds.top+=std::max<LONG>(0,(bounds.bottom-bounds.top-(measured.bottom-measured.top))/2);
                 DrawTextW(item.hDC,text,-1,&bounds,DT_CENTER|DT_WORDBREAK|DT_NOPREFIX);SelectObject(item.hDC,old);}
-            if(item.itemState&ODS_FOCUS){InflateRect(&bounds,-2,-2);DrawFocusRect(item.hDC,&bounds);}return TRUE;
+            return TRUE;
         }
         if(item.CtlID==back){FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::card));auto bounds=item.rcItem;InflateRect(&bounds,-self->px(18),-self->px(8));draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_ink(window,reader_theme::palette(window).card));return TRUE;}return reader_theme::draw_button(item);}
     case WM_MOUSEWHEEL:self->scroll-=GET_WHEEL_DELTA_WPARAM(wp)*self->px(48)/WHEEL_DELTA;self->layout();return 0;
@@ -583,7 +659,150 @@ HWND create_settings_view(HWND parent,SettingsAccess access){
     if(!InitCommonControlsEx(&common))throw std::runtime_error("Cannot initialize native settings controls");
     const auto instance=reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(parent,GWLP_HINSTANCE));
     WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=proc;cls.hInstance=instance;cls.lpszClassName=class_name;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
-    auto settings=std::make_unique<Settings>(std::move(access));const auto window=CreateWindowExW(0,class_name,L"Opciones",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,0,0,0,0,parent,nullptr,instance,settings.get());
+    auto settings=std::make_unique<Settings>(std::move(access));const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,L"Opciones",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_VSCROLL,0,0,0,0,parent,nullptr,instance,settings.get());
     if(!window)throw std::runtime_error("No se pudo abrir las opciones.");settings.release();return window;
+}
+
+namespace {
+constexpr wchar_t frame_class[]=L"LearnGameAndEngineDev.SettingsWindow";
+constexpr wchar_t attempts_class[]=L"LearnGameAndEngineDev.AttemptDetails";
+constexpr wchar_t attempts_property[]=L"LGAED.AttemptDetails";
+struct LanguageDialog {
+    HWND window=nullptr;HFONT font=nullptr;std::string locale,selected;std::optional<std::string> result;std::exception_ptr error;
+    ~LanguageDialog(){if(font)DeleteObject(font);}
+    std::string tr(const char* es,const char* en,const char* fr)const{return locale=="fr"?fr:locale=="en"?en:es;}
+    int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96);}
+    void initialize(HWND target){
+        window=target;reader_theme::apply(window,reader_theme::Surface::card);
+        SetWindowTextW(window,wide(tr("Idioma de la aplicación","App language","Langue de l’application")).c_str());
+        RECT bounds{0,0,px(440),px(314)};const auto style=static_cast<DWORD>(GetWindowLongPtrW(window,GWL_STYLE)),ex=static_cast<DWORD>(GetWindowLongPtrW(window,GWL_EXSTYLE));
+        AdjustWindowRectExForDpi(&bounds,style,FALSE,ex,GetDpiForWindow(window));RECT parent{};GetWindowRect(GetWindow(window,GW_OWNER),&parent);
+        SetWindowPos(window,nullptr,(parent.left+parent.right-(bounds.right-bounds.left))/2,(parent.top+parent.bottom-(bounds.bottom-bounds.top))/2,bounds.right-bounds.left,bounds.bottom-bounds.top,SWP_NOZORDER|SWP_NOACTIVATE);
+        font=CreateFontW(-px(18),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        if(!font)throw std::runtime_error("Cannot create the application language chooser font");
+        const std::array<std::string,4> labels{tr("Automático (idioma del dispositivo)","Automatic (device language)","Automatique (langue de l’appareil)"),"Español","English","Français"};
+        constexpr std::array<const char*,4> tags{"auto","es","en","fr"};
+        RECT area{};GetClientRect(window,&area);
+        for(std::size_t index=0;index<labels.size();++index){
+            const auto radio=CreateWindowExW(0,L"BUTTON",wide(labels[index]).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTORADIOBUTTON|BS_MULTILINE|(index==0?WS_GROUP:0),px(24),px(16+static_cast<int>(index)*56),area.right-px(48),px(56),window,reinterpret_cast<HMENU>(8350+index),GetModuleHandleW(nullptr),nullptr);
+            if(!radio)throw std::runtime_error("Cannot create an application language choice");
+            reader_theme::apply(radio,reader_theme::Surface::card);SendMessageW(radio,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);SendMessageW(radio,BM_SETCHECK,selected==tags[index]?BST_CHECKED:BST_UNCHECKED,0);
+        }
+        const auto cancel=CreateWindowExW(0,L"BUTTON",wide(tr("Cancelar","Cancel","Annuler")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_GROUP|BS_PUSHBUTTON,area.right-px(160),px(250),px(136),px(48),window,reinterpret_cast<HMENU>(IDCANCEL),GetModuleHandleW(nullptr),nullptr);
+        if(!cancel)throw std::runtime_error("Cannot create the language chooser Cancel action");
+        reader_theme::apply(cancel,reader_theme::Surface::card);SendMessageW(cancel,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+    }
+    static INT_PTR CALLBACK proc(HWND target,UINT message,WPARAM wp,LPARAM lp){
+        auto* self=reinterpret_cast<LanguageDialog*>(GetWindowLongPtrW(target,DWLP_USER));
+        if(message==WM_INITDIALOG){self=reinterpret_cast<LanguageDialog*>(lp);SetWindowLongPtrW(target,DWLP_USER,reinterpret_cast<LONG_PTR>(self));}
+        if(!self)return FALSE;LRESULT themed{};if(reader_theme::control_color(message,wp,lp,themed))return themed;
+        try{switch(message){
+        case WM_INITDIALOG:self->initialize(target);return TRUE;
+        case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){EndDialog(target,IDCANCEL);return TRUE;}
+            if(LOWORD(wp)>=8350&&LOWORD(wp)<8354&&HIWORD(wp)==BN_CLICKED){constexpr std::array<const char*,4> tags{"auto","es","en","fr"};self->result=tags[LOWORD(wp)-8350];EndDialog(target,IDOK);return TRUE;}break;
+        case WM_CLOSE:EndDialog(target,IDCANCEL);return TRUE;
+        case WM_DRAWITEM:return reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lp));
+        case WM_ERASEBKGND:{RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::brush(reader_theme::Surface::card));return TRUE;}
+        default:break;}}catch(...){self->error=std::current_exception();EndDialog(target,IDCANCEL);}return FALSE;
+    }
+    std::optional<std::string> show(HWND owner){
+        struct alignas(DWORD) Template{DLGTEMPLATE dialog{};WORD menu=0,window_class=0,title=0;} layout;
+        static_assert(offsetof(Template,menu)==sizeof(DLGTEMPLATE));
+        layout.dialog.style=WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_CLIPCHILDREN|DS_MODALFRAME|DS_CENTER;
+        layout.dialog.dwExtendedStyle=WS_EX_CONTROLPARENT;layout.dialog.cx=310;layout.dialog.cy=220;
+        const auto code=DialogBoxIndirectParamW(GetModuleHandleW(nullptr),&layout.dialog,GetAncestor(owner,GA_ROOT),proc,reinterpret_cast<LPARAM>(this));
+        if(error)std::rethrow_exception(error);if(code==-1)throw std::runtime_error("Cannot open the application language chooser");return result;
+    }
+};
+struct SettingsFrame {HWND child=nullptr;SettingsAccess access;bool owns=false;};
+LRESULT CALLBACK frame_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
+    auto* frame=reinterpret_cast<SettingsFrame*>(GetWindowLongPtrW(window,GWLP_USERDATA));
+    if(message==WM_NCCREATE){frame=static_cast<SettingsFrame*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(frame));}
+    if(!frame)return DefWindowProcW(window,message,wp,lp);
+    switch(message){
+    case WM_CREATE:try{frame->child=create_settings_view(window,std::move(frame->access));return 0;}catch(...){return -1;}
+    case WM_SIZE:{RECT bounds{};GetClientRect(window,&bounds);if(frame->child)MoveWindow(frame->child,0,0,bounds.right,bounds.bottom,TRUE);return 0;}
+    case WM_SETFOCUS:if(frame->child)SetFocus(frame->child);return 0;
+    case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){SendMessageW(window,WM_CLOSE,0,0);return 0;}break;
+    case WM_KEYDOWN:if(wp==VK_ESCAPE){SendMessageW(window,WM_CLOSE,0,0);return 0;}break;
+    case WM_CLOSE:if(frame->child)SendMessageW(frame->child,close_message,0,0);return 0;
+    case WM_DPICHANGED:{const auto bounds=reinterpret_cast<RECT*>(lp);SetWindowPos(window,nullptr,bounds->left,bounds->top,bounds->right-bounds->left,bounds->bottom-bounds->top,SWP_NOZORDER|SWP_NOACTIVATE);return 0;}
+    case WM_GETMINMAXINFO:{const auto dpi=GetDpiForWindow(window);reinterpret_cast<MINMAXINFO*>(lp)->ptMinTrackSize={MulDiv(360,dpi,96),MulDiv(320,dpi,96)};return 0;}
+    case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);if(frame->owns)delete frame;break;
+    default:break;
+    }
+    return DefWindowProcW(window,message,wp,lp);
+}
+std::int64_t now_millis(){FILETIME time{};GetSystemTimeAsFileTime(&time);ULARGE_INTEGER ticks{};ticks.LowPart=time.dwLowDateTime;ticks.HighPart=time.dwHighDateTime;return static_cast<std::int64_t>(ticks.QuadPart/10000-11644473600000ULL);}
+struct AttemptDetails {HWND lesson=nullptr;std::function<state::StateData()> read;std::string route;int offset=0;POINT drag{};bool dragging=false;};
+void position_attempt_details(HWND window,HWND lesson){
+    RECT bounds{};GetClientRect(lesson,&bounds);RECT anchor{};const auto header_end=GetDlgItem(lesson,106);
+    GetWindowRect(header_end?header_end:lesson,&anchor);MapWindowPoints(nullptr,lesson,reinterpret_cast<POINT*>(&anchor),2);
+    const auto dpi=GetDpiForWindow(lesson);SetWindowPos(window,HWND_TOP,0,header_end?anchor.bottom:MulDiv(80,dpi,96),bounds.right,MulDiv(43,dpi,96),SWP_NOACTIVATE);
+}
+LRESULT CALLBACK attempt_owner_subclass(HWND lesson,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR){
+    const auto popup=static_cast<HWND>(GetPropW(lesson,attempts_property));
+    if(message==WM_SIZE&&popup)position_attempt_details(popup,lesson);
+    if(message==WM_NCDESTROY){RemoveWindowSubclass(lesson,attempt_owner_subclass,id);RemovePropW(lesson,attempts_property);}
+    return DefSubclassProc(lesson,message,wp,lp);
+}
+LRESULT CALLBACK attempt_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
+    auto* details=reinterpret_cast<AttemptDetails*>(GetWindowLongPtrW(window,GWLP_USERDATA));
+    if(message==WM_NCCREATE){details=static_cast<AttemptDetails*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(details));}
+    if(!details)return DefWindowProcW(window,message,wp,lp);
+    if(message==WM_CREATE){reader_theme::apply(window,reader_theme::Surface::inset);SetTimer(window,1,1000,nullptr);return 0;}
+    if(message==WM_MOUSEACTIVATE)return MA_NOACTIVATE;
+    if(message==WM_TIMER){InvalidateRect(window,nullptr,FALSE);return 0;}
+    if(message==WM_LBUTTONDOWN){details->drag={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};details->dragging=true;SetCapture(window);return 0;}
+    if(message==WM_MOUSEMOVE&&details->dragging&&(wp&MK_LBUTTON)){details->offset+=details->drag.x-GET_X_LPARAM(lp);details->drag.x=GET_X_LPARAM(lp);InvalidateRect(window,nullptr,FALSE);return 0;}
+    if(message==WM_LBUTTONUP||message==WM_CAPTURECHANGED){details->dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;}
+    if(message==WM_MOUSEWHEEL){details->offset-=GET_WHEEL_DELTA_WPARAM(wp)/3;InvalidateRect(window,nullptr,FALSE);return 0;}
+    if(message==WM_ERASEBKGND)return 1;
+    if(message==WM_PAINT){
+        PAINTSTRUCT paint{};const auto dc=BeginPaint(window,&paint);RECT area{};GetClientRect(window,&area);
+        const auto memory=CreateCompatibleDC(dc);const auto bitmap=CreateCompatibleBitmap(dc,std::max(1L,area.right),std::max(1L,area.bottom));const auto old=SelectObject(memory,bitmap);
+        FillRect(memory,&area,reader_theme::brush(reader_theme::Surface::inset));
+        const auto data=details->read();const auto current=attempts::balance(data,details->route,now_millis());
+        const auto width=MulDiv(43,GetDpiForWindow(window),96);details->offset=std::clamp(details->offset,0,std::max(0,current.maximum*width-static_cast<int>(area.right)));
+        const auto start=std::max(0L,(area.right-current.maximum*width)/2)-details->offset;
+        const auto tint=reader_theme::appearance_accent(data,details->route);
+        const auto icon=details->route=="math_physics"?Icon::attempt_math:Icon::terminal;
+        for(int index=0;index<current.maximum;++index){RECT slot{start+index*width,0,start+(index+1)*width,area.bottom};
+            const auto inset=std::max(1,width/12);InflateRect(&slot,-inset,-inset);draw_icon(memory,slot,icon,RGB(255,255,255));
+            const auto saved=SaveDC(memory);const auto progress=std::clamp(current.reserve-index,0.,1.);
+            IntersectClipRect(memory,slot.left,slot.top,slot.left+static_cast<int>((slot.right-slot.left)*progress),slot.bottom);draw_icon(memory,slot,icon,tint);RestoreDC(memory,saved);
+        }
+        BitBlt(dc,0,0,area.right,area.bottom,memory,0,0,SRCCOPY);SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);EndPaint(window,&paint);return 0;
+    }
+    if(message==WM_NCDESTROY){KillTimer(window,1);if(IsWindow(details->lesson))RemovePropW(details->lesson,attempts_property);SetWindowLongPtrW(window,GWLP_USERDATA,0);delete details;}
+    return DefWindowProcW(window,message,wp,lp);
+}
+}
+HWND create_settings_window(HWND owner,SettingsAccess access){
+    const auto instance=GetModuleHandleW(nullptr);WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=frame_proc;cls.hInstance=instance;cls.lpszClassName=frame_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
+    auto frame=std::make_unique<SettingsFrame>();const auto locale=interface_language(access.read());
+    const auto caption=access.title.empty()?(locale=="es"?L"Opciones":locale=="fr"?L"Options":L"Options"):wide(access.title);
+    frame->access=std::move(access);RECT owner_bounds{},work{};GetWindowRect(owner,&owner_bounds);MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(owner,MONITOR_DEFAULTTONEAREST),&monitor);work=monitor.rcWork;
+    const auto dpi=GetDpiForWindow(owner);const auto width=std::min<LONG>(MulDiv(920,dpi,96),work.right-work.left),height=std::min<LONG>(MulDiv(900,dpi,96),work.bottom-work.top);
+    const auto left=std::clamp<LONG>((owner_bounds.left+owner_bounds.right-width)/2,work.left,work.right-width),top=std::clamp<LONG>((owner_bounds.top+owner_bounds.bottom-height)/2,work.top,work.bottom-height);
+    const auto result=CreateWindowExW(WS_EX_CONTROLPARENT,frame_class,caption.c_str(),WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,left,top,width,height,owner,nullptr,instance,frame.get());
+    if(!result)throw std::runtime_error("No se pudo abrir la ventana de opciones.");frame->owns=true;frame.release();ShowWindow(result,SW_SHOW);SetForegroundWindow(result);return result;
+}
+void refresh_settings_language(HWND settings_window){
+    const auto view=FindWindowExW(settings_window,nullptr,class_name,nullptr);
+    PostMessageW(view?view:settings_window,refresh_language_message,0,0);
+}
+void toggle_attempt_details(HWND lesson,std::function<state::StateData()> read,std::string_view route){
+    if(const auto popup=static_cast<HWND>(GetPropW(lesson,attempts_property))){DestroyWindow(popup);return;}
+    if(attempts::premium(read()))return;
+    const auto instance=GetModuleHandleW(nullptr);WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=attempt_proc;cls.hInstance=instance;cls.lpszClassName=attempts_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
+    auto details=std::make_unique<AttemptDetails>();details->lesson=lesson;details->read=std::move(read);details->route=route;
+    const auto popup=CreateWindowExW(WS_EX_NOACTIVATE,attempts_class,L"",WS_CHILD|WS_VISIBLE,0,0,0,0,lesson,nullptr,instance,details.get());
+    if(!popup)throw std::runtime_error("Cannot open the attempt reserve details");details.release();SetPropW(lesson,attempts_property,popup);SetWindowSubclass(lesson,attempt_owner_subclass,0x4C474154,0);position_attempt_details(popup,lesson);
+}
+std::optional<std::string> choose_interface_language(HWND owner,const state::StateData& data){
+    LanguageDialog dialog;dialog.locale=interface_language(data);dialog.selected=state::string_value(data,"native_windows","ui_language","auto");
+    if(dialog.selected!="es"&&dialog.selected!="en"&&dialog.selected!="fr")dialog.selected="auto";
+    return dialog.show(owner);
 }
 }

@@ -360,10 +360,16 @@ AnswerEvaluation evaluate_text_answer(const Block& block, std::string_view answe
     const auto correct = std::ranges::any_of(block.answers, [&](const auto& candidate) { return normalize(candidate) == actual; });
     return verdict(block, correct);
 }
+std::string incorrect_feedback(const Block& block,std::optional<std::size_t> selected) {
+    if(block.type==BlockType::multiple_choice&&selected&&*selected<block.review_feedback_options.size())
+        return block.review_feedback_options[*selected];
+    return block.review_feedback;
+}
 AnswerEvaluation evaluate_choice(const Block& block, std::size_t option) {
     if (block.type != BlockType::multiple_choice || !block.correct_index || option >= block.options.size())
         throw std::invalid_argument("Invalid choice answer");
-    return verdict(block, option == *block.correct_index);
+    const bool correct=option==*block.correct_index;
+    return {correct,correct?block.explanation:incorrect_feedback(block,option)};
 }
 AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t> order) {
     if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order answer");

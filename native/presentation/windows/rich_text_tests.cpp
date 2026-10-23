@@ -1,6 +1,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "core/lesson_state.hpp"
+#include "platform/windows/state_store.hpp"
 
 #include <richedit.h>
 #include <algorithm>
@@ -35,24 +36,24 @@ int main() {
         {
             const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"prosa",0,"bold_italic"}}};
             set_rich_text(editor.value,"Una prosa con `std::cout`.",emphasis);
-            check(character(editor.value,0).yHeight==360
-                && std::wstring(character(editor.value,0).szFaceName)==L"Segoe UI",
-                "Lesson prose does not use the Android-derived native 18-point base");
+            check(character(editor.value,0).yHeight==270
+                && std::wstring(character(editor.value,0).szFaceName)==L"Roboto",
+                "Lesson prose does not use the Android-derived native 18sp base");
             const auto emphasized=character(editor.value,4),technical=character(editor.value,14);
-            check(emphasized.yHeight==360&&(emphasized.dwEffects&CFE_BOLD)&&(emphasized.dwEffects&CFE_ITALIC)
-                && technical.yHeight==360&&std::wstring(technical.szFaceName)==L"Consolas",
+            check(emphasized.yHeight==270&&(emphasized.dwEffects&CFE_BOLD)&&(emphasized.dwEffects&CFE_ITALIC)
+                && technical.yHeight==270&&std::wstring(technical.szFaceName)==reader_theme::code_font_face(),
                 "Readable body typography flattened emphasis or changed the inline code face/size");
             set_rich_text(editor.value,"Una pregunta",{},false,RichTextRole::heading);
-            check(character(editor.value,0).yHeight==460&&(character(editor.value,0).dwEffects&CFE_BOLD),
-                "Headings and questions lost the 23-point bold hierarchy");
+            check(character(editor.value,0).yHeight==345&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "Headings and questions lost the 23sp bold hierarchy");
             set_rich_text(editor.value,"Una pregunta matemática",{},false,RichTextRole::prompt);
-            check(character(editor.value,0).yHeight==360&&(character(editor.value,0).dwEffects&CFE_BOLD),
-                "Mathematical prompts must be bold without increasing their 18-point body size");
+            check(character(editor.value,0).yHeight==270&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "Mathematical prompts must be bold without increasing their 18sp body size");
             set_rich_text(editor.value,"Título de lección",{},false,RichTextRole::lesson_title);
-            check(character(editor.value,0).yHeight==640&&(character(editor.value,0).dwEffects&CFE_BOLD),
-                "The 32-point lesson title was flattened into an ordinary heading");
+            check(character(editor.value,0).yHeight==480&&(character(editor.value,0).dwEffects&CFE_BOLD),
+                "The 32sp lesson title was flattened into an ordinary heading");
             set_rich_text(editor.value,"std::cout << 2;",{},true);
-            check(character(editor.value,0).yHeight==360&&std::wstring(character(editor.value,0).szFaceName)==L"Consolas",
+            check(character(editor.value,0).yHeight==270&&std::wstring(character(editor.value,0).szFaceName)==reader_theme::code_font_face(),
                 "Displayed code is still smaller than the original source editor");
             SendMessageW(editor.value,EM_SETZOOM,150,100);
             const int dpi=static_cast<int>(GetDpiForWindow(editor.value));
@@ -108,10 +109,58 @@ int main() {
                 check(colors.canvas == GetSysColor(COLOR_WINDOW) && colors.text == GetSysColor(COLOR_WINDOWTEXT),
                     "High-contrast theme replaced the user's system colors");
             } else {
-                check(colors.canvas == RGB(30,31,33) && colors.header == RGB(37,40,45)
-                    && colors.card == RGB(40,41,45) && colors.field == RGB(38,41,46)
-                    && colors.text == RGB(222,223,225) && colors.accent == RGB(89,240,252),
+                check(colors.canvas == RGB(16,16,16) && colors.header == RGB(23,23,23)
+                    && colors.card == RGB(28,28,28) && colors.field == RGB(37,37,37)
+                    && colors.text == RGB(218,221,228) && colors.accent == RGB(89,240,252),
                     "Reader theme diverged from the Android reference presentation");
+            }
+            {
+                reader_theme::prepare_fonts();const auto dc=GetDC(parent.value);
+                std::array<LONG,2> actual_weights{};
+                for(std::size_t index=0;index<actual_weights.size();++index){
+                    const auto font=CreateFontW(-20,0,0,0,index?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,
+                        DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+                    check(font!=nullptr,"Create the actual Android-equivalent font faces");const auto previous=SelectObject(dc,font);
+                    TEXTMETRICW measured{};check(GetTextMetricsW(dc,&measured)!=FALSE,"Inspect the selected font's real weight");
+                    actual_weights[index]=measured.tmWeight;SelectObject(dc,previous);DeleteObject(font);
+                }
+                // GetFontData proves which exact private font GDI selected,
+                // rather than merely trusting the requested family name.
+                for(const bool italic:{false,true}){
+                    const auto font=CreateFontW(-24,0,0,0,FW_NORMAL,italic,FALSE,FALSE,
+                        DEFAULT_CHARSET,OUT_TT_ONLY_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,reader_theme::math_font_face());
+                    check(font!=nullptr,"Cannot create the original Android mathematical serif face");const auto previous=SelectObject(dc,font);
+                    wchar_t face[LF_FACESIZE]{};check(GetTextFaceW(dc,LF_FACESIZE,face)>0&&std::wstring_view(face)==L"Noto Serif",
+                        "Mathematical text silently fell back from the original Noto Serif family");
+                    TEXTMETRICW metrics{};check(GetTextMetricsW(dc,&metrics)&&metrics.tmHeight-metrics.tmInternalLeading==24
+                        &&static_cast<bool>(metrics.tmItalic)==italic,"Mathematical font changed its requested size or italic face");
+                    const auto size=GetFontData(dc,0,0,nullptr,0);check(size==(italic?249748u:246740u),"Mathematical font does not have the reference Android font size");
+                    std::vector<std::uint8_t> bytes(size);check(GetFontData(dc,0,0,bytes.data(),size)==size,"Cannot inspect actual selected mathematical font data");
+                    check(lgaed::state::sha256(bytes)==(italic?"bb2ad30a8b95b367ed9576cea42bc085b7e69a6f81e6fe53ac3db6f10c7ff5f3":"1e65d9bbb6864fd4a32b96a8f0de3739b667c9eac793ec2d6d00bab7adb5a965"),
+                        "The selected mathematical font is not byte-identical to the official OFL Android reference");
+                    SelectObject(dc,previous);DeleteObject(font);
+                }
+                {
+                    const auto font=CreateFontW(-24,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+                        DEFAULT_CHARSET,OUT_TT_ONLY_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH,reader_theme::code_font_face());
+                    check(font!=nullptr,"Cannot create Android's original monospace face");const auto previous=SelectObject(dc,font);
+                    wchar_t face[LF_FACESIZE]{};check(GetTextFaceW(dc,LF_FACESIZE,face)>0&&std::wstring_view(face)==L"Droid Sans Mono",
+                        "Technical text silently fell back from the original Droid Sans Mono family");
+                    TEXTMETRICW metrics{};check(GetTextMetricsW(dc,&metrics)&&metrics.tmHeight-metrics.tmInternalLeading==24,
+                        "The original monospace font changed its requested character size");
+                    const auto size=GetFontData(dc,0,0,nullptr,0);check(size==108128u,"The selected code font has a different size from Android's reference");
+                    std::vector<std::uint8_t> bytes(size);check(GetFontData(dc,0,0,bytes.data(),size)==size,"Cannot inspect the actual selected code font");
+                    check(lgaed::state::sha256(bytes)=="db19a1fdaba41cc4a2fec0330e5c15e71c6dd68a3ef074f4f28268828b45c862",
+                        "The selected code font is not byte-identical to the Apache-2.0 AOSP/LDPlayer reference");
+                    std::array<SIZE,4> widths{};const std::wstring glyphs=L"iW 0";
+                    for(std::size_t i=0;i<widths.size();++i)check(GetTextExtentPoint32W(dc,glyphs.data()+i,1,&widths[i])!=FALSE,"Cannot measure the code font's advances");
+                    check(std::ranges::all_of(widths,[&](const auto& value){return value.cx==widths[0].cx;}),
+                        "The original code font lost fixed-width glyph/space advances");
+                    SelectObject(dc,previous);DeleteObject(font);
+                }
+                ReleaseDC(parent.value,dc);
+                check(actual_weights[0]==FW_NORMAL&&actual_weights[1]>=FW_BOLD,
+                    "A Windows Roboto registration resolves ordinary body text to the Bold face");
             }
             set_edit_text(editor.value, original);
             SendMessageW(editor.value, EM_EMPTYUNDOBUFFER, 0, 0);
@@ -160,7 +209,7 @@ int main() {
             check(edit_text(text.value) == "Álgebra con std::cout y valor.", "Theming altered Unicode or displayed inline delimiters");
             check(character(text.value, 0).crTextColor == colors.text, "Themed prose kept an unreadable system foreground");
             const auto prose = wide(edit_text(text.value));
-            check(std::wstring(character(text.value, static_cast<LONG>(prose.find(L"std"))).szFaceName) == L"Consolas",
+            check(std::wstring(character(text.value, static_cast<LONG>(prose.find(L"std"))).szFaceName) == reader_theme::code_font_face(),
                 "Theming removed the technical fragment's monospace span");
             const auto value_style = character(text.value, static_cast<LONG>(prose.find(L"valor")));
             check((value_style.dwEffects & (CFE_BOLD | CFE_ITALIC)) == (CFE_BOLD | CFE_ITALIC),
@@ -181,6 +230,16 @@ int main() {
                 && result == reinterpret_cast<LRESULT>(reader_theme::brush(reader_theme::Surface::field)),
                 "Themed field did not use its local brush");
             ReleaseDC(parent.value, dc);
+
+            for(const auto& [surface,expected]:std::array<std::pair<reader_theme::Surface,COLORREF>,3>{{
+                {reader_theme::Surface::compiler_header,colors.high_contrast?colors.header:RGB(37,40,46)},
+                {reader_theme::Surface::compiler_editor,colors.high_contrast?colors.field:RGB(28,31,36)},
+                {reader_theme::Surface::compiler_output,colors.high_contrast?colors.field:RGB(5,6,7)}}}){
+                reader_theme::apply(untouched.value,surface);
+                check(reader_theme::background(untouched.value)==expected,"Compiler surface lost its exact Android fill or high-contrast fallback");
+                LOGBRUSH brush{};check(GetObjectW(reader_theme::brush(surface),sizeof(brush),&brush)==static_cast<int>(sizeof(brush))
+                    &&brush.lbColor==expected,"Compiler surface brush uses a stale surface index");
+            }
 
             Window button{CreateWindowExW(0, L"BUTTON", L"&Comprobar", WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON,
                 0, 0, 130, 36, parent.value, nullptr, GetModuleHandleW(nullptr), nullptr)};
@@ -211,11 +270,27 @@ int main() {
                     check(reader_theme::draw_button(item), "Themed button could not draw a normal, pressed, disabled or focused state");
                 }
             }
+            if(!colors.high_contrast){
+                reader_theme::icon_button(button.value);reader_theme::apply(button.value,reader_theme::Surface::header);item.itemState=ODS_FOCUS;
+                check(reader_theme::draw_button(item)&&GetPixel(memory,1,18)==colors.header&&GetPixel(memory,1,1)==colors.header,
+                    "A header icon still paints a canvas-colored rectangular tile over its own surface");
+                reader_theme::apply(button.value,reader_theme::Surface::card);
+                SetWindowTextW(button.value,L"");reader_theme::icon_button(button.value,false);
+                reader_theme::premium_button(button.value);item.itemState=0;
+                check(reader_theme::draw_button(item),"The Premium action could not be rendered");
+                const auto first=GetPixel(memory,16,18),middle=GetPixel(memory,65,18),last=GetPixel(memory,114,18);
+                check(first!=middle&&middle!=last&&first!=last&&GetRValue(middle)>GetRValue(first)&&GetRValue(middle)>GetRValue(last),
+                    "Premium lost Android's true three-stop gold gradient");
+                item.itemState=ODS_DISABLED;check(reader_theme::draw_button(item)&&GetPixel(memory,16,18)==first
+                    &&GetPixel(memory,65,18)==middle&&GetPixel(memory,114,18)==last,
+                    "The non-clickable Premium activated status lost its Android gold drawable");
+                reader_theme::premium_button(button.value,false);SetWindowTextW(button.value,L"&Comprobar");
+            }
             item.hwndItem = radio.value;
             check(!reader_theme::draw_button(item), "Theme intercepted native radio-button drawing");
             const auto radio_dpi = GetDpiForWindow(radio.value);
-            const auto glyph_diameter = MulDiv(16,static_cast<int>(radio_dpi ? radio_dpi : 96),96);
             const auto glyph_left = MulDiv(3,static_cast<int>(radio_dpi ? radio_dpi : 96),96);
+            const auto glyph_diameter = std::min(MulDiv(20,static_cast<int>(radio_dpi ? radio_dpi : 96),96),36-glyph_left*2);
             const auto glyph_center_x = glyph_left + glyph_diameter / 2;
             const auto glyph_center_y = 36 / 2;
             const auto raster = [&] {
@@ -229,8 +304,17 @@ int main() {
                 return count;
             };
             SendMessageW(radio.value,BM_SETCHECK,BST_UNCHECKED,0); raster();
-            check(glyph_pixels(colors.muted) >= 24 && GetPixel(memory,glyph_center_x,glyph_center_y) == colors.card,
-                "Unchecked radio did not draw a visible 16-DIP outline and empty center");
+            const auto unchecked_ink=colors.high_contrast?colors.muted:RGB(120,124,134);
+            if(glyph_pixels(unchecked_ink)<24||GetPixel(memory,glyph_center_x,glyph_center_y)!=colors.card)
+                std::cerr<<"Radio paint diagnostic: dpi="<<radio_dpi<<" diameter="<<glyph_diameter<<" left="<<glyph_left
+                    <<" center=("<<glyph_center_x<<','<<glyph_center_y<<") actual="<<GetPixel(memory,glyph_center_x,glyph_center_y)
+                    <<" background="<<colors.card<<" exact-edge="<<glyph_pixels(unchecked_ink)<<'\n';
+            check(glyph_pixels(unchecked_ink) >= 24 && GetPixel(memory,glyph_center_x,glyph_center_y) == colors.card,
+                "Unchecked radio did not draw the Android 20-DIP outline and empty center");
+            if(!colors.high_contrast){unsigned blended=0;
+                for(int y=0;y<36;++y)for(int x=0;x<glyph_left+glyph_diameter;++x){const auto value=GetPixel(memory,x,y);
+                    if(value!=colors.card&&value!=unchecked_ink)++blended;}
+                check(blended>=12,"The radio outline is still a jagged, unfiltered pixel circle");}
             unsigned caption_pixels = 0;
             for (int y = 0; y < 36; ++y) for (int x = glyph_left + glyph_diameter + 4; x < 130; ++x)
                 if (GetPixel(memory,x,y) != colors.card) ++caption_pixels;
@@ -240,9 +324,9 @@ int main() {
                 && GetPixel(memory,glyph_center_x,glyph_center_y) == colors.accent
                 && glyph_pixels(colors.accent) >= 32,"Selected radio did not preserve native state and draw its accent center");
             EnableWindow(radio.value,FALSE); raster();
-            const auto disabled_ink = colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted;
+            const auto disabled_ink = colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.accent;
             check(GetPixel(memory,glyph_center_x,glyph_center_y) == disabled_ink,
-                "Disabled radio did not respect accessible/system disabled colors");
+                "A correct/disabled selected radio lost its route accent instead of matching Android");
             EnableWindow(radio.value,TRUE);
             SendMessageW(radio.value,BM_SETCHECK,BST_CHECKED,0);
             check(SendMessageW(radio.value,BM_GETCHECK,0,0) == BST_CHECKED,
@@ -256,7 +340,7 @@ int main() {
             check(checkbox.value != nullptr,"Cannot create a real automatic checkbox");
             const auto checkbox_dialog=SendMessageW(checkbox.value,WM_GETDLGCODE,0,0);reader_theme::apply(checkbox.value,reader_theme::Surface::card);
             SendMessageW(checkbox.value,BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(checkbox.value,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);
-            check(GetPixel(memory,glyph_center_x,glyph_center_y)==colors.card&&glyph_pixels(colors.muted)>=24,
+            check(GetPixel(memory,glyph_center_x,glyph_center_y)==colors.card&&glyph_pixels(colors.high_contrast?colors.muted:colors.accent)>=24,
                 "The native checkbox has no empty, clearly drawn square glyph");
             SendMessageW(checkbox.value,BM_CLICK,0,0);SendMessageW(checkbox.value,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(memory),PRF_CLIENT);
             check(SendMessageW(checkbox.value,BM_GETCHECK,0,0)==BST_CHECKED&&glyph_pixels(colors.accent)>=32,
@@ -301,7 +385,7 @@ int main() {
                 "A local route accent leaked globally, ignored its nearest parent or replaced high-contrast system colors");
             reader_theme::set_accent(branch.value,RGB(0,0,0));
             check(reader_theme::palette(formula.value).accent == (system.high_contrast ? system.accent : RGB(0,0,0)),"A valid black accent was confused with an absent property");
-            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):system.text),"A black primary accent chose an unreadable dark foreground");
+            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):RGB(255,255,255)),"A black primary accent lost Android's white enabled Button foreground");
             for(const auto surface:{system.canvas,system.header,system.card,system.field})
                 check(reader_theme::accent_ink(formula.value,surface)==system.text,"A black accent disappeared as icon/text ink on a real themed surface");
             check(reader_theme::palette(formula.value).accent==(system.high_contrast?system.accent:RGB(0,0,0))&&preferences==unchanged,
@@ -313,7 +397,7 @@ int main() {
                         "Contrast-safe accent ink changed an original Android accent or ignored actual system high contrast");
             }
             reader_theme::set_accent(branch.value,RGB(255,255,255));
-            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):system.canvas),"A white primary accent chose an unreadable light foreground");
+            check(reader_theme::accent_foreground(formula.value)==(system.high_contrast?GetSysColor(COLOR_HIGHLIGHTTEXT):RGB(0,0,0)),"A white primary accent lost Android's black enabled Button foreground");
             reader_theme::set_accent(branch.value,std::nullopt);
             check(reader_theme::palette(formula.value).accent == (system.high_contrast ? system.accent : RGB(228,88,72)),"Removing a local accent did not restore parent inheritance");
             for (std::size_t index=0;index<original_ink.size();++index) {

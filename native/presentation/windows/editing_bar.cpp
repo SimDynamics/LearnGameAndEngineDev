@@ -66,11 +66,12 @@ struct EditingBar::Impl{
         return resolve(handle);
     }
     void theme(){reader_theme::apply(bar,reader_theme::Surface::header);reader_theme::apply(strip,reader_theme::Surface::header);
-        for(const auto item:fixed)if(item)reader_theme::apply(item,reader_theme::Surface::card);
-        for(const auto item:buttons)reader_theme::apply(item,reader_theme::Surface::card);}
+        for(const auto item:fixed)if(item)reader_theme::apply(item,reader_theme::Surface::header);
+        for(const auto item:buttons)reader_theme::apply(item,reader_theme::Surface::header);}
     void update_font(){
-        const auto next=CreateFontW(-MulDiv(10,static_cast<int>(GetDpiForWindow(parent)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
-            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+        // Android's shortcut TextViews use MONOSPACE 16sp, not body Roboto.
+        const auto next=CreateFontW(-MulDiv(16,static_cast<int>(GetDpiForWindow(parent)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
+            DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,reader_theme::code_font_face());
         if(!next)return;for(const auto item:fixed)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),TRUE);
         for(const auto item:buttons)SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),TRUE);
         if(font)DeleteObject(font);font=next;
@@ -78,28 +79,28 @@ struct EditingBar::Impl{
     int natural_width(std::size_t index)const{
         const auto dc=GetDC(strip);const auto old=SelectObject(dc,font);const auto text=wide(shortcuts[index]);SIZE measured{};
         GetTextExtentPoint32W(dc,text.c_str(),static_cast<int>(text.size()),&measured);SelectObject(dc,old);ReleaseDC(strip,dc);
-        return std::max(px(36),static_cast<int>(measured.cx)+px(20));
+        return std::max(px(40),static_cast<int>(measured.cx)+px(20));
     }
     void layout(){
         if(!bar||!strip||laying_out)return;laying_out=true;RECT area{};GetClientRect(bar,&area);
-        const int padding=px(5),gap=px(3),tab_width=px(48),history_width=px(36);
-        const int height=std::max(1,static_cast<int>(area.bottom)-padding*2),right=static_cast<int>(area.right)-padding;
-        MoveWindow(fixed[0],padding,padding,tab_width,height,TRUE);
-        MoveWindow(fixed[1],std::max(padding,right-history_width*2-gap),padding,history_width,height,TRUE);
-        MoveWindow(fixed[2],std::max(padding,right-history_width),padding,history_width,height,TRUE);
-        const int left=padding+tab_width+gap,width=std::max(1,right-history_width*2-gap*2-left);
-        MoveWindow(strip,left,padding,width,height,TRUE);
+        const int padding=px(4),margin=px(3),gap=px(6),vertical=px(6),tab_width=px(56),history_width=px(40);
+        const int height=std::max(1,static_cast<int>(area.bottom)-vertical*2),right=static_cast<int>(area.right)-padding-margin;
+        MoveWindow(fixed[0],padding+margin,vertical,tab_width,height,TRUE);
+        MoveWindow(fixed[1],std::max(padding,right-history_width*2-gap),vertical,history_width,height,TRUE);
+        MoveWindow(fixed[2],std::max(padding,right-history_width),vertical,history_width,height,TRUE);
+        const int left=padding+margin+tab_width+gap,width=std::max(1,right-history_width*2-gap*2-left);
+        MoveWindow(strip,left,vertical,width,height,TRUE);
         extent=0;for(std::size_t i=0;i<buttons.size();++i)extent+=natural_width(i)+(i?gap:0);
         horizontal=std::clamp(horizontal,0,std::max(0,extent-width));
         SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,extent-1),static_cast<UINT>(width),horizontal,0};
-        SetScrollInfo(strip,SB_HORZ,&info,TRUE);reader_theme::refresh_scrollbars(strip);RECT visible{};GetClientRect(strip,&visible);
+        SetScrollInfo(strip,SB_HORZ,&info,FALSE);ShowScrollBar(strip,SB_HORZ,FALSE);RECT visible{};GetClientRect(strip,&visible);
         int x=-horizontal;for(std::size_t i=0;i<buttons.size();++i){const auto cell=natural_width(i);
             MoveWindow(buttons[i],x,0,cell,std::max(px(24),static_cast<int>(visible.bottom)),TRUE);x+=cell+gap;}
         laying_out=false;RedrawWindow(bar,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
     }
     void scroll(int position){horizontal=position;layout();}
     void reveal(HWND button){const auto found=std::ranges::find(buttons,button);if(found==buttons.end())return;
-        const auto index=static_cast<std::size_t>(found-buttons.begin());int left=0;for(std::size_t i=0;i<index;++i)left+=natural_width(i)+px(3);
+        const auto index=static_cast<std::size_t>(found-buttons.begin());int left=0;for(std::size_t i=0;i<index;++i)left+=natural_width(i)+px(6);
         RECT area{};GetClientRect(strip,&area);const auto right=left+natural_width(index);
         if(left<horizontal)scroll(left);else if(right>horizontal+area.right)scroll(right-area.right);
     }
@@ -112,7 +113,7 @@ struct EditingBar::Impl{
                 0,0,1,1,strip,reinterpret_cast<HMENU>(static_cast<INT_PTR>(shortcut_command+i)),GetModuleHandleW(nullptr),nullptr);
             if(!button)throw std::runtime_error("Cannot create a configured code shortcut");
             SetWindowSubclass(button,shortcut_proc,button_subclass,reinterpret_cast<DWORD_PTR>(this));buttons.push_back(button);
-            reader_theme::apply(button,reader_theme::Surface::card);if(font)SendMessageW(button,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+            reader_theme::apply(button,reader_theme::Surface::header);if(font)SendMessageW(button,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
         }
         layout();if(had_focus)SetFocus(fixed[0]);
     }
@@ -148,16 +149,23 @@ struct EditingBar::Impl{
     }
     bool draw(const DRAWITEMSTRUCT& item)const{
         if(item.CtlType!=ODT_BUTTON)return false;const auto colors=reader_theme::palette(item.hwndItem);const auto saved=SaveDC(item.hDC);
-        FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::header));const auto fill=CreateSolidBrush((item.itemState&ODS_SELECTED)?colors.header:colors.field);
-        const auto border=CreatePen(PS_SOLID,1,colors.outline);const auto old_brush=SelectObject(item.hDC,fill),old_pen=SelectObject(item.hDC,border);
-        RoundRect(item.hDC,item.rcItem.left,item.rcItem.top,item.rcItem.right,item.rcItem.bottom,px(7),px(7));
-        SelectObject(item.hDC,old_brush);SelectObject(item.hDC,old_pen);DeleteObject(fill);DeleteObject(border);
+        const bool icon=item.CtlID==first_command+1||item.CtlID==first_command+2;
+        FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::header));
+        if(!icon){
+            const auto fill=CreateSolidBrush(colors.high_contrast?colors.field:RGB(35,35,35));
+            const auto border=CreatePen(PS_SOLID,px(1),colors.accent);
+            const auto old_brush=SelectObject(item.hDC,fill),old_pen=SelectObject(item.hDC,border);
+            RoundRect(item.hDC,item.rcItem.left,item.rcItem.top,item.rcItem.right,item.rcItem.bottom,px(16),px(16));
+            SelectObject(item.hDC,old_brush);SelectObject(item.hDC,old_pen);DeleteObject(fill);DeleteObject(border);
+        }
         auto bounds=item.rcItem;InflateRect(&bounds,-px(6),-px(4));
-        if(item.CtlID==first_command+1||item.CtlID==first_command+2){InflateRect(&bounds,-px(3),-px(3));draw_icon(item.hDC,bounds,item.CtlID==first_command+1?Icon::undo:Icon::redo,colors.text);}
-        else{SelectObject(item.hDC,font);SetTextColor(item.hDC,colors.text);SetBkMode(item.hDC,TRANSPARENT);
+        const auto ink=colors.high_contrast?colors.text:RGB(255,255,255);
+        if(icon){InflateRect(&bounds,-px(3),-px(3));draw_icon(item.hDC,bounds,item.CtlID==first_command+1?Icon::undo:Icon::redo,ink);}
+        else{SelectObject(item.hDC,font);SetTextColor(item.hDC,ink);SetBkMode(item.hDC,TRANSPARENT);
             std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(item.hwndItem))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(item.hwndItem,text.data(),static_cast<int>(text.size()))));
             DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&bounds,DT_CENTER|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
-        if(item.itemState&ODS_FOCUS){auto focus=item.rcItem;InflateRect(&focus,-2,-2);DrawFocusRect(item.hDC,&focus);}RestoreDC(item.hDC,saved);return true;
+        if(item.itemState&ODS_FOCUS)reader_theme::paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,ink);
+        RestoreDC(item.hDC,saved);return true;
     }
     static LRESULT CALLBACK shortcut_proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR data){auto& self=*reinterpret_cast<Impl*>(data);
         if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL)return SendMessageW(self.strip,message,wp,lp);
@@ -198,5 +206,5 @@ void EditingBar::set_shortcuts(std::vector<std::string> values){impl_->set_short
 void EditingBar::place(int x,int y,int width,int height){if(impl_->bar)MoveWindow(impl_->bar,x,y,std::max(1,width),std::max(1,height),TRUE);}
 bool EditingBar::visible()const{return impl_->shown;}
 HWND EditingBar::window()const{return impl_->bar;}
-int EditingBar::logical_height()const{return 66;}
+int EditingBar::logical_height()const{return 52;}
 } // namespace lgaed::presentation

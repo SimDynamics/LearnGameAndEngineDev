@@ -92,6 +92,14 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                 check(kind!=ERROR&&!PtInRegion(shape,0,0)&&PtInRegion(shape,(initial.right-initial.left)/2,(initial.bottom-initial.top)/2),
                     "The compact reader has no actual rounded floating outline");DeleteObject(shape);
                 const auto before=f.snapshot();const auto down=GetTickCount64();
+                const auto pane=GetParent(before.segments.front().target);RECT pane_bounds{},view_bounds{};
+                GetWindowRect(pane,&pane_bounds);MapWindowPoints(nullptr,f.view,reinterpret_cast<POINT*>(&pane_bounds),2);GetClientRect(f.view,&view_bounds);
+                check(pane_bounds.bottom==view_bounds.bottom&&!(GetWindowLongPtrW(pane,GWL_STYLE)&WS_VSCROLL),
+                    "Floating reader reserved a footer or exposed the page scrollbar");
+                for(int id=6500;id<6507;++id)UpdateWindow(GetDlgItem(bar,id));
+                SendMessageW(bar,WM_TIMER,901,0);
+                for(int id=6500;id<6507;++id)check(!GetUpdateRect(GetDlgItem(bar,id),nullptr,FALSE),
+                    "An idle reader timer invalidated an unchanged icon");
                 SendMessageW(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,30));
                 SendMessageW(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10));
                 RECT early{};GetWindowRect(bar,&early);check(EqualRect(&initial,&early),"Reader dragging ignored its 90ms distinction");
@@ -108,7 +116,7 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             f.reader->toggle();
             wait([&]{const auto s=f.snapshot();return s.playing&&s.index==1&&s.offset>700&&s.offset<2500;},"paragraph real playback");
             const auto moving=f.snapshot();const auto& segment=moving.segments[moving.index];
-            const auto pending=reader_theme::palette().high_contrast?GetSysColor(COLOR_GRAYTEXT):RGB(135,139,148);
+            const auto pending=reader_theme::unread_color(reader_theme::background(segment.target));
             check(color(segment.target,0)!=pending&&color(segment.target,static_cast<LONG>(wide(segment.source).size()-2))==pending,
                 "Read and pending words do not coexist inside the real paragraph");
             auto expected_visibility_settings=read_lesson_state(f.view).preferences.at("lesson_narration_settings");
@@ -173,6 +181,40 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             std::cout<<"PASS real Kokoro shading, pause/release, exact resume, seek, restart, finish and bounded three-page history\n";
         }
         {
+            Fixture f(backend);f.page(1);const auto current=f.snapshot();const auto page=lesson_page_state(f.view);
+            check(std::ranges::none_of(current.segments,[](const auto& segment){return segment.source=="Prueba.";}),
+                "A later page still repeats the lesson title");
+            const auto prefix=backend->plan(page.lesson_title,"es");auto legacy=prefix;
+            for(const auto& region:lesson_reading_regions(f.view)){
+                const auto planned=backend->plan(region.source_text,"es");legacy.insert(legacy.end(),planned.begin(),planned.end());
+            }
+            const auto old_key=backend->identity(page.narration_page_identity,"es","ef_dora",legacy);
+            check(old_key!=current.key&&!prefix.empty(),"Legacy-title migration fixture did not describe the previous exact script");
+            for(const bool finished:{false,true}){
+                f.reader.reset();
+                narration::Position position{static_cast<std::int64_t>(prefix.size()+current.segments.size()-1),300,
+                    static_cast<std::int64_t>(prefix.size()),finished};
+                update_lesson_preferences(f.view,[&](state::StateData& data){
+                    auto history=narration::begin({},"other-paused","owner-a",{0,100,0,false},{},"other-page-a");
+                    history=narration::begin(std::move(history),"other-finished","owner-b",{0,200,1,true},{},"other-page-b");
+                    history=narration::checkpoint(std::move(history),"other-finished","owner-b",{0,200,1,true});
+                    history=narration::begin(std::move(history),old_key,"owner-c",position,{},page.narration_page_identity);
+                    if(finished)history=narration::checkpoint(std::move(history),old_key,"owner-c",position);
+                    narration::write_history(data,history);
+                });
+                f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto restored=f.snapshot();
+                check(restored.key==current.key&&restored.index+1==current.segments.size()&&restored.offset==300
+                    &&restored.finished==finished&&!restored.allocated&&!restored.playing&&restored.heard_through==0,
+                    "Removing only the old repeated title lost the exact paused/final position");
+                const auto history=narration::read_history(read_lesson_state(f.view));
+                check(history.entries.size()==3&&std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==old_key;})
+                    &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="other-paused"&&entry.position.milliseconds==100;})
+                    &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="other-finished"&&entry.position.finished;}),
+                    "Title migration created a parallel bookmark or evicted another recent page");
+            }
+            std::cout<<"PASS exact legacy-title bookmark migration preserves offset, final state and the same three slots\n";
+        }
+        {
             Fixture f(backend,true);f.answer("<<");f.reader->toggle();
             std::size_t repeated_index=0;
             wait([&]{const auto s=f.snapshot();if(!s.playing||!s.segments[s.index].feedback||s.offset<120)return false;
@@ -218,7 +260,7 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                 return part.block==0&&part.timings.size()>5&&current.offset>=part.timings[1].start_ms&&
                     current.offset<part.timings.back().start_ms;},"real word-aligned "+language+" playback");
             f.reader->pause();const auto paused=f.snapshot();const auto& part=paused.segments[paused.index];
-            const auto pending=reader_theme::palette().high_contrast?GetSysColor(COLOR_GRAYTEXT):RGB(135,139,148);
+            const auto pending=reader_theme::unread_color(reader_theme::background(part.target));
             const auto read=static_cast<LONG>(part.start+part.timings.front().start);
             const auto unread=static_cast<LONG>(part.start+part.timings.back().start);
             check(color(part.target,read)!=pending&&color(part.target,unread)==pending,

@@ -1,4 +1,5 @@
 #include "presentation/windows/editing_bar.hpp"
+#include "presentation/windows/reader_theme.hpp"
 #include "core/lesson_state.hpp"
 
 #include <commctrl.h>
@@ -221,7 +222,31 @@ int main() {
         require(scroll.nPos>0&&last_after.left>=0&&last_after.right<=viewport_area.right&&EqualRect(&tab_before,&tab_after),
             "Horizontal scrolling did not expose the final shortcut independently of fixed controls");
         require(field.source_editor->document().text.empty()&&GetFocus()==field.source,"Scrolling the shortcut list edited code or moved its focus");
+        require(!(GetWindowLongPtrW(viewport,GWL_STYLE)&WS_HSCROLL),"The Android-style shortcut strip still exposes a native scrollbar and reserves its height");
         field.bar->set_shortcuts({});require(field.shortcut(L"TAB")&&field.shortcut(L"Deshacer")&&field.shortcut(L"Rehacer"),"An empty personal list removed fixed editing actions");
+    });
+    test("Shortcut geometry and ink match Android while history icons remain borderless",[]{
+        Fixture field;field.focus(field.source);const auto tab=field.shortcut(L"TAB"),symbol=field.shortcut(L"("),undo=field.shortcut(L"Deshacer");
+        const int dpi=static_cast<int>(GetDpiForWindow(tab));const auto px=[dpi](int size){return MulDiv(size,dpi,96);};
+        require(field.bar->logical_height()==52,"The editing bar does not preserve Android's normal52dp height");
+        LOGFONTW font{};GetObjectW(reinterpret_cast<HFONT>(SendMessageW(symbol,WM_GETFONT,0,0)),sizeof(font),&font);
+        require(-font.lfHeight==px(16)&&std::wstring(font.lfFaceName)==lgaed::presentation::reader_theme::code_font_face(),"Symbol shortcuts lost Android's monospace16sp typography");
+        RECT tab_bounds{},symbol_bounds{};GetClientRect(tab,&tab_bounds);GetClientRect(symbol,&symbol_bounds);
+        require(tab_bounds.right==px(56)&&tab_bounds.bottom==px(40)&&symbol_bounds.right>=px(40)&&symbol_bounds.bottom==px(40),
+            "The TAB/shortcut keys do not match Android's56/40dp widths and40dp height");
+        if(!lgaed::presentation::reader_theme::palette(tab).high_contrast){
+            const auto screen=GetDC(tab),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,px(60),px(40));ReleaseDC(tab,screen);
+            require(dc&&bitmap,"Create shortcut regression drawing surface");const auto old=SelectObject(dc,bitmap);
+            DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.hDC=dc;draw.hwndItem=tab;draw.CtlID=9000;draw.rcItem=tab_bounds;
+            require(SendMessageW(field.bar->window(),WM_DRAWITEM,draw.CtlID,reinterpret_cast<LPARAM>(&draw))!=FALSE&&GetPixel(dc,px(5),px(20))==RGB(35,35,35),
+                "The shortcut key does not use Android's #232323 background");
+            GetClientRect(undo,&draw.rcItem);draw.hwndItem=undo;draw.CtlID=9001;
+            require(SendMessageW(field.bar->window(),WM_DRAWITEM,draw.CtlID,reinterpret_cast<LPARAM>(&draw))!=FALSE
+                &&GetPixel(dc,0,px(20))==lgaed::presentation::reader_theme::palette(undo).header,
+                "The Undo icon still has a square key background or outline");
+            SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);
+        }
+        require(field.source_editor->document().text.empty()&&GetFocus()==field.source,"Shortcut visual presentation changed source or editor focus");
     });
     test("Multi-character shortcuts are one transaction and single-line macros never submit",[] {
         Fixture field;field.bar->set_shortcuts({"std::cout","<<","(\n)"});field.answer_editor->reset({"abc",{},0,3});field.focus(field.answer);

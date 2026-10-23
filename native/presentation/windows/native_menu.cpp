@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <cwchar>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -19,6 +20,9 @@
 
 namespace lgaed::presentation {
 namespace {
+// Android options selectors use this explicit popupBackground. Keep the same
+// surface for native command/selector popups, independently of lesson cards.
+constexpr COLORREF popup_background=RGB(48,50,57);
 struct AccessibleMenuData {
     // Official MSAA contract: first member, no virtual table. MENUITEMINFO's
     // dwItemData points here, not into an unrelated application object.
@@ -218,10 +222,11 @@ NativeMenuStyle prepare_native_menu(HMENU menu, HWND owner) {
     if (!SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0, resources.dpi))
         throw std::runtime_error("Cannot read the system menu font.");
     auto font = metrics.lfMenuFont;
-    font.lfHeight = -std::max<LONG>(std::abs(font.lfHeight), MulDiv(16,static_cast<int>(resources.dpi),72));
+    font.lfHeight = -std::max<LONG>(std::abs(font.lfHeight), MulDiv(16,static_cast<int>(resources.dpi),96));
+    wcscpy_s(font.lfFaceName,L"Roboto");font.lfWeight=FW_NORMAL;font.lfQuality=CLEARTYPE_QUALITY;
     resources.font = CreateFontIndirectW(&font); font.lfWeight = std::max<LONG>(font.lfWeight, FW_BOLD);
     resources.bold_font = CreateFontIndirectW(&font);
-    resources.background = CreateSolidBrush(reader_theme::palette(owner).card);
+    resources.background = CreateSolidBrush(popup_background);
     if (!resources.font || !resources.bold_font || !resources.background) throw std::runtime_error("Cannot create native menu drawing resources.");
     implementation->prepare(menu);
     return NativeMenuStyle(std::move(implementation));
@@ -245,7 +250,7 @@ bool measure_native_menu(MEASUREITEMSTRUCT& measured) {
     if (!shortcut.empty()) DrawTextW(dc, shortcut.data(), static_cast<int>(shortcut.size()), &shortcut_size, DT_CALCRECT | DT_SINGLELINE | DT_NOPREFIX);
     measured.itemWidth = static_cast<UINT>(resources.scale(12 + 24 + 8 + 20 + 12) + label_size.right +
         (shortcut.empty() ? 0 : resources.scale(24) + shortcut_size.right));
-    measured.itemHeight = static_cast<UINT>(std::max(resources.scale(44),
+    measured.itemHeight = static_cast<UINT>(std::max(resources.scale(48),
         static_cast<int>(std::max(label_size.bottom, shortcut_size.bottom)) + resources.scale(20)));
     RestoreDC(dc, saved); ReleaseDC(resources.owner, dc); return true;
 }
@@ -260,7 +265,7 @@ bool draw_native_menu(const DRAWITEMSTRUCT& drawn) {
     const bool disabled = (drawn.itemState & (ODS_DISABLED | ODS_GRAYED)) != 0 || (current.fState & MFS_DISABLED) != 0;
     const bool selected = (drawn.itemState & ODS_SELECTED) != 0;
     const auto background = colors.high_contrast ? GetSysColor(selected ? COLOR_HIGHLIGHT : COLOR_MENU) :
-        (selected ? blend(colors.accent, colors.card) : colors.card);
+        (selected ? blend(colors.accent,popup_background) : popup_background);
     const auto ink = colors.high_contrast ? GetSysColor(disabled ? COLOR_GRAYTEXT : (selected ? COLOR_HIGHLIGHTTEXT : COLOR_MENUTEXT)) :
         (disabled ? colors.muted : colors.text);
     const auto saved = SaveDC(drawn.hDC); fill(drawn.hDC, drawn.rcItem, background);

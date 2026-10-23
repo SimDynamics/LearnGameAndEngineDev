@@ -86,7 +86,13 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
         check(gutter.logical_lines==2,"Scrolling changed the number of source paragraphs");});
     test("Painting preserves exact CRLF tabs selection indentation and undo",[]{const std::string original="int main() {\r\n\t    return 0;\r\n}\r\n";Fixture field(original);
         CHARRANGE selection{2,6};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));const auto before=field.editor->document();
-        {Raster pixels(field.edit);(void)code_gutter_snapshot(field.edit);}
+        set_code_gutter_appearance(field.edit,RGB(24,26,31),RGB(111,119,130),3);
+        {Raster pixels(field.edit);const auto gutter=code_gutter_snapshot(field.edit);const auto colors=presentation::reader_theme::palette();
+            const auto expected_background=colors.high_contrast?presentation::reader_theme::background(field.edit):RGB(24,26,31);
+            check(GetPixel(pixels.dc,0,1)==expected_background,"The explicit laboratory gutter color was not painted, or replaced system high contrast");
+            const auto expected_foreground=colors.high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(111,119,130);unsigned ink=0;
+            for(int y=0;y<pixels.height;++y)for(int x=0;x<gutter.width;++x)if(GetPixel(pixels.dc,x,y)==expected_foreground)++ink;
+            check(ink>0,"The explicit laboratory line-number ink was not rendered");}
         const auto after=field.editor->document();check(after.text==before.text&&after.indentation_starts==before.indentation_starts&&after.selection_start==before.selection_start&&after.selection_end==before.selection_end,
             "Gutter painting changed source, indentation identity or selection");
         const LONG length=GetWindowTextLengthW(field.edit);CHARRANGE end{length,length};SendMessageW(field.edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&end));SendMessageW(field.edit,WM_CHAR,L'x',1);

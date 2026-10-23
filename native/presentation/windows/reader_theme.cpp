@@ -1,5 +1,6 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "core/lesson_state.hpp"
+#include "native_build_config.hpp"
 
 #include <richedit.h>
 #include <commctrl.h>
@@ -11,20 +12,28 @@
 #include <cstdint>
 #include <cwchar>
 #include <cmath>
+#include <filesystem>
 #include <string>
+#include <vector>
 
 namespace lgaed::presentation::reader_theme {
 namespace {
 constexpr wchar_t surface_property[] = L"LGAED.ReaderSurface";
 constexpr wchar_t primary_property[] = L"LGAED.ReaderPrimaryButton";
+constexpr wchar_t icon_property[] = L"LGAED.ReaderIconButton";
+constexpr wchar_t premium_property[] = L"LGAED.ReaderPremiumButton";
 constexpr wchar_t accent_property[] = L"LGAED.ReaderAccent";
+constexpr wchar_t text_property[] = L"LGAED.ReaderTextColor";
 constexpr UINT_PTR radio_subclass_id = 0x4C475244;
 constexpr UINT_PTR combo_subclass_id = 0x4C47434F;
 constexpr UINT_PTR scroll_subclass_id = 0x4C475342;
 constexpr UINT_PTR progress_subclass_id = 0x4C475052;
+constexpr UINT_PTR focus_subclass_id = 0x4C474643;
+thread_local bool keyboard_focus = false;
+constexpr std::size_t surface_count=static_cast<std::size_t>(Surface::compiler_output)+1;
 unsigned surface_index(HWND window) {
     const auto value = reinterpret_cast<ULONG_PTR>(GetPropW(window, surface_property));
-    return value >= 1 && value <= 4 ? static_cast<unsigned>(value) - 1 : 0;
+    return value >= 1 && value <= surface_count ? static_cast<unsigned>(value) - 1 : 0;
 }
 COLORREF color(const Palette& colors, Surface surface) {
     switch (surface) {
@@ -32,8 +41,31 @@ COLORREF color(const Palette& colors, Surface surface) {
     case Surface::header: return colors.header;
     case Surface::card: return colors.card;
     case Surface::field: return colors.field;
+    case Surface::screen: return colors.high_contrast ? colors.canvas : RGB(16,17,20);
+    case Surface::catalog_card: return colors.high_contrast ? colors.card : RGB(32,33,38);
+    case Surface::card_header: return colors.high_contrast ? colors.header : RGB(35,35,35);
+    case Surface::inset: return colors.high_contrast ? colors.field : RGB(20,20,20);
+    case Surface::low: return colors.high_contrast ? colors.field : RGB(25,25,25);
+    case Surface::note: return colors.high_contrast ? colors.card : RGB(30,30,30);
+    case Surface::compiler_header: return colors.high_contrast ? colors.header : RGB(37,40,46);
+    case Surface::compiler_editor: return colors.high_contrast ? colors.field : RGB(28,31,36);
+    case Surface::compiler_output: return colors.high_contrast ? colors.field : RGB(5,6,7);
     }
     return colors.canvas;
+}
+LRESULT CALLBACK focus_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR) {
+    if(message==WM_NCDESTROY){
+        RemoveWindowSubclass(window,focus_subclass,focus_subclass_id);
+        RemovePropW(window,icon_property);RemovePropW(window,premium_property);
+        return DefSubclassProc(window,message,wp,lp);
+    }
+    if(message==WM_LBUTTONDOWN||message==WM_RBUTTONDOWN||message==WM_POINTERDOWN)keyboard_focus=false;
+    else if(message==WM_KEYDOWN||message==WM_SYSKEYDOWN)keyboard_focus=true;
+    else if(message==WM_SETFOCUS&&(GetKeyState(VK_TAB)&0x8000))keyboard_focus=true;
+    const auto result=DefSubclassProc(window,message,wp,lp);
+    if(message==WM_SETFOCUS||message==WM_KILLFOCUS||message==WM_LBUTTONDOWN||message==WM_KEYDOWN||message==WM_UPDATEUISTATE)
+        InvalidateRect(window,nullptr,FALSE);
+    return result;
 }
 double luminance(COLORREF value) {
     const auto linear=[](BYTE c){const auto s=c/255.;return s<=.04045?s/12.92:std::pow((s+.055)/1.055,2.4);};
@@ -125,7 +157,7 @@ LRESULT CALLBACK combo_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UIN
         Polygon(dc,arrow,3);
         SelectObject(dc,old_pen);SelectObject(dc,old_brush);
         DeleteObject(pen);DeleteObject(fill);
-        if(GetFocus()==window){auto focus=bounds;InflateRect(&focus,-3,-3);DrawFocusRect(dc,&focus);}RestoreDC(dc,saved);if(message==WM_PAINT)EndPaint(window,&paint);return 0;}
+        paint_keyboard_focus(window,dc,bounds,colors.muted);RestoreDC(dc,saved);if(message==WM_PAINT)EndPaint(window,&paint);return 0;}
     const auto result=DefSubclassProc(window,message,wp,lp);if(message==WM_SETFOCUS||message==WM_KILLFOCUS||message==CB_SETCURSEL||message==WM_ENABLE||message==WM_SETTEXT)InvalidateRect(window,nullptr,FALSE);return result;
 }
 void paint_radio(HWND window, HDC dc) {
@@ -139,37 +171,73 @@ void paint_radio(HWND window, HDC dc) {
     const bool checked = state == BST_CHECKED;
     const bool checkbox = checkbox_button(window);
     const auto ink = disabled ? (colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted) : colors.text;
-    const auto edge = disabled ? ink : (checked ? accent_ink(window,background(window)) : colors.muted);
+    // Android AppearanceUi keys the tint on checked state, not enabled state.
+    // A solved, disabled choice therefore keeps the route's red/green circle.
+    const auto unchecked = colors.high_contrast ? colors.muted : checkbox ? colors.accent : RGB(120,124,134);
+    const auto edge = colors.high_contrast && disabled ? ink : (checked ? colors.accent : unchecked);
     const auto dpi = GetDpiForWindow(window);
     const auto scale = [dpi](int value) { return std::max(1,MulDiv(value,static_cast<int>(dpi ? dpi : 96),96)); };
     const auto padding = scale(3);
     const auto width = static_cast<int>(client.right - client.left);
     const auto height = static_cast<int>(client.bottom - client.top);
-    const auto diameter = std::min({scale(16),std::max(1,width - 2 * padding),std::max(1,height - 2 * padding)});
+    const auto diameter = std::min({scale(20),std::max(1,width - 2 * padding),std::max(1,height - 2 * padding)});
     const bool right = (GetWindowLongPtrW(window,GWL_STYLE) & BS_LEFTTEXT) != 0;
     const auto left = right ? client.right - padding - diameter : padding;
     const auto top = (client.bottom - diameter) / 2;
     RECT glyph{left,top,left + diameter,top + diameter};
-    const auto border = CreatePen(PS_SOLID,scale(2),edge);
-    const auto previous_pen = SelectObject(dc,border);
-    const auto previous_brush = SelectObject(dc,brush(static_cast<Surface>(surface_index(window))));
-    if (checkbox) RoundRect(dc,glyph.left,glyph.top,glyph.right,glyph.bottom,scale(3),scale(3));
-    else Ellipse(dc,glyph.left,glyph.top,glyph.right,glyph.bottom);
+    // Supersample only the small glyph. Text keeps ClearType and native radio
+    // behavior, while the circle no longer has a pixelated GDI outline.
+    constexpr int supersampling=4;
+    const auto glyph_dc=CreateCompatibleDC(dc);
+    BITMAPINFO sample_format{};sample_format.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
+    sample_format.bmiHeader.biWidth=diameter*supersampling;sample_format.bmiHeader.biHeight=-diameter*supersampling;
+    sample_format.bmiHeader.biPlanes=1;sample_format.bmiHeader.biBitCount=32;sample_format.bmiHeader.biCompression=BI_RGB;
+    void* sample_pixels=nullptr;
+    const auto bitmap=CreateDIBSection(dc,&sample_format,DIB_RGB_COLORS,&sample_pixels,nullptr,0);
+    const auto old_bitmap=SelectObject(glyph_dc,bitmap);
+    const RECT sample{0,0,diameter*supersampling,diameter*supersampling};
+    FillRect(glyph_dc,&sample,brush(static_cast<Surface>(surface_index(window))));
+    const auto border = CreatePen(PS_SOLID,scale(2)*supersampling,edge);
+    const auto previous_pen = SelectObject(glyph_dc,border);
+    const auto previous_brush = SelectObject(glyph_dc,brush(static_cast<Surface>(surface_index(window))));
+    const int sample_end=diameter*supersampling-supersampling;
+    if (checkbox) RoundRect(glyph_dc,supersampling,supersampling,sample_end,sample_end,scale(3)*supersampling,scale(3)*supersampling);
+    else Ellipse(glyph_dc,supersampling,supersampling,sample_end,sample_end);
     if (checked || state == BST_INDETERMINATE) {
-        const auto center = CreateSolidBrush(disabled ? ink : colors.accent);
-        SelectObject(dc,center); SelectObject(dc,GetStockObject(NULL_PEN));
-        const auto inset = std::max(1,diameter / 4);
+        const auto center = CreateSolidBrush(colors.high_contrast && disabled ? ink : colors.accent);
+        SelectObject(glyph_dc,center); SelectObject(glyph_dc,GetStockObject(NULL_PEN));
+        const auto inset = std::max(supersampling,diameter*supersampling / 4);
         if (checkbox) {
-            RoundRect(dc,glyph.left,glyph.top,glyph.right,glyph.bottom,scale(3),scale(3));
-            const auto check = CreatePen(PS_SOLID,scale(2),disabled ? colors.canvas : accent_foreground(window));
-            SelectObject(dc,check);
-            if (state == BST_INDETERMINATE) { MoveToEx(dc,glyph.left+inset,glyph.top+diameter/2,nullptr); LineTo(dc,glyph.right-inset,glyph.top+diameter/2); }
-            else { MoveToEx(dc,glyph.left+diameter/5,glyph.top+diameter/2,nullptr);LineTo(dc,glyph.left+diameter*2/5,glyph.top+diameter*3/4);LineTo(dc,glyph.left+diameter*4/5,glyph.top+diameter/4); }
-            SelectObject(dc,border);DeleteObject(check);
-        } else Ellipse(dc,glyph.left + inset,glyph.top + inset,glyph.right - inset,glyph.bottom - inset);
-        SelectObject(dc,previous_brush); DeleteObject(center);
-    } else SelectObject(dc,previous_brush);
-    SelectObject(dc,previous_pen); DeleteObject(border);
+            RoundRect(glyph_dc,supersampling,supersampling,sample_end,sample_end,scale(3)*supersampling,scale(3)*supersampling);
+            const auto check = CreatePen(PS_SOLID,scale(2)*supersampling,accent_foreground(window));
+            SelectObject(glyph_dc,check);const int size=diameter*supersampling;
+            if (state == BST_INDETERMINATE) { MoveToEx(glyph_dc,inset,size/2,nullptr); LineTo(glyph_dc,size-inset,size/2); }
+            else { MoveToEx(glyph_dc,size/5,size/2,nullptr);LineTo(glyph_dc,size*2/5,size*3/4);LineTo(glyph_dc,size*4/5,size/4); }
+            SelectObject(glyph_dc,border);DeleteObject(check);
+        } else Ellipse(glyph_dc,inset,inset,diameter*supersampling-inset,diameter*supersampling-inset);
+        SelectObject(glyph_dc,previous_brush); DeleteObject(center);
+    } else SelectObject(glyph_dc,previous_brush);
+    SelectObject(glyph_dc,previous_pen); DeleteObject(border);
+    if(sample_pixels){
+        // HALFTONE StretchBlt may quantize even opaque stroke colors according
+        // to the display's palette. Average exact RGB coverage instead, so the
+        // selected circle retains the same route tint as its Android drawable.
+        GdiFlush();const auto* samples=static_cast<const std::uint32_t*>(sample_pixels);
+        std::vector<std::uint32_t> reduced(static_cast<std::size_t>(diameter)*diameter);
+        constexpr unsigned sample_count=supersampling*supersampling;
+        for(int y=0;y<diameter;++y)for(int x=0;x<diameter;++x){
+            unsigned red=0,green=0,blue=0;
+            for(int sy=0;sy<supersampling;++sy)for(int sx=0;sx<supersampling;++sx){
+                const auto value=samples[(y*supersampling+sy)*diameter*supersampling+x*supersampling+sx];
+                red+=(value>>16)&255;green+=(value>>8)&255;blue+=value&255;
+            }
+            reduced[static_cast<std::size_t>(y)*diameter+x]=((red+sample_count/2)/sample_count<<16)
+                |((green+sample_count/2)/sample_count<<8)|(blue+sample_count/2)/sample_count;
+        }
+        auto reduced_format=sample_format;reduced_format.bmiHeader.biWidth=diameter;reduced_format.bmiHeader.biHeight=-diameter;
+        SetDIBitsToDevice(dc,glyph.left,glyph.top,diameter,diameter,0,0,0,diameter,reduced.data(),&reduced_format,DIB_RGB_COLORS);
+    }
+    SelectObject(glyph_dc,old_bitmap);DeleteObject(bitmap);DeleteDC(glyph_dc);
     const auto font = reinterpret_cast<HFONT>(SendMessageW(window,WM_GETFONT,0,0));
     SelectObject(dc,font ? font : GetStockObject(DEFAULT_GUI_FONT));
     SetBkMode(dc,TRANSPARENT); SetTextColor(dc,ink);
@@ -187,11 +255,7 @@ void paint_radio(HWND window, HDC dc) {
         }else flags|=DT_VCENTER|DT_SINGLELINE;
         DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&text_rect,flags);
     }
-    if (GetFocus() == window && (ui_state & UISF_HIDEFOCUS) == 0) {
-        auto focus = text.empty() ? glyph : client;
-        InflateRect(&focus,text.empty() ? padding : -1,text.empty() ? padding : -1);
-        DrawFocusRect(dc,&focus);
-    }
+    if((ui_state&UISF_HIDEFOCUS)==0)paint_keyboard_focus(window,dc,text.empty()?glyph:client,colors.muted);
     RestoreDC(dc,saved);
 }
 LRESULT CALLBACK radio_subclass(HWND window, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR, DWORD_PTR) {
@@ -221,8 +285,8 @@ LRESULT CALLBACK radio_subclass(HWND window, UINT message, WPARAM wparam, LPARAM
     }
 }
 struct Brushes {
-    std::array<COLORREF,4> colors{};
-    std::array<HBRUSH,4> handles{};
+    std::array<COLORREF,surface_count> colors{};
+    std::array<HBRUSH,surface_count> handles{};
     ~Brushes() { for (const auto handle : handles) if (handle) DeleteObject(handle); }
     HBRUSH get(Surface surface) {
         const auto index = static_cast<std::size_t>(surface);
@@ -252,7 +316,43 @@ LRESULT CALLBACK scroll_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UI
 }
 }
 
+void prepare_fonts() {
+    struct PrivateFonts {
+        std::vector<std::wstring> loaded;
+        PrivateFonts(){
+            // Original AOSP files, byte-identical to the reference LDPlayer:
+            // https://android.googlesource.com/platform/external/noto-fonts/+/refs/heads/main/notoserif/
+            // Their original copyright/OFL notice is bundled beside them.
+            // Android's monospace family is the unmodified Apache-2.0 font at
+            // https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/data/fonts/
+            // Its separate original notice is DroidSansMono-NOTICE.txt.
+            std::wstring module(32768,L'\0');const auto length=GetModuleFileNameW(nullptr,module.data(),static_cast<DWORD>(module.size()));
+            if(length&&length<module.size())module.resize(length);else module.clear();
+            for(const auto name:{L"NotoSerif-Regular.ttf",L"NotoSerif-Italic.ttf",L"DroidSansMono.ttf"}){
+                const auto installed=std::filesystem::path(module).parent_path()/L"fonts"/name;
+                const auto source=std::filesystem::path(build::source_root)/L"native/assets/fonts"/name;
+                for(const auto& candidate:{installed,source}){
+                    if(std::filesystem::is_regular_file(candidate)&&AddFontResourceExW(candidate.c_str(),FR_PRIVATE,nullptr)>0){loaded.push_back(candidate.native());break;}
+                }
+            }
+            wchar_t directory[MAX_PATH]{};const auto count=GetWindowsDirectoryW(directory,MAX_PATH);
+            if(count==0||count>=MAX_PATH)return;
+            // Some Windows installations register "Roboto" against the Bold
+            // file only. Loading its existing Regular/Medium/Bold faces with
+            // FR_PRIVATE fixes weight selection without touching that registry.
+            for(const auto name:{L"Roboto-Regular.ttf",L"Roboto-Medium.ttf",L"Roboto-Bold_2.ttf"}){
+                const auto path=std::wstring(directory)+L"\\Fonts\\"+name;
+                if(AddFontResourceExW(path.c_str(),FR_PRIVATE,nullptr)>0)loaded.push_back(path);
+            }
+        }
+        ~PrivateFonts(){for(const auto& path:loaded)RemoveFontResourceExW(path.c_str(),FR_PRIVATE,nullptr);}
+    };
+    static const PrivateFonts fonts;(void)fonts;
+}
+const wchar_t* math_font_face(){prepare_fonts();return L"Noto Serif";}
+const wchar_t* code_font_face(){prepare_fonts();return L"Droid Sans Mono";}
 Palette palette() {
+    prepare_fonts();
     HIGHCONTRASTW contrast{}; contrast.cbSize = sizeof(contrast);
     const bool high_contrast = SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0)
         && (contrast.dwFlags & HCF_HIGHCONTRASTON) != 0;
@@ -261,8 +361,8 @@ Palette palette() {
             GetSysColor(COLOR_WINDOW), GetSysColor(COLOR_WINDOWTEXT), GetSysColor(COLOR_WINDOWTEXT),
             GetSysColor(COLOR_HIGHLIGHT), GetSysColor(COLOR_WINDOWTEXT), true};
     }
-    return {RGB(30,31,33), RGB(37,40,45), RGB(40,41,45), RGB(38,41,46),
-        RGB(222,223,225), RGB(158,163,173), RGB(89,240,252), RGB(70,74,83), false};
+    return {RGB(16,16,16), RGB(23,23,23), RGB(28,28,28), RGB(37,37,37),
+        RGB(218,221,228), RGB(170,174,183), RGB(89,240,252), RGB(74,74,74), false};
 }
 Palette palette(HWND context) {
     auto result = palette();
@@ -292,19 +392,33 @@ COLORREF appearance_accent(const state::StateData& data,std::string_view route) 
 }
 COLORREF accent_foreground(HWND context) {
     const auto colors=palette(context);if(colors.high_contrast)return GetSysColor(COLOR_HIGHLIGHTTEXT);
-    return contrast_ratio(colors.accent,colors.text)>=contrast_ratio(colors.accent,colors.canvas)?colors.text:colors.canvas;
+    // Same enabled Button ink selection as Android AppearanceUi.applyButton.
+    const auto brightness=(GetRValue(colors.accent)*299+GetGValue(colors.accent)*587+GetBValue(colors.accent)*114)/1000;
+    return brightness>=160?RGB(0,0,0):RGB(255,255,255);
 }
 COLORREF accent_ink(HWND context,COLORREF surface) {
     const auto colors=palette(context);if(colors.high_contrast)return GetSysColor(COLOR_WINDOWTEXT);
     if(contrast_ratio(colors.accent,surface)>=3.)return colors.accent;
     return contrast_ratio(colors.text,surface)>=contrast_ratio(colors.canvas,surface)?colors.text:colors.canvas;
 }
+COLORREF unread_color(COLORREF background){
+    const int preferred=luminance(background)<.35?122:80;
+    const auto gray=[](int channel){return RGB(channel,channel,channel);};
+    if(contrast_ratio(gray(preferred),background)>=4.5)return gray(preferred);
+    int selected=preferred,distance=256;
+    for(int channel=0;channel<=255;++channel)if(contrast_ratio(gray(channel),background)>=4.5&&std::abs(channel-preferred)<distance){selected=channel;distance=std::abs(channel-preferred);}
+    return gray(selected);
+}
 HBRUSH brush(Surface surface) { static Brushes brushes; return brushes.get(surface); }
 bool applied(HWND window) { return window && GetPropW(window, surface_property) != nullptr; }
 COLORREF background(HWND window) {
     return applied(window) ? color(palette(window), static_cast<Surface>(surface_index(window))) : GetSysColor(COLOR_WINDOW);
 }
-COLORREF foreground(HWND window) { return applied(window) ? palette(window).text : GetSysColor(COLOR_WINDOWTEXT); }
+COLORREF foreground(HWND window) {
+    const auto colors=palette(window);
+    if(!colors.high_contrast)if(const auto value=reinterpret_cast<ULONG_PTR>(GetPropW(window,text_property)))return static_cast<COLORREF>(value-1);
+    return applied(window)?colors.text:GetSysColor(COLOR_WINDOWTEXT);
+}
 void paint_scrollbars(HWND window,HDC dc){
     if(!dc||!IsWindow(window)||!applied(window))return;
     const auto colors=palette(window);if(colors.high_contrast)return;
@@ -354,6 +468,7 @@ void refresh_scrollbars(HWND window){
 void apply(HWND window, Surface surface) {
     if (!window) return;
     SetPropW(window, surface_property, reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(surface) + 1));
+    SetWindowSubclass(window,focus_subclass,focus_subclass_id,0);
     if(progress_bar(window))SetWindowSubclass(window,progress_subclass,progress_subclass_id,0);
     if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window))
         SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
@@ -371,6 +486,37 @@ void primary_button(HWND button, bool primary) {
     else RemovePropW(button, primary_property);
     InvalidateRect(button, nullptr, FALSE);
 }
+void icon_button(HWND button,bool icon) {
+    if(!IsWindow(button))return;
+    if(icon)SetPropW(button,icon_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));
+    else RemovePropW(button,icon_property);
+    InvalidateRect(button,nullptr,FALSE);
+}
+void premium_button(HWND button,bool premium) {
+    if(!IsWindow(button))return;
+    if(premium)SetPropW(button,premium_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));
+    else RemovePropW(button,premium_property);
+    InvalidateRect(button,nullptr,FALSE);
+}
+void set_text_color(HWND window,std::optional<COLORREF> color) {
+    if(!IsWindow(window))return;
+    if(color)SetPropW(window,text_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(*color&0xFFFFFF)+1));
+    else RemovePropW(window,text_property);
+    InvalidateRect(window,nullptr,FALSE);
+}
+bool keyboard_focus_visible(HWND window) {
+    const auto focus=GetFocus();
+    return keyboard_focus&&focus&&(focus==window||IsChild(window,focus));
+}
+void paint_keyboard_focus(HWND window,HDC dc,RECT bounds,COLORREF ink) {
+    if(!dc||!keyboard_focus_visible(window))return;
+    const int dpi=static_cast<int>(GetDpiForWindow(window));
+    const int inset=std::max(1,MulDiv(2,dpi,96));InflateRect(&bounds,-inset,-inset);
+    const auto pen=CreatePen(PS_SOLID,std::max(1,MulDiv(1,dpi,96)),ink);
+    const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+    RoundRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom,inset*4,inset*4);
+    SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(pen);
+}
 bool control_color(UINT message, WPARAM wparam, LPARAM lparam, LRESULT& result) {
     if (message != WM_CTLCOLOREDIT && message != WM_CTLCOLORSTATIC && message != WM_CTLCOLORBTN
         && message != WM_CTLCOLORLISTBOX && message != WM_CTLCOLORDLG) return false;
@@ -386,26 +532,68 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
     const auto colors = palette(item.hwndItem);
     const bool disabled = (item.itemState & ODS_DISABLED) != 0;
     const bool pressed = (item.itemState & ODS_SELECTED) != 0;
-    const bool primary = GetPropW(item.hwndItem, primary_property) != nullptr;
-    auto fill = primary && !disabled ? colors.accent : colors.field;
-    auto ink = primary && !disabled ? accent_foreground(item.hwndItem) : colors.text;
+    const bool icon = GetPropW(item.hwndItem,icon_property) != nullptr;
+    const bool premium = GetPropW(item.hwndItem,premium_property) != nullptr;
+    const auto parent=GetParent(item.hwndItem);
+    const auto parent_fill=applied(parent)?background(parent):colors.canvas;
+    const auto icon_fill=background(item.hwndItem);
+    auto fill = icon ? icon_fill : disabled ? RGB(72,72,72) : colors.accent;
+    auto ink = icon ? colors.text : disabled ? colors.muted : accent_foreground(item.hwndItem);
     if (colors.high_contrast) {
-        fill = primary && !disabled ? GetSysColor(COLOR_HIGHLIGHT) : GetSysColor(COLOR_BTNFACE);
-        ink = primary && !disabled ? GetSysColor(COLOR_HIGHLIGHTTEXT) : GetSysColor(COLOR_BTNTEXT);
+        fill = icon ? icon_fill : !disabled ? GetSysColor(COLOR_HIGHLIGHT) : GetSysColor(COLOR_BTNFACE);
+        ink = !icon && !disabled ? GetSysColor(COLOR_HIGHLIGHTTEXT) : GetSysColor(COLOR_BTNTEXT);
     } else if (pressed && !disabled) {
-        fill = primary ? colors.accent : RGB(53,57,65);
+        const auto base=icon?icon_fill:colors.accent;
+        fill=RGB((GetRValue(base)*9+255)/10,(GetGValue(base)*9+255)/10,(GetBValue(base)*9+255)/10);
     }
     if (disabled) ink = colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted;
     const auto saved = SaveDC(item.hDC);
-    const auto parent = GetParent(item.hwndItem);
-    FillRect(item.hDC, &item.rcItem, brush(applied(parent) ? static_cast<Surface>(surface_index(parent)) : Surface::canvas));
-    const auto body = CreateSolidBrush(fill);
-    const auto border = CreatePen(PS_SOLID, 1, primary && !disabled ? colors.accent : colors.outline);
-    const auto old_brush = SelectObject(item.hDC, body);
-    const auto old_pen = SelectObject(item.hDC, border);
-    RoundRect(item.hDC, item.rcItem.left, item.rcItem.top, item.rcItem.right, item.rcItem.bottom, 10, 10);
-    SelectObject(item.hDC, old_pen); SelectObject(item.hDC, old_brush);
-    DeleteObject(border); DeleteObject(body);
+    const int dpi=static_cast<int>(GetDpiForWindow(item.hwndItem));
+    const auto px=[&](int value){return std::max(1,MulDiv(value,dpi,96));};
+    const auto outside=CreateSolidBrush(icon?icon_fill:parent_fill);FillRect(item.hDC,&item.rcItem,outside);DeleteObject(outside);
+    if(!icon || pressed){
+        const auto body = CreateSolidBrush(fill);
+        const auto old_brush = SelectObject(item.hDC, body);
+        const auto old_pen = SelectObject(item.hDC,GetStockObject(NULL_PEN));
+        const auto radius=px(icon?24:4)*2;
+        RoundRect(item.hDC,item.rcItem.left,item.rcItem.top,item.rcItem.right,item.rcItem.bottom,radius,radius);
+        SelectObject(item.hDC,old_pen);SelectObject(item.hDC,old_brush);DeleteObject(body);
+    }
+    // The Android "Premium activated" status keeps its gold drawable even
+    // when it is non-clickable; disabling a native read-only status must not
+    // turn the entitlement into an ordinary grey action.
+    if(premium&&!colors.high_contrast){
+        // Exact three stops, 45-degree direction, radius and stroke from
+        // Android's bg_premium_gold.xml. No single-color approximation.
+        const int width=item.rcItem.right-item.rcItem.left,height=item.rcItem.bottom-item.rcItem.top;
+        if(width>0&&height>0){
+            BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=width;
+            info.bmiHeader.biHeight=-height;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+            void* pixels=nullptr;const auto bitmap=CreateDIBSection(item.hDC,&info,DIB_RGB_COLORS,&pixels,nullptr,0);
+            if(bitmap&&pixels){
+                auto* data=static_cast<std::uint32_t*>(pixels);
+                const double denominator=static_cast<double>(width)*width+static_cast<double>(height)*height;
+                for(int y=0;y<height;++y)for(int x=0;x<width;++x){
+                    const double t=std::clamp((static_cast<double>(x)*width+static_cast<double>(height-y)*height)/denominator,0.,1.);
+                    const auto a=t<.5?RGB(110,83,16):RGB(212,175,55),b=t<.5?RGB(212,175,55):RGB(140,106,18);
+                    const double fraction=t<.5?t*2:(t-.5)*2;
+                    const auto channel=[&](int start,int end){return static_cast<std::uint32_t>(std::lround(start+(end-start)*fraction));};
+                    data[y*width+x]=(channel(GetRValue(a),GetRValue(b))<<16)|(channel(GetGValue(a),GetGValue(b))<<8)|channel(GetBValue(a),GetBValue(b));
+                }
+                const auto memory=CreateCompatibleDC(item.hDC);const auto before=SelectObject(memory,bitmap);
+                const auto clip=CreateRoundRectRgn(item.rcItem.left,item.rcItem.top,item.rcItem.right,item.rcItem.bottom,px(36),px(36));
+                const auto saved_clip=SaveDC(item.hDC);ExtSelectClipRgn(item.hDC,clip,RGN_AND);
+                BitBlt(item.hDC,item.rcItem.left,item.rcItem.top,width,height,memory,0,0,SRCCOPY);
+                RestoreDC(item.hDC,saved_clip);DeleteObject(clip);SelectObject(memory,before);DeleteDC(memory);
+                const auto stroke=CreatePen(PS_SOLID,px(1),RGB(242,220,138));const auto pen_before=SelectObject(item.hDC,stroke);
+                const auto brush_before=SelectObject(item.hDC,GetStockObject(NULL_BRUSH));
+                RoundRect(item.hDC,item.rcItem.left,item.rcItem.top,item.rcItem.right,item.rcItem.bottom,px(36),px(36));
+                SelectObject(item.hDC,pen_before);SelectObject(item.hDC,brush_before);DeleteObject(stroke);
+            }
+            if(bitmap)DeleteObject(bitmap);
+        }
+        ink=RGB(32,22,0);
+    }
     const auto font = reinterpret_cast<HFONT>(SendMessageW(item.hwndItem, WM_GETFONT, 0, 0));
     SelectObject(item.hDC, font ? font : GetStockObject(DEFAULT_GUI_FONT));
     SetTextColor(item.hDC, ink); SetBkMode(item.hDC, TRANSPARENT);
@@ -418,10 +606,9 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
         auto measured=bounds;DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&measured,text_flags | DT_WORDBREAK | DT_CALCRECT);
         bounds.top+=std::max<LONG>(0,(bounds.bottom-bounds.top-(measured.bottom-measured.top))/2);text_flags|=DT_WORDBREAK;
     }else text_flags|=DT_VCENTER | DT_SINGLELINE;
-    DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&bounds,text_flags);
-    if ((item.itemState & ODS_FOCUS) != 0 && (item.itemState & ODS_NOFOCUSRECT) == 0) {
-        auto focus = item.rcItem; InflateRect(&focus, -4, -4); DrawFocusRect(item.hDC, &focus);
-    }
+    if(!icon)DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&bounds,text_flags);
+    if((item.itemState&ODS_FOCUS)&&(item.itemState&ODS_NOFOCUSRECT)==0)
+        paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,ink);
     RestoreDC(item.hDC, saved);
     return true;
 }

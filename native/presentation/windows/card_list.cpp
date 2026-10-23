@@ -52,9 +52,9 @@ struct CardList {
         scroll=std::clamp(scroll,0,std::max(0,extent()-static_cast<int>(bounds.bottom)));
         SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,extent()-1),
             static_cast<UINT>(std::max(0L,bounds.bottom)),scroll,0};
-        SetScrollInfo(window,SB_VERT,&info,TRUE);
-        reader_theme::refresh_scrollbars(window);
-        // The scrollbar can change the usable width; measure again afterwards.
+        SetScrollInfo(window,SB_VERT,&info,FALSE);ShowScrollBar(window,SB_VERT,FALSE);
+        // Android's catalog does not expose a scrollbar. Native range/position
+        // remain available for wheel, drag, keyboard and accessibility.
         GetClientRect(window,&bounds);
         int y=-scroll;
         for(const auto& card:cards){
@@ -190,6 +190,7 @@ LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wp,LPARAM lp) {
                 0,0,1,1,window,reinterpret_cast<HMENU>(1),GetModuleHandleW(nullptr),nullptr);
             if(!card)return LB_ERR;
             if(!SetWindowSubclass(card,card_proc,1,reinterpret_cast<DWORD_PTR>(self))){DestroyWindow(card);return LB_ERR;}
+            reader_theme::apply(card,reader_theme::Surface::screen);
             self->cards.push_back({card,std::move(text),height});self->configure_gesture(card);
             SendMessageW(card,WM_SETFONT,reinterpret_cast<WPARAM>(self->font),FALSE);self->layout();return static_cast<LRESULT>(self->cards.size()-1);
         }
@@ -246,7 +247,7 @@ LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wp,LPARAM lp) {
             if(GetFocus()==window&&index==self->selection)draw.itemState|=ODS_FOCUS;
             return SendMessageW(self->parent,WM_DRAWITEM,static_cast<WPARAM>(self->identifier),reinterpret_cast<LPARAM>(&draw));
         }
-        case WM_ERASEBKGND:{RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wp),&area,reader_theme::brush(reader_theme::Surface::canvas));return TRUE;}
+        case WM_ERASEBKGND:{RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wp),&area,reader_theme::brush(reader_theme::Surface::screen));return TRUE;}
         case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);if(self->owned)delete self;return DefWindowProcW(window,message,wp,lp);
         default:break;
         }

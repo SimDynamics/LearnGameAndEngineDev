@@ -1,6 +1,8 @@
 #include "core/catalog.hpp"
 
 #include <algorithm>
+#include <map>
+#include <set>
 #include <stdexcept>
 
 namespace lgaed::curriculum {
@@ -90,6 +92,89 @@ bool catalog_lesson_started(const state::StateData& data, std::string_view id) {
 CatalogProgress catalog_progress(const state::StateData& data,const CatalogScope& scope) {
     CatalogProgress result{0,scope.lessons.size()};
     for (const auto& id : scope.lessons) if (catalog_lesson_completed(data,id)) ++result.completed;
+    return result;
+}
+CatalogProgress catalog_lesson_page_progress(const state::StateData& data,const Lesson& lesson,
+                                           const CatalogExerciseCompletion& correct) {
+    CatalogProgress result{0,lesson.pages.size()};
+    if (lesson.pages.empty()) return result;
+    const auto base = "lesson_" + lesson.id;
+    const auto started_value = state::find(data,"learning_progress",base + "_started");
+    if (started_value && !std::holds_alternative<bool>(*started_value))
+        throw std::runtime_error("El estado de inicio de la lección no es válido.");
+    const bool started = started_value && std::get<bool>(*started_value);
+    const auto is_exercise = [](BlockType type) {
+        return type == BlockType::multiple_choice || type == BlockType::fill_code ||
+            type == BlockType::output_prediction || type == BlockType::order_code ||
+            type == BlockType::drag_fill_code || type == BlockType::inline_fill_code || type == BlockType::math_puzzle;
+    };
+    struct Group { std::string id; std::vector<const Block*> blocks; };
+    std::vector<Group> groups;
+    const auto& layout = lesson.state_layout;
+    std::set<std::string> read_pages, read_blocks;
+    if (layout.version) {
+        std::map<std::string,const Block*> displayed;
+        for (const auto& page : lesson.pages) for (const auto& block : page.blocks)
+            if (!displayed.emplace(block.stable_id,&block).second)
+                throw std::runtime_error("Una identidad de bloque aparece repetida en el progreso.");
+        for (const auto& original : layout.origin) {
+            Group group{original.id,{}};
+            auto ids = original.blocks;
+            for (const auto& addition : layout.additions)
+                if (addition.progress_page == original.id) ids.push_back(addition.id);
+            for (const auto& id : ids) {
+                const auto found = displayed.find(id);
+                if (found == displayed.end()) throw std::runtime_error("Falta un bloque del grupo histórico de progreso.");
+                group.blocks.push_back(found->second);
+            }
+            groups.push_back(std::move(group));
+        }
+        const auto suffix = layout.version == 2 ? "v2_" + layout.locale : std::string("v1");
+        const auto coverage = [&](std::string_view name, std::set<std::string>& target) {
+            const auto value = state::find(data,"learning_progress",base + std::string(name) + suffix);
+            if (!value) return;
+            const auto items = std::get_if<std::vector<std::string>>(value);
+            if (!items) throw std::runtime_error("La cobertura de lectura guardada no es válida.");
+            target.insert(items->begin(),items->end());
+        };
+        coverage("_read_pages_",read_pages); coverage("_read_blocks_",read_blocks);
+    } else {
+        for (const auto& page : lesson.pages) {
+            Group group;
+            for (const auto& block : page.blocks) group.blocks.push_back(&block);
+            groups.push_back(std::move(group));
+        }
+    }
+    const auto current_page = std::min(state::saved_page(data,lesson.id),lesson.pages.size()-1);
+    for (std::size_t index = 0; index < groups.size(); ++index) {
+        const auto& group = groups[index];
+        const bool has_exercise = std::ranges::any_of(group.blocks,[&](const auto* block) { return is_exercise(block->type); });
+        bool completed = false;
+        if (has_exercise) {
+            completed = std::ranges::all_of(group.blocks,[&](const auto* block) {
+                return !is_exercise(block->type) || (correct && correct(*block));
+            });
+        } else if (layout.version) {
+            completed = started && (group.blocks.empty() ? read_pages.contains(group.id) :
+                std::ranges::all_of(group.blocks,[&](const auto* block) { return read_blocks.contains(block->stable_id); }));
+        } else {
+            // This is Android's historical theory-only rule, gated by the
+            // explicit started flag. It never credits an unanswered puzzle.
+            completed = started && index <= current_page;
+        }
+        if (completed) ++result.completed;
+    }
+    return result;
+}
+CatalogProgress catalog_unit_learning_progress(const state::StateData& data,const CatalogScope& scope,
+                                              std::span<const CatalogProgress> lessons) {
+    if (scope.lessons.size() != lessons.size()) throw std::invalid_argument("El progreso no coincide con las lecciones publicadas.");
+    auto result = catalog_progress(data,scope);
+    result.learning_total = scope.lessons.size() * 100;
+    for (const auto& lesson : lessons) {
+        result.learning_completed += lesson.percentage();
+        result.pending_validation = result.pending_validation || lesson.pending_validation;
+    }
     return result;
 }
 std::size_t reset_catalog_progress(state::StateData& data,const CatalogScope& scope) {

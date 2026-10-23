@@ -31,9 +31,16 @@ Vector load(Icon icon) {
     case Icon::speaker:file=L"ic_person_speaking.xml";break;
     case Icon::language:file=L"ic_lesson_language.xml";break;
     case Icon::terminal:file=L"ic_attempt_programming.xml";break;
+    case Icon::attempt_math:file=L"ic_attempt_math.xml";break;
     case Icon::copy:file=L"ic_code_copy.xml";break;
     case Icon::reset:file=L"ic_code_reset.xml";break;
     case Icon::expand:file=L"ic_code_fullscreen.xml";break;
+    case Icon::calculator_edit:file=L"ic_calculator_edit.xml";break;
+    case Icon::calculator:file=L"ic_calculator.xml";break;
+    case Icon::math_previous_slot:file=L"ic_math_previous_slot.xml";break;
+    case Icon::math_next_slot:file=L"ic_math_next_slot.xml";break;
+    case Icon::wrap_on:file=L"ic_code_wrap_on.xml";break;
+    case Icon::wrap_off:file=L"ic_code_wrap_off.xml";break;
     default:break;
     }
     Vector result;
@@ -56,6 +63,7 @@ Vector load(Icon icon) {
     const char* path="";
     switch(icon) {
     case Icon::back:path="M20,12H4M11,5L4,12L11,19";break;
+    case Icon::close:path="M6,6L18,18M18,6L6,18";break;
     case Icon::play:result.layers.push_back({"M7,3L21,12L7,21Z",true,0});return result;
     case Icon::pause:result.layers.push_back({"M6,3H10V21H6ZM14,3H18V21H14Z",true,0});return result;
     case Icon::undo:path="M4,9H12C21,9 21,20 12,20M4,9L9,4M4,9L9,14";break;

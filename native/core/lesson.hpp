@@ -77,6 +77,7 @@ struct Block {
     std::vector<Emphasis> emphasis;
     std::vector<std::string> options, answers, fragments;
     std::vector<std::string> choices;
+    std::vector<std::string> review_feedback_options;
     std::vector<std::vector<std::string>> answer_alternatives;
     std::optional<std::size_t> correct_index;
     std::vector<std::size_t> correct_order;
@@ -125,6 +126,7 @@ void validate_activity_relationships(const Lesson&);
 [[nodiscard]] std::size_t display_page(const Lesson&, std::size_t storage_page);
 
 struct AnswerEvaluation { bool correct = false; std::string feedback; };
+[[nodiscard]] std::string incorrect_feedback(const Block&,std::optional<std::size_t> selected={});
 [[nodiscard]] AnswerEvaluation evaluate_text_answer(const Block&, std::string_view answer);
 [[nodiscard]] AnswerEvaluation evaluate_choice(const Block&, std::size_t option);
 [[nodiscard]] AnswerEvaluation evaluate_order(const Block&, std::span<const std::size_t> order);

@@ -136,7 +136,7 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text) {
     return result;
 }
 void apply_cpp(HWND edit, std::wstring_view source, std::size_t offset = 0, bool monospaced = false) {
-    for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? L"Consolas" : nullptr);
+    for (const auto& ink : cpp_ink(edit, source)) format(edit, offset + ink.start, offset + ink.end, ink.color, monospaced ? reader_theme::code_font_face() : nullptr);
 }
 struct Stream { const BYTE* bytes; std::size_t size, offset = 0; };
 DWORD CALLBACK stream_text(DWORD_PTR cookie, LPBYTE buffer, LONG requested, LONG* copied) {
@@ -148,15 +148,18 @@ void default_format(HWND edit, bool code, RichTextRole role) {
     select(edit, 0, static_cast<std::size_t>(GetWindowTextLengthW(edit)));
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(edit);
+    if(role!=RichTextRole::body&&!reader_theme::palette().high_contrast)style.crTextColor=RGB(255,255,255);
     style.dwEffects = role == RichTextRole::body ? 0 : CFE_BOLD;
-    wcscpy_s(style.szFaceName, code ? L"Consolas" : L"Segoe UI");
+    wcscpy_s(style.szFaceName, code ? reader_theme::code_font_face() : L"Roboto");
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&style));
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_DEFAULT, reinterpret_cast<LPARAM>(&style));
     PARAFORMAT2 paragraph{}; paragraph.cbSize = sizeof(paragraph);
-    paragraph.dwMask = PFM_SPACEBEFORE | PFM_SPACEAFTER | PFM_TABSTOPS;
-    paragraph.dySpaceAfter = code ? 0 : 100; paragraph.cTabCount = MAX_TAB_STOPS;
-    // Four Consolas advances at the base size. Editable code replaces these
-    // with its measured tab stops, preserving real tabs and indentation units.
+    paragraph.dwMask = PFM_SPACEBEFORE | PFM_SPACEAFTER | PFM_TABSTOPS | PFM_LINESPACING;
+    paragraph.dySpaceAfter = 0; paragraph.cTabCount = MAX_TAB_STOPS;
+    paragraph.bLineSpacingRule = 5;
+    paragraph.dyLineSpacing = !code && role == RichTextRole::body ? 25 : 20;
+    // Preserve the default tab positions. Editable code replaces these with
+    // measured tab stops, preserving real tabs and indentation units.
     for (int tab = 0; tab < MAX_TAB_STOPS; ++tab) paragraph.rgxTabs[tab] = (tab + 1) * 792;
     SendMessageW(edit, EM_SETPARAFORMAT, 0, reinterpret_cast<LPARAM>(&paragraph));
 }
@@ -283,13 +286,13 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
         static const std::wregex technical(LR"((#\s*include(?:[ \t]*(?:<[^>\r\n]+>|"[^"\r\n]*"))?)|(\bstd[ \t]*::[A-Za-z_0-9:]*)|(\bmain(?:\(\))?)|(\breturn[ \t]+[0-9]+[ \t]*;?)|([Cc]\+\+[0-9]*)|(<<|>>))");
         for (std::wsregex_iterator match(source.begin(), source.end(), technical), end; match != end; ++match) {
             const auto start = static_cast<std::size_t>(match->position()); const auto count = static_cast<std::size_t>(match->length());
-            format(edit, start, start + count, reader_theme::foreground(edit), L"Consolas");
+            format(edit, start, start + count, reader_theme::foreground(edit), reader_theme::code_font_face());
             apply_cpp(edit, std::wstring_view(source).substr(start,count), start, true);
         }
         for (const auto& [start,end] : fragments) {
             const auto begin_wide = wide(std::string_view(displayed).substr(0,start)).size();
             const auto fragment = wide(std::string_view(displayed).substr(start,end-start));
-            format(edit, begin_wide, begin_wide + fragment.size(), reader_theme::foreground(edit), L"Consolas");
+            format(edit, begin_wide, begin_wide + fragment.size(), reader_theme::foreground(edit), reader_theme::code_font_face());
             apply_cpp(edit, fragment, begin_wide, true);
         }
     }

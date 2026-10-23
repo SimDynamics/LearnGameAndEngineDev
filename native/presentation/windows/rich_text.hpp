@@ -5,11 +5,11 @@
 #include <windows.h>
 
 namespace lgaed::presentation {
-// The Android renderer's 18/23/32 hierarchy, expressed in native points.
+// Android sp at font scale 1 are logical pixels, not Windows points.
 // A role is applied before syntax/emphasis/math formatting, never over it.
 enum class RichTextRole { body, prompt, heading, lesson_title };
 [[nodiscard]] constexpr LONG rich_text_height(RichTextRole role = RichTextRole::body) {
-    return 20 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
+    return 15 * (role == RichTextRole::lesson_title ? 32 : role == RichTextRole::heading ? 23 : 18);
 }
 [[nodiscard]] std::wstring wide(std::string_view utf8);
 [[nodiscard]] std::string utf8(std::wstring_view text);

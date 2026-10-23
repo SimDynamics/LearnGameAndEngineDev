@@ -43,8 +43,8 @@ struct CppFillView::Impl {
             0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if(!host)throw std::runtime_error("Cannot create code holes");
         reader_theme::apply(host,reader_theme::Surface::card);
-        font=CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
-            CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,L"Consolas");
+        font=CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+            CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,reader_theme::code_font_face());
         std::vector<std::string> answers; std::vector<std::size_t> restored;
         if(!saved.empty()){
             const auto json=JsonObject::Parse(winrt::to_hstring(saved));
@@ -205,8 +205,8 @@ windows::CodeEditor* CppFillView::editor(HWND focused){for(std::size_t i=0;i<imp
 void CppFillView::set_enabled(bool value){impl_->enabled=value;for(auto h:impl_->holes)EnableWindow(h,value);for(auto h:impl_->cards)EnableWindow(h,value);}
 void CppFillView::set_text_scale(int percentage){
     percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
-    const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),72*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
-        CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,L"Consolas");
+    const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,reader_theme::code_font_face());
     if(!next)throw std::runtime_error("Cannot scale code-hole text");
     for(auto item=GetWindow(impl_->host,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT)){
         wchar_t name[32]{};GetClassNameW(item,name,32);

@@ -19,6 +19,7 @@ struct LessonPageState {
     bool can_previous = false, can_next = false;
     std::string lesson_id, page_id, locale;
     std::string narration_scope,narration_page_identity,narration_language;
+    std::string lesson_title;
 };
 struct LessonReadingRegion {
     std::string key, source_text;
@@ -33,6 +34,8 @@ struct LessonViewHooks {
     std::function<void(HWND)> reader_requested, language_requested, attempts_requested, settings_requested;
     std::function<void(HWND)> lesson_completed;
     std::function<std::string(std::string_view,std::string_view,std::string_view,std::stop_token)> validate_math;
+    std::function<std::string(std::string_view)> math_editor_request;
+    std::function<void(HWND,HWND)> calculator_requested;
 };
 // Page actions share exactly the gates used by gestures and the native Pages
 // menu. These messages carry no fake/hidden navigation controls.
@@ -45,11 +48,15 @@ inline constexpr UINT lesson_state_read_message = WM_APP + 185;
 inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
 [[nodiscard]] LessonPageState lesson_page_state(HWND window);
 [[nodiscard]] bool navigate_lesson_view(HWND window,std::size_t page);
+// Back first dismisses the current transient surface, then uses the existing
+// catalog callback. It never changes page/reading history on its own.
+[[nodiscard]] bool navigate_lesson_back(HWND window);
 [[nodiscard]] std::vector<LessonReadingRegion> lesson_reading_regions(HWND window);
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
 // The caller owns the reader bar. It must be a child of the lesson view; the
-// viewport reserves its height rather than drawing educational text beneath it.
+// bar overlays the viewport, as on Android; it never reserves a footer.
 void attach_lesson_reader_bar(HWND window,HWND reader_bar,int logical_height);
+void set_lesson_attempts_state(HWND window,int available,int maximum,double progress,bool premium);
 [[nodiscard]] state::StateData read_lesson_state(HWND window);
 void update_lesson_preferences(HWND window,const std::function<void(state::StateData&)>& update);
 
@@ -59,7 +66,7 @@ void update_lesson_preferences(HWND window,const std::function<void(state::State
                                      const std::filesystem::path& content_root);
 // A loaded model can also be supplied by a catalog or another trusted content adapter.
 [[nodiscard]] HWND create_lesson_view(HWND parent, const WindowsEnvironment& environment,
-                                     curriculum::Lesson lesson);
+                                     curriculum::Lesson lesson,LessonViewHooks hooks = {});
 [[nodiscard]] bool flush_lesson_view(HWND window);
 
 } // namespace lgaed::presentation

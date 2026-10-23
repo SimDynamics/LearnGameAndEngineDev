@@ -1,4 +1,5 @@
 #include "platform/windows/catalog_loader.hpp"
+#include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
@@ -6,6 +7,9 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <stdexcept>
 
@@ -36,6 +40,64 @@ IJsonValue read(const std::filesystem::path& path) {
 std::string route_title(std::string_view route, std::string_view locale) {
     if (route == "programming") return locale == "fr" ? "Programmation avancée et architecture des moteurs" : locale == "en" ? "Advanced Programming and Engine Architecture" : "Programación Avanzada y Arquitectura de Motores";
     return locale == "fr" ? "Mathématiques et physique" : locale == "en" ? "Mathematics and Physics" : "Matemáticas y Física";
+}
+std::shared_ptr<const Lesson> progress_metadata(const CatalogEntry& entry) {
+    struct Cached {
+        std::filesystem::file_time_type stamp;
+        std::uintmax_t size = 0;
+        std::shared_ptr<const Lesson> lesson;
+    };
+    static std::mutex lock;
+    static std::map<std::pair<std::filesystem::path,std::string>,Cached> entries;
+    const auto path = state::native_io_path(entry.asset);
+    const auto stamp = std::filesystem::last_write_time(path);
+    const auto size = std::filesystem::file_size(path);
+    const auto key = std::make_pair(entry.asset,entry.asset_locale);
+    {
+        const std::lock_guard guard(lock);
+        const auto found = entries.find(key);
+        if (found != entries.end() && found->second.stamp == stamp && found->second.size == size) {
+            require(found->second.lesson->id == entry.id,"el recurso de progreso pertenece a otra lección.");
+            return found->second.lesson;
+        }
+    }
+    auto lesson = std::make_shared<const Lesson>(load_lesson_progress_metadata(path,entry.asset_locale));
+    require(lesson->id == entry.id,"el recurso de progreso pertenece a otra lección.");
+    require(std::filesystem::last_write_time(path) == stamp && std::filesystem::file_size(path) == size,
+        "el contenido cambió durante la lectura del progreso.");
+    {
+        const std::lock_guard guard(lock);
+        if (entries.size() >= 2048) entries.erase(entries.begin());
+        entries[key] = Cached{stamp,size,lesson};
+    }
+    return lesson;
+}
+CatalogProgress lesson_progress(const CatalogEntry& entry,const state::StateData& data,
+                               const CatalogMathCompletion& math_correct) {
+    if (!entry.available) return {};
+    const auto lesson = progress_metadata(entry);
+    // Android initializes immutable state-layout ownership when loading the
+    // lesson. Do the same on a private read-only projection; catalog rendering
+    // never changes preferences or migrates the student's actual stored data.
+    state::StateData metadata;
+    if (const auto domain = data.preferences.find("learning_progress"); domain != data.preferences.end()) {
+        const auto prefix = "lesson_" + lesson->id + '_';
+        for (const auto& [key,value] : domain->second)
+            if (key.starts_with(prefix)) metadata.preferences["learning_progress"].emplace(key,value);
+    }
+    state::prepare_lesson_state(metadata,*lesson);
+    bool pending = false;
+    auto result = catalog_lesson_page_progress(metadata,*lesson,[&](const Block& block) {
+        const auto saved = state::get_response(data,exercise_key(*lesson,block));
+        if (!saved || !saved->correct) return false;
+        if (block.type != BlockType::math_puzzle) return true;
+        if (!math_correct) { pending = true; return false; }
+        const auto verified = math_correct(block,*saved,lesson->locale);
+        if (!verified) { pending = true; return false; }
+        return *verified;
+    });
+    result.pending_validation = pending;
+    return result;
 }
 }
 curriculum::CatalogPage load_catalog(const std::filesystem::path& content_root, const curriculum::CatalogLocation& location) {
@@ -114,6 +176,32 @@ curriculum::CatalogScope catalog_scope(const std::filesystem::path& root,const c
         result.lessons.insert(result.lessons.end(),child.lessons.begin(),child.lessons.end());
     }
     return result;
+}
+curriculum::CatalogProgress catalog_entry_progress(const std::filesystem::path& root,
+    const curriculum::CatalogLocation& parent,const curriculum::CatalogEntry& entry,
+    const state::StateData& data,const CatalogMathCompletion& math_correct) {
+    if (!entry.available) return {};
+    const auto page = load_catalog(root,parent);
+    const auto published = std::ranges::find_if(page.entries,[&](const auto& item) {
+        return item.id == entry.id && item.asset == entry.asset && item.asset_locale == entry.asset_locale;
+    });
+    require(published != page.entries.end(),"el progreso no pertenece a la entrada publicada.");
+    switch (catalog_level(parent)) {
+    case CatalogLevel::courses:
+        return catalog_progress(data,catalog_scope(root,catalog_child(parent,entry.id)));
+    case CatalogLevel::units: {
+        const auto unit = catalog_child(parent,entry.id);
+        const auto lessons = load_catalog(root,unit);
+        const auto scope = catalog_scope(root,unit);
+        std::vector<CatalogProgress> progress;
+        for (const auto& lesson : lessons.entries) progress.push_back(lesson_progress(lesson,data,math_correct));
+        return catalog_unit_learning_progress(data,scope,progress);
+    }
+    case CatalogLevel::lessons:
+        return lesson_progress(entry,data,math_correct);
+    default:
+        return {};
+    }
 }
 std::optional<curriculum::CatalogLocation> next_catalog_lesson(const std::filesystem::path& root,
     const curriculum::CatalogLocation& current,bool between_units,bool between_courses) {

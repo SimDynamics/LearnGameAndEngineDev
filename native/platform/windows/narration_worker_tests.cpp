@@ -8,19 +8,57 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <future>
+#include <fstream>
 #include <stdexcept>
 
 namespace {
 void check(bool value,const char* message) { if (!value) throw std::runtime_error(message); }
 using winrt::Windows::Data::Json::JsonObject;
 JsonObject json(std::string_view value) { return JsonObject::Parse(winrt::to_hstring(value)); }
+void cancelled_inflight_protocol(const std::filesystem::path& root,const std::filesystem::path& python,const std::filesystem::path& build_directory){
+    using namespace lgaed;
+    check(std::filesystem::is_regular_file(python)&&std::filesystem::is_directory(build_directory),"Protocol test requires its configured Python and existing build directory");
+    const auto runtime=build_directory/L"narration-protocol-fixture-runtime.json";
+    JsonObject config;config.Insert(L"java",winrt::Windows::Data::Json::JsonValue::CreateStringValue(python.native()));
+    winrt::Windows::Data::Json::JsonArray arguments;
+    arguments.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue(L"-u"));
+    arguments.Append(winrt::Windows::Data::Json::JsonValue::CreateStringValue((root/L"native/platform/windows/narration_worker_protocol_fixture.py").native()));
+    config.Insert(L"arguments",arguments);
+    {std::ofstream output(runtime,std::ios::binary|std::ios::trunc);check(static_cast<bool>(output),"Cannot write controlled protocol configuration");output<<winrt::to_string(config.Stringify());check(static_cast<bool>(output),"Cannot save controlled protocol configuration");}
+    windows::NarrationWorker worker(runtime);std::stop_source stopped;
+    auto calculation=std::async(std::launch::async,[&]{
+        try{(void)worker.math_calculate(R"({"latex":"1+1"})",stopped.get_token());return false;}
+        catch(const std::exception& error){return std::string_view(error.what())=="Lectura cancelada";}
+    });
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+    bool observed=false;
+    do{observed=json(worker.math_editor(R"({"action":"probe"})")).GetNamedBoolean(L"observed");}
+    while(!observed&&std::chrono::steady_clock::now()<deadline);
+    check(observed,"Controlled fixture never observed the in-flight request");
+    stopped.request_stop();
+    const bool returned_before_release=calculation.wait_for(std::chrono::milliseconds(500))==std::future_status::ready;
+    const auto cancellation=json(worker.math_editor(R"({"action":"probe"})"));
+    const auto release=json(worker.math_editor(R"({"action":"release"})"));
+    const bool rejected=calculation.get();
+    check(returned_before_release,"An in-flight mathematical cancellation waited for its explicitly withheld response");
+    check(rejected&&cancellation.GetNamedBoolean(L"cancelled"),"Mathematical cancellation did not reach the intended in-flight request");
+    check(release.GetNamedBoolean(L"released"),"A late cancelled reply was routed to the release request");
+    for(const auto* marker:{L"next-request-one",L"next-request-two"}){
+        JsonObject request;request.Insert(L"action",winrt::Windows::Data::Json::JsonValue::CreateStringValue(L"echo"));request.Insert(L"marker",winrt::Windows::Data::Json::JsonValue::CreateStringValue(marker));
+        check(json(worker.math_editor(winrt::to_string(request.Stringify()))).GetNamedString(L"marker")==marker,"A late cancelled reply corrupted subsequent request identities");
+    }
+    std::cout<<"PASS controlled IPC in-flight mathematical cancellation, withheld late reply and subsequent request identities (not an audio benchmark)\n";
+}
 }
 
-int main() {
+int wmain(int argc,wchar_t** argv) {
     using namespace lgaed;
     try {
         windows::ensure_winrt_apartment();
         const auto root = std::filesystem::path(build::source_root);
+        check(argc==3,"The narration test requires CMake's Python executable and existing build directory arguments");
+        cancelled_inflight_protocol(root,argv[1],argv[2]);
         windows::NarrationWorker worker(root / "out/narration/runtime.json");
         const std::string source = "La línea #include y std::cout muestran una salida.";
         const auto segments = worker.plan(source,"es");
@@ -75,6 +113,28 @@ int main() {
         catch (const std::exception&) { rejected = true; }
         check(rejected,"A cancelled native request was executed");
         check(!worker.plan("La lectura continúa.","es").empty(),"Cancellation broke subsequent planning");
+        {
+            // One worker process must route out-of-order mathematical replies
+            // without consuming an ONNX reply or rebuilding its shared engine.
+            auto voice=std::async(std::launch::async,[&]{return worker.prepare(segment,"es","ef_dora",cache,2);});
+            std::vector<std::future<std::string>> editors;
+            for(int index=0;index<12;++index)editors.push_back(std::async(std::launch::async,[&,index]{
+                return worker.math_editor("{\"editorId\":\"native-concurrent-"+std::to_string(index)+"\",\"action\":\"create\",\"latex\":\""+std::to_string(100+index)+"\"}");
+            }));
+            for(int index=0;index<12;++index){const auto editor=json(editors[index].get());
+                check(editor.GetNamedString(L"latex")==winrt::to_hstring(std::to_string(100+index)),
+                    "Concurrent mathematical replies were routed to another request");
+                (void)worker.math_editor("{\"editorId\":\"native-concurrent-"+std::to_string(index)+"\",\"action\":\"close\"}");
+            }
+            const auto retained=voice.get();check(retained.cache_hit&&retained.key==audio.key&&retained.wav==audio.wav,
+                "Editing mathematics changed or regenerated a compatible Kokoro recording");
+            std::stop_source stopped;stopped.request_stop();bool cancelled_editor=false;
+            try{(void)worker.math_editor(R"({"editorId":"cancelled","action":"create"})",stopped.get_token());}
+            catch(const std::exception&){cancelled_editor=true;}
+            check(cancelled_editor,"A cancelled mathematical request was executed");
+            check(!worker.plan("La lectura continúa.","es").empty(),"Mathematical cancellation interfered with narration");
+            std::cout<<"PASS one-process concurrent mathematical/audio replies, cache reuse and independent cancellation\n";
+        }
         std::cout << "PASS native real Kokoro plan/prepare/identity/cache/word timings and exact mathematical bridge\n";
         return 0;
     } catch (const winrt::hresult_error& error) {

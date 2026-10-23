@@ -3,6 +3,8 @@
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/native_menu.hpp"
+#include "presentation/windows/icons.hpp"
+#include "presentation/windows/math_expression_editor.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #include <commctrl.h>
@@ -26,6 +28,9 @@ namespace {
 using namespace winrt::Windows::Data::Json;
 constexpr wchar_t view_class[] = L"LearnGameAndEngineDev.MathPuzzle";
 constexpr wchar_t canvas_class[] = L"LearnGameAndEngineDev.MathCanvas";
+constexpr wchar_t canvas_fullscreen_class[] = L"LearnGameAndEngineDev.MathCanvasFullscreen";
+constexpr int canvas_close_id=6401;
+constexpr wchar_t keyboard_context_property[]=L"LGAED.MathKeyboardContext";
 std::string text(const JsonObject& object,const wchar_t* key,std::string fallback = {}) {
     const auto value = object.TryLookup(key);
     return value && value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : fallback;
@@ -61,7 +66,16 @@ bool own_vertical_scroll(HWND item) {
     SCROLLINFO info{sizeof(info),SIF_RANGE | SIF_PAGE};
     return GetScrollInfo(item,SB_VERT,&info) && info.nPage > 0 && info.nMax - info.nMin + 1 > static_cast<int>(info.nPage);
 }
-LRESULT CALLBACK text_wheel_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR) {
+bool passive_mouse_message(UINT message) {
+    return message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||message==WM_MOUSEMOVE||
+        message==WM_CAPTURECHANGED||message==WM_CANCELMODE||message==WM_NCDESTROY;
+}
+LRESULT CALLBACK text_wheel_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR context) {
+    const auto* callbacks=reinterpret_cast<const MathPuzzleCallbacks*>(context);
+    if(callbacks&&callbacks->passive_gesture&&passive_mouse_message(message)) {
+        const auto result=callbacks->passive_gesture(item,message,wparam,lparam);
+        if(result&&message!=WM_NCDESTROY)return *result;
+    }
     if (message == WM_MOUSEWHEEL && !own_vertical_scroll(item)) return SendMessageW(GetParent(item),message,wparam,lparam);
     if (message == WM_NCDESTROY) RemoveWindowSubclass(item,text_wheel_proc,14);
     return DefSubclassProc(item,message,wparam,lparam);
@@ -69,19 +83,85 @@ LRESULT CALLBACK text_wheel_proc(HWND item,UINT message,WPARAM wparam,LPARAM lpa
 struct PlotPoint { double x = 0,y = 0; std::string id; std::vector<std::string> labels; bool draggable = false; };
 struct Canvas {
     HWND window = nullptr;
+    HWND fullscreen=nullptr,inline_parent=nullptr,previous_focus=nullptr,expand_button=nullptr;
+    RECT inline_rectangle{};
     HFONT scaled_font = nullptr;
     JsonObject config, state;
     std::string type;
+    std::string locale;
     std::function<void(JsonObject)> changed;
     std::function<void()> sync_fields;
     std::vector<PlotPoint> points;
     std::optional<std::size_t> dragging;
     double xmin = -5,xmax = 5,ymin = -5,ymax = 5;
-    ~Canvas() { if (scaled_font) DeleteObject(scaled_font); }
+    double zoom=1,pan_x=0,pan_y=0;
+    POINT pan_last{};bool panning=false;
+    std::optional<JsonObject> number_line_click;
+    POINT number_line_click_start{};
+    ~Canvas() { close_expanded();if (scaled_font) DeleteObject(scaled_font); }
+    std::string tr(const char* es,const char* en,const char* fr)const{return locale.starts_with("fr")?fr:locale.starts_with("en")?en:es;}
+    void clamp_pan(){RECT client{};GetClientRect(window,&client);const auto x=std::max(0.,client.right*(zoom-1)/2),y=std::max(0.,client.bottom*(zoom-1)/2);pan_x=std::clamp(pan_x,-x,x);pan_y=std::clamp(pan_y,-y,y);}
+    POINT content_point(POINT at)const{RECT client{};GetClientRect(window,&client);return {
+        static_cast<LONG>(std::lround((at.x-client.right/2.-pan_x)/zoom+client.right/2.)),
+        static_cast<LONG>(std::lround((at.y-client.bottom/2.-pan_y)/zoom+client.bottom/2.))};}
+    void toggle_zoom(POINT focus){
+        if(zoom>1){zoom=1;pan_x=pan_y=0;}
+        else {RECT client{};GetClientRect(window,&client);zoom=2;pan_x=-(focus.x-client.right/2.);pan_y=-(focus.y-client.bottom/2.);clamp_pan();}
+        InvalidateRect(window,nullptr,FALSE);
+    }
+    double aspect_ratio()const{
+        if(type=="math_number_line"||type=="number_line")return 2.4;
+        if(type=="euclidean_diagram")return 1.4;
+        if(type=="geometry_3d_diagram"||type=="venn_diagram")return 1.2;
+        if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="graph")return std::clamp((xmax-xmin)/(ymax-ymin),.6,4.);
+        return 1.;
+    }
+    void expanded_layout(){
+        if(!fullscreen)return;RECT area{};GetClientRect(fullscreen,&area);const int row=px(48),available=std::max(1,static_cast<int>(area.bottom)-row);
+        const auto ratio=aspect_ratio();const int width=std::max(1,std::min(static_cast<int>(area.right),static_cast<int>(available*ratio))),height=std::max(1,std::min(available,static_cast<int>(width/ratio)));
+        MoveWindow(window,(area.right-width)/2,(available-height)/2,width,height,TRUE);
+        MoveWindow(GetDlgItem(fullscreen,canvas_close_id),std::max(0L,area.right-row),available,row,row,TRUE);clamp_pan();
+    }
+    void close_expanded(){
+        if(!fullscreen)return;const auto frame=fullscreen;fullscreen=nullptr;zoom=1;pan_x=pan_y=0;panning=false;dragging.reset();
+        if(GetCapture()==window)ReleaseCapture();
+        if(IsWindow(window)&&IsWindow(inline_parent)){SetParent(window,inline_parent);MoveWindow(window,inline_rectangle.left,inline_rectangle.top,inline_rectangle.right-inline_rectangle.left,inline_rectangle.bottom-inline_rectangle.top,TRUE);}
+        if(IsWindow(frame))DestroyWindow(frame);if(IsWindow(previous_focus)&&IsWindowEnabled(previous_focus))SetFocus(previous_focus);
+    }
+    static LRESULT CALLBACK exit_key_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR){
+        if(message==WM_KEYDOWN&&wp==VK_ESCAPE){SendMessageW(GetParent(item),WM_CLOSE,0,0);return 0;}
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(item,exit_key_proc,id);
+        return DefSubclassProc(item,message,wp,lp);
+    }
+    static LRESULT CALLBACK fullscreen_proc(HWND target,UINT message,WPARAM wp,LPARAM lp){
+        auto* self=reinterpret_cast<Canvas*>(GetWindowLongPtrW(target,GWLP_USERDATA));
+        if(message==WM_NCCREATE){self=static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(target,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
+        if(!self)return DefWindowProcW(target,message,wp,lp);
+        if(message==WM_SIZE){self->expanded_layout();return 0;}
+        if(message==WM_CLOSE||(message==WM_COMMAND&&LOWORD(wp)==canvas_close_id)||(message==WM_KEYDOWN&&wp==VK_ESCAPE)){self->close_expanded();return 0;}
+        if(message==WM_ERASEBKGND){RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));return 1;}
+        if(message==WM_DRAWITEM){auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);if(item.CtlID==canvas_close_id){
+            FillRect(item.hDC,&item.rcItem,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::close,reader_theme::palette(target).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}}
+        return DefWindowProcW(target,message,wp,lp);
+    }
+    void expand(){
+        if(fullscreen||!IsWindow(window))return;previous_focus=GetFocus();inline_parent=GetParent(window);GetWindowRect(window,&inline_rectangle);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&inline_rectangle),2);
+        WNDCLASSEXW definition{sizeof(definition)};definition.lpfnWndProc=fullscreen_proc;definition.hInstance=GetModuleHandleW(nullptr);definition.lpszClassName=canvas_fullscreen_class;definition.hCursor=LoadCursorW(nullptr,IDC_ARROW);
+        if(!RegisterClassExW(&definition)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register the expanded mathematics viewport");
+        MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor);const auto area=monitor.rcMonitor;
+        fullscreen=CreateWindowExW(WS_EX_CONTROLPARENT,canvas_fullscreen_class,wide(tr("Representación ampliada","Expanded representation","Représentation agrandie")).c_str(),WS_POPUP|WS_CLIPCHILDREN,area.left,area.top,area.right-area.left,area.bottom-area.top,GetAncestor(window,GA_ROOT),nullptr,GetModuleHandleW(nullptr),this);
+        if(!fullscreen)throw std::runtime_error("Cannot expand the mathematics representation");
+        reader_theme::apply(fullscreen,reader_theme::Surface::card);reader_theme::set_accent(fullscreen,reader_theme::palette(inline_parent).accent);
+        const auto close=CreateWindowExW(0,L"BUTTON",wide(tr("Cerrar representación ampliada","Close expanded representation","Fermer la représentation agrandie")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,0,0,1,1,fullscreen,reinterpret_cast<HMENU>(static_cast<INT_PTR>(canvas_close_id)),GetModuleHandleW(nullptr),nullptr);
+        if(!close){DestroyWindow(fullscreen);fullscreen=nullptr;throw std::runtime_error("Cannot create the expanded mathematics exit control");}
+        reader_theme::apply(close,reader_theme::Surface::card);reader_theme::icon_button(close);
+        SetWindowSubclass(close,exit_key_proc,19,0);
+        SetParent(window,fullscreen);expanded_layout();ShowWindow(fullscreen,SW_SHOW);SetForegroundWindow(fullscreen);SetFocus(window);
+    }
     void scale_text(int percentage) {
-        const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(window)),72*100),
+        const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(window)),96*100),
             0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-            DEFAULT_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+            CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(next){if(scaled_font)DeleteObject(scaled_font);scaled_font=next;}InvalidateRect(window,nullptr,FALSE);
     }
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
@@ -136,9 +216,11 @@ struct Canvas {
     }
     void paint(HDC dc) {
         const auto colors = reader_theme::palette(window); RECT client{}; GetClientRect(window,&client);
-        FillRect(dc,&client,reader_theme::brush(reader_theme::Surface::card)); SetBkMode(dc,TRANSPARENT); SetTextColor(dc,colors.text);
+        FillRect(dc,&client,reader_theme::brush(reader_theme::Surface::canvas));const auto transform=SaveDC(dc);
+        if(zoom>1){SetGraphicsMode(dc,GM_ADVANCED);XFORM matrix{static_cast<FLOAT>(zoom),0,0,static_cast<FLOAT>(zoom),static_cast<FLOAT>(client.right*(1-zoom)/2+pan_x),static_cast<FLOAT>(client.bottom*(1-zoom)/2+pan_y)};SetWorldTransform(dc,&matrix);}
+        SetBkMode(dc,TRANSPARENT); SetTextColor(dc,colors.text);
         const auto font = scaled_font ? scaled_font : reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT)); const auto old_font = SelectObject(dc,font);
-        const auto pen = CreatePen(PS_SOLID,px(2),reader_theme::accent_ink(window,colors.card)), grid = CreatePen(PS_SOLID,1,colors.outline);
+        const auto pen = CreatePen(PS_SOLID,px(2),reader_theme::accent_ink(window,colors.canvas)), grid = CreatePen(PS_SOLID,1,colors.outline);
         const auto previous_pen = SelectObject(dc,pen), previous_brush = SelectObject(dc,GetStockObject(NULL_BRUSH));
         const auto rect = bounds();
         if (type == "math_number_line" || type == "number_line") {
@@ -284,7 +366,7 @@ struct Canvas {
             }
             SelectObject(dc,previous_brush); DeleteObject(fill);
         } else SelectObject(dc,previous_brush);
-        SelectObject(dc,previous_pen); SelectObject(dc,old_font); DeleteObject(pen); DeleteObject(grid);
+        SelectObject(dc,previous_pen); SelectObject(dc,old_font); DeleteObject(pen); DeleteObject(grid);RestoreDC(dc,transform);
     }
     void pointer(POINT at) {
         if (!changed) return;
@@ -305,18 +387,35 @@ struct Canvas {
         auto* self = reinterpret_cast<Canvas*>(GetWindowLongPtrW(window,GWLP_USERDATA));
         if (message == WM_NCCREATE) { self = static_cast<Canvas*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams); self->window = window; SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self)); }
         if (!self) return DefWindowProcW(window,message,wparam,lparam);
-        if (message == WM_PAINT) { PAINTSTRUCT paint{}; const auto dc = BeginPaint(window,&paint); self->paint(dc); EndPaint(window,&paint); return 0; }
+        if(message==WM_PRINTCLIENT){self->paint(reinterpret_cast<HDC>(wparam));return 0;}
+        if(message==WM_LBUTTONDBLCLK){
+            // Windows sends a complete first click before identifying a double
+            // click. Keep zoom/expand input-neutral without delaying ordinary
+            // number-line clicks or losing their existing immediate response.
+            if(self->number_line_click&&self->changed){self->state=*self->number_line_click;self->changed(self->state);self->number_line_click.reset();}
+            self->dragging.reset();self->panning=false;if(GetCapture()==window)ReleaseCapture();if(!self->fullscreen)self->expand();else self->toggle_zoom({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)});return 0;}
+        if(message==WM_KEYDOWN&&wparam==VK_ESCAPE&&self->fullscreen){self->close_expanded();return 0;}
+        if(message==WM_SIZE){self->clamp_pan();return 0;}
+        if (message == WM_PAINT) { PAINTSTRUCT paint{}; const auto dc = BeginPaint(window,&paint);RECT bounds{};GetClientRect(window,&bounds);
+            const auto buffer=CreateCompatibleDC(dc);const auto bitmap=CreateCompatibleBitmap(dc,std::max(1L,bounds.right),std::max(1L,bounds.bottom));const auto previous=SelectObject(buffer,bitmap);
+            self->paint(buffer);BitBlt(dc,0,0,bounds.right,bounds.bottom,buffer,0,0,SRCCOPY);SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);EndPaint(window,&paint);return 0; }
         if (message == WM_ERASEBKGND) return TRUE;
         if (message == WM_LBUTTONDOWN && self->changed && IsWindowEnabled(window)) {
-            POINT at{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};
+            POINT at=self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)});
             for (std::size_t index = 0; index < self->points.size(); ++index) {
                 const auto point = self->project(self->points[index].x,self->points[index].y);
                 if (self->points[index].draggable && std::hypot(static_cast<double>(point.x - at.x),static_cast<double>(point.y - at.y)) < self->px(18)) { self->dragging = index; SetCapture(window); break; }
             }
-            if (self->type == "number_line") { SetCapture(window); self->pointer(at); } return 0;
+            if (self->type == "number_line") {self->number_line_click=JsonObject::Parse(self->state.Stringify());self->number_line_click_start={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window); self->pointer(at); }
+            else if(!self->dragging&&self->zoom>1){self->panning=true;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);}return 0;
         }
-        if (message == WM_MOUSEMOVE && GetCapture() == window && (wparam & MK_LBUTTON)) { self->pointer({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}); return 0; }
-        if (message == WM_LBUTTONUP && GetCapture() == window) { self->pointer({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}); self->dragging.reset(); ReleaseCapture(); return 0; }
+        if(message==WM_LBUTTONDOWN&&self->zoom>1){self->panning=true;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);return 0;}
+        if (message == WM_MOUSEMOVE && GetCapture() == window && (wparam & MK_LBUTTON)) {
+            if(self->number_line_click&&(std::abs(GET_X_LPARAM(lparam)-self->number_line_click_start.x)>GetSystemMetrics(SM_CXDRAG)/2||std::abs(GET_Y_LPARAM(lparam)-self->number_line_click_start.y)>GetSystemMetrics(SM_CYDRAG)/2))self->number_line_click.reset();
+            if(self->panning){self->pan_x+=GET_X_LPARAM(lparam)-self->pan_last.x;self->pan_y+=GET_Y_LPARAM(lparam)-self->pan_last.y;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};self->clamp_pan();InvalidateRect(window,nullptr,FALSE);}
+            else self->pointer(self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));return 0; }
+        if (message == WM_LBUTTONUP && GetCapture() == window) { if(!self->panning)self->pointer(self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));self->panning=false;self->dragging.reset(); ReleaseCapture(); return 0; }
+        if(message==WM_CAPTURECHANGED){self->panning=false;self->dragging.reset();return 0;}
         if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(window),message,wparam,lparam);
         return DefWindowProcW(window,message,wparam,lparam);
     }
@@ -325,7 +424,7 @@ struct Canvas {
 
 struct MathPuzzleView::Impl {
     struct Cell { HWND window; int width = 0; bool text = false; };
-    struct Row { std::vector<Cell> cells; int height = 42; };
+    struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; };
     HWND host = nullptr,parent = nullptr;
     std::string locale; JsonObject block,answers,initial;
     MathPuzzleCallbacks callbacks;
@@ -334,6 +433,10 @@ struct MathPuzzleView::Impl {
     std::vector<Row> rows; std::vector<MathReadingRegion> regions; std::vector<std::unique_ptr<Canvas>> canvases;
     std::map<int,std::function<void(int)>> commands;
     std::map<HWND,std::pair<std::string,std::string>> editors;
+    struct ExpressionBinding {HWND window=nullptr;std::string id,field;};
+    std::vector<std::unique_ptr<ExpressionBinding>> expression_editors;
+    std::map<HWND,std::string> keyboard_contexts;
+    std::map<HWND,HWND> calculator_buttons;
     std::map<std::string,std::vector<std::string>> orders;
     std::map<std::string,std::vector<std::size_t>> order_rows;
     std::map<HWND,std::pair<std::string,std::string>> order_cards;
@@ -365,13 +468,13 @@ struct MathPuzzleView::Impl {
         if (_wcsicmp(name,MSFTEDIT_CLASS)==0) SendMessageW(item,EM_SETZOOM,text_scale,100);
         return item;
     }
-    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body) {
+    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true) {
         const auto item = make(MSFTEDIT_CLASS,"",ES_MULTILINE | ES_READONLY);
         set_rich_text(item,value,{},false,role); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
         const auto& original = regions.back().source_text;
         if (original.find("\\(") != original.npos || original.find("\\[") != original.npos) set_native_math_inline_text(item,original,{},role);
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
-        SetWindowSubclass(item,text_wheel_proc,14,0);
+        SetWindowSubclass(item,text_wheel_proc,14,passive?reinterpret_cast<DWORD_PTR>(&callbacks):0);
         return item;
     }
     void add_text(std::string value,std::string key = {},RichTextRole role = RichTextRole::body) { if (!value.empty()) rows.push_back({{{label(std::move(value),std::move(key),role),0,true}},26}); }
@@ -395,14 +498,30 @@ struct MathPuzzleView::Impl {
         if (callbacks.changed) callbacks.changed();
     }
     void submit() { if (!initializing && callbacks.submit) callbacks.submit(stringify(answers)); }
-    HWND input(const std::string& id,const std::string& field,JsonObject current,std::string hint = {}) {
+    void keyboard_context(HWND item,const JsonObject& config,const JsonObject& validator,bool structured,std::string_view mode){
+        auto context=JsonObject::Parse(config.Stringify());context.SetNamedValue(L"validator",validator);context.SetNamedValue(L"structured",JsonValue::CreateBooleanValue(structured));
+        if(!context.HasKey(L"keyboard"))context.SetNamedValue(L"keyboard",string_value(mode));
+        keyboard_contexts[item]=stringify(context);SetPropW(item,keyboard_context_property,&keyboard_contexts.at(item));
+    }
+    void layout_calculator(HWND field){
+        const auto found=calculator_buttons.find(field);if(found==calculator_buttons.end())return;RECT area{};GetClientRect(field,&area);
+        const int side=px(32);MoveWindow(found->second,std::max(0L,area.right-side),std::max(0L,(area.bottom-side)/2),side,std::min<LONG>(side,area.bottom),TRUE);
+        SendMessageW(field,EM_SETMARGINS,EC_RIGHTMARGIN,MAKELPARAM(0,side+px(8)));
+    }
+    void calculator(HWND field,const JsonObject& config){
+        if(!flag(config,L"calculator"))return;
+        const auto item=CreateWindowExW(0,L"BUTTON",wide(tr("Abrir calculadora científica","Open Scientific Calculator","Ouvrir la calculatrice scientifique")).c_str(),WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,0,0,1,1,field,reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),nullptr);
+        if(!item)throw std::runtime_error("Cannot create the permitted mathematical calculator action");
+        reader_theme::apply(item,reader_theme::Surface::field);reader_theme::icon_button(item);calculator_buttons[field]=item;layout_calculator(field);
+    }
+    HWND input(const std::string& id,const std::string& field,JsonObject current,std::string hint = {},const JsonObject& config={},const JsonObject& validator={},std::string_view mode="NUMERIC") {
         const auto item = make(MSFTEDIT_CLASS,"",WS_TABSTOP | ES_AUTOHSCROLL);
         reader_theme::apply(item,reader_theme::Surface::field);
         const auto values = field.empty() ? current : object(current,L"values");
         set_edit_text(item,text(values,field.empty() ? L"value" : winrt::to_hstring(field).c_str()));
         if (!hint.empty()) SendMessageW(item,EM_SETCUEBANNER,FALSE,reinterpret_cast<LPARAM>(wide(hint).c_str()));
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE);
-        editors[item] = {id,field}; SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this)); return item;
+        editors[item] = {id,field};keyboard_context(item,config,validator,false,mode);SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this));calculator(item,config);return item;
     }
     void edited(HWND item) {
         if (initializing) return; const auto found = editors.find(item); if (found == editors.end()) return;
@@ -411,13 +530,37 @@ struct MathPuzzleView::Impl {
         else { auto values = object(current,L"values"); values.SetNamedValue(winrt::to_hstring(field),string_value(edit_text(item))); current.SetNamedValue(L"values",values); }
         answers.SetNamedValue(winrt::to_hstring(id),current); change();
     }
+    void capture_expression(const ExpressionBinding& binding){
+        const auto snapshot=inspect_math_expression_editor(binding.window);auto current=response(binding.id,binding.field.empty()?"text":"fields");
+        if(binding.field.empty()){current.SetNamedValue(L"value",string_value(snapshot.latex));current.SetNamedValue(L"editorDraft",string_value(snapshot.draft_json));}
+        else {auto values=object(current,L"values"),drafts=object(current,L"editorDrafts");values.SetNamedValue(winrt::to_hstring(binding.field),string_value(snapshot.latex));drafts.SetNamedValue(winrt::to_hstring(binding.field),string_value(snapshot.draft_json));current.SetNamedValue(L"values",values);current.SetNamedValue(L"editorDrafts",drafts);}
+        answers.SetNamedValue(winrt::to_hstring(binding.id),current);
+    }
+    void capture_expressions(){for(const auto& editor:expression_editors)capture_expression(*editor);}
+    HWND expression_input(const std::string& id,const std::string& field,JsonObject current,const JsonObject& config,const JsonObject& validator){
+        if(!callbacks.expression_request)throw std::runtime_error("The structured mathematics editor requires its canonical model service");
+        auto binding=std::make_unique<ExpressionBinding>();binding->id=id;binding->field=field;auto* identity=binding.get();
+        MathExpressionEditorAccess access;access.request=callbacks.expression_request;access.expected_template=text(validator,L"expected");access.language=locale;access.accent_border=true;
+        access.changed=[this,identity]{if(initializing||!identity->window)return;capture_expression(*identity);change();if(callbacks.layout_changed)callbacks.layout_changed();};
+        access.submit=[this]{submit();};access.focus_changed=[this,identity](bool focused){if(!initializing&&callbacks.expression_focus)callbacks.expression_focus(identity->window,focused);};
+        access.cancel=[this]{if(callbacks.back_requested)callbacks.back_requested();};
+        const auto item=create_math_expression_editor(host,next_id++,std::move(access));identity->window=item;
+        SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
+        const auto drafts=field.empty()?text(current,L"editorDraft"):text(object(current,L"editorDrafts"),winrt::to_hstring(field).c_str());
+        const auto value=field.empty()?text(current,L"value"):text(object(current,L"values"),winrt::to_hstring(field).c_str());
+        if((drafts.empty()||!restore_math_expression_draft(item,drafts))&&!set_math_expression_latex(item,value)){
+            DestroyWindow(item);throw std::runtime_error("Cannot restore the existing structured mathematics response");}
+        keyboard_context(item,config,validator,true,"ALGEBRA");expression_editors.push_back(std::move(binding));return item;
+    }
     void canvas(const JsonObject& config,std::string type,JsonObject state = {},std::function<void(JsonObject)> changed = {},std::string live_id = {}) {
-        auto plot = std::make_unique<Canvas>(); plot->config = config; plot->type = std::move(type); plot->state = state; plot->changed = std::move(changed);
+        auto plot = std::make_unique<Canvas>(); plot->config = config; plot->type = std::move(type); plot->state = state; plot->changed = std::move(changed);plot->locale=locale;
         plot->window = CreateWindowExW(0,canvas_class,L"",WS_CHILD | WS_VISIBLE | (plot->changed ? WS_TABSTOP : 0),0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),plot.get());
         if (!plot->window) throw std::runtime_error("Cannot create a mathematics canvas");
         plot->initialize(); plot->scale_text(text_scale);
-        rows.push_back({{{plot->window}},plot->type == "number_line" || plot->type == "math_number_line" ? 150 : 280});
+        const auto spacer=make(L"STATIC","");plot->expand_button=button(tr("Ampliar representación","Expand representation","Agrandir la représentation"),[visual=plot.get()]{visual->expand();});reader_theme::icon_button(plot->expand_button);
+        rows.push_back({{{spacer},{plot->expand_button,48}},48,0});
+        rows.push_back({{{plot->window}},1});
         if (!live_id.empty()) live_visuals[live_id].push_back(plot.get()); canvases.push_back(std::move(plot));
     }
     void representation(const JsonObject& spec) {
@@ -519,7 +662,9 @@ struct MathPuzzleView::Impl {
             }
         } else if (type == "math_numeric_input" || type == "math_expression_input") {
             if (array(spec,L"fields").Size()) fields(spec,id);
-            else { const auto current = response(id,"text"); rows.push_back({{{input(id,"",current,text(spec,L"hint"))}},42}); }
+            else { const auto current = response(id,"text");
+                if(type=="math_expression_input"&&text(spec,L"inputMode","simple")=="structured")rows.push_back({{{expression_input(id,"",current,spec,object(spec,L"validator"))}},44});
+                else rows.push_back({{{input(id,"",current,text(spec,L"hint"),spec,object(spec,L"validator"),type=="math_expression_input"?"ALGEBRA":"NUMERIC")}},42}); }
         } else if (type == "math_multi_input" || type == "math_structured_answer" || type == "math_equation_fill_blanks") fields(spec,id);
         else if (type == "math_matching_drag") {
             (void)response(id,"matching"); const auto sources = array(spec,L"sources"),targets = array(spec,L"targets");
@@ -531,7 +676,7 @@ struct MathPuzzleView::Impl {
                     if (index >= items.Size()) { row.cells.push_back({label(""),0,true}); continue; }
                     const auto item = items.GetObjectAt(index); const auto key = text(item,L"id");
                     auto visible = visible_label(item); if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
-                    const auto card = label(visible,id + (source ? "/source/" : "/target/") + key);
+                    const auto card = label(visible,id + (source ? "/source/" : "/target/") + key,RichTextRole::body,false);
                     match_cards[card] = {id,key,source}; SetWindowSubclass(card,match_proc,13,reinterpret_cast<DWORD_PTR>(this));
                     row.cells.push_back({card,0,true});
                 }
@@ -548,7 +693,7 @@ struct MathPuzzleView::Impl {
             for (const auto& key : ids) {
                 const auto item = cards.at(key); auto visible = visible_label(item);
                 if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
-                const auto card = label(visible,id + "/item/" + key); order_cards[card] = {id,key}; SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
+                const auto card = label(visible,id + "/item/" + key,RichTextRole::body,false); order_cards[card] = {id,key}; SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
                 const auto move = [this,id,key](int delta) { const auto& current_ids = orders[id]; const auto at = static_cast<std::size_t>(std::ranges::find(current_ids,key) - current_ids.begin());
                     if ((delta < 0 && at) || (delta > 0 && at + 1 < current_ids.size())) reorder(id,at,static_cast<std::size_t>(static_cast<std::ptrdiff_t>(at) + delta)); };
                 order_rows[id].push_back(rows.size()); rows.push_back({{{card,0,true},{button("↑",[move] { move(-1); }),34},{button("↓",[move] { move(1); }),34}},48});
@@ -604,7 +749,7 @@ struct MathPuzzleView::Impl {
                 const auto x = make(MSFTEDIT_CLASS,decimal(plot->points[index].x),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
                 const auto y = make(MSFTEDIT_CLASS,decimal(plot->points[index].y),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
                 graph_fields[plot].push_back({x,y});
-                for (const auto item : {x,y}) { reader_theme::apply(item,reader_theme::Surface::field); SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE); SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this)); }
+                for (const auto item : {x,y}) { reader_theme::apply(item,reader_theme::Surface::field);keyboard_context(item,{}, {},false,"NUMERIC");SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE); SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this)); }
                 const auto sync = [this,id,plot,index,x,y](int notification) {
                     if (notification != EN_CHANGE || initializing) return;
                     try { std::size_t endx = 0,endy = 0; const auto tx = edit_text(x),ty = edit_text(y); const auto xx = std::stod(tx,&endx),yy = std::stod(ty,&endy);
@@ -632,7 +777,11 @@ struct MathPuzzleView::Impl {
             if (!definitions.contains(key)) throw std::invalid_argument("A displayed math field has no definition");
             const auto config = definitions.at(key); const auto kind = text(config,L"type","numeric");
             if (kind == "fixed") return {label(text(config,L"text"),id + "/fixed/" + key),0,true};
-            if (!created.contains(key)) created[key] = kind == "dropdown" ? dropdown(id,key,array(config,L"options"),current) : input(id,key,current,text(config,L"hint"));
+            auto keyboard_config=JsonObject::Parse(config.Stringify());for(const auto property:{L"keyboard",L"keyboardSymbols"})if(!keyboard_config.HasKey(property)&&spec.HasKey(property))keyboard_config.SetNamedValue(property,spec.GetNamedValue(property));
+            const auto validator=object(object(object(spec,L"validator"),L"fields"),winrt::to_hstring(key).c_str());
+            if (!created.contains(key)) created[key] = kind == "dropdown" ? dropdown(id,key,array(config,L"options"),current)
+                :kind=="expression"&&text(config,L"inputMode","simple")=="structured"?expression_input(id,key,current,keyboard_config,validator)
+                :input(id,key,current,text(config,L"hint"),keyboard_config,validator,kind=="expression"?"ALGEBRA":"NUMERIC");
             return {created.at(key),0,false};
         };
         const auto segments = array(spec,L"segments"); const auto table = array(spec,L"rows");
@@ -668,6 +817,9 @@ struct MathPuzzleView::Impl {
             int fixed = 0,flex = 0; for (const auto& cell : row.cells) if (cell.width) fixed += px(cell.width); else ++flex;
             const auto flexible = std::max(px(30),(current_width - px(16) - fixed - gap * (static_cast<int>(row.cells.size()) - 1)) / std::max(1,flex));
             int height = px(row.height),x = px(8);
+            for(const auto& cell:row.cells)if(std::ranges::any_of(expression_editors,[&](const auto& value){return value->window==cell.window;}))height=std::max(height,math_expression_editor_height(cell.window));
+            for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end())
+                height=std::max(height,static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio())));
             for (const auto& cell : row.cells) if (cell.text || (GetWindowLongPtrW(cell.window,GWL_STYLE) & BS_MULTILINE) || editors.contains(cell.window)) {
                 const auto cell_width = cell.width ? px(cell.width) : flexible;
                 if (cell.text) {
@@ -682,14 +834,19 @@ struct MathPuzzleView::Impl {
                 height = std::max(height,static_cast<int>(text_rect.bottom) + px(8)); SelectObject(dc,old); ReleaseDC(cell.window,dc);
             }
             if (move) for (const auto& cell : row.cells) { const auto cell_width = cell.width ? px(cell.width) : flexible;
-                SetWindowPos(cell.window,nullptr,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS); x += cell_width + gap; }
-            y += height + gap;
+                if(GetParent(cell.window)==host)SetWindowPos(cell.window,nullptr,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS); x += cell_width + gap; }
+            y += height + px(row.gap_after);
         }
         if (move) RedrawWindow(host,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
         return y;
     }
     static LRESULT CALLBACK field_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
+        if(message==WM_SIZE){const auto result=DefSubclassProc(item,message,wparam,lparam);self->layout_calculator(item);return result;}
+        if(message==WM_DRAWITEM&&lparam){const auto& drawing=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);if(const auto button=self->calculator_buttons.find(item);button!=self->calculator_buttons.end()&&drawing.hwndItem==button->second){
+            (void)reader_theme::draw_button(drawing);auto icon=drawing.rcItem;InflateRect(&icon,-self->px(4),-self->px(4));draw_icon(drawing.hDC,icon,Icon::calculator,IsWindowEnabled(item)?reader_theme::palette(item).accent:reader_theme::palette(item).muted);return TRUE;}}
+        if(message==WM_COMMAND&&HIWORD(wparam)==BN_CLICKED){const auto button=self->calculator_buttons.find(item);if(button!=self->calculator_buttons.end()&&reinterpret_cast<HWND>(lparam)==button->second){if(!self->initializing&&IsWindowEnabled(item)&&self->callbacks.calculator_requested)self->callbacks.calculator_requested(item);return 0;}}
+        if((message==WM_SETFOCUS||message==WM_KILLFOCUS)&&!self->initializing&&self->callbacks.expression_focus)self->callbacks.expression_focus(item,message==WM_SETFOCUS);
         if (message == WM_MOUSEWHEEL && !own_vertical_scroll(item)) return SendMessageW(GetParent(item),message,wparam,lparam);
         if (message == WM_GETDLGCODE) {
             const auto* key = reinterpret_cast<const MSG*>(lparam);
@@ -698,7 +855,7 @@ struct MathPuzzleView::Impl {
         }
         if (message == WM_KEYDOWN && wparam == VK_RETURN) { self->submit(); return 0; }
         if (message == WM_CHAR && (wparam == L'\r' || wparam == L'\n')) return 0;
-        if (message == WM_NCDESTROY) RemoveWindowSubclass(item,field_proc,11);
+        if (message == WM_NCDESTROY) {self->calculator_buttons.erase(item);RemoveWindowSubclass(item,field_proc,11);}
         return DefSubclassProc(item,message,wparam,lparam);
     }
     static LRESULT CALLBACK card_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
@@ -747,12 +904,13 @@ struct MathPuzzleView::Impl {
     void initialize() {
         WNDCLASSEXW cls{sizeof(cls)}; cls.lpfnWndProc = procedure; cls.hInstance = GetModuleHandleW(nullptr); cls.lpszClassName = view_class; cls.hCursor = LoadCursorW(nullptr,IDC_ARROW);
         if (!RegisterClassExW(&cls) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register native math view");
-        cls.lpfnWndProc = Canvas::procedure; cls.lpszClassName = canvas_class;
+        cls.lpfnWndProc = Canvas::procedure; cls.lpszClassName = canvas_class;cls.style=CS_DBLCLKS;
         if (!RegisterClassExW(&cls) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register native math canvas");
         host = CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"",WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if (!host) throw std::runtime_error("Cannot create native math view");
-        font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,L"Segoe UI");
-        base_font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),72),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+        SetWindowSubclass(host,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
+        font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        base_font = CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         reader_theme::apply(host,reader_theme::Surface::card); build();
     }
     static LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM wparam,LPARAM lparam) {
@@ -764,8 +922,9 @@ struct MathPuzzleView::Impl {
         if (message == WM_ERASEBKGND) { RECT rect{}; GetClientRect(window,&rect); FillRect(reinterpret_cast<HDC>(wparam),&rect,reader_theme::brush(reader_theme::Surface::card)); return TRUE; }
         try {
             if (message == WM_MEASUREITEM && measure_native_menu(*reinterpret_cast<MEASUREITEMSTRUCT*>(lparam))) return TRUE;
-            if (message == WM_DRAWITEM && (draw_native_menu(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam)) ||
-                reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam)))) return TRUE;
+            if (message == WM_DRAWITEM){const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);
+                for(const auto& canvas:self->canvases)if(canvas->expand_button==item.hwndItem){(void)reader_theme::draw_button(item);auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::expand,reader_theme::palette(window).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}
+                if(draw_native_menu(item)||reader_theme::draw_button(item))return TRUE;}
             if (message == WM_MENUCHAR) {
                 LRESULT result = 0;
                 if (native_menu_character(reinterpret_cast<HMENU>(lparam),static_cast<wchar_t>(LOWORD(wparam)),result)) return result;
@@ -783,18 +942,33 @@ struct MathPuzzleView::Impl {
     }
     void clear() {
         initializing = true;
+        for(const auto& canvas:canvases)canvas->close_expanded();
         for (auto item = GetWindow(host,GW_CHILD); item;) { const auto next = GetWindow(item,GW_HWNDNEXT); DestroyWindow(item); item = next; }
-        canvases.clear(); rows.clear(); regions.clear(); commands.clear(); editors.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear(); live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
+        canvases.clear(); rows.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear(); live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
     }
 };
 
 MathPuzzleView::MathPuzzleView(HWND parent,std::string raw,std::string locale,std::string saved,MathPuzzleCallbacks callbacks)
     : impl_(std::make_unique<Impl>(parent,std::move(raw),std::move(locale),std::move(saved),std::move(callbacks))) { impl_->initialize(); }
+std::string math_field_keyboard_context(HWND field){const auto value=static_cast<const std::string*>(GetPropW(field,keyboard_context_property));return value?*value:std::string{};}
+bool apply_math_calculator_result(HWND field,std::string_view latex){
+    if(!IsWindow(field)||!IsWindowEnabled(field)||math_field_keyboard_context(field).empty())return false;
+    wchar_t type[96]{};GetClassNameW(field,type,96);
+    if(std::wstring_view(type)==L"LearnGameAndEngineDev.MathExpressionEditor")return set_math_expression_latex(field,latex);
+    if(_wcsnicmp(type,L"RichEdit",8)!=0)return false;
+    const auto replacement=wide(latex);SendMessageW(field,EM_SETSEL,0,-1);SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(replacement.c_str()));
+    const auto end=GetWindowTextLengthW(field);SendMessageW(field,EM_SETSEL,end,end);SetFocus(field);return true;
+}
 MathPuzzleView::~MathPuzzleView() { if (impl_) impl_->clear(); }
 HWND MathPuzzleView::window() const { return impl_->host; }
 int MathPuzzleView::height_for_width(int width) { return impl_->arrange(width,false); }
 void MathPuzzleView::layout(int x,int y,int width) { const auto height = impl_->arrange(width); MoveWindow(impl_->host,x,y,width,height,TRUE); }
-std::string MathPuzzleView::answers_json() const { return stringify(impl_->answers); }
+std::string MathPuzzleView::answers_json() const { impl_->capture_expressions();return stringify(impl_->answers); }
+std::string MathPuzzleView::answer_identity_json() const {
+    impl_->capture_expressions();auto values=JsonObject::Parse(impl_->answers.Stringify());
+    for(const auto& response:values)if(response.Value().ValueType()==JsonValueType::Object){auto value=response.Value().GetObject();value.Remove(L"editorDraft");value.Remove(L"editorDrafts");}
+    return stringify(values);
+}
 std::vector<MathReadingRegion> MathPuzzleView::reading_regions() const {
     auto result = impl_->regions;
     std::ranges::stable_sort(result,[](const auto& left,const auto& right) { RECT a{},b{}; GetWindowRect(left.target,&a); GetWindowRect(right.target,&b);
@@ -808,15 +982,18 @@ void MathPuzzleView::set_enabled(bool enabled) {
         impl_->drag = {}; impl_->selected_sources.clear();
     }
     for (auto item = GetWindow(impl_->host,GW_CHILD); item; item = GetWindow(item,GW_HWNDNEXT)) {
-        const bool interactive = impl_->editors.contains(item) || impl_->commands.contains(GetDlgCtrlID(item))
+        const bool view_control=std::ranges::any_of(impl_->canvases,[item](const auto& canvas){return canvas->expand_button==item;});
+        const bool expression=std::ranges::any_of(impl_->expression_editors,[item](const auto& value){return value->window==item;});
+        const bool interactive = impl_->editors.contains(item) || expression || (impl_->commands.contains(GetDlgCtrlID(item))&&!view_control)
             || std::ranges::any_of(impl_->canvases,[item](const auto& canvas) { return canvas->window == item && canvas->changed; });
         if (interactive) EnableWindow(item,enabled);
     }
+    for(const auto& canvas:impl_->canvases)if(canvas->changed)EnableWindow(canvas->window,enabled);
 }
 void MathPuzzleView::set_text_scale(int percentage) {
     percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
-    const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),72*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
-        OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+    const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
     if(!next)throw std::runtime_error("Cannot scale mathematical text");
     for(auto item=GetWindow(impl_->host,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT)) {
         wchar_t name[32]{};GetClassNameW(item,name,32);

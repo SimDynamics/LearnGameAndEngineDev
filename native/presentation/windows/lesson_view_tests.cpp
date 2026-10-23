@@ -1,10 +1,13 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/math_puzzle_view.hpp"
+#include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/android_import.hpp"
+#include "platform/windows/narration_worker.hpp"
 #include "native_build_config.hpp"
 
 #include <commctrl.h>
@@ -181,7 +184,7 @@ struct Fixture {
             replace(block,2,current.answers.at(0)); const auto current_page = page(); enter(block);
             require(page() == current_page, "Enter checked and unexpectedly changed page");
         }
-        require(text(block,4).starts_with("Correcto"), "Authored response was not accepted through actual controls");
+        require(text(block,4).starts_with("✓ Correcto"), "Authored response was not accepted through actual controls");
     }
     void run(std::size_t block) {
         const auto compile = control(block,11);
@@ -269,21 +272,12 @@ struct Fixture {
     void contextual_editing(std::size_t block) {
         const bool shown = IsWindowVisible(host); if (!shown) { ShowWindow(host,SW_SHOWNOACTIVATE); pump(host); }
         const auto bar = descendant_class(view,L"LearnGameAndEngineDev.EditingBar");
-        require(bar != nullptr,"The contextual editor shortcuts are missing");
-        const auto source = control(block,10); const auto before = text(block,10);
-        SetFocus(source); SendMessageW(bar,WM_TIMER,1,0); pump(host);
-        require(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE,"Focusing a code editor did not show its shortcuts");
-        RECT viewport{}, strip{}, frame{};
-        GetWindowRect(GetParent(source),&viewport); GetWindowRect(bar,&strip); GetWindowRect(view,&frame);
-        require(viewport.bottom <= strip.top && strip.bottom < frame.bottom,
-                "The editing shortcuts cover code or page navigation");
-        const auto tab = GetDlgItem(bar,9000); require(tab != nullptr,"Contextual TAB command missing");
-        SetFocus(tab); SendMessageW(tab,BM_CLICK,0,0); pump(host);
-        require(GetFocus() == source && text(block,10) != before,"Contextual TAB lost the editor or did not use its editing operation");
-        SendMessageW(source,WM_UNDO,0,0); pump(host);
-        require(text(block,10) == before,"Contextual TAB did not preserve the existing Undo history");
-        SetFocus(control(107)); SendMessageW(bar,WM_TIMER,1,0); pump(host);
-        require(!(GetWindowLongPtrW(bar,GWL_STYLE) & WS_VISIBLE),"Editor shortcuts remained visible outside code editing");
+        require(!bar,"Programming must not create the retired floating shortcuts");
+        const auto source=control(block,10);const auto before=text(block,10);
+        SetFocus(source);SendMessageW(source,WM_KEYDOWN,VK_TAB,0);SendMessageW(source,WM_KEYUP,VK_TAB,0);pump(host);
+        require(GetFocus()==source&&text(block,10)!=before,"Physical TAB lost focus or stopped editing without the floating bar");
+        SendMessageW(source,WM_UNDO,0,0);pump(host);
+        require(text(block,10)==before,"Physical TAB did not preserve the existing Undo history");
         viewport_layout();
         if (!shown) { ShowWindow(host,SW_HIDE); pump(host); }
     }
@@ -440,7 +434,7 @@ void lesson_interface_languages() {
         ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
         require(accessible_name(fixture.control(111)) == pick("Lector","Reader","Lecteur") &&
                 accessible_name(fixture.control(112)) == pick("Idioma","Language","Langue") &&
-                accessible_name(fixture.control(113)) == pick("Progreso de la lección","Lesson progress","Progression de la leçon"),
+                accessible_name(fixture.control(113)) == pick("Intentos disponibles","Available attempts","Essais disponibles"),
                 "Lesson header labels ignored the independent interface language");
         require(window_text(fixture.control(2,11)) == pick("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier") &&
                 window_text(fixture.control(3,11)) == pick("Compilar y ejecutar","Compile and run","Compiler et exécuter") &&
@@ -465,10 +459,10 @@ void lesson_interface_languages() {
             require(capture.captions.front() == pick("Copiar salida","Copy output","Copier la sortie"),"The real console popup ignored the interface language");
         }
         fixture.replace(1,2,"void"); fixture.enter(1);
-        require(fixture.text(1,4) == pick("Incorrecto","Incorrect","Incorrect") + "\nGuía curricular intacta.",
+        require(fixture.text(1,4) == pick("✗ Incorrecto","✗ Incorrect","✗ Incorrect") + "\n\nGuía curricular intacta.",
                 "The wrong verdict was not localized or rewrote authored feedback");
         fixture.replace(1,2,"int"); fixture.enter(1);
-        require(fixture.text(1,4) == pick("Correcto","Correct","Correct") + "\nExplicación curricular intacta.",
+        require(fixture.text(1,4) == pick("✓ Correcto","✓ Correct","✓ Correct") + "\n\nExplicación curricular intacta.",
                 "The correct verdict was not localized or rewrote authored feedback");
         const auto source = fixture.control(2,10); const auto original = fixture.text(2,10);
         fixture.replace(2,10,original+"// historial QA\n");
@@ -476,12 +470,79 @@ void lesson_interface_languages() {
         update_lesson_preferences(fixture.view,[](state::StateData& data) { data.preferences["native_windows"]["ui_language"]=std::string("fr"); });
         CHARRANGE restored{}; SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored));
         require(fixture.control(2,10)==source && restored.cpMin==selection.cpMin && restored.cpMax==selection.cpMax &&
-                fixture.text(1,4)=="Correct\nExplicación curricular intacta." && fixture.text(2,17)=="Entrée",
+                fixture.text(1,4)=="✓ Correct\n\nExplicación curricular intacta." && fixture.text(2,17)=="Entrée",
                 "Refreshing interface labels recreated editors, moved the selection or changed authored feedback");
         SendMessageW(source,WM_UNDO,0,0); pump(fixture.host);
         require(fixture.text(2,10)==original,"Changing interface language discarded the editor's existing Undo history");
     }
     std::cout << "PASS ES/EN/FR real lesson/editor/console popups, generated verdicts, original curriculum, selection and Undo\n";
+}
+void laboratory_interface_parity(){
+    for(const auto locale:{"es","en","fr"}){
+        Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&){data.preferences["native_windows"]["ui_language"]=std::string(locale);},[](const curriculum::Lesson&){
+            curriculum::Lesson model;model.id="native_cpp_laboratory";model.title="Prototipo del motor C++";model.locale="es";
+            curriculum::Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="native_lab_editor";compiler.initial_code="#include <iostream>\n\nusing namespace std;\n\nint main()\n{\n    \n}";
+            curriculum::Page page;page.stable_id="native_lab";page.blocks.push_back(std::move(compiler));model.pages.push_back(std::move(page));return model;
+        });
+        const auto pick=[locale](const char* es,const char* en,const char* fr){return std::string(std::string_view(locale)=="fr"?fr:std::string_view(locale)=="en"?en:es);};
+        ShowWindow(fixture.host,SW_SHOWNOACTIVATE);pump(fixture.host);
+        require(window_text(fixture.control(990))==pick("Prototipo del motor C++","C++ Engine Prototype","Prototype du moteur C++")&&character_format(fixture.control(990)).yHeight==420,"The native laboratory lost Android's original localized28sp title");
+        require(window_text(fixture.control(991)).find("MSVC")!=std::string::npos&&window_text(fixture.control(991)).find("x64")!=std::string::npos&&character_format(fixture.control(991)).yHeight==270,"The native laboratory description is absent, untruthful or has the wrong18sp size");
+        for(const auto control:{106,111,112,113,107})require(!(GetWindowLongPtrW(fixture.control(control),GWL_STYLE)&WS_VISIBLE),"A synthetic lesson control leaked into the standalone C++ laboratory");
+        for(const auto part:{4,15,17,19,23,24,25,30,31})require(!descendant(fixture.view,id(0,part)),"The standalone laboratory gained a lesson feedback/input/console toolbar not present in Android");
+        require(window_text(fixture.control(0,34))==pick("Listo para ejecutar.","Ready to Run.","Prêt pour l’exécution.")&&character_format(fixture.control(0,34)).yHeight==240,"The native laboratory lost its localized16sp status line");
+        require(reader_theme::palette().high_contrast||reader_theme::background(fixture.control(0,14))==RGB(5,6,7),"The standalone output no longer has Android's black console surface");
+        const auto output_ink=character_format(fixture.control(0,14));require(reader_theme::palette().high_contrast||output_ink.crTextColor==RGB(121,226,157),"The standalone output lost Android's green ink");
+        RECT editor_bounds{};GetWindowRect(fixture.control(0,10),&editor_bounds);require(editor_bounds.bottom-editor_bounds.top>=MulDiv(200,static_cast<int>(GetDpiForWindow(fixture.view)),96),"The standalone editor omitted its original200dp minimum");
+        LOGFONTW compact{};require(GetObjectW(reinterpret_cast<HFONT>(SendMessageW(fixture.control(0,36),WM_GETFONT,0,0)),sizeof(compact),&compact)&&compact.lfHeight==-MulDiv(13,static_cast<int>(GetDpiForWindow(fixture.view)),96),"The compact compiler selector did not preserve Android's13sp label");
+        const auto original=fixture.text(0,10);const auto editor=fixture.control(0,10);const auto initial_cursor=static_cast<LONG>(wide(original.substr(0,original.find("\n    \n")+5)).size());
+        CHARRANGE initial_selection{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&initial_selection));require(initial_selection.cpMin==initial_cursor&&initial_selection.cpMax==initial_cursor,"A new laboratory draft did not start inside main after its predefined indentation");
+        fixture.click(0,35);
+        require(fixture.control(0,10)==editor&&fixture.text(0,10)==original&&!(GetWindowLongPtrW(editor,GWL_STYLE)&ES_AUTOHSCROLL),"The direct wrap icon recreated or changed the source instead of wrapping it");
+        {PopupCapture capture(fixture.view);fixture.click(0,36);capture.verified();require(capture.captions==std::vector<std::string>{"MSVC C++20 · x64"},"The laboratory compiler control advertised an unavailable backend");}
+        fixture.click(0,20);require(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE,"The standalone editor did not enter real fullscreen");SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);
+        require(!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&fixture.text(0,10)==original,"Escape from laboratory fullscreen changed the draft or retained an exit overlay");
+        CHARRANGE personal_selection{1,3};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&personal_selection));fixture.reopen();
+        CHARRANGE restored_selection{};SendMessageW(fixture.control(0,10),EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored_selection));
+        require(fixture.text(0,10)==original&&!(GetWindowLongPtrW(fixture.control(0,10),GWL_STYLE)&ES_AUTOHSCROLL)&&restored_selection.cpMin==1&&restored_selection.cpMax==3,"Reopening lost the laboratory draft, wrapping preference or restored its cursor to the default");
+        fixture.click(0,12);SendMessageW(fixture.control(0,10),EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored_selection));
+        require(restored_selection.cpMin==initial_cursor&&restored_selection.cpMax==initial_cursor&&(GetWindowLongPtrW(fixture.control(0,10),GWL_STYLE)&ES_AUTOHSCROLL),"An explicit laboratory Reset did not restore the original main caret and wrapping mode");
+        if(std::string_view(locale)=="es"){
+            fixture.replace(0,10,"#include <iostream>\nint main(){std::cout << \"Salida real\";}\n");fixture.click(0,11);
+            wait_for(fixture.host,[&]{return IsWindowEnabled(fixture.control(0,11));},"The standalone laboratory did not finish its real native compile/run");
+            require(fixture.text(0,14).find("Salida real")!=std::string::npos&&fixture.text(0,34)=="Ejecución terminada (código 0).","The standalone laboratory did not display its actual native output and status");
+            require(!state::find(fixture.saved(),"attempt_reserve_seconds_test","reserve_programming"),"The standalone laboratory created or consumed exercise hearts");
+        }
+        fixture.non_overlapping_rows();
+    }
+    std::cout<<"PASS standalone Android-parity laboratory: source title/sizing/status/surfaces, no lesson controls, actual MSVC backend, direct wrap, fullscreen/Escape, draft retention and real x64 output\n";
+}
+void back_navigation_tests(){
+    int returned=0;Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_back","title":"Regreso","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main() {\n    return 0;\n}\n"}]}]})");});
+    LessonViewHooks hooks;hooks.back_to_catalog=[&](HWND){++returned;};set_lesson_view_hooks(fixture.view,hooks);
+    ShowWindow(fixture.host,SW_SHOWNOACTIVATE);fixture.replace(0,10,fixture.text(0,10)+"// borrador conservado\n");const auto editor=fixture.control(0,10);const auto draft=fixture.text(0,10);
+    CHARRANGE selection{4,8};SendMessageW(editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));fixture.click(0,20);
+    SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);CHARRANGE restored{};SendMessageW(editor,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&restored));
+    require(returned==0&&!(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&fixture.control(0,10)==editor&&fixture.text(0,10)==draft&&restored.cpMin==selection.cpMin&&restored.cpMax==selection.cpMax,"Escape left the lesson before closing fullscreen or changed the editor draft/selection");
+    require(navigate_lesson_back(fixture.view),"Normal Back did not use the existing catalog callback");pump(fixture.host);require(returned==1&&fixture.page()==0&&fixture.text(0,10)==draft,"Normal Back changed page or the editor instead of its existing destination");
+    SendMessageW(editor,WM_KEYDOWN,VK_ESCAPE,0);pump(fixture.host);require(returned==2,"Escape inside the real C++ editor did not reuse normal Back");
+    {
+        Fixture imported;LessonViewHooks events;events.back_to_catalog=[&](HWND){++returned;};set_lesson_view_hooks(imported.view,events);const auto calls=returned;
+        SendMessageW(imported.view,WM_COMMAND,MAKEWPARAM(104,BN_CLICKED),0);pump(imported.host);require(descendant(imported.view,201),"The actual import surface did not open on its isolated empty profile");
+        require(navigate_lesson_back(imported.view),"Back did not consume the open import surface");pump(imported.host);
+        require(!descendant(imported.view,201)&&returned==calls&&imported.page()==0,"Back left the lesson instead of closing import without changing page");
+    }
+    {
+        Fixture mathematical({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_back_math","title":"Regreso matemático","pages":[{"blocks":[{"type":"math_puzzle","prompt":"Escribe un número.","responses":[{"id":"value","type":"math_numeric_input"}]}]}]})");});
+        LessonViewHooks events;events.back_to_catalog=[&](HWND){++returned;};set_lesson_view_hooks(mathematical.view,events);ShowWindow(mathematical.host,SW_SHOWNOACTIVATE);
+        HWND field=nullptr;EnumChildWindows(mathematical.view,[](HWND candidate,LPARAM output)->BOOL{if(!math_field_keyboard_context(candidate).empty()){*reinterpret_cast<HWND*>(output)=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&field));require(field,"A real mathematical answer field is missing");
+        static windows::NarrationWorker worker(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        SetFocus(field);show_math_keyboard(field,[](std::string_view request){return worker.math_keyboard(request);},math_field_keyboard_context(field),"es");const auto keyboard=math_keyboard_window(GetAncestor(mathematical.view,GA_ROOT));require(keyboard&&IsWindowVisible(keyboard),"The original mathematical keyboard did not open through its real canonical resolver");
+        const auto calls=returned;const auto text=edit_text(field);require(navigate_lesson_back(mathematical.view),"Back did not consume the mathematical keyboard");
+        require(!IsWindowVisible(keyboard)&&returned==calls&&GetFocus()==field&&edit_text(field)==text&&mathematical.page()==0,"Back from the mathematical keyboard changed focus, answer, page or left the lesson");
+        SendMessageW(mathematical.view,WM_KEYDOWN,VK_ESCAPE,0);pump(mathematical.host);require(returned==calls+1,"A second Escape did not return through the original catalog callback");
+    }
+    std::cout<<"PASS shared Back/Escape: import/fullscreen/math-keyboard priority, real canonical keyboard, retained editor/draft/selection and existing catalog destination\n";
 }
 void native_page_progress_theme() {
     Fixture fixture;const auto progress=fixture.control(106);
@@ -568,18 +629,18 @@ void simulated_exercise_code_cards() {
         (GetWindowLongPtrW(output_answer,GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(0,3),GWL_STYLE)&WS_VISIBLE)&&
         !(GetWindowLongPtrW(fixture.control(1,2),GWL_STYLE)&WS_VISIBLE),
         "Simulated response fullscreen recreated fields, hid its answer or retained unrelated/check controls");
-    fixture.click(110);fixture.click(0,12);
+    fixture.click(116);fixture.click(0,12);
     require(fixture.text(0,2).empty()&&fixture.control(1,2)==fill_answer&&fixture.text(1,2)=="<<"&&
         fixture.text(0,1)==fixture.lesson.pages[0].blocks[0].code,
         "Resetting a response modified immutable code, another answer or its HWND");
-    fixture.enter(1);require(fixture.text(1,4).starts_with("Correcto")&&fixture.page()==0,"The decorated fill no longer checks with Enter without navigation");
+    fixture.enter(1);require(fixture.text(1,4).starts_with("✓ Correcto")&&fixture.page()==0,"The decorated fill no longer checks with Enter without navigation");
     fixture.click(1,12);require(fixture.text(1,2).empty()&&fixture.text(1,4).empty(),"The fill header did not reuse the existing correct-answer reset");
     fixture.click(2,21);require(fixture.text(2,22)=="int main() {"&&IsWindowEnabled(fixture.control(2,12)),"The order header collided with the actual first movement control");
     fixture.click(2,12);require(fixture.text(2,22)=="return 0;"&&!IsWindowEnabled(fixture.control(2,12)),"Resetting order did not restore its original unsolved presentation");
     SendMessageW(inline_answer,EM_SETSEL,0,-1);SendMessageW(inline_answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);
     fixture.click(3,13);require(fixture.control(3,5)==inline_host&&GetDlgItem(inline_host,100)==inline_answer&&edit_text(inline_answer)=="<<",
         "Inline fullscreen recreated the existing hole/editor or discarded its draft");
-    fixture.click(110);fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
+    fixture.click(116);fixture.click(3,12);require(edit_text(inline_answer).empty(),"The inline header reset did not clear only its own answer");
     SendMessageW(GetDlgItem(drag_host,2000),BM_CLICK,0,0);SendMessageW(drag_slot,WM_LBUTTONUP,0,0);pump(fixture.host);
     require(edit_text(drag_slot)=="main"&&IsWindowEnabled(fixture.control(4,12)),"The decorated drag card no longer places a visible choice");
     fixture.click(4,12);require(edit_text(drag_slot)=="…"&&fixture.lesson.raw_json==original_json&&fixture.control(4,5)==drag_host,
@@ -621,7 +682,7 @@ void simulated_code_and_choice_cards() {
         const auto header=sample(fixture.control(0,16),7),body=sample(code,9);
         SelectObject(memory,previous);DeleteObject(bitmap);DeleteDC(memory);
         const auto colors=reader_theme::palette(pane);
-        require(header==colors.header&&body==colors.card,"The simulated code card did not paint an actual header and body around its unchanged controls");
+        require(header==reader_theme::background(fixture.control(0,16))&&body==colors.card,"The simulated code card did not paint an actual header and body around its unchanged controls");
     }
     {
         PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
@@ -632,16 +693,33 @@ void simulated_code_and_choice_cards() {
     require(fixture.control(0,1)==code&&fixture.text(0,1)==original&&!(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE)&&
             lesson_reading_regions(fixture.view).empty()&&(GetWindowLongPtrW(code,GWL_STYLE)&WS_VSCROLL),
             "Readonly fullscreen recreated code, exposed hidden exercise text or has no real internal scrolling");
-    fixture.click(110);
+    require((GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(110),GWL_STYLE)&WS_VISIBLE),"Fullscreen retained the page toolbar instead of its explicit exit X");
+    int before_n=0,before_d=0,after_n=0,after_d=0;
+    SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&before_n),reinterpret_cast<LPARAM>(&before_d));
+    SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
+    SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
+    const auto base=before_d?MulDiv(before_n,100,before_d):100;
+    require(after_d&&MulDiv(after_n,100,after_d)==2*base&&fixture.text(0,1)==original&&(GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE),
+        "Double click failed to zoom the existing readonly code or incorrectly left fullscreen");
+    SendMessageW(code,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(40,20));pump(fixture.host);
+    SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
+    require(after_d&&MulDiv(after_n,100,after_d)==base,"Second double click did not restore the original code zoom");
+    fixture.click(116);
     require(fixture.control(0,1)==code&&fixture.control(1,20)==first&&(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE),
             "Leaving simulated-code fullscreen replaced controls or lost the exercise");
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
     fixture.click(1,20);require(IsWindowEnabled(fixture.control(1,12)),"Selecting an option did not enable its header reset");
-    fixture.click(1,3);require(fixture.text(1,4).starts_with("Incorrecto"),"The real incorrect-choice path did not execute");
+    fixture.click(1,3);require(fixture.text(1,4).starts_with("✗ Incorrecto"),"The real incorrect-choice path did not execute");
+    const auto after_wrong=read_lesson_state(fixture.view);
+    require(state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming")&&std::get<double>(*state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming"))<8.,"An evaluated wrong puzzle did not consume a route attempt");
+    fixture.click(1,3);
+    const auto repeated=read_lesson_state(fixture.view);
+    require(*state::find(repeated,"attempt_reserve_seconds_test","reserve_programming")==*state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming"),
+        "Repeating the same wrong answer consumed another attempt");
     fixture.click(1,12);
     require(fixture.text(1,4).empty()&&!SendMessageW(first,BM_GETCHECK,0,0)&&!IsWindowEnabled(fixture.control(1,12))&&
             fixture.control(2,10)==editor&&fixture.text(2,10)==draft,"Header reset changed another editor or retained a stale wrong attempt");
-    fixture.click(1,22);fixture.click(1,3);require(fixture.text(1,4).starts_with("Correcto")&&!IsWindowEnabled(second),"Correct choice did not retain the existing lock/verdict policy");
+    fixture.click(1,22);fixture.click(1,3);require(fixture.text(1,4).starts_with("✓ Correcto")&&!IsWindowEnabled(second),"Correct choice did not retain the existing lock/verdict policy");
     fixture.click(1,12);require(IsWindowEnabled(first)&&IsWindowEnabled(second)&&fixture.text(1,4).empty(),"Header reset did not reuse the ordinary correct-answer reset policy");
     SendMessageW(editor,WM_UNDO,0,0);pump(fixture.host);require(fixture.text(2,10)==source,"Resetting a simulated puzzle destroyed an independent editor's Undo history");
     fixture.non_overlapping_rows();fixture.scroll_repaint();fixture.reopen();
@@ -661,6 +739,8 @@ int main() {
         simulated_exercise_code_cards();
         simulated_code_and_choice_cards();
         lesson_interface_languages();
+        laboratory_interface_parity();
+        back_navigation_tests();
         Fixture view;
         require(view.page() == 0 && !lesson_page_state(view.view).can_next, "A fresh profile bypassed initial page exercises");
         view.close();
@@ -677,14 +757,14 @@ int main() {
                 "Reopening an untouched profile published personal state or changed its explicit UI preference");
         }
         view.viewport_layout(); view.scroll_repaint();
-        require(character_format(descendant(view.view,990)).yHeight==640,
-            "The lesson title did not retain its native 32-point hierarchy");
+        require(character_format(descendant(view.view,990)).yHeight==480,
+            "The lesson title did not retain its native 32sp hierarchy");
         for(std::size_t index=0;index<view.lesson.pages.front().blocks.size();++index){
             const auto& item=view.lesson.pages.front().blocks[index];
             if(item.type==BlockType::paragraph)
-                require(character_format(view.control(index,0)).yHeight==360,"Lesson prose remains below the readable 18-point base");
+                require(character_format(view.control(index,0)).yHeight==270,"Lesson prose remains below the readable 18sp base");
             else if(item.type==BlockType::heading||!item.question.empty())
-                require(character_format(view.control(index,0)).yHeight==460,"A question/heading lost its distinct 23-point size");
+                require(character_format(view.control(index,0)).yHeight==345,"A question/heading lost its distinct 23sp size");
         }
         view.gesture_navigation(false);
         {
@@ -705,16 +785,16 @@ int main() {
 
         const auto& first_prediction = view.lesson.pages[1].blocks[3];
         view.replace(3,2,first_prediction.answers.at(0) + ' '); view.enter(3);
-        require(view.page() == 1 && view.text(3,4).starts_with("Incorrecto") && !lesson_page_state(view.view).can_next, "Wrong exact prediction did not stay on its page");
+        require(view.page() == 1 && view.text(3,4).starts_with("✗ Incorrecto") && !lesson_page_state(view.view).can_next, "Wrong exact prediction did not stay on its page");
         view.reopen();
-        require(view.page() == 1 && view.text(3,4).starts_with("Incorrecto"), "Reviewed incorrect feedback did not reopen");
+        require(view.page() == 1 && view.text(3,4).starts_with("✗ Incorrecto"), "Reviewed incorrect feedback did not reopen");
         view.replace(3,2,first_prediction.answers.at(0));
         require(view.text(3,4).empty(), "Editing retained an obsolete incorrect verdict");
         view.reopen(); require(view.text(3,4).empty(), "Unreviewed edited response reopened as Incorrecto");
         view.enter(3);
-        require(view.page() == 1 && view.text(3,4).starts_with("Correcto") && !IsWindowEnabled(view.control(3,2)), "Correct response was not locked or Enter navigated");
-        require(window_text(view.control(3,3)) == "Reiniciar respuesta", "Correct quiz lacks explicit reset action");
-        view.click(3,3);
+        require(view.page() == 1 && view.text(3,4).starts_with("✓ Correcto") && !IsWindowEnabled(view.control(3,2)), "Correct response was not locked or Enter navigated");
+        require(window_text(view.control(3,3)) == "Correcto ✓" && !IsWindowEnabled(view.control(3,3)) && IsWindowEnabled(view.control(3,12)), "Correct quiz does not preserve its Android verdict and header reset");
+        view.click(3,12);
         require(IsWindowEnabled(view.control(3,2)) && view.text(3,2).empty() && view.text(3,4).empty(), "Reset did not restore an editable unanswered quiz");
         view.solve(3); view.solve(4);
         require(view.page() == 1 && lesson_page_state(view.view).can_next, "Last Enter auto-advanced instead of enabling Next");
@@ -742,21 +822,21 @@ int main() {
         view.contextual_editing(3);
         view.editor_gestures(3);
         view.run(3);
-        require(view.text(3,14) == "Zona inicial" && view.text(3,4) == "Correcto", "Original program did not produce/check its fresh exact output");
+        require(view.text(3,14) == "Zona inicial" && view.text(3,4) == "✓ Correcto", "Original program did not produce/check its fresh exact output");
         view.compiler_menus(3);
         const auto changed_source = message_code(modified,"Zona inicial","Caja recibida");
         view.replace(6,10,changed_source);
         require(view.text(3,10) == original.initial_code, "Modification editor changed the independent original draft");
         view.run(6);
-        require(view.text(6,14) == "Caja recibida" && view.text(6,4).starts_with("Correcto\n"), "Modified compiler lost its explanation or checked old output");
+        require(view.text(6,14) == "Caja recibida" && view.text(6,4).starts_with("✓ Correcto\n\n"), "Modified compiler lost its explanation or checked old output");
         std::cout << "PASS Real original and modified C++ executions, integrated checking and independent editors\n" << std::flush;
 
         view.replace(6,10,message_code(modified,"Zona inicial","Zona segura"));
         require(view.text(6,4).empty(), "Editing retained the preceding correct verdict");
         view.run(6);
-        require(view.text(6,4).starts_with("Incorrecto\nRevisa el mensaje solicitado"), "Authored targeted output review was not selected");
+        require(view.text(6,4).starts_with("✗ Incorrecto\n\nRevisa el mensaje solicitado"), "Authored targeted output review was not selected");
         view.replace(6,10,message_code(modified,"Zona inicial","Salida desconocida")); view.run(6);
-        require(view.text(6,4) == "Incorrecto", "An unknown output invented a pedagogical explanation");
+        require(view.text(6,4) == "✗ Incorrecto", "An unknown output invented a pedagogical explanation");
         auto broken = changed_source; const auto terminator = broken.find("\"Caja recibida\";");
         require(terminator != broken.npos, "Missing authored statement fixture"); broken.erase(terminator + std::string("\"Caja recibida\"").size(),1);
         view.replace(6,10,broken); view.run(6);
@@ -788,7 +868,7 @@ int main() {
         require(view.page() == 5 && !lesson_page_state(view.view).can_next, "Final page navigation escaped the lesson");
         const auto& independent = view.lesson.pages[5].blocks[6];
         view.replace(6,10,message_code(independent,"Caja recibida","Zona segura")); view.run(6);
-        require(view.text(6,14) == "Zona segura" && view.text(6,4) == "Correcto", "Page 6 did not keep its independent target");
+        require(view.text(6,14) == "Zona segura" && view.text(6,4) == "✓ Correcto", "Page 6 did not keep its independent target");
         view.reopen();
         require(view.page() == 5 && view.text(6,10).find("Zona segura") != std::string::npos && view.text(6,4).empty(), "Final reopen lost position/source or reused a verdict");
         view.non_overlapping_rows();
@@ -833,7 +913,7 @@ int main() {
         require(!descendant(legacy.view,id(3,15)) && !descendant(legacy.view,id(6,15)),
                 "An old hidden input invented a visible curricular input field");
         legacy.run(6);
-        require(legacy.text(6,14) == "Caja heredada" && legacy.text(6,4) == "Incorrecto",
+        require(legacy.text(6,14) == "Caja heredada" && legacy.text(6,4) == "✗ Incorrecto",
                 "The imported historical source was not executed as its own current draft");
         bool found_input = false;
         for (const auto& entry : std::filesystem::recursive_directory_iterator(legacy.environment.paths.projects))
@@ -971,7 +1051,7 @@ int main() {
             require(zoom_denominator>0&&zoom_numerator*100==125*zoom_denominator
                 && (GetWindowLongPtrW(source_control,GWL_STYLE)&ES_AUTOHSCROLL),
                 "A lesson ignored its original per-course text size or code-wrap override");
-            require(character_format(source_control).yHeight==360,
+            require(character_format(source_control).yHeight==270,
                 "The source editor still uses the old small type or a live zoom rewrote its base formatting");
             // A touch in the lower part of an enlarged glyph is still text,
             // not blank editor space that may be handed to page scrolling.
@@ -1057,8 +1137,8 @@ int main() {
             SendMessageW(source_control,WM_UNDO,0,0);pump(preferences.host);
             require(preferences.text(3,10)==scale_source,"Changing scale/wrap discarded the existing source Undo history");
             const auto shortcuts = descendant_class(preferences.view,L"LearnGameAndEngineDev.EditingBar");
-            require(shortcuts&&window_text(descendant(shortcuts,9003))=="std::cout"&&window_text(descendant(shortcuts,9004))=="<<",
-                "Saving shortcut preferences did not update the existing contextual bar");
+            require(!shortcuts&&state::string_value(read_lesson_state(preferences.view),"keyboard_shortcut_settings","cpp_shortcuts")==R"(["std::cout","<<",";"])",
+                "Retiring the Programming bar removed stored shortcuts or recreated it");
             const auto theme = reader_theme::palette(preferences.view);
             require(theme.accent == (theme.high_contrast ? GetSysColor(COLOR_HIGHLIGHT) : RGB(228,50,123)),
                 "A permitted appearance update did not refresh the lesson's own route accent");
@@ -1121,10 +1201,10 @@ int main() {
         require(!lesson_page_state(dependencies.view).can_next,"A legacy correct marker unlocked the next independent activity");
         reject_forward_selector(dependencies,5);
         dependencies.run(3);
-        require(dependencies.text(3,4) == "Correcto" && !lesson_page_state(dependencies.view).can_next,
+        require(dependencies.text(3,4) == "✓ Correcto" && !lesson_page_state(dependencies.view).can_next,
                 "Successful execution of the original program satisfied another editor's prerequisite");
         dependencies.run(6);
-        require(dependencies.text(6,4).starts_with("Incorrecto") && !lesson_page_state(dependencies.view).can_next,
+        require(dependencies.text(6,4).starts_with("✗ Incorrecto") && !lesson_page_state(dependencies.view).can_next,
                 "An incorrect output unlocked its dependent page");
         const auto prerequisite_source = message_code(dependencies.lesson.pages[4].blocks[6],"Zona inicial","Caja recibida");
         dependencies.replace(6,10,prerequisite_source + "esto no compila\n"); dependencies.run(6);
@@ -1204,11 +1284,11 @@ int main() {
         const auto original_source = local_dependencies.text(3,10);
         local_dependencies.replace(3,10,original_source + "// historial del editor libre\n");
         local_dependencies.run(3);
-        require(local_dependencies.control(3,10) == original_editor && local_dependencies.text(3,4) == "Correcto"
+        require(local_dependencies.control(3,10) == original_editor && local_dependencies.text(3,4) == "✓ Correcto"
                 && local_dependencies.text(6,10) == same_page_draft && local_dependencies.text(6,14).empty(),
                 "Additive unlocking recreated the prerequisite editor, verdict/history or dependent draft");
         local_dependencies.run(6);
-        require(local_dependencies.text(6,4).starts_with("Correcto"),"The same-page dependent editor cannot execute its preserved draft");
+        require(local_dependencies.text(6,4).starts_with("✓ Correcto"),"The same-page dependent editor cannot execute its preserved draft");
         const auto dependent_editor = local_dependencies.control(6,10);
         local_dependencies.replace(3,10,original_source + "// revocación\n");
         require(local_dependencies.control(3,10) == original_editor && !IsWindow(dependent_editor)

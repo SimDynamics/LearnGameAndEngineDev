@@ -39,6 +39,9 @@ public:
     [[nodiscard]] std::string describe_math(std::string_view raw_block,std::string_view language,std::stop_token={});
     [[nodiscard]] std::string validate_math(std::string_view raw_block,std::string_view raw_responses,
         std::string_view language,std::stop_token={});
+    [[nodiscard]] std::string math_editor(std::string_view request_json,std::stop_token={});
+    [[nodiscard]] std::string math_keyboard(std::string_view request_json,std::stop_token={});
+    [[nodiscard]] std::string math_calculate(std::string_view request_json,std::stop_token={});
 private:struct Impl;std::unique_ptr<Impl> impl_;
 };
 }

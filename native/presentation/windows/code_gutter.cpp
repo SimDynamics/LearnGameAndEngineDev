@@ -5,6 +5,7 @@
 #include <richedit.h>
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -26,6 +27,8 @@ std::wstring raw_text(HWND window){
 struct CodeGutter::Impl {
     HWND window=nullptr;HFONT font=nullptr;int width=0,line_height=1,original_margin=0;
     bool updating=false;
+    std::optional<COLORREF> background_color,foreground_color;
+    int right_padding=8;
     std::vector<LONG> starts{0};
     explicit Impl(HWND target):window(target){RECT format{};SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));original_margin=format.left;}
     ~Impl(){if(window&&IsWindow(window)){RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);
@@ -74,11 +77,12 @@ struct CodeGutter::Impl {
     void paint(HDC dc)const{
         if(!dc||!window)return;const auto saved=SaveDC(dc);RECT area{};GetClientRect(window,&area);area.right=width;
         IntersectClipRect(dc,area.left,area.top,area.right,area.bottom);
-        const auto background=presentation::reader_theme::background(window);const auto fill=CreateSolidBrush(background);FillRect(dc,&area,fill);DeleteObject(fill);
-        const auto colors=presentation::reader_theme::palette();SetTextColor(dc,colors.high_contrast?GetSysColor(COLOR_WINDOWTEXT):
-            presentation::reader_theme::applied(window)?colors.muted:GetSysColor(COLOR_GRAYTEXT));SetBkMode(dc,TRANSPARENT);
+        const auto colors=presentation::reader_theme::palette();const auto background=colors.high_contrast?presentation::reader_theme::background(window):background_color.value_or(presentation::reader_theme::background(window));
+        const auto fill=CreateSolidBrush(background);FillRect(dc,&area,fill);DeleteObject(fill);
+        SetTextColor(dc,colors.high_contrast?GetSysColor(COLOR_WINDOWTEXT):foreground_color.value_or(
+            presentation::reader_theme::applied(window)?colors.muted:GetSysColor(COLOR_GRAYTEXT)));SetBkMode(dc,TRANSPARENT);
         if(font)SelectObject(dc,font);
-        for(const auto& line:snapshot().visible){const auto label=std::to_wstring(line.number);RECT bounds{px(3),line.text_position.y,width-px(8),line.text_position.y+line_height};
+        for(const auto& line:snapshot().visible){const auto label=std::to_wstring(line.number);RECT bounds{px(3),line.text_position.y,width-px(right_padding),line.text_position.y+line_height};
             DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&bounds,DT_RIGHT|DT_TOP|DT_SINGLELINE|DT_NOPREFIX|DT_NOCLIP);}
         RestoreDC(dc,saved);
     }
@@ -108,5 +112,7 @@ CodeGutter::CodeGutter(HWND window){
 }
 CodeGutter::~CodeGutter()=default;
 CodeGutterSnapshot CodeGutter::snapshot()const{return impl_->snapshot();}
+void CodeGutter::set_appearance(COLORREF background,COLORREF foreground,int right_padding){impl_->background_color=background;impl_->foreground_color=foreground;impl_->right_padding=std::clamp(right_padding,0,32);impl_->invalidate();}
 CodeGutterSnapshot code_gutter_snapshot(HWND window){const auto gutter=reinterpret_cast<const CodeGutter*>(GetPropW(window,property));return gutter?gutter->snapshot():CodeGutterSnapshot{};}
+void set_code_gutter_appearance(HWND window,COLORREF background,COLORREF foreground,int right_padding){if(const auto gutter=reinterpret_cast<CodeGutter*>(GetPropW(window,property)))gutter->set_appearance(background,foreground,right_padding);}
 }

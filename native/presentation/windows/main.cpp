@@ -1,5 +1,6 @@
 #include "core/profile.hpp"
 #include "core/learning_flow.hpp"
+#include "core/attempts.hpp"
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 #include "presentation/windows/lesson_view.hpp"
@@ -7,6 +8,7 @@
 #include "presentation/windows/settings_view.hpp"
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/tools_view.hpp"
+#include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "presentation/windows/native_menu.hpp"
@@ -18,6 +20,8 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <ole2.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <algorithm>
 #include <array>
@@ -72,7 +76,7 @@ std::wstring widen_error(const std::exception& error) {
 
 void layout_controls(HWND window, WindowState& state) {
     RECT area{};GetClientRect(window,&area);
-    for(const auto view:{state.catalog,state.lesson,state.settings,state.tool})if(view)MoveWindow(view,0,0,area.right,area.bottom,TRUE);
+    for(const auto view:{state.catalog,state.lesson,state.tool})if(view)MoveWindow(view,0,0,area.right,area.bottom,TRUE);
 }
 
 // Navigation has one current destination. The lesson's existing store owns its
@@ -93,9 +97,29 @@ void show_catalog(HWND window,WindowState& state){
     remember_open_lesson(state,{});
     lgaed::presentation::refresh_catalog_view(state.catalog);ShowWindow(state.catalog,SW_SHOW);layout_controls(window,state);SetFocus(state.catalog);
 }
+void navigate_back(HWND window,WindowState& state){
+    // IsDialogMessage turns Escape over ordinary buttons into IDCANCEL;
+    // editors that request the key use their existing local escape route.
+    // Both paths retain the current view's normal save/close policy.
+    if(state.settings&&IsWindow(state.settings)){
+        PostMessageW(state.settings,WM_CLOSE,0,0);return;
+    }
+    if(state.lesson){(void)lgaed::presentation::navigate_lesson_back(state.lesson);return;}
+    if(state.tool){PostMessageW(window,return_message,0,0);return;}
+    if(state.catalog)(void)lgaed::presentation::navigate_catalog_back(state.catalog);
+}
+bool escape_has_local_popup(HWND window){
+    GUITHREADINFO info{sizeof(info)};
+    if(GetGUIThreadInfo(GetCurrentThreadId(),&info)&&
+       (info.flags&(GUI_INMENUMODE|GUI_POPUPMENUMODE|GUI_SYSTEMMENUMODE)))return true;
+    for(auto item=GetFocus();item&&item!=window;item=GetParent(item)){
+        wchar_t name[64]{};GetClassNameW(item,name,64);
+        if(std::wstring_view(name)==L"ComboBox"&&SendMessageW(item,CB_GETDROPPEDSTATE,0,0))return true;
+    }
+    return false;
+}
 void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson){
     using namespace lgaed::presentation;
-    const auto lesson_title=lesson.title;
     const auto ui_locale=interface_language(preferences(state));
     const auto tr=[&](const char* es,const char* en,const char* fr){return std::string(ui_locale=="fr"?fr:ui_locale=="en"?en:es);};
     std::string lesson_label=tr("Lección","Lesson","Leçon");
@@ -106,7 +130,6 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
     }
     if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
     remember_open_lesson(state,lesson.id);
-    state.lesson=create_lesson_view(window,state.environment,std::move(lesson));ShowWindow(state.catalog,SW_HIDE);
     LessonViewHooks hooks;hooks.lesson_label=lesson_label;hooks.back_to_catalog=[window](HWND){PostMessageW(window,return_message,0,0);};
     hooks.validate_math=[backend=state.narrator](std::string_view block,std::string_view answers,std::string_view locale,std::stop_token stop){
         return backend->validate_math(block,answers,locale,stop);};
@@ -120,36 +143,41 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
         if(current.lesson_id=="native_cpp_laboratory")state.context={current.locale};else state.context.lesson=current.lesson_id;PostMessageW(window,settings_message,0,0);};
     hooks.language_requested=[&state](HWND owner){
         using namespace lgaed::presentation;
-        const auto selected=interface_language(preferences(state));
-        const auto menu=CreatePopupMenu();if(!menu)return;
-        constexpr std::array<const wchar_t*,3> labels{L"Español",L"English",L"Français"};
-        constexpr std::array<const char*,3> locales{"es","en","fr"};
-        for(std::size_t index=0;index<labels.size();++index)
-            AppendMenuW(menu,MF_STRING|(selected==locales[index]?MF_CHECKED:0),8101+index,labels[index]);
-        RECT anchor{};const auto button=GetDlgItem(owner,112);
-        GetWindowRect(button?button:owner,&anchor);
-        const auto style=prepare_native_menu(menu,owner);
-        const auto command=TrackPopupMenuEx(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,anchor.left,anchor.bottom,owner,nullptr);
-        DestroyMenu(menu);
-        if(command<8101||command>8103)return;
-        const auto locale=std::string(locales[command-8101]);if(locale==selected)return;
+        const auto data=preferences(state);const auto selected=lgaed::state::string_value(data,"native_windows","ui_language","auto");
+        const auto locale=choose_interface_language(owner,data);if(!locale||*locale==selected)return;
         // This shortcut changes only menu/control language. The original
         // curriculum, narration language, editor and playback stay in place.
-        update_preferences(state,[&](auto& data){data.preferences["native_windows"]["ui_language"]=locale;});
+        update_preferences(state,[&](auto& updated){updated.preferences["native_windows"]["ui_language"]=*locale;});
         if(state.reader)state.reader->settings_changed();
+        if(state.settings)refresh_settings_language(state.settings);
     };
-    // Attempts are a route-specific status in the catalog; the native personal
-    // build does not invent a second commercial heart balance.
-    hooks.attempts_requested=[&state,lesson_title](HWND owner){const auto current=lgaed::presentation::lesson_page_state(state.lesson);
-        const auto popup_locale=lgaed::presentation::interface_language(preferences(state));
-        const auto content=lesson_title+'\n'+(popup_locale=="fr"?"Page ":popup_locale=="en"?"Page ":"Página ")+std::to_string(current.index+1)+(popup_locale=="fr"?" sur ":popup_locale=="en"?" of ":" de ")+std::to_string(current.count);
-        MessageBoxW(owner,lgaed::presentation::wide(content).c_str(),popup_locale=="fr"?L"Progression de la leçon":popup_locale=="en"?L"Lesson progress":L"Progreso de la lección",MB_OK|MB_ICONINFORMATION);};
-    set_lesson_view_hooks(state.lesson,std::move(hooks));
-    state.reader=std::make_unique<LessonReader>(state.lesson,state.environment,state.narrator,[window]{PostMessageW(window,settings_message,0,0);});
+    hooks.attempts_requested=[&state,route=context.route.empty()?std::string("programming"):context.route](HWND owner){
+        toggle_attempt_details(owner,[&state]{return preferences(state);},route);};
+    hooks.math_editor_request=[backend=state.narrator](std::string_view request){
+        const auto command=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(request)).GetNamedString(L"command",L"");
+        return command==L"math_keyboard"?backend->math_keyboard(request):backend->math_editor(request);
+    };
+    hooks.calculator_requested=[&state](HWND owner,HWND field){
+        if(!IsWindow(field)||!IsWindowEnabled(field)||!IsChild(owner,field))return;
+        const auto page=lesson_page_state(owner);
+        CalculatorPreferences access;
+        access.read=[owner]{return read_lesson_state(owner);};
+        access.update=[owner](const auto& update){if(IsWindow(owner))update_lesson_preferences(owner,update);};
+        (void)open_calculator_window(owner,state.environment,state.narrator,[owner,field,page](std::string_view latex){
+            if(!IsWindow(owner)||!IsWindow(field)||!IsChild(owner,field))return;
+            const auto current=lesson_page_state(owner);
+            if(current.lesson_id!=page.lesson_id||current.page_id!=page.page_id)return;
+            (void)apply_math_calculator_result(field,latex);
+        },std::move(access));
+    };
+    const bool laboratory=lesson.id=="native_cpp_laboratory";
+    state.lesson=create_lesson_view(window,state.environment,std::move(lesson),std::move(hooks));ShowWindow(state.catalog,SW_HIDE);
+    if(!laboratory)state.reader=std::make_unique<LessonReader>(state.lesson,state.environment,state.narrator,[window,&state]{
+        state.pending_action=CatalogAction::audio;state.context=catalog_location(state.catalog);PostMessageW(window,settings_message,0,0);});
     layout_controls(window,state);SetFocus(state.lesson);
 }
 void open_settings(HWND window,WindowState& state){
-    using namespace lgaed::presentation;if(state.settings)return;
+    using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_RESTORE);SetForegroundWindow(state.settings);return;}
     if(state.lesson&&!flush_lesson_view(state.lesson))return;
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
     access.changed=[&state]{if(state.reader)state.reader->settings_changed();};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
@@ -196,7 +224,7 @@ void open_settings(HWND window,WindowState& state){
             if(state.reader)state.reader->pause();if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
             lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);PostMessageW(window,close_settings_message,0,0);};
     }
-    state.settings=create_settings_view(window,std::move(access));ShowWindow(state.catalog,SW_HIDE);if(state.lesson)ShowWindow(state.lesson,SW_HIDE);if(state.tool)ShowWindow(state.tool,SW_HIDE);layout_controls(window,state);SetFocus(state.settings);
+    state.settings=create_settings_window(window,std::move(access));
 }
 
 LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -212,6 +240,12 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
     LRESULT themed{};
     if (lgaed::presentation::reader_theme::control_color(message, wparam, lparam, themed)) return themed;
     switch (message) {
+    case WM_COMMAND:
+        if(LOWORD(wparam)==IDCANCEL){navigate_back(window,*state);return 0;}
+        break;
+    case WM_KEYDOWN:
+        if(wparam==VK_ESCAPE){navigate_back(window,*state);return 0;}
+        break;
     case WM_ERASEBKGND: {
         RECT area{}; GetClientRect(window, &area);
         FillRect(reinterpret_cast<HDC>(wparam), &area,
@@ -246,7 +280,23 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                     [window,state](const auto& path){state->pending_lesson=path;PostMessageW(window,open_lesson_message,0,0);},
                     [window,state](auto action,const auto& context){state->context=context;state->pending_action=action;
                         PostMessageW(window,action==lgaed::presentation::CatalogAction::settings||action==lgaed::presentation::CatalogAction::audio?settings_message:tool_message,0,0);},
-                    [](auto,const auto&){return true;});
+                    [](auto,const auto&){return true;},
+                    [backend=state->narrator](const lgaed::curriculum::Block& block,const lgaed::state::Response& response,
+                        std::string_view locale)->std::optional<bool>{
+                        using namespace winrt::Windows::Data::Json;
+                        try{
+                            const auto saved=JsonObject::Parse(winrt::to_hstring(response.raw_json));
+                            if(!response.correct||!saved.GetNamedBoolean(L"correct",false)||
+                                !saved.HasKey(L"responses")||!saved.HasKey(L"contentFingerprint"))return false;
+                            const auto fingerprint=saved.GetNamedString(L"contentFingerprint");
+                            if(fingerprint.empty())return false;
+                            const auto reply=JsonObject::Parse(winrt::to_hstring(backend->validate_math(block.raw_json,
+                                winrt::to_string(saved.GetNamedObject(L"responses").Stringify()),locale)));
+                            return reply.GetNamedBoolean(L"evaluable",false)&&reply.GetNamedBoolean(L"correct",false)&&
+                                fingerprint==reply.GetNamedString(L"contentFingerprint",L"missing");
+                        }catch(const winrt::hresult_error& error){OutputDebugStringW(error.message().c_str());return std::nullopt;}
+                        catch(const std::exception& error){OutputDebugStringW(widen_error(error).c_str());return std::nullopt;}
+                    });
                 layout_controls(window, *state);
                 if(!state->environment.options.smoke_test){
                     const auto active=lgaed::state::string_value(defaults,"native_windows","navigation/lesson");
@@ -303,13 +353,13 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
             if(state->tool){DestroyWindow(state->tool);state->tool=nullptr;}
             if(state->pending_action==CatalogAction::compiler){lgaed::curriculum::Lesson lab;lab.id="native_cpp_laboratory";
                 const auto data=preferences(*state);const auto ui=lgaed::presentation::interface_language(data);
-                lab.title=ui=="fr"?"Laboratoire C++":ui=="en"?"C++ laboratory":"Laboratorio C++";
+                lab.title=ui=="fr"?"Prototype du moteur C++":ui=="en"?"C++ Engine Prototype":"Prototipo del motor C++";
                 lab.locale=lgaed::state::string_value(data,"native_windows","content_language","es");
                 lab.source_path=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content"/lab.locale/L"programming";
-                lgaed::curriculum::Block compiler;compiler.type=lgaed::curriculum::BlockType::cpp_compiler;compiler.stable_id="native_lab_editor";compiler.initial_code="#include <iostream>\n\nint main() {\n    std::cout << \"Hola\" << '\\n';\n    return 0;\n}\n";compiler.standard_input="";
+                lgaed::curriculum::Block compiler;compiler.type=lgaed::curriculum::BlockType::cpp_compiler;compiler.stable_id="native_lab_editor";compiler.initial_code="#include <iostream>\n\nusing namespace std;\n\nint main()\n{\n    \n}";
                 lgaed::curriculum::Page page;page.stable_id="native_lab";page.blocks.push_back(std::move(compiler));lab.pages.push_back(std::move(page));open_lesson(window,*state,std::move(lab));}
             else{ShowWindow(state->catalog,SW_HIDE);state->tool=state->pending_action==CatalogAction::calculator?
-                    lgaed::presentation::create_calculator_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);}):
+                    lgaed::presentation::create_calculator_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);},state->narrator):
                     lgaed::presentation::create_graphics_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}}
         catch(const std::exception& error){MessageBoxW(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
     case WM_SIZE:
@@ -431,7 +481,18 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         MSG message{};
         BOOL result = 0;
         while ((result = GetMessageW(&message, nullptr, 0, 0)) > 0) {
-            if (!IsDialogMessageW(window, &message)) {
+            const auto target=GetAncestor(message.hwnd,GA_ROOT);
+            // Native RichEdit fields can request all keys, including the
+            // read-only lesson header. Keep the Android-style Back gesture
+            // at the root, after any local popup and before dialog dispatch.
+            if(target==window&&message.message==WM_KEYDOWN&&message.wParam==VK_ESCAPE&&!escape_has_local_popup(window)){
+                if(!(message.lParam&(1LL<<30)))navigate_back(window,state);
+                continue;
+            }
+            wchar_t target_class[128]{};if(target)GetClassNameW(target,target_class,128);
+            const bool auxiliary=target&&(target==state.settings||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CalculatorWindow");
+            const auto dialog=auxiliary?target:target==window?window:nullptr;
+            if (!dialog||!IsDialogMessageW(dialog,&message)) {
                 TranslateMessage(&message);
                 DispatchMessageW(&message);
             }

@@ -1,0 +1,45 @@
+package lgaed.narration.windows
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+
+/** Deterministic task-lifecycle test, not a Kokoro or CPU benchmark. */
+fun main() {
+    val executor=Executors.newSingleThreadExecutor()
+    try {
+        val entered=CountDownLatch(1);val gate=CountDownLatch(1)
+        val interrupted=AtomicBoolean();val cancellations=AtomicInteger();val completions=AtomicInteger()
+        val running=WindowsCalculatorTask(Runnable {
+            entered.countDown()
+            try { check(gate.await(5,TimeUnit.SECONDS)) } catch(failure: InterruptedException) {
+                interrupted.set(true);throw failure
+            }
+        },{cancellations.incrementAndGet()},{completions.incrementAndGet()})
+        executor.execute(running)
+        check(entered.await(2,TimeUnit.SECONDS)){"Calculation did not start"}
+        check(running.cancel(true)){"Running calculator request was not cancelled"}
+        check(executor.submit<Boolean>{!Thread.currentThread().isInterrupted}.get(2,TimeUnit.SECONDS)){
+            "The next calculator request inherited an interrupted thread"
+        }
+        check(interrupted.get()&&cancellations.get()==1&&completions.get()==1){
+            "Running cancellation did not interrupt/report/clean up exactly once"
+        }
+
+        val occupied=CountDownLatch(1);val release=CountDownLatch(1);val executed=AtomicBoolean()
+        executor.execute { occupied.countDown();check(release.await(5,TimeUnit.SECONDS)) }
+        check(occupied.await(2,TimeUnit.SECONDS))
+        val queued=WindowsCalculatorTask(Runnable {executed.set(true)},
+            {cancellations.incrementAndGet()},{completions.incrementAndGet()})
+        executor.execute(queued)
+        check(queued.cancel(true)){"Queued calculator request was not cancelled"}
+        check(cancellations.get()==2&&completions.get()==2){"Queued cancellation leaked its request cleanup"}
+        release.countDown()
+        check(executor.submit<Boolean>{!Thread.currentThread().isInterrupted}.get(2,TimeUnit.SECONDS))
+        check(!executed.get()){"Cancelled queued calculation executed its body"}
+        check(cancellations.get()==2&&completions.get()==2){"A cancelled task replied or cleaned up twice"}
+        println("PASS calculator-only Future interruption, queued cleanup and next-request thread state (not an audio benchmark)")
+    } finally { executor.shutdownNow();check(executor.awaitTermination(5,TimeUnit.SECONDS)) }
+}

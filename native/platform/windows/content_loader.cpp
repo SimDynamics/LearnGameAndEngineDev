@@ -427,7 +427,16 @@ Block read_block(const JsonObject& value,std::string_view original) {
     result.type = mathematics.contains(type) ? BlockType::math_puzzle : types.at(type);
     result.id = optional_text(value, "id"); result.text = optional_text(value, "text"); result.question = optional_text(value, "question");
     result.code = optional_text(value, "code"); result.initial_code = optional_text(value, "initialCode"); result.language = optional_text(value, "language");
-    result.explanation = optional_text(value, "explanation"); result.review_feedback = optional_text(value, "reviewFeedback");
+    result.explanation = optional_text(value, "explanation");
+    if(value.HasKey(L"reviewFeedback")) {
+        const auto feedback=value.GetNamedValue(L"reviewFeedback");
+        if(feedback.ValueType()==JsonValueType::String)result.review_feedback=utf8(feedback.GetString());
+        else {
+            require(result.type==BlockType::multiple_choice&&feedback.ValueType()==JsonValueType::Array,
+                "Per-option review feedback requires a multiple-choice string array");
+            result.review_feedback_options=strings(feedback.GetArray(),true,false);
+        }
+    }
     if (value.HasKey(L"emphasis")) for (const auto& emphasis : array(value, "emphasis")) {
         const auto item = emphasis.GetObject();
         Emphasis entry; entry.text = text(item, "text");
@@ -438,6 +447,8 @@ Block read_block(const JsonObject& value,std::string_view original) {
     if (result.type == BlockType::multiple_choice) {
         result.options = strings(array(value, "options"), true); result.correct_index = integer(value.GetNamedValue(L"correctIndex"));
         require(*result.correct_index < result.options.size(), "Choice answer is outside options");
+        require(result.review_feedback_options.empty()||result.review_feedback_options.size()==result.options.size(),
+            "Per-option review feedback must match the number of choices");
     } else if (result.type == BlockType::output_prediction || result.type == BlockType::fill_code) {
         result.answers = strings(array(value, "answers"), true, false);
         if (value.HasKey(L"outputComparison")) result.output_comparison = comparison(text(value, "outputComparison"));
@@ -575,5 +586,62 @@ curriculum::Lesson load_lesson(const std::filesystem::path& path, std::string_vi
     const std::string bytes{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     require(!input.bad(), "Cannot read lesson file");
     auto lesson = parse_lesson_json(bytes, expected_locale); lesson.source_path = path; return lesson;
+}
+curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::string_view expected_locale) {
+    require(known_locale(expected_locale),"Unsupported asset language");
+    ensure_winrt_apartment();
+    try {
+        if (source.starts_with("\xEF\xBB\xBF")) source.remove_prefix(3);
+        require(source.size() <= 32 * 1024 * 1024,"Lesson file too large");
+        const auto root = JsonObject::Parse(winrt::to_hstring(source));
+        Lesson lesson; lesson.id = text(root,"id"); lesson.title = text(root,"title");
+        lesson.locale = expected_locale; lesson.raw_json = source;
+        require(!lesson.id.empty() && !lesson.title.empty(),"Lesson identity/title missing");
+        const auto pages = array(root,"pages");
+        require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
+        if (root.HasKey(L"stateLayout")) {
+            require_integer_json_numbers(source);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale);
+        }
+        const OriginalJson original(source);
+        const auto original_pages = original.elements(original.member(original.root(),"pages"));
+        require(original_pages.size() == pages.Size(),"Original JSON page ownership mismatch");
+        for (unsigned p = 0; p < pages.Size(); ++p) {
+            const auto blocks = array(pages.GetAt(p).GetObject(),"blocks");
+            const auto original_blocks = original.elements(original.member(original_pages[p],"blocks"));
+            require(original_blocks.size() == blocks.Size(),"Original JSON block ownership mismatch");
+            Page page;
+            for (unsigned b = 0; b < blocks.Size(); ++b) {
+                const auto block = blocks.GetAt(b).GetObject();
+                const auto raw = original.text(original_blocks[b]);
+                if (text(block,"type") == "cpp_compiler") {
+                    Block compiler; compiler.type = BlockType::cpp_compiler; compiler.raw_json = raw;
+                    page.blocks.push_back(std::move(compiler));
+                } else {
+                    // Progress needs answer contracts and historical addresses,
+                    // not the runtime renderer's editorial presentation fields.
+                    // Valid per-answer reviewFeedback arrays must remain raw,
+                    // without being misinterpreted as a string by read_block.
+                    const auto projection=JsonObject::Parse(block.Stringify());
+                    if(projection.HasKey(L"explanation"))projection.Remove(L"explanation");
+                    if(projection.HasKey(L"reviewFeedback"))projection.Remove(L"reviewFeedback");
+                    try { page.blocks.push_back(read_block(projection,raw)); }
+                    catch(const std::exception& failure){throw std::runtime_error("Progress page "+std::to_string(p+1)+" block "+std::to_string(b+1)+": "+failure.what());}
+                }
+            }
+            lesson.pages.push_back(std::move(page));
+        }
+        resolve_addresses(lesson);
+        return lesson;
+    } catch (const winrt::hresult_error& error) {
+        throw std::runtime_error("Curriculum progress JSON/contract error: " + utf8(error.message()));
+    }
+}
+curriculum::Lesson load_lesson_progress_metadata(const std::filesystem::path& path, std::string_view expected_locale) {
+    std::ifstream input(path,std::ios::binary); require(input.good(),"Cannot open lesson progress metadata");
+    const std::string source{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
+    require(!input.bad(),"Cannot read lesson progress metadata");
+    try { auto lesson = parse_lesson_progress_metadata(source,expected_locale); lesson.source_path = path; return lesson; }
+    catch(const std::exception& failure){throw std::runtime_error(path.string()+": "+failure.what());}
 }
 } // namespace lgaed::windows

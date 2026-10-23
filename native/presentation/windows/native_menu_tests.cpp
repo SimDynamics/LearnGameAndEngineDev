@@ -99,9 +99,19 @@ void dpi_measurement_and_theme_preserve_drawing_state() {
     const auto guard = prepare_native_menu(menu.handle, owner.window); if (!guard.styled()) return;
     const auto short_size = measure(menu.handle, 0), long_size = measure(menu.handle, 1), separator = measure(menu.handle, 2);
     const auto dpi = GetDpiForWindow(owner.window);
-    check(short_size.itemHeight >= static_cast<UINT>(MulDiv(44, static_cast<int>(dpi), 96)) &&
+    check(short_size.itemHeight >= static_cast<UINT>(MulDiv(48, static_cast<int>(dpi), 96)) &&
         long_size.itemWidth > short_size.itemWidth && separator.itemHeight < short_size.itemHeight,
         "Native menu padding/font/shortcut measurement is not readable or DPI aware");
+    NONCLIENTMETRICSW metrics{};metrics.cbSize=sizeof(metrics);
+    check(SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS,sizeof(metrics),&metrics,0,dpi)!=FALSE,"Read actual accessibility menu metrics");
+    const auto expected_font=CreateFontW(-std::max<LONG>(std::abs(metrics.lfMenuFont.lfHeight),MulDiv(16,static_cast<int>(dpi),96)),
+        0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+    check(expected_font!=nullptr,"Create the Android-equivalent 16sp Roboto reference font");
+    const auto measure_dc=GetDC(owner.window);const auto old_measure_font=SelectObject(measure_dc,expected_font);
+    RECT expected_label{};DrawTextW(measure_dc,L"&Short",-1,&expected_label,DT_CALCRECT|DT_SINGLELINE);
+    SelectObject(measure_dc,old_measure_font);ReleaseDC(owner.window,measure_dc);DeleteObject(expected_font);
+    check(short_size.itemWidth==static_cast<UINT>(MulDiv(76,static_cast<int>(dpi),96)+expected_label.right),
+        "Native popup labels do not use Android's Roboto16sp measurement");
     const auto screen = GetDC(owner.window); check(screen != nullptr, "Cannot acquire the test owner's drawing context");
     const auto dc = CreateCompatibleDC(screen); const auto bitmap = CreateCompatibleBitmap(screen, 640, 200);
     ReleaseDC(owner.window, screen); check(dc && bitmap, "Cannot allocate the isolated native menu drawing surface");
@@ -110,12 +120,12 @@ void dpi_measurement_and_theme_preserve_drawing_state() {
     DRAWITEMSTRUCT draw{}; draw.CtlType = ODT_MENU; draw.itemID = 1; draw.hwndItem = reinterpret_cast<HWND>(menu.handle);
     draw.itemData = information(menu.handle, 0).dwItemData; draw.hDC = dc; draw.rcItem = {0, 0, 640, 150};
     check(draw_native_menu(draw), "The native menu helper did not draw its real item");
-    check(GetPixel(dc, 2, 2) == reader_theme::palette(owner.window).card,
-        "The actual popup item background is not the current reader theme");
+    check(GetPixel(dc, 2, 2) == RGB(48,50,57),
+        "The actual popup background differs from Android's explicit #303239 selector surface");
     check(GetTextColor(dc) == RGB(1, 2, 3) && GetCurrentObject(dc, OBJ_FONT) == original_font,
         "Native menu painting changed the caller's DC/font state");
     draw.itemState = ODS_SELECTED | ODS_CHECKED;
-    check(draw_native_menu(draw) && GetPixel(dc, 2, 2) != reader_theme::palette(owner.window).card,
+    check(draw_native_menu(draw) && GetPixel(dc, 2, 2) != RGB(48,50,57),
         "The real native highlighted item has no visible selection distinction");
     SetTextColor(dc, previous_text); SelectObject(dc, previous_bitmap); DeleteObject(bitmap); DeleteDC(dc);
 }

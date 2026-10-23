@@ -452,7 +452,7 @@ int main() {
         view.click(block_id(original, 11));
         wait_for(view.host, [&] { return IsWindowEnabled(compile) && edit_text(view.control(original, 14)) != "Compilando…"; },
             "A freshly imported real source could not compile and execute");
-        require(edit_text(view.control(original, 14)) == "Zona inicial" && edit_text(view.control(original, 4)) == "Correcto",
+        require(edit_text(view.control(original, 14)) == "Zona inicial" && edit_text(view.control(original, 4)) == "✓ Correcto",
             "A fresh imported source did not produce/check its real output");
         view.reopen(); assert_restored(view, exported);
         require(hashes(exported.folder) == changed_hashes, "Compiling the imported source changed the original export");

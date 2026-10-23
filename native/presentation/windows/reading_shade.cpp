@@ -52,7 +52,7 @@ void ReadingShade::read_through(std::size_t source){
     if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;const auto boundary=static_cast<long>(map_[std::min(source,map_.size()-1)]);if(boundary==boundary_)return;
     Transaction transaction(window_);boundary_=boundary;
     for(const auto& ink:ink_)color(window_,transaction.document,ink.start,std::min(ink.end,boundary),ink.color,ink.automatic);
-    const auto gray=reader_theme::palette().high_contrast?GetSysColor(COLOR_GRAYTEXT):RGB(135,139,148);
+    const auto gray=reader_theme::unread_color(reader_theme::background(window_));
     color(window_,transaction.document,boundary,static_cast<long>(displayed_.size()),gray);
 }
 void ReadingShade::restore(){if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;Transaction transaction(window_);for(const auto& ink:ink_)color(window_,transaction.document,ink.start,ink.end,ink.color,ink.automatic);boundary_=-1;}

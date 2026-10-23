@@ -22,8 +22,11 @@ public:
     CodeGutter(const CodeGutter&)=delete;
     CodeGutter& operator=(const CodeGutter&)=delete;
     [[nodiscard]] CodeGutterSnapshot snapshot()const;
+    void set_appearance(COLORREF background,COLORREF foreground,int right_padding);
 private:
     struct Impl;std::unique_ptr<Impl> impl_;
 };
 [[nodiscard]] CodeGutterSnapshot code_gutter_snapshot(HWND rich_edit);
+// Explicit view appearance only; never infers source colors or changes text.
+void set_code_gutter_appearance(HWND rich_edit,COLORREF background,COLORREF foreground,int right_padding=3);
 }
