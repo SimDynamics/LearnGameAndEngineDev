@@ -27,6 +27,9 @@ struct LessonReadingRegion {
     HWND target = nullptr;
     std::size_t block_index = std::numeric_limits<std::size_t>::max();
     bool feedback = false, correct = false, is_exercise = false, solved = false;
+    // Spoken Android heading, anchored to its compact visual language caption.
+    // It has no invented word map onto that differently written caption.
+    bool passive_label = false;
 };
 struct LessonViewHooks {
     std::string lesson_label = "Lección";
@@ -60,6 +63,8 @@ inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
 // Reconstructs only the previous Windows script for exact bookmark migration.
 // These regions are never used for playback or visual shading.
 [[nodiscard]] std::vector<LessonReadingRegion> legacy_lesson_reading_regions(HWND window);
+// Exact prior script before Android code-heading narration was restored.
+[[nodiscard]] std::vector<LessonReadingRegion> pre_caption_lesson_reading_regions(HWND window);
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
 // The caller owns the reader bar. It must be a child of the lesson view; the
 // bar overlays the viewport, as on Android; it never reserves a footer.

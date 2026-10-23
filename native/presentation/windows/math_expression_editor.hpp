@@ -17,6 +17,7 @@ struct MathExpressionEditorAccess {
     std::string language="es";
     bool accent_border=false;
     std::function<void()> cancel;
+    int minimum_height=44,horizontal_padding=8,vertical_padding=4;
 };
 struct MathExpressionCaret {
     std::string path_json;

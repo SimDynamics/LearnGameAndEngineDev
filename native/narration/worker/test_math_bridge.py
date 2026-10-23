@@ -72,6 +72,82 @@ class WindowsMathBridgeTest(unittest.TestCase):
             answers = {response["id"]: known_answer(response["validator"]) for response in responses(block)}
         return self.worker.ask("validate_math", block=block, responses=answers, language=language)
 
+    def test_10_rigid_copy_reuses_original_placement_layout_and_validator(self):
+        # Same technical geometry as Android RigidAngleCopyTest; no lesson added.
+        def figure(vertex, first, second, x, y, angle, first_distance, second_distance):
+            points = [{"id": vertex, "x": x, "y": y, "labels": [vertex]}]
+            for name, direction, distance in ((first, angle, first_distance), (second, angle + 1, second_distance)):
+                points.append({"id": name, "x": x + math.cos(direction) * distance,
+                               "y": y + math.sin(direction) * distance, "labels": [name]})
+            return {"vertex": vertex, "sides": ["first", "second"], "region": "counterclockwise",
+                    "diagram": {"points": points, "objects": [
+                        {"id": name, "kind": "ray", "through": [vertex, endpoint], "contains": [vertex, endpoint]}
+                        for name, endpoint in (("first", first), ("second", second))]}}
+        spec = {"type": "rigid_angle_copy", "reference": figure("O", "A", "B", 1, 2, 0, 4, 5),
+                "copy": figure("V", "C", "D", 0, 0, .7, 6, 3), "initial": {"x": 7, "y": 6, "rotation": .2},
+                "relation": "congruent", "positionTolerance": .1, "directionTolerance": .01}
+        original = copy.deepcopy(spec)
+        def draw(**fields):
+            return self.worker.ask("math_editor", action="rigid_layout", config=spec,
+                                   width=850, height=600, unit=1, textSize=15, **fields)
+        initial = draw()
+        self.assertEqual({"type": "rigid_angle", **spec["initial"]}, initial["placement"])
+        self.assertEqual(6, len(initial["points"]))
+        self.assertEqual(4, len(initial["arrows"]))
+        self.assertEqual({"reference:", "copy:"}, {part["id"] for part in initial["regions"]})
+        fixed = {part["id"]: part for part in initial["points"] if part["id"].startswith("reference:")}
+        moved = draw(placement=initial["placement"], gesture={"mode": "move", "previous": {"x": 300, "y": 300}, "current": {"x": 320, "y": 310}})
+        self.assertNotEqual(initial["placement"], moved["placement"])
+        self.assertEqual(fixed, {part["id"]: part for part in moved["points"] if part["id"].startswith("reference:")})
+        self.assertEqual(initial["placement"]["rotation"], moved["placement"]["rotation"])
+        view = draw(placement=initial["placement"], gesture={"mode": "view", "previous": {"x": 300, "y": 300}, "current": {"x": 320, "y": 310}})
+        self.assertEqual(initial["placement"], view["placement"])
+        center = initial["copyCenter"]
+        rotated = draw(placement=initial["placement"], gesture={"mode": "rotate",
+            "previous": {"x": center["x"] + 80, "y": center["y"]},
+            "current": {"x": center["x"] + 75, "y": center["y"] + 20}})
+        self.assertEqual(initial["placement"]["x"], rotated["placement"]["x"])
+        self.assertEqual(initial["placement"]["y"], rotated["placement"]["y"])
+        self.assertNotEqual(initial["placement"]["rotation"], rotated["placement"]["rotation"])
+        far = draw(placement=initial["placement"], gesture={"mode": "move", "previous": {"x": 0, "y": 0}, "current": {"x": 100000, "y": -100000}})
+        self.assertTrue(all(0 <= point["center"]["x"] <= 850 and 0 <= point["center"]["y"] <= 600
+                            for point in far["points"] if point["id"].startswith("copy:")))
+        stored = {"x": 10000, "y": -10000, "rotation": 1.2}
+        self.assertEqual({"type": "rigid_angle", **stored}, draw(placement=stored)["placement"])
+        block = {"type": "math_puzzle", "prompt": "Traslada y gira la copia conservando su forma.", "responses": [{"id": "copy", "type": "math_rigid_angle_copy", "validator": spec}]}
+        self.assertTrue(self.evaluate(block, {"copy": {"type": "rigid_angle", "x": 1, "y": 2, "rotation": -.7}})["correct"])
+        self.assertFalse(self.evaluate(block, {"copy": initial["placement"]})["correct"])
+        self.assertEqual(original, spec)
+
+    def test_11_original_auto_typesetting_preserves_utf16_source_and_operators(self):
+        def fragments(source, mode="auto"):
+            result = self.worker.ask("math_editor", action="text_layout", text=source, mode=mode)
+            encoded = source.encode("utf-16-le")
+            previous = 0
+            for part in result["fragments"]:
+                self.assertTrue(previous <= part["start"] < part["end"] <= len(encoded)//2)
+                part["original"] = encoded[part["start"]*2:part["end"]*2].decode("utf-16-le")
+                previous = part["end"]
+            return result["fragments"]
+
+        source = "🙂 Punto (1,2) y fracción 3/4, con x²."
+        result = fragments(source)
+        self.assertEqual(["(1,2)", "3/4", "x²"], [part["original"] for part in result])
+        self.assertEqual([r"(1\mathrm{,}2)", r"\frac{3}{4}", "x^{2}"], [part["formula"] for part in result])
+        self.assertFalse(any(part["literal"] for part in result))
+        self.assertEqual([], fragments(source, "text"))
+        for expression in ("2 × 3 = 6", "4 − 1 = 3"):
+            result = fragments(expression)
+            self.assertEqual(expression, result[0]["original"])
+            self.assertEqual(expression, result[0]["formula"], "AST serialization changed an original visible operator")
+        explicit = fragments(r"Antes \(\frac{1}{2}\) después.")
+        self.assertEqual(r"\(\frac{1}{2}\)", explicit[0]["original"])
+        self.assertEqual(r"\frac{1}{2}", explicit[0]["formula"])
+        self.assertEqual([], fragments(r"C++23; std::cout; C:/ruta/1/2; 2026/10/23; `1/2`."))
+        fallback = fragments(r"Antes \(\notacommand{a}\) después.")
+        self.assertTrue(fallback[0]["literal"])
+        self.assertEqual(r"\notacommand{a}", fallback[0]["formula"])
+
     def test_01_describes_all_real_math_blocks_without_exposing_solutions(self):
         forbidden = {"validator", "expected", "correctFeedback", "incorrectFeedback", "reviewFeedback", "solution"}
         def inspect(value):
@@ -217,6 +293,41 @@ class WindowsMathBridgeTest(unittest.TestCase):
         reordered = {"prompt":legacy["prompt"],"type":legacy["type"],"responses":legacy["responses"]}
         changed = self.worker.ask("validate_math",blockJson=json.dumps(reordered,ensure_ascii=False),responsesJson=json.dumps(answers),language="es")
         self.assertNotEqual(expected,changed["contentFingerprint"],"A sorted-key replacement silently changed Android's historical hash contract")
+
+    def test_09_all_authored_euclidean_drawings_use_the_original_layout(self):
+        def representations(value):
+            if isinstance(value, dict):
+                if value.get("type") == "euclidean_diagram":
+                    yield value.get("config", value)
+                for key, child in value.items():
+                    if key not in {"validator", "feedback", "reviewFeedback"}:
+                        yield from representations(child)
+            elif isinstance(value, list):
+                for child in value:
+                    yield from representations(child)
+
+        configs = [config for _, block in self.blocks for config in representations(block)]
+        self.assertGreaterEqual(len(configs), 37, "The complete authored Euclidean inventory lost known drawings")
+        for index, config in enumerate(configs):
+            original = copy.deepcopy(config)
+            for width, height in ((400, 286), (850, 607)):
+                for scale in (.75, 1., 1.5):
+                    with self.subTest(diagram=index, width=width, scale=scale):
+                        drawing = self.worker.ask("math_editor", action="diagram_layout", config=config,
+                                                  width=width, height=height, textSize=15*scale)
+                        self.assertEqual({p["id"] for p in config["points"]}, {p["id"] for p in drawing["points"]})
+                        self.assertEqual({p["id"] for p in config.get("arcs", [])}, {p["id"] for p in drawing["arcs"]})
+                        self.assertEqual({p["id"]: p.get("filled", False) for p in config.get("circles", [])},
+                                         {p["id"]: p["filled"] for p in drawing["circles"]})
+                        labels = [label for p in config["points"] for label in p.get("labels", [])]
+                        labels += [p["label"] for key in ("objects", "circles", "arcs") for p in config.get(key, []) if "label" in p]
+                        self.assertCountEqual(labels, [label["text"] for label in drawing["labels"]])
+                        for label in drawing["labels"]:
+                            bounds = label["bounds"]
+                            self.assertEqual(label["text"], "".join(label["lines"]))
+                            self.assertTrue(0 <= bounds["left"] < bounds["right"] <= width)
+                            self.assertTrue(0 <= bounds["top"] < bounds["bottom"] <= height)
+            self.assertEqual(original, config)
 
 
 if __name__ == "__main__":

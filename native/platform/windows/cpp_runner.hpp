@@ -1,4 +1,5 @@
 #pragma once
+#include "core/cpp_project.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -30,6 +31,13 @@ struct CppRunRequest {
     std::uint64_t revision = 0;
     std::string source_utf8;
     std::string stdin_utf8;
+    curriculum::CppProjectFiles project_files;
+    std::vector<std::string> source_files;
+    std::optional<curriculum::CmakeConfig> cmake;
+    // Stable existing lesson draft identity; no student-visible pathname.
+    std::string project_key;
+    enum class Action {compile_run,configure,build,execute};
+    Action action=Action::compile_run;
     std::filesystem::path projects_directory;
     std::chrono::milliseconds compile_timeout{60000};
     std::chrono::milliseconds execution_timeout{5000};
@@ -42,8 +50,19 @@ struct CppRunResult {
     std::filesystem::path run_directory;
     CppPhaseResult compilation;
     CppPhaseResult execution;
+    CppPhaseResult configuration;
+    std::string project_fingerprint,configuration_fingerprint,target_type;
+    std::optional<std::string> executable;
+    std::filesystem::path artifact;
     std::string error_utf8;
 };
+struct CppProjectAvailability {
+    bool configured=false,built=false;
+    std::string project_fingerprint,configuration_fingerprint,target_type;
+    std::filesystem::path workspace,artifact;
+};
+// Read-only inspection. Never configures, builds, executes or rewrites a draft.
+[[nodiscard]] CppProjectAvailability inspect_cpp_project(const CppRunRequest&);
 
 // Blocking adapter: invoke on an owned worker, never the window thread. A stop
 // request kills the entire child job before returning. The caller rejects stale

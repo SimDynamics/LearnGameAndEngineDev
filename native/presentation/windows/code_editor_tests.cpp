@@ -67,7 +67,8 @@ struct Fixture {
     std::unique_ptr<CodeEditor> adapter;
 
     Fixture(EditorDocument document = {}, bool multiline = true,
-        std::function<void()> submit = {}, bool code_assistance = true, ChangeProbe* probe = nullptr) {
+        std::function<void()> submit = {}, bool code_assistance = true, ChangeProbe* probe = nullptr,
+        bool auto_indent = true, bool line_numbers = true) {
         host = CreateWindowExW(0, L"LgaedCodeEditorTestHost", L"Hidden editor QA",
             WS_OVERLAPPEDWINDOW, 0, 0, 640, 300, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         if (!host) throw std::runtime_error("Cannot create editor test host");
@@ -85,7 +86,7 @@ struct Fixture {
                 "Observe real native stream boundaries");
         }
         adapter = std::make_unique<CodeEditor>(edit, std::move(document), multiline,
-            std::move(submit), code_assistance);
+            std::move(submit), code_assistance, auto_indent, line_numbers);
         SetPropW(edit, L"lgaed.test.editor", reinterpret_cast<HANDLE>(adapter.get()));
     }
     ~Fixture() {
@@ -259,6 +260,57 @@ int main() {
             require(field.adapter->document().text == "(\"x\")" && field.adapter->document().selection_start == 5,
                 "Skip existing closing delimiters without duplicates");
         }
+    });
+
+    test("Deleting an empty assisted pair is one reversible transaction in either input kind", [] {
+        for(const auto multiline:{false,true})for(const auto opening:{L'(',L'[',L'{',L'"',L'\''}) {
+            Fixture field({},multiline);field.character(opening);
+            const auto paired=field.adapter->document();field.key(VK_BACK,L'\b');
+            require(field.adapter->document().text.empty(),"Backspace left the closing half of an empty pair");
+            field.adapter->undo();require(field.adapter->document().text==paired.text&&field.adapter->document().selection_start==1,
+                "Undo did not restore both delimiters and their inner cursor");
+            field.adapter->redo();require(field.adapter->document().text.empty(),"Redo did not delete the same complete pair");
+        }
+        Fixture plain({"()",{},1,1},true,{},false);plain.key(VK_BACK,L'\b');
+        require(plain.adapter->document().text==")","A plain stdin-like input acquired programming pair deletion");
+    });
+
+    test("Multiline Enter inherits only proven indentation identities and splits braces", [] {
+        const std::string original="    if (ready) {}";
+        auto document=predefined_code_document(original);document.selection_start=document.selection_end=static_cast<std::int64_t>(original.size()-1);
+        Fixture field(document);field.key(VK_RETURN,L'\r');
+        auto after=field.adapter->document();
+        require(after.text=="    if (ready) {\n    \t\n    }"&&after.selection_start==22,
+            "Enter failed to inherit indentation, add one real tab and split the closing brace");
+        require(after.indentation_starts==std::vector<std::int64_t>({0,17,23}),
+            "Newline did not preserve predefined indentation identity on both inherited lines");
+        field.key(VK_BACK,L'\b');require(field.adapter->document().text=="    if (ready) {\n    \n    }",
+            "The new real TAB did not delete in one Backspace");
+        field.key(VK_BACK,L'\b');require(field.adapter->document().text=="    if (ready) {\n\n    }",
+            "Inherited predefined indentation lost its complete-unit Backspace behavior");
+        field.adapter->undo();field.adapter->undo();field.adapter->undo();
+        require(field.adapter->document().text==original&&field.adapter->document().indentation_starts==document.indentation_starts,
+            "Undo did not restore the original source and indentation identity");
+        Fixture manual({"    value;",{},10,10});manual.key(VK_RETURN,L'\r');manual.key(VK_BACK,L'\b');
+        require(manual.adapter->document().text=="    value;\n   "&&manual.adapter->document().indentation_starts.empty(),
+            "Copying manual indentation fabricated a tab unit");
+    });
+
+    test("Closing brace dedents a logical indentation while prediction disables only autoindent", [] {
+        Fixture brace({"\t\t",{},2,2});brace.character(L'}');
+        require(brace.adapter->document().text=="\t}"&&brace.adapter->document().selection_start==2,
+            "A closing brace did not remove exactly one leading real tab");
+        brace.adapter->undo();require(brace.adapter->document().text=="\t\t","Brace dedent lost its original Undo transaction");
+        Fixture prediction({"    {",{},5,5},true,{},true,nullptr,false,false);
+        prediction.key(VK_RETURN,L'\r');require(prediction.adapter->document().text=="    {\n",
+            "An output prediction introduced programming indentation into the expected output");
+        prediction.character(L'(');require(prediction.adapter->document().text=="    {\n()",
+            "Disabling output autoindent also disabled shared pair assistance");
+        prediction.key(VK_BACK,L'\b');prediction.adapter->insert_tab();
+        require(prediction.adapter->document().text=="    {\n    "&&prediction.adapter->document().indentation_starts==std::vector<std::int64_t>{6},
+            "Prediction TAB no longer shares the existing completion and origin journal");
+        Fixture input({"  \t \n",{},5,5},true,{},false,nullptr,false,false);input.key(VK_RETURN,L'\r');
+        require(input.adapter->document().text=="  \t \n\n","Plain stdin indentation or intentional whitespace was rewritten");
     });
 
     test("Selections wrapped in pairs and undo restore selection", [] {

@@ -1,4 +1,5 @@
 #include "platform/windows/android_import.hpp"
+#include "platform/windows/cpp_project_history.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
@@ -246,67 +247,9 @@ void validate_json_versions(const StateData& data) {
         }
     }
 }
-class RevisionReader {
-    std::span<const std::uint8_t> bytes_; std::size_t offset_ = 0;
-public:
-    explicit RevisionReader(std::span<const std::uint8_t> bytes) : bytes_(bytes) {}
-    std::uint64_t number(unsigned count) {
-        if (bytes_.size() - offset_ < count) throw std::runtime_error("Revision Android incompleta.");
-        std::uint64_t value = 0;
-        while (count--) value = (value << 8) | bytes_[offset_++];
-        return value;
-    }
-    std::string text(std::size_t limit = 16 * 1024 * 1024) {
-        const auto size = number(4);
-        if (size > limit || size > bytes_.size() - offset_) throw std::runtime_error("Texto de revision no valido.");
-        const auto first = bytes_.data() + offset_;
-        std::string text(reinterpret_cast<const char*>(first), static_cast<std::size_t>(size));
-        offset_ += static_cast<std::size_t>(size);
-        // Json conversion is not used for source; this call only validates Unicode round-trip.
-        if (winrt::to_string(winrt::to_hstring(text)) != text) throw std::runtime_error("UTF-8 de revision no valido.");
-        return text;
-    }
-    std::size_t count() { const auto value = number(4); if (value > 256) throw std::runtime_error("Demasiados archivos en revision."); return static_cast<std::size_t>(value); }
-    bool done() const { return offset_ == bytes_.size(); }
-};
 void validate_revision(const ImportFile& file, std::span<const std::uint8_t> bytes) {
-    if (bytes.size() > 32 * 1024 * 1024 || file.relative_path.stem().string() != sha256(bytes))
-        throw std::runtime_error("SHA-256 de revision Android no coincide.");
-    RevisionReader reader(bytes);
-    if (reader.text(128) != "lgp-cpp-local-history-v1" ||
-        reader.text(128) != file.relative_path.parent_path().filename().string())
-        throw std::runtime_error("Version o identidad de historial Android no compatible.");
-    const auto uuid = reader.text(128);
-    if (uuid.size() != 36) throw std::runtime_error("UUID de revision no valido.");
-    for (std::size_t index = 0; index < uuid.size(); ++index) {
-        if (index == 8 || index == 13 || index == 18 || index == 23) {
-            if (uuid[index] != '-') throw std::runtime_error("UUID de revision no valido.");
-        } else if (!((uuid[index] >= '0' && uuid[index] <= '9') || (uuid[index] >= 'a' && uuid[index] <= 'f') ||
-                     (uuid[index] >= 'A' && uuid[index] <= 'F'))) throw std::runtime_error("UUID de revision no valido.");
-    }
-    (void)reader.number(8);
-    if (reader.text(8192).empty()) throw std::runtime_error("Revision sin nombre.");
-    std::set<std::string> paths;
-    const auto files = reader.count();
-    for (std::size_t index = 0; index < files; ++index) {
-        const auto path = reader.text(4096);
-        if (!project_path(path) || !paths.insert(path).second)
-            throw std::runtime_error("Ruta de revision Android no valida.");
-        (void)reader.text();
-    }
-    check_file_hierarchy(paths);
-    const auto sources = reader.count(); std::set<std::string> selected;
-    for (std::size_t index = 0; index < sources; ++index) {
-        const auto path = reader.text(4096);
-        if (!paths.contains(path) || !source_path(path) || !selected.insert(path).second) throw std::runtime_error("Fuente de revision no valida.");
-    }
-    const auto metadata = reader.count(); std::set<std::string> indentation;
-    for (std::size_t index = 0; index < metadata; ++index) {
-        const auto path = reader.text(4096);
-        if (!paths.contains(path) || !indentation.insert(path).second) throw std::runtime_error("Sangria de revision no valida.");
-        (void)reader.text();
-    }
-    if (!reader.done()) throw std::runtime_error("Revision con datos desconocidos.");
+    (void)windows::decode_cpp_revision(bytes,file.relative_path.stem().string(),
+        file.relative_path.parent_path().filename().string());
 }
 void write_synced(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {
     const auto handle = CreateFileW(native_io_path(path).c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW,

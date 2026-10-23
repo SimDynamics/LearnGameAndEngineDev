@@ -16,8 +16,8 @@ namespace lgaed::windows {
     std::string_view utf8, std::string_view expected_locale = "es");
 
 // Read-only catalog projection: validates the same JSON/state identities and
-// preserves exact response payloads, without claiming support for executing
-// a CMake/multi-file compiler activity. It cannot be used to open an editor.
+// preserves exact response payloads without opening editors or executing any
+// CMake/multi-file compiler activity. It cannot be used to open an editor.
 [[nodiscard]] curriculum::Lesson parse_lesson_progress_metadata(
     std::string_view utf8, std::string_view expected_locale = "es");
 [[nodiscard]] curriculum::Lesson load_lesson_progress_metadata(

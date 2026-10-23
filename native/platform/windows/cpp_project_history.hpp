@@ -1,0 +1,45 @@
+#pragma once
+#include "core/cpp_project.hpp"
+#include <cstdint>
+#include <filesystem>
+#include <map>
+#include <span>
+#include <stop_token>
+#include <string>
+#include <vector>
+
+namespace lgaed::windows {
+struct CppHistoryRevision {
+    std::string id,project_key,uuid,label;
+    std::int64_t created_at=0;
+    curriculum::CppProjectFiles files;
+    std::vector<std::string> sources;
+    std::map<std::string,std::string> indentation;
+};
+struct CppHistorySummary {std::string id,label;std::int64_t created_at=0;};
+enum class CppHistoryChange {unchanged,added,modified,removed};
+struct CppHistoryStatus {std::string path;CppHistoryChange change;};
+enum class CppHistoryLineType {context,added,removed};
+struct CppHistoryDiffLine {CppHistoryLineType type;std::string text,ending;};
+// The original Android binary format and SHA-256, also used by its importer.
+[[nodiscard]] CppHistoryRevision decode_cpp_revision(std::span<const std::uint8_t>,
+    std::string_view id,std::string_view project_key);
+class CppProjectHistory {
+public:
+    CppProjectHistory(std::filesystem::path root,std::string_view project_identity);
+    [[nodiscard]] std::vector<CppHistorySummary> summaries(std::stop_token stop={})const;
+    [[nodiscard]] CppHistoryRevision load(std::string_view id)const;
+    [[nodiscard]] CppHistoryRevision record(const curriculum::CppProjectFiles&,
+        const std::vector<std::string>&,std::string_view label,
+        const std::map<std::string,std::string>& indentation={})const;
+    [[nodiscard]] std::vector<CppHistoryStatus> statuses(const curriculum::CppProjectFiles&,
+        const CppHistoryRevision&)const;
+    [[nodiscard]] std::vector<CppHistoryDiffLine> diff(std::string_view path,
+        const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
+    [[nodiscard]] curriculum::CppProjectFiles restore_file(std::string_view path,
+        const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
+private:
+    std::filesystem::path root_;
+    std::string key_;
+};
+}

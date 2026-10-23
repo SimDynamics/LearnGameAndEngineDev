@@ -1,5 +1,6 @@
 #include "presentation/windows/audio_course_view.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <filesystem>
@@ -49,7 +50,13 @@ void unicode_window_tests(const Fixture& fixture){
     const auto verify=[&](const char* language,const char* route,std::wstring_view title,std::wstring_view information,std::wstring_view pending){
         selected.ui_language=language;const auto window=open_course_audio_window(owner,route,access);
         const bool correct=caption(window)==title&&caption(GetDlgItem(window,6104))==title&&caption(GetDlgItem(window,6102))==information&&caption(GetDlgItem(window,6105))==pending;
-        DestroyWindow(window);check(correct,"Course audio window corrupted an accented title, button or ellipsis");};
+        const auto heading=GetDlgItem(window,6104),status=GetDlgItem(window,6105),list=GetDlgItem(window,6103);const auto before=caption(status);
+        SendMessageW(window,WM_DPICHANGED_AFTERPARENT,0,0);LOGFONTW font{};check(GetObjectW(reinterpret_cast<HFONT>(SendMessageW(heading,WM_GETFONT,0,0)),sizeof(font),&font)==sizeof(font)&&std::abs(font.lfHeight)==MulDiv(26,static_cast<int>(GetDpiForWindow(window)),96),"Course audio typography did not refresh at the current DPI");
+        check(GetDlgItem(window,6103)==list&&GetDlgItem(window,6105)==status&&caption(status)==before,"DPI refresh replaced course controls or restarted its scan");
+        selected.enabled=false;SendMessageW(window,WM_ACTIVATE,WA_ACTIVE,0);
+        for(const int id:{6101,6102,6103,6107,6108})check(!IsWindowEnabled(GetDlgItem(window,id)),"A second window disabling narration left course-audio actions enabled");
+        check(IsWindowEnabled(GetDlgItem(window,6100)),"Disabling narration blocked the course-audio Back action");selected.enabled=true;
+        SendMessageW(window,WM_COMMAND,MAKEWPARAM(6100,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(window,6100)));check(!IsWindow(window),"Enabled Back did not close/cancel the course-audio scan");check(correct,"Course audio window corrupted an accented title, button or ellipsis");};
     verify("es","programming",L"Programación",L"Información",L"Comprobando los audios guardados para las voces e idiomas actuales…");
     verify("fr","math_physics",L"Mathématiques et physique",L"Informations",L"Vérification des audios enregistrés pour les voix et langues actuelles…");
     verify("en","programming",L"Programming",L"Information",L"Checking saved audio for the current voices and languages…");
@@ -58,8 +65,14 @@ void unicode_window_tests(const Fixture& fixture){
 std::string plan(std::string_view raw,std::size_t,std::string_view language,std::string_view voice,std::string_view,std::stop_token){check(language=="es"&&voice=="em_santa","Scan changed the effective voice or language");const bool programming=raw.find("programming")!=std::string_view::npos;return std::string("{\"segments\":[{\"key\":\"")+shared+"\"}"+(programming?",{\"key\":\""+unique+"\"}":std::string{})+"]}";}
 }
 int wmain(int argc,wchar_t** argv){
-    try{check(argc==2,"The test needs its existing isolated QA parent");const auto parent=std::filesystem::absolute(argv[1]);std::filesystem::create_directories(parent);Fixture fixture(parent);
-        unicode_window_tests(fixture);
+    try{check(argc==2,"The test needs its existing isolated QA parent");
+        // The real application's UI apartment outlives all auxiliary windows
+        // and their scan threads. Keep that same lifetime in this test host;
+        // otherwise the first cancelled scan can tear down the process's last
+        // COM apartment while the next scan is activating a cached factory.
+        windows::ensure_winrt_apartment();
+        const auto parent=std::filesystem::absolute(argv[1]);std::filesystem::create_directories(parent);Fixture fixture(parent);
+        for(int reopen=0;reopen<3;++reopen)unicode_window_tests(fixture);
         const auto before=state::sha256(state::read_bytes(fixture.cache/(historical+".wav")));const auto shared_before=state::sha256(state::read_bytes(fixture.cache/(shared+".wav")));
         auto report=scan_course_audio(fixture.content,fixture.cache,profile(),"programming",false,plan);
         check(report.courses.size()==2&&report.inventory.size()==3,"Read-only inventory omitted valid audio or counted invalid/staged data");

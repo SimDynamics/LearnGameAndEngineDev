@@ -39,7 +39,11 @@ target_include_directories(lgaed_host_options INTERFACE
     "${CMAKE_SOURCE_DIR}/native"
     "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp
+add_executable(lgaed_cpp_tool_host native/platform/windows/cpp_tool_host.cpp)
+target_link_libraries(lgaed_cpp_tool_host PRIVATE lgaed_host_options user32)
+set_target_properties(lgaed_cpp_tool_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+
+add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
     native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
 
@@ -55,12 +59,15 @@ add_library(lgaed_platform_windows STATIC
     native/platform/windows/system_speech.cpp
     native/platform/windows/state_store.cpp
     native/platform/windows/android_import.cpp
+    native/platform/windows/cpp_project_history.cpp
     native/platform/windows/cpp_runner.cpp)
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
+add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
 add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/lesson_view.cpp
+    native/presentation/windows/cpp_project_view.cpp
     native/presentation/windows/cpp_fill_view.cpp
     native/presentation/windows/order_code_view.cpp
     native/presentation/windows/math_puzzle_view.cpp
@@ -69,6 +76,7 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/catalog_view.cpp
     native/presentation/windows/card_list.cpp
     native/presentation/windows/tools_view.cpp
+    native/presentation/windows/graphics_view.cpp
     native/presentation/windows/settings_view.cpp
     native/presentation/windows/audio_course_view.cpp
     native/presentation/windows/narration_licenses.cpp
@@ -156,8 +164,9 @@ if(BUILD_TESTING)
     add_executable(lgaed_settings_view_tests native/presentation/windows/settings_view_tests.cpp)
     target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_settings_view_tests lgaed_narration_runtime)
-    add_test(NAME native.settings_view COMMAND lgaed_settings_view_tests)
-    set_tests_properties(native.settings_view PROPERTIES TIMEOUT 40)
+    add_test(NAME native.settings_view COMMAND lgaed_settings_view_tests --case controls)
+    add_test(NAME native.narration_licenses COMMAND lgaed_settings_view_tests --case licenses)
+    set_tests_properties(native.settings_view native.narration_licenses PROPERTIES TIMEOUT 40)
     add_executable(lgaed_lesson_composition_tests native/presentation/windows/lesson_composition_tests.cpp)
     target_link_libraries(lgaed_lesson_composition_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_composition_tests lgaed_narration_runtime)
@@ -206,6 +215,10 @@ if(BUILD_TESTING)
     add_test(NAME native.calculator COMMAND lgaed_calculator_tests)
     add_executable(lgaed_tools_view_tests native/presentation/windows/tools_view_tests.cpp)
     target_link_libraries(lgaed_tools_view_tests PRIVATE lgaed_presentation_windows)
+    add_executable(lgaed_graphics_view_tests native/presentation/windows/graphics_view_tests.cpp)
+    target_link_libraries(lgaed_graphics_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.graphics_view COMMAND lgaed_graphics_view_tests)
+    set_tests_properties(native.graphics_view PROPERTIES TIMEOUT 60)
     add_dependencies(lgaed_tools_view_tests lgaed_narration_runtime)
     add_test(NAME native.tools_view COMMAND lgaed_tools_view_tests)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)
@@ -234,6 +247,22 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.cpp_runner COMMAND lgaed_cpp_runner_tests)
     set_tests_properties(native.cpp_runner PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_cpp_project_tests native/core/cpp_project_tests.cpp)
+    target_link_libraries(lgaed_cpp_project_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_project COMMAND lgaed_cpp_project_tests)
+    set_tests_properties(native.cpp_project PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_cpp_cmake_runner_tests native/platform/windows/cpp_cmake_runner_tests.cpp)
+    target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_cmake_runner COMMAND lgaed_cpp_cmake_runner_tests)
+    set_tests_properties(native.cpp_cmake_runner PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_cpp_project_history_tests native/platform/windows/cpp_project_history_tests.cpp)
+    target_link_libraries(lgaed_cpp_project_history_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_project_history COMMAND lgaed_cpp_project_history_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history")
+    set_tests_properties(native.cpp_project_history PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
+    target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.cpp_project_view COMMAND lgaed_cpp_project_view_tests "${CMAKE_SOURCE_DIR}/out/qa/cpp-project-history")
+    set_tests_properties(native.cpp_project_view PROPERTIES TIMEOUT 120)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state")
@@ -253,13 +282,24 @@ if(BUILD_TESTING)
     add_dependencies(lgaed_lesson_view_tests lgaed_narration_runtime)
     add_test(NAME native.lesson_view COMMAND lgaed_lesson_view_tests)
     set_tests_properties(native.lesson_view PROPERTIES TIMEOUT 180)
+    add_test(NAME native.lesson_caret COMMAND lgaed_lesson_view_tests --caret)
+    set_tests_properties(native.lesson_caret PROPERTIES TIMEOUT 180)
+    add_executable(lgaed_programming_composition_tests native/presentation/windows/programming_composition_tests.cpp)
+    target_link_libraries(lgaed_programming_composition_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_programming_composition_tests lgaed_narration_runtime)
+    foreach(locale IN ITEMS es en fr)
+        foreach(partition RANGE 0 15)
+            add_test(NAME native.programming_composition_${locale}_${partition} COMMAND lgaed_programming_composition_tests ${locale} ${partition} 16)
+            set_tests_properties(native.programming_composition_${locale}_${partition} PROPERTIES TIMEOUT 180)
+        endforeach()
+    endforeach()
     add_executable(lgaed_import_view_tests native/presentation/windows/import_view_tests.cpp)
     target_link_libraries(lgaed_import_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.import_view COMMAND lgaed_import_view_tests)
     set_tests_properties(native.import_view PROPERTIES TIMEOUT 180)
 endif()
 
-install(TARGETS LearnGameAndEngineDev RUNTIME DESTINATION bin)
+install(TARGETS LearnGameAndEngineDev lgaed_cpp_tool_host RUNTIME DESTINATION bin)
 install(FILES native/assets/fonts/NotoSerif-Regular.ttf native/assets/fonts/NotoSerif-Italic.ttf
     native/assets/fonts/NOTICE.txt native/assets/fonts/DroidSansMono.ttf
     native/assets/fonts/DroidSansMono-NOTICE.txt DESTINATION bin/fonts)

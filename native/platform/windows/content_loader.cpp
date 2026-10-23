@@ -383,7 +383,7 @@ TextComparison comparison(std::string_view mode, bool input = false) {
     if (!input && mode == "trimmed") return TextComparison::trimmed;
     invalid("Unknown text comparison");
 }
-OutputCheck read_output_check(const JsonObject& value) {
+OutputCheck read_output_check(const JsonObject& value,bool cmake=false) {
     allowed_keys(value, {"inputComparison", "cases"});
     OutputCheck result;
     result.input_comparison = comparison(value.HasKey(L"inputComparison") ? text(value, "inputComparison") : "exact", true);
@@ -392,7 +392,7 @@ OutputCheck read_output_check(const JsonObject& value) {
         const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target"});
         OutputCase record; record.standard_input = text(item, "standardInput"); record.outputs = strings(array(item, "outputs"), true);
         record.explanation = optional_text(item, "explanation");
-        if (item.HasKey(L"target")) invalid("CMake output-check targets are not supported by the initial single-source Windows adapter");
+        if(item.HasKey(L"target")){require(cmake,"An outputCheck target requires a CMake project");record.executable=text(item,"target");validate_cmake_config(CmakeConfig{*record.executable,{},"Debug"});}
         if (item.HasKey(L"reviewFeedback")) {
             std::set<std::string> reviewed(record.outputs.begin(), record.outputs.end());
             for (const auto& review : array(item, "reviewFeedback")) {
@@ -408,7 +408,7 @@ OutputCheck read_output_check(const JsonObject& value) {
     }
     // The pure evaluator also checks matching ambiguity; reject it at load time.
     for (const auto& item : result.cases) {
-        FreshExecution execution{1, true, true, 0, item.standard_input, {}, {}};
+        FreshExecution execution{1, true, true, 0, item.standard_input, {}, item.executable};
         (void)evaluate_output_check(result, execution, 1);
     }
     return result;
@@ -494,10 +494,24 @@ Block read_block(const JsonObject& value,std::string_view original) {
         }
         require(seen.size() == result.fragments.size(), "Order answer is not a full permutation");
     } else if (result.type == BlockType::cpp_compiler) {
-        require(!value.HasKey(L"cmake") && !value.HasKey(L"projectFiles"), "Multi-file/CMake projects need their Windows adapter");
-        require(!result.initial_code.empty(), "Compiler block requires its source");
+        if(value.HasKey(L"projectFiles")){
+            for(const auto& entry:array(value,"projectFiles")){const auto file=entry.GetObject();result.project_files.emplace_back(text(file,"path"),text(file,"initialCode"));}
+            validate_cpp_project_files(result.project_files);
+            if(value.HasKey(L"cmake")){
+                std::size_t bytes=0;for(const auto& [path,code]:result.project_files)bytes+=code.size();require(result.project_files.size()<=128&&bytes<=8*1024*1024,"CMake project exceeds its original128-file/8MiB limits");
+                require(!value.HasKey(L"sourceFiles"),"CMake owns its source selection");const auto config=value.GetNamedObject(L"cmake");CmakeConfig cmake;
+                for(const auto& item:config)require(item.Key()==L"target"||item.Key()==L"options"||item.Key()==L"buildType","Unknown CMake configuration field");
+                cmake.target=text(config,"target");if(config.HasKey(L"buildType"))cmake.build_type=text(config,"buildType");
+                if(config.HasKey(L"options"))for(const auto& item:config.GetNamedObject(L"options"))cmake.options.emplace(utf8(item.Key()),utf8(item.Value().GetString()));
+                validate_cmake_config(cmake);result.cmake=std::move(cmake);
+            }else{
+                if(value.HasKey(L"sourceFiles"))result.source_files=strings(array(value,"sourceFiles"),true);
+                else for(const auto& [path,code]:result.project_files)if(is_cpp_source_file(path))result.source_files.push_back(path);
+                validate_cpp_project(result.project_files,result.source_files);
+            }
+        }else{require(!value.HasKey(L"cmake")&&!value.HasKey(L"sourceFiles"),"Project metadata requires projectFiles");require(!result.initial_code.empty(), "Compiler block requires its source");}
         if (value.HasKey(L"initialStandardInput")) result.standard_input = text(value, "initialStandardInput");
-        if (value.HasKey(L"outputCheck")) result.output_check = read_output_check(value.GetNamedObject(L"outputCheck"));
+        if (value.HasKey(L"outputCheck")) result.output_check = read_output_check(value.GetNamedObject(L"outputCheck"),result.cmake.has_value());
         if (!result.standard_input && result.output_check && std::ranges::any_of(result.output_check->cases,
             [](const auto& item) { return !item.standard_input.empty(); })) result.standard_input = "";
     }

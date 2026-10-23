@@ -114,6 +114,20 @@ class WindowsMathEditorTest(unittest.TestCase):
         self.assertEqual([], current["cursor"]["path"])
         self.assertEqual(len(original["expression"]["children"]), current["cursor"]["offset"])
 
+    def test_06b_hardware_slot_navigation_is_distinct_from_leaf_steps(self):
+        identity, original = self.create("hardware-slots", r"\frac{1234}{56}")
+        denominator = self.edit(identity, "previousSlot")
+        self.assertTrue(denominator["accepted"])
+        self.assertEqual([{"node": 0, "slot": "denominator"}], denominator["cursor"]["path"])
+        numerator = self.edit(identity, "previousSlot")
+        self.assertTrue(numerator["accepted"])
+        self.assertEqual([{"node": 0, "slot": "numerator"}], numerator["cursor"]["path"])
+        following = self.edit(identity, "nextSlot")
+        self.assertTrue(following["accepted"])
+        self.assertEqual([{"node": 0, "slot": "denominator"}], following["cursor"]["path"])
+        for state in (denominator, numerator, following):
+            self.assertEqual(original["expression"], state["expression"])
+
     def test_07_terminal_integral_continuation_is_original_virtual_boundary(self):
         identity, original = self.create("terminal", r"\int_0^1")
         seen = set()

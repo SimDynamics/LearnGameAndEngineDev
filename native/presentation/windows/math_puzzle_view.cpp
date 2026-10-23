@@ -11,15 +11,20 @@
 #include <richedit.h>
 #include <windowsx.h>
 #include <oleacc.h>
+#include <gdiplus.h>
 #include <wrl/client.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cwctype>
 #include <map>
+#include <iterator>
 #include <numeric>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -29,6 +34,7 @@ using namespace winrt::Windows::Data::Json;
 constexpr wchar_t view_class[] = L"LearnGameAndEngineDev.MathPuzzle";
 constexpr wchar_t canvas_class[] = L"LearnGameAndEngineDev.MathCanvas";
 constexpr wchar_t canvas_fullscreen_class[] = L"LearnGameAndEngineDev.MathCanvasFullscreen";
+constexpr wchar_t content_class[]=L"LearnGameAndEngineDev.MathContent";
 constexpr int canvas_close_id=6401;
 constexpr wchar_t keyboard_context_property[]=L"LGAED.MathKeyboardContext";
 std::string text(const JsonObject& object,const wchar_t* key,std::string fallback = {}) {
@@ -54,6 +60,10 @@ double snapped(double value,double step,double low,double high) {
     if (step > 0) value = low + std::round((value - low) / step) * step;
     return std::clamp(value,low,high);
 }
+double graph_coordinate(double value,double step,double low,double high){
+    if(value<=low)return low;if(value>=high)return high;
+    return std::clamp(step>0?std::round(value/step)*step:value,low,high);
+}
 std::optional<double> coordinate(std::string value) {
     const auto first=value.find_first_not_of(" \t\r\n\f\v"),last=value.find_last_not_of(" \t\r\n\f\v");if(first==value.npos)return {};
     value=value.substr(first,last-first+1);std::replace(value.begin(),value.end(),',','.');
@@ -63,6 +73,11 @@ std::optional<double> coordinate(std::string value) {
 std::string decimal(double value) {
     auto result = std::to_string(value); while (result.size() > 1 && result.back() == '0') result.pop_back();
     if (result.back() == '.') result.pop_back(); return result;
+}
+std::string coordinate_caption(double value){
+    if(std::abs(value)<1e-9)value=0;
+    char buffer[96]{};std::snprintf(buffer,sizeof(buffer),std::abs(value)<1e12&&value==std::floor(value)?"%.0f":"%.4f",value);
+    std::string result=buffer;if(result.find('.')!=result.npos){while(result.back()=='0')result.pop_back();if(result.back()=='.')result.pop_back();}return result;
 }
 std::string visible_label(const JsonObject& item) {
     return text(item,L"label",text(item,L"text",text(item,L"value")));
@@ -97,6 +112,10 @@ struct Canvas {
     std::string locale;
     std::function<void(JsonObject)> changed;
     std::function<void()> sync_fields;
+    std::function<std::string(std::string_view)> layout_request;
+    JsonObject drawing,inline_drawing;
+    int inline_drawing_width=0,inline_drawing_height=0;
+    int drawing_width=0,drawing_height=0,text_scale=100;
     std::vector<PlotPoint> points;
     std::optional<std::size_t> dragging;
     double xmin = -5,xmax = 5,ymin = -5,ymax = 5;
@@ -104,7 +123,10 @@ struct Canvas {
     POINT pan_last{};bool panning=false;
     std::optional<JsonObject> number_line_click;
     POINT number_line_click_start{};
-    ~Canvas() { close_expanded();if (scaled_font) DeleteObject(scaled_font); }
+    std::string rigid_mode="move";bool rigid_dragging=false;POINT rigid_previous{};
+    std::vector<HWND> auxiliary_controls;std::vector<RECT> auxiliary_rectangles;
+    std::function<LRESULT(UINT,WPARAM,LPARAM)> auxiliary_dispatch;
+    ~Canvas() { close_expanded(false);if (scaled_font) DeleteObject(scaled_font); }
     std::string tr(const char* es,const char* en,const char* fr)const{return locale.starts_with("fr")?fr:locale.starts_with("en")?en:es;}
     void clamp_pan(){RECT client{};GetClientRect(window,&client);const auto x=std::max(0.,client.right*(zoom-1)/2),y=std::max(0.,client.bottom*(zoom-1)/2);pan_x=std::clamp(pan_x,-x,x);pan_y=std::clamp(pan_y,-y,y);}
     POINT content_point(POINT at)const{RECT client{};GetClientRect(window,&client);return {
@@ -118,7 +140,8 @@ struct Canvas {
     double aspect_ratio()const{
         if(type=="math_number_line"||type=="number_line")return 2.4;
         if(type=="euclidean_diagram")return 1.4;
-        if(type=="geometry_3d_diagram"||type=="venn_diagram")return 1.2;
+        if(type=="rigid_angle")return 1.1;
+        if(type=="geometry_2d_diagram"||type=="geometry_3d_diagram"||type=="venn_diagram")return 1.2;
         if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="graph"||(type=="sliders_visual"&&text(config,L"type")=="graph"))return std::clamp((xmax-xmin)/(ymax-ymin),.6,4.);
         if(type=="sliders_visual")return 1.2;
         return 1.;
@@ -134,14 +157,17 @@ struct Canvas {
     void expanded_layout(){
         if(!fullscreen)return;RECT area{};GetClientRect(fullscreen,&area);const int row=px(48),available=std::max(1,static_cast<int>(area.bottom)-row);
         const auto ratio=aspect_ratio();const int width=std::max(1,std::min(static_cast<int>(area.right),static_cast<int>(available*ratio))),height=std::max(1,std::min(available,static_cast<int>(width/ratio)));
-        MoveWindow(window,(area.right-width)/2,(available-height)/2,width,height,TRUE);
+        const int left=(area.right-width)/2,top=(available-height)/2,controls=auxiliary_controls.empty()?0:2*row;
+        if(auxiliary_controls.size()==4){for(int index=0;index<3;++index)MoveWindow(auxiliary_controls[index],left+width*index/3,top,width*(index+1)/3-width*index/3,row,TRUE);MoveWindow(auxiliary_controls[3],left,top+row,width,row,TRUE);}
+        MoveWindow(window,left,top+controls,width,std::max(1,height-controls),FALSE);prepare_drawing();InvalidateRect(window,nullptr,FALSE);
         MoveWindow(GetDlgItem(fullscreen,canvas_close_id),std::max(0L,area.right-row),available,row,row,TRUE);clamp_pan();
     }
-    void close_expanded(){
+    void close_expanded(bool refresh=true){
         if(!fullscreen)return;const auto frame=fullscreen;fullscreen=nullptr;zoom=1;pan_x=pan_y=0;panning=false;dragging.reset();
         if(GetCapture()==window)ReleaseCapture();
-        if(IsWindow(window)&&IsWindow(inline_parent)){SetParent(window,inline_parent);MoveWindow(window,inline_rectangle.left,inline_rectangle.top,inline_rectangle.right-inline_rectangle.left,inline_rectangle.bottom-inline_rectangle.top,TRUE);}
-        if(IsWindow(frame))DestroyWindow(frame);if(IsWindow(previous_focus)&&IsWindowEnabled(previous_focus))SetFocus(previous_focus);
+        if(IsWindow(window)&&IsWindow(inline_parent)){SetParent(window,inline_parent);drawing=inline_drawing;drawing_width=inline_drawing_width;drawing_height=inline_drawing_height;MoveWindow(window,inline_rectangle.left,inline_rectangle.top,inline_rectangle.right-inline_rectangle.left,inline_rectangle.bottom-inline_rectangle.top,TRUE);
+            for(std::size_t index=0;index<auxiliary_controls.size();++index)if(IsWindow(auxiliary_controls[index])&&index<auxiliary_rectangles.size()){SetParent(auxiliary_controls[index],inline_parent);const auto& rect=auxiliary_rectangles[index];MoveWindow(auxiliary_controls[index],rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,TRUE);}}
+        if(IsWindow(frame))DestroyWindow(frame);if(refresh&&IsWindow(window)){drawing_width=drawing_height=0;prepare_drawing();InvalidateRect(window,nullptr,FALSE);}if(IsWindow(previous_focus)&&IsWindowEnabled(previous_focus))SetFocus(previous_focus);
     }
     static LRESULT CALLBACK exit_key_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR id,DWORD_PTR){
         if(message==WM_KEYDOWN&&wp==VK_ESCAPE){SendMessageW(GetParent(item),WM_CLOSE,0,0);return 0;}
@@ -157,10 +183,11 @@ struct Canvas {
         if(message==WM_ERASEBKGND){RECT bounds{};GetClientRect(target,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));return 1;}
         if(message==WM_DRAWITEM){auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);if(item.CtlID==canvas_close_id){
             FillRect(item.hDC,&item.rcItem,reader_theme::palette(target).high_contrast?GetSysColorBrush(COLOR_WINDOW):reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::close,reader_theme::palette(target).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}}
+        if(self->auxiliary_dispatch&&(message==WM_COMMAND||message==WM_DRAWITEM||message==WM_NOTIFY||message==WM_CTLCOLORBTN))return self->auxiliary_dispatch(message,wp,lp);
         return DefWindowProcW(target,message,wp,lp);
     }
     void expand(){
-        if(fullscreen||!IsWindow(window))return;previous_focus=GetFocus();inline_parent=GetParent(window);GetWindowRect(window,&inline_rectangle);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&inline_rectangle),2);
+        if(fullscreen||!IsWindow(window))return;previous_focus=GetFocus();inline_parent=GetParent(window);GetWindowRect(window,&inline_rectangle);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&inline_rectangle),2);inline_drawing=drawing;inline_drawing_width=drawing_width;inline_drawing_height=drawing_height;
         WNDCLASSEXW definition{sizeof(definition)};definition.lpfnWndProc=fullscreen_proc;definition.hInstance=GetModuleHandleW(nullptr);definition.lpszClassName=canvas_fullscreen_class;definition.hCursor=LoadCursorW(nullptr,IDC_ARROW);
         if(!RegisterClassExW(&definition)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register the expanded mathematics viewport");
         MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor);const auto area=monitor.rcMonitor;
@@ -171,16 +198,68 @@ struct Canvas {
         if(!close){DestroyWindow(fullscreen);fullscreen=nullptr;throw std::runtime_error("Cannot create the expanded mathematics exit control");}
         reader_theme::apply(close,reader_theme::Surface::card);reader_theme::icon_button(close);
         SetWindowSubclass(close,exit_key_proc,19,0);
+        auxiliary_rectangles.clear();for(const auto item:auxiliary_controls){RECT rect{};GetWindowRect(item,&rect);MapWindowPoints(nullptr,inline_parent,reinterpret_cast<POINT*>(&rect),2);auxiliary_rectangles.push_back(rect);SetParent(item,fullscreen);SetWindowSubclass(item,exit_key_proc,19,0);}
         SetParent(window,fullscreen);expanded_layout();ShowWindow(fullscreen,SW_SHOW);SetForegroundWindow(fullscreen);SetFocus(window);
     }
     void scale_text(int percentage) {
-        const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(window)),96*100),
+        text_scale=percentage;drawing_width=drawing_height=0;
+        const auto base=type=="euclidean_diagram"||type=="rigid_angle"||type=="geometry_2d_diagram"||type=="geometry_3d_diagram"?15:type=="venn_diagram"?14:
+            type=="math_number_line"||type=="number_line"?12:type=="graph"||type=="math_coordinate_graph"||type=="coordinate_graph"||(type=="sliders_visual"&&text(config,L"type")=="graph")?11:18;
+        const auto next=CreateFontW(-MulDiv(base*percentage,static_cast<int>(GetDpiForWindow(window)),96*100),
             0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         if(next){if(scaled_font)DeleteObject(scaled_font);scaled_font=next;}InvalidateRect(window,nullptr,FALSE);
     }
+    void prepare_drawing(std::optional<JsonObject> gesture={}){
+        if(type!="euclidean_diagram"&&type!="rigid_angle")return;
+        RECT area{};GetClientRect(window,&area);if(area.right<=0||area.bottom<=0||(!gesture&&drawing_width==area.right&&drawing_height==area.bottom))return;
+        if(!layout_request)throw std::runtime_error("The Euclidean representation requires its original geometry layout service");
+        const auto dc=GetDC(window);const auto previous=SelectObject(dc,scaled_font);TEXTMETRICW font_metrics{};GetTextMetricsW(dc,&font_metrics);
+        const auto unit=static_cast<double>(GetDpiForWindow(window))/96.,edge=std::min(12*unit,std::min(area.right,area.bottom)*.08);
+        const auto maximum=std::max(1.,std::min(area.right*.43,area.right-2*edge));JsonObject metrics;
+        const auto measure=[&](const std::string& value){
+            if(value.empty()||metrics.HasKey(winrt::to_hstring(value)))return;
+            const auto original=wide(value);JsonArray lines;double width=0;std::size_t offset=0;
+            while(offset<original.size()){
+                auto end=offset,last_space=offset;SIZE extent{};
+                while(end<original.size()){
+                    auto next=end+1;if(IS_HIGH_SURROGATE(original[end])&&next<original.size()&&IS_LOW_SURROGATE(original[next]))++next;
+                    GetTextExtentPoint32W(dc,original.data()+offset,static_cast<int>(next-offset),&extent);
+                    if(extent.cx>maximum&&end>offset)break;
+                    if(iswspace(original[end]))last_space=next;end=next;
+                }
+                if(type!="rigid_angle"&&end<original.size()&&last_space>offset)end=last_space;
+                const auto line=original.substr(offset,end-offset);GetTextExtentPoint32W(dc,line.data(),static_cast<int>(line.size()),&extent);
+                width=std::max(width,static_cast<double>(extent.cx));lines.Append(string_value(utf8(line)));offset=end;
+            }
+            JsonObject value_metrics;value_metrics.SetNamedValue(L"lines",lines);value_metrics.SetNamedValue(L"width",JsonValue::CreateNumberValue(width));
+            value_metrics.SetNamedValue(L"lineHeight",JsonValue::CreateNumberValue(font_metrics.tmHeight+2*unit));value_metrics.SetNamedValue(L"ascent",JsonValue::CreateNumberValue(font_metrics.tmAscent));metrics.SetNamedValue(winrt::to_hstring(value),value_metrics);
+        };
+        const auto measure_diagram=[&](const JsonObject& diagram){for(const auto& item:array(diagram,L"points"))for(const auto& value:array(item.GetObject(),L"labels"))measure(winrt::to_string(value.GetString()));for(const auto key:{L"objects",L"circles",L"arcs"})for(const auto& item:array(diagram,key))measure(text(item.GetObject(),L"label"));};
+        if(type=="rigid_angle"){measure_diagram(object(object(config,L"reference"),L"diagram"));measure_diagram(object(object(config,L"copy"),L"diagram"));}else measure_diagram(config);
+        SelectObject(dc,previous);ReleaseDC(window,dc);
+        JsonObject request;request.SetNamedValue(L"action",string_value(type=="rigid_angle"?"rigid_layout":"diagram_layout"));request.SetNamedValue(L"config",config);
+        if(type=="rigid_angle"){request.SetNamedValue(L"placement",state);if(gesture)request.SetNamedValue(L"gesture",*gesture);}
+        request.SetNamedValue(L"width",JsonValue::CreateNumberValue(area.right));request.SetNamedValue(L"height",JsonValue::CreateNumberValue(area.bottom));
+        request.SetNamedValue(L"unit",JsonValue::CreateNumberValue(unit));request.SetNamedValue(L"textSize",JsonValue::CreateNumberValue(15*unit*text_scale/100));request.SetNamedValue(L"labelMetrics",metrics);
+        drawing=JsonObject::Parse(winrt::to_hstring(layout_request(stringify(request))));
+        if(!drawing.HasKey(L"viewport"))throw std::runtime_error(text(drawing,L"error","The original Euclidean layout did not return its drawing"));
+        if(type=="rigid_angle"&&gesture)state=object(drawing,L"placement");
+        drawing_width=area.right;drawing_height=area.bottom;
+    }
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
-    RECT bounds() const { RECT result{}; GetClientRect(window,&result); InflateRect(&result,-px(38),-px(28)); return result; }
+    RECT bounds() const {
+        RECT result{};GetClientRect(window,&result);
+        if(type=="math_number_line"||type=="number_line"){result.left=px(28);result.right-=px(28);return result;}
+        const auto dc=GetDC(window);const auto old=SelectObject(dc,scaled_font?scaled_font:GetStockObject(DEFAULT_GUI_FONT));TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);
+        const auto measure=[&](double value){const auto content=wide(coordinate_caption(value));SIZE size{};GetTextExtentPoint32W(dc,content.c_str(),static_cast<int>(content.size()),&size);return static_cast<double>(size.cx);};
+        const auto widest_y=std::max({measure(ymin),measure(ymax),measure(0)}),edge_x=std::max(measure(xmin),measure(xmax))/2;
+        SelectObject(dc,old);ReleaseDC(window,dc);
+        const auto left=std::max(widest_y+px(8),edge_x+px(4)),right=result.right-std::max(edge_x+px(4),static_cast<double>(px(18)));
+        const auto top=static_cast<double>(std::max<LONG>(metrics.tmHeight,px(16))),bottom=static_cast<double>(result.bottom-std::max<LONG>(metrics.tmHeight+px(12),px(30)));
+        const auto aspect=(xmax-xmin)/(ymax-ymin),width=std::max(1.,std::min(right-left,(bottom-top)*aspect)),height=width/aspect;
+        return {static_cast<LONG>(std::lround((left+right-width)/2)),static_cast<LONG>(std::lround((top+bottom-height)/2)),static_cast<LONG>(std::lround((left+right+width)/2)),static_cast<LONG>(std::lround((top+bottom+height)/2))};
+    }
     POINT project(double x,double y) const {
         const auto rect = bounds(); return {rect.left + static_cast<LONG>(std::lround((x - xmin) * (rect.right - rect.left) / (xmax - xmin))),
             rect.bottom - static_cast<LONG>(std::lround((y - ymin) * (rect.bottom - rect.top) / (ymax - ymin)))};
@@ -193,7 +272,8 @@ struct Canvas {
         for (std::uint32_t index = 0; index < values.Size(); ++index) {
             const auto item = values.GetObjectAt(index); PlotPoint point;
             point.x = number(item,L"x"); point.y = number(item,L"y"); point.id = text(item,L"id");
-            if (index < initial.Size()) point.draggable = flag(initial.GetObjectAt(index),L"draggable",changed != nullptr);
+            point.draggable=index>=initial.Size()||flag(initial.GetObjectAt(index),L"draggable",true);
+            if(type=="graph"&&changed){point.x=graph_coordinate(point.x,number(config,L"snap",1),xmin,xmax);point.y=graph_coordinate(point.y,number(config,L"snap",1),ymin,ymax);}
             for (const auto& label : array(item,L"labels")) if (label.ValueType() == JsonValueType::String) point.labels.push_back(winrt::to_string(label.GetString()));
             points.push_back(std::move(point));
         }
@@ -202,7 +282,7 @@ struct Canvas {
             const std::vector<std::pair<double,double>> defaults=mode=="line"||mode=="parabola"?std::vector<std::pair<double,double>>{{0,0},{1,1}}:
                 mode=="polygon"?std::vector<std::pair<double,double>>{{-2,-1},{2,-1},{0,2}}:
                 mode=="scatter"?std::vector<std::pair<double,double>>{{-2,0},{0,1},{2,2}}:std::vector<std::pair<double,double>>{{0,0}};
-            for(const auto [x,y]:defaults){PlotPoint point;point.x=snapped(x,number(config,L"snap",1),xmin,xmax);point.y=snapped(y,number(config,L"snap",1),ymin,ymax);point.draggable=true;points.push_back(point);}
+            for(const auto [x,y]:defaults){PlotPoint point;point.x=graph_coordinate(x,number(config,L"snap",1),xmin,xmax);point.y=graph_coordinate(y,number(config,L"snap",1),ymin,ymax);point.draggable=true;points.push_back(point);}
         }
         if (type == "euclidean_diagram" && !points.empty()) {
             xmin = xmax = points.front().x; ymin = ymax = points.front().y;
@@ -217,7 +297,7 @@ struct Canvas {
             const auto cx = (xmin + xmax) / 2,cy = (ymin + ymax) / 2;
             xmin = cx - span * .7; xmax = cx + span * .7; ymin = cy - span * .7; ymax = cy + span * .7;
         }
-        if (xmax <= xmin) xmax = xmin + 1; if (ymax <= ymin) ymax = ymin + 1;
+        if (xmax <= xmin) xmax = xmin + 10; if (ymax <= ymin) ymax = ymin + 10;
         update_slider_points();
     }
     const PlotPoint* find(const std::string& id) const {
@@ -237,97 +317,89 @@ struct Canvas {
             }
         }
     }
+    void paint_euclidean(HDC dc)const{
+        if(!drawing.HasKey(L"viewport"))return;
+        const auto colors=reader_theme::palette(window);const auto unit=static_cast<double>(GetDpiForWindow(window))/96.;
+        const auto position=[](const JsonObject& value){return POINT{static_cast<LONG>(std::lround(number(value,L"x"))),static_cast<LONG>(std::lround(number(value,L"y")))};};
+        const bool rigid=type=="rigid_angle";const auto amber=colors.high_contrast?colors.text:RGB(255,190,95);
+        const auto ink=[&](const JsonObject& item,const wchar_t* id=L"id"){return rigid&&text(item,id).starts_with("copy:")?amber:colors.accent;};
+        const auto stroke=CreatePen(PS_SOLID,std::max(1,static_cast<int>(std::lround(2.2*unit))),colors.accent),copy_stroke=CreatePen(PS_SOLID,std::max(1,static_cast<int>(std::lround(2.2*unit))),amber);const auto old_pen=SelectObject(dc,stroke),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+        if(rigid){
+            struct GdiRuntime{ULONG_PTR token{};GdiRuntime(){Gdiplus::GdiplusStartupInput input;Gdiplus::GdiplusStartup(&token,&input,nullptr);}~GdiRuntime(){if(token)Gdiplus::GdiplusShutdown(token);}};static GdiRuntime runtime;
+            Gdiplus::Graphics graphics(dc);graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);XFORM world{};if(GetWorldTransform(dc,&world)){Gdiplus::Matrix matrix(world.eM11,world.eM12,world.eM21,world.eM22,world.eDx,world.eDy);graphics.SetTransform(&matrix);}
+            for(const auto& value:array(drawing,L"regions")){const auto item=value.GetObject(),center=object(item,L"center");const auto tint=ink(item);const auto radius=number(item,L"radius");
+                const Gdiplus::RectF box(static_cast<Gdiplus::REAL>(number(center,L"x")-radius),static_cast<Gdiplus::REAL>(number(center,L"y")-radius),static_cast<Gdiplus::REAL>(radius*2),static_cast<Gdiplus::REAL>(radius*2));
+                Gdiplus::SolidBrush fill(Gdiplus::Color(53,GetRValue(tint),GetGValue(tint),GetBValue(tint)));Gdiplus::Pen border(Gdiplus::Color(255,GetRValue(tint),GetGValue(tint),GetBValue(tint)),static_cast<Gdiplus::REAL>(unit*1.5));
+                graphics.FillPie(&fill,box,static_cast<Gdiplus::REAL>(number(item,L"startDegrees")),static_cast<Gdiplus::REAL>(number(item,L"sweepDegrees")));graphics.DrawArc(&border,box,static_cast<Gdiplus::REAL>(number(item,L"startDegrees")),static_cast<Gdiplus::REAL>(number(item,L"sweepDegrees")));}
+        }
+        const auto blend=[](BYTE foreground,BYTE background){return (foreground*42+background*213)/255;};
+        const auto disk=CreateSolidBrush(RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas))));
+        const auto circle=[&](POINT center,double radius){const auto r=static_cast<LONG>(std::lround(radius));Ellipse(dc,center.x-r,center.y-r,center.x+r,center.y+r);};
+        for(const auto& value:array(drawing,L"circles")){const auto item=value.GetObject();if(flag(item,L"filled"))SelectObject(dc,disk);circle(position(object(item,L"center")),number(item,L"radius"));SelectObject(dc,GetStockObject(NULL_BRUSH));}
+        for(const auto& value:array(drawing,L"paths")){const auto item=value.GetObject();SelectObject(dc,ink(item)==amber?copy_stroke:stroke);line(dc,position(object(item,L"start")),position(object(item,L"end")));}
+        for(const auto& value:array(drawing,L"arrows")){const auto item=value.GetObject(),tip=object(item,L"tip");SelectObject(dc,ink(item)==amber?copy_stroke:stroke);line(dc,position(tip),position(object(item,L"wingA")));line(dc,position(tip),position(object(item,L"wingB")));}
+        const auto arc_pen=CreatePen(PS_SOLID,std::max(1,static_cast<int>(std::lround(3.6*unit))),colors.accent);SelectObject(dc,arc_pen);
+        for(const auto& value:array(drawing,L"arcs")){const auto item=value.GetObject(),center=object(item,L"center");const auto radius=number(item,L"radius"),start=number(item,L"startDegrees"),sweep=number(item,L"sweepDegrees");
+            const auto at=[&](double degrees){const auto angle=degrees*3.14159265358979323846/180;return POINT{static_cast<LONG>(std::lround(number(center,L"x")+radius*std::cos(angle))),static_cast<LONG>(std::lround(number(center,L"y")+radius*std::sin(angle)))};};
+            auto from=at(start);for(int step=1;step<=96;++step){const auto to=at(start+sweep*step/96);line(dc,from,to);from=to;}}
+        SelectObject(dc,GetStockObject(NULL_PEN));const auto background=CreateSolidBrush(colors.canvas),foreground=CreateSolidBrush(colors.high_contrast?colors.text:RGB(255,255,255)),copy_foreground=CreateSolidBrush(amber);
+        if(rigid){const auto leader=CreatePen(PS_SOLID,std::max(1,px(1)),colors.text),copy_leader=CreatePen(PS_SOLID,std::max(1,px(1)),amber);
+            for(const auto& value:array(drawing,L"labels")){const auto item=value.GetObject(),box=object(item,L"bounds");for(const auto& point_value:array(drawing,L"points")){const auto point=point_value.GetObject();if(text(point,L"id")!=text(item,L"id"))continue;const auto center=position(object(point,L"center"));SelectObject(dc,ink(item)==amber?copy_leader:leader);line(dc,{std::clamp<LONG>(center.x,static_cast<LONG>(number(box,L"left")),static_cast<LONG>(number(box,L"right"))),std::clamp<LONG>(center.y,static_cast<LONG>(number(box,L"top")),static_cast<LONG>(number(box,L"bottom")))},center);break;}}
+            SelectObject(dc,GetStockObject(NULL_PEN));DeleteObject(leader);DeleteObject(copy_leader);}
+        const auto protected_ink=CreateRectRgn(0,0,0,0);
+        for(const auto& value:array(drawing,L"points")){const auto item=value.GetObject();const auto center=position(object(item,L"center"));SelectObject(dc,background);circle(center,5.6*unit);SelectObject(dc,rigid&&ink(item)==amber?copy_foreground:foreground);circle(center,4*unit);
+            if(rigid){const auto radius=static_cast<int>(std::ceil(6.6*unit));POINT marker_bounds[2]{{center.x-radius,center.y-radius},{center.x+radius,center.y+radius}};LPtoDP(dc,marker_bounds,2);const auto marker=CreateEllipticRgn(marker_bounds[0].x,marker_bounds[0].y,marker_bounds[1].x,marker_bounds[1].y);CombineRgn(protected_ink,protected_ink,marker,RGN_OR);DeleteObject(marker);}}
+        if(rigid)for(const auto& value:array(drawing,L"arrows")){const auto item=value.GetObject();const auto tip=position(object(item,L"tip"));for(const auto key:{L"wingA",L"wingB"}){const auto wing=position(object(item,key));const auto dx=static_cast<double>(wing.x-tip.x),dy=static_cast<double>(wing.y-tip.y),length=std::max(1.,std::hypot(dx,dy)),r=1.8*unit;POINT polygon[4]{{static_cast<LONG>(std::lround(tip.x-dy*r/length)),static_cast<LONG>(std::lround(tip.y+dx*r/length))},{static_cast<LONG>(std::lround(wing.x-dy*r/length)),static_cast<LONG>(std::lround(wing.y+dx*r/length))},{static_cast<LONG>(std::lround(wing.x+dy*r/length)),static_cast<LONG>(std::lround(wing.y-dx*r/length))},{static_cast<LONG>(std::lround(tip.x+dy*r/length)),static_cast<LONG>(std::lround(tip.y-dx*r/length))}};LPtoDP(dc,polygon,4);const auto arrow=CreatePolygonRgn(polygon,4,WINDING);CombineRgn(protected_ink,protected_ink,arrow,RGN_OR);DeleteObject(arrow);}}
+        const auto previous_alignment=SetTextAlign(dc,TA_LEFT|TA_BASELINE);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));
+        for(const auto& value:array(drawing,L"labels")){const auto item=value.GetObject(),box=object(item,L"bounds");SelectObject(dc,background);const auto saved=SaveDC(dc);if(rigid)ExtSelectClipRgn(dc,protected_ink,RGN_DIFF);
+            RoundRect(dc,static_cast<int>(std::floor(number(box,L"left"))),static_cast<int>(std::floor(number(box,L"top"))),static_cast<int>(std::ceil(number(box,L"right"))),static_cast<int>(std::ceil(number(box,L"bottom"))),px(2),px(2));
+            RestoreDC(dc,saved);SetTextColor(dc,rigid&&ink(item)==amber?amber:colors.high_contrast?colors.text:RGB(255,255,255));
+            const auto lines=array(item,L"lines");for(unsigned index=0;index<lines.Size();++index){const auto content=std::wstring(lines.GetStringAt(index));TextOutW(dc,static_cast<int>(std::lround(number(box,L"left")+2*unit)),static_cast<int>(std::lround(number(box,L"top")+unit+number(item,L"ascent")+index*number(item,L"lineHeight"))),content.c_str(),static_cast<int>(content.size()));}}
+        SetTextAlign(dc,previous_alignment);SelectObject(dc,old_pen);SelectObject(dc,old_brush);DeleteObject(stroke);DeleteObject(copy_stroke);DeleteObject(arc_pen);DeleteObject(disk);DeleteObject(background);DeleteObject(foreground);DeleteObject(copy_foreground);DeleteObject(protected_ink);
+    }
     void paint(HDC dc) {
         const auto colors = reader_theme::palette(window); RECT client{}; GetClientRect(window,&client);
         FillRect(dc,&client,reader_theme::brush(reader_theme::Surface::canvas));const auto transform=SaveDC(dc);
         if(zoom>1){SetGraphicsMode(dc,GM_ADVANCED);XFORM matrix{static_cast<FLOAT>(zoom),0,0,static_cast<FLOAT>(zoom),static_cast<FLOAT>(client.right*(1-zoom)/2+pan_x),static_cast<FLOAT>(client.bottom*(1-zoom)/2+pan_y)};SetWorldTransform(dc,&matrix);}
         SetBkMode(dc,TRANSPARENT); SetTextColor(dc,colors.text);
         const auto font = scaled_font ? scaled_font : reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT)); const auto old_font = SelectObject(dc,font);
-        const auto pen = CreatePen(PS_SOLID,px(2),reader_theme::accent_ink(window,colors.canvas)), grid = CreatePen(PS_SOLID,1,colors.outline);
+        const auto pen = CreatePen(PS_SOLID,px(2),reader_theme::accent_ink(window,colors.canvas)), grid = CreatePen(PS_SOLID,px(1),colors.high_contrast?colors.outline:RGB(51,56,65));
         const auto previous_pen = SelectObject(dc,pen), previous_brush = SelectObject(dc,GetStockObject(NULL_BRUSH));
         const auto rect = bounds();
         if (type == "math_number_line" || type == "number_line") {
-            const auto low = number(config,L"min",-5), high = number(config,L"max",5), step = number(config,L"step",1);
-            const auto y = (rect.top + rect.bottom) / 2; line(dc,{rect.left,y},{rect.right,y},true);
-            for (double value = low; value <= high + step * .01 && step > 0 && (high - low) / step <= 100; value += step) {
-                const auto x = rect.left + static_cast<LONG>((value - low) / (high - low) * (rect.right - rect.left));
-                line(dc,{x,y - px(5)},{x,y + px(5)}); label(dc,{x,y},decimal(value),-8,12);
-            }
-            const auto value = number(state,L"value",number(config,L"value",0));
-            const auto x = rect.left + static_cast<LONG>((value - low) / (high - low) * (rect.right - rect.left));
-            const auto closed = flag(state,L"closed",flag(config,L"closed"));
-            if (closed) SelectObject(dc,GetStockObject(DC_BRUSH)); SetDCBrushColor(dc,colors.accent);
-            Ellipse(dc,x - px(6),y - px(6),x + px(6),y + px(6)); SelectObject(dc,GetStockObject(NULL_BRUSH));
-            const auto direction = text(state,L"direction",text(config,L"direction","none"));
-            if (direction == "left") line(dc,{x - px(8),y},{rect.left,y},true);
-            if (direction == "right") line(dc,{x + px(8),y},{rect.right,y},true);
-            for (const auto& item : array(config,L"points")) {
-                const auto point = item.GetObject(); const auto at = number(point,L"value");
-                const auto xx = rect.left + static_cast<LONG>((at - low) / (high - low) * (rect.right - rect.left));
-                Ellipse(dc,xx - px(4),y - px(4),xx + px(4),y + px(4)); label(dc,{xx,y},text(point,L"label"),-6,-28);
-            }
-        } else if (type == "euclidean_diagram") {
-            // Shared isotropic scale keeps circles, angles and labels geometrically faithful.
-            const auto aspect = static_cast<double>(rect.right - rect.left) / std::max<LONG>(1,rect.bottom - rect.top);
-            const auto cx = (xmin + xmax) / 2, span = ymax - ymin; xmin = cx - span * aspect / 2; xmax = cx + span * aspect / 2;
-            for (const auto& value : array(config,L"circles")) {
-                const auto circle = value.GetObject(); const auto center = find(text(circle,L"center")); if (!center) continue;
-                const auto r = number(circle,L"radius"); const auto a = project(center->x - r,center->y + r), b = project(center->x + r,center->y - r);
-                Ellipse(dc,a.x,a.y,b.x,b.y); if (!text(circle,L"label").empty()) label(dc,project(center->x + r,center->y),text(circle,L"label"));
-            }
-            for (const auto& value : array(config,L"objects")) {
-                const auto item = value.GetObject(); const auto through = array(item,L"through");
-                PlotPoint a,b;
-                if (through.Size() >= 2) {
-                    const auto first = find(winrt::to_string(through.GetStringAt(0))), second = find(winrt::to_string(through.GetStringAt(1)));
-                    if (!first || !second) continue; a = *first; b = *second;
-                } else {
-                    const auto origin = object(item,L"origin"), direction = object(item,L"direction");
-                    if (const auto point = find(text(item,L"origin"))) a = *point;
-                    else { a.x = number(origin,L"x"); a.y = number(origin,L"y"); }
-                    b.x = a.x + number(direction,L"x",1); b.y = a.y + number(direction,L"y");
-                }
-                const auto kind = text(item,L"kind","segment"); const double dx = b.x - a.x,dy = b.y - a.y;
-                double begin = 0,end = 1;
-                if (kind != "segment") {
-                    begin = kind == "line" ? -1e9 : 0; end = 1e9;
-                    const auto clip = [&](double origin,double delta,double low,double high) {
-                        if (std::abs(delta) < 1e-10) return;
-                        const auto one = (low - origin) / delta,two = (high - origin) / delta;
-                        begin = std::max(begin,std::min(one,two)); end = std::min(end,std::max(one,two));
-                    };
-                    clip(a.x,dx,xmin,xmax); clip(a.y,dy,ymin,ymax);
-                }
-                const auto first = project(a.x + begin * dx,a.y + begin * dy), last = project(a.x + end * dx,a.y + end * dy);
-                line(dc,first,last,kind != "segment"); if (kind == "line") line(dc,last,first,true);
-                if (!text(item,L"label").empty()) label(dc,last,text(item,L"label"),-24,-22);
-            }
-            for (const auto& value : array(config,L"arcs")) {
-                const auto arc = value.GetObject(); const auto through = array(arc,L"through"); if (through.Size() < 3) continue;
-                const auto first = find(winrt::to_string(through.GetStringAt(0))), middle = find(winrt::to_string(through.GetStringAt(1))), last = find(winrt::to_string(through.GetStringAt(2)));
-                if (!first || !middle || !last) continue;
-                const auto circles = array(config,L"circles");
-                for (const auto& circle_value : circles) {
-                    const auto circle = circle_value.GetObject(); if (text(circle,L"id") != text(arc,L"circle")) continue;
-                    const auto center = find(text(circle,L"center")); if (!center) continue;
-                    const auto a = std::atan2(first->y - center->y,first->x - center->x), b = std::atan2(last->y - center->y,last->x - center->x);
-                    const auto m = std::atan2(middle->y - center->y,middle->x - center->x); constexpr double tau = 6.283185307179586;
-                    const auto normalize = [](double x) { constexpr double full = 6.283185307179586; while (x < 0) x += full; while (x >= full) x -= full; return x; };
-                    auto sweep = normalize(b - a); if (normalize(m - a) > sweep) sweep -= tau;
-                    const auto radius = number(circle,L"radius"); auto from = project(first->x,first->y);
-                    const auto arc_pen = CreatePen(PS_SOLID,px(4),colors.text); SelectObject(dc,arc_pen);
-                    for (int step = 1; step <= 96; ++step) { const auto t = a + sweep * step / 96; const auto to = project(center->x + radius * std::cos(t),center->y + radius * std::sin(t)); line(dc,from,to); from = to; }
-                    SelectObject(dc,pen); DeleteObject(arc_pen);
-                }
-            }
+            // The same geometry and label policy as MathNumberLineView: both
+            // arrows, bounded tick density and an explicitly optional value.
+            const auto low=number(config,L"min",-10),high=number(config,L"max",10)>low?number(config,L"max",10):low+20;
+            const auto step=number(config,L"step",1)>0?number(config,L"step",1):1;
+            const auto y=client.bottom/2;const auto x_at=[&](double value){return rect.left+static_cast<LONG>(std::lround((value-low)/(high-low)*(rect.right-rect.left)));};
+            const auto saved=SaveDC(dc);const auto axis=CreatePen(PS_SOLID,px(2),colors.high_contrast?colors.text:RGB(204,204,204));SelectObject(dc,axis);
+            const auto arrow=[&](LONG x,bool left){line(dc,{x,y},{x+(left?px(8):-px(8)),y-px(6)});line(dc,{x,y},{x+(left?px(8):-px(8)),y+px(6)});};
+            line(dc,{rect.left,y},{rect.right,y});arrow(rect.left,true);arrow(rect.right,false);
+            const auto alignment=SetTextAlign(dc,TA_CENTER|TA_BASELINE);SetTextColor(dc,colors.high_contrast?colors.text:RGB(204,204,204));
+            const auto caption=[&](std::string value,LONG x,LONG baseline){const auto source=wide(value);TextOutW(dc,x,baseline,source.c_str(),static_cast<int>(source.size()));};
+            const auto tick_step=step*std::max(1.,std::ceil((high-low)/step/16.));
+            for(unsigned index=0;index<=18;++index){const auto value=low+index*tick_step;if(value>high+1e-10)break;const auto x=x_at(value);line(dc,{x,y-px(5)},{x,y+px(5)});caption(coordinate_caption(value),x,y+px(24));}
+            const auto value=std::clamp(number(state,L"value",number(config,L"value")),low,high);const auto x=x_at(value);
+            const auto direction=text(state,L"direction",text(config,L"direction","none"));const auto ray=CreatePen(PS_SOLID,px(5),colors.accent);SelectObject(dc,ray);
+            if(direction=="left"||direction=="right"){const auto end=direction=="left"?rect.left:rect.right;line(dc,{x,y},{end,y});arrow(end,direction=="left");}
+            const auto background=CreateSolidBrush(colors.canvas);SelectObject(dc,background);SelectObject(dc,GetStockObject(NULL_PEN));Ellipse(dc,x-px(8),y-px(8),x+px(8),y+px(8));
+            const auto marker=CreatePen(PS_SOLID,px(3),colors.accent);const auto fill=CreateSolidBrush(colors.accent);SelectObject(dc,marker);SelectObject(dc,flag(state,L"closed",flag(config,L"closed",true))?fill:GetStockObject(NULL_BRUSH));Ellipse(dc,x-px(7),y-px(7),x+px(7),y+px(7));
+            const auto mode=text(config,L"mode");HFONT value_font=nullptr;
+            if(flag(config,L"showValueLabel",mode!="read_value"&&mode!="missing_value_hint")){
+                value_font=CreateFontW(-MulDiv(15*text_scale,static_cast<int>(GetDpiForWindow(window)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+                if(value_font)SelectObject(dc,value_font);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));caption(coordinate_caption(value),x,y-px(21));}
+            SetTextAlign(dc,alignment);RestoreDC(dc,saved);DeleteObject(axis);DeleteObject(ray);DeleteObject(background);DeleteObject(marker);DeleteObject(fill);if(value_font)DeleteObject(value_font);
+        } else if (type == "euclidean_diagram"||type=="rigid_angle") {
+            paint_euclidean(dc);
         } else if (type == "venn_diagram") {
-            const auto w = rect.right - rect.left,h = rect.bottom - rect.top,r = std::min(w / 4,h / 2);
-            const int cy = (rect.top + rect.bottom) / 2,cx = (rect.left + rect.right) / 2;
-            Rectangle(dc,rect.left,rect.top,rect.right,rect.bottom);
-            Ellipse(dc,cx - r * 3 / 2,cy - r,cx + r / 2,cy + r); Ellipse(dc,cx - r / 2,cy - r,cx + r * 3 / 2,cy + r);
-            label(dc,{cx - r,cy - r},text(config,L"leftLabel","A"),0,-20); label(dc,{cx + r,cy - r},text(config,L"rightLabel","B"),0,-20);
-            label(dc,{cx - r,cy},text(config,L"leftOnly"),0,0); label(dc,{cx,cy},text(config,L"intersection"),0,0);
-            label(dc,{cx + r,cy},text(config,L"rightOnly"),0,0); label(dc,{rect.left,rect.bottom},text(config,L"outside"),0,-18);
+            const auto w=client.right,h=client.bottom;const auto radius=std::min(w*.25,h*.32),center_y=h*.49,left_x=w*.4,right_x=w*.6;
+            const auto frame=CreatePen(PS_SOLID,px(2),colors.high_contrast?colors.outline:RGB(98,109,121));SelectObject(dc,frame);Rectangle(dc,px(10),px(12),w-px(10),h-px(12));SelectObject(dc,pen);DeleteObject(frame);
+            const auto circle=[&](double x){Ellipse(dc,static_cast<int>(std::lround(x-radius)),static_cast<int>(std::lround(center_y-radius)),static_cast<int>(std::lround(x+radius)),static_cast<int>(std::lround(center_y+radius)));};circle(left_x);circle(right_x);
+            const auto previous_alignment=SetTextAlign(dc,TA_CENTER|TA_BASELINE);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));
+            const auto caption=[&](std::string value,double x,double y){const auto source=wide(value);TextOutW(dc,static_cast<int>(std::lround(x)),static_cast<int>(std::lround(y)),source.c_str(),static_cast<int>(source.size()));};
+            caption(text(config,L"leftLabel","A"),left_x-radius*.25,center_y-radius-px(8));caption(text(config,L"rightLabel","B"),right_x+radius*.25,center_y-radius-px(8));
+            const auto lines=[&](const wchar_t* key,double x){const auto source=text(config,key);std::size_t at=0;for(unsigned index=0;index<4;++index){const auto end=source.find('\n',at);caption(source.substr(at,end==source.npos?end:end-at),x,center_y+index*px(18)*text_scale/100.);if(end==source.npos)break;at=end+1;}};
+            lines(L"leftOnly",left_x-radius*.35);lines(L"intersection",w/2.);lines(L"rightOnly",right_x+radius*.35);caption(text(config,L"outside"),w/2.,h-px(25));SetTextAlign(dc,TA_LEFT|TA_BASELINE);caption(text(config,L"universeLabel","U"),px(18),px(30));SetTextAlign(dc,previous_alignment);
         } else if (type == "sliders_visual"&&text(config,L"type")!="graph") {
             const auto values=object(state,L"values");const auto parameters=array(config,L"parameters");const auto scale_id=text(config,L"scaleParameter");
             const auto dimension=[&](const wchar_t* key,unsigned at,double fallback){const auto default_id=at<parameters.Size()?text(parameters.GetObjectAt(at),L"id"):std::string{};
@@ -351,33 +423,34 @@ struct Canvas {
             DrawTextW(dc,caption.c_str(),static_cast<int>(caption.size()),&label_bounds,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX|DT_VCENTER);
             SetTextColor(dc,before_ink);SelectObject(dc,before_font);DeleteObject(caption_font);
         } else if (type == "geometry_2d_diagram" || type == "geometry_3d_diagram") {
-            const auto shape = text(config,L"shape",text(config,L"type","rectangle"));
-            auto box = rect; InflateRect(&box,-(rect.right - rect.left) / 5,-px(8));
-            if (shape == "circle" || shape == "sphere") Ellipse(dc,box.left,box.top,box.right,box.bottom);
-            else if (shape == "triangle") { const POINT vertices[]{{box.left,box.bottom},{box.right,box.bottom},{(box.left + box.right) / 2,box.top}}; Polygon(dc,vertices,3); }
-            else { Rectangle(dc,box.left,box.top,box.right,box.bottom);
-                if (type == "geometry_3d_diagram") { const auto d = px(24); Rectangle(dc,box.left + d,box.top - d,box.right + d,box.bottom - d);
-                    line(dc,{box.left,box.top},{box.left + d,box.top - d}); line(dc,{box.right,box.top},{box.right + d,box.top - d});
-                    line(dc,{box.left,box.bottom},{box.left + d,box.bottom - d}); line(dc,{box.right,box.bottom},{box.right + d,box.bottom - d}); }
-            }
-            const auto labels = array(config,L"labels");
-            for (std::uint32_t index = 0; index < labels.Size(); ++index) if (labels.GetAt(index).ValueType() == JsonValueType::String) {
-                auto label_rect = client; UINT alignment = DT_NOPREFIX | DT_WORDBREAK;
-                if (index == 0) { label_rect.top = box.bottom + px(8); label_rect.bottom = client.bottom; alignment |= DT_CENTER; }
-                else if (index == 1) { label_rect.right = std::max<LONG>(px(50),box.left - px(4)); label_rect.top = (box.top + box.bottom) / 2; alignment |= DT_LEFT; }
-                else { label_rect.left = box.right; label_rect.top = std::max<LONG>(0,box.top - px(22)); alignment |= DT_RIGHT; }
-                const auto caption = wide(winrt::to_string(labels.GetStringAt(index))); DrawTextW(dc,caption.c_str(),static_cast<int>(caption.size()),&label_rect,alignment);
-            }
+            const bool solid=type=="geometry_3d_diagram";const auto shape=text(config,L"shape",solid?"cube":"rectangle");
+            const auto left=client.right*.22,top=client.bottom*.18,right=client.right*.75,bottom=client.bottom*.72;
+            const auto cx=(left+right)/2,cy=(top+bottom)/2,width=right-left,height=bottom-top;
+            const auto ellipse=[&](double x1,double y1,double x2,double y2){Ellipse(dc,static_cast<int>(std::lround(x1)),static_cast<int>(std::lround(y1)),static_cast<int>(std::lround(x2)),static_cast<int>(std::lround(y2)));};
+            const auto segment=[&](double x1,double y1,double x2,double y2){line(dc,{static_cast<LONG>(std::lround(x1)),static_cast<LONG>(std::lround(y1))},{static_cast<LONG>(std::lround(x2)),static_cast<LONG>(std::lround(y2))});};
+            if(solid&&shape=="cylinder"){const auto oval=height*.22;ellipse(left,top,right,top+oval);ellipse(left,bottom-oval,right,bottom);segment(left,top+oval/2,left,bottom-oval/2);segment(right,top+oval/2,right,bottom-oval/2);}
+            else if(solid&&shape=="cone"){const auto oval=height*.22;ellipse(left,bottom-oval,right,bottom);segment(cx,top,left,bottom-oval/2);segment(cx,top,right,bottom-oval/2);}
+            else if(solid&&shape=="sphere"){const auto radius=std::min(width,height)/2;ellipse(cx-radius,cy-radius,cx+radius,cy+radius);ellipse(cx-radius,cy-radius/3,cx+radius,cy+radius/3);ellipse(cx-radius/3,cy-radius,cx+radius/3,cy+radius);}
+            else if(solid){const auto offset=std::min(width,height)*.23;Rectangle(dc,static_cast<int>(left),static_cast<int>(top+offset),static_cast<int>(right-offset),static_cast<int>(bottom));Rectangle(dc,static_cast<int>(left+offset),static_cast<int>(top),static_cast<int>(right),static_cast<int>(bottom-offset));segment(left,top+offset,left+offset,top);segment(right-offset,top+offset,right,top);segment(left,bottom,left+offset,bottom-offset);segment(right-offset,bottom,right,bottom-offset);}
+            else if(shape=="circle"){const auto radius=std::min(width,height)/2;ellipse(cx-radius,cy-radius,cx+radius,cy+radius);}
+            else if(shape=="triangle"){const POINT vertices[]{{static_cast<LONG>(left),static_cast<LONG>(bottom)},{static_cast<LONG>(right),static_cast<LONG>(bottom)},{static_cast<LONG>(cx),static_cast<LONG>(top)}};Polygon(dc,vertices,3);}
+            else Rectangle(dc,static_cast<int>(left),static_cast<int>(top),static_cast<int>(right),static_cast<int>(bottom));
+            const auto labels=array(config,L"labels");const auto previous_alignment=SetTextAlign(dc,TA_CENTER|TA_BASELINE);SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));
+            for(unsigned index=0;index<std::min(3U,labels.Size());++index){const auto caption=std::wstring(labels.GetStringAt(index));SetTextAlign(dc,(index==0?TA_CENTER:index==1?TA_LEFT:TA_RIGHT)|TA_BASELINE);TextOutW(dc,index==0?client.right/2:index==1?px(10):client.right-px(10),index==0?client.bottom-px(15):static_cast<int>(client.bottom*(index==1?.5:.22)),caption.c_str(),static_cast<int>(caption.size()));}SetTextAlign(dc,previous_alignment);
         } else {
             SelectObject(dc,grid);
-            if (xmax - xmin <= 60 && ymax - ymin <= 60) {
-                for (auto x = std::ceil(xmin); x <= xmax; ++x) line(dc,project(x,ymin),project(x,ymax));
-                for (auto y = std::ceil(ymin); y <= ymax; ++y) line(dc,project(xmin,y),project(xmax,y));
-            }
-            SelectObject(dc,pen); if (xmin <= 0 && xmax >= 0) line(dc,project(0,ymin),project(0,ymax),true);
-            if (ymin <= 0 && ymax >= 0) line(dc,project(xmin,0),project(xmax,0),true);
-            for (auto x = std::ceil(xmin); x <= xmax && xmax - xmin <= 30; ++x) label(dc,project(x,ymin),decimal(x),-4,8);
-            for (auto y = std::ceil(ymin); y <= ymax && ymax - ymin <= 30; ++y) label(dc,project(xmin,y),decimal(y),-28,-8);
+            const auto grid_step=std::max(number(config,L"gridStep",1)>0?number(config,L"gridStep",1):1,std::max(xmax-xmin,ymax-ymin)/100.);
+            for(unsigned index=0;index<=101;++index){const auto x=std::ceil(xmin/grid_step)*grid_step+index*grid_step;if(x>xmax)break;line(dc,project(x,ymin),project(x,ymax));}
+            for(unsigned index=0;index<=101;++index){const auto y=std::ceil(ymin/grid_step)*grid_step+index*grid_step;if(y>ymax)break;line(dc,project(xmin,y),project(xmax,y));}
+            Rectangle(dc,rect.left,rect.top,rect.right,rect.bottom);
+            const auto axes=CreatePen(PS_SOLID,std::max(1,px(3)/2),colors.high_contrast?colors.text:RGB(192,201,211));SelectObject(dc,axes);
+            if(xmin<=0&&xmax>=0)line(dc,project(0,ymin),project(0,ymax));if(ymin<=0&&ymax>=0)line(dc,project(xmin,0),project(xmax,0));
+            TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SetTextColor(dc,colors.high_contrast?colors.text:RGB(192,201,211));const auto alignment=SetTextAlign(dc,TA_CENTER|TA_BASELINE);
+            const auto caption=[&](std::string content,LONG x,LONG y){const auto source=wide(content);TextOutW(dc,x,y,source.c_str(),static_cast<int>(source.size()));};
+            const auto label_step=grid_step*std::max(1.,std::ceil(std::max(xmax-xmin,ymax-ymin)/grid_step/12.));
+            for(unsigned index=0;index<=15;++index){const auto x=std::ceil(xmin/label_step)*label_step+index*label_step;if(x>xmax)break;caption(coordinate_caption(x),project(x,ymin).x,rect.bottom+metrics.tmAscent+px(4));}
+            SetTextAlign(dc,TA_RIGHT|TA_BASELINE);for(unsigned index=0;index<=15;++index){const auto y=std::ceil(ymin/label_step)*label_step+index*label_step;if(y>ymax)break;caption(coordinate_caption(y),rect.left-px(6),project(xmin,y).y+(metrics.tmAscent-metrics.tmDescent)/2);}
+            SetTextAlign(dc,TA_LEFT|TA_BASELINE);caption("x",rect.right+px(5),rect.bottom+metrics.tmAscent+px(4));caption("y",rect.left-px(4),std::max<LONG>(metrics.tmAscent,rect.top-px(6)));SetTextAlign(dc,alignment);SelectObject(dc,pen);DeleteObject(axes);
             const auto mode = type=="sliders_visual"?"line":text(config,L"mode","point"); const auto saved = SaveDC(dc); IntersectClipRect(dc,rect.left,rect.top,rect.right,rect.bottom);
             if (mode == "line" && points.size() >= 2) {
                 const auto& first = points[0]; const auto& second = points[1];
@@ -385,8 +458,9 @@ struct Canvas {
                 else { const auto slope = (second.y - first.y) / (second.x - first.x);
                     line(dc,project(xmin,first.y + slope * (xmin - first.x)),project(xmax,first.y + slope * (xmax - first.x))); }
             } else if (mode == "polygon") {
-                for (std::size_t index = 1; index < points.size(); ++index) line(dc,project(points[index - 1].x,points[index - 1].y),project(points[index].x,points[index].y));
-                if (points.size() > 2) line(dc,project(points.back().x,points.back().y),project(points.front().x,points.front().y));
+                if(points.size()>=2){std::vector<POINT> polygon;for(const auto& point:points)polygon.push_back(project(point.x,point.y));
+                    const auto blend=[](BYTE foreground,BYTE background){return static_cast<BYTE>((foreground*51+background*204)/255);};
+                    const auto fill=CreateSolidBrush(RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas))));const auto old=SelectObject(dc,fill);Polygon(dc,polygon.data(),static_cast<int>(polygon.size()));SelectObject(dc,old);DeleteObject(fill);}
             } else if (mode == "parabola" && points.size() >= 2 && std::abs(points[1].x - points[0].x) > 1e-10) {
                 const auto dx = points[1].x - points[0].x, a = (points[1].y - points[0].y) / (dx * dx);
                 const auto value_at = [&](double x) { return a * (x - points[0].x) * (x - points[0].x) + points[0].y; };
@@ -396,19 +470,26 @@ struct Canvas {
             }
             RestoreDC(dc,saved);
         }
-        if (type == "euclidean_diagram" || type == "math_coordinate_graph" || type == "coordinate_graph" || type == "graph" || (type=="sliders_visual"&&text(config,L"type")=="graph")) {
-            const auto fill = CreateSolidBrush(colors.accent); SelectObject(dc,fill);
-            for (const auto& point : points) {
-                const auto at = project(point.x,point.y); Ellipse(dc,at.x - px(4),at.y - px(4),at.x + px(4),at.y + px(4));
-                for (std::size_t index = 0; index < point.labels.size(); ++index) label(dc,at,point.labels[index],8,-22 - static_cast<int>(index) * 20);
-                if (type != "euclidean_diagram" && flag(config,L"showLabels",true)) label(dc,at,"(" + decimal(point.x) + ", " + decimal(point.y) + ")");
-            }
-            SelectObject(dc,previous_brush); DeleteObject(fill);
+        if (type == "math_coordinate_graph" || type == "coordinate_graph" || type == "graph" || (type=="sliders_visual"&&text(config,L"type")=="graph")) {
+            const auto saved=SaveDC(dc);IntersectClipRect(dc,rect.left,rect.top,rect.right,rect.bottom);SelectObject(dc,GetStockObject(NULL_PEN));SelectObject(dc,GetStockObject(DC_BRUSH));
+            TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);SetTextAlign(dc,TA_LEFT|TA_BASELINE);
+            for(std::size_t index=0;index<points.size();++index){const auto& point=points[index];const auto at=project(point.x,point.y);
+                SetDCBrushColor(dc,changed&&point.draggable?colors.accent:colors.high_contrast?colors.text:RGB(204,204,204));Ellipse(dc,at.x-px(6),at.y-px(6),at.x+px(6),at.y+px(6));
+                if(flag(config,L"showLabels",true)){const auto prefix=points.size()>1?(index<26?std::string(1,static_cast<char>('A'+index)):"P"+std::to_string(index+1))+": ":std::string{};
+                    const auto content=wide(prefix+"("+coordinate_caption(point.x)+", "+coordinate_caption(point.y)+")");SIZE size{};GetTextExtentPoint32W(dc,content.c_str(),static_cast<int>(content.size()),&size);
+                    const auto preferred=at.x+px(9)+size.cx<=rect.right?at.x+px(9):at.x-px(9)-size.cx;
+                    const auto x=std::clamp(preferred,rect.left+px(2),std::max(rect.left+px(2),rect.right-size.cx-px(2))),y=std::clamp(at.y-px(9),rect.top+metrics.tmAscent,std::max(rect.top+metrics.tmAscent,rect.bottom-metrics.tmDescent));
+                    SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));TextOutW(dc,x,y,content.c_str(),static_cast<int>(content.size()));}}
+            RestoreDC(dc,saved);SelectObject(dc,previous_brush);
         } else SelectObject(dc,previous_brush);
         SelectObject(dc,previous_pen); SelectObject(dc,old_font); DeleteObject(pen); DeleteObject(grid);RestoreDC(dc,transform);
     }
     void pointer(POINT at) {
         if (!changed) return;
+        if(type=="rigid_angle"){
+            if(!rigid_dragging)return;JsonObject gesture,previous,current;previous.SetNamedValue(L"x",JsonValue::CreateNumberValue(rigid_previous.x));previous.SetNamedValue(L"y",JsonValue::CreateNumberValue(rigid_previous.y));current.SetNamedValue(L"x",JsonValue::CreateNumberValue(at.x));current.SetNamedValue(L"y",JsonValue::CreateNumberValue(at.y));gesture.SetNamedValue(L"mode",string_value(rigid_mode));gesture.SetNamedValue(L"previous",previous);gesture.SetNamedValue(L"current",current);
+            prepare_drawing(gesture);rigid_previous=at;changed(state);InvalidateRect(window,nullptr,FALSE);return;
+        }
         const auto rect = bounds();
         if (type == "number_line") {
             const auto low = number(config,L"min",-5),high = number(config,L"max",5);
@@ -417,8 +498,8 @@ struct Canvas {
         }
         if (!dragging || *dragging >= points.size()) return;
         auto& point = points[*dragging]; const auto snap = number(config,L"snap",1);
-        point.x = snapped(xmin + static_cast<double>(at.x - rect.left) / std::max<LONG>(1,rect.right - rect.left) * (xmax - xmin),snap,xmin,xmax);
-        point.y = snapped(ymin + static_cast<double>(rect.bottom - at.y) / std::max<LONG>(1,rect.bottom - rect.top) * (ymax - ymin),snap,ymin,ymax);
+        point.x = graph_coordinate(xmin + static_cast<double>(at.x - rect.left) / std::max<LONG>(1,rect.right - rect.left) * (xmax - xmin),snap,xmin,xmax);
+        point.y = graph_coordinate(ymin + static_cast<double>(rect.bottom - at.y) / std::max<LONG>(1,rect.bottom - rect.top) * (ymax - ymin),snap,ymin,ymax);
         JsonArray values; for (const auto& current : points) { JsonObject item; item.SetNamedValue(L"x",JsonValue::CreateNumberValue(current.x)); item.SetNamedValue(L"y",JsonValue::CreateNumberValue(current.y)); values.Append(item); }
         state.SetNamedValue(L"points",values); changed(state); if (sync_fields) sync_fields(); InvalidateRect(window,nullptr,FALSE);
     }
@@ -441,10 +522,14 @@ struct Canvas {
         if (message == WM_ERASEBKGND) return TRUE;
         if (message == WM_LBUTTONDOWN && self->changed && IsWindowEnabled(window)) {
             POINT at=self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)});
+            if(self->type=="rigid_angle"&&self->rigid_mode!="view"){self->rigid_dragging=true;self->rigid_previous=at;SetCapture(window);return 0;}
+            auto nearest=static_cast<double>(self->px(32));
             for (std::size_t index = 0; index < self->points.size(); ++index) {
                 const auto point = self->project(self->points[index].x,self->points[index].y);
-                if (self->points[index].draggable && std::hypot(static_cast<double>(point.x - at.x),static_cast<double>(point.y - at.y)) < self->px(18)) { self->dragging = index; SetCapture(window); break; }
+                const auto distance=std::hypot(static_cast<double>(point.x-at.x),static_cast<double>(point.y-at.y));
+                if(self->points[index].draggable&&distance<=nearest){self->dragging=index;nearest=distance;}
             }
+            if(self->dragging)SetCapture(window);
             if (self->type == "number_line") {self->number_line_click=JsonObject::Parse(self->state.Stringify());self->number_line_click_start={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window); self->pointer(at); }
             else if(!self->dragging&&self->zoom>1){self->panning=true;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(window);}return 0;
         }
@@ -453,8 +538,8 @@ struct Canvas {
             if(self->number_line_click&&(std::abs(GET_X_LPARAM(lparam)-self->number_line_click_start.x)>GetSystemMetrics(SM_CXDRAG)/2||std::abs(GET_Y_LPARAM(lparam)-self->number_line_click_start.y)>GetSystemMetrics(SM_CYDRAG)/2))self->number_line_click.reset();
             if(self->panning){self->pan_x+=GET_X_LPARAM(lparam)-self->pan_last.x;self->pan_y+=GET_Y_LPARAM(lparam)-self->pan_last.y;self->pan_last={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};self->clamp_pan();InvalidateRect(window,nullptr,FALSE);}
             else self->pointer(self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));return 0; }
-        if (message == WM_LBUTTONUP && GetCapture() == window) { if(!self->panning)self->pointer(self->content_point({GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}));self->panning=false;self->dragging.reset(); ReleaseCapture(); return 0; }
-        if(message==WM_CAPTURECHANGED){self->panning=false;self->dragging.reset();return 0;}
+        if (message == WM_LBUTTONUP && GetCapture() == window) {self->rigid_dragging=false;self->panning=false;self->dragging.reset();ReleaseCapture();return 0;}
+        if(message==WM_CAPTURECHANGED){self->rigid_dragging=false;self->panning=false;self->dragging.reset();return 0;}
         if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(window),message,wparam,lparam);
         return DefWindowProcW(window,message,wparam,lparam);
     }
@@ -462,20 +547,28 @@ struct Canvas {
 }
 
 struct MathPuzzleView::Impl {
-    struct Cell { HWND window; int width = 0; bool text = false; };
+    struct Cell { HWND window; int width = 0; bool text = false;int inset_x=0,inset_y=0; };
     struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; int indent=0; };
+    struct Content {HWND window=nullptr;std::vector<Row> rows;bool horizontal=false,natural_columns=false;int padding_x=0,padding_y=0,gap=0,minimum_column=0,scroll=0,extent=0;POINT drag_origin{};int drag_scroll=0;bool dragging=false,moved=false;};
     HWND host = nullptr,parent = nullptr;
     std::string locale; JsonObject block,answers,initial;
     MathPuzzleCallbacks callbacks;
     HMODULE rich = nullptr; HFONT font = nullptr,base_font = nullptr;
     Microsoft::WRL::ComPtr<IAccPropServices> accessibility;
     std::vector<Row> rows; std::vector<MathReadingRegion> regions; std::vector<std::unique_ptr<Canvas>> canvases;
+    std::map<HWND,std::unique_ptr<Content>> contents;
+    std::map<HWND,HWND> card_children;
+    std::map<HWND,int> requested_widths;
+    std::map<HWND,int> intrinsic_widths;
+    std::map<std::pair<std::string,std::string>,std::vector<NativeMathFragment>> typeset_fragments;
+    std::map<HWND,std::pair<std::string,RichTextRole>> label_formats;
     std::map<int,std::function<void(int)>> commands;
     std::map<HWND,std::pair<std::string,std::string>> editors;
     struct ExpressionBinding {HWND window=nullptr;std::string id,field;};
     std::vector<std::unique_ptr<ExpressionBinding>> expression_editors;
     std::map<HWND,std::string> keyboard_contexts;
     std::map<HWND,HWND> calculator_buttons;
+    std::map<HWND,bool> input_disabled_readonly;
     std::map<std::string,std::vector<std::string>> orders;
     std::map<std::string,std::vector<std::size_t>> order_rows;
     std::map<HWND,std::pair<std::string,std::string>> order_cards;
@@ -494,6 +587,7 @@ struct MathPuzzleView::Impl {
         std::map<std::string,Row> source_rows,target_rows;
     };
     std::map<std::string,MatchLayout> matching_layouts;
+    std::map<HWND,HWND> matching_empty_labels;
     HWND expand_button = nullptr,reset_button = nullptr;
     std::map<std::string,std::vector<Canvas*>> live_visuals;
     std::map<Canvas*,std::vector<std::pair<HWND,HWND>>> graph_fields;
@@ -524,11 +618,26 @@ struct MathPuzzleView::Impl {
         if (_wcsicmp(name,MSFTEDIT_CLASS)==0) SendMessageW(item,EM_SETZOOM,text_scale,100);
         return item;
     }
-    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true) {
+    HWND label(std::string value,std::string key = {},RichTextRole role = RichTextRole::body,bool passive = true,std::string_view math_mode="auto") {
         const auto item = make(MSFTEDIT_CLASS,"",ES_MULTILINE | ES_READONLY);
+        if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,RGB(235,239,245));
         set_rich_text(item,value,{},false,role); regions.push_back({key.empty() ? "text/" + std::to_string(regions.size()) : std::move(key),std::move(value),item});
         const auto& original = regions.back().source_text;
-        if (original.find("\\(") != original.npos || original.find("\\[") != original.npos) set_native_math_inline_text(item,original,{},role);
+        label_formats[item]={std::string(math_mode),role};
+        if(math_mode=="inline"||math_mode=="block")set_native_math_text(item,original);
+        else if(math_mode!="text"&&callbacks.expression_request){
+            const auto fragment_key=std::pair{original,std::string(math_mode)};auto found=typeset_fragments.find(fragment_key);
+            if(found==typeset_fragments.end()){JsonObject request;request.SetNamedValue(L"action",string_value("text_layout"));request.SetNamedValue(L"text",string_value(original));request.SetNamedValue(L"mode",string_value(math_mode));
+                const auto reply=JsonObject::Parse(wide(callbacks.expression_request(stringify(request))));if(!reply.HasKey(L"fragments"))throw std::runtime_error(text(reply,L"error","The original mathematical text renderer returned no source ranges"));
+                std::vector<NativeMathFragment> fragments;for(const auto& fragment_value:array(reply,L"fragments")){const auto fragment=fragment_value.GetObject();const auto start=number(fragment,L"start",-1),end=number(fragment,L"end",-1);if(start<0||end<=start||std::floor(start)!=start||std::floor(end)!=end||end>wide(original).size())throw std::runtime_error("The original mathematical text renderer returned an invalid source range");fragments.push_back({static_cast<std::size_t>(start),static_cast<std::size_t>(end),text(fragment,L"formula"),flag(fragment,L"literal")});}
+                found=typeset_fragments.emplace(fragment_key,std::move(fragments)).first;
+            }
+            set_native_math_fragments(item,original,found->second,role);
+        }else if(math_mode!="text"&&(original.find("\\(")!=original.npos||original.find("\\[")!=original.npos))set_native_math_inline_text(item,original,{},role);
+        // MathWidgetUi.text uses normal platform line spacing, including
+        // instructions, labels and tables; lesson prose uses a separate role.
+        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
+        SendMessageW(item,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
         SetWindowSubclass(item,text_wheel_proc,14,passive?reinterpret_cast<DWORD_PTR>(&callbacks):0);
         return item;
@@ -574,12 +683,21 @@ struct MathPuzzleView::Impl {
         if(!item)throw std::runtime_error("Cannot create the permitted mathematical calculator action");
         reader_theme::apply(item,reader_theme::Surface::field);reader_theme::icon_button(item);calculator_buttons[field]=item;layout_calculator(field);
     }
+    void input_ink(HWND item,COLORREF color=RGB(235,239,245)){
+        if(!reader_theme::palette(item).high_contrast)reader_theme::set_text_color(item,color);
+        // A RichEdit document owns its insertion color independently from its
+        // parent's WM_CTLCOLOREDIT DC. Set both restored text and future keys.
+        CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_COLOR;format.crTextColor=reader_theme::foreground(item);
+        SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));SendMessageW(item,EM_SETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
+    }
     HWND input(const std::string& id,const std::string& field,JsonObject current,std::string hint = {},const JsonObject& config={},const JsonObject& validator={},std::string_view mode="NUMERIC") {
         const auto item = make(MSFTEDIT_CLASS,"",WS_TABSTOP | ES_AUTOHSCROLL);
         reader_theme::apply(item,reader_theme::Surface::field);
         const auto values = field.empty() ? current : object(current,L"values");
         set_edit_text(item,text(values,field.empty() ? L"value" : winrt::to_hstring(field).c_str()));
-        if (!hint.empty()) SendMessageW(item,EM_SETCUEBANNER,FALSE,reinterpret_cast<LPARAM>(wide(hint).c_str()));
+        input_ink(item);
+        if(hint.empty())hint=tr("Respuesta","Answer","Réponse");
+        set_edit_hint(item,hint);
         SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE);
         editors[item] = {id,field};keyboard_context(item,config,validator,false,mode);SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this));calculator(item,config);return item;
     }
@@ -601,6 +719,7 @@ struct MathPuzzleView::Impl {
         if(!callbacks.expression_request)throw std::runtime_error("The structured mathematics editor requires its canonical model service");
         auto binding=std::make_unique<ExpressionBinding>();binding->id=id;binding->field=field;auto* identity=binding.get();
         MathExpressionEditorAccess access;access.request=callbacks.expression_request;access.expected_template=text(validator,L"expected");access.language=locale;access.accent_border=true;
+        access.minimum_height=56;access.horizontal_padding=12;access.vertical_padding=10;
         access.changed=[this,identity]{if(initializing||!identity->window)return;capture_expression(*identity);change();if(callbacks.layout_changed)callbacks.layout_changed();};
         access.submit=[this]{submit();};access.focus_changed=[this,identity](bool focused){if(!initializing&&callbacks.expression_focus)callbacks.expression_focus(identity->window,focused);};
         access.cancel=[this]{if(callbacks.back_requested)callbacks.back_requested();};
@@ -612,11 +731,60 @@ struct MathPuzzleView::Impl {
             DestroyWindow(item);throw std::runtime_error("Cannot restore the existing structured mathematics response");}
         keyboard_context(item,config,validator,true,"ALGEBRA");expression_editors.push_back(std::move(binding));return item;
     }
+    template<class F>void visit_cells(const std::vector<Row>& source,const F& visit){
+        for(const auto& row:source)for(const auto& cell:row.cells){visit(cell);if(const auto at=contents.find(cell.window);at!=contents.end())visit_cells(at->second->rows,visit);}
+    }
+    HWND group_content(std::size_t first,bool horizontal=false,bool natural_columns=false,int padding_x=0,int padding_y=0,int gap=0,int minimum_column=0){
+        auto content=std::make_unique<Content>();content->horizontal=horizontal;content->natural_columns=natural_columns;content->padding_x=padding_x;content->padding_y=padding_y;content->gap=gap;content->minimum_column=minimum_column;
+        content->rows.assign(std::make_move_iterator(rows.begin()+static_cast<std::ptrdiff_t>(first)),std::make_move_iterator(rows.end()));rows.erase(rows.begin()+static_cast<std::ptrdiff_t>(first),rows.end());
+        content->window=CreateWindowExW(WS_EX_CONTROLPARENT,content_class,L"",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|(horizontal?WS_TABSTOP:0),0,0,1,1,host,reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),this);
+        if(!content->window)throw std::runtime_error("Cannot create the original mathematical content container");
+        reader_theme::apply(content->window,reader_theme::Surface::card);
+        for(const auto& row:content->rows)for(const auto& cell:row.cells){SetParent(cell.window,content->window);if(horizontal)SetWindowSubclass(cell.window,scroll_child_proc,19,reinterpret_cast<DWORD_PTR>(this));}
+        const auto result=content->window;contents.emplace(result,std::move(content));rows.push_back({{{result}},0});return result;
+    }
+    void bind_card_children(HWND card){
+        const auto found=contents.find(card);if(found==contents.end())return;
+        visit_cells(found->second->rows,[&](const Cell& cell){wchar_t type[40]{};GetClassNameW(cell.window,type,40);if(_wcsicmp(type,L"BUTTON")==0)return;card_children[cell.window]=card;SetWindowSubclass(cell.window,card_child_proc,18,reinterpret_cast<DWORD_PTR>(this));});
+    }
+    int intrinsic_text_width(HWND item){
+        if(const auto at=intrinsic_widths.find(item);at!=intrinsic_widths.end())return at->second;
+        // These labels start life at1px. Disabling wrapping alone does not
+        // expand RichEdit's initial formatting rectangle. Give its real text
+        // engine an unbounded measurement surface before reading glyph edges.
+        SendMessageW(item,EM_SETOPTIONS,ECOOP_OR,ECO_AUTOHSCROLL);SendMessageW(item,EM_SETTARGETDEVICE,0,1);
+        const auto source=wide(edit_text(item));const auto dc=GetDC(item);const auto old=SelectObject(dc,font);SIZE extent{};TEXTMETRICW metrics{};GetTextMetricsW(dc,&metrics);GetTextExtentPoint32W(dc,source.c_str(),static_cast<int>(source.size()),&extent);SelectObject(dc,old);ReleaseDC(item,dc);
+        const auto measure_width=std::max<LONG>(px(256),extent.cx*2+metrics.tmHeight*2);RECT previous{};GetClientRect(item,&previous);
+        SetWindowPos(item,nullptr,0,0,measure_width,std::max<LONG>(px(48),previous.bottom),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW|SWP_NOCOPYBITS);
+        RECT measuring{0,0,measure_width,std::max<LONG>(px(48),previous.bottom)};SendMessageW(item,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&measuring));SendMessageW(item,EM_REQUESTRESIZE,0,0);
+        GETTEXTLENGTHEX length{GTL_NUMCHARS,1200};const auto count=SendMessageW(item,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&length),0);
+        POINT scroll{};SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));RECT format{};SendMessageW(item,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));int width=0;
+        // EN_REQUESTRESIZE reports the control's current formatting width.
+        // Native character edges retain the real unwrapped/TOM math advance,
+        // including fractions, styled glyphs and the selected text scale.
+        for(LRESULT at=0;at<=count;++at){POINT edge{};SendMessageW(item,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&edge),at);width=std::max(width,static_cast<int>(edge.x+scroll.x-format.left));}
+        intrinsic_widths[item]=width;return width;
+    }
+    int content_layout(Content& content,int width,bool move){
+        if(content.natural_columns){std::vector<int> columns;
+            for(const auto& row:content.rows){if(columns.size()<row.cells.size())columns.resize(row.cells.size(),px(content.minimum_column));
+                for(std::size_t index=0;index<row.cells.size();++index){const auto& cell=row.cells[index];if(cell.text){SendMessageW(cell.window,EM_SETTARGETDEVICE,0,1);SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);}
+                    const auto preferred=cell.text?intrinsic_text_width(cell.window)+px(12):cell.width?px(cell.width):px(content.minimum_column);
+                    columns[index]=std::max(columns[index],preferred);}}
+            for(auto& row:content.rows)for(std::size_t index=0;index<row.cells.size();++index)row.cells[index].width=MulDiv(columns[index],96,static_cast<int>(GetDpiForWindow(host)));
+        }
+        int extent=width;for(const auto& row:content.rows){int natural=px(content.padding_x*2+row.indent+content.gap*std::max(0,static_cast<int>(row.cells.size())-1));for(const auto& cell:row.cells)natural+=px(cell.width);extent=std::max(extent,natural);}
+        content.extent=extent;content.scroll=std::clamp(content.scroll,0,std::max(0,extent-width));
+        const auto height=arrange_rows(content.rows,content.window,extent,move,content.padding_x,content.padding_y,content.gap,-content.scroll);
+        if(move){SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,extent-1),static_cast<UINT>(std::max(1,width)),content.scroll};SetScrollInfo(content.window,SB_HORZ,&info,TRUE);ShowScrollBar(content.window,SB_HORZ,content.horizontal&&extent>width);reader_theme::refresh_scrollbars(content.window);}
+        return height+(content.horizontal&&extent>width?GetSystemMetricsForDpi(SM_CYHSCROLL,GetDpiForWindow(content.window)):0);
+    }
     void canvas(const JsonObject& config,std::string type,JsonObject state = {},std::function<void(JsonObject)> changed = {},std::string live_id = {}) {
-        auto plot = std::make_unique<Canvas>(); plot->config = config; plot->type = std::move(type); plot->state = state; plot->changed = std::move(changed);plot->locale=locale;
+        auto plot = std::make_unique<Canvas>(); plot->config = config; plot->type = std::move(type); plot->state = state; plot->changed = std::move(changed);plot->locale=locale;plot->layout_request=callbacks.expression_request;
         plot->window = CreateWindowExW(0,canvas_class,L"",WS_CHILD | WS_VISIBLE | (plot->changed ? WS_TABSTOP : 0),0,0,1,1,host,
             reinterpret_cast<HMENU>(static_cast<INT_PTR>(next_id++)),GetModuleHandleW(nullptr),plot.get());
         if (!plot->window) throw std::runtime_error("Cannot create a mathematics canvas");
+        if(!text(config,L"description").empty())SetWindowTextW(plot->window,wide(text(config,L"description")).c_str());
         plot->initialize(); plot->scale_text(text_scale);
         const auto spacer=make(L"STATIC","");plot->expand_button=button(tr("Ampliar representación","Expand representation","Agrandir la représentation"),[visual=plot.get()]{visual->expand();});reader_theme::icon_button(plot->expand_button);
         rows.push_back({{{spacer},{plot->expand_button,48}},48,0});
@@ -626,25 +794,50 @@ struct MathPuzzleView::Impl {
     void representation(const JsonObject& spec) {
         const auto config = spec.HasKey(L"config") ? object(spec,L"config") : spec;
         const auto type = text(spec,L"type","text");
+        const auto previous_canvases=canvases.size();
         if (type == "text" || type == "math_formula") {
             const auto source = text(config,L"latex",text(config,L"text",text(config,L"formula",text(config,L"value"))));
-            if (!source.empty()) { const auto item = label(source); if (type == "math_formula") set_native_math_text(item,source);
-                rows.push_back({{{item,0,true}},type == "math_formula" ? 56 : 26}); }
+            if(!source.empty()){const bool formula=type=="math_formula",inline_formula=formula&&text(config,L"display","block")=="inline";const auto first=rows.size();
+                const auto item=label(source,{},RichTextRole::body,true,formula?(inline_formula?"inline":"block"):text(config,L"mathMode","auto"));
+                if(inline_formula){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=240;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
+                rows.push_back({{{item,0,true,formula&&!inline_formula?0:6,formula&&!inline_formula?0:6}},0,0});if(formula&&!inline_formula)group_content(first,true,true,6,6);}
         }
         else if (type == "math_table") {
-            const auto add = [&](const JsonArray& values) { Row row; for (const auto& value : values) {
+            const auto first=rows.size();const auto add = [&](const JsonArray& values,bool header=false) { Row row;row.height=0;row.gap_after=2;for (const auto& value : values) {
                 const auto visible = value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value);
-                row.cells.push_back({label(visible),0,true}); } if (!row.cells.empty()) rows.push_back(std::move(row)); };
-            const auto headers = array(config,L"headers"); if (headers.Size()) add(headers);
+                const auto item=label(visible,{},header?RichTextRole::prompt:RichTextRole::body);reader_theme::apply(item,header?reader_theme::Surface::card_header:reader_theme::Surface::card);if(header){CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(item,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));}
+                row.cells.push_back({item,0,true,6,6}); } if (!row.cells.empty()) rows.push_back(std::move(row)); };
+            const auto headers = array(config,L"headers"); if (headers.Size()) add(headers,true);
             for (const auto& value : array(config,L"rows")) if (value.ValueType() == JsonValueType::Array) add(value.GetArray());
-        } else if (type == "rich_answer_option") { for (const auto& value : array(config,L"content")) representation(value.GetObject()); }
-        else { canvas(config,type); add_text(text(config,L"description")); }
+            if(rows.size()>first)group_content(first,true,true,1,1,2,70);
+        } else if (type == "rich_answer_option") { for (const auto& value : array(config,L"content")) {if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value));} }
+        else if(type=="geometry_2d_diagram"&&config.HasKey(L"points")){auto graph=JsonObject::Parse(config.Stringify());if(!graph.HasKey(L"mode"))graph.SetNamedValue(L"mode",string_value("polygon"));canvas(graph,"math_coordinate_graph");}
+        else {canvas(config,type);
+            if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="math_number_line"){
+                const auto target=canvases.back()->window;const auto key="representation/"+std::to_string(canvases.size());
+                if(!text(config,L"label").empty())regions.push_back({key+"/label",text(config,L"label"),target});
+                if(!text(config,L"description").empty())regions.push_back({key+"/description",text(config,L"description"),target});
+            }
+        }
+        if(canvases.size()>previous_canvases&&(type=="geometry_2d_diagram"||type=="geometry_3d_diagram"||type=="venn_diagram")){
+            const auto target=canvases.back()->window;const auto key="representation/"+std::to_string(canvases.size());
+            const auto spoken=[&](const std::string& value,std::string suffix){if(!value.empty())regions.push_back({key+"/"+suffix,value,target});};
+            if(type=="venn_diagram")for(const auto name:{L"universeLabel",L"leftLabel",L"leftOnly",L"intersection",L"rightLabel",L"rightOnly",L"outside"})spoken(text(config,name),utf8(name));
+            else{spoken(text(config,L"label"),"label");const auto labels=array(config,L"labels");for(unsigned index=0;index<std::min(3u,labels.Size());++index)if(labels.GetAt(index).ValueType()==JsonValueType::String)spoken(winrt::to_string(labels.GetStringAt(index)),"label/"+std::to_string(index));}
+        }
     }
     void option_content(const JsonObject& option) {
         const auto content=array(option,L"content");
-        if(content.Size())for(const auto& value:content)representation(value.GetObject());
-        else if(!visible_label(option).empty())add_text(visible_label(option));
+        if(content.Size())for(const auto& value:content){if(value.ValueType()==JsonValueType::Object)representation(value.GetObject());else add_text(value.ValueType()==JsonValueType::String?winrt::to_string(value.GetString()):stringify(value));}
+        else add_text(visible_label(option).empty()?text(option,L"id"):visible_label(option));
         add_text(text(option,L"explanation"));
+    }
+    HWND rich_card(const JsonObject& item,const std::string& key,int padding_x,bool target=false){
+        const auto first=rows.size();option_content(item);HWND unassigned=nullptr;
+        if(target){unassigned=label(tr("Sin asignar","Unassigned","Non attribué"));regions.pop_back();reader_theme::set_text_color(unassigned,reader_theme::palette(host).muted);rows.push_back({{{unassigned,0,true}},0,0});}
+        if(rows.size()==first)rows.push_back({{},48});const auto card=group_content(first,false,false,padding_x,6);
+        unsigned readable=0;visit_cells(contents.at(card)->rows,[&](const Cell& cell){for(auto& region:regions)if(region.target==cell.window)region.key=key+(readable++?"/content/"+std::to_string(readable-1):"");});
+        if(unassigned)matching_empty_labels[card]=unassigned;bind_card_children(card);return card;
     }
     void choose(const std::string& id,const std::string& selected,bool multiple,bool card_tap=false) {
         if(!cards_enabled)return;
@@ -700,19 +893,20 @@ struct MathPuzzleView::Impl {
             if (notification != BN_CLICKED) return;
             struct Popup { HMENU handle = CreatePopupMenu(); ~Popup() { if (handle) DestroyMenu(handle); } } menu;
             if (!menu.handle) throw std::runtime_error("Cannot create the native mathematical choice menu");
+            AppendMenuW(menu.handle,MF_STRING,1,wide(tr("Seleccionar…","Select…","Sélectionner…")).c_str());
             for (std::uint32_t index = 0; index < choices.Size(); ++index) {
                 auto label = wide(visible_label(choices.GetObjectAt(index)));
                 for (std::size_t position = 0; (position = label.find(L'&',position)) != label.npos; position += 2) label.insert(position,1,L'&');
-                AppendMenuW(menu.handle,MF_STRING,index + 1,label.c_str());
+                AppendMenuW(menu.handle,MF_STRING,index + 2,label.c_str());
             }
             const auto style = prepare_native_menu(menu.handle,host);
             RECT rect{}; GetWindowRect(item,&rect);
             const auto selected = TrackPopupMenuEx(menu.handle,TPM_RETURNCMD | TPM_LEFTALIGN,rect.left,rect.bottom,host,nullptr);
-            if (selected <= 0 || static_cast<std::uint32_t>(selected) > choices.Size()) return;
-            const auto option = choices.GetObjectAt(selected - 1); auto value = object(answers,winrt::to_hstring(id).c_str());
+            if (selected <= 0 || static_cast<std::uint32_t>(selected) > choices.Size()+1) return;
+            const auto option=selected==1?JsonObject{}:choices.GetObjectAt(selected-2);auto value = object(answers,winrt::to_hstring(id).c_str());
             auto pairs = object(value,matching ? L"pairs" : L"values"); pairs.SetNamedValue(winrt::to_hstring(field),string_value(text(option,L"id")));
             value.SetNamedValue(matching ? L"pairs" : L"values",pairs); answers.SetNamedValue(winrt::to_hstring(id),value);
-            SetWindowTextW(item,wide(visible_label(option)).c_str()); change();
+            SetWindowTextW(item,wide(selected==1?tr("Seleccionar…","Select…","Sélectionner…"):visible_label(option)).c_str()); change();
         }; return item;
     }
     void reorder(const std::string& id,std::size_t from,std::size_t to) {
@@ -746,7 +940,9 @@ struct MathPuzzleView::Impl {
         rows[position++]=layout.available_heading;
         for(const auto& source:layout.sources)if(!pairs.HasKey(winrt::to_hstring(source)))rows[position++]=layout.source_rows.at(source);
         rows[position++]=layout.target_heading;
-        for(const auto& target:layout.targets){rows[position++]=layout.target_rows.at(target);
+        for(const auto& target:layout.targets){const auto& target_row=layout.target_rows.at(target);rows[position++]=target_row;
+            bool assigned=false;for(const auto& source:layout.sources)assigned=assigned||text(pairs,winrt::to_hstring(source).c_str())==target;
+            if(!target_row.cells.empty())if(const auto empty=matching_empty_labels.find(target_row.cells.front().window);empty!=matching_empty_labels.end())ShowWindow(empty->second,assigned?SW_HIDE:SW_SHOW);
             for(const auto& source:layout.sources)if(text(pairs,winrt::to_hstring(source).c_str())==target)rows[position++]=layout.source_rows.at(source);}
         arrange(current_width);if(!initializing&&callbacks.layout_changed)callbacks.layout_changed();
     }
@@ -764,6 +960,8 @@ struct MathPuzzleView::Impl {
             else if(type=="math_matching_drag")heading=tr("Arrastra una ficha a su destino, o toca primero la ficha y después el destino. Toca un destino sin ficha seleccionada para vaciarlo.","Drag a tile to its target, or tap the tile and then the target. Tap a target with no tile selected to clear it.","Faites glisser une fiche vers sa destination, ou touchez la fiche puis la destination. Touchez une destination sans fiche sélectionnée pour la vider.");
         }
         add_text(heading,id+"/label");
+        const bool text_unit=(type=="math_numeric_input"||type=="math_expression_input")&&!array(spec,L"fields").Size();
+        if(text_unit&&!text(spec,L"unit").empty())add_text(tr("Unidad: ","Unit: ","Unité : ")+text(spec,L"unit"),id+"/unit");
         if (type == "math_multiple_choice_single" || type == "math_multiple_choice_multi") {
             const bool multiple = type == "math_multiple_choice_multi"; auto current = response(id,"choice"); const auto selected = array(current,L"selected");
             for (const auto& value : array(spec,L"options")) {
@@ -783,7 +981,7 @@ struct MathPuzzleView::Impl {
                 // further formulas/tables/graphs keep that same content inset.
                 for(auto at=first+1;at<rows.size();++at)rows[at].indent=56;
                 unsigned readable=0;
-                for(auto at=first;at<rows.size();++at)for(const auto& cell:rows[at].cells){
+                const std::vector<Row> body(rows.begin()+static_cast<std::ptrdiff_t>(first),rows.end());visit_cells(body,[&](const Cell& cell){
                     choice_cards[toggle].push_back(cell.window);
                     if(cell.text){
                         // MathWidgetUi.text uses the platform's normal line
@@ -794,13 +992,13 @@ struct MathPuzzleView::Impl {
                         for(auto& region:regions)if(region.target==cell.window){region.key=id+"/option/"+option_id+(readable?"/content/"+std::to_string(readable):"");break;}++readable;
                         choice_labels[cell.window]=toggle;SetWindowSubclass(cell.window,choice_proc,15,reinterpret_cast<DWORD_PTR>(this));
                     }
-                }
+                });
             }
         } else if (type == "math_numeric_input" || type == "math_expression_input") {
             if (array(spec,L"fields").Size()) fields(spec,id);
             else { const auto current = response(id,"text");
                 if(type=="math_expression_input"&&text(spec,L"inputMode","simple")=="structured")rows.push_back({{{expression_input(id,"",current,spec,object(spec,L"validator"))}},44});
-                else rows.push_back({{{input(id,"",current,text(spec,L"hint"),spec,object(spec,L"validator"),type=="math_expression_input"?"ALGEBRA":"NUMERIC")}},42}); }
+                else rows.push_back({{{input(id,"",current,text(spec,L"hint"),spec,object(spec,L"validator"),type=="math_expression_input"?"ALGEBRA":"NUMERIC"),0,false,12,8}},48}); }
         } else if (type == "math_multi_input" || type == "math_structured_answer" || type == "math_equation_fill_blanks") fields(spec,id);
         else if (type == "math_matching_drag") {
             (void)response(id,"matching"); const auto sources = array(spec,L"sources"),targets = array(spec,L"targets");
@@ -815,10 +1013,9 @@ struct MathPuzzleView::Impl {
                 (source?layout.available_heading:layout.target_heading)=rows.back();
                 for(const auto& value:(source?sources:targets)) {
                     const auto item=value.GetObject();const auto key=text(item,L"id");
-                    auto visible = visible_label(item); if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
-                    const auto card = label(visible,id + (source ? "/source/" : "/target/") + key,RichTextRole::body,false);
+                    const auto card=rich_card(item,id+(source?"/source/":"/target/")+key,12,!source);SetWindowTextW(card,wide(visible_label(item)).c_str());
                     match_cards[card] = {id,key,source}; SetWindowSubclass(card,match_proc,13,reinterpret_cast<DWORD_PTR>(this));
-                    rows.push_back({{{card,0,true}},48});
+                    rows.back().height=48;
                     (source?layout.sources:layout.targets).push_back(key);(source?layout.source_rows:layout.target_rows)[key]=rows.back();
                 }
             }
@@ -832,11 +1029,27 @@ struct MathPuzzleView::Impl {
             JsonArray initial_ids; for (const auto& key : ids) initial_ids.Append(string_value(key)); current.SetNamedValue(L"ids",initial_ids); answers.SetNamedValue(winrt::to_hstring(id),current);
             next_tap_positions[id]=static_cast<std::size_t>(std::clamp(number(object(current,L"interactionDraft"),L"nextTapPosition"),0.,static_cast<double>(ids.size())));
             for (const auto& key : ids) {
-                const auto item = cards.at(key); auto visible = visible_label(item);
-                if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
-                const auto card = label(visible,id + "/item/" + key,RichTextRole::body,false); order_cards[card] = {id,key}; SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
-                order_rows[id].push_back(rows.size()); rows.push_back({{{card,0,true}},48});
+                const auto& item=cards.at(key);const auto card=rich_card(item,id+"/item/"+key,10);SetWindowTextW(card,wide(visible_label(item)).c_str());order_cards[card]={id,key};SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
+                rows.back().height=48;order_rows[id].push_back(rows.size()-1);
             }
+        } else if(type=="math_rigid_angle_copy"){
+            const auto config=object(spec,L"validator");auto current=response(id,"rigid_angle");
+            if(!current.HasKey(L"x")){current=JsonObject::Parse(object(config,L"initial").Stringify());current.SetNamedValue(L"type",string_value("rigid_angle"));answers.SetNamedValue(winrt::to_hstring(id),current);}
+            add_text(tr("Mueve la copia completa y gírala alrededor de su vértice. El modo Vista y el doble clic desplazan o amplían la vista. La colocación admite una pequeña tolerancia operativa; la copia conserva su forma exacta.","Move the entire copy, then rotate it about its vertex. View mode and double-click move or enlarge the view. Placement allows a small operational tolerance; the copy keeps its exact shape.","Déplacez toute la copie puis tournez-la autour de son sommet. Le mode Vue et le double-clic déplacent ou agrandissent la vue. Le placement admet une petite tolérance opérationnelle ; la copie conserve exactement sa forme."),id+"/help");
+            add_text(tr("Referencia fija: color del curso. Copia móvil: ámbar. La marca curva identifica cada región elegida.","Fixed reference: course colour. Movable copy: amber. The curved mark identifies each chosen region.","Référence fixe : couleur du cours. Copie mobile : ambre. La marque courbe identifie chaque région choisie."),id+"/legend");
+            canvas(config,"rigid_angle",current,[this,id](JsonObject value){answers.SetNamedValue(winrt::to_hstring(id),value);change();},id);auto* plot=canvases.back().get();
+            SetWindowTextW(plot->window,wide(tr("Referencia fija y copia rígida móvil de un ángulo, sin ejes ni coordenadas","Fixed reference and movable rigid angle copy, without axes or coordinates","Référence fixe et copie rigide mobile d’un angle, sans axes ni coordonnées")).c_str());
+            // The original mode/reset controls are part of the expandable
+            // panel, not detached clones with a second answer/history.
+            Row modes; modes.height=48;modes.gap_after=0;
+            const std::vector<std::pair<std::string,std::string>> definitions{{"move",tr("Mover copia","Move copy","Déplacer")},{"rotate",tr("Girar copia","Rotate copy","Tourner")},{"view",tr("Vista","View","Vue")}};
+            for(const auto& [mode,caption]:definitions){const auto control=button(caption,[plot,mode]{plot->rigid_mode=mode;plot->rigid_dragging=false;if(GetCapture()==plot->window)ReleaseCapture();});reader_theme::primary_button(control);modes.cells.push_back({control});plot->auxiliary_controls.push_back(control);}
+            const auto reset=button(tr("Restablecer copia inicial","Restore initial copy","Rétablir la copie initiale"),[this,plot,id,config]{auto value=JsonObject::Parse(object(config,L"initial").Stringify());value.SetNamedValue(L"type",string_value("rigid_angle"));answers.SetNamedValue(winrt::to_hstring(id),value);plot->state=value;plot->drawing_width=plot->drawing_height=0;plot->prepare_drawing();change();});plot->auxiliary_controls.push_back(reset);
+            reader_theme::primary_button(reset);
+            plot->auxiliary_dispatch=[this](UINT message,WPARAM wp,LPARAM lp){return SendMessageW(host,message,wp,lp);};
+            // canvas() appended its expand toolbar and canvas. Insert modes
+            // between those same rows so every action stays above its figure.
+            rows.insert(rows.end()-1,std::move(modes));rows.insert(rows.end()-1,Row{{{reset}},48,0});
         } else if (type == "math_number_line") {
             auto current = response(id,"number_line"); if (!current.HasKey(L"value")&&!current.HasKey(L"interactionDraft")) {
                 current.SetNamedValue(L"value",JsonValue::CreateNumberValue(snapped(number(spec,L"value"),number(spec,L"step",1),number(spec,L"min",-10),number(spec,L"max",10)))); current.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(flag(spec,L"closed",true)));
@@ -847,11 +1060,11 @@ struct MathPuzzleView::Impl {
             canvas(config,"number_line",displayed,[this,id](JsonObject value) { value.Remove(L"interactionDraft");answers.SetNamedValue(winrt::to_hstring(id),value); change(); },id);auto* plot=canvases.back().get();
             add_text(tr("Posición","Position","Position"),id+"/position");
             const auto position=make(MSFTEDIT_CLASS,"",WS_TABSTOP|ES_AUTOHSCROLL);reader_theme::apply(position,reader_theme::Surface::field);
-            set_edit_text(position,text(object(current,L"interactionDraft"),L"position",decimal(number(current,L"value"))));keyboard_context(position,spec,object(spec,L"validator"),false,"NUMERIC");
+            set_edit_text(position,text(object(current,L"interactionDraft"),L"position",decimal(number(current,L"value"))));input_ink(position,RGB(255,255,255));keyboard_context(position,spec,object(spec,L"validator"),false,"NUMERIC");
             SendMessageW(position,EM_SETEVENTMASK,0,ENM_CHANGE);SetWindowSubclass(position,field_proc,11,reinterpret_cast<DWORD_PTR>(this));rows.push_back({{{position}},48});
             const auto update_position=[this,id,position,config](int notification){if(notification!=EN_CHANGE||initializing)return;auto value=response(id,"number_line");const auto input=edit_text(position);JsonObject draft;draft.SetNamedValue(L"position",string_value(input));
                 if(value.HasKey(L"value"))draft.SetNamedValue(L"lastValidValue",value.GetNamedValue(L"value"));else if(object(value,L"interactionDraft").HasKey(L"lastValidValue"))draft.SetNamedValue(L"lastValidValue",object(value,L"interactionDraft").GetNamedValue(L"lastValidValue"));value.SetNamedValue(L"interactionDraft",draft);
-                try{std::size_t end=0;const auto parsed=std::stod(input,&end);if(end!=input.size()||!std::isfinite(parsed))throw std::invalid_argument("Incomplete position");value.SetNamedValue(L"value",JsonValue::CreateNumberValue(snapped(parsed,number(config,L"step",1),number(config,L"min",-10),number(config,L"max",10))));}catch(const std::exception&){value.Remove(L"value");}
+                if(const auto parsed=coordinate(input))value.SetNamedValue(L"value",JsonValue::CreateNumberValue(snapped(*parsed,number(config,L"step",1),number(config,L"min",-10),number(config,L"max",10))));else value.Remove(L"value");
                 answers.SetNamedValue(winrt::to_hstring(id),value);change();};commands[GetDlgCtrlID(position)]=update_position;
             const auto closed=button(tr("Punto cerrado (incluye el extremo)","Closed point (includes the endpoint)","Point fermé (extrémité incluse)"),[this,id]{auto value=response(id,"number_line");value.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(!flag(value,L"closed")));answers.SetNamedValue(winrt::to_hstring(id),value);change();},BS_AUTOCHECKBOX);
             SendMessageW(closed,BM_SETCHECK,flag(current,L"closed")?BST_CHECKED:BST_UNCHECKED,0);rows.push_back({{{closed}},48});
@@ -904,20 +1117,20 @@ struct MathPuzzleView::Impl {
                 }
                 initializing = previous;save_graph_draft(id,plot);change();
             };
-            add_text(tr("Edita las coordenadas o arrastra los puntos.","Edit the coordinates or drag the points.","Modifiez les coordonnées ou faites glisser les points."),id + "/coordinates-instruction");
+            add_text(tr("Arrastra los puntos o edita sus coordenadas.","Drag the points or edit their coordinates.","Faites glisser les points ou modifiez leurs coordonnées."),id + "/coordinates-instruction");
             for (std::size_t index = 0; index < plot->points.size(); ++index) {
                 const auto editable = plot->points[index].draggable;
                 const auto restored_coordinates=array(object(current,L"interactionDraft"),L"coords");const auto draft=index<restored_coordinates.Size()?restored_coordinates.GetObjectAt(static_cast<unsigned>(index)):JsonObject{};
-                const auto x = make(MSFTEDIT_CLASS,text(draft,L"x",decimal(plot->points[index].x)),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
-                const auto y = make(MSFTEDIT_CLASS,text(draft,L"y",decimal(plot->points[index].y)),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
+                const auto x = make(MSFTEDIT_CLASS,text(draft,L"x",decimal(plot->points[index].x)),WS_TABSTOP | ES_AUTOHSCROLL);
+                const auto y = make(MSFTEDIT_CLASS,text(draft,L"y",decimal(plot->points[index].y)),WS_TABSTOP | ES_AUTOHSCROLL);
                 graph_fields[plot].push_back({x,y});
-                for (const auto item : {x,y}) { reader_theme::apply(item,reader_theme::Surface::field);keyboard_context(item,{}, {},false,"NUMERIC");SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE); SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this)); }
+                for (const auto item : {x,y}) { reader_theme::apply(item,reader_theme::Surface::field);input_ink(item,RGB(255,255,255));keyboard_context(item,{}, {},false,"NUMERIC");SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE); SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this));EnableWindow(item,editable); }
                 const auto sync = [this,id,plot,index,x,y](int notification) {
-                    if (notification != EN_CHANGE || initializing) return;
+                    if (notification != EN_CHANGE || initializing || !cards_enabled || !plot->points[index].draggable) return;
                     save_graph_draft(id,plot);const auto xx=coordinate(edit_text(x)),yy=coordinate(edit_text(y));
                     if(xx&&yy){
-                        auto& point = plot->points[index]; point.x = snapped(*xx,number(plot->config,L"snap",1),plot->xmin,plot->xmax);
-                        point.y = snapped(*yy,number(plot->config,L"snap",1),plot->ymin,plot->ymax);
+                        auto& point = plot->points[index]; point.x = graph_coordinate(*xx,number(plot->config,L"snap",1),plot->xmin,plot->xmax);
+                        point.y = graph_coordinate(*yy,number(plot->config,L"snap",1),plot->ymin,plot->ymax);
                         auto answer_value = response(id,"graph"); JsonArray points;
                         for (const auto& item : plot->points) { JsonObject coordinates; coordinates.SetNamedValue(L"x",JsonValue::CreateNumberValue(item.x)); coordinates.SetNamedValue(L"y",JsonValue::CreateNumberValue(item.y)); points.Append(coordinates); }
                         answer_value.SetNamedValue(L"points",points); answers.SetNamedValue(winrt::to_hstring(id),answer_value); InvalidateRect(plot->window,nullptr,FALSE);
@@ -925,45 +1138,62 @@ struct MathPuzzleView::Impl {
                     change();
                 };
                 commands[GetDlgCtrlID(x)] = sync; commands[GetDlgCtrlID(y)] = sync;
-                rows.push_back({{{label("P" + std::to_string(index + 1)),48,true},{label("x",id + "/x/" + std::to_string(index)),20,true},{x,0},
-                    {label("y",id + "/y/" + std::to_string(index)),20,true},{y,0}},42});
+                const auto prefix=plot->points.size()>1?(index<26?std::string(1,static_cast<char>('A'+index)):"P"+std::to_string(index+1))+": ":std::string{};
+                rows.push_back({{{label(prefix+"x =",id + "/x/" + std::to_string(index)),70,true},{x,0},
+                    {label(" y =",id + "/y/" + std::to_string(index)),40,true},{y,0}},48});
             }
         } else throw std::invalid_argument("Native math control is not yet implemented: " + type);
-        if (!text(spec,L"unit").empty()) add_text(tr("Unidad: ","Unit: ","Unité : ") + text(spec,L"unit"),id + "/unit");
         add_text(text(spec,L"instruction"),id + "/instruction-authored");
     }
     void fields(const JsonObject& spec,const std::string& id) {
         auto current = response(id,"fields"),values = object(current,L"values"); current.SetNamedValue(L"values",values); answers.SetNamedValue(winrt::to_hstring(id),current);
         std::map<std::string,JsonObject> definitions; for (const auto& value : array(spec,L"fields")) definitions[text(value.GetObject(),L"id")] = value.GetObject();
-        std::map<std::string,HWND> created;
+        const bool inline_fields=spec.HasKey(L"segments");std::set<std::string> used;
         const auto field = [&](const std::string& key) -> Cell {
             if (!definitions.contains(key)) throw std::invalid_argument("A displayed math field has no definition");
+            if(!used.insert(key).second)throw std::invalid_argument("A mathematical template repeats the same field");
             const auto config = definitions.at(key); const auto kind = text(config,L"type","numeric");
-            if (kind == "fixed") return {label(text(config,L"text"),id + "/fixed/" + key),0,true};
+            const auto first=rows.size();const auto caption=text(config,L"label");
+            if(!inline_fields)add_text(caption,id+"/field/"+key);
             auto keyboard_config=JsonObject::Parse(config.Stringify());for(const auto property:{L"keyboard",L"keyboardSymbols"})if(!keyboard_config.HasKey(property)&&spec.HasKey(property))keyboard_config.SetNamedValue(property,spec.GetNamedValue(property));
             const auto validator=object(object(object(spec,L"validator"),L"fields"),winrt::to_hstring(key).c_str());
-            if (!created.contains(key)) created[key] = kind == "dropdown" ? dropdown(id,key,array(config,L"options"),current)
-                :kind=="expression"&&text(config,L"inputMode","simple")=="structured"?expression_input(id,key,current,keyboard_config,validator)
-                :input(id,key,current,text(config,L"hint"),keyboard_config,validator,kind=="expression"?"ALGEBRA":"NUMERIC");
-            return {created.at(key),0,false};
+            const bool structured=kind=="expression"&&text(config,L"inputMode","simple")=="structured";
+            const auto control=kind=="fixed"?label(text(config,L"text"),id+"/fixed/"+key):kind=="dropdown"?dropdown(id,key,array(config,L"options"),current)
+                :structured?expression_input(id,key,current,keyboard_config,validator)
+                :input(id,key,current,text(config,L"hint",inline_fields?caption:std::string{}),keyboard_config,validator,kind=="expression"?"ALGEBRA":"NUMERIC");
+            if(accessibility&&!caption.empty())accessibility->SetHwndPropStr(control,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_NAME,wide(caption).c_str());
+            Row control_row;control_row.height=kind=="fixed"?0:48;control_row.gap_after=0;
+            control_row.cells.push_back({control,inline_fields?(kind=="dropdown"?150:100):0,kind=="fixed",kind=="fixed"||structured||kind=="dropdown"?0:12,kind=="fixed"||structured||kind=="dropdown"?0:8});
+            const auto unit=text(config,L"unit");int inline_width=kind=="dropdown"?150:100;
+            if(inline_fields&&!unit.empty()){const auto unit_label=label(unit,id+"/field/"+key+"/unit");const auto unit_width=std::max(1,MulDiv(intrinsic_text_width(unit_label),96,static_cast<int>(GetDpiForWindow(host))));control_row.cells.push_back({unit_label,unit_width,true});inline_width+=unit_width;}
+            rows.push_back(std::move(control_row));if(!inline_fields)add_text(unit,id+"/field/"+key+"/unit");
+            const auto column=group_content(first,false,false,0,0,inline_fields?0:8);
+            rows.pop_back();
+            // Android preserves the semantic hole on its field column without
+            // narrating the editable value, its hint or a selected dropdown.
+            if(inline_fields&&kind!="fixed"&&!caption.empty())regions.push_back({id+"/field/"+key,caption,column});
+            return {column,inline_fields?inline_width:0};
         };
         const auto segments = array(spec,L"segments"); const auto table = array(spec,L"rows");
-        if (segments.Size()) {
+        if (inline_fields) {
+            const auto first=rows.size();
             Row row; for (const auto& value : segments) { const auto segment = value.GetObject();
                 if (segment.HasKey(L"field")) row.cells.push_back(field(text(segment,L"field")));
                 else row.cells.push_back({label(text(segment,L"text")),0,true}); }
-            if (!row.cells.empty()) rows.push_back(std::move(row));
-        } else if (table.Size()) {
-            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row; for (const auto& value : headers) row.cells.push_back({label(winrt::to_string(value.GetString())),0,true}); rows.push_back(std::move(row)); }
+            if (!row.cells.empty()){rows.push_back(std::move(row));group_content(first,true,true,0,0,8);}
+        } else if (text(spec,L"layout")=="table"&&table.Size()) {
+            const auto first=rows.size();
+            const auto headers = array(spec,L"headers"); if (headers.Size()) { Row row; for (const auto& value : headers){const auto heading=label(winrt::to_string(value.GetString()),{},RichTextRole::prompt);CHARFORMAT2W style{};style.cbSize=sizeof(style);style.dwMask=CFM_SIZE;style.yHeight=270;SendMessageW(heading,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&style));row.cells.push_back({heading,150,true});} rows.push_back(std::move(row)); }
             for (const auto& row_value : table) { Row row; for (const auto& value : row_value.GetArray())
-                if (value.ValueType() == JsonValueType::Object) row.cells.push_back(field(text(value.GetObject(),L"field")));
-                else row.cells.push_back({label(value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value)),0,true});
+                if (value.ValueType() == JsonValueType::Object){auto cell=field(text(value.GetObject(),L"field"));cell.width=150;row.cells.push_back(cell);}
+                else row.cells.push_back({label(value.ValueType() == JsonValueType::String ? winrt::to_string(value.GetString()) : stringify(value)),150,true});
                 if (!row.cells.empty()) rows.push_back(std::move(row)); }
-        } else for (const auto& value : array(spec,L"fields")) {
-            const auto config = value.GetObject(); add_text(text(config,L"label"),id + "/field/" + text(config,L"id"));
-            rows.push_back({{field(text(config,L"id"))},42});
-            if (!text(config,L"unit").empty()) add_text(tr("Unidad: ","Unit: ","Unité : ") + text(config,L"unit"));
-        }
+            group_content(first,true,false,0,0,0);
+        } else for (const auto& value : array(spec,L"fields")) rows.push_back({{field(text(value.GetObject(),L"id"))},0});
+        // A partial inline/table template does not hide the remaining authored
+        // fields. Preserve source order and their own labels and units.
+        for(const auto& value:array(spec,L"fields")){const auto config=value.GetObject();const auto key=text(config,L"id");if(used.contains(key))continue;
+            rows.push_back({{field(key)},0});}
     }
     void build() {
         // Match MathPuzzleRenderer's card actions. The lesson owns reset and
@@ -981,24 +1211,26 @@ struct MathPuzzleView::Impl {
         for (const auto& value : array(block,L"responses")) response_controls(value.GetObject());
         initial = JsonObject::Parse(answers.Stringify()); initializing = false;
     }
-    int arrange(int width,bool move = true) {
-        current_width = std::max(px(100),width); const auto gap = px(8); int y = px(8);
+    int arrange_rows(const std::vector<Row>& content_rows,HWND container,int width,bool move,int padding_x=8,int padding_y=8,int spacing=8,int offset_x=0) {
+        width=std::max(1,width);const auto gap=px(spacing);int y=px(padding_y);
         const auto format_coordinate=[](HWND item,int pixel){int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
             return numerator>0&&denominator>0?MulDiv(pixel,denominator,numerator):pixel;};
-        for (const auto& row : rows) {
+        for (const auto& row : content_rows) {
+            if(!row.cells.empty()&&std::ranges::all_of(row.cells,[](const auto& cell){return !(GetWindowLongPtrW(cell.window,GWL_STYLE)&WS_VISIBLE);}))continue;
             int fixed = 0,flex = 0; for (const auto& cell : row.cells) if (cell.width) fixed += px(cell.width); else ++flex;
-            const auto flexible = std::max(px(30),(current_width - px(16) - px(row.indent) - fixed - gap * (static_cast<int>(row.cells.size()) - 1)) / std::max(1,flex));
-            int height = px(row.height),x = px(8+row.indent);
+            const auto flexible = std::max(px(30),(width-px(padding_x*2)-px(row.indent)-fixed-gap*(static_cast<int>(row.cells.size())-1))/std::max(1,flex));
+            int height=px(row.height),x=px(padding_x+row.indent)+offset_x;
+            for(const auto& cell:row.cells)if(const auto found=contents.find(cell.window);found!=contents.end())height=std::max(height,content_layout(*found->second,cell.width?px(cell.width):flexible,move));
             for(const auto& cell:row.cells)if(std::ranges::any_of(expression_editors,[&](const auto& value){return value->window==cell.window;}))height=std::max(height,math_expression_editor_height(cell.window));
             for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end())
-                height=std::max(height,static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio())));
+                height=std::max(height,std::max(px(48),static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio()))-((*canvas)->type=="rigid_angle"?px(96):0)));
             for (const auto& cell : row.cells) if (cell.text || (GetWindowLongPtrW(cell.window,GWL_STYLE) & BS_MULTILINE) || editors.contains(cell.window)) {
                 const auto cell_width = cell.width ? px(cell.width) : flexible;
                 if (cell.text) {
                     SetWindowPos(cell.window,nullptr,0,0,cell_width,std::max(1,height),SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
-                    if(choice_labels.contains(cell.window)){RECT content{0,0,cell_width,std::max(1,height)};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
+                    if(choice_labels.contains(cell.window)||cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),0,cell_width-px(cell.inset_x),std::max(1,height)};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
                     SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);
-                    if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) { height = std::max(height,found->second + px(4)); continue; }
+                    if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) { height = std::max(height,found->second + px(cell.inset_y?cell.inset_y*2:4)); continue; }
                 }
                 const auto dc = GetDC(cell.window); const auto old = SelectObject(dc,font);
                 const auto count = GetWindowTextLengthW(cell.window); std::wstring value(static_cast<std::size_t>(count) + 1,L'\0'); value.resize(GetWindowTextW(cell.window,value.data(),static_cast<int>(value.size())));
@@ -1007,8 +1239,14 @@ struct MathPuzzleView::Impl {
                 height = std::max(height,static_cast<int>(text_rect.bottom) + px(8)); SelectObject(dc,old); ReleaseDC(cell.window,dc);
             }
             if (move) for (const auto& cell : row.cells) { const auto cell_width = cell.width ? px(cell.width) : flexible;
-                if(GetParent(cell.window)==host){
-                    SetWindowPos(cell.window,nullptr,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS);
+                for(const auto& plot:canvases)if(plot->fullscreen&&plot->inline_parent==container){
+                    if(cell.window==plot->window)plot->inline_rectangle={x,y,x+cell_width,y+height};
+                    else if(const auto at=std::ranges::find(plot->auxiliary_controls,cell.window);at!=plot->auxiliary_controls.end()){const auto index=static_cast<std::size_t>(at-plot->auxiliary_controls.begin());if(index<plot->auxiliary_rectangles.size())plot->auxiliary_rectangles[index]={x,y,x+cell_width,y+height};}}
+                if(GetParent(cell.window)==container){
+                    // Reparenting a rich/field column changes native child
+                    // order. Keep dialog navigation in the same visual/source
+                    // order as Android MathInputFocusOrder, without moving focus.
+                    SetWindowPos(cell.window,HWND_BOTTOM,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOCOPYBITS);
                     if(choice_labels.contains(cell.window)){
                         // The native radio centers its glyph in the row, while
                         // RichEdit otherwise anchors text at the top. Center
@@ -1018,16 +1256,30 @@ struct MathPuzzleView::Impl {
                         // RichEdit scales the text origin, while the right and
                         // bottom bounds still clip in client pixels. Convert
                         // the inset alone so zoom cannot cut off the glyphs.
-                        RECT content{0,format_coordinate(cell.window,inset),cell_width,height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
-                    }
+                        RECT content{px(cell.inset_x),format_coordinate(cell.window,inset),cell_width-px(cell.inset_x),height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+                    }else if(cell.inset_x||cell.inset_y){RECT content{px(cell.inset_x),format_coordinate(cell.window,px(cell.inset_y)),cell_width-px(cell.inset_x),height};if(calculator_buttons.contains(cell.window))content.right-=px(32);SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
                 }x += cell_width + gap; }
             y += height + px(row.gap_after);
         }
-        if (move) RedrawWindow(host,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
-        return y;
+        if(move){for(const auto& plot:canvases)if(GetParent(plot->window)==container)plot->prepare_drawing();RedrawWindow(container,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);}
+        return y+(container==host?0:px(padding_y));
     }
+    int arrange(int width,bool move=true){current_width=std::max(px(100),width);return arrange_rows(rows,host,current_width,move);}
     static LRESULT CALLBACK field_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
+        if(message==WM_ENABLE){
+            if(wparam){if(const auto previous=self->input_disabled_readonly.find(item);previous!=self->input_disabled_readonly.end()){SendMessageW(item,EM_SETREADONLY,previous->second,0);self->input_disabled_readonly.erase(previous);}}
+            else if(!reader_theme::palette(item).high_contrast){
+                // EnableWindow has already set the real WS_DISABLED bit.
+                // RichEdit's default FALSE handler forces COLOR_3DFACE over
+                // its explicit background. Retain its native read-only text
+                // services instead, without custom text painting or fake input.
+                self->input_disabled_readonly.try_emplace(item,(GetWindowLongPtrW(item,GWL_STYLE)&ES_READONLY)!=0);
+                SendMessageW(item,EM_SETREADONLY,TRUE,0);SendMessageW(item,EM_SETBKGNDCOLOR,0,reader_theme::background(item));InvalidateRect(item,nullptr,TRUE);return 0;
+            }
+            const auto result=DefSubclassProc(item,message,wparam,lparam);SendMessageW(item,EM_SETBKGNDCOLOR,0,reader_theme::background(item));return result;
+        }
+        if(message==WM_SETFOCUS){const auto result=DefSubclassProc(item,message,wparam,lparam);SendMessageW(item,EM_SETSEL,0,-1);if(!self->initializing&&self->callbacks.expression_focus)self->callbacks.expression_focus(item,true);return result;}
         if(message==WM_SIZE){const auto result=DefSubclassProc(item,message,wparam,lparam);self->layout_calculator(item);return result;}
         if(message==WM_DRAWITEM&&lparam){const auto& drawing=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);if(const auto button=self->calculator_buttons.find(item);button!=self->calculator_buttons.end()&&drawing.hwndItem==button->second){
             (void)reader_theme::draw_button(drawing);auto icon=drawing.rcItem;InflateRect(&icon,-self->px(4),-self->px(4));draw_icon(drawing.hDC,icon,Icon::calculator,IsWindowEnabled(item)?reader_theme::palette(item).accent:reader_theme::palette(item).muted);return TRUE;}}
@@ -1041,7 +1293,7 @@ struct MathPuzzleView::Impl {
         }
         if (message == WM_KEYDOWN && wparam == VK_RETURN) { self->submit(); return 0; }
         if (message == WM_CHAR && (wparam == L'\r' || wparam == L'\n')) return 0;
-        if (message == WM_NCDESTROY) {self->calculator_buttons.erase(item);RemoveWindowSubclass(item,field_proc,11);}
+        if (message == WM_NCDESTROY) {self->calculator_buttons.erase(item);self->input_disabled_readonly.erase(item);RemoveWindowSubclass(item,field_proc,11);}
         return DefSubclassProc(item,message,wparam,lparam);
     }
     static LRESULT CALLBACK choice_button_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value){
@@ -1130,11 +1382,49 @@ struct MathPuzzleView::Impl {
         if (message == WM_NCDESTROY) { if (self->drag.window == item) self->drag = {}; RemoveWindowSubclass(item,match_proc,13); }
         return DefSubclassProc(item,message,wparam,lparam);
     }
+    static LRESULT CALLBACK scroll_child_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value){
+        auto* self=reinterpret_cast<Impl*>(value);const auto parent=GetParent(item);const auto found=self->contents.find(parent);
+        if(message==WM_NCDESTROY){RemoveWindowSubclass(item,scroll_child_proc,19);return DefSubclassProc(item,message,wparam,lparam);}
+        if(found!=self->contents.end()){
+            if(message==WM_MOUSEHWHEEL||(message==WM_MOUSEWHEEL&&(GET_KEYSTATE_WPARAM(wparam)&MK_SHIFT)))return SendMessageW(parent,message,wparam,lparam);
+            RECT area{};GetClientRect(parent,&area);if(message==WM_LBUTTONDOWN&&found->second->horizontal&&found->second->extent>area.right){POINT point{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};MapWindowPoints(item,parent,&point,1);return SendMessageW(parent,message,wparam,MAKELPARAM(point.x,point.y));}
+        }
+        return DefSubclassProc(item,message,wparam,lparam);
+    }
+    static LRESULT CALLBACK card_child_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value){
+        auto* self=reinterpret_cast<Impl*>(value);const auto found=self->card_children.find(item);
+        if(message==WM_NCDESTROY){self->card_children.erase(item);RemoveWindowSubclass(item,card_child_proc,18);return DefSubclassProc(item,message,wparam,lparam);}
+        if(found!=self->card_children.end()&&(message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||message==WM_MOUSEMOVE)){
+            POINT point{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};MapWindowPoints(item,found->second,&point,1);return SendMessageW(found->second,message,wparam,MAKELPARAM(point.x,point.y));}
+        if(found!=self->card_children.end()&&message==WM_MOUSEWHEEL)return SendMessageW(found->second,message,wparam,lparam);
+        return DefSubclassProc(item,message,wparam,lparam);
+    }
+    static LRESULT CALLBACK content_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam){
+        auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(window,GWLP_USERDATA));
+        if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
+        if(!self)return DefWindowProcW(window,message,wparam,lparam);
+        LRESULT themed{};if(reader_theme::control_color(message,wparam,lparam,themed))return themed;
+        if(message==WM_COMMAND||message==WM_NOTIFY||message==WM_DRAWITEM||message==WM_MEASUREITEM||message==WM_MENUCHAR||(message==WM_HSCROLL&&lparam))return SendMessageW(self->host,message,wparam,lparam);
+        if(message==WM_ERASEBKGND){RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::card));return TRUE;}
+        const auto found=self->contents.find(window);if(found!=self->contents.end()){
+            auto& content=*found->second;RECT area{};GetClientRect(window,&area);
+            const auto scroll=[&](int position){content.scroll=std::clamp(position,0,std::max(0,content.extent-static_cast<int>(area.right)));self->content_layout(content,area.right,true);};
+            if(message==WM_HSCROLL){SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(window,SB_HORZ,&info);auto position=content.scroll;switch(LOWORD(wparam)){case SB_LINELEFT:position-=self->px(40);break;case SB_LINERIGHT:position+=self->px(40);break;case SB_PAGELEFT:position-=area.right;break;case SB_PAGERIGHT:position+=area.right;break;case SB_THUMBTRACK:position=info.nTrackPos;break;}scroll(position);return 0;}
+            if(message==WM_MOUSEHWHEEL||(message==WM_MOUSEWHEEL&&(GET_KEYSTATE_WPARAM(wparam)&MK_SHIFT))){scroll(content.scroll+MulDiv(GET_WHEEL_DELTA_WPARAM(wparam),self->px(40),WHEEL_DELTA)*(message==WM_MOUSEHWHEEL?1:-1));return 0;}
+            if(message==WM_LBUTTONDOWN&&content.horizontal&&content.extent>area.right){content.drag_origin={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};content.drag_scroll=content.scroll;content.dragging=true;content.moved=false;SetCapture(window);return 0;}
+            if(message==WM_MOUSEMOVE&&content.dragging&&(wparam&MK_LBUTTON)){const auto delta=content.drag_origin.x-GET_X_LPARAM(lparam);content.moved=content.moved||std::abs(delta)>self->px(6);if(content.moved)scroll(content.drag_scroll+delta);return 0;}
+            if(message==WM_LBUTTONUP&&content.dragging){content.dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;}
+            if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE)content.dragging=false;
+        }
+        if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(window),message,wparam,lparam);
+        return DefWindowProcW(window,message,wparam,lparam);
+    }
     void initialize() {
         WNDCLASSEXW cls{sizeof(cls)}; cls.lpfnWndProc = procedure; cls.hInstance = GetModuleHandleW(nullptr); cls.lpszClassName = view_class; cls.hCursor = LoadCursorW(nullptr,IDC_ARROW);
         if (!RegisterClassExW(&cls) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register native math view");
         cls.lpfnWndProc = Canvas::procedure; cls.lpszClassName = canvas_class;cls.style=CS_DBLCLKS;
         if (!RegisterClassExW(&cls) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register native math canvas");
+        cls.lpfnWndProc=content_proc;cls.lpszClassName=content_class;if(!RegisterClassExW(&cls)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("Cannot register mathematical content containers");
         host = CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"",WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN,0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if (!host) throw std::runtime_error("Cannot create native math view");
         SetWindowSubclass(host,text_wheel_proc,14,reinterpret_cast<DWORD_PTR>(&callbacks));
@@ -1166,16 +1456,16 @@ struct MathPuzzleView::Impl {
             }
             if (message == WM_HSCROLL && lparam) { const auto found = self->commands.find(GetDlgCtrlID(reinterpret_cast<HWND>(lparam))); if (found != self->commands.end()) found->second(0); return 0; }
             if (message == WM_NOTIFY && lparam) { const auto* header = reinterpret_cast<NMHDR*>(lparam);
-                if (header->code == EN_REQUESTRESIZE) { const auto* request = reinterpret_cast<REQRESIZE*>(lparam); self->requested_heights[header->hwndFrom] = static_cast<int>(request->rc.bottom - request->rc.top); } return 0; }
+                if (header->code == EN_REQUESTRESIZE) { const auto* request = reinterpret_cast<REQRESIZE*>(lparam); self->requested_heights[header->hwndFrom] = static_cast<int>(request->rc.bottom - request->rc.top);self->requested_widths[header->hwndFrom]=static_cast<int>(request->rc.right-request->rc.left); } return 0; }
             if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(window),message,wparam,lparam);
         } catch (const std::exception& error) { OutputDebugStringW(wide(error.what()).c_str()); }
         return DefWindowProcW(window,message,wparam,lparam);
     }
     void clear() {
         initializing = true;
-        for(const auto& canvas:canvases)canvas->close_expanded();
+        for(const auto& canvas:canvases)canvas->close_expanded(false);
         for (auto item = GetWindow(host,GW_CHILD); item;) { const auto next = GetWindow(item,GW_HWNDNEXT); DestroyWindow(item); item = next; }
-        canvases.clear(); rows.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
+        canvases.clear();rows.clear();contents.clear();card_children.clear();matching_empty_labels.clear();requested_widths.clear();intrinsic_widths.clear();label_formats.clear();typeset_fragments.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear();input_disabled_readonly.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
     }
 };
 
@@ -1188,10 +1478,13 @@ bool apply_math_calculator_result(HWND field,std::string_view latex){
     if(std::wstring_view(type)==L"LearnGameAndEngineDev.MathExpressionEditor")return set_math_expression_latex(field,latex);
     if(_wcsnicmp(type,L"RichEdit",8)!=0)return false;
     const auto replacement=wide(latex);SendMessageW(field,EM_SETSEL,0,-1);SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(replacement.c_str()));
-    const auto end=GetWindowTextLengthW(field);SendMessageW(field,EM_SETSEL,end,end);SetFocus(field);return true;
+    // Focus follows Android's select-all-on-entry behavior; the calculator's
+    // explicit return caret is applied afterwards, at the end of its result.
+    SetFocus(field);const auto end=GetWindowTextLengthW(field);SendMessageW(field,EM_SETSEL,end,end);return true;
 }
 MathPuzzleView::~MathPuzzleView() { if (impl_) impl_->clear(); }
 HWND MathPuzzleView::window() const { return impl_->host; }
+HWND MathPuzzleView::fullscreen_button() const { return impl_->expand_button; }
 int MathPuzzleView::height_for_width(int width) { return impl_->arrange(width,false); }
 void MathPuzzleView::layout(int x,int y,int width) { const auto height = impl_->arrange(width); MoveWindow(impl_->host,x,y,width,height,TRUE); }
 std::string MathPuzzleView::answers_json() const { impl_->capture_expressions();return stringify(impl_->answers); }
@@ -1212,28 +1505,43 @@ void MathPuzzleView::set_enabled(bool enabled) {
         if (impl_->drag.window && GetCapture() == impl_->drag.window) ReleaseCapture();
         impl_->drag = {}; impl_->selected_sources.clear();
     }
-    for (auto item = GetWindow(impl_->host,GW_CHILD); item; item = GetWindow(item,GW_HWNDNEXT)) {
+    impl_->visit_cells(impl_->rows,[&](const auto& cell){const auto item=cell.window;
         const bool view_control=item==impl_->expand_button||item==impl_->reset_button||std::ranges::any_of(impl_->canvases,[item](const auto& canvas){return canvas->expand_button==item;});
         const bool expression=std::ranges::any_of(impl_->expression_editors,[item](const auto& value){return value->window==item;});
         const bool interactive = impl_->editors.contains(item) || expression || (impl_->commands.contains(GetDlgCtrlID(item))&&!view_control)
             || std::ranges::any_of(impl_->canvases,[item](const auto& canvas) { return canvas->window == item && canvas->changed; });
         if (interactive) EnableWindow(item,enabled);
-    }
+    });
     for(const auto& canvas:impl_->canvases)if(canvas->changed)EnableWindow(canvas->window,enabled);
+    for(const auto& [canvas,fields]:impl_->graph_fields)for(std::size_t index=0;index<fields.size();++index){const auto [x,y]=fields[index];EnableWindow(x,enabled&&canvas->points[index].draggable);EnableWindow(y,enabled&&canvas->points[index].draggable);}
 }
 void MathPuzzleView::set_text_scale(int percentage) {
     percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
     const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
     if(!next)throw std::runtime_error("Cannot scale mathematical text");
-    for(auto item=GetWindow(impl_->host,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT)) {
+    impl_->visit_cells(impl_->rows,[&](const auto& cell){const auto item=cell.window;
         wchar_t name[32]{};GetClassNameW(item,name,32);
         if(_wcsnicmp(name,L"RichEdit",8)==0)SendMessageW(item,EM_SETZOOM,percentage,100);
         else SendMessageW(item,WM_SETFONT,reinterpret_cast<WPARAM>(next),FALSE);
-    }
+    });
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;
     for(const auto& canvas:impl_->canvases)canvas->scale_text(percentage);
-    impl_->requested_heights.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
+    impl_->requested_heights.clear();impl_->requested_widths.clear();impl_->intrinsic_widths.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
+}
+void MathPuzzleView::set_expression_request(std::function<std::string(std::string_view)> request){
+    impl_->callbacks.expression_request=std::move(request);impl_->typeset_fragments.clear();
+    for(const auto& canvas:impl_->canvases)canvas->layout_request=impl_->callbacks.expression_request;
+    if(!impl_->callbacks.expression_request)return;
+    for(const auto& region:impl_->regions){const auto format=impl_->label_formats.find(region.target);if(format==impl_->label_formats.end()||!IsWindow(region.target))continue;
+        CHARRANGE selection{};POINT scroll{};SendMessageW(region.target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        CHARFORMAT2W original{};original.cbSize=sizeof(original);SendMessageW(region.target,EM_SETSEL,0,1);SendMessageW(region.target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&original));
+        (void)set_original_math_text(region.target,region.source_text,format->second.first,impl_->callbacks.expression_request,{},format->second.second);
+        CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=original.yHeight;SendMessageW(region.target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
+        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;SendMessageW(region.target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+        SendMessageW(region.target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(region.target,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+    }
+    impl_->requested_heights.clear();impl_->requested_widths.clear();impl_->intrinsic_widths.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
 }
 void MathPuzzleView::reset() { const auto width = impl_->current_width; impl_->clear(); impl_->answers = JsonObject{}; impl_->build(); impl_->arrange(width); if (impl_->callbacks.layout_changed) impl_->callbacks.layout_changed(); impl_->change(); }
 } // namespace lgaed::presentation

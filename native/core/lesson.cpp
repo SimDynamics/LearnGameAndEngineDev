@@ -263,6 +263,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     token(activity.address.addition_namespace);
     token(std::to_string(activity.address.page)); token(std::to_string(activity.address.block));
     token(activity.initial_code); token(activity.language);
+    // Keep historical single-file identities byte-for-byte compatible. A
+    // project objective additionally owns all authored files and build inputs.
+    if(!activity.project_files.empty()){token("cpp-project-v1");token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));}
     token(activity.output_check->input_comparison == TextComparison::tokens ? "tokens" : "exact");
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {

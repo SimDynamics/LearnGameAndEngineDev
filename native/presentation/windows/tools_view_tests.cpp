@@ -1,4 +1,5 @@
 #include "presentation/windows/tools_view.hpp"
+#include "presentation/windows/graphics_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/narration_worker.hpp"
@@ -32,7 +33,6 @@ void dialog_escape(HWND frame,int focused_id) {
     check(IsDialogMessageW(frame,&message)!=FALSE,"The Windows dialog manager did not process Escape");
     pump();
 }
-void frames(HWND view,unsigned count) { for (unsigned index = 0; index < count; ++index) { SendMessageW(view,WM_TIMER,1,0); pump(); } }
 void calculated(HWND view){const auto start=GetTickCount64();while(inspect_calculator(view).evaluating&&GetTickCount64()-start<20000){pump();Sleep(5);}pump();check(!inspect_calculator(view).evaluating,"Actual canonical calculator did not return");}
 LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) { return DefWindowProcW(window,message,wparam,lparam); }
 }
@@ -57,9 +57,18 @@ int main() {
         SetWindowTextW(expression,L"\\sin{30}+\\sqrt{81}"); SendMessageW(angle,BM_CLICK,0,0);
         SendMessageW(expression,WM_KEYDOWN,VK_RETURN,1); SendMessageW(expression,WM_CHAR,L'\r',1); SendMessageW(expression,WM_KEYUP,VK_RETURN,1); pump();
         calculated(calculator);check(inspect_calculator(calculator).result=="9.5"&&text(result)==L"9.5","Native Enter did not use the canonical Android/Symja calculator");
+        RECT result_heading{},result_surface{};GetWindowRect(control(calculator,5244),&result_heading);GetWindowRect(result,&result_surface);
+        check(result_heading.top==result_surface.top&&result_heading.bottom==result_surface.bottom&&result_heading.right<=result_surface.left,
+            "Calculator result no longer shares the original Android result-label row");
         const auto original_draft=inspect_calculator(calculator).draft;
         SendMessageW(control(calculator,5240),BM_CLICK,0,0);check(inspect_calculator(calculator).advanced&&inspect_calculator(calculator).key_order.size()==48,"Advanced tools did not use the exact six-column Android layout");
-        const auto before_order=inspect_calculator(calculator).key_order;SendMessageW(control(calculator,5241),BM_CLICK,0,0);SendMessageW(control(calculator,5300),BM_CLICK,0,0);SendMessageW(control(calculator,5301),BM_CLICK,0,0);const auto swapped=inspect_calculator(calculator).key_order;check(swapped[0]==before_order[1]&&swapped[1]==before_order[0],"Key personalization is decorative");SendMessageW(control(calculator,5241),BM_CLICK,0,0);
+        const auto before_order=inspect_calculator(calculator).key_order;SendMessageW(control(calculator,5241),BM_CLICK,0,0);
+        MoveWindow(calculator,0,0,640,220,TRUE);SendMessageW(calculator,WM_VSCROLL,SB_TOP,0);const auto keypad=control(calculator,5222);RECT keypad_area{},scroll_down_area{},scroll_up_area{};GetClientRect(keypad,&keypad_area);MapWindowPoints(keypad,nullptr,reinterpret_cast<POINT*>(&keypad_area),2);GetWindowRect(control(calculator,5249),&scroll_up_area);GetWindowRect(control(calculator,5250),&scroll_down_area);
+        check(scroll_down_area.right==keypad_area.right&&scroll_up_area.right==scroll_down_area.left,"Calculator edit scrolling controls are not aligned at the original right edge");
+        SendMessageW(control(calculator,5250),BM_CLICK,0,0);SCROLLINFO edit_scroll{sizeof(edit_scroll),SIF_POS};GetScrollInfo(keypad,SB_VERT,&edit_scroll);
+        check(edit_scroll.nPos==MulDiv(74,static_cast<int>(GetDpiForWindow(calculator)),96),"Calculator edit scrolling did not advance exactly two landscape key rows");
+        SendMessageW(control(calculator,5249),BM_CLICK,0,0);MoveWindow(calculator,0,0,980,800,TRUE);
+        SendMessageW(control(calculator,5300),BM_CLICK,0,0);SendMessageW(control(calculator,5301),BM_CLICK,0,0);const auto swapped=inspect_calculator(calculator).key_order;check(swapped[0]==before_order[1]&&swapped[1]==before_order[0],"Key personalization is decorative");SendMessageW(control(calculator,5241),BM_CLICK,0,0);
         DestroyWindow(calculator); calculator = create_calculator_view(host,environment,[&] { ++returned; },worker); MoveWindow(calculator,0,0,980,800,TRUE); pump();
         expression=control(calculator,5202);result=control(calculator,5203);angle=control(calculator,5204);const auto restored=inspect_calculator(calculator);check(restored.degrees&&restored.advanced&&restored.draft==original_draft&&restored.result=="9.5"&&restored.key_order==swapped,"Original Android draft/mode/result/key-order preferences were not restored");
         SetWindowTextW(expression,L"1/0");SendMessageW(control(calculator,5206),BM_CLICK,0,0);calculated(calculator);check(!inspect_calculator(calculator).error.empty()&&inspect_calculator(calculator).result.empty(),"Invalid expression became a valid result");
@@ -67,6 +76,8 @@ int main() {
         MoveWindow(calculator,0,0,640,220,TRUE); SendMessageW(calculator,WM_VSCROLL,SB_BOTTOM,0);
         SCROLLINFO scroll{sizeof(scroll),SIF_ALL}; GetScrollInfo(control(calculator,5222),SB_VERT,&scroll);
         check(scroll.nPos > 0,"Compact calculator hides scientific controls instead of scrolling");
+        const auto before_dpi=inspect_calculator(calculator);const auto before_scroll=scroll.nPos;SendMessageW(calculator,WM_DPICHANGED_AFTERPARENT,0,0);GetScrollInfo(control(calculator,5222),SB_VERT,&scroll);
+        const auto after_dpi=inspect_calculator(calculator);check(after_dpi.draft==before_dpi.draft&&after_dpi.result==before_dpi.result&&after_dpi.degrees==before_dpi.degrees&&after_dpi.advanced==before_dpi.advanced&&after_dpi.key_order==before_dpi.key_order&&scroll.nPos==before_scroll,"A calculator display notification reset its expression, modes, key order or viewport");
         SendMessageW(control(calculator,5201),BM_CLICK,0,0); check(returned == 1,"Calculator back button is decorative"); DestroyWindow(calculator);
         const auto retained_preferences=state::StateStore(environment.paths.root).load();check(retained_preferences.preferences.at("native_windows").at("calculator/history/v1")==original_preferences.preferences.at("native_windows").at("calculator/history/v1"),"Calculator migration erased a pre-existing Windows tool history");
         auto shared_preferences=retained_preferences;unsigned shared_writes=0;std::string pasted;
@@ -75,29 +86,21 @@ int main() {
         shared_preferences.preferences["learning_progress"]["concurrent_reader_coverage"]=std::string("intact");SetWindowTextW(frame_expression,L"5nCr2");SendMessageW(control(frame,5206),BM_CLICK,0,0);calculated(frame_view);check(inspect_calculator(frame_view).result=="10"&&shared_writes>0&&state::string_value(shared_preferences,"learning_progress","concurrent_reader_coverage")=="intact","Calculator overwrote its owning lesson's latest reader/progress state");SendMessageW(control(frame,5248),BM_CLICK,0,0);pump();check(pasted=="10"&&!IsWindow(frame)&&IsWindowEnabled(host),"Paste did not return the exact value and close/re-enable its original owner");
         const auto cancelled_frame=open_calculator_window(host,environment,worker,[&](std::string_view){throw std::runtime_error("Closing calculator returned an unintended value");},access);
         const auto nested_frame=open_calculator_window(cancelled_frame,environment,worker,[&](std::string_view){throw std::runtime_error("Escape returned an unintended calculator value");},access);
+        const auto display_draft=inspect_calculator(GetParent(GetParent(control(nested_frame,5202)))).draft;RECT suggested{};GetWindowRect(nested_frame,&suggested);suggested.right=suggested.left+820;suggested.bottom=suggested.top+540;const auto native_dpi=GetDpiForWindow(nested_frame);SendMessageW(nested_frame,WM_DPICHANGED,MAKEWPARAM(native_dpi,native_dpi),reinterpret_cast<LPARAM>(&suggested));RECT actual{};GetWindowRect(nested_frame,&actual);
+        check(EqualRect(&actual,&suggested)&&inspect_calculator(GetParent(GetParent(control(nested_frame,5202)))).draft==display_draft,"The calculator frame ignored the official suggested display rectangle or replaced its expression");
         SendMessageW(nested_frame,WM_COMMAND,MAKEWPARAM(IDOK,0),0);pump();check(IsWindow(nested_frame),"An unrelated dialog command closed the calculator");
         dialog_escape(nested_frame,5204);
         check(!IsWindow(nested_frame)&&IsWindow(cancelled_frame)&&IsWindowEnabled(cancelled_frame)&&IsWindow(host)&&!IsWindowEnabled(host),"Escape from RAD closed the preceding calculator or its host");
         dialog_escape(cancelled_frame,5241);
         check(!IsWindow(cancelled_frame)&&IsWindow(host)&&IsWindowEnabled(host),"Escape from Edit did not close only the focused calculator and restore its owner");
-        auto graphics = create_graphics_view(host,environment,[&] { ++returned; }); MoveWindow(graphics,0,0,980,800,TRUE); pump(); frames(graphics,2);
-        const auto solid = inspect_graphics_frame(graphics);
-        check(solid.presented_frames >= 1 && solid.colored_pixels > 100 && solid.backend.starts_with("Direct3D 11"),"The graphics tool did not render a real Direct3D triangle");
-        SendMessageW(GetDlgItem(graphics,5211),BM_SETCHECK,BST_UNCHECKED,0); frames(graphics,1);
-        const auto paused = inspect_graphics_frame(graphics); frames(graphics,2);
-        check(inspect_graphics_frame(graphics).rotation == paused.rotation,"Rotation pause kept changing the scene");
-        SendMessageW(GetDlgItem(graphics,5210),CB_SETCURSEL,1,0);
-        SendMessageW(graphics,WM_COMMAND,MAKEWPARAM(5210,CBN_SELCHANGE),reinterpret_cast<LPARAM>(GetDlgItem(graphics,5210))); frames(graphics,1);
-        const auto wire = inspect_graphics_frame(graphics);
-        check(wire.wireframe && wire.colored_pixels > 0 && wire.colored_pixels < solid.colored_pixels,"Wireframe selection did not change actual GPU pixels");
-        SendMessageW(GetDlgItem(graphics,5212),BM_CLICK,0,0); frames(graphics,1); const auto reset = inspect_graphics_frame(graphics);
-        check(!reset.wireframe && reset.rotation == 0 && reset.colored_pixels > wire.colored_pixels,"Reset did not restore the actual scene");
-        SendMessageW(GetDlgItem(graphics,5211),BM_SETCHECK,BST_CHECKED,0); Sleep(30); frames(graphics,1);
-        check(inspect_graphics_frame(graphics).rotation > 0,"Rotation control is decorative");
-        std::cout << "Direct3D adapter actually used: " << solid.backend << '\n';
-        SendMessageW(GetDlgItem(graphics,5201),BM_CLICK,0,0); check(returned == 2,"Graphics back button is decorative");
+        auto graphics=create_graphics_view(host,environment,[&]{++returned;});MoveWindow(graphics,0,0,980,800,TRUE);pump();
+        const auto scene=inspect_graphics_lab(graphics);const auto frame_compatibility=inspect_graphics_frame(graphics);
+        check(scene.objects==14&&!scene.benchmark&&scene.presented_frames>0&&scene.colored_pixels>100&&scene.error.empty(),"The public graphics wrapper did not open the original fourteen-body physics laboratory");
+        check(frame_compatibility.backend==scene.backend&&frame_compatibility.presented_frames>=scene.presented_frames,"The public graphics inspection bypassed its real renderer");
+        check(control(graphics,5260)&&control(graphics,5261)&&control(graphics,5262)&&control(graphics,5263)&&!control(graphics,5210)&&!control(graphics,5211),"The graphics wrapper retained the obsolete triangle controls or omitted the real laboratory controls");
+        SendMessageW(control(graphics,5201),BM_CLICK,0,0);check(returned==2,"The physical graphics laboratory back action is disconnected");
         DestroyWindow(graphics); DestroyWindow(host); UnregisterClassW(type.lpszClassName,type.hInstance);
-        std::cout << "Canonical Android AST/Symja calculation, editable layout, persistent draft/mode/result, stale evaluation cancellation and Direct3D readback: PASS\n";
+        std::cout << "Canonical Android AST/Symja calculation, editable layout, persistent draft/mode/result, stale evaluation cancellation and physical graphics laboratory integration: PASS\n";
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

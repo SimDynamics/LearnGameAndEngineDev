@@ -1,4 +1,5 @@
 #pragma once
+#include "core/cpp_project.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -85,6 +86,9 @@ struct Block {
     AnswerComparison answer_comparison = AnswerComparison::code;
     std::optional<OutputCheck> output_check;
     std::optional<std::string> standard_input;
+    CppProjectFiles project_files;
+    std::vector<std::string> source_files;
+    std::optional<CmakeConfig> cmake;
     StateAddress address;
 };
 struct Page {

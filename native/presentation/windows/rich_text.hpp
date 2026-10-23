@@ -19,6 +19,9 @@ enum class RichTextRole { body, prompt, heading, lesson_title };
 // Plain editing preserves the original characters and exposes paragraph breaks as LF.
 [[nodiscard]] std::string edit_text(HWND edit);
 void set_edit_text(HWND edit, std::string_view text);
+// Empty editable RichEdit hint only: never inserts text, changes selection,
+// participates in Undo or exposes a false value to the lesson narrator.
+void set_edit_hint(HWND edit, std::string_view text);
 // Uses the HWND's optional reader_theme surface; untouched controls keep their
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);

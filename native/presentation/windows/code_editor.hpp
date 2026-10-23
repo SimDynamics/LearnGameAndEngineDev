@@ -26,7 +26,8 @@ struct EditorDocument {
 class CodeEditor {
 public:
     CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
-        std::function<void()> submit = {}, bool code_assistance = true);
+        std::function<void()> submit = {}, bool code_assistance = true,
+        bool auto_indent = true, bool line_numbers = true);
     ~CodeEditor();
     CodeEditor(const CodeEditor&) = delete;
     CodeEditor& operator=(const CodeEditor&) = delete;

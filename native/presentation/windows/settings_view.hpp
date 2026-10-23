@@ -12,6 +12,8 @@
 namespace lgaed::presentation {
 using PreferencesMutation = std::function<void(state::StateData&)>;
 enum class SettingsScope {global,course,unit,lesson,audio};
+struct SettingsResetText {std::string title,confirmation,success;};
+[[nodiscard]] SettingsResetText settings_reset_text(SettingsScope,std::string_view locale,std::string_view route={});
 struct SettingsAccess {
     std::function<state::StateData()> read;
     std::function<void(const PreferencesMutation&)> update;

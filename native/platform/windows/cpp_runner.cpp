@@ -1,5 +1,9 @@
 #include "platform/windows/cpp_runner.hpp"
+#include "platform/windows/state_store.hpp"
+#include "platform/windows/winrt_apartment.hpp"
 #include "native_build_config.hpp"
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <windows.h>
 #include <objbase.h>
@@ -10,6 +14,9 @@
 #include <fstream>
 #include <limits>
 #include <map>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
@@ -51,6 +58,14 @@ std::string utf8(std::wstring_view text) {
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.data(),
         static_cast<int>(text.size()), result.data(), length, nullptr, nullptr);
     return result;
+}
+
+std::filesystem::path cpp_tool_host(){
+    std::vector<wchar_t> name(512);
+    for(;;){const auto size=GetModuleFileNameW(nullptr,name.data(),static_cast<DWORD>(name.size()));
+        if(!size)break;if(size<name.size()){const auto beside=std::filesystem::path(std::wstring(name.data(),size)).parent_path()/L"lgaed_cpp_tool_host.exe";
+            if(std::filesystem::is_regular_file(beside))return beside;break;}name.resize(name.size()*2);}
+    return std::filesystem::path(build::cpp_tool_host);
 }
 
 [[noreturn]] void windows_error(const char* operation) {
@@ -109,7 +124,7 @@ std::vector<wchar_t> compiler_environment() {
     values[L"PATH"] = (vc / L"bin/Hostx64/x64").wstring() + L";" +
         (sdk / L"bin" / version / L"x64").wstring() + L";" + values[L"PATH"];
     values[L"VSLANG"] = L"1033";
-    for (const auto variable : {L"CL", L"_CL_", L"LINK", L"_LINK_", L"LIBPATH"}) values.erase(variable);
+    for (const auto variable : {L"CL", L"_CL_", L"LINK", L"_LINK_", L"LIBPATH",L"CMAKE_TOOLCHAIN_FILE",L"CMAKE_GENERATOR",L"CMAKE_GENERATOR_PLATFORM",L"CMAKE_GENERATOR_TOOLSET",L"CMAKE_GENERATOR_INSTANCE"}) values.erase(variable);
     std::vector<wchar_t> result;
     for (const auto& [key, value] : values) {
         result.insert(result.end(), key.begin(), key.end());
@@ -252,7 +267,7 @@ CppPhaseResult run_phase(const std::filesystem::path& executable,
     const std::vector<std::wstring>& arguments, const std::filesystem::path& directory,
     const std::filesystem::path& input_path, std::wstring_view phase,
     std::chrono::milliseconds timeout, std::size_t limit, bool compilation,
-    std::stop_token stop) {
+    std::stop_token stop,bool utf8_console=false) {
     CppPhaseResult result;
     if (stop.stop_requested()) {
         result.status = CppPhaseStatus::cancelled;
@@ -274,19 +289,23 @@ CppPhaseResult run_phase(const std::filesystem::path& executable,
     limits.JobMemoryLimit = static_cast<SIZE_T>(compilation ? 2048ULL : 512ULL) * 1024 * 1024;
     if (!SetInformationJobObject(job.get(), JobObjectExtendedLimitInformation, &limits, sizeof(limits)))
         windows_error("SetInformationJobObject");
-    std::wstring command = quote_argument(executable.wstring());
+    auto launcher=executable;
+    if(utf8_console){launcher=cpp_tool_host();if(!std::filesystem::is_regular_file(launcher))throw std::runtime_error("The native UTF-8 compiler host is unavailable");}
+    std::wstring command = quote_argument(launcher.wstring());
+    if(utf8_console)command+=L" "+quote_argument(executable.wstring());
     for (const auto& argument : arguments) command += L" " + quote_argument(argument);
     auto environment = compiler_environment();
     STARTUPINFOEXW startup{};
     startup.StartupInfo.cb = sizeof(startup);
-    startup.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    startup.StartupInfo.dwFlags = STARTF_USESTDHANDLES|STARTF_USESHOWWINDOW;
+    startup.StartupInfo.wShowWindow=SW_HIDE;
     startup.StartupInfo.hStdInput = input.get();
     startup.StartupInfo.hStdOutput = output.get();
     startup.StartupInfo.hStdError = error.get();
     startup.lpAttributeList = attributes.get();
     PROCESS_INFORMATION information{};
-    if (!CreateProcessW(executable.c_str(), command.data(), nullptr, nullptr, TRUE,
-            CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT |
+    if (!CreateProcessW(launcher.c_str(), command.data(), nullptr, nullptr, TRUE,
+            CREATE_SUSPENDED | (utf8_console?CREATE_NEW_CONSOLE:CREATE_NO_WINDOW) | CREATE_UNICODE_ENVIRONMENT |
                 EXTENDED_STARTUPINFO_PRESENT,
             environment.data(), directory.c_str(), &startup.StartupInfo, &information))
         windows_error("CreateProcessW");
@@ -335,7 +354,7 @@ std::filesystem::path create_run_directory(const CppRunRequest& request) {
     if (!request.projects_directory.is_absolute())
         throw std::invalid_argument("Student projects directory must be absolute");
     const auto parent = request.projects_directory / L"cpp-runs";
-    std::filesystem::create_directories(parent);
+    state::require_safe_path(parent);std::filesystem::create_directories(parent);state::require_safe_path(parent);
     GUID id{};
     if (FAILED(CoCreateGuid(&id))) throw std::runtime_error("Cannot create run identity");
     std::array<wchar_t, 40> token{};
@@ -346,24 +365,164 @@ std::filesystem::path create_run_directory(const CppRunRequest& request) {
     const auto path = parent / name;
     if (!std::filesystem::create_directory(path))
         throw std::runtime_error("Fresh run directory collision");
+    state::require_safe_path(path);
     return path;
+}
+
+using winrt::Windows::Data::Json::JsonObject;
+using winrt::Windows::Data::Json::JsonValue;
+std::filesystem::path project_path(std::string_view path){return std::filesystem::path(winrt::to_hstring(path).c_str());}
+std::string fingerprint(const CppRunRequest& request,bool configuration=false){return state::sha256(curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake,configuration)+utf8(build::educational_vc_root)+utf8(build::educational_sdk_version)+utf8(build::educational_cmake)+utf8(build::educational_ninja));}
+void validate_request_project(const CppRunRequest& request){
+    if(!request.projects_directory.is_absolute())throw std::invalid_argument("Student projects directory must be absolute");
+    std::map<std::wstring,bool,CaseInsensitive> paths;for(const auto& [name,text]:request.project_files)if(!paths.emplace(project_path(name).generic_wstring(),true).second)throw std::invalid_argument("Case-colliding Windows project paths");
+    for(const auto& [name,unused]:paths)for(auto slash=name.find(L'/');slash!=name.npos;slash=name.find(L'/',slash+1))if(paths.contains(name.substr(0,slash)))throw std::invalid_argument("A project path is both a Windows file and a directory");
+    if(request.cmake){curriculum::validate_cpp_project_files(request.project_files);curriculum::validate_cmake_config(*request.cmake);std::size_t bytes=0;for(const auto& [path,text]:request.project_files)bytes+=text.size();if(request.project_files.size()>128||bytes>8*1024*1024)throw std::invalid_argument("CMake project exceeds its original128-file/8MiB limits");
+        if(request.project_key.empty()||request.project_key.size()>16384)throw std::invalid_argument("CMake needs the stable existing draft identity");
+        if(!request.source_files.empty())throw std::invalid_argument("CMake owns its source selection");
+    }else curriculum::validate_cpp_project(request.project_files,request.source_files);
+}
+std::string cmake_workspace_identity(const CppRunRequest& request){
+    const auto identity="cpp-cmake-workspace-v1/"+std::to_string(request.project_key.size())+":"+request.project_key+fingerprint(request,true);
+    return state::sha256(identity);
+}
+std::filesystem::path cmake_workspace(const CppRunRequest& request){
+    // Child MSVC tools still need room for CMakeScratch/TryCompile paths.
+    // The shortened directory is only an address; the full digest below is
+    // mandatory before reading or modifying any generated project data.
+    return request.projects_directory/project_path("c"+cmake_workspace_identity(request).substr(0,32));
+}
+bool verify_workspace_identity(const CppRunRequest& request,bool create){
+    const auto workspace=cmake_workspace(request),marker=workspace/L"identity.sha256";
+    state::require_safe_path(workspace);
+    if(!std::filesystem::exists(workspace)){
+        if(!create)return false;
+        std::filesystem::create_directories(workspace);state::require_safe_path(workspace);
+    }
+    state::require_safe_path(marker);
+    const auto expected=cmake_workspace_identity(request)+"\n";
+    const auto verify=[&]{
+        if(!std::filesystem::is_regular_file(marker)||read_exact(marker,128)!=expected)
+            throw std::runtime_error("CMake workspace identity collision or invalid ownership manifest");
+    };
+    if(std::filesystem::exists(marker)){verify();return true;}
+    if(!create)return false;
+    if(!std::filesystem::is_empty(workspace))throw std::runtime_error("CMake workspace has data without a valid ownership manifest");
+    // CREATE_NEW never overwrites a concurrently established owner. Its writer
+    // denies sharing until the complete digest has been flushed and closed.
+    Handle owner(CreateFileW(marker.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr));
+    if(!owner){if(GetLastError()==ERROR_FILE_EXISTS){verify();return true;}windows_error("Create CMake ownership manifest");}
+    DWORD written=0;
+    if(!WriteFile(owner.get(),expected.data(),static_cast<DWORD>(expected.size()),&written,nullptr)||written!=expected.size()||!FlushFileBuffers(owner.get()))
+        windows_error("Write CMake ownership manifest");
+    return true;
+}
+JsonObject read_json(const std::filesystem::path& path){state::require_safe_path(path);const auto bytes=state::read_bytes(path,8*1024*1024);return JsonObject::Parse(winrt::to_hstring(std::string_view(reinterpret_cast<const char*>(bytes.data()),bytes.size())));}
+std::string json_text(const JsonObject& object,const wchar_t* key){return winrt::to_string(object.GetNamedString(key,L""));}
+void save_json(const std::filesystem::path& path,const JsonObject& value){state::require_safe_path(path);write_exact(path,winrt::to_string(value.Stringify()));}
+void materialize(const curriculum::CppProjectFiles& files,const std::filesystem::path& directory){
+    state::require_safe_path(directory);std::filesystem::create_directories(directory);state::require_safe_path(directory);
+    for(const auto& [name,text]:files){const auto path=directory/project_path(name);state::require_safe_path(path);std::filesystem::create_directories(path.parent_path());state::require_safe_path(path);
+        if(std::filesystem::is_regular_file(path)&&std::filesystem::file_size(path)==text.size()&&read_exact(path,text.size())==text)continue;write_exact(path,text);}
+}
+std::shared_ptr<std::timed_mutex> project_mutex(const std::filesystem::path& workspace){static std::mutex lock;static std::map<std::filesystem::path,std::weak_ptr<std::timed_mutex>> locks;
+    const std::lock_guard guard(lock);auto& entry=locks[workspace];if(const auto found=entry.lock())return found;auto value=std::make_shared<std::timed_mutex>();entry=value;return value;}
+struct Target{std::string type;std::vector<std::filesystem::path> artifacts;};
+std::filesystem::path contained(const std::filesystem::path& root,const std::filesystem::path& path){const auto absolute=(path.is_absolute()?path:root/path).lexically_normal();const auto relative=absolute.lexically_relative(root.lexically_normal());
+    if(relative.empty()||relative.is_absolute()||*relative.begin()==L"..")throw std::runtime_error("CMake artifact or reply escapes its owned build directory");state::require_safe_path(absolute);return absolute;
+}
+Target cmake_target(const std::filesystem::path& workspace,const curriculum::CmakeConfig& config){const auto& build=workspace;const auto reply=build/L".cmake/api/v1/reply";state::require_safe_path(reply);
+    std::filesystem::path latest;for(const auto& file:std::filesystem::directory_iterator(reply))if(file.is_regular_file()&&file.path().filename().wstring().starts_with(L"index-")&&file.path().extension()==L".json"&&(latest.empty()||file.path().filename()>latest.filename()))latest=file.path();
+    if(latest.empty())throw std::runtime_error("CMake did not return a File API index");const auto index=read_json(latest);std::optional<JsonObject> model;
+    for(const auto& entry:index.GetNamedArray(L"objects")){const auto item=entry.GetObject();if(json_text(item,L"kind")=="codemodel"&&item.GetNamedObject(L"version").GetNamedNumber(L"major")==2){model=read_json(contained(reply,project_path(json_text(item,L"jsonFile"))));break;}}
+    if(!model)throw std::runtime_error("CMake did not return codemodel version2");
+    for(const auto& entry:model->GetNamedArray(L"configurations")){const auto configuration=entry.GetObject();const auto name=json_text(configuration,L"name");if(!name.empty()&&name!=config.build_type)continue;
+        if(!configuration.HasKey(L"targets"))continue;for(const auto& reference:configuration.GetNamedArray(L"targets")){const auto item=reference.GetObject();if(json_text(item,L"name")!=config.target)continue;const auto target=read_json(contained(reply,project_path(json_text(item,L"jsonFile"))));Target result;result.type=json_text(target,L"type");
+            if(target.HasKey(L"artifacts"))for(const auto& artifact:target.GetNamedArray(L"artifacts"))result.artifacts.push_back(contained(build,project_path(json_text(artifact.GetObject(),L"path"))));return result;}}
+    return {};
+}
+bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
+CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
+    if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
+    try{const auto saved=read_json(path);result.configured=json_text(saved,L"configuration")==result.configuration_fingerprint&&std::filesystem::is_regular_file(result.workspace/L"build.ninja");
+        if(!result.configured)return result;const auto target=cmake_target(result.workspace,*request.cmake);result.target_type=target.type;
+        if(json_text(saved,L"built")!=result.project_fingerprint||result.target_type!="EXECUTABLE")return result;
+        const auto artifact=contained(result.workspace,project_path(json_text(saved,L"artifact")));
+        if(std::ranges::find(target.artifacts,artifact)==target.artifacts.end()||!executable64(artifact)||state::sha256(state::read_bytes(artifact,128*1024*1024))!=json_text(saved,L"artifactSha256"))return result;
+        result.artifact=artifact;result.built=true;
+    }catch(const std::exception&){result.built=false;result.configured=false;}catch(const winrt::hresult_error&){result.built=false;result.configured=false;}return result;
+}
+void merge_phase(CppPhaseResult& total,CppPhaseResult part,std::size_t limit){const bool exceeded=part.stdout_bytes.size()>limit-total.stdout_bytes.size()||part.stderr_bytes.size()>limit-total.stderr_bytes.size();
+    total.stdout_bytes.append(part.stdout_bytes,0,std::min(part.stdout_bytes.size(),limit-total.stdout_bytes.size()));total.stderr_bytes.append(part.stderr_bytes,0,std::min(part.stderr_bytes.size(),limit-total.stderr_bytes.size()));total.status=exceeded?CppPhaseStatus::output_limit:part.status;total.exit_code=part.exit_code;}
+void run_multifile(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
+    validate_request_project(request);result.project_fingerprint=fingerprint(request);const auto source=result.run_directory/L"project",objects=result.run_directory/L"objects",executable=result.run_directory/L"program.exe";
+    materialize(request.project_files,source);std::filesystem::create_directory(objects);const std::filesystem::path compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";std::vector<std::wstring> link{L"/nologo",L"/Fe:"+executable.wstring()};
+    const auto start=std::chrono::steady_clock::now();const auto remaining=[&]{return request.compile_timeout-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start);};
+    std::size_t sequence=0;for(const auto& file:request.source_files){if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}const auto object=objects/(std::to_wstring(sequence)+L".obj");const std::vector<std::wstring> args{L"/nologo",L"/c",L"/EHsc",L"/std:c++20",L"/permissive-",L"/utf-8",L"/W4",L"/diagnostics:column",L"/I"+source.wstring(),L"/Fo:"+object.wstring(),(source/project_path(file)).wstring()};
+        merge_phase(result.compilation,run_phase(compiler,args,result.run_directory,compiler_input,L"compile-"+std::to_wstring(sequence++),remaining(),request.output_limit_bytes,true,stop),request.output_limit_bytes);if(!result.compilation.succeeded())return;link.push_back(object.wstring());}
+    link.insert(link.end(),{L"/link",L"/INCREMENTAL:NO",L"/MACHINE:X64",L"/SUBSYSTEM:CONSOLE",L"/MANIFEST:EMBED",L"/MANIFESTUAC:level='asInvoker' uiAccess='false'"});
+    if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}merge_phase(result.compilation,run_phase(compiler,link,result.run_directory,compiler_input,L"link",remaining(),request.output_limit_bytes,true,stop),request.output_limit_bytes);
+    if(result.compilation.succeeded()){result.artifact=executable;result.target_type="EXECUTABLE";result.execution=run_phase(executable,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);}
+}
+void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
+    validate_request_project(request);const auto workspace=cmake_workspace(request);const auto shared_lock=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()){auto& phase=request.action==CppRunRequest::Action::execute?result.execution:request.action==CppRunRequest::Action::build?result.compilation:result.configuration;phase.status=CppPhaseStatus::cancelled;return;}
+    result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);const auto& build_directory=workspace;const auto source=workspace/L"p",state_file=workspace/L"state.json";
+    auto availability=inspect_unlocked(request);const auto action=request.action;
+    const bool configure=action==CppRunRequest::Action::configure||(action==CppRunRequest::Action::compile_run&&!availability.configured);
+    const auto cmake=std::filesystem::path(build::educational_cmake),ninja=std::filesystem::path(build::educational_ninja),compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";
+    if(!std::filesystem::is_regular_file(cmake)||!std::filesystem::is_regular_file(ninja)||!std::filesystem::is_regular_file(compiler))throw std::runtime_error("Pinned CMake, Ninja or MSVC is unavailable");
+    if(configure){(void)verify_workspace_identity(request,true);materialize(request.project_files,source);state::require_safe_path(build_directory);std::filesystem::create_directories(build_directory);state::require_safe_path(build_directory);
+        JsonObject saved;save_json(state_file,saved);const auto query=build_directory/L".cmake/api/v1/query/client-lgaed";state::require_safe_path(query);std::filesystem::create_directories(query);state::require_safe_path(query);write_exact(query/L"codemodel-v2","");
+        std::vector<std::wstring> arguments{L"--fresh",L"-S",source.wstring(),L"-B",build_directory.wstring(),L"-G",L"Ninja",L"-DCMAKE_MAKE_PROGRAM="+ninja.wstring(),L"-DCMAKE_CXX_COMPILER="+compiler.wstring(),L"-DCMAKE_C_COMPILER="+compiler.wstring(),L"-DCMAKE_RC_COMPILER="+std::wstring(build::educational_resource_compiler),L"-DCMAKE_BUILD_TYPE="+std::wstring(winrt::to_hstring(request.cmake->build_type)),L"-DCMAKE_CXX_STANDARD=20",L"-DCMAKE_CXX_STANDARD_REQUIRED=ON",L"-DCMAKE_CXX_EXTENSIONS=OFF",L"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"};
+        for(const auto& [key,value]:request.cmake->options)arguments.push_back(std::wstring(L"-D")+winrt::to_hstring(key).c_str()+L"="+winrt::to_hstring(value).c_str());
+        result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true);
+        if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
+        const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
+    }
+    if(action==CppRunRequest::Action::configure)return;
+    if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
+    if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
+        if(saved.HasKey(L"artifact")&&saved.HasKey(L"artifactSha256")){const auto old=contained(build_directory,project_path(json_text(saved,L"artifact")));const auto current_target=cmake_target(workspace,*request.cmake);
+            // An unchanged Ninja build cannot certify a tampered old binary.
+            // Remove only that proven changed generated artifact, owned by the
+            // selected File API target, so Ninja must produce it again.
+            if(std::ranges::find(current_target.artifacts,old)!=current_target.artifacts.end()&&std::filesystem::is_regular_file(old)&&state::sha256(state::read_bytes(old,128*1024*1024))!=json_text(saved,L"artifactSha256"))std::filesystem::remove(old);}
+        for(const auto key:{L"built",L"artifact",L"artifactSha256"})if(saved.HasKey(key))saved.Remove(key);save_json(state_file,saved);
+        result.compilation=run_phase(cmake,{L"--build",build_directory.wstring(),L"--target",std::wstring(winrt::to_hstring(request.cmake->target)),L"--parallel",L"2"},result.run_directory,compiler_input,L"build",request.compile_timeout,request.output_limit_bytes,true,stop,true);
+        if(!result.compilation.succeeded())return;const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;
+        if(target.type=="EXECUTABLE"){for(const auto& artifact:target.artifacts)if(executable64(artifact)){result.artifact=artifact;break;}if(result.artifact.empty())throw std::runtime_error("The selected CMake executable did not produce a native x64 artifact inside its build directory");
+            saved.Insert(L"built",JsonValue::CreateStringValue(winrt::to_hstring(result.project_fingerprint)));saved.Insert(L"artifact",JsonValue::CreateStringValue(result.artifact.lexically_relative(build_directory).generic_wstring()));saved.Insert(L"artifactSha256",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(state::read_bytes(result.artifact,128*1024*1024)))));save_json(state_file,saved);}
+        availability=inspect_unlocked(request);
+    }
+    if(action==CppRunRequest::Action::build)return;
+    if(!availability.built)throw std::runtime_error("Build the executable of the current project revision before running it");
+    result.compilation.status=CppPhaseStatus::completed;result.compilation.exit_code=0;result.artifact=availability.artifact;result.target_type=availability.target_type;result.executable=request.cmake->target;
+    result.execution=run_phase(result.artifact,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);
 }
 
 } // namespace
 
+CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
+    ensure_winrt_apartment();if(!request.cmake)return {};validate_request_project(request);const auto workspace=cmake_workspace(request);const auto mutex=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*mutex,std::try_to_lock);
+    if(!lock.owns_lock()){CppProjectAvailability busy;busy.workspace=workspace;busy.project_fingerprint=fingerprint(request);busy.configuration_fingerprint=fingerprint(request,true);return busy;}return inspect_unlocked(request);
+}
 CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     CppRunResult result;
     result.request_id = request.request_id;
     result.revision = request.revision;
     try {
+        ensure_winrt_apartment();
         if (stop.stop_requested()) {
-            result.compilation.status = CppPhaseStatus::cancelled;
+            (request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation).status = CppPhaseStatus::cancelled;
             return result;
         }
         if (request.compile_timeout.count() <= 0 || request.execution_timeout.count() <= 0 ||
                 request.output_limit_bytes == 0 || request.output_limit_bytes > 16 * 1024 * 1024 ||
-                request.source_utf8.size() > 4 * 1024 * 1024 || request.stdin_utf8.size() > 4 * 1024 * 1024)
+                (request.project_files.empty()&&request.source_utf8.size() > 4 * 1024 * 1024) || request.stdin_utf8.size() > 4 * 1024 * 1024)
             throw std::invalid_argument("Invalid educational execution limits");
+        if(!request.project_files.empty())validate_request_project(request);
+        else if(request.cmake||request.action!=CppRunRequest::Action::compile_run)throw std::invalid_argument("Project phase actions require projectFiles and CMake");
         result.run_directory = create_run_directory(request);
         const auto source = result.run_directory / L"main.cpp";
         const auto input = result.run_directory / L"stdin.bin";
@@ -373,11 +532,13 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         const auto compiler = vc / L"bin/Hostx64/x64/cl.exe";
         if (!std::filesystem::is_regular_file(compiler))
             throw std::runtime_error("Pinned educational MSVC compiler is unavailable");
-        write_exact(source, request.source_utf8);
         write_exact(input, request.stdin_utf8);
         write_exact(compiler_input, "");
         write_exact(result.run_directory / L"toolchain.txt", "MSVC=14.51.36231\nSDK=" +
             utf8(build::educational_sdk_version) + "\ncompiler=" + utf8(compiler.wstring()) + "\n");
+        if(request.cmake){run_cmake(request,result,input,compiler_input,stop);return result;}
+        if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
+        write_exact(source, request.source_utf8);
         const std::vector<std::wstring> arguments{
             L"/nologo", L"/EHsc", L"/std:c++20", L"/permissive-", L"/utf-8", L"/W4",
             L"/diagnostics:column", L"/Fe:" + executable.wstring(),
@@ -388,12 +549,17 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             compiler_input, L"compilation", request.compile_timeout,
             request.output_limit_bytes, true, stop);
         if (result.compilation.succeeded()) {
+            result.artifact=executable;result.target_type="EXECUTABLE";
             result.execution = run_phase(executable, {}, result.run_directory, input,
                 L"execution", request.execution_timeout, request.output_limit_bytes, false, stop);
         }
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
-        auto& phase = result.compilation.succeeded() ? result.execution : result.compilation;
+        auto& phase = request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:
+            request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation.succeeded() ? result.execution : result.compilation;
+        phase.status = CppPhaseStatus::launch_failed;
+    } catch (const winrt::hresult_error& error) {
+        result.error_utf8=winrt::to_string(error.message());auto& phase=request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation;
         phase.status = CppPhaseStatus::launch_failed;
     }
     return result;

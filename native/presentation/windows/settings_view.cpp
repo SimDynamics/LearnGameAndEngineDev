@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstddef>
 #include <exception>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -40,11 +41,28 @@ enum {text_scale=5120,text_preview,text_inherit,save_appearance,wrap_overwrite,g
 constexpr int premium_action=5138;
 constexpr int audio_programming=5139,audio_mathematics=5140,licenses_action=5141,color_save_notice=5142,size_title=5143,storage_limit=5144,storage_detail=5145;
 constexpr int size_separator=5146,narration_hint=5147;
+constexpr int storage_maximum=5148;
+constexpr int flow_separator_first=5150;
+constexpr int size_range=5152;
+constexpr int kokoro_separator=5153,kokoro_heading=5154,storage_explanation=5155;
+bool separator_id(int id){return id==size_separator||id==kokoro_separator||(id>=flow_separator_first&&id<flow_separator_first+2);}
+constexpr std::uint64_t storage_step=1024ull*1024;
 constexpr int rgb_slider_first=5700,rgb_input_first=5720,rgb_label_first=5740,rgb_default_first=5760,rgb_default_heading_first=5780;
 constexpr int audio_course_first=5600;
 std::optional<std::size_t> choose_settings_option(HWND,std::string_view,std::string_view,const std::vector<std::string>&,std::size_t);
 constexpr UINT_PTR combo_size_subclass_id=0x4C475348;
 constexpr UINT_PTR slider_pointer_subclass_id=0x4C475350;
+constexpr UINT_PTR rgb_input_subclass_id=0x4C475352;
+LRESULT CALLBACK rgb_input_subclass(HWND control,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
+    if(message==WM_NCDESTROY){RemoveWindowSubclass(control,rgb_input_subclass,rgb_input_subclass_id);return DefSubclassProc(control,message,wp,lp);}
+    const bool first_click=message==WM_LBUTTONDOWN&&GetFocus()!=control;
+    const auto result=DefSubclassProc(control,message,wp,lp);
+    // Android's selectAllOnFocus applies to both keyboard focus and the first
+    // mouse click. Select after the native click places its caret; later clicks
+    // and drags keep ordinary EDIT selection and cursor behavior.
+    if((message==WM_SETFOCUS||first_click)&&IsWindow(control))SendMessageW(control,EM_SETSEL,0,-1);
+    return result;
+}
 LRESULT CALLBACK slider_pointer_subclass(HWND control,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
     if(message==WM_NCDESTROY){RemoveWindowSubclass(control,slider_pointer_subclass,slider_pointer_subclass_id);return DefSubclassProc(control,message,wp,lp);}
     if(message==WM_LBUTTONDOWN){
@@ -219,7 +237,7 @@ struct ShortcutDialog {
         if(code==-1)throw std::runtime_error("Cannot open the programming shortcut dialog");return result;
     }
 };
-struct Row{HWND window;int y,height;bool dropdown=false;int actual_top=0,actual_height=0,actual_width=0;bool suppressed=false;int font_size=16;bool font_bold=false;int columns=1,column=0,actual_left=0;};
+struct Row{HWND window;int y,height;bool dropdown=false;int actual_top=0,actual_height=0,actual_width=0;bool suppressed=false;int font_size=16;bool font_bold=false;int columns=1,column=0,actual_left=0;int minimum_gap=8;};
 struct Settings {
     SettingsAccess access; HWND window=nullptr,eyebrow_label=nullptr;std::vector<Row> rows;std::vector<HFONT> fonts;
     std::string locale="es";int scroll=0,extent=0,measured_width=-1,measured_dpi=0,content_height=0;bool binding=false;POINT drag{};bool dragging=false;
@@ -281,8 +299,8 @@ struct Settings {
         if(!SetWindowSubclass(control,combo_size_subclass,combo_size_subclass_id,0))throw std::runtime_error("Cannot preserve native selector dimensions");
         size_combo(control);
     }
-    void checkbox(int id,std::string text,int y,bool checked,int size=18){const auto control=item(L"BUTTON",std::move(text),id,y,40,WS_TABSTOP|BS_AUTOCHECKBOX|BS_MULTILINE|(id==enabled?0:BS_RIGHTBUTTON),size);
-        reader_theme::switch_button(control,id!=enabled);
+    void checkbox(int id,std::string text,int y,bool checked,int size=18){const auto control=item(L"BUTTON",std::move(text),id,y,40,WS_TABSTOP|BS_AUTOCHECKBOX|BS_MULTILINE|BS_RIGHTBUTTON,size);
+        reader_theme::switch_button(control);
         SendMessageW(control,BM_SETCHECK,checked?BST_CHECKED:BST_UNCHECKED,0);}
     void progress(int& y){
         if(!access.reset_scope)return;
@@ -296,10 +314,10 @@ struct Settings {
         label(details,y,access.scope==SettingsScope::course?16:14,false,60);y+=86;
     }
     void flow_controls(int& y){
-        checkbox(auto_lesson,tr("Avanzar automáticamente entre lecciones","Automatically Advance Between Lessons","Passer automatiquement à la leçon suivante"),y,flow_draft.between_lessons);y+=48;
-        checkbox(auto_unit,tr("Avanzar automáticamente entre unidades","Automatically Advance Between Units","Passer automatiquement à l’unité suivante"),y,flow_draft.between_units);y+=48;
-        checkbox(auto_course,tr("Avanzar automáticamente entre cursos","Automatically Advance Between Courses","Passer automatiquement au cours suivant"),y,flow_draft.between_courses);y+=48;
-        checkbox(swipe_finish,tr("Permitir terminar una lección deslizando","Allow Swiping to Finish a Lesson","Autoriser le glissement pour terminer une leçon"),y,flow_draft.swipe_finish);y+=58;
+        checkbox(auto_lesson,tr("Avanzar automáticamente entre lecciones","Automatically Advance Between Lessons","Passer automatiquement à la leçon suivante"),y,flow_draft.between_lessons);y+=40;
+        checkbox(auto_unit,tr("Avanzar automáticamente entre unidades","Automatically Advance Between Units","Passer automatiquement à l’unité suivante"),y,flow_draft.between_units);rows.back().minimum_gap=0;y+=40;
+        checkbox(auto_course,tr("Avanzar automáticamente entre cursos","Automatically Advance Between Courses","Passer automatiquement au cours suivant"),y,flow_draft.between_courses);rows.back().minimum_gap=0;y+=40;
+        checkbox(swipe_finish,tr("Permitir terminar una lección deslizando","Allow Swiping to Finish a Lesson","Autoriser le glissement pour terminer une leçon"),y,flow_draft.swipe_finish);rows.back().minimum_gap=0;y+=58;
         if(access.scope==SettingsScope::course)for(const auto id:{auto_lesson,auto_unit,auto_course,swipe_finish})EnableWindow(GetDlgItem(window,id),!flow_uses_global);
     }
     static bool boolean(const state::StateData& data,const char* domain,const char* key,bool fallback){const auto value=state::find(data,domain,key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
@@ -338,10 +356,13 @@ struct Settings {
         const auto slider=GetDlgItem(window,text_scale),preview=GetDlgItem(window,text_preview);
         if(slider){EnableWindow(slider,access.scope!=SettingsScope::lesson||!inherits_scale);
             const auto effective=access.scope==SettingsScope::lesson&&inherits_scale?appearance::global_text_scale(access.read()):scale_draft;
+            SendMessageW(slider,TBM_SETPOS,TRUE,effective);
             const auto font=CreateFontW(-MulDiv((access.scope==SettingsScope::lesson?17:18)*effective,static_cast<int>(GetDpiForWindow(window)),9600),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,
                 DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             if(font){SendMessageW(preview,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);if(preview_font)DeleteObject(preview_font);preview_font=font;}
-            SetWindowTextW(GetDlgItem(window,size_title),wide((access.scope==SettingsScope::lesson?tr("Tamaño del curso","Course text size","Taille du texte du cours"):tr("Tamaño del contenido","Content Size","Taille du contenu"))+" · "+std::to_string(effective)+(access.scope==SettingsScope::lesson&&locale!="en"?" %":"%")).c_str());
+            const auto size_label=(access.scope==SettingsScope::lesson?tr("Tamaño del curso","Course Content Size","Taille du contenu du cours"):tr("Tamaño del contenido","Content Size","Taille du contenu"))+" · "+std::to_string(effective)+"%"+
+                (access.scope==SettingsScope::lesson&&inherits_scale?tr(" · Global"," · Global"," · Globale"):std::string{});
+            SetWindowTextW(GetDlgItem(window,size_title),wide(size_label).c_str());
             const auto sample=tr("Vista previa de lectura","Reading Preview","Aperçu de lecture");
             SetWindowTextW(preview,wide(sample).c_str());
         }
@@ -364,7 +385,9 @@ struct Settings {
         if(access.scope==SettingsScope::global)description(y,tr("Se aplica a todos los cursos que tengan activada la opción «Usar tamaño global».","Applies to all courses with the «Use Global Size» option enabled.","S’applique à tous les cours pour lesquels l’option « Utiliser la taille globale » est activée."));
         const auto slider=item(TRACKBAR_CLASSW,"",text_scale,y,48,WS_TABSTOP|TBS_HORZ|TBS_NOTICKS);y+=56;
         SendMessageW(slider,TBM_SETRANGE,TRUE,MAKELPARAM(75,150));SendMessageW(slider,TBM_SETLINESIZE,0,1);SendMessageW(slider,TBM_SETPAGESIZE,0,5);SendMessageW(slider,TBM_SETPOS,TRUE,scale_draft);
-        reader_theme::set_text_color(item(L"STATIC","",text_preview,y,80,SS_CENTER,lesson?17:18),RGB(255,255,255));y+=90;label("75% – 150%",y,lesson?12:16);y+=48;
+        reader_theme::set_text_color(item(L"STATIC","",text_preview,y,80,SS_CENTER,lesson?17:18),RGB(255,255,255));y+=88;
+        const auto range=lesson?(locale=="en"?"75%                                  150%":"75 %                                  150 %"):"75 % · 150 %";
+        reader_theme::set_text_color(item(L"STATIC",range,size_range,y,34,SS_CENTER,lesson?12:16),RGB(143,149,159));y+=48;
         if(lesson)end_card(y);
     }
     void description(int& y,std::string text){label(std::move(text),y,16,false,48);y+=58;}
@@ -372,7 +395,10 @@ struct Settings {
         reader_theme::set_text_color(label(std::move(text),y,16,false,48),RGB(174,180,190));y+=58;}
     void rgb_fields(std::size_t index,int& y,bool defaults){
         for(int channel=0;channel<3;++channel){const auto control=item(L"EDIT","",(defaults?rgb_default_first:rgb_input_first)+static_cast<int>(index)*3+channel,y,52,WS_TABSTOP|WS_BORDER|ES_CENTER|ES_AUTOHSCROLL|ES_NUMBER,18);
-            SendMessageW(control,EM_SETLIMITTEXT,3,0);reader_theme::set_text_color(control,RGB(255,255,255));rows.back().columns=3;rows.back().column=channel;}
+            SendMessageW(control,EM_SETLIMITTEXT,3,0);reader_theme::set_text_color(control,RGB(255,255,255));rows.back().columns=3;rows.back().column=channel;
+            const auto hint=channel==0?L"R":channel==1?(locale=="fr"?L"V":L"G"):L"B";
+            SendMessageW(control,EM_SETCUEBANNER,TRUE,reinterpret_cast<LPARAM>(hint));
+            if(!SetWindowSubclass(control,rgb_input_subclass,rgb_input_subclass_id,0))throw std::runtime_error("Cannot preserve RGB input focus selection");}
         y+=64;
     }
     void rgb_controls(std::size_t index,int& y){
@@ -517,6 +543,7 @@ struct Settings {
             const std::array<std::string,3> descriptions{tr("Al terminar una lección, abre directamente la siguiente de la misma unidad.","After completing a lesson, automatically open the next lesson in the same unit.","Après avoir terminé une leçon, ouvrez directement la suivante dans la même unité."),tr("Al terminar una unidad, abre la primera lección de la siguiente.","After completing a unit, open the first lesson of the next unit.","Après avoir terminé une unité, ouvrez la première leçon de l’unité suivante."),tr("Al terminar un curso, abre la primera lección del siguiente curso disponible.","After completing a course, open the first lesson of the next available course.","Après avoir terminé un cours, ouvrez la première leçon du prochain cours disponible.")};
             const std::array<bool,3> values{flow_draft.between_lessons,flow_draft.between_units,flow_draft.between_courses};
             checkbox(auto_lesson+index,names[index],y,values[index]);y+=58;description(y,descriptions[index]);
+            if(index<2){y+=4;item(L"STATIC","",flow_separator_first+index,y,1,SS_OWNERDRAW);y+=5;}
         }end_card(y);y+=32;
         section(y,tr("Gestos de navegación","Navigation Gestures","Gestes de navigation"),tr("Configura cómo responden las lecciones a los gestos.","Configure how lessons respond to gestures.","Configurez la manière dont les leçons réagissent aux gestes."));
         begin_card(y);checkbox(swipe_finish,tr("Terminar una lección deslizando","Finish a Lesson by Swiping","Terminer une leçon par glissement"),y,flow_draft.swipe_finish);y+=58;
@@ -526,8 +553,9 @@ struct Settings {
         description(y,tr("Al cambiar este ajuste, el nuevo valor se aplica a los cursos que permiten sobrescribir su ajuste de línea desde las opciones globales.","Changes apply to courses that allow their line wrapping to be overridden by global options.","Les modifications s’appliquent aux cours qui autorisent les options globales à remplacer leur retour à la ligne."));end_card(y);y+=24;
         section(y,tr("Excepciones de ajuste de línea","Line Wrapping Exceptions","Exceptions de retour à la ligne"),tr("Restablece las excepciones individuales de una ruta y vuelve a permitir que sus cursos reciban el ajuste de línea predeterminado.","Reset individual exceptions for a learning path and allow its courses to use the default line wrapping setting again.","Réinitialisez les exceptions individuelles d’un parcours pour permettre à ses cours d’utiliser à nouveau le paramètre de retour à la ligne par défaut."));
         for(int index=0;index<2;++index){begin_card(y);label(index==0?tr("Programación","Programming","Programmation"):tr("Matemáticas y Física","Mathematics and Physics","Mathématiques et physique"),y,19,true);y+=34;
-            description(y,tr("Los cursos de esta ruta volverán a permitir la sobrescritura global y recibirán el ajuste de línea predeterminado actual.","Courses in this path will allow global overrides again and receive the current default line wrapping.","Les cours de ce parcours autoriseront à nouveau le réglage global et recevront le retour à la ligne par défaut actuel."));
-            const auto button=item(L"BUTTON",index==0?tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation"):tr("Restablecer excepciones de Matemáticas y Física","Reset Mathematics and Physics exceptions","Réinitialiser les exceptions de Mathématiques et Physique"),index==0?reset_wrap_exceptions:reset_math_wrap_exceptions,y,58,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);y+=72;end_card(y);y+=20;
+            description(y,index==0?tr("Los cursos de esta ruta volverán a permitir la sobrescritura global y recibirán el ajuste de línea predeterminado actual.","Courses in this path will allow global overrides again and receive the current default line wrapping.","Les cours de ce parcours autoriseront à nouveau le réglage global et recevront le retour à la ligne par défaut actuel."):
+                tr("Esta ruta aún no tiene cursos ni excepciones de ajuste de línea. El botón solo muestra un aviso; no restablece ninguna configuración.","This learning path has no courses or line wrapping exceptions yet. The button only shows a notice; it does not reset any settings.","Ce parcours n’a pas encore de cours ni d’exceptions de retour à la ligne. Le bouton affiche seulement un message ; aucun réglage n’est réinitialisé."));
+            const auto button=item(L"BUTTON",index==0?tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation"):tr("Consultar disponibilidad de excepciones","Check exception availability","Vérifier la disponibilité des exceptions"),index==0?reset_wrap_exceptions:reset_math_wrap_exceptions,y,58,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);y+=72;end_card(y);y+=20;
         }
         if(access.reset_route){section(y,tr("Datos y progreso","Data and Progress","Données et progression"),tr("Reinicia el progreso guardado de cada ruta sin cambiar sus ajustes.","Reset each learning path’s saved progress without changing its settings.","Réinitialisez la progression enregistrée de chaque parcours sans modifier ses réglages."));
             for(int index=0;index<2;++index){begin_card(y);label(index==0?tr("Ruta de Programación","Programming Learning Path","Parcours de programmation"):tr("Ruta de Matemáticas y Física","Mathematics and Physics path","Parcours Mathématiques et Physique"),y,19,true);y+=34;
@@ -538,27 +566,41 @@ struct Settings {
     }
     void refresh_narration_visibility(){
         if(!GetDlgItem(window,engine))return;
-        const auto data=access.read();const auto chosen=state::string_value(data,"lesson_narration_settings","engine","KOKORO");const bool neural=chosen!="WINDOWS"&&chosen!="ANDROID";
+        const auto data=access.read();
         const bool active=boolean(data,"lesson_narration_settings","enabled",true);
         for(const auto id:{engine,language,voice})EnableWindow(GetDlgItem(window,id),active&&(id!=voice||!voices.empty()));
-        for(std::size_t index=kokoro_rows_begin;index<kokoro_rows_end&&index<rows.size();++index){rows[index].suppressed=!neural;ShowWindow(rows[index].window,neural?SW_SHOW:SW_HIDE);EnableWindow(rows[index].window,active);}
+        // Android keeps the existing Kokoro recordings and preparation controls
+        // available when the playback engine changes. Only the master switch
+        // disables this section; selecting system speech does not remove it.
+        for(std::size_t index=kokoro_rows_begin;index<kokoro_rows_end&&index<rows.size();++index){rows[index].suppressed=false;ShowWindow(rows[index].window,SW_SHOW);EnableWindow(rows[index].window,active);}
+        EnableWindow(GetDlgItem(window,licenses_action),active);
+    }
+    std::string storage_size(std::uint64_t bytes)const{char value[40]{};std::snprintf(value,sizeof(value),"%.2f",static_cast<double>(bytes)/(1024.*1024.*1024.));std::string number(value);if(locale!="en")std::replace(number.begin(),number.end(),'.',',');return number+tr(" GB"," GB"," Go");}
+    void refresh_storage_detail(std::uint64_t selected){
+        const auto limit=selected?storage_size(selected):tr("0 GB (pregeneración pausada)","0 GB (pre-rendering paused)","0 Go (prégénération en pause)");
+        auto detail=tr("Límite: ","Limit: ","Limite : ")+limit+tr(" · Ya guardado: "," · Already saved: "," · Déjà enregistré : ")+storage_size(storage.stored_bytes);
+        if(storage.stored_bytes>=selected)detail+=" "+tr("No se generarán nuevos audios automáticos hasta tener espacio disponible.","No new background audio will be generated until there is room.","Aucun nouvel audio automatique tant que l’espace reste insuffisant.");
+        SetWindowTextW(GetDlgItem(window,storage_detail),wide(detail).c_str());
+        SetWindowTextW(GetDlgItem(window,storage_maximum),wide(tr("Máximo disponible: ","Available maximum: ","Maximum disponible : ")+storage_size(storage.maximum_bytes)+tr(" (con 1 GB de reserva)"," (with 1 GB reserved)"," (1 Go réservé)")).c_str());
     }
     void narration_controls(int& y,const state::StateData& data){
         section(y,tr("Lectura en voz alta","Read aloud","Lecture à voix haute"),tr("Configura la lectura de las lecciones, el motor, las voces y sus recursos.","Configure lesson narration, the speech engine, voices, and their resources.","Configurez la lecture des leçons, le moteur vocal, les voix et leurs ressources."));
-        begin_card(y);label(tr("Ajustes generales de narración","General narration settings","Paramètres généraux de narration"),y,17,true);y+=42;
+        begin_card(y);label(tr("Ajustes generales de narración","General narration settings","Paramètres généraux de narration"),y,18,true);y+=42;
         checkbox(enabled,tr("Activar narración de las lecciones","Enable lesson narration","Activer la narration des leçons"),y,boolean(data,"lesson_narration_settings","enabled",true));y+=52;
         for(const auto id:{engine,language,voice}){reader_theme::primary_button(item(L"BUTTON","",id,y,56,WS_TABSTOP|BS_PUSHBUTTON,17));y+=72;}
         fill_voices(data);
         kokoro_rows_begin=rows.size();
+        y+=14;item(L"STATIC","",kokoro_separator,y,1,SS_OWNERDRAW);y+=13;
+        item(L"STATIC",tr("Voces y recursos Kokoro","Kokoro voices and resources","Voix et ressources Kokoro"),kokoro_heading,y,34,SS_LEFT,18,true);y+=46;
         if(access.storage_snapshot){storage=access.storage_snapshot();
             label(tr("Almacenamiento para audios Kokoro","Kokoro audio storage","Stockage audio Kokoro"),y,17,true);y+=38;
-            const auto gib=[](std::uint64_t bytes){char value[32]{};std::snprintf(value,sizeof(value),"%.2f GiB",static_cast<double>(bytes)/(1024.*1024.*1024.));return std::string(value);};
-            item(L"STATIC",tr("Límite: ","Limit: ","Limite : ")+gib(storage.effective_bytes)+tr(" · Guardados: "," · Stored: "," · Enregistrés : ")+gib(storage.stored_bytes),storage_detail,y,46,SS_LEFT,15);y+=54;
+            item(L"STATIC","",storage_detail,y,46,SS_LEFT,15);y+=54;
             const auto slider=item(TRACKBAR_CLASSW,"",storage_limit,y,48,WS_TABSTOP|TBS_HORZ|TBS_NOTICKS);y+=56;
-            const auto steps=static_cast<int>(std::min<std::uint64_t>(20000,storage.maximum_bytes/(512ull*1024*1024)));
-            SendMessageW(slider,TBM_SETRANGE,TRUE,MAKELPARAM(0,steps));SendMessageW(slider,TBM_SETPOS,TRUE,std::min(steps,static_cast<int>(storage.effective_bytes/(512ull*1024*1024))));
-            label(tr("Máximo disponible: ","Maximum available: ","Maximum disponible : ")+gib(storage.maximum_bytes),y,14);y+=40;
-            description(y,tr("Al alcanzar el límite se conservan las grabaciones existentes y se detiene la generación de audios nuevos. Se reserva al menos 1 GiB libre.","At the limit, existing recordings are preserved and new audio generation stops. At least 1 GiB stays free.","Lorsque la limite est atteinte, les enregistrements sont conservés et la génération de nouveaux audios s’arrête. Au moins 1 Gio reste libre."));
+            const auto steps=static_cast<int>(std::min<std::uint64_t>(std::numeric_limits<int>::max(),storage.maximum_bytes/storage_step));
+            SendMessageW(slider,TBM_SETRANGEMIN,FALSE,0);SendMessageW(slider,TBM_SETRANGEMAX,TRUE,steps);
+            SendMessageW(slider,TBM_SETPOS,TRUE,static_cast<int>(std::min<std::uint64_t>(steps,storage.effective_bytes/storage_step)));
+            item(L"STATIC","",storage_maximum,y,30,SS_LEFT,14);y+=40;refresh_storage_detail(storage.effective_bytes);
+            item(L"STATIC",tr("Límite para la pregeneración automática. Se reserva al menos 1 GB libre; los audios terminados nunca se borran automáticamente.","Limit for automatic pre-rendering. At least 1 GB stays free; finished audio is never deleted automatically.","Limite de prégénération automatique. Au moins 1 Go reste libre ; les audios terminés ne sont jamais supprimés automatiquement."),storage_explanation,y,60,SS_LEFT,14);y+=70;
         }
         checkbox(advance,tr("Generar anticipadamente los audios de las siguientes lecciones y cursos","Generate audio for upcoming lessons and courses in advance","Générer à l’avance l’audio des prochaines leçons et cours"),y,boolean(data,"lesson_narration_settings","kokoro_advance_generation",true));y+=72;
         if(access.open_audio){label(tr("Audios Kokoro por curso","Kokoro audio by course","Audios Kokoro par cours"),y,17,true);y+=38;
@@ -570,7 +612,7 @@ struct Settings {
                 reader_theme::set_text_color(rows[index].window,RGB(210,214,220));}
         end_card(y);y+=24;
         refresh_narration_visibility();
-        if(access.open_licenses){label(tr("Licencias","Licenses","Licences"),y,19,true);y+=38;begin_card(y);const auto button=item(L"BUTTON",tr("Licencias y atribuciones de lectura","Read aloud licenses and credits","Licences et crédits de lecture"),licenses_action,y,54,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);y+=66;end_card(y);y+=24;}
+        if(access.open_licenses){label(tr("Licencias","Licenses","Licences"),y,19,true);y+=38;begin_card(y);const auto button=item(L"BUTTON",tr("Licencias y atribuciones de lectura","Read aloud licenses and credits","Licences et crédits de lecture"),licenses_action,y,54,WS_TABSTOP|BS_PUSHBUTTON);reader_theme::primary_button(button);EnableWindow(button,boolean(data,"lesson_narration_settings","enabled",true));y+=66;end_card(y);y+=24;}
     }
     void build(){
         binding=true;struct BindingGuard{bool& value;~BindingGuard(){value=false;}} binding_guard{binding};
@@ -674,7 +716,7 @@ struct Settings {
             const auto row_index=static_cast<std::size_t>(&row-rows.data());const auto inner=in_card(row_index);
             const auto id=GetDlgCtrlID(row.window);if(row.suppressed||(id==save_appearance&&!appearance_dirty())){row.actual_height=0;row.actual_top=cursor;row.actual_width=width;authored_end=row.y+row.height;continue;}const int gap=row.y-authored_end;
             const auto nested=in_defaults(row_index);const int inset=(inner?padding:0)+(nested?px(14):0),usable=std::max(1,width-2*inset);
-            row.actual_top=row.column>0?rows[row_index-1].actual_top:rows.data()==&row?px(row.y):cursor+px(std::max(8,gap));
+            row.actual_top=row.column>0?rows[row_index-1].actual_top:rows.data()==&row?px(row.y):cursor+px(std::max(row.minimum_gap,gap));
             row.actual_width=id==back?px(56):row.columns>1?std::max(1,(usable-px(8)*(row.columns-1))/row.columns):usable;
             row.actual_left=margin+inset+row.column*(row.actual_width+px(8));
             if(row.dropdown){
@@ -685,7 +727,7 @@ struct Settings {
             }else{
                 wchar_t name[32]{};GetClassNameW(row.window,name,32);
                 if(id==back)row.actual_height=px(56);
-                else if(id==size_separator)row.actual_height=px(1);
+                else if(separator_id(id))row.actual_height=px(1);
                 else if(id>=global_color&&id<=math_color)row.actual_height=px(76);
                 else if(_wcsicmp(name,L"BUTTON")==0){
                     const auto type=GetWindowLongPtrW(row.window,GWL_STYLE)&BS_TYPEMASK;
@@ -730,8 +772,8 @@ struct Settings {
         if((id==reset_programming||id==reset_math)&&access.reset_route){access.reset_route(id==reset_programming?"programming":"math_physics");return;}
         if(notification!=CBN_SELCHANGE&&notification!=BN_CLICKED)return;
         if(id==premium_action){MessageBoxW(window,wide(tr("Esta versión es para uso personal. Premium solo se activa desde el código.","This version is for personal use. Premium is enabled only in code.","Cette version est réservée à un usage personnel. Premium s’active uniquement dans le code.")).c_str(),L"Premium",MB_OK|MB_ICONINFORMATION);return;}
-        if(id==audio_programming||id==audio_mathematics){if(access.open_audio)access.open_audio(id==audio_programming?"programming":"math_physics");return;}
-        if(id==licenses_action){if(access.open_licenses)access.open_licenses();return;}
+        if(id==audio_programming||id==audio_mathematics){if(boolean(access.read(),"lesson_narration_settings","enabled",true)&&access.open_audio)access.open_audio(id==audio_programming?"programming":"math_physics");return;}
+        if(id==licenses_action){if(boolean(access.read(),"lesson_narration_settings","enabled",true)&&access.open_licenses)access.open_licenses();return;}
         const auto selection=static_cast<int>(SendDlgItemMessageW(window,id,CB_GETCURSEL,0,0));
         const bool checked=SendDlgItemMessageW(window,id,BM_GETCHECK,0,0)==BST_CHECKED;
         if(id==save_appearance){save_appearance_settings();return;}
@@ -743,15 +785,17 @@ struct Settings {
         if(id==text_inherit){inherits_scale=original_inherits_scale=checked;access.update([&](auto& data){appearance::save_course_text_scale(data,access.course_id,checked,scale_draft);});refresh_appearance();if(access.changed)access.changed();return;}
         if(id==wrap_overwrite){wrap_allowed=original_wrap_allowed=checked;access.update([&](auto& data){appearance::save_wrap_overwrite(data,access.course_id,checked);});refresh_appearance();if(access.changed)access.changed();return;}
         if(id==programming_color_overwrite||id==math_color_overwrite){color_overwrite[id-programming_color_overwrite]=checked;refresh_appearance();return;}
-        if(id==reset_wrap_exceptions||id==reset_math_wrap_exceptions){
-            const auto& courses=id==reset_wrap_exceptions?access.programming_course_ids:access.math_course_ids;
-            const auto title=id==reset_wrap_exceptions?tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation"):tr("Restablecer excepciones de Matemáticas y Física","Reset Mathematics and Physics exceptions","Réinitialiser les exceptions de Mathématiques et Physique");
-            const auto description=id==reset_wrap_exceptions?tr("Todos los cursos de Programación volverán a permitir que las Opciones globales sobrescriban su ajuste de línea.\n\nAdemás, todos recibirán inmediatamente el ajuste de línea predeterminado actualmente guardado.","All Programming courses will once again allow global settings to override their line wrapping preferences.\n\nThey will also immediately receive the currently saved default line wrapping setting.","Tous les cours de Programmation autoriseront à nouveau les paramètres généraux à remplacer leur réglage de retour à la ligne.\n\nIls recevront également immédiatement le réglage de retour à la ligne par défaut actuellement enregistré."):
-                tr("Todos los cursos de Matemáticas y Física volverán a permitir que las Opciones globales sobrescriban su ajuste de línea.\n\nAdemás, todos recibirán inmediatamente el ajuste de línea predeterminado actualmente guardado.","All Mathematics and Physics courses will once again allow global settings to override their line wrapping preferences.\n\nThey will also immediately receive the currently saved default line wrapping setting.","Tous les cours de Mathématiques et Physique autoriseront à nouveau les paramètres généraux à remplacer leur réglage de retour à la ligne.\n\nIls recevront également immédiatement le réglage de retour à la ligne par défaut actuellement enregistré.");
+        if(id==reset_math_wrap_exceptions){
+            const auto message=tr("Todavía no hay cursos disponibles en esta ruta.\n\nCuando se agreguen cursos, este botón permitirá restablecer sus excepciones de ajuste de línea.","There are no courses available in this learning path yet.\n\nWhen courses are added, this button will allow you to reset their line wrapping exceptions.","Aucun cours n’est encore disponible dans ce parcours.\n\nLorsque des cours seront ajoutés, ce bouton permettra de réinitialiser leurs exceptions de retour à la ligne.");
+            MessageBoxW(window,wide(message).c_str(),wide(tr("Matemáticas y Física","Mathematics and Physics","Mathématiques et physique")).c_str(),MB_OK|MB_ICONINFORMATION);return;
+        }
+        if(id==reset_wrap_exceptions){
+            const auto& courses=access.programming_course_ids;
+            const auto title=tr("Restablecer excepciones de Programación","Reset Programming Exceptions","Réinitialiser les exceptions de programmation");
+            const auto description=tr("Todos los cursos de Programación volverán a permitir que las Opciones globales sobrescriban su ajuste de línea.\n\nAdemás, todos recibirán inmediatamente el ajuste de línea predeterminado actualmente guardado.","All Programming courses will once again allow global settings to override their line wrapping preferences.\n\nThey will also immediately receive the currently saved default line wrapping setting.","Tous les cours de Programmation autoriseront à nouveau les paramètres généraux à remplacer leur réglage de retour à la ligne.\n\nIls recevront également immédiatement le réglage de retour à la ligne par défaut actuellement enregistré.");
             if(MessageBoxW(window,wide(description).c_str(),wide(title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONQUESTION)!=IDYES)return;
             access.update([&](state::StateData& data){appearance::reset_wrap_exceptions(data,courses);});
-            show_settings_notice(window,id==reset_wrap_exceptions?tr("Excepciones de Programación restablecidas","Programming Exceptions Reset","Exceptions de programmation réinitialisées"):
-                tr("Excepciones de Matemáticas y Física restablecidas","Mathematics and Physics Exceptions Reset","Exceptions de mathématiques et physique réinitialisées"));
+            show_settings_notice(window,tr("Excepciones de Programación restablecidas","Programming Exceptions Reset","Exceptions de programmation réinitialisées"));
             if(access.changed)access.changed();return;
         }
         if(access.scope==SettingsScope::global&&(id==auto_lesson||id==auto_unit||id==auto_course||id==swipe_finish||id==code_wrap)){
@@ -810,7 +854,7 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     case close_message:if(self->appearance_dirty()&&self->access.unsaved_discarded)self->access.unsaved_discarded(self->tr("Saliste sin guardar los cambios de color.","You left without saving the colour changes.","Vous avez quitté sans enregistrer les modifications de couleur."));if(self->access.close)self->access.close();return 0;
     case refresh_language_message:self->refresh_language();return 0;
     case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);
-        if(item.CtlID==size_separator){const auto color=reader_theme::palette(window);const auto fill=CreateSolidBrush(color.high_contrast?color.outline:RGB(48,50,58));FillRect(item.hDC,&item.rcItem,fill);DeleteObject(fill);return TRUE;}
+        if(separator_id(static_cast<int>(item.CtlID))){const auto color=reader_theme::palette(window);const auto fill=CreateSolidBrush(color.high_contrast?color.outline:item.CtlID==kokoro_separator?RGB(76,79,87):RGB(48,50,58));FillRect(item.hDC,&item.rcItem,fill);DeleteObject(fill);return TRUE;}
         if(item.CtlID>=global_color&&item.CtlID<=math_color){
             const auto palette=reader_theme::palette(window);FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::catalog_card));
             const int index=item.CtlID-global_color;const auto color=self->colors[index];const auto fill=CreateSolidBrush(palette.high_contrast?palette.card:color);
@@ -838,15 +882,15 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
         }
         if(item.CtlID==back){FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::catalog_card));auto bounds=item.rcItem;InflateRect(&bounds,-self->px(18),-self->px(8));draw_icon(item.hDC,bounds,Icon::back,reader_theme::accent_ink(window,reader_theme::palette(window).card));return TRUE;}return reader_theme::draw_button(item);}
     case WM_MOUSEWHEEL:self->scroll-=GET_WHEEL_DELTA_WPARAM(wp)*self->px(48)/WHEEL_DELTA;self->layout(false);return 0;
-    case WM_HSCROLL:if(lp&&!self->binding){const auto slider=reinterpret_cast<HWND>(lp);const int id=GetDlgCtrlID(slider);
+    case WM_HSCROLL:if(lp&&!IsWindowEnabled(reinterpret_cast<HWND>(lp)))return 0;
+    if(lp&&!self->binding){const auto slider=reinterpret_cast<HWND>(lp);const int id=GetDlgCtrlID(slider);
         if(id>=rgb_slider_first&&id<rgb_slider_first+9){const int offset=id-rgb_slider_first,index=offset/3,channel=offset%3,value=static_cast<int>(SendMessageW(slider,TBM_GETPOS,0,0));
             self->colors[index]=rgb_with_channel(self->colors[index],channel,value);self->color_inputs[index][channel]=std::to_string(value);self->refresh_appearance();return 0;}}
     if(lp&&!self->binding&&reinterpret_cast<HWND>(lp)==GetDlgItem(window,storage_limit)){
-        const auto bytes=static_cast<std::uint64_t>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0))*(512ull*1024*1024);
+        const auto bytes=static_cast<std::uint64_t>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0))*storage_step;
         self->access.update([&](auto& data){data.preferences["lesson_narration_settings"]["offline_audio_budget_bytes"]=static_cast<std::int64_t>(bytes);});
         if(self->access.storage_snapshot)self->storage=self->access.storage_snapshot();
-        char value[120]{};std::snprintf(value,sizeof(value),"%.2f GiB · %.2f GiB",static_cast<double>(self->storage.effective_bytes)/(1024.*1024.*1024.),static_cast<double>(self->storage.stored_bytes)/(1024.*1024.*1024.));
-        SetWindowTextW(GetDlgItem(window,storage_detail),wide(self->tr("Límite / guardados: ","Limit / stored: ","Limite / enregistrés : ")+value).c_str());
+        self->refresh_storage_detail(bytes);self->layout();
         if(self->access.changed)self->access.changed();return 0;}
     if(lp&&!self->binding&&reinterpret_cast<HWND>(lp)==GetDlgItem(window,text_scale)){
         self->scale_draft=self->original_scale=std::clamp(static_cast<int>(SendMessageW(reinterpret_cast<HWND>(lp),TBM_GETPOS,0,0)),75,150);self->access.update([&](auto& data){if(self->access.scope==SettingsScope::lesson)appearance::save_course_text_scale(data,self->access.course_id,self->inherits_scale,self->scale_draft);else appearance::save_global_text_scale(data,self->scale_draft);});self->refresh_appearance();if(self->access.changed)self->access.changed();return 0;}break;
@@ -1017,10 +1061,27 @@ LRESULT CALLBACK attempt_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     return DefWindowProcW(window,message,wp,lp);
 }
 }
+SettingsResetText settings_reset_text(SettingsScope scope,std::string_view locale,std::string_view route){
+    const auto tr=[&](const char* es,const char* en,const char* fr){return std::string(locale=="fr"?fr:locale=="en"?en:es);};
+    if(scope==SettingsScope::global){
+        if(route=="programming")return {
+            tr("Reiniciar progreso de Programación","Reset Programming Progress","Réinitialiser la progression en programmation"),
+            tr("Se eliminarán el progreso, las respuestas y las páginas guardadas de todos los cursos de la ruta de Programación.\n\nLos ajustes generales y las configuraciones particulares de los cursos se conservarán.\n\nEsta acción no se puede deshacer.","Saved progress, answers, and pages from all courses in the Programming learning path will be deleted.\n\nGeneral settings and individual course configurations will be preserved.\n\nThis action cannot be undone.","La progression, les réponses et les pages enregistrées de tous les cours du parcours Programmation seront supprimées.\n\nLes paramètres généraux et les configurations particulières des cours seront conservés.\n\nCette action est irréversible."),
+            tr("Progreso de Programación reiniciado","Programming Progress Reset","Progression en programmation réinitialisée")};
+        if(route=="math_physics")return {
+            tr("Reiniciar progreso de Matemáticas y Física","Reset Mathematics and Physics progress","Réinitialiser la progression en mathématiques et en physique"),
+            tr("Se eliminarán el progreso, las respuestas y las páginas guardadas de todos los cursos de la ruta de Matemáticas y Física.\n\nLos ajustes generales y las configuraciones particulares de los cursos se conservarán.\n\nEsta acción no se puede deshacer.","Progress, answers, and saved pages for all courses in the Mathematics and Physics route will be deleted.\n\nGeneral settings and course-specific configurations will be preserved.\n\nThis action cannot be undone.","La progression, les réponses et les pages enregistrées de tous les cours du parcours de mathématiques et de physique seront supprimées.\n\nLes réglages généraux et les configurations propres aux cours seront conservés.\n\nCette action est irréversible."),
+            tr("Progreso de Matemáticas y Física reiniciado","Mathematics and Physics progress reset","Progression en mathématiques et en physique réinitialisée")};
+    }
+    if(scope==SettingsScope::course)return {tr("Reiniciar curso","Reset course","Réinitialiser le cours"),tr("Se eliminarán el progreso y las respuestas de todas las unidades y lecciones de este curso.\n\nEsta acción no se puede deshacer.","Progress and answers from all units and lessons in this course will be deleted.\n\nThis action cannot be undone.","La progression et les réponses de toutes les unités et leçons de ce cours seront supprimées.\n\nCette action est irréversible."),tr("Curso reiniciado","Course Reset","Cours réinitialisé")};
+    if(scope==SettingsScope::unit)return {tr("Reiniciar unidad","Reset unit","Réinitialiser l’unité"),tr("Se eliminarán el progreso y las respuestas de todas las lecciones de esta unidad.\n\nEsta acción no se puede deshacer.","Progress and answers from all lessons in this unit will be deleted.\n\nThis action cannot be undone.","La progression et les réponses de toutes les leçons de cette unité seront supprimées.\n\nCette action est irréversible."),tr("Unidad reiniciada","Unit Reset","Unité réinitialisée")};
+    if(scope==SettingsScope::lesson)return {tr("Reiniciar lección","Reset lesson","Réinitialiser la leçon"),tr("Se eliminarán todas las respuestas, los ejercicios completados, la página guardada y el progreso de esta lección.\n\nEsta acción no se puede deshacer.","All answers, completed exercises, the saved page, and progress for this lesson will be deleted.\n\nThis action cannot be undone.","Toutes les réponses, les exercices terminés, la page enregistrée et la progression de cette leçon seront supprimés.\n\nCette action est irréversible."),tr("Lección reiniciada","Lesson Reset","Leçon réinitialisée")};
+    throw std::invalid_argument("Unknown progress reset scope");
+}
 HWND create_settings_window(HWND owner,SettingsAccess access){
     const auto instance=GetModuleHandleW(nullptr);WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=frame_proc;cls.hInstance=instance;cls.lpszClassName=frame_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
     auto frame=std::make_unique<SettingsFrame>();const auto locale=interface_language(access.read());
-    const auto caption=access.title.empty()?(locale=="es"?L"Opciones":locale=="fr"?L"Options":L"Options"):wide(access.title);
+    const auto caption=access.title.empty()?(locale=="es"?L"Opciones":locale=="fr"?L"Paramètres":L"Settings"):wide(access.title);
     frame->access=std::move(access);RECT owner_bounds{},work{};GetWindowRect(owner,&owner_bounds);MONITORINFO monitor{sizeof(monitor)};GetMonitorInfoW(MonitorFromWindow(owner,MONITOR_DEFAULTTONEAREST),&monitor);work=monitor.rcWork;
     const auto dpi=GetDpiForWindow(owner);const auto width=std::min<LONG>(MulDiv(920,dpi,96),work.right-work.left),height=std::min<LONG>(MulDiv(900,dpi,96),work.bottom-work.top);
     const auto left=std::clamp<LONG>((owner_bounds.left+owner_bounds.right-width)/2,work.left,work.right-width),top=std::clamp<LONG>((owner_bounds.top+owner_bounds.bottom-height)/2,work.top,work.bottom-height);
@@ -1049,7 +1110,7 @@ void show_settings_notice(HWND owner,std::string_view text){
     const auto dpi=GetDpiForWindow(owner);RECT parent{};GetWindowRect(owner,&parent);
     const int width=std::min<int>(MulDiv(600,dpi,96),std::max(160L,parent.right-parent.left-MulDiv(32,dpi,96)));
     const int height=MulDiv(78,dpi,96);
-    const auto popup=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,L"STATIC",wide(text).c_str(),WS_POPUP|WS_VISIBLE|SS_CENTER|SS_CENTERIMAGE,
+    const auto popup=CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,L"STATIC",wide(text).c_str(),WS_POPUP|SS_CENTER|SS_CENTERIMAGE,
         parent.left+(parent.right-parent.left-width)/2,parent.bottom-height-MulDiv(32,dpi,96),width,height,owner,nullptr,GetModuleHandleW(nullptr),nullptr);
     if(!popup)return;reader_theme::apply(popup,reader_theme::Surface::catalog_card);
     const auto font=CreateFontW(-MulDiv(16,dpi,96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
@@ -1062,5 +1123,6 @@ void show_settings_notice(HWND owner,std::string_view text){
     },0x4C47534E,reinterpret_cast<DWORD_PTR>(font))){DeleteObject(font);DestroyWindow(popup);return;}
     SendMessageW(popup,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);
     SetTimer(popup,1,3000,nullptr);
+    SetWindowPos(popup,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
 }
 }

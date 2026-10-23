@@ -283,7 +283,7 @@ def math_host_sources() -> list[Path]:
     """Compile original evaluators; only resource resolution is platform-specific."""
     names = ("MathPuzzleSpec", "MathValidators", "MathAnswer", "MathShortcutResolver",
              "MathExpressionSemantics", "ParametricRationalExpression", "RigidAngleCopy",
-             "EuclideanDiagram", "MathPuzzleFeedback", "MathInputMode")
+             "EuclideanDiagram", "RigidAngleLabelLayout", "MathPuzzleFeedback", "MathInputMode")
     sources = []
     for name in names:
         path = APP / "math" / f"{name}.kt"
@@ -294,6 +294,55 @@ def math_host_sources() -> list[Path]:
         if name == "MathValidators":
             code = exact(code, "    fun resolveMessage(context: android.content.Context): String = uiMessage?.resolve(context) ?: message\n", "")
         sources.append(generated(f"{name}.kt", code))
+    # Reuse Android's exact implicit-formula detector and parser. Only the
+    # Spannable drawing sink becomes UTF-16 ranges plus the original AST;
+    # neither detection expressions nor their priority are reimplemented.
+    typesetter = (APP / "math/MathTextView.kt").read_text(encoding="utf-8-sig")
+    typesetter = typesetter[typesetter.index("    private val numericFraction"):typesetter.index("\nprivate class MathFormulaSpan")]
+    typesetter = remove_platform_method(typesetter, "    fun apply(")
+    typesetter = exact(typesetter, 'fun render(value: String, mode: String = "auto"): CharSequence {',
+        'fun render(value: String, mode: String = "auto"): WindowsMathTextOutput {')
+    typesetter = exact(typesetter, 'if (mode == "text" || value.isBlank()) return value',
+        'if (mode == "text" || value.isBlank()) return WindowsMathTextOutput()')
+    typesetter = exact(typesetter, "val output = SpannableStringBuilder()", "val output = WindowsMathTextOutput()")
+    typesetter = exact(typesetter, "fun appendMath(source: String, content: Boolean = false) {",
+        "fun appendMath(source: String, content: Boolean = false, sourceStart: Int = 0, sourceEnd: Int = sourceStart + source.length) {")
+    typesetter = exact(typesetter, "            val start = output.length\n", "")
+    typesetter = exact(typesetter,
+        "            output.setSpan(MathFormulaSpan(expression, MathReadingAtoms.flat(source, expression)), start, output.length,\n                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)",
+        "            val literal = expression.children.singleOrNull().let { it is MathExpression.Symbol && it.value == source }\n            output.fragments += WindowsMathFragment(sourceStart, sourceEnd, if (literal) source else normalizeExpression(source), literal)")
+    typesetter = exact(typesetter, "fun appendContent(source: String) {", "fun appendContent(source: String, sourceStart: Int) {\n            var lineStart = sourceStart")
+    typesetter = exact(typesetter, "appendMath(line, content = true)", "appendMath(line, content = true, sourceStart = lineStart)\n                lineStart += line.length + 1")
+    typesetter = exact(typesetter, "appendContent(value.substring(contentStart, index))", "appendContent(value.substring(contentStart, index), contentStart)")
+    typesetter = exact(typesetter, "appendContent(value.substring(contentStart))", "appendContent(value.substring(contentStart), contentStart)")
+    typesetter = exact(typesetter, "appendMath(value.substring(index + delimiters.first.length, end).let { if (display) it.trim() else it })",
+        "val source = value.substring(index + delimiters.first.length, end)\n                    appendMath(if (display) source.trim() else source, sourceStart = index, sourceEnd = end + delimiters.second.length)", count=2)
+    typesetter = exact(typesetter, "appendMath(candidate.value)", "appendMath(candidate.value, sourceStart = index)")
+    typesetter = exact(typesetter, "appendMath(value[index].toString())", "appendMath(value[index].toString(), sourceStart = index)")
+    # Keep the original normalization independently of the serializer: serializing
+    # the AST would turn visible '×' into '\\cdot', and Unicode minus into '-'.
+    # The native projection must retain the same original displayed operators.
+    method = typesetter.index("    internal fun parseExpression(")
+    normalization_start = typesetter.index("        // A coordinate separator", method)
+    normalization_end = typesetter.index("        return when (val result =", normalization_start)
+    normalization = typesetter[normalization_start:normalization_end]
+    typesetter = typesetter[:normalization_start] + "        val normalized = normalizeExpression(source)\n" + typesetter[normalization_end:]
+    typesetter = typesetter[:method] + "    private fun normalizeExpression(source: String): String {\n" + normalization + "        return normalized\n    }\n\n" + typesetter[method:]
+    typesetter_source = '''package com.learngraphicsprogramming.app.math
+internal data class WindowsMathFragment(val start: Int, val end: Int, val formula: String, val literal: Boolean)
+internal class WindowsMathTextOutput : CharSequence {
+    private val display = StringBuilder()
+    val fragments = mutableListOf<WindowsMathFragment>()
+    override val length get() = display.length
+    override fun get(index: Int) = display[index]
+    override fun subSequence(startIndex: Int, endIndex: Int) = display.subSequence(startIndex, endIndex)
+    fun append(value: String) { display.append(value) }
+    fun append(value: Char) { display.append(value) }
+    fun append(value: String, start: Int, end: Int) { display.append(value, start, end) }
+}
+internal object WindowsMathTypesetting {
+'''+typesetter
+    sources.append(generated("WindowsMathTypesetting.kt", typesetter_source))
     model = (APP / "math/MathExpressionModel.kt").read_text(encoding="utf-8-sig")
     model = exact(model, "import com.learngraphicsprogramming.app.R\n", "")
     model = re.sub(r"R\.string\.([a-z_]+)", r'"\1"', model)

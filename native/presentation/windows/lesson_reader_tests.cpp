@@ -2,6 +2,9 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "presentation/windows/math_expression_editor.hpp"
+#include "presentation/windows/math_puzzle_view.hpp"
+#include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
@@ -10,6 +13,7 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <winrt/Windows.Data.Json.h>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -90,6 +94,39 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         {
+            auto lesson=windows::parse_lesson_json(R"({"id":"qa_reader_math_keyboard","title":"Prueba.","pages":[{"blocks":[{"type":"math_puzzle","prompt":"Escribe un número.","responses":[{"id":"value","type":"math_numeric_input"}]}]}]})");
+            Fixture f(backend,false,true,true,"es",std::move(lesson));
+            LessonViewHooks hooks;hooks.before_page_change=[&f](HWND){f.reader->pause();};
+            hooks.content_changed=[&f](HWND){f.reader->content_changed();};
+            hooks.feedback_changed=[&f](HWND,std::size_t block,bool correct){f.reader->feedback(block,correct);};
+            hooks.math_editor_request=[backend](std::string_view request){
+                const auto command=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(request)).GetNamedString(L"command",L"");
+                return command==L"math_keyboard"?backend->math_keyboard(request):backend->math_editor(request);
+            };set_lesson_view_hooks(f.view,std::move(hooks));
+            HWND field=nullptr;EnumChildWindows(f.view,[](HWND candidate,LPARAM output)->BOOL{
+                if(!math_field_keyboard_context(candidate).empty()){*reinterpret_cast<HWND*>(output)=candidate;return FALSE;}return TRUE;
+            },reinterpret_cast<LPARAM>(&field));check(field!=nullptr,"The real mathematical puzzle has no editable field");
+            const auto before=f.snapshot();SetFocus(f.view);SetFocus(field);pump();
+            const auto keyboard=math_keyboard_window(GetAncestor(f.view,GA_ROOT)),bar=f.reader->bar();RECT keys{},initial{};
+            check(keyboard&&IsWindowVisible(keyboard),"The real mathematical shortcut keyboard failed to open");
+            GetWindowRect(keyboard,&keys);GetWindowRect(bar,&initial);
+            check(initial.bottom<=keys.top,"The mathematical keyboard covers the floating reader controls");
+            pointer_message(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,20),false);
+            pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-61,-10),false);
+            pointer_message(bar,WM_LBUTTONUP,0,MAKELPARAM(4,20),false);RECT moved{};GetWindowRect(bar,&moved);
+            check(moved.left<initial.left&&moved.top<initial.top&&moved.bottom<=keys.top,
+                "The reader stopped dragging on either axis above the mathematical keyboard");
+            pointer_message(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,20),false);
+            pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(4,1020),false);
+            pointer_message(bar,WM_LBUTTONUP,0,MAKELPARAM(4,20),false);GetWindowRect(bar,&moved);
+            check(moved.bottom<=keys.top,"Dragging the reader down bypassed the mathematical keyboard exclusion");
+            check(navigate_lesson_back(f.view),"Back did not consume the original mathematical keyboard");pump();
+            const auto after=f.snapshot();check(!IsWindowVisible(keyboard)&&GetFocus()==field&&!after.playing&&!after.allocated&&
+                before.key==after.key&&before.index==after.index&&before.offset==after.offset&&edit_text(field).empty(),
+                "Opening, dragging or closing mathematical shortcuts changed playback, focus or the answer");
+            std::cout<<"PASS real mathematical shortcuts leave the reader fully visible and draggable, with bounded placement and unchanged released position/focus/answer\n";
+        }
+        {
             auto lesson=model();curriculum::Block source;source.type=curriculum::BlockType::code;
             source.stable_id="fullscreen_source";source.language="cpp";source.code="#include <iostream>\nint main() {}\n";
             source.address={0,1,{},{}};lesson.pages[0].blocks.push_back(source);
@@ -111,6 +148,29 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             check(resuming.allocated&&resuming.index==paused.index&&std::abs(resuming.offset-paused.offset)<=1,
                 "Playback after fullscreen failed to resume the exact existing recording offset");f.reader->pause();
             std::cout<<"PASS readonly fullscreen and later notifications preserve the real Kokoro script/key/recordings, exact released pause and resume\n";
+            const auto page=lesson_page_state(f.view);std::vector<windows::NarrationSegment> old_script;
+            for(const auto& region:pre_caption_lesson_reading_regions(f.view)){const auto sentences=backend->plan(region.source_text,"es");old_script.insert(old_script.end(),sentences.begin(),sentences.end());}
+            const auto old_key=backend->identity(page.narration_page_identity,"es","ef_dora",old_script);f.reader.reset();
+            update_lesson_preferences(f.view,[&](state::StateData& data){
+                auto history=narration::begin({},"other-paused","owner-a",{0,100,0,false},{},"other-page-a");
+                history=narration::begin(std::move(history),"other-finished","owner-b",{0,200,1,false},{},"other-page-b");
+                history=narration::checkpoint(std::move(history),"other-finished","owner-b",{0,200,1,true});
+                const narration::Position terminal{static_cast<std::int64_t>(old_script.size()-1),321,0,true};
+                history=narration::begin(std::move(history),old_key,"owner-c",terminal,{},page.narration_page_identity);
+                history=narration::checkpoint(std::move(history),old_key,"owner-c",terminal);narration::write_history(data,history);
+            });
+            for(int reopen=0;reopen<2;++reopen){
+                f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto terminal=f.snapshot();
+                check(terminal.key==paused.key&&terminal.finished&&terminal.index+1==terminal.segments.size()&&!terminal.playing&&!terminal.allocated,
+                    "A formerly completed page ending before its restored code label lost its valid final bookmark on migration/reopen");
+                const auto terminal_history=narration::read_history(read_lesson_state(f.view));
+                check(terminal_history.entries.size()==3&&narration::restore(terminal_history,terminal.key,terminal.segments.size()).has_value(),
+                    "A completed heading migration stored an invalid final segment or changed the three-slot limit");
+                for(std::size_t i=0;i<paused.segments.size();++i)check(terminal.segments[i].recording==paused.segments[i].recording,
+                    "Migrating a completed page regenerated an existing valid recording");f.reader.reset();
+            }
+            std::cout<<"PASS appended original code heading preserves finished pages across migration and second restore, valid terminal position, existing audio and three slots\n";
+
         }
         {
             Fixture f(backend);
@@ -263,14 +323,16 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             Fixture f(backend,false,true,true,"es",std::move(lesson));
             const auto card=child(f.view,1105),main_row=GetDlgItem(card,101);check(main_row!=nullptr,"Missing actual order row for legacy bookmark fixture");
             SendMessageW(main_row,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);SendMessageW(child(f.view,1103),BM_CLICK,0,0);f.reader->pause();f.ready();
-            const auto current=f.snapshot();const auto page=lesson_page_state(f.view);const auto legacy_regions=legacy_lesson_reading_regions(f.view);
+            const auto current=f.snapshot();const auto page=lesson_page_state(f.view);
+            for(const bool before_captions:{false,true}){
+            const auto legacy_regions=before_captions?pre_caption_lesson_reading_regions(f.view):legacy_lesson_reading_regions(f.view);
             std::vector<windows::NarrationSegment> legacy;std::size_t paragraph=0,fragment=0;
             for(const auto& region:legacy_regions){const auto source=backend->plan(region.source_text,"es");
                 if(region.block_index==0)paragraph=legacy.size();if(IsChild(card,region.target))fragment=legacy.size();
                 legacy.insert(legacy.end(),source.begin(),source.end());}
             const auto old_key=backend->identity(page.narration_page_identity,"es","ef_dora",legacy);
-            check(old_key!=current.key&&paragraph>0&&fragment>paragraph,"The migration fixture failed to reconstruct the exact old code-fragment script");
-            for(int mode=0;mode<3;++mode){f.reader.reset();
+            check(old_key!=current.key&&paragraph>0&&(before_captions||fragment>paragraph),"The migration fixture failed to reconstruct the exact previous source script");
+            for(int mode=0;mode<(before_captions?2:3);++mode){f.reader.reset();
                 narration::Position old{static_cast<std::int64_t>(mode==1?legacy.size()-1:mode==2?fragment:paragraph),321,mode==1?static_cast<std::int64_t>(legacy.size()):0,mode==1};
                 update_lesson_preferences(f.view,[&](state::StateData& data){
                     auto history=narration::begin({},"other-paused","owner-a",{0,100,0,false},{},"other-page-a");
@@ -282,6 +344,9 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                 });
                 f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto restored=f.snapshot();
                 check(restored.key==current.key&&!restored.playing&&!restored.allocated,"An exact legacy script migration started playback or failed to select the new script");
+                check(restored.segments.size()==current.segments.size()&&std::ranges::equal(restored.segments,current.segments,[](const auto& a,const auto& b){
+                    return a.recording==b.recording&&a.duration_ms==b.duration_ms&&a.source==b.source;
+                }),"Adding only original code labels regenerated or replaced compatible existing audio");
                 if(mode==0)check(restored.index==paragraph&&restored.offset==321&&!restored.finished,"An unchanged real segment lost its exact paused offset during instruction migration");
                 if(mode==1)check(restored.index+1==restored.segments.size()&&restored.offset==321&&restored.finished,
                     "A finished page reset instead of retaining its real last segment and final bookmark");
@@ -295,7 +360,8 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                     &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="other-finished"&&entry.position.finished;}),
                     "Instruction migration created a parallel history, changed recency or discarded either other recent page");
             }
-            std::cout<<"PASS exact old order-code script migration: real paused/final offsets, removed-fragment provenance and the same three page slots\n";
+            }
+            std::cout<<"PASS exact old order-code and caption-free script migration: real paused/final offsets, removed-fragment provenance and the same three page slots\n";
         }
         {
             Fixture f(backend,true);f.answer("<<");f.reader->toggle();

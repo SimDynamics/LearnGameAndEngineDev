@@ -5,6 +5,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/icons.hpp"
 #include "presentation/windows/native_menu.hpp"
+#include "presentation/windows/settings_view.hpp"
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
 
@@ -24,8 +25,6 @@ using namespace curriculum;
 constexpr wchar_t catalog_class[] = L"LearnGameAndEngineDev.CatalogView";
 constexpr int back_id = 4101, home_id = 4102, menu_id = 4103, language_id = 4104;
 constexpr int list_id = 4105, open_id = 4106, info_id = 4107, title_id = 4108, status_id = 4109;
-constexpr int settings_id = 4110, audio_id = 4111;
-constexpr int reset_id = 4112;
 constexpr int routes_heading_id = 4113;
 constexpr int scope_ordinal_id = 4114;
 constexpr UINT activate_message = WM_APP + 141;
@@ -51,7 +50,6 @@ struct CatalogView {
     std::vector<CatalogProgress> completion;
     std::vector<CatalogScope> scopes;
     std::string ui_locale = "es";
-    CatalogLocation menu_context;
     struct HeaderPlacement{HWND item;int x,y,width,height;};
     std::vector<HeaderPlacement> header;
     void position_header(int offset){
@@ -83,10 +81,10 @@ struct CatalogView {
     COLORREF accent() const { return reader_theme::palette(window).accent; }
     std::string action_label(CatalogAction action) const {
         switch (action) {
-        case CatalogAction::settings: return ui("Opciones globales","Global options","Options générales");
+        case CatalogAction::settings: return ui("Opciones globales","Global settings","Options générales");
         case CatalogAction::audio: return "Audio";
-        case CatalogAction::calculator: return ui("Abrir calculadora científica","Open scientific calculator","Ouvrir la calculatrice scientifique");
-        case CatalogAction::compiler: return ui("Laboratorio C++","C++ laboratory","Laboratoire C++");
+        case CatalogAction::calculator: return ui("Abrir calculadora científica","Open Scientific Calculator","Ouvrir la calculatrice scientifique");
+        case CatalogAction::compiler: return ui("Abrir prototipo C++","Open C++ Prototype","Ouvrir le prototype C++");
         case CatalogAction::graphics: return ui("Motor gráfico","Graphics engine","Moteur graphique");
         }
         return {};
@@ -134,18 +132,23 @@ struct CatalogView {
         return (entry.number ? std::to_string(entry.number) + ". " : "") + entry.title;
     }
     std::string detail(const CatalogEntry& entry) const {
-        if (!entry.available) return ui("Contenido todavía no instalado","Content not installed yet","Contenu pas encore installé");
+        if (!entry.available) return development_notice();
         if (catalog_level(page.location) == CatalogLevel::routes) return ui("Ver cursos","View courses","Voir les cours");
         const auto index = static_cast<std::size_t>(&entry - page.entries.data());
         if (index < completion.size()) {
             const auto snapshot = completion[index];
             const bool lesson=catalog_level(page.location)==CatalogLevel::lessons;
+            if(catalog_level(page.location)==CatalogLevel::courses&&snapshot.total==0)return development_notice();
+            const bool singular=snapshot.total==1||(ui_locale=="fr"&&snapshot.total==0);
             return std::to_string(snapshot.completed) + ui(" de "," of "," sur ") + std::to_string(snapshot.total) +
-                (lesson?ui(" páginas completadas"," pages completed"," pages terminées"):
-                    ui(" lecciones completadas"," lessons completed"," leçons terminées")) +
+                (lesson?(singular?ui(" página completada"," page completed"," page terminée"):ui(" páginas completadas"," pages completed"," pages terminées")):
+                    (singular?ui(" lección completada"," lesson completed"," leçon terminée"):ui(" lecciones completadas"," lessons completed"," leçons terminées"))) +
                 (snapshot.pending_validation?ui(" · verificando…"," · checking…"," · vérification…"):"");
         }
         return ui("Abrir","Open","Ouvrir");
+    }
+    std::string development_notice() const {
+        return ui("En desarrollo · Próximamente disponible","In Development · Coming Soon","En développement · Bientôt disponible");
     }
     void update_selection() {
         const auto index = selected(); EnableWindow(open_button,index.has_value()); EnableWindow(info_button,index.has_value());
@@ -162,7 +165,6 @@ struct CatalogView {
         struct Restore { bool& updating; ~Restore() { updating = false; } } restore{updating};
         home_actions.clear(); completion.clear(); scopes.clear();
         ui_locale = interface_language(progress);
-        menu_context = page.location;
         for (const auto& entry : page.entries) {
             CatalogScope scope;
             if (entry.available && catalog_level(location) != CatalogLevel::routes) {
@@ -195,9 +197,9 @@ struct CatalogView {
             ui("Ruta progresiva de matemáticas y física.","A progressive learning path in mathematics and physics.","Un parcours progressif en mathématiques et en physique.") :
             level==CatalogLevel::units ? ui("Unidades","Units","Unités") : ui("Lecciones","Lessons","Leçons");
         SetWindowTextW(status,wide(catalog_level(location) == CatalogLevel::routes ? ui("Aprende programación, gráficos, motores, matemáticas y física desde sus fundamentos.",
-            "Learn programming, graphics, engines, mathematics and physics from their foundations.",
-            "Apprenez la programmation, les graphismes, les moteurs, les mathématiques et la physique depuis leurs bases.") : status_text).c_str());
-        SetWindowTextW(routes_heading,wide(ui("Rutas de aprendizaje","Learning paths","Parcours d'apprentissage")).c_str());
+            "Learn programming, graphics, engines, mathematics, and physics from the ground up.",
+            "Apprenez la programmation, l’informatique graphique, les moteurs, les mathématiques et la physique depuis leurs fondements.") : status_text).c_str());
+        SetWindowTextW(routes_heading,wide(ui("Rutas de aprendizaje","Learning Paths","Parcours d’apprentissage")).c_str());
         if(level==CatalogLevel::units||level==CatalogLevel::lessons){
             const auto parent_page=windows::load_catalog(root,catalog_parent(location));
             const auto id=level==CatalogLevel::units?location.course:location.unit;
@@ -332,17 +334,11 @@ struct CatalogView {
         // old client rectangle. Repaint that parent area as well as the rows.
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
     }
-    void information() {
-        const auto index = selected();
-        const auto text = index ? *index < page.entries.size() ? label(page.entries[*index]) + "\n\n" + detail(page.entries[*index])
-            : action_label(home_actions[*index - page.entries.size()]) : page.title;
-        MessageBoxW(window,wide(text).c_str(),wide(ui("Información","Information","Informations")).c_str(),MB_OK | MB_ICONINFORMATION);
-    }
     void activate() {
         const auto index = selected(); if (!index) return;
         if (*index >= page.entries.size()) { const auto action = home_actions[*index - page.entries.size()]; if (action_available(action)) on_action(action,page.location); return; }
         const auto entry = page.entries[*index];
-        if (!entry.available) { SetWindowTextW(status,L"Este contenido todavía no está instalado. Se conserva su lugar en el curso."); return; }
+        if (!entry.available) { show_settings_notice(window,development_notice()); return; }
         write_position();
         if (catalog_level(page.location) == CatalogLevel::lessons) {
             const auto callback = on_open; callback(entry.asset); return;
@@ -354,38 +350,6 @@ struct CatalogView {
         render(catalog_parent(page.location));SetFocus(list);return true;
     }
     bool action_available(CatalogAction action) const { return on_action && can_action && can_action(action,page.location); }
-    CatalogLocation entry_context() const {
-        const auto index = selected();
-        if (!index || *index >= page.entries.size()) return page.location;
-        auto context = page.location;
-        if (catalog_level(context) == CatalogLevel::lessons) context.lesson = page.entries[*index].id;
-        else context = catalog_child(context,page.entries[*index].id);
-        return context;
-    }
-    void reset_progress() {
-        const auto scope = windows::catalog_scope(root,menu_context);
-        const auto message = ui("¿Reiniciar el progreso y las respuestas de este contenido? Los programas guardados y los recursos instalados se conservarán.",
-            "Reset progress and answers for this content? Saved programs and installed resources will be kept.",
-            "Réinitialiser la progression et les réponses de ce contenu ? Les programmes sauvegardés et les ressources installées seront conservés.");
-        if (MessageBoxW(window,wide(message).c_str(),wide(ui("Reiniciar progreso","Reset progress","Réinitialiser la progression")).c_str(),MB_YESNO | MB_DEFBUTTON2 | MB_ICONWARNING) != IDYES) return;
-        state::StateStore store(environment.paths.root); auto data = store.load(); reset_catalog_progress(data,scope); store.save(data);
-        render(page.location);
-    }
-    void popup(POINT point,bool contextual = false) {
-        menu_context = contextual ? entry_context() : page.location;
-        const auto handle = CreatePopupMenu(); if (!handle) return;
-        AppendMenuW(handle,MF_STRING | (selected() ? 0 : MF_GRAYED),open_id,wide(ui("Abrir / continuar","Open / continue","Ouvrir / continuer")).c_str());
-        AppendMenuW(handle,MF_STRING,info_id,wide(ui("Información","Information","Informations")).c_str()); AppendMenuW(handle,MF_SEPARATOR,0,nullptr);
-        AppendMenuW(handle,MF_STRING,home_id,wide(ui("Inicio","Home","Accueil")).c_str());
-        AppendMenuW(handle,MF_STRING | (catalog_level(page.location) == CatalogLevel::routes ? MF_GRAYED : 0),back_id,wide(ui("Volver","Back","Retour")).c_str());
-        if (on_action && can_action && can_action(CatalogAction::settings,menu_context)) AppendMenuW(handle,MF_STRING,settings_id,wide(ui("Opciones","Options","Options")).c_str());
-        if (on_action && can_action && can_action(CatalogAction::audio,menu_context)) AppendMenuW(handle,MF_STRING,audio_id,L"Audio");
-        if (!menu_context.route.empty())
-            AppendMenuW(handle,MF_STRING,reset_id,wide(ui("Reiniciar progreso…","Reset progress…","Réinitialiser la progression…")).c_str());
-        const auto style = prepare_native_menu(handle,window);
-        const auto id = TrackPopupMenuEx(handle,TPM_RETURNCMD | TPM_RIGHTBUTTON,point.x,point.y,window,nullptr); DestroyMenu(handle);
-        if (id) command(static_cast<int>(id),BN_CLICKED);
-    }
     void command(int id,int notification) {
         if (updating) return;
         if (id == list_id) {
@@ -401,13 +365,9 @@ struct CatalogView {
         }
         if (notification != BN_CLICKED) return;
         if (id == open_id) activate();
-        else if (id == info_id) information();
         else if (id == back_id) (void)navigate_back();
         else if (id == home_id) { CatalogLocation location; location.locale = page.location.locale; render(location); }
         else if (id == menu_id && on_action && can_action && can_action(CatalogAction::settings,page.location)) on_action(CatalogAction::settings,page.location);
-        else if (id == settings_id && on_action && can_action && can_action(CatalogAction::settings,menu_context)) on_action(CatalogAction::settings,menu_context);
-        else if (id == audio_id && on_action && can_action && can_action(CatalogAction::audio,menu_context)) on_action(CatalogAction::audio,menu_context);
-        else if (id == reset_id) reset_progress();
     }
     void draw(const DRAWITEMSTRUCT& item) {
         if (item.itemID >= page.entries.size() + home_actions.size()) return;
@@ -462,7 +422,8 @@ struct CatalogView {
         const auto percentage = snapshot.percentage();
         bounds.left=bounds.right+px(12);bounds.right=card.right-px(20);const auto percent = snapshot.pending_validation?std::wstring(L"…"):std::to_wstring(percentage) + L"%";
         SetTextColor(item.hDC,palette.high_contrast?palette.text:RGB(255,255,255));
-        DrawTextW(item.hDC,percent.c_str(),static_cast<int>(percent.size()),&bounds,DT_SINGLELINE | DT_RIGHT | DT_NOPREFIX);
+        if(entry.available&&!(catalog_level(page.location)==CatalogLevel::courses&&snapshot.total==0))
+            DrawTextW(item.hDC,percent.c_str(),static_cast<int>(percent.size()),&bounds,DT_SINGLELINE | DT_RIGHT | DT_NOPREFIX);
         auto meter = card; meter.left += px(20); meter.right -= px(20);meter.bottom-=px(20);meter.top=meter.bottom-px(lesson?6:8);
         const auto track = CreateSolidBrush(palette.high_contrast?palette.outline:RGB(48,50,58)); FillRect(item.hDC,&meter,track); DeleteObject(track);
         meter.right = meter.left + MulDiv(meter.right - meter.left,static_cast<int>(percentage),100);
@@ -514,11 +475,9 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
             if (native_menu_character(reinterpret_cast<HMENU>(lparam),static_cast<wchar_t>(LOWORD(wparam)),result)) return result;
             break;
         }
-        case WM_CONTEXTMENU: {
-            POINT point{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};
-            if (point.x == -1 && point.y == -1) { RECT area{}; GetWindowRect(self->list,&area); point = {area.left + 20,area.top + 20}; }
-            self->popup(point,true); return 0;
-        }
+        // Android catalog cards have only their normal activation. Scoped
+        // options remain on the original Settings icon, not an extra menu.
+        case WM_CONTEXTMENU:return 0;
         case WM_ERASEBKGND: { RECT area{}; GetClientRect(window,&area); FillRect(reinterpret_cast<HDC>(wparam),&area,reader_theme::brush(reader_theme::Surface::screen)); return 1; }
         case WM_NCDESTROY: SetWindowLongPtrW(window,GWLP_USERDATA,0); if (self->owned_by_window) delete self; break;
         }

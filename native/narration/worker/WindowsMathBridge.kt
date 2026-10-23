@@ -4,6 +4,7 @@ import com.learngraphicsprogramming.app.math.*
 import com.learngraphicsprogramming.app.calculator.*
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlin.math.*
 
 /** A platform boundary around the original Android-independent parser and evaluators. */
 internal object WindowsMathBridge {
@@ -14,6 +15,9 @@ internal object WindowsMathBridge {
     // UI lifetime, not a second persistence/history system. The canonical draft
     // is returned after each edit; close discards this transient model only.
     private val editors = mutableMapOf<String,EditorSession>()
+    // Pure presentation results only. No answer/editor/model/audio state is
+    // cached here, and every range keeps its original UTF-16 source owner.
+    private val textLayouts = linkedMapOf<String,List<WindowsMathFragment>>()
 
     private fun parsed(source: String): MathExpression.Sequence = when(val result=MathLatexParser.parse(source)) {
         is MathLatexParser.Result.Success -> result.expression
@@ -119,6 +123,9 @@ internal object WindowsMathBridge {
             .apply { session.textSelection?.let { put("textSelection",JSONObject().put("path",path(it.path)).put("start",it.start).put("end",it.end)) } }
     }
     fun editor(request: JSONObject): JSONObject {
+        if(request.optString("action")=="diagram_layout")return diagramLayout(request)
+        if(request.optString("action")=="rigid_layout")return rigidLayout(request)
+        if(request.optString("action")=="text_layout")return textLayout(request)
         val id=request.getString("editorId")
         require(id.length in 1..128&&id.all { it.isLetterOrDigit()||it in "_.-" }){"Invalid mathematical editor identity"}
         val action=request.optString("action","state")
@@ -149,6 +156,10 @@ internal object WindowsMathBridge {
                 else replaceSelection(session,request.getString("latex"))
             "left" -> model.stepLeft()
             "right" -> model.stepRight()
+            // Android hardware Up/Down/Tab visit slots, whereas Left/Right
+            // retain the model's finer parent/child/leaf navigation.
+            "previousSlot" -> model.previousSlot()
+            "nextSlot" -> model.nextSlot()
             "backspace" -> if(session.textSelection!=null)replaceSelection(session,"") else {model.deleteBackward();true}
             "deleteForward" -> if(session.textSelection!=null)replaceSelection(session,"") else model.deleteSurroundingTextInCurrentSlot(0,1)
             "copy", "cut" -> {
@@ -212,6 +223,111 @@ internal object WindowsMathBridge {
         if(!accepted){if(before!=model.saveDraft())check(model.restoreDraft(before));session.textSelection=previousTextSelection}
         if(before!=model.saveDraft()||previousTextSelection!=session.textSelection)session.revision++
         return snapshot(id,session,accepted).apply { clipboard?.let { put("clipboardLatex",it) } }
+    }
+    /** The same pure Android layout; Windows supplies its actual font metrics. */
+    private fun textLayout(request: JSONObject): JSONObject {
+        val source=request.getString("text");val mode=request.optString("mode","auto")
+        val key=mode+'\u0000'+source
+        val fragments=textLayouts[key]?:WindowsMathTypesetting.render(source,mode).fragments.toList().also {
+            if(textLayouts.size>=2048)textLayouts.remove(textLayouts.keys.first())
+            textLayouts[key]=it
+        }
+        return JSONObject().put("fragments",JSONArray(fragments.map {
+            JSONObject().put("start",it.start).put("end",it.end).put("formula",it.formula).put("literal",it.literal)
+        }))
+    }
+    private fun diagramLayout(request: JSONObject): JSONObject {
+        val diagram=EuclideanDiagram.parse(request.getJSONObject("config"))
+        val width=request.getDouble("width");val height=request.getDouble("height")
+        val unit=request.optDouble("unit",1.0);val size=request.optDouble("textSize",15.0)
+        val supplied=request.optJSONObject("labelMetrics")
+        val drawing=if(supplied==null)EuclideanDiagramLayout.layout(diagram,width,height,unit,size)
+            else EuclideanDiagramLayout.layout(diagram,width,height,unit,size){ text,_ ->
+                val metric=supplied.getJSONObject(text);val lines=metric.getJSONArray("lines")
+                EuclideanLabelMetrics(List(lines.length()){lines.getString(it)},metric.getDouble("width"),
+                    metric.getDouble("lineHeight"),metric.getDouble("ascent"))
+            }
+        return drawingJson(drawing)
+    }
+    private fun drawingJson(drawing: EuclideanDrawingSnapshot): JSONObject {
+        fun point(value: EuclideanPosition)=JSONObject().put("x",value.x).put("y",value.y)
+        fun bounds(value: EuclideanRect)=JSONObject().put("left",value.left).put("top",value.top)
+            .put("right",value.right).put("bottom",value.bottom)
+        return JSONObject().put("viewport",bounds(drawing.viewport)).put("plot",bounds(drawing.plotBounds))
+            .put("points",JSONArray(drawing.points.map{JSONObject().put("id",it.id).put("center",point(it.center))}))
+            .put("paths",JSONArray(drawing.paths.map{JSONObject().put("id",it.id).put("start",point(it.start)).put("end",point(it.end))}))
+            .put("arrows",JSONArray(drawing.arrows.map{JSONObject().put("id",it.objectId).put("tip",point(it.tip))
+                .put("wingA",point(it.wingA)).put("wingB",point(it.wingB))}))
+            .put("circles",JSONArray(drawing.circles.map{JSONObject().put("id",it.id).put("center",point(it.center))
+                .put("radius",it.radius).put("filled",it.filled)}))
+            .put("arcs",JSONArray(drawing.arcs.map{JSONObject().put("id",it.id).put("center",point(it.center))
+                .put("radius",it.radius).put("startDegrees",it.startDegrees).put("sweepDegrees",it.sweepDegrees)}))
+            .put("labels",JSONArray(drawing.labels.map{JSONObject().put("id",it.ownerId).put("text",it.text)
+                .put("lines",JSONArray(it.lines)).put("bounds",bounds(it.bounds)).put("ascent",it.ascent).put("lineHeight",it.lineHeight)}))
+    }
+    /** Android's rigid view uses these same fixed bounds, motions and pure
+     * diagram/label layouts. Placements remain the existing typed answer. */
+    private fun rigidLayout(request: JSONObject): JSONObject {
+        val spec=RigidAngleCopySpec.parse(request.getJSONObject("config"))
+        val width=request.getDouble("width");val height=request.getDouble("height")
+        val unit=request.optDouble("unit",1.0);val size=request.optDouble("textSize",15.0)
+        require(width>0&&height>0&&unit>0&&size>0&&listOf(width,height,unit,size).all(Double::isFinite))
+        val initialPoints=spec.reference.diagram.points.map { it.position }+spec.copy.moved(spec.initial,"").points.map { it.position }
+        val radius=max(spec.reference.radius,spec.copy.radius).coerceAtLeast(1.0)
+        val center=EuclideanPosition((initialPoints.minOf { it.x }+initialPoints.maxOf { it.x })/2,
+            (initialPoints.minOf { it.y }+initialPoints.maxOf { it.y })/2)
+        val halfWidth=max(radius,(initialPoints.maxOf { it.x }-initialPoints.minOf { it.x })/2+radius*.25)
+        val halfHeight=max(radius,(initialPoints.maxOf { it.y }-initialPoints.minOf { it.y })/2+radius*.25)
+        val bounds=EuclideanRect(center.x-halfWidth,center.y-halfHeight,center.x+halfWidth,center.y+halfHeight)
+        val padding=min(max(30*unit,size*1.8),min(width,height)*.24)
+        val factor=min((width-2*padding)/(bounds.width.coerceAtLeast(1.0)*1.8),
+            (height-2*padding)/(bounds.height.coerceAtLeast(1.0)*1.8)).coerceAtLeast(1e-9)
+        fun project(point: EuclideanPosition)=EuclideanPosition(width/2+(point.x-center.x)*factor,height/2-(point.y-center.y)*factor)
+        fun unproject(point: EuclideanPosition)=EuclideanPosition((point.x-width/2)/factor+center.x,-(point.y-height/2)/factor+center.y)
+        val original=request.optJSONObject("placement")
+        var placement=if(original==null)spec.initial else RigidAnglePlacement(original.getDouble("x"),original.getDouble("y"),original.getDouble("rotation"))
+        val gesture=request.optJSONObject("gesture")
+        if(gesture!=null){
+            fun position(key: String)=gesture.getJSONObject(key).let { unproject(EuclideanPosition(it.getDouble("x"),it.getDouble("y"))) }
+            val before=position("previous");val after=position("current");val mode=gesture.getString("mode")
+            require(mode in setOf("move","rotate","view"))
+            val margin=min(padding+16*unit,min(width,height)*.4)
+            if(mode=="move"){
+                val next=placement.copy(x=placement.x+after.x-before.x,y=placement.y+after.y-before.y)
+                val low=unproject(EuclideanPosition(margin,height-margin));val high=unproject(EuclideanPosition(width-margin,margin))
+                val points=spec.copy.moved(next,"").points.map { it.position }
+                fun correction(low: Double,high: Double)=if(low<=high)0.0.coerceIn(low,high)else(low+high)/2
+                placement=next.copy(x=next.x+correction(low.x-points.minOf { it.x },high.x-points.maxOf { it.x }),
+                    y=next.y+correction(low.y-points.minOf { it.y },high.y-points.maxOf { it.y }))
+            }else if(mode=="rotate"){
+                val vertex=EuclideanPosition(placement.x,placement.y);val first=before-vertex;val second=after-vertex
+                if(hypot(first.x,first.y)*factor>=20*unit&&hypot(second.x,second.y)*factor>=20*unit){
+                    val next=placement.copy(rotation=placement.rotation+atan2(first.x*second.y-first.y*second.x,first.x*second.x+first.y*second.y))
+                    if(spec.copy.moved(next,"").points.all { val pixel=project(it.position);pixel.x>=margin&&pixel.y>=margin&&pixel.x<=width-margin&&pixel.y<=height-margin })placement=next
+                }
+            }
+        }
+        val fixed=spec.reference.moved(spec.referencePlacement,"reference:");val moving=spec.copy.moved(placement,"copy:")
+        val groups=(fixed.points+moving.points).groupBy { it.position }.values
+        val owners=groups.flatMap { group -> group.map { it.id to group.first().id } }.toMap()
+        val points=groups.map { group -> group.first().copy(labels=group.flatMap { it.labels }.distinct()) }
+        val objects=(fixed.objects+moving.objects).map { value -> value.copy(definingPointIds=value.definingPointIds.map { owners.getValue(it) },contains=value.contains.map { owners.getValue(it) }.toSet()) }
+        val diagram=EuclideanDiagram(points,objects);val metrics=request.optJSONObject("labelMetrics")
+        val snapshot=if(metrics==null)EuclideanDiagramLayout.layoutInBounds(diagram,width,height,unit,size,bounds)
+            else EuclideanDiagramLayout.layoutInBounds(diagram,width,height,unit,size,bounds){ text,_ ->
+                val metric=metrics.getJSONObject(text);val lines=metric.getJSONArray("lines")
+                EuclideanLabelMetrics(List(lines.length()){lines.getString(it)},metric.getDouble("width"),metric.getDouble("lineHeight"),metric.getDouble("ascent"))
+            }
+        val drawing=RigidAngleLabelLayout.clear(snapshot,unit)
+        fun region(figure: RigidAngleFigure,position: RigidAnglePlacement,id: String): JSONObject {
+            val at=project(EuclideanPosition(position.x,position.y));val first=position.rotate(figure.sides.first().direction)
+            return JSONObject().put("id",id).put("center",JSONObject().put("x",at.x).put("y",at.y))
+                .put("radius",(radius*.28*factor).coerceAtLeast(14*unit)).put("startDegrees",-Math.toDegrees(atan2(first.y,first.x)))
+                .put("sweepDegrees",Math.toDegrees(figure.sweep)*if(figure.counterclockwise)-1 else 1)
+        }
+        return drawingJson(drawing).put("placement",JSONObject().put("type","rigid_angle").put("x",placement.x).put("y",placement.y).put("rotation",placement.rotation))
+            .put("regions",JSONArray().put(region(spec.reference,spec.referencePlacement,"reference:")).put(region(spec.copy,placement,"copy:")))
+            .put("factor",factor).put("copyCenter",JSONObject().put("x",project(EuclideanPosition(placement.x,placement.y)).x).put("y",project(EuclideanPosition(placement.x,placement.y)).y))
     }
     fun keyboard(request: JSONObject): JSONObject {
         val config=request.optJSONObject("config")?:JSONObject(request.getString("configJson"))

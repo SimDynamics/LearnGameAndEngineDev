@@ -29,7 +29,10 @@ int main(){using namespace lgaed::presentation;
         check(view.order()==std::vector<std::size_t>({1,3,2,0}),"Accessible reorder lost stable source identity");
         view.reset();const auto origin=GetDlgItem(view.window(),100),target=GetDlgItem(view.window(),103);
         RECT a{},b{};GetWindowRect(origin,&a);GetWindowRect(target,&b);
-        SendMessageW(origin,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,8));Sleep(25);
+        SendMessageW(origin,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,8));
+        // Exercise the real20ms boundary using the same clock as the gesture.
+        // Sleep(25) can span only one coarse GetTickCount64 tick on Windows.
+        const auto ready=GetTickCount64()+20;while(GetTickCount64()<ready)Sleep(1);
         SendMessageW(origin,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(12,b.top-a.top+8));
         SendMessageW(origin,WM_LBUTTONUP,0,MAKELPARAM(12,b.top-a.top+8));
         check(view.order()==std::vector<std::size_t>({1,2,3,0}),"Actual drag did not move the stable fragment to its target");

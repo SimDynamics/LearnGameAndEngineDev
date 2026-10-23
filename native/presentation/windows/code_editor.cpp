@@ -196,6 +196,7 @@ struct CodeEditor::Impl {
     HWND window;
     bool multiline;
     bool code_assistance;
+    bool auto_indent;
     std::function<void()> submit;
     bool applying = false;
     bool suppress_tab_char = false;
@@ -207,8 +208,8 @@ struct CodeEditor::Impl {
     std::size_t current = 0;
     std::unique_ptr<CodeGutter> gutter;
 
-    Impl(HWND control, bool lines, std::function<void()> action, bool assistance)
-        : window(control), multiline(lines), code_assistance(assistance), submit(std::move(action)) {}
+    Impl(HWND control, bool lines, std::function<void()> action, bool assistance, bool indent)
+        : window(control), multiline(lines), code_assistance(assistance), auto_indent(indent), submit(std::move(action)) {}
 
     Snapshot& now() { return history[current]; }
     const Snapshot& now() const { return history[current]; }
@@ -347,7 +348,8 @@ struct CodeEditor::Impl {
 
     void replace(std::size_t start, std::size_t end, std::wstring_view replacement,
         std::size_t cursor_start, std::size_t cursor_end,
-        std::optional<std::int64_t> completed_unit = {}) {
+        std::optional<std::int64_t> completed_unit = {},
+        const std::vector<std::int64_t>& inherited_units = {}) {
         cursor_snapshot();
         Snapshot next = now();
         next.original.reset();
@@ -362,6 +364,8 @@ struct CodeEditor::Impl {
             next.units.push_back(*completed_unit);
             std::sort(next.units.begin(), next.units.end());
         }
+        next.units.insert(next.units.end(), inherited_units.begin(), inherited_units.end());
+        std::sort(next.units.begin(), next.units.end());
         next.cursor = {static_cast<LONG>(cursor_start), static_cast<LONG>(cursor_end)};
         commit(std::move(next));
         apply(now());
@@ -399,11 +403,58 @@ struct CodeEditor::Impl {
         const auto end = static_cast<std::size_t>(range.cpMax);
         if (start == end) {
             if (!start) return;
+            if (code_assistance && start < now().text.size()) {
+                const auto opening=now().text[start-1],closing=now().text[start];
+                if ((opening==L'('&&closing==L')')||(opening==L'['&&closing==L']')||
+                    (opening==L'{'&&closing==L'}')||(opening==L'"'&&closing==L'"')||
+                    (opening==L'\''&&closing==L'\'')) {
+                    replace(start-1,start+1,L"",start-1,start-1);return;
+                }
+            }
             --start;
             if (start && now().text[start] >= 0xDC00 && now().text[start] <= 0xDFFF &&
                     now().text[start - 1] >= 0xD800 && now().text[start - 1] <= 0xDBFF) --start;
         }
         replace(start, end, L"", start, start);
+    }
+
+    bool newline() {
+        if (!multiline || !code_assistance || !auto_indent) return false;
+        const auto range=selection(window);
+        const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
+        const auto previous= start ? now().text.rfind(L'\n',start-1) : std::wstring::npos;
+        const auto line_start=previous==std::wstring::npos?0:previous+1;
+        auto indent_end=line_start;
+        while(indent_end<start&&(now().text[indent_end]==L' '||now().text[indent_end]==L'\t'))++indent_end;
+        const auto base=now().text.substr(line_start,indent_end-line_start);
+        auto trimmed=start;
+        while(trimmed>line_start&&(now().text[trimmed-1]==L' '||now().text[trimmed-1]==L'\t'))--trimmed;
+        const bool opens=trimmed>line_start&&now().text[trimmed-1]==L'{';
+        const bool split=opens&&end<now().text.size()&&now().text[end]==L'}';
+        const auto child=base+(opens?L"\t":L"");
+        auto replacement=L"\n"+child;
+        if(split)replacement+=L"\n"+base;
+        std::vector<std::int64_t> inherited;
+        for(const auto unit:now().units)if(unit>=static_cast<std::int64_t>(line_start)&&unit+4<=static_cast<std::int64_t>(indent_end)) {
+            inherited.push_back(static_cast<std::int64_t>(start+1)+unit-static_cast<std::int64_t>(line_start));
+            if(split)inherited.push_back(static_cast<std::int64_t>(start+child.size()+2)+unit-static_cast<std::int64_t>(line_start));
+        }
+        replace(start,end,replacement,start+1+child.size(),start+1+child.size(),{},inherited);
+        return true;
+    }
+
+    bool closing_brace() {
+        if (!multiline || !code_assistance || !auto_indent) return false;
+        const auto range=selection(window);
+        const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
+        const auto previous=start?now().text.rfind(L'\n',start-1):std::wstring::npos;
+        const auto line_start=previous==std::wstring::npos?0:previous+1;
+        if(start==line_start||now().text.find_first_not_of(L" \t",line_start)<start)return false;
+        auto erase=start;
+        if(now().text[start-1]==L'\t')--erase;
+        else while(erase>line_start&&start-erase<4&&now().text[erase-1]==L' ')--erase;
+        if(erase==start)return false;
+        replace(erase,end,L"}",erase+1,erase+1);return true;
     }
 
     bool pair(wchar_t character) {
@@ -446,7 +497,9 @@ struct CodeEditor::Impl {
         if(supplied.find(L'\0')!=supplied.npos||(!multiline&&supplied.find_first_of(L"\r\n")!=supplied.npos))return false;
         capture();
         if(supplied==L"\t"&&code_assistance){insert_tab();return true;}
+        if((supplied==L"\n"||supplied==L"\r"||supplied==L"\r\n")&&newline())return true;
         if(supplied.size()==1&&code_assistance&&pair(supplied.front()))return true;
+        if(supplied==L"}"&&closing_brace())return true;
         const auto value=lf(supplied);const auto range=selection(window);
         const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
         replace(start,end,value,start+value.size(),start+value.size());return true;
@@ -504,6 +557,9 @@ struct CodeEditor::Impl {
                     if (self.submit) self.submit();
                     return 0;
                 }
+                if (self.multiline && wparam == VK_RETURN && self.newline()) {
+                    self.suppress_enter_char=true;return 0;
+                }
             }
             if (message == WM_KEYUP) {
                 if (wparam == VK_TAB) self.suppress_tab_char = false;
@@ -525,8 +581,12 @@ struct CodeEditor::Impl {
                     if (!std::exchange(self.suppress_enter_char, false) && self.submit) self.submit();
                     return 0;
                 }
+                if ((wparam == L'\r' || wparam == L'\n') && self.multiline && self.code_assistance && self.auto_indent) {
+                    if(!std::exchange(self.suppress_enter_char,false))self.newline();return 0;
+                }
                 if (self.code_assistance && wparam >= L' ' && wparam <= 0xFFFF &&
                         self.pair(static_cast<wchar_t>(wparam))) return 0;
+                if (wparam == L'}' && self.closing_brace()) return 0;
             }
             const auto mutating = message == WM_CHAR || message == WM_PASTE || message == WM_CUT ||
                 message == WM_CLEAR || message == EM_REPLACESEL ||
@@ -558,8 +618,8 @@ struct CodeEditor::Impl {
 };
 
 CodeEditor::CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
-    std::function<void()> submit, bool code_assistance)
-    : impl_(std::make_unique<Impl>(rich_edit, multiline, std::move(submit), code_assistance)) {
+    std::function<void()> submit, bool code_assistance, bool auto_indent, bool line_numbers)
+    : impl_(std::make_unique<Impl>(rich_edit, multiline, std::move(submit), code_assistance, auto_indent)) {
     if (!IsWindow(rich_edit)) throw std::invalid_argument("CodeEditor requires a RichEdit control");
     SendMessageW(rich_edit, EM_SETUNDOLIMIT, 0, 0);
     SendMessageW(rich_edit, EM_EXLIMITTEXT, 0, 4 * 1024 * 1024);
@@ -567,7 +627,7 @@ CodeEditor::CodeEditor(HWND rich_edit, EditorDocument document, bool multiline,
     reset(std::move(document));
     if (!SetWindowSubclass(rich_edit, Impl::subclass, 1, reinterpret_cast<DWORD_PTR>(impl_.get())))
         throw std::runtime_error("Cannot attach code editing behavior");
-    try{if(multiline&&code_assistance)impl_->gutter=std::make_unique<CodeGutter>(rich_edit);}
+    try{if(multiline&&code_assistance&&line_numbers)impl_->gutter=std::make_unique<CodeGutter>(rich_edit);}
     catch(...){RemoveWindowSubclass(rich_edit,Impl::subclass,1);throw;}
 }
 

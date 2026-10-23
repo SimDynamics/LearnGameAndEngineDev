@@ -252,13 +252,12 @@ void open_settings(HWND window,WindowState& state){
     access.reset_route=[window,&state,content,catalogue_locale,locale](std::string_view route){
         if(route!="programming"&&route!="math_physics")throw std::invalid_argument("Unknown reset route");
         const auto scope=lgaed::windows::catalog_scope(content,{catalogue_locale,std::string(route)});
-        const auto prompt=locale=="fr"?L"Réinitialiser uniquement la progression et les réponses de ce parcours ? Les programmes, les ressources et l’autre parcours seront conservés.":locale=="en"?L"Reset only this learning path’s progress and answers? Programs, resources and the other path will be kept.":L"¿Reiniciar únicamente el progreso y las respuestas de esta ruta? Se conservarán los programas, los recursos y la otra ruta.";
-        const auto title=locale=="fr"?L"Réinitialiser le parcours":locale=="en"?L"Reset learning path":L"Reiniciar ruta";
-        if(MessageBoxW(window,prompt,title,MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
+        const auto text=settings_reset_text(SettingsScope::global,locale,route);
+        if(MessageBoxW(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
         if(state.reader)state.reader->pause();
         if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
         lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();
-        lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);PostMessageW(window,close_settings_message,0,0);
+        lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);show_settings_notice(state.settings?state.settings:window,text.success);
     };
     if(state.pending_action==CatalogAction::audio)access.scope=SettingsScope::audio;
     else if(!context.lesson.empty())access.scope=SettingsScope::lesson;
@@ -277,12 +276,11 @@ void open_settings(HWND window,WindowState& state){
     }
     if(!context.route.empty()){
         const auto scope=lgaed::windows::catalog_scope(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",context);
-        access.reset_scope=[window,&state,scope,locale]{
-            const auto prompt=locale=="fr"?L"Réinitialiser uniquement la progression et les réponses de ce contenu ? Les programmes et les ressources installées seront conservés.":locale=="en"?L"Reset only this content’s progress and answers? Programs and installed resources will be kept.":L"¿Reiniciar únicamente el progreso y las respuestas de este contenido? Se conservarán los programas y recursos instalados.";
-            const auto title=locale=="fr"?L"Réinitialiser la progression":locale=="en"?L"Reset progress":L"Reiniciar progreso";
-            if(MessageBoxW(window,prompt,title,MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
+        access.reset_scope=[window,&state,scope,locale,kind=access.scope]{
+            const auto text=settings_reset_text(kind,locale);
+            if(MessageBoxW(state.settings?state.settings:window,wide(text.confirmation).c_str(),wide(text.title).c_str(),MB_YESNO|MB_DEFBUTTON2|MB_ICONWARNING)!=IDYES)return;
             if(state.reader)state.reader->pause();if(state.lesson){state.reader.reset();if(!flush_lesson_view(state.lesson))return;DestroyWindow(state.lesson);state.lesson=nullptr;}
-            lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);PostMessageW(window,close_settings_message,0,0);};
+            lgaed::state::StateStore store(state.environment.paths.root);auto data=store.load();lgaed::curriculum::reset_catalog_progress(data,scope);store.save(data);show_settings_notice(window,text.success);PostMessageW(window,close_settings_message,0,0);};
     }
     state.settings=create_settings_window(window,std::move(access));
 }

@@ -41,6 +41,7 @@ public:
     MathPuzzleView(const MathPuzzleView&) = delete;
     MathPuzzleView& operator=(const MathPuzzleView&) = delete;
     [[nodiscard]] HWND window() const;
+    [[nodiscard]] HWND fullscreen_button() const;
     [[nodiscard]] int height_for_width(int width);
     void layout(int x,int y,int width);
     [[nodiscard]] std::string answers_json() const;
@@ -49,6 +50,9 @@ public:
     [[nodiscard]] std::vector<MathReadingRegion> reading_regions() const;
     void set_enabled(bool);
     void set_text_scale(int percentage);
+    // Hooks can be installed after the lesson window is created. Connect the
+    // existing labels/canvases without replacing inputs or their drafts.
+    void set_expression_request(std::function<std::string(std::string_view)>);
     void reset();
 private:
     struct Impl;

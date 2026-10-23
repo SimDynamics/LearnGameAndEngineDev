@@ -34,6 +34,39 @@ int main() {
             0, 0, 500, 300, parent.value, nullptr, GetModuleHandleW(nullptr), nullptr)};
         check(editor.value != nullptr, "Cannot create real RichEdit");
         {
+            Window hinted{CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|ES_MULTILINE,
+                0,0,360,90,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(hinted.value!=nullptr,"Cannot create the real hinted RichEdit");reader_theme::apply(hinted.value,reader_theme::Surface::card);
+            set_rich_text(hinted.value,"",{},true);SendMessageW(hinted.value,EM_EMPTYUNDOBUFFER,0,0);
+            const auto pixels=[&]{RECT bounds{};GetClientRect(hinted.value,&bounds);const auto dc=CreateCompatibleDC(nullptr);
+                BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bounds.right;
+                info.bmiHeader.biHeight=-bounds.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+                void* memory=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&memory,nullptr,0);
+                check(bitmap&&memory,"Create the isolated hint drawing surface");const auto previous=SelectObject(dc,bitmap);
+                FillRect(dc,&bounds,reader_theme::brush(reader_theme::Surface::card));
+                SendMessageW(hinted.value,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT|PRF_ERASEBKGND);GdiFlush();
+                const auto begin=static_cast<const std::uint32_t*>(memory);std::vector<std::uint32_t> result(begin,begin+bounds.right*bounds.bottom);
+                SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);return result;};
+            const auto empty=pixels();const auto modified=SendMessageW(hinted.value,EM_GETMODIFY,0,0);
+            set_edit_hint(hinted.value,"Escribe el código faltante");const auto hint=pixels();
+            check(hint!=empty&&edit_text(hinted.value).empty()&&GetWindowTextLengthW(hinted.value)==0&&
+                !SendMessageW(hinted.value,EM_CANUNDO,0,0)&&SendMessageW(hinted.value,EM_GETMODIFY,0,0)==modified,
+                "The empty hint was not painted, became false document text, changed Modify or entered Undo");
+            SetFocus(hinted.value);const auto focus=GetFocus();CHARRANGE before{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&before));
+            (void)pixels();CHARRANGE after{};SendMessageW(hinted.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&after));
+            check(focus==hinted.value&&GetFocus()==focus&&before.cpMin==after.cpMin&&before.cpMax==after.cpMax,
+                "Drawing a focused hint moved the native caret, selection or focus");
+            SendMessageW(hinted.value,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"x"));const auto typed=pixels();
+            set_edit_hint(hinted.value,"");check(pixels()==typed&&edit_text(hinted.value)=="x","A hint remained over the actual typed text");
+            set_edit_hint(hinted.value,"Escribe el código faltante");
+            check(SendMessageW(hinted.value,EM_UNDO,0,0)&&edit_text(hinted.value).empty()&&pixels()==hint,
+                "Undo failed to restore an empty document with a purely visual hint");
+            check(SendMessageW(hinted.value,EM_CANREDO,0,0)!=0,"Painting the restored hint discarded Redo");
+            SendMessageW(hinted.value,EM_SETREADONLY,TRUE,0);const auto readonly=pixels();set_edit_hint(hinted.value,"");
+            check(pixels()==readonly&&edit_text(hinted.value).empty(),"A readonly display acquired an editable placeholder");
+            SendMessageW(hinted.value,EM_SETREADONLY,FALSE,0);
+        }
+        {
             const std::array<lgaed::curriculum::Emphasis,1> emphasis{{{"prosa",0,"bold_italic"}}};
             set_rich_text(editor.value,"Una prosa con `std::cout`.",emphasis);
             check(character(editor.value,0).yHeight==270

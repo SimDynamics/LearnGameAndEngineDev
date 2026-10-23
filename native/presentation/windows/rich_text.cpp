@@ -2,6 +2,7 @@
 #include "presentation/windows/reader_theme.hpp"
 
 #include <richedit.h>
+#include <commctrl.h>
 #include <richole.h>
 #include <tom.h>
 #include <wrl/client.h>
@@ -10,12 +11,50 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <regex>
 #include <set>
 #include <stdexcept>
 
 namespace lgaed::presentation {
 namespace {
+constexpr UINT_PTR hint_subclass_id=0x4c474854;
+struct EditHint {
+    std::wstring text;
+    void paint(HWND edit,HDC dc) const {
+        if(text.empty()||GetWindowTextLengthW(edit)!=0||(GetWindowLongPtrW(edit,GWL_STYLE)&ES_READONLY)||!dc)return;
+        RECT bounds{};SendMessageW(edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&bounds));
+        if(bounds.right<=bounds.left||bounds.bottom<=bounds.top)return;
+        CHARFORMAT2W style{};style.cbSize=sizeof(style);
+        SendMessageW(edit,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&style));
+        int numerator=0,denominator=0;SendMessageW(edit,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        if(!numerator||!denominator){numerator=1;denominator=1;}
+        const auto height=MulDiv(MulDiv(style.yHeight,static_cast<int>(GetDpiForWindow(edit)),1440),numerator,denominator);
+        const auto font=CreateFontW(-std::max(1,height),0,0,0,(style.dwEffects&CFE_BOLD)?FW_BOLD:FW_NORMAL,
+            (style.dwEffects&CFE_ITALIC)!=0,FALSE,FALSE,style.bCharSet,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY,style.bPitchAndFamily,style.szFaceName[0]?style.szFaceName:L"Roboto");
+        if(!font)return;
+        const auto saved=SaveDC(dc);if(!saved){DeleteObject(font);return;}
+        IntersectClipRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom);
+        SelectObject(dc,font);SetBkMode(dc,TRANSPARENT);
+        SetTextColor(dc,reader_theme::palette(edit).high_contrast?reader_theme::foreground(edit):RGB(140,145,155));
+        DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&bounds,DT_LEFT|DT_TOP|DT_WORDBREAK|DT_NOPREFIX);
+        RestoreDC(dc,saved);DeleteObject(font);
+    }
+    static LRESULT CALLBACK proc(HWND edit,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw) {
+        auto* self=reinterpret_cast<EditHint*>(raw);
+        if(message==WM_NCDESTROY){RemoveWindowSubclass(edit,proc,hint_subclass_id);delete self;return DefSubclassProc(edit,message,wp,lp);}
+        const auto result=DefSubclassProc(edit,message,wp,lp);
+        if(message==WM_PAINT){const auto dc=GetDC(edit);self->paint(edit,dc);if(dc)ReleaseDC(edit,dc);}
+        else if(message==WM_PRINTCLIENT)self->paint(edit,reinterpret_cast<HDC>(wp));
+        else if(message==WM_CHAR||message==WM_PASTE||message==WM_CUT||message==WM_CLEAR||message==WM_SETTEXT||
+            message==EM_STREAMIN||message==EM_SETTEXTEX||message==EM_REPLACESEL||message==EM_UNDO||message==WM_UNDO||
+            message==EM_REDO||message==EM_SETREADONLY||message==EM_SETCHARFORMAT||message==EM_SETZOOM||
+            message==WM_SETFONT||message==WM_SETFOCUS||message==WM_KILLFOCUS||message==WM_SIZE)
+            InvalidateRect(edit,nullptr,FALSE);
+        return result;
+    }
+};
 struct FormatTransaction {
     HWND edit;
     CHARRANGE selection{};
@@ -180,6 +219,18 @@ std::string utf8(std::wstring_view source) {
     if (!length) throw std::runtime_error("Invalid UTF-16 text");
     std::string result(static_cast<std::size_t>(length), '\0');
     WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source.data(), static_cast<int>(source.size()), result.data(), length, nullptr, nullptr); return result;
+}
+void set_edit_hint(HWND edit,std::string_view text) {
+    if(!IsWindow(edit))throw std::invalid_argument("An edit hint requires a live RichEdit");
+    DWORD_PTR existing=0;
+    if(GetWindowSubclass(edit,EditHint::proc,hint_subclass_id,&existing))reinterpret_cast<EditHint*>(existing)->text=wide(text);
+    else {
+        auto hint=std::make_unique<EditHint>();hint->text=wide(text);
+        if(!SetWindowSubclass(edit,EditHint::proc,hint_subclass_id,reinterpret_cast<DWORD_PTR>(hint.get())))
+            throw std::runtime_error("Cannot attach an empty edit hint");
+        hint.release();
+    }
+    InvalidateRect(edit,nullptr,FALSE);
 }
 bool rich_text_hit_test(HWND edit,POINT point) {
     const auto px=[&](int dip){return MulDiv(dip,static_cast<int>(GetDpiForWindow(edit)),96);};

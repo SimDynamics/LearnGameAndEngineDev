@@ -168,7 +168,7 @@ constexpr wchar_t course_window_class[]=L"LearnGameAndEngineDev.CourseAudio";
 constexpr int back_id=6100,refresh_id=6101,info_id=6102,list_id=6103,title_id=6104,status_id=6105,details_id=6106,pause_id=6107,delete_id=6108;
 constexpr UINT activate_course_message=WM_APP+270,job_message=WM_APP+271;
 enum class Operation {none,report,preview,remove};
-std::string audio_size(std::uint64_t bytes){char label[64]{};std::snprintf(label,sizeof(label),"%.2f MiB",static_cast<double>(bytes)/(1024.*1024.));return label;}
+std::string audio_size(std::uint64_t bytes,std::string_view locale={}){char label[64]{};std::snprintf(label,sizeof(label),"%.1f",static_cast<double>(bytes)/(1024.*1024.));std::string result(label);if(locale=="es"||locale=="fr")std::replace(result.begin(),result.end(),'.',',');return result+(locale=="fr"?" Mio":" MiB");}
 struct CourseAudioWindow {
     HWND window=nullptr;CourseAudioAccess access;std::string route;CourseAudioProfile profile;
     HFONT font=nullptr,title_font=nullptr;bool owns=false,closing=false;
@@ -189,12 +189,19 @@ struct CourseAudioWindow {
         if(id==title_id)reader_theme::set_text_color(child,RGB(255,255,255));else if(id==status_id||id==details_id)reader_theme::set_text_color(child,RGB(210,214,220));
         SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(id==title_id?title_font:font),FALSE);return child;}
     const CourseAudioCourse* course()const{return report&&selected&&*selected<report->courses.size()?&report->courses[*selected]:nullptr;}
-    std::string count_text(const CourseAudioCourse& course)const{const auto& coverage=course.coverage;const auto percentage=coverage.percentage();return std::to_string(coverage.generated)+"/"+std::to_string(coverage.expected)+" ("+(percentage?std::to_string(*percentage)+"%":tr("Sin datos","Unknown","Inconnu"))+") · "+std::to_string(coverage.files)+tr(" archivos · "," files · "," fichiers · ")+audio_size(coverage.bytes);}
-    std::string row_text(std::size_t index)const{if(!report||index>=report->courses.size())return {};const auto& item=report->courses[index];return tr("Curso ","Course ","Cours ")+std::to_string(item.number)+": "+item.title+"\n"+count_text(item)+(access.paused(item.owner)?"\n"+tr("Generación anticipada pausada","Advance generation paused","Génération anticipée suspendue"):std::string{});}
+    std::string count_text(const CourseAudioCourse& course)const{const auto& coverage=course.coverage;const auto percentage=coverage.percentage();return std::to_string(coverage.generated)+"/"+std::to_string(coverage.expected)+" ("+(percentage?std::to_string(*percentage)+"%":tr("Sin frases previstas","No utterances expected","Aucun énoncé prévu"))+") · "+std::to_string(coverage.files)+tr(" archivos · "," files · "," fichiers · ")+audio_size(coverage.bytes,profile.ui_language);}
+    std::string row_text(std::size_t index)const{if(!report||index>=report->courses.size())return {};const auto& item=report->courses[index];return tr("Curso ","Course ","Cours ")+std::to_string(item.number)+tr(": ",": "," : ")+item.title+"\n"+count_text(item)+(access.paused(item.owner)?"\n"+tr("Generación anticipada pausada","Advance generation paused","Génération anticipée en pause"):std::string{});}
     int row_height(std::size_t index)const{RECT bounds{};GetClientRect(GetDlgItem(window,list_id),&bounds);const auto dc=GetDC(window);const auto old=SelectObject(dc,font);RECT text{0,0,std::max(px(80),static_cast<int>(bounds.right)-px(40)),0};DrawTextW(dc,wide(row_text(index)).c_str(),-1,&text,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);SelectObject(dc,old);ReleaseDC(window,dc);return std::max(px(100),static_cast<int>(text.bottom)+px(32));}
+    void refresh_fonts(){
+        const auto body=CreateFontW(-px(18),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        const auto heading=CreateFontW(-px(26),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        if(!body||!heading){if(body)DeleteObject(body);if(heading)DeleteObject(heading);throw std::runtime_error("Cannot create course-audio fonts");}
+        for(auto child=GetWindow(window,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT))
+            SendMessageW(child,WM_SETFONT,reinterpret_cast<WPARAM>(GetDlgCtrlID(child)==title_id?heading:body),FALSE);
+        if(font)DeleteObject(font);if(title_font)DeleteObject(title_font);font=body;title_font=heading;
+    }
     void initialize(){
-        reader_theme::apply(window,reader_theme::Surface::screen);font=CreateFontW(-px(18),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");title_font=CreateFontW(-px(26),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
-        if(!font||!title_font)throw std::runtime_error("Cannot create course-audio fonts");
+        reader_theme::apply(window,reader_theme::Surface::screen);refresh_fonts();
         reader_theme::primary_button(control(L"BUTTON",tr("Volver","Back","Retour"),back_id,WS_TABSTOP|BS_OWNERDRAW));
         control(L"STATIC",route_title(),title_id,SS_LEFT);control(L"STATIC","",status_id,SS_LEFT);
         (void)create_card_list(window,list_id,activate_course_message);
@@ -217,19 +224,22 @@ struct CourseAudioWindow {
         MoveWindow(GetDlgItem(window,refresh_id),margin,bottom-button,(width-gap)/2,button,TRUE);MoveWindow(GetDlgItem(window,info_id),margin+(width+gap)/2,bottom-button,(width-gap)/2,button,TRUE);
         const bool detail=course()!=nullptr;for(const auto id:{list_id,refresh_id,info_id})ShowWindow(GetDlgItem(window,id),detail?SW_HIDE:SW_SHOW);for(const auto id:{details_id,pause_id,delete_id})ShowWindow(GetDlgItem(window,id),detail?SW_SHOW:SW_HIDE);
         if(report)for(std::size_t index=0;index<report->courses.size();++index)SendDlgItemMessageW(window,list_id,LB_SETITEMHEIGHT,index,row_height(index));
-        for(const auto id:{list_id,pause_id,delete_id,info_id})EnableWindow(GetDlgItem(window,id),operation==Operation::none);
-        EnableWindow(GetDlgItem(window,back_id),operation!=Operation::remove);EnableWindow(GetDlgItem(window,refresh_id),operation!=Operation::remove);
+        const bool enabled=access.profile().enabled;
+        for(const auto id:{list_id,pause_id,delete_id,info_id})EnableWindow(GetDlgItem(window,id),enabled&&operation==Operation::none);
+        EnableWindow(GetDlgItem(window,back_id),operation!=Operation::remove);EnableWindow(GetDlgItem(window,refresh_id),enabled&&operation!=Operation::remove);
         SetWindowTextW(GetDlgItem(window,refresh_id),wide(operation==Operation::none?tr("Actualizar","Refresh","Actualiser"):tr("Cancelar","Cancel","Annuler")).c_str());
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
     }
     void show_detail(){const auto* item=course();if(!item)return;
         const auto active=access.paused(item->owner);
-        SetWindowTextW(GetDlgItem(window,title_id),wide(tr("Curso ","Course ","Cours ")+std::to_string(item->number)+": "+item->title).c_str());
-        const auto text=tr("Audio generado: ","Generated audio: ","Audio généré : ")+count_text(*item)+"\n\n"+
-            tr("Los audios pueden compartirse entre cursos. El cálculo refleja los idiomas y las voces actualmente seleccionados. La eliminación requiere una confirmación explícita y conserva los audios compartidos.","Audio may be shared between courses. These figures use the currently selected languages and voices. Deletion requires explicit confirmation and preserves shared audio.","Les audios peuvent être partagés entre les cours. Le calcul reflète les langues et les voix sélectionnées. La suppression nécessite une confirmation explicite et conserve les audios partagés.")+"\n\n"+
-            (active?tr("Generación anticipada pausada.","Advance generation is paused.","La génération anticipée est suspendue."):tr("Generación anticipada activa.","Advance generation is active.","La génération anticipée est active."))+"\n"+
-            tr("Esta pausa solo afecta a la preparación anticipada del curso; no borra archivos ni impide leer su página actual.","This pause only affects advance preparation for the course; it neither deletes files nor prevents reading its current page.","Cette pause ne concerne que la préparation anticipée du cours ; elle ne supprime aucun fichier et n’empêche pas la lecture de sa page actuelle.");
-        set_edit_text(GetDlgItem(window,details_id),text);CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_FACE|CFM_COLOR;format.yHeight=rich_text_height();format.crTextColor=reader_theme::foreground(GetDlgItem(window,details_id));wcscpy_s(format.szFaceName,L"Roboto");SendDlgItemMessageW(window,details_id,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));SendDlgItemMessageW(window,details_id,EM_SETSEL,0,0);SetWindowTextW(GetDlgItem(window,pause_id),wide(active?tr("Reanudar generación anticipada","Resume advance generation","Reprendre la génération anticipée"):tr("Pausar generación anticipada","Pause advance generation","Suspendre la génération anticipée")).c_str());layout();
+        SetWindowTextW(GetDlgItem(window,title_id),wide(route_title()+tr(" · Curso "," · Course "," · Cours ")+std::to_string(item->number)+tr(": ",": "," : ")+item->title).c_str());
+        const auto& coverage=item->coverage;const auto percentage=coverage.percentage();
+        const auto text=tr("Audio generado: ","Audio generated: ","Audio généré : ")+std::to_string(coverage.generated)+tr(" de "," of "," sur ")+std::to_string(coverage.expected)+tr(" frases distintas ("," unique utterances ("," énoncés distincts (")+(percentage?std::to_string(*percentage)+"%":tr("Sin frases previstas","No utterances expected","Aucun énoncé prévu"))+").\n"+
+            tr("Archivos verificados: ","Verified files: ","Fichiers vérifiés : ")+std::to_string(coverage.files)+tr(" · Tamaño: "," · Size: "," · Taille : ")+audio_size(coverage.bytes,profile.ui_language)+".\n\n"+
+            tr("Los audios pueden compartirse entre cursos. El cálculo refleja los idiomas y las voces actualmente seleccionados. La eliminación requiere una confirmación explícita y conserva los audios compartidos.","Audio can be shared across courses. These figures reflect the currently selected languages and voices. Deletion requires explicit confirmation and keeps shared recordings.","Des audios peuvent être communs à plusieurs cours. Ces chiffres concernent les langues et voix actuellement sélectionnées. La suppression exige une confirmation explicite et préserve les audios partagés.")+"\n\n"+
+            (active?tr("Generación anticipada pausada","Advance generation paused","Génération anticipée en pause"):tr("Generación anticipada permitida en este curso","Advance generation permitted for this course","Génération anticipée autorisée pour ce cours"))+"\n"+
+            tr("Solo controla la generación anticipada de este curso. Las páginas que visites podrán generar audio y los archivos guardados seguirán disponibles. No se elimina ningún audio.","Only advance audio generation for this course is affected. Pages you visit can still generate audio, and saved recordings remain available. No audio is deleted.","Seule la génération anticipée de ce cours est concernée. Les pages visitées peuvent encore produire de l’audio et les enregistrements conservés restent disponibles. Aucun audio n’est supprimé.");
+        set_edit_text(GetDlgItem(window,details_id),text);CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_FACE|CFM_COLOR;format.yHeight=rich_text_height();format.crTextColor=reader_theme::foreground(GetDlgItem(window,details_id));wcscpy_s(format.szFaceName,L"Roboto");SendDlgItemMessageW(window,details_id,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&format));SendDlgItemMessageW(window,details_id,EM_SETSEL,0,0);SetWindowTextW(GetDlgItem(window,pause_id),wide(active?tr("Reanudar generación","Resume generation","Reprendre la génération"):tr("Pausar generación","Pause generation","Suspendre la génération")).c_str());layout();
     }
     void begin(Operation next,std::function<Reply(std::stop_token)> work){if(job.joinable()){job.request_stop();job.join();}operation=next;layout();job=std::jthread([this,work=std::move(work)](std::stop_token stop){Reply reply;reply.operation=operation;
         try{reply=work(stop);}catch(const winrt::hresult_error& error){reply.error=winrt::to_string(error.message());reply.cancelled=stop.stop_requested();}catch(const std::exception& error){reply.error=error.what();reply.cancelled=stop.stop_requested();}
@@ -276,9 +286,16 @@ struct CourseAudioWindow {
         begin(Operation::remove,[preview,current,lease=maintenance](std::stop_token stop){Reply result;result.operation=Operation::remove;result.removal=remove_confirmed_course_audio(*preview,current,[lease]{return static_cast<bool>(lease);},stop);return result;});
     }
     void command(int id){
+        // A second settings window may disable narration after this dialog was
+        // opened. A queued click must not mutate preparation or remove audio.
+        if(id!=back_id&&!access.profile().enabled){layout();return;}
+        if(id==back_id){
+            if(operation==Operation::remove)return;
+            if(operation!=Operation::none){SendMessageW(window,WM_CLOSE,0,0);return;}
+            if(selected){selected.reset();SetWindowTextW(GetDlgItem(window,title_id),wide(route_title()).c_str());layout();}else DestroyWindow(window);return;
+        }
         if(id==refresh_id&&operation!=Operation::none){job.request_stop();return;}
         if(operation!=Operation::none)return;
-        if(id==back_id){if(selected){selected.reset();SetWindowTextW(GetDlgItem(window,title_id),wide(route_title()).c_str());layout();}else DestroyWindow(window);return;}
         if(id==refresh_id){scan(false);return;}
         if(id==info_id){MessageBoxW(window,wide(tr("En cada lista solo aparecen los cursos de su ruta. Un audio puede utilizarse en varios cursos y se cuenta dentro de cada uno, pero sigue siendo un único archivo físico. Los porcentajes consideran las voces e idiomas actualmente seleccionados. La eliminación solo ocurre tras la confirmación del usuario y nunca afecta archivos compartidos.","Each list shows only courses from its learning path. One recording can be used by several courses and counted in each, while remaining one physical file. Percentages use the current voices and languages. Deletion requires explicit confirmation and never affects shared files.","Chaque liste ne contient que les cours de son parcours. Un audio partagé est compté dans chaque cours, tout en restant un seul fichier physique. Les pourcentages reflètent les voix et langues sélectionnées. La suppression nécessite une confirmation et n’affecte jamais les fichiers partagés.")).c_str(),wide(route_title()).c_str(),MB_OK|MB_ICONINFORMATION);return;}
         if(id==pause_id&&course()){const auto item=course()->owner;access.pause(item,!access.paused(item));show_detail();return;}
@@ -293,6 +310,9 @@ LRESULT CALLBACK course_audio_proc(HWND window,UINT message,WPARAM wp,LPARAM lp)
     try{switch(message){
     case WM_CREATE:self->initialize();return 0;
     case WM_SIZE:self->layout();return 0;
+    case WM_DPICHANGED:{const auto* suggested=reinterpret_cast<const RECT*>(lp);if(suggested)SetWindowPos(window,nullptr,suggested->left,suggested->top,suggested->right-suggested->left,suggested->bottom-suggested->top,SWP_NOZORDER|SWP_NOACTIVATE);self->refresh_fonts();self->layout();return 0;}
+    case WM_DPICHANGED_AFTERPARENT:self->refresh_fonts();self->layout();return 0;
+    case WM_ACTIVATE:if(LOWORD(wp)!=WA_INACTIVE)self->layout();return 0;
     case WM_ERASEBKGND:{RECT bounds{};GetClientRect(window,&bounds);FillRect(reinterpret_cast<HDC>(wp),&bounds,reader_theme::brush(reader_theme::Surface::screen));return 1;}
     case WM_COMMAND:if(LOWORD(wp)==IDCANCEL){SendMessageW(window,WM_CLOSE,0,0);return 0;}if(HIWORD(wp)==BN_CLICKED)self->command(LOWORD(wp));return 0;
     case activate_course_message:{const auto chosen=SendDlgItemMessageW(window,list_id,LB_GETCURSEL,0,0);if(self->operation==Operation::none&&chosen>=0&&self->report&&static_cast<std::size_t>(chosen)<self->report->courses.size()){self->selected=static_cast<std::size_t>(chosen);self->show_detail();}return 0;}

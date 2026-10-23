@@ -7,9 +7,13 @@
 #include <tom.h>
 #include <commctrl.h>
 #include <wrl/client.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <numeric>
+#include <set>
 #include <stdexcept>
 
 namespace lgaed::presentation {
@@ -132,6 +136,26 @@ LRESULT CALLBACK mapping_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
 struct InlineProjection {
     Projection value;
     std::vector<std::pair<std::size_t,std::size_t>> spans;
+    std::set<std::size_t> literal_spans;
+    InlineProjection(std::string_view source,std::span<const NativeMathFragment> fragments):value(source){
+        std::size_t at=0;
+        const auto plain=[&](std::size_t end){while(at<end){value.mapping[at]=value.linear.size();value.linear+=value.source[at++];value.mapping[at]=value.linear.size();}};
+        for(const auto& fragment:fragments){
+            if(fragment.start<at||fragment.end<=fragment.start||fragment.end>value.source.size())throw std::invalid_argument("The original mathematics renderer returned an invalid source range");
+            const auto splits_surrogate=[&](std::size_t index){return index>0&&index<value.source.size()&&IS_HIGH_SURROGATE(value.source[index-1])&&IS_LOW_SURROGATE(value.source[index]);};
+            if(splits_surrogate(fragment.start)||splits_surrogate(fragment.end))throw std::invalid_argument("A mathematical source range splits a Unicode character");
+            plain(fragment.start);auto first=fragment.start,last=fragment.end;const auto original=std::wstring_view(value.source).substr(first,last-first);
+            if((original.starts_with(L"\\(")&&original.ends_with(L"\\)"))||(original.starts_with(L"\\[")&&original.ends_with(L"\\]"))||(original.starts_with(L"$$")&&original.ends_with(L"$$"))){first+=2;last-=2;}
+            else if(original.size()>=2&&original.front()==L'$'&&original.back()==L'$'){++first;--last;}
+            Projection normalized(fragment.formula);if(fragment.literal){normalized.linear=normalized.source;std::iota(normalized.mapping.begin(),normalized.mapping.end(),0);}else normalized.parse();
+            const auto offset=value.linear.size();const auto source_mapping=align(std::wstring_view(value.source).substr(first,last-first),normalized.linear);
+            for(auto index=fragment.start;index<first;++index)value.mapping[index]=offset;
+            for(std::size_t index=0;index<source_mapping.size();++index)value.mapping[first+index]=offset+source_mapping[index];
+            value.linear+=normalized.linear;for(auto index=last;index<=fragment.end;++index)value.mapping[index]=value.linear.size();
+            spans.push_back({offset,value.linear.size()});if(fragment.literal)literal_spans.insert(offset);at=fragment.end;
+        }
+        plain(value.source.size());
+    }
     InlineProjection(std::string_view source,bool inline_only) : value(source) {
         if (!inline_only) { value.parse(); spans.push_back({0,value.linear.size()}); return; }
         std::size_t at = 0;
@@ -172,8 +196,8 @@ struct DisplayTransaction {
         if (visible) SendMessageW(window,WM_SETREDRAW,TRUE,0); InvalidateRect(window,nullptr,TRUE);
     }
 };
-bool set_math_text(HWND window,std::string_view original,bool inline_only,std::span<const curriculum::Emphasis> emphasis = {},RichTextRole role = RichTextRole::body) {
-    InlineProjection converted(original,inline_only); auto& projection = converted.value;
+bool set_math_text(HWND window,std::string_view original,bool inline_only,std::span<const curriculum::Emphasis> emphasis = {},RichTextRole role = RichTextRole::body,std::span<const NativeMathFragment> fragments = {}) {
+    InlineProjection converted=fragments.empty()?InlineProjection(original,inline_only):InlineProjection(original,fragments); auto& projection = converted.value;
     if (converted.spans.empty()) return false;
     if (projection.linear.size() > 4096) throw std::length_error("Native mathematical display is too large");
     std::vector<curriculum::Emphasis> displayed_emphasis(emphasis.begin(),emphasis.end());
@@ -185,7 +209,7 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
     if (SendMessageW(window,EM_GETEDITSTYLEEX,0,0) & SES_EX_NOMATH)
         throw std::runtime_error("This RichEdit cannot enable native mathematical display");
     DisplayTransaction transaction(window);
-    set_rich_text(window,utf8(projection.linear),displayed_emphasis,false,role);
+    set_rich_text(window,utf8(projection.linear),fragments.empty()?std::span<const curriculum::Emphasis>(displayed_emphasis):std::span<const curriculum::Emphasis>{},false,role);
     CHARFORMAT2W style{}; style.cbSize = sizeof(style); style.dwMask = CFM_FACE | CFM_SIZE | CFM_COLOR | CFM_MATH; style.dwEffects = CFE_MATH;
     style.yHeight = rich_text_height(role); style.crTextColor = reader_theme::foreground(window); wcscpy_s(style.szFaceName,L"Cambria Math");
     Microsoft::WRL::ComPtr<IRichEditOle> rich; SendMessageW(window,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
@@ -195,7 +219,18 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
     for (auto span = converted.spans.rbegin(); span != converted.spans.rend(); ++span) {
         const auto begin = static_cast<LONG>(linear_to_visible.at(span->first)),end = static_cast<LONG>(linear_to_visible.at(span->second));
         CHARRANGE selected{begin,end}; SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected)); SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&style));
-        if (document && SUCCEEDED(document->Range2(begin,end,range.ReleaseAndGetAddressOf()))) built = range->BuildUpMath(0) == S_OK || built;
+        if (!converted.literal_spans.contains(span->first)&&document && SUCCEEDED(document->Range2(begin,end,range.ReleaseAndGetAddressOf()))) built = range->BuildUpMath(0) == S_OK || built;
+    }
+    if(!fragments.empty())for(const auto& emphasis_range:curriculum::emphasis_ranges(original,emphasis)){
+        const auto begin=wide(original.substr(0,emphasis_range.start)).size(),end=wide(original.substr(0,emphasis_range.end)).size();
+        // TOM may replace a mathematical letter/digit with a supplementary
+        // styled character when its weight changes. Resolve every authored
+        // emphasis against the current story, retaining original overlap/order.
+        const auto current=align(projection.linear,raw_text(window));
+        CHARRANGE selected{static_cast<LONG>(current.at(projection.mapping.at(begin))),static_cast<LONG>(current.at(projection.mapping.at(end)))};SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selected));
+        CHARFORMAT2W emphasis_style{};emphasis_style.cbSize=sizeof(emphasis_style);emphasis_style.dwMask=CFM_BOLD|CFM_ITALIC;
+        emphasis_style.dwEffects=(role!=RichTextRole::body||emphasis_range.style=="bold"||emphasis_range.style=="bold_italic"?CFE_BOLD:0)|(emphasis_range.style=="italic"||emphasis_range.style=="bold_italic"?CFE_ITALIC:0);
+        SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&emphasis_style));
     }
     NativeMathTextMapping mapping; mapping.source = original; mapping.native_text = raw_text(window); mapping.built_up = built;
     const auto linear_mapping = align(projection.linear,mapping.native_text); mapping.source_to_native.reserve(projection.mapping.size());
@@ -208,6 +243,22 @@ bool set_math_text(HWND window,std::string_view original,bool inline_only,std::s
 }
 bool set_native_math_text(HWND window,std::string_view original) { return set_math_text(window,original,false); }
 bool set_native_math_inline_text(HWND window,std::string_view original,std::span<const curriculum::Emphasis> emphasis,RichTextRole role) { return set_math_text(window,original,true,emphasis,role); }
+bool set_native_math_fragments(HWND window,std::string_view original,std::span<const NativeMathFragment> fragments,RichTextRole role){if(fragments.empty())return false;return set_math_text(window,original,true,{},role,fragments);}
+bool set_original_math_text(HWND window,std::string_view original,std::string_view mode,const std::function<std::string(std::string_view)>& request,std::span<const curriculum::Emphasis> emphasis,RichTextRole role){
+    using namespace winrt::Windows::Data::Json;
+    delete reinterpret_cast<NativeMathTextMapping*>(RemovePropW(window,mapping_property));
+    set_rich_text(window,original,emphasis,false,role);
+    if(mode=="text"||mode=="off"||original.empty())return false;
+    if(!request){if(mode=="inline"||mode=="block")return set_math_text(window,original,false,emphasis,role);return set_native_math_inline_text(window,original,emphasis,role);}
+    JsonObject query;query.SetNamedValue(L"action",JsonValue::CreateStringValue(L"text_layout"));query.SetNamedValue(L"text",JsonValue::CreateStringValue(wide(original)));query.SetNamedValue(L"mode",JsonValue::CreateStringValue(wide(mode)));
+    const auto reply=JsonObject::Parse(wide(request(winrt::to_string(query.Stringify()))));if(!reply.HasKey(L"fragments"))throw std::runtime_error(winrt::to_string(reply.GetNamedString(L"error",L"The original mathematical text renderer returned no source ranges")));
+    const auto length=wide(original).size();std::vector<NativeMathFragment> fragments;
+    for(const auto& value:reply.GetNamedArray(L"fragments")){const auto fragment=value.GetObject();const auto start=fragment.GetNamedNumber(L"start",-1),end=fragment.GetNamedNumber(L"end",-1);
+        if(start<0||end<=start||std::floor(start)!=start||std::floor(end)!=end||end>length)throw std::runtime_error("The original mathematical text renderer returned an invalid source range");
+        fragments.push_back({static_cast<std::size_t>(start),static_cast<std::size_t>(end),winrt::to_string(fragment.GetNamedString(L"formula")),fragment.GetNamedBoolean(L"literal",false)});
+    }
+    return fragments.empty()?false:set_math_text(window,original,true,emphasis,role,fragments);
+}
 std::optional<NativeMathTextMapping> native_math_text_mapping(HWND window,std::string_view source) {
     if (!IsWindow(window)) return {};
     const auto* mapping = reinterpret_cast<const NativeMathTextMapping*>(GetPropW(window,mapping_property));
