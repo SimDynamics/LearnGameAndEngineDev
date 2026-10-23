@@ -1,6 +1,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/code_editor.hpp"
+#include "presentation/windows/code_gutter.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/reader_theme.hpp"
@@ -39,6 +40,11 @@ std::string window_text(HWND window) {
     std::wstring value(static_cast<std::size_t>(size) + 1,L'\0');
     value.resize(static_cast<std::size_t>(GetWindowTextW(window,value.data(),static_cast<int>(value.size()))));
     return utf8(value);
+}
+std::vector<std::pair<std::string,std::string>> reading_script(HWND view){
+    std::vector<std::pair<std::string,std::string>> result;
+    for(const auto& region:lesson_reading_regions(view))result.emplace_back(region.key,region.source_text);
+    return result;
 }
 CHARFORMAT2W character_format(HWND edit,LONG character = 0) {
     CHARRANGE previous{}; SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
@@ -345,12 +351,19 @@ struct Fixture {
     }
     void compiler_menus(std::size_t block) {
         const auto source = control(block,10); const auto before = text(block,10); const auto verdict = text(block,4);
+        const auto original_script=reading_script(view);CHARRANGE original_selection{};
+        SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&original_selection));
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,75),0),0); pump(host);
         require(control(block,10) == source && text(block,10) == before,
                 "Editor fullscreen recreated the document or changed the code");
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,76),0),0); pump(host);
-        require(!(GetWindowLongPtrW(source,GWL_STYLE) & WS_VISIBLE) && lesson_reading_regions(view).empty(),
-                "Console fullscreen still exposed hidden lesson/source text to the reader");
+        const auto expanded_regions=lesson_reading_regions(view);
+        require(!(GetWindowLongPtrW(source,GWL_STYLE) & WS_VISIBLE)&&reading_script(view)==original_script&&
+            std::ranges::none_of(expanded_regions,[&](const auto& region){return region.target==source||region.target==control(block,14);}),
+            "Console fullscreen changed the existing narration script or began narrating excluded source/output code");
+        CHARRANGE expanded_selection{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&expanded_selection));
+        require(expanded_selection.cpMin==original_selection.cpMin&&expanded_selection.cpMax==original_selection.cpMax,
+            "Console fullscreen changed the hidden source editor's existing selection range");
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(id(block,72),0),0); pump(host);
         require(text(block,14).empty() && text(block,10) == before && text(block,4) == verdict,
                 "Clearing console output cleared code, answers or the feedback verdict");
@@ -437,6 +450,7 @@ void lesson_interface_languages() {
         ShowWindow(fixture.host,SW_SHOWNOACTIVATE); pump(fixture.host);
         require(accessible_name(fixture.control(111)) == pick("Lector","Reader","Lecteur") &&
                 accessible_name(fixture.control(112)) == pick("Idioma","Language","Langue") &&
+                accessible_name(fixture.control(107)) == pick("Ajustes de la lección","Lesson Settings","Paramètres de la leçon") &&
                 accessible_name(fixture.control(113)) == pick("Intentos disponibles","Available attempts","Essais disponibles"),
                 "Lesson header labels ignored the independent interface language");
         require(window_text(fixture.control(2,11)) == pick("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier") &&
@@ -454,7 +468,7 @@ void lesson_interface_languages() {
                     capture.captions[1] == pick("Páginas","Pages","Pages"), "The real lesson popup remained in another language");
         }
         {
-            PopupCapture capture(fixture.view); fixture.click(2,19); capture.verified();
+            PopupCapture capture(fixture.view); SendMessageW(fixture.control(2,10),WM_CONTEXTMENU,0,MAKELPARAM(-1,-1));capture.verified();
             require(capture.captions.front() == pick("Deshacer","Undo","Annuler"),"The real editor popup ignored the interface language");
         }
         {
@@ -547,6 +561,98 @@ void back_navigation_tests(){
     }
     std::cout<<"PASS shared Back/Escape: import/fullscreen/math-keyboard priority, real canonical keyboard, retained editor/draft/selection and existing catalog destination\n";
 }
+void initial_readonly_source_layout(){
+    struct DpiScope{DPI_AWARENESS_CONTEXT previous=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        ~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}} dpi_scope;
+    const auto resize=[&](Fixture& fixture,int width){
+        const auto dpi=static_cast<int>(GetDpiForWindow(fixture.view));RECT outer{0,0,MulDiv(width,dpi,96),MulDiv(750,dpi,96)};
+        AdjustWindowRectExForDpi(&outer,static_cast<DWORD>(GetWindowLongPtrW(fixture.host,GWL_STYLE)),FALSE,
+            static_cast<DWORD>(GetWindowLongPtrW(fixture.host,GWL_EXSTYLE)),dpi);
+        SetWindowPos(fixture.host,nullptr,0,0,outer.right-outer.left,outer.bottom-outer.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+        MoveWindow(fixture.view,0,0,MulDiv(width,dpi,96),MulDiv(750,dpi,96),TRUE);pump(fixture.host);
+    };
+    Fixture fixture;resize(fixture,900);
+    const auto source=fixture.control(2,1),caption=fixture.control(2,16);
+    const auto visible_bar=[](HWND control,int axis){SCROLLBARINFO info{sizeof(info)};
+        return GetScrollBarInfo(control,axis==SB_HORZ?OBJID_HSCROLL:OBJID_VSCROLL,&info)&&
+            !(info.rgstate[0]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN));
+    };
+    const auto original=edit_text(source);RECT client{},format{};POINTL first{};POINT offset{};GetClientRect(caption,&client);
+    const auto source_extents=[&]{
+        const auto raw=wide(edit_text(source));POINT scroll{};SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        POINTL maximum{};
+        for(std::size_t i=0;i<=raw.size();++i)if(i==raw.size()||raw[i]==L'\n'){
+            POINTL end{};SendMessageW(source,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),static_cast<LPARAM>(i));
+            maximum.x=std::max(maximum.x,end.x+scroll.x);maximum.y=std::max(maximum.y,end.y+scroll.y);
+        }
+        return maximum;
+    };
+    const auto describe=[&](const char* message){
+        RECT source_client{},source_format{},source_screen{},pane_client{};POINT scroll{};int numerator=0,denominator=0;SCROLLINFO h{sizeof(h),SIF_ALL},v{sizeof(v),SIF_ALL};
+        GetClientRect(source,&source_client);SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&source_format));
+        GetWindowRect(source,&source_screen);MapWindowPoints(nullptr,GetParent(source),reinterpret_cast<POINT*>(&source_screen),2);GetClientRect(GetParent(source),&pane_client);
+        SendMessageW(source,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));GetScrollInfo(source,SB_HORZ,&h);GetScrollInfo(source,SB_VERT,&v);
+        const auto maximum=source_extents();
+        return std::string(message)+"; dpi="+std::to_string(GetDpiForWindow(source))+" client="+std::to_string(source_client.right)+","+std::to_string(source_client.bottom)+
+            " format="+std::to_string(source_format.left)+","+std::to_string(source_format.top)+","+std::to_string(source_format.right)+","+std::to_string(source_format.bottom)+
+            " maxLineEnd="+std::to_string(maximum.x)+","+std::to_string(maximum.y)+" zoom="+std::to_string(numerator)+"/"+std::to_string(denominator)+
+            " position="+std::to_string(source_screen.left)+","+std::to_string(source_screen.top)+" pane="+std::to_string(pane_client.right)+","+std::to_string(pane_client.bottom)+
+            " h="+std::to_string(h.nMin)+","+std::to_string(h.nMax)+","+std::to_string(h.nPage)+
+            " v="+std::to_string(v.nMin)+","+std::to_string(v.nMax)+","+std::to_string(v.nPage)+" bars="+std::to_string(visible_bar(source,SB_HORZ))+","+std::to_string(visible_bar(source,SB_VERT));
+    };
+    SendMessageW(caption,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));SendMessageW(caption,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+    SendMessageW(caption,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));const auto font=character_format(caption);
+    require(first.y>=format.top&&first.y+MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(caption)),1440)<=client.bottom&&
+        offset.y==0&&SendMessageW(caption,EM_GETLINECOUNT,0,0)==1,
+        "The first-open production code caption is clipped, internally scrolled or split across rows");
+    RECT source_format{};SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&source_format));
+    const auto initial_extents=source_extents();
+    const auto source_font=character_format(source);
+    const auto line_height=MulDiv(source_font.yHeight,static_cast<int>(GetDpiForWindow(source)),1440);
+    require(initial_extents.x<=source_format.right&&initial_extents.y+line_height<=source_format.bottom,
+        describe("The DPI-aware fit fixture does not actually fit the original source inside its native format rectangle"));
+    require(!visible_bar(source,SB_HORZ)&&!visible_bar(source,SB_VERT),
+        describe("The production readonly source shows a scrollbar even though its seven lines fit the actual viewport"));
+    int original_numerator=0,original_denominator=0;
+    SendMessageW(source,EM_GETZOOM,reinterpret_cast<WPARAM>(&original_numerator),reinterpret_cast<LPARAM>(&original_denominator));
+    CHARRANGE selection{8,15};SendMessageW(source,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+    resize(fixture,280);
+    SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&source_format));
+    require(source_extents().x>source_format.right,
+        describe("The narrowed readonly fixture does not actually overflow its native format rectangle"));
+    SCROLLINFO horizontal{sizeof(horizontal),SIF_RANGE|SIF_PAGE};GetScrollInfo(source,SB_HORZ,&horizontal);
+    require(visible_bar(source,SB_HORZ)&&horizontal.nPage>0&&horizontal.nMax-horizontal.nMin+1>static_cast<int>(horizontal.nPage),
+        describe("Narrowing the same readonly source failed to expose its genuine native horizontal overflow"));
+    require(!visible_bar(source,SB_VERT)&&source_extents().y+line_height<=source_format.bottom,
+        describe("The bottomless readonly source clips its final line or captures vertical lesson scrolling"));
+    POINT wanted{60,0};SendMessageW(source,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&wanted));SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+    require(offset.x>0&&edit_text(source)==original,"Readonly horizontal overflow has no real native scroll or changed the code");
+    fixture.click(2,35);require(!visible_bar(source,SB_HORZ)&&edit_text(source)==original,
+        "Wrap retained an unnecessary readonly horizontal bar or changed the source");
+    SendMessageW(source,EM_GETRECT,0,reinterpret_cast<LPARAM>(&source_format));
+    require(!visible_bar(source,SB_VERT)&&source_extents().y+line_height<=source_format.bottom,
+        describe("Wrapped readonly source no longer grows to its actual document height"));
+    fixture.click(2,35);resize(fixture,900);
+    require(!visible_bar(source,SB_HORZ),"Widening the same readonly source retained an obsolete overflow scrollbar");
+    fixture.click(2,20);require(!visible_bar(source,SB_HORZ)&&!visible_bar(source,SB_VERT),
+        "Readonly fullscreen shows bars when the real seven-line source fits");fixture.click(116);
+    CHARRANGE preserved{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&preserved));
+    int final_numerator=0,final_denominator=0;
+    SendMessageW(source,EM_GETZOOM,reinterpret_cast<WPARAM>(&final_numerator),reinterpret_cast<LPARAM>(&final_denominator));
+    require(preserved.cpMin==selection.cpMin&&preserved.cpMax==selection.cpMax&&
+        original_numerator*final_denominator==final_numerator*original_denominator&&source_extents().x==initial_extents.x,
+        "Readonly viewport refresh changed its selection, effective zoom or original glyph positions");
+    Fixture longer({},[](const curriculum::Lesson& original_lesson){auto lesson=original_lesson;
+        for(unsigned i=0;i<65;++i)lesson.pages[0].blocks[2].code+="// línea adicional\n";return lesson;});
+    resize(longer,900);longer.click(2,20);const auto long_source=longer.control(2,1);
+    SCROLLINFO vertical{sizeof(vertical),SIF_RANGE|SIF_PAGE};GetScrollInfo(long_source,SB_VERT,&vertical);
+    require(visible_bar(long_source,SB_VERT)&&vertical.nPage>0&&vertical.nMax-vertical.nMin+1>static_cast<int>(vertical.nPage),
+        "Long readonly fullscreen lost its genuine native vertical overflow scrollbar");
+    SendMessageW(long_source,EM_LINESCROLL,0,6);SendMessageW(long_source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+    require(offset.y>0,"Long readonly fullscreen no longer scrolls its actual source");longer.click(116);
+    std::cout<<"PASS production readonly source first-open caption and DPI-aware native bars: fit, genuine horizontal/vertical overflow, resize, wrap and fullscreen\n";
+}
 void mathematical_feedback_paragraph_spacing() {
     windows::NarrationWorker backend(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
     for(const auto locale:{"es","en","fr"}) {
@@ -594,6 +700,28 @@ void mathematical_feedback_paragraph_spacing() {
             format={};format.cbSize=sizeof(format);SendMessageW(target,EM_GETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));
             require(format.dySpaceAfter==0,"Math verdict spacing leaked into the authored explanation paragraphs");
             SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            const auto math_host=fixture.control(0,5),pane=GetParent(math_host);
+            RECT host_bounds{},check_bounds{},feedback_bounds{},canvas{};GetWindowRect(math_host,&host_bounds);
+            GetWindowRect(fixture.control(0,3),&check_bounds);GetWindowRect(target,&feedback_bounds);
+            for(const auto rect:{&host_bounds,&check_bounds,&feedback_bounds})MapWindowPoints(nullptr,pane,reinterpret_cast<POINT*>(rect),2);
+            const auto inset=MulDiv(8,static_cast<int>(GetDpiForWindow(pane)),96);
+            require(check_bounds.left==host_bounds.left+inset&&feedback_bounds.left==host_bounds.left+inset&&
+                check_bounds.right==host_bounds.right-inset&&feedback_bounds.right==host_bounds.right-inset,
+                "The mathematical group contour clips its check/feedback instead of retaining Android's internal padding");
+            GetClientRect(pane,&canvas);const auto screen=GetDC(pane),memory=CreateCompatibleDC(screen);
+            const auto bitmap=CreateCompatibleBitmap(screen,canvas.right,canvas.bottom);ReleaseDC(pane,screen);
+            require(memory&&bitmap,"Cannot create the mathematical group's actual native drawing surface");const auto old=SelectObject(memory,bitmap);
+            SendMessageW(pane,WM_ERASEBKGND,reinterpret_cast<WPARAM>(memory),0);
+            const auto outline=reader_theme::palette(pane).outline;
+            const auto check_pixel=GetPixel(memory,host_bounds.left,(check_bounds.top+check_bounds.bottom)/2);
+            const auto left_pixel=GetPixel(memory,host_bounds.left,(feedback_bounds.top+feedback_bounds.bottom)/2);
+            const auto right_pixel=GetPixel(memory,host_bounds.right-1,(feedback_bounds.top+feedback_bounds.bottom)/2);
+            const bool whole_group=check_pixel==outline&&left_pixel==outline&&right_pixel==outline;
+            SelectObject(memory,old);DeleteObject(bitmap);DeleteDC(memory);
+            const auto rectangle=[](RECT value){return std::to_string(value.left)+","+std::to_string(value.top)+","+std::to_string(value.right)+","+std::to_string(value.bottom);};
+            require(whole_group,"The actual mathematical outline does not enclose both Check and the full feedback; host="+rectangle(host_bounds)+
+                " check="+rectangle(check_bounds)+" feedback="+rectangle(feedback_bounds)+" canvas="+rectangle(canvas)+
+                " pixels="+std::to_string(check_pixel)+","+std::to_string(left_pixel)+","+std::to_string(right_pixel)+" outline="+std::to_string(outline));
             require(fixture.lesson.raw_json==original_json,"Math verdict spacing changed the curriculum");
         }
     }
@@ -659,15 +787,27 @@ void simulated_exercise_code_cards() {
     const auto original_json=fixture.lesson.raw_json;
     for(std::size_t index=0;index<5;++index){
         require(fixture.text(index,16)=="</> C++"&&accessible_name(fixture.control(index,12))=="Reiniciar respuesta"&&
-            accessible_name(fixture.control(index,18))=="Copiar ejercicio"&&accessible_name(fixture.control(index,13))=="Pantalla completa",
-            "A simulated programming response lost its actual language/reset/copy/fullscreen header");
+            accessible_name(fixture.control(index,18))=="Copiar ejercicio",
+            "A simulated programming response lost its actual language/reset/copy header");
+        require(!descendant(fixture.view,id(index,19)),"A simulated puzzle retained an Android-absent settings button");
+        if(index<2)require(!descendant(fixture.view,id(index,13))&&!descendant(fixture.view,id(index,35)),
+            "A plain response gained fullscreen or wrap buttons absent from Android");
+        else require(accessible_name(fixture.control(index,13))=="Pantalla completa","A code composition puzzle lost its Android fullscreen action");
+        if(index>=3)require(accessible_name(fixture.control(index,35))=="Ajuste de línea desactivado",
+            "A compositional code puzzle lost its direct Android wrap button");
         require(!IsWindowEnabled(fixture.control(index,12)),"A fresh simulated response gained a resettable hidden answer");
     }
-    const auto output_code=fixture.control(0,1),output_answer=fixture.control(0,2),fill_answer=fixture.control(1,2);
+    const auto output_code=fixture.control(0,1),fill_answer=fixture.control(1,2);
     const auto inline_host=fixture.control(3,5),drag_host=fixture.control(4,5);
     const auto inline_answer=GetDlgItem(inline_host,100),drag_slot=GetDlgItem(drag_host,100);
     require(inline_answer&&drag_slot&&edit_text(inline_answer).empty()&&edit_text(drag_slot)=="…",
         "Adding code headers revealed the internal inline/drag expected answers");
+    fixture.click(3,35);
+    require(accessible_name(fixture.control(4,35))=="Ajuste de línea activado"&&
+        GetDlgItem(inline_host,100)==inline_answer&&GetDlgItem(drag_host,100)==drag_slot&&
+        !(GetWindowLongPtrW(output_code,GWL_STYLE)&ES_AUTOHSCROLL),
+        "A direct inline wrap change did not propagate to the same live drag/source views and toolbar states");
+    fixture.click(4,35);
     const auto regions=lesson_reading_regions(fixture.view);
     require(std::ranges::none_of(regions,[&](const auto& region){
         return region.target==output_code||region.target==fixture.control(0,16)||region.target==fixture.control(1,16);
@@ -676,19 +816,9 @@ void simulated_exercise_code_cards() {
     require(std::ranges::none_of(regions,[&](const auto& region){return IsChild(order_surface,region.target);})&&
         std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(2,37)&&region.source_text=="Mantén pulsado un bloque y arrástralo hasta la posición correcta.";}),
         "Code ordering narrated source fragments or omitted the original visible Android instruction");
-    {
-        PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
-        require(popup.captions==std::vector<std::string>{"Copiar ejercicio","Reiniciar respuesta","Pantalla completa","Ajuste de línea"},
-            "The simulated response menu does not expose its real copy/reset/fullscreen operations");
-    }
     fixture.replace(0,2,"Respuesta personal");fixture.replace(1,2,"<<");
     require(IsWindowEnabled(fixture.control(0,12))&&IsWindowEnabled(fixture.control(1,12)),"Typing a simulated answer did not update its real header reset");
-    fixture.click(0,13);
-    require(fixture.control(0,1)==output_code&&fixture.control(0,2)==output_answer&&fixture.text(0,2)=="Respuesta personal"&&
-        (GetWindowLongPtrW(output_answer,GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(0,3),GWL_STYLE)&WS_VISIBLE)&&
-        !(GetWindowLongPtrW(fixture.control(1,2),GWL_STYLE)&WS_VISIBLE),
-        "Simulated response fullscreen recreated fields, hid its answer or retained unrelated/check controls");
-    fixture.click(116);fixture.click(0,12);
+    fixture.click(0,12);
     require(fixture.text(0,2).empty()&&fixture.control(1,2)==fill_answer&&fixture.text(1,2)=="<<"&&
         fixture.text(0,1)==fixture.lesson.pages[0].blocks[0].code,
         "Resetting a response modified immutable code, another answer or its HWND");
@@ -748,15 +878,31 @@ void simulated_code_and_choice_cards() {
         const auto colors=reader_theme::palette(pane);
         require(header==reader_theme::background(fixture.control(0,16))&&body==colors.card,"The simulated code card did not paint an actual header and body around its unchanged controls");
     }
-    {
-        PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
-        require(popup.captions==std::vector<std::string>{"Copiar código","Pantalla completa","Ajuste de línea"},
-                "The immutable code menu exposed editing actions or lost its original copy/fullscreen actions");
-    }
+    require(!descendant(fixture.view,id(0,19))&&!descendant(fixture.view,id(2,19))&&
+            accessible_name(fixture.control(0,35))=="Ajuste de línea desactivado"&&
+            accessible_name(fixture.control(2,35))=="Ajuste de línea desactivado",
+            "Readonly code and compiler must expose Android's direct wrap action, without an added settings button");
+    require(windows::code_gutter_snapshot(code).active&&windows::code_gutter_snapshot(code).logical_lines==1+static_cast<std::size_t>(std::ranges::count(original,'\n')),
+        "Readonly source does not reuse the actual logical-line number gutter");
+    fixture.click(0,35);
+    require(!(GetWindowLongPtrW(code,GWL_STYLE)&ES_AUTOHSCROLL)&&
+            !(GetWindowLongPtrW(editor,GWL_STYLE)&ES_AUTOHSCROLL)&&
+            accessible_name(fixture.control(2,35))=="Ajuste de línea activado"&&fixture.text(0,1)==original,
+            "Direct wrap did not update the actual source surfaces and every course toolbar together");
+    fixture.click(2,35);
+    const auto script_before_fullscreen=reading_script(fixture.view);
+    const auto pane=GetParent(code);SendMessageW(fixture.view,WM_VSCROLL,SB_PAGEDOWN,0);pump(fixture.host);
+    SCROLLINFO original_scroll{sizeof(original_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&original_scroll);
+    RECT original_code_bounds{};GetWindowRect(code,&original_code_bounds);
+    require(original_scroll.nPos>0,"Readonly fullscreen regression did not begin below the lesson top");
     fixture.click(0,20);
     require(fixture.control(0,1)==code&&fixture.text(0,1)==original&&!(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE)&&
-            lesson_reading_regions(fixture.view).empty()&&(GetWindowLongPtrW(code,GWL_STYLE)&WS_VSCROLL),
-            "Readonly fullscreen recreated code, exposed hidden exercise text or has no real internal scrolling");
+            reading_script(fixture.view)==script_before_fullscreen&&(GetWindowLongPtrW(code,GWL_STYLE)&WS_VSCROLL),
+            "Readonly fullscreen recreated code, changed the page's real narration script or has no internal scrolling");
+    int notifications=0;LessonViewHooks events;events.content_changed=[&](HWND){++notifications;};
+    set_lesson_view_hooks(fixture.view,std::move(events));
+    require(notifications>0&&reading_script(fixture.view)==script_before_fullscreen,
+        "A later content notification during fullscreen lost the page narration projection");
     require((GetWindowLongPtrW(fixture.control(116),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(fixture.control(110),GWL_STYLE)&WS_VISIBLE),"Fullscreen retained the page toolbar instead of its explicit exit X");
     int before_n=0,before_d=0,after_n=0,after_d=0;
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&before_n),reinterpret_cast<LPARAM>(&before_d));
@@ -769,6 +915,10 @@ void simulated_code_and_choice_cards() {
     SendMessageW(code,EM_GETZOOM,reinterpret_cast<WPARAM>(&after_n),reinterpret_cast<LPARAM>(&after_d));
     require(after_d&&MulDiv(after_n,100,after_d)==base,"Second double click did not restore the original code zoom");
     fixture.click(116);
+    SCROLLINFO restored_scroll{sizeof(restored_scroll),SIF_POS};GetScrollInfo(pane,SB_VERT,&restored_scroll);
+    RECT restored_code_bounds{};GetWindowRect(code,&restored_code_bounds);
+    require(restored_scroll.nPos==original_scroll.nPos&&EqualRect(&restored_code_bounds,&original_code_bounds)&&
+        reading_script(fixture.view)==script_before_fullscreen,"Leaving fullscreen lost the exact normal-page offset or changed its narration script");
     require(fixture.control(0,1)==code&&fixture.control(1,20)==first&&(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE),
             "Leaving simulated-code fullscreen replaced controls or lost the exercise");
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
@@ -795,6 +945,50 @@ void simulated_code_and_choice_cards() {
     require(fixture.text(0,1)==original&&!IsWindowEnabled(fixture.control(1,12))&&fixture.lesson.raw_json==raw,
             "Reopening simulated cards changed curriculum, restored a stale attempt or fabricated a resettable immutable program");
     std::cout<<"PASS Simulated code/choice cards, native popup, exact text/reading targets, fullscreen, wrong/correct reset and independent editor history\n";
+}
+void code_hole_background_gestures(){
+    Fixture fixture({},[](const curriculum::Lesson&){
+        auto model=windows::parse_lesson_json(R"({"id":"qa_code_hole_gestures","title":"Gestos.","pages":[{"blocks":[{"type":"inline_fill_code","question":"Completa el operador.","template":"std::cout [] mensaje;","answers":["<<"]},{"type":"paragraph","text":"Lectura posterior."}]},{"blocks":[{"type":"heading","text":"Página siguiente."}]}]})");
+        model.pages[0].blocks[0].code_template="std::cout [] \""+std::string(160,'x')+"\";";
+        for(unsigned i=0;i<35;++i)model.pages[0].blocks[1].text+="\n\nUn párrafo adicional para desplazar la lección.";
+        return model;
+    });
+    const auto host=fixture.control(0,5),field=GetDlgItem(host,100),pane=GetParent(host);
+    const auto original_json=fixture.lesson.raw_json;
+    SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);fixture.click(0,3);
+    require(lesson_page_state(fixture.view).can_next,"Background gesture regression did not solve its real inline exercise");
+    RECT area{};GetClientRect(host,&area);const POINT blank{area.right-12,area.bottom-3};
+    fixture.drag_control(host,blank,{-160,0});
+    SCROLLINFO horizontal{sizeof(horizontal),SIF_POS};GetScrollInfo(host,SB_HORZ,&horizontal);
+    require(fixture.page()==0&&horizontal.nPos>0&&edit_text(field)=="<<",
+        "An overflowing code-hole background changed page instead of scrolling its own horizontal axis");
+    fixture.drag_control(host,blank,{0,-100});
+    SCROLLINFO vertical{sizeof(vertical),SIF_POS};GetScrollInfo(pane,SB_VERT,&vertical);
+    require(vertical.nPos>0&&fixture.page()==0,"A code-hole background with no internal vertical scroll failed to hand that axis to the lesson");
+    SendMessageW(fixture.view,WM_VSCROLL,SB_TOP,0);pump(fixture.host);fixture.click(0,35);
+    GetClientRect(host,&area);
+    fixture.drag_control(host,{area.right-12,area.bottom-3},{-180,0});
+    require(fixture.page()==1&&fixture.lesson.raw_json==original_json,
+        "A wrapped code-hole background with no horizontal overflow did not reuse normal gated page navigation");
+    fixture.select_page(0);require(GetDlgItem(fixture.control(0,5),100)&&edit_text(GetDlgItem(fixture.control(0,5),100))=="<<",
+        "Delegated code-hole background gestures lost the existing answer");
+    std::cout<<"PASS real inline background gesture arbitration: own horizontal overflow, lesson vertical scrolling, gated page swipe and unchanged answers\n";
+}
+void edited_composition_owns_enter(){
+    Fixture fixture({},[](const curriculum::Lesson&){
+        return windows::parse_lesson_json(R"({"id":"qa_edited_composition_enter","title":"Comprobar la edición actual.","pages":[{"blocks":[{"type":"multiple_choice","question":"Elige la segunda.","options":["Primera.","Segunda."],"correctIndex":1},{"type":"inline_fill_code","question":"Completa el operador.","template":"std::cout [] 6;","answers":["<<"]}]}]})");
+    });
+    fixture.click(0,20);
+    const auto field=GetDlgItem(fixture.control(1,5),100);require(field,"The current inline composition field is missing");
+    SetFocus(field);SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);
+    MSG key{field,WM_KEYDOWN,VK_RETURN,1};require(dispatch_lesson_enter(key),"Enter did not route the current inline composition");pump(fixture.host);
+    key={field,WM_KEYUP,VK_RETURN,LPARAM{1}<<31};(void)dispatch_lesson_enter(key);pump(fixture.host);
+    require(fixture.text(1,4).starts_with("✓ Correcto")&&fixture.text(0,4).empty()&&fixture.page()==0,
+        "Enter after editing an inline field checked a previously selected puzzle or advanced the page");
+    const auto saved=fixture.saved();const auto reserve=state::find(saved,"attempt_reserve_seconds_test","reserve_programming");
+    require(!reserve||std::get<double>(*reserve)==8.,
+        "Enter consumed a heart by evaluating the old wrong selection instead of the current edited composition");
+    std::cout<<"PASS an edited inline composition owns Enter over a previous prepared option without evaluating it or consuming a heart\n";
 }
 void physical_enter_and_attempt_fill(){
     Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_physical_enter_parity","title":"Entrada y comprobación","pages":[{"blocks":[
@@ -851,9 +1045,12 @@ int main() {
     WNDCLASSW host{}; host.lpfnWndProc = host_proc; host.hInstance = GetModuleHandleW(nullptr); host.lpszClassName = L"LgaedLessonViewTests";
     if (!RegisterClassW(&host)) return 2;
     try {
+        initial_readonly_source_layout();
         native_page_progress_theme();
         simulated_exercise_code_cards();
         simulated_code_and_choice_cards();
+        code_hole_background_gestures();
+        edited_composition_owns_enter();
         physical_enter_and_attempt_fill();
         lesson_interface_languages();
         laboratory_interface_parity();

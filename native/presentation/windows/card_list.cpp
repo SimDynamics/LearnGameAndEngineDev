@@ -15,31 +15,33 @@
 namespace lgaed::presentation {
 namespace {
 constexpr wchar_t class_name[] = L"LearnGameAndEngineDev.CardList";
+constexpr UINT header_message=WM_APP+0x381,offset_message=WM_APP+0x382;
 struct CardList;
 LRESULT CALLBACK card_proc(HWND,UINT,WPARAM,LPARAM,UINT_PTR,DWORD_PTR);
 struct CardList {
     struct Card { HWND window=nullptr; std::wstring caption; int height=48; };
     HWND window=nullptr,parent=nullptr;
     int identifier=0,selection=-1,scroll=0,wheel_remainder=0;
-    UINT activation=0;
+    UINT activation=0,scroll_message=0;
+    int header_height=0;
     HFONT font=nullptr;
     std::vector<Card> cards;
     bool owned=false,down=false,dragging=false,laying_out=false;
     POINT pressed{};
     int pressed_scroll=0,pressed_card=-1;
     int px(int value) const { return MulDiv(value,static_cast<int>(GetDpiForWindow(window)),96); }
-    int extent() const { std::int64_t total=0;for(const auto& card:cards)total+=card.height;return static_cast<int>(total); }
-    int top(int index) const { int result=0;for(int i=0;i<index;++i)result+=cards[static_cast<std::size_t>(i)].height;return result; }
+    int extent() const { std::int64_t total=header_height;for(const auto& card:cards)total+=card.height;return static_cast<int>(total); }
+    int top(int index) const { int result=header_height;for(int i=0;i<index;++i)result+=cards[static_cast<std::size_t>(i)].height;return result; }
     int index(HWND child) const { for(std::size_t i=0;i<cards.size();++i)if(cards[i].window==child)return static_cast<int>(i);return -1; }
     int index_at(int y) const {
         if(cards.empty())return -1;
-        if(y<0)return 0;
-        int bottom=0;for(std::size_t i=0;i<cards.size();++i){bottom+=cards[i].height;if(y<bottom)return static_cast<int>(i);}
+        if(y<header_height)return header_height? -1:0;
+        int bottom=header_height;for(std::size_t i=0;i<cards.size();++i){bottom+=cards[i].height;if(y<bottom)return static_cast<int>(i);}
         return static_cast<int>(cards.size()-1);
     }
     bool inside(POINT point) const {
         RECT bounds{};GetClientRect(window,&bounds);
-        return PtInRect(&bounds,point)&&point.y+scroll<extent();
+        return PtInRect(&bounds,point)&&point.y+scroll>=header_height&&point.y+scroll<extent();
     }
     void configure_gesture(HWND target) {
         GESTURECONFIG pan{GID_PAN,GC_PAN|GC_PAN_WITH_SINGLE_FINGER_VERTICALLY,GC_PAN_WITH_GUTTER|GC_PAN_WITH_INERTIA};
@@ -56,13 +58,14 @@ struct CardList {
         // Android's catalog does not expose a scrollbar. Native range/position
         // remain available for wheel, drag, keyboard and accessibility.
         GetClientRect(window,&bounds);
-        int y=-scroll;
+        int y=header_height-scroll;
         for(const auto& card:cards){
             SetWindowPos(card.window,nullptr,0,y,bounds.right,card.height,
                 SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOREDRAW);
             y+=card.height;
         }
         laying_out=false;
+        if(scroll_message)SendMessageW(parent,scroll_message,static_cast<WPARAM>(scroll),reinterpret_cast<LPARAM>(window));
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN|RDW_FRAME);
     }
     void set_scroll(int value) { scroll=value;layout(); }
@@ -91,9 +94,11 @@ struct CardList {
     }
     void cancel_drag() { down=false;dragging=false;pressed_card=-1;if(GetCapture()==window)ReleaseCapture(); }
     void begin(POINT point) {
-        if(!inside(point))return;
+        RECT area{};GetClientRect(window,&area);if(!PtInRect(&area,point))return;
         down=true;dragging=false;pressed=point;pressed_scroll=scroll;pressed_card=index_at(point.y+scroll);
-        select(pressed_card,true);SetFocus(cards[static_cast<std::size_t>(pressed_card)].window);SetCapture(window);
+        if(pressed_card>=0&&inside(point)){select(pressed_card,true);SetFocus(cards[static_cast<std::size_t>(pressed_card)].window);}
+        else pressed_card=-1;
+        SetCapture(window);
     }
     void move(POINT point) {
         if(!down)return;
@@ -102,7 +107,7 @@ struct CardList {
     }
     void end(POINT point) {
         if(!down)return;
-        const bool click=!dragging&&inside(point)&&index_at(point.y+scroll)==pressed_card;
+        const bool click=pressed_card>=0&&!dragging&&inside(point)&&index_at(point.y+scroll)==pressed_card;
         const int card=pressed_card;cancel_drag();if(click)activate(card);
     }
     void keyboard(WPARAM key) {
@@ -111,7 +116,7 @@ struct CardList {
         RECT area{};GetClientRect(window,&area);
         if(key==VK_PRIOR||key==VK_NEXT){
             set_scroll(scroll+(key==VK_NEXT?1:-1)*std::max(1L,area.bottom));
-            const int destination=index_at(scroll);select(destination,true);
+            const int destination=std::max(0,index_at(scroll));select(destination,true);
             SetFocus(cards[static_cast<std::size_t>(destination)].window);return;
         }
         int destination=selection<0?0:selection;
@@ -178,6 +183,13 @@ LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wp,LPARAM lp) {
     try {
         switch(message){
         case WM_CREATE:self->configure_gesture(window);return 0;
+        case header_message:{
+            const int next=static_cast<int>(wp);
+            if(next<0||next>std::numeric_limits<int>::max()/2-self->extent()+self->header_height)return LB_ERR;
+            if(self->scroll>=self->header_height&&self->scroll>0)self->scroll+=next-self->header_height;
+            self->header_height=next;self->scroll_message=static_cast<UINT>(lp);self->layout();return 0;
+        }
+        case offset_message:if(wp)self->set_scroll(static_cast<int>(lp));return self->scroll;
         case LB_ADDSTRING:{
             if(!lp||self->cards.size()>=10000)return LB_ERR;
             MEASUREITEMSTRUCT measure{ODT_LISTBOX,static_cast<UINT>(self->identifier),static_cast<UINT>(self->cards.size()),0,
@@ -199,12 +211,12 @@ LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wp,LPARAM lp) {
         case LB_GETCOUNT:return static_cast<LRESULT>(self->cards.size());
         case LB_GETCURSEL:return self->selection<0?LB_ERR:self->selection;
         case LB_SETCURSEL:{const auto index=static_cast<int>(wp);if(index<-1||(index>=0&&static_cast<std::size_t>(index)>=self->cards.size()))return LB_ERR;self->select(index,false);return index<0?LB_ERR:index;}
-        case LB_GETTOPINDEX:return self->cards.empty()?LB_ERR:self->index_at(self->scroll);
-        case LB_SETTOPINDEX:if(wp>=self->cards.size())return LB_ERR;self->set_scroll(self->top(static_cast<int>(wp)));return 0;
+        case LB_GETTOPINDEX:return self->cards.empty()?LB_ERR:std::max(0,self->index_at(self->scroll));
+        case LB_SETTOPINDEX:if(wp>=self->cards.size())return LB_ERR;self->set_scroll(wp?self->top(static_cast<int>(wp)):0);return 0;
         case LB_SETITEMHEIGHT:{
             if(wp>=self->cards.size()||lp<1||lp>std::numeric_limits<int>::max()/2)return LB_ERR;
             auto& card=self->cards[wp];if(static_cast<std::int64_t>(self->extent())-card.height+lp>std::numeric_limits<int>::max()/2)return LB_ERR;
-            const int anchor=self->index_at(self->scroll),within=self->scroll-self->top(anchor);
+            const int anchor=std::max(0,self->index_at(self->scroll)),within=self->scroll-self->top(anchor);
             card.height=static_cast<int>(lp);
             // Match list-box restoration: remeasuring earlier cards keeps the
             // same first visible card, including a partial pixel displacement.
@@ -261,8 +273,11 @@ HWND create_card_list(HWND parent,int id,UINT activate_message) {
         if(!RegisterClassW(&cls)&&GetLastError()!=ERROR_CLASS_ALREADY_EXISTS)throw std::runtime_error("No se pudo registrar el catálogo de tarjetas.");return true;
     }();(void)registered;
     auto self=std::make_unique<CardList>();self->parent=parent;self->identifier=id;self->activation=activate_message;
-    const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,L"Catálogo",WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_VSCROLL|WS_CLIPCHILDREN,
+    const auto window=CreateWindowExW(WS_EX_CONTROLPARENT,class_name,L"Catálogo",WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_VSCROLL|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,
         0,0,1,1,parent,reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),GetModuleHandleW(nullptr),self.get());
     if(!window)throw std::runtime_error("No se pudo crear el catálogo de tarjetas.");self->owned=true;self.release();return window;
 }
+void set_card_list_header(HWND list,int height,UINT scroll_message){SendMessageW(list,header_message,static_cast<WPARAM>(height),scroll_message);}
+int card_list_scroll_offset(HWND list){return static_cast<int>(SendMessageW(list,offset_message,0,0));}
+void set_card_list_scroll_offset(HWND list,int offset){SendMessageW(list,offset_message,1,offset);}
 } // namespace lgaed::presentation

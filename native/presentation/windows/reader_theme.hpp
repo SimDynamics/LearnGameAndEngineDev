@@ -10,7 +10,7 @@ namespace lgaed::presentation::reader_theme {
 // These values mirror the Android XML surfaces; menu screens deliberately use
 // a different canvas and card from lesson pages.
 enum class Surface { canvas, header, card, field, screen, catalog_card, card_header, inset, low, note, popup,
-    compiler_header, compiler_editor, compiler_output };
+    compiler_header, compiler_editor, settings_defaults, compiler_output };
 struct Palette {
     COLORREF canvas, header, card, field, text, muted, accent, outline;
     bool high_contrast;

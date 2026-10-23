@@ -9,6 +9,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <algorithm>
 #include <limits>
+#include <map>
 #include <stdexcept>
 
 namespace lgaed::presentation {
@@ -26,13 +27,18 @@ struct CppFillView::Impl {
     std::vector<std::unique_ptr<windows::CodeEditor>> editors;
     std::vector<std::size_t> values;
     std::function<void()> changed,submit;
-    bool updating=true,enabled=true;
+    std::function<std::optional<LRESULT>(HWND,UINT,WPARAM,LPARAM)> lesson_gesture;
+    bool updating=true,enabled=true,wrap=false,laying_out=false;
     std::size_t selected=empty_slot,dragged=empty_slot;
     POINT down{}; ULONGLONG pressed=0;
     int height=0,horizontal=0,content_width=0,text_scale=100;
+    int gutter_width=0;
+    std::vector<RECT> numbered_lines;
+    std::map<HWND,int> requested_heights;
     Impl(HWND parent,const curriculum::Block& model,std::string_view saved,
-         std::function<void()> on_change,std::function<void()> on_submit)
-        :block(model),changed(std::move(on_change)),submit(std::move(on_submit)) {
+         std::function<void()> on_change,std::function<void()> on_submit,
+         std::function<std::optional<LRESULT>(HWND,UINT,WPARAM,LPARAM)> on_gesture)
+        :block(model),changed(std::move(on_change)),submit(std::move(on_submit)),lesson_gesture(std::move(on_gesture)) {
         windows::ensure_winrt_apartment();
         rich=LoadLibraryW(L"Msftedit.dll");
         if(!rich)throw std::runtime_error("RichEdit is unavailable");
@@ -42,6 +48,7 @@ struct CppFillView::Impl {
         host=CreateWindowExW(WS_EX_CONTROLPARENT,view_class,L"C++",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_HSCROLL,
             0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),this);
         if(!host)throw std::runtime_error("Cannot create code holes");
+        SetWindowSubclass(host,background_proc,2,reinterpret_cast<DWORD_PTR>(this));
         reader_theme::apply(host,reader_theme::Surface::card);
         font=CreateFontW(-MulDiv(18,static_cast<int>(GetDpiForWindow(host)),96),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
             CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,FIXED_PITCH|FF_MODERN,reader_theme::code_font_face());
@@ -79,7 +86,9 @@ struct CppFillView::Impl {
                     next==std::string::npos?block.code_template.size():next);
                 auto text=block.code_template.substr(cursor,stop-cursor);
                 auto item=create(MSFTEDIT_CLASS,L"",ES_READONLY|ES_MULTILINE,1000+static_cast<int>(pieces.size()));
-                set_rich_text(item,text,{},true);pieces.push_back({item,false,false,std::move(text)});cursor=stop;
+                set_rich_text(item,text,{},true);SendMessageW(item,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
+                SendMessageW(item,EM_SETTARGETDEVICE,0,1);
+                pieces.push_back({item,false,false,std::move(text)});cursor=stop;
             }
         }
         if(drag())for(std::size_t i=0;i<block.choices.size();++i){
@@ -104,25 +113,44 @@ struct CppFillView::Impl {
         GetTextExtentPoint32W(dc,text.c_str(),static_cast<int>(text.size()),&size);SelectObject(dc,old);ReleaseDC(host,dc);return size.cx;
     }
     void layout(int width){
-        int x=px(10),y=px(8);const auto line=MulDiv(px(40),text_scale,100);const auto right=std::max(px(90),width-px(10));
-        content_width=width;
-        // A source line stays a source line. Horizontal overflow belongs to
-        // this code surface instead of clipping tokens or changing pages.
+        if(laying_out)return;laying_out=true;
+        struct Guard{bool& value;~Guard(){value=false;}} guard{laying_out};
+        const auto count=1+static_cast<std::size_t>(std::ranges::count(block.code_template,'\n'));
+        gutter_width=std::max(px(20),measure(std::string(std::to_string(count).size(),'0'))+px(16));
+        const int start=gutter_width+px(10),right=std::max(start+px(12),width-px(10));
+        const int available=std::max(px(12),right-start),line=MulDiv(px(40),text_scale,100);
+        struct Placement{HWND item;int x,y,width,height;};std::vector<Placement> placements;
+        int x=start,y=px(8),row_height=line,logical_top=y;content_width=width;numbered_lines.clear();
+        std::size_t row_begin=0;
+        const auto center_row=[&]{for(auto i=row_begin;i<placements.size();++i)placements[i].y+=(row_height-placements[i].height)/2;row_begin=placements.size();};
+        const auto finish_line=[&]{center_row();content_width=std::max(content_width,x+px(10));y+=row_height;
+            numbered_lines.push_back({0,logical_top,gutter_width,y});logical_top=y;x=start;row_height=line;};
         for(const auto& p:pieces){
-            if(p.newline){content_width=std::max(content_width,x+px(10));x=px(10);continue;}
+            if(p.newline){finish_line();continue;}
             auto value=p.source;if(p.hole){const auto i=static_cast<std::size_t>(std::ranges::find(holes,p.item)-holes.begin());
                 value=drag()?(values[i]==empty_slot?"      ":block.choices[values[i]]):editors[i]->document().text;}
-            x+=std::max(p.hole?px(78):0,measure(value)+px(p.hole?22:4));
+            int cell=std::max(p.hole?px(78):px(12),measure(value)+px(p.hole?22:4));
+            if(wrap&&x>start&&x+cell>right){center_row();y+=row_height;x=start;row_height=line;}
+            if(wrap)cell=std::min(cell,available);
+            int cell_height=line;
+            if(!p.hole){
+                SendMessageW(p.item,EM_SETTARGETDEVICE,0,wrap?0:1);
+                SetWindowPos(p.item,nullptr,0,0,cell,line,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOREDRAW);
+                SendMessageW(p.item,EM_REQUESTRESIZE,0,0);
+                if(const auto measured=requested_heights.find(p.item);measured!=requested_heights.end())cell_height=std::max(line,measured->second+px(4));
+            }
+            placements.push_back({p.item,x,y,cell,cell_height});x+=cell;row_height=std::max(row_height,cell_height);
         }
-        content_width=std::max(content_width,x+px(10));horizontal=std::clamp(horizontal,0,std::max(0,content_width-width));x=px(10);
-        for(const auto& p:pieces){
-            if(p.newline){x=px(10);y+=line;continue;}
-            auto value=p.source;if(p.hole){const auto i=static_cast<std::size_t>(std::ranges::find(holes,p.item)-holes.begin());
-                value=drag()?(values[i]==empty_slot?"      ":block.choices[values[i]]):editors[i]->document().text;}
-            int cell=measure(value)+px(p.hole?22:4);if(p.hole)cell=std::max(px(78),cell);
-            MoveWindow(p.item,x-horizontal,y,std::max(px(12),cell),line,TRUE);x+=cell;
+        finish_line();
+        if(wrap){content_width=width;horizontal=0;}
+        else horizontal=std::clamp(horizontal,0,std::max(0,content_width-width));
+        for(const auto& p:placements){
+            const int left=p.x-horizontal;MoveWindow(p.item,left,p.y,p.width,p.height,TRUE);
+            // The fixed number column must not be covered by an overflowing
+            // piece while its source row is scrolled horizontally.
+            const auto clip=CreateRectRgn(std::clamp(gutter_width-left,0,p.width),0,p.width,p.height);
+            if(clip&&!SetWindowRgn(p.item,clip,TRUE))DeleteObject(clip);
         }
-        y+=line;
         if(!cards.empty()){
             y+=px(8);x=px(10);
             for(auto card:cards){const int id=GetDlgCtrlID(card)-2000;int cell=std::max(px(48),measure(block.choices[static_cast<std::size_t>(id)])+px(24));
@@ -133,7 +161,30 @@ struct CppFillView::Impl {
         height=y+px(8)+(content_width>width?GetSystemMetricsForDpi(SM_CYHSCROLL,GetDpiForWindow(host)):0);
         SCROLLINFO info{sizeof(info),SIF_RANGE|SIF_PAGE|SIF_POS,0,std::max(0,content_width-1),static_cast<UINT>(std::max(1,width)),horizontal,0};
         SetScrollInfo(host,SB_HORZ,&info,TRUE);
-        reader_theme::refresh_scrollbars(host);
+        reader_theme::refresh_scrollbars(host);InvalidateRect(host,nullptr,FALSE);
+    }
+    void paint_numbers(HDC dc)const{
+        if(!dc)return;const auto saved=SaveDC(dc);RECT bounds{};GetClientRect(host,&bounds);bounds.right=gutter_width;
+        if(!numbered_lines.empty())bounds.bottom=std::min(bounds.bottom,numbered_lines.back().bottom);
+        const auto colors=reader_theme::palette(host);
+        const auto fill=CreateSolidBrush(reader_theme::background(host));FillRect(dc,&bounds,fill);DeleteObject(fill);
+        IntersectClipRect(dc,0,0,gutter_width,bounds.bottom);SetBkMode(dc,TRANSPARENT);
+        SetTextColor(dc,colors.high_contrast?colors.text:RGB(111,119,130));SelectObject(dc,font);
+        for(std::size_t i=0;i<numbered_lines.size();++i){auto rect=numbered_lines[i];rect.left=px(3);rect.right-=px(3);
+            const auto label=std::to_wstring(i+1);DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&rect,
+                DT_RIGHT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
+        RestoreDC(dc,saved);
+    }
+    void focus_blank(HWND from,bool backwards){
+        const auto current=static_cast<std::size_t>(std::ranges::find(holes,from)-holes.begin());
+        if(current>=holes.size())return;
+        const auto target=holes[(current+holes.size()+(backwards?holes.size()-1:1))%holes.size()];
+        if(!IsWindowEnabled(target))return;
+        SetFocus(target);SendMessageW(target,EM_SCROLLCARET,0,0);
+        RECT area{},bounds{};GetClientRect(host,&area);GetWindowRect(target,&bounds);MapWindowPoints(nullptr,host,reinterpret_cast<POINT*>(&bounds),2);
+        if(bounds.left<gutter_width)horizontal-=gutter_width-bounds.left;
+        else if(bounds.right>area.right)horizontal+=bounds.right-area.right;
+        layout(area.right);
     }
     void assign(std::size_t slot,std::size_t choice){
         if(!enabled||slot>=holes.size()||(choice!=empty_slot&&choice>=block.choices.size()))return;
@@ -147,6 +198,12 @@ struct CppFillView::Impl {
     static LRESULT CALLBACK child_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR data){
         auto& self=*reinterpret_cast<Impl*>(data);const int id=GetDlgCtrlID(item);
         if(message==WM_NCDESTROY){RemoveWindowSubclass(item,child_proc,1);return DefSubclassProc(item,message,wparam,lparam);}
+        if(!self.drag()&&self.holes.size()>1&&id>=100&&id<1000){
+            if(message==WM_GETDLGCODE)return DefSubclassProc(item,message,wparam,lparam)|DLGC_WANTTAB;
+            if(message==WM_KEYDOWN&&wparam==VK_TAB&&!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000)){
+                if(!(lparam&(LPARAM{1}<<30)))self.focus_blank(item,(GetKeyState(VK_SHIFT)&0x8000)!=0);return 0;}
+            if((message==WM_CHAR&&wparam==L'\t')||(message==WM_KEYUP&&wparam==VK_TAB))return 0;
+        }
         if(self.drag()&&self.enabled){
             if(message==WM_LBUTTONDOWN&&id>=2000){self.dragged=static_cast<std::size_t>(id-2000);self.pressed=GetTickCount64();self.down={GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};SetCapture(item);}
             if(message==WM_LBUTTONUP&&id>=2000&&self.dragged!=empty_slot){
@@ -161,12 +218,23 @@ struct CppFillView::Impl {
         }
         return DefSubclassProc(item,message,wparam,lparam);
     }
+    static LRESULT CALLBACK background_proc(HWND item,UINT message,WPARAM keys,LPARAM point,UINT_PTR,DWORD_PTR data){
+        auto& self=*reinterpret_cast<Impl*>(data);
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(item,background_proc,2);
+        // Only an actual background hit reaches this host; holes, cards and
+        // selectable source pieces retain their existing input/selection.
+        if(self.lesson_gesture)if(const auto result=self.lesson_gesture(item,message,keys,point))return *result;
+        return DefSubclassProc(item,message,keys,point);
+    }
     static LRESULT CALLBACK proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam){
         auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(item,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams);self->host=item;SetWindowLongPtrW(item,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
         if(!self)return DefWindowProcW(item,message,wparam,lparam);
         LRESULT result{};if(reader_theme::control_color(message,wparam,lparam,result))return result;
         if(message==WM_DRAWITEM&&reader_theme::draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam)))return TRUE;
+        if(message==WM_NOTIFY){const auto note=reinterpret_cast<NMHDR*>(lparam);
+            if(note&&note->code==EN_REQUESTRESIZE){const auto request=reinterpret_cast<REQRESIZE*>(lparam);
+                self->requested_heights[note->hwndFrom]=request->rc.bottom-request->rc.top;return 0;}}
         if(message==WM_SIZE){self->layout(LOWORD(lparam));return 0;}
         if(message==WM_HSCROLL||message==WM_MOUSEHWHEEL){
             RECT r{};GetClientRect(item,&r);SCROLLINFO info{sizeof(info),SIF_TRACKPOS};GetScrollInfo(item,SB_HORZ,&info);
@@ -178,6 +246,8 @@ struct CppFillView::Impl {
         }
         if(message==WM_MOUSEWHEEL)return SendMessageW(GetParent(item),message,wparam,lparam);
         if(message==WM_ERASEBKGND){RECT r{};GetClientRect(item,&r);FillRect(reinterpret_cast<HDC>(wparam),&r,reader_theme::brush(reader_theme::Surface::card));return TRUE;}
+        if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(item,&paint);self->paint_numbers(dc);EndPaint(item,&paint);return 0;}
+        if(message==WM_PRINTCLIENT){self->paint_numbers(reinterpret_cast<HDC>(wparam));return 0;}
         if(message==WM_COMMAND&&!self->updating){
             const int id=LOWORD(wparam);if(HIWORD(wparam)==EN_CHANGE&&id>=100&&id<1000&&!self->drag()){
                 const auto i=static_cast<std::size_t>(id-100);if(i<self->editors.size()){self->updating=true;self->editors[i]->capture_change();style_cpp(self->holes[i]);self->updating=false;if(self->changed)self->changed();}
@@ -188,8 +258,9 @@ struct CppFillView::Impl {
         return DefWindowProcW(item,message,wparam,lparam);
     }
 };
-CppFillView::CppFillView(HWND p,const curriculum::Block& b,std::string_view saved,std::function<void()> c,std::function<void()> s)
-    :impl_(std::make_unique<Impl>(p,b,saved,std::move(c),std::move(s))){}
+CppFillView::CppFillView(HWND p,const curriculum::Block& b,std::string_view saved,std::function<void()> c,std::function<void()> s,
+    std::function<std::optional<LRESULT>(HWND,UINT,WPARAM,LPARAM)> gesture)
+    :impl_(std::make_unique<Impl>(p,b,saved,std::move(c),std::move(s),std::move(gesture))){}
 CppFillView::~CppFillView()=default;
 HWND CppFillView::window()const{return impl_->host;}
 int CppFillView::height_for_width(int width){impl_->layout(width);return impl_->height;}
@@ -203,6 +274,8 @@ std::string CppFillView::response_json()const{
 }
 windows::CodeEditor* CppFillView::editor(HWND focused){for(std::size_t i=0;i<impl_->editors.size();++i)if(impl_->holes[i]==focused)return impl_->editors[i].get();return nullptr;}
 void CppFillView::set_enabled(bool value){impl_->enabled=value;for(auto h:impl_->holes)EnableWindow(h,value);for(auto h:impl_->cards)EnableWindow(h,value);}
+void CppFillView::set_wrap(bool value){if(impl_->wrap==value)return;impl_->wrap=value;RECT bounds{};GetClientRect(impl_->host,&bounds);impl_->layout(bounds.right);}
+void CppFillView::scroll_horizontal_to(int offset){impl_->horizontal=offset;RECT bounds{};GetClientRect(impl_->host,&bounds);impl_->layout(bounds.right);}
 void CppFillView::set_text_scale(int percentage){
     percentage=std::clamp(percentage,75,150);if(impl_->text_scale==percentage)return;impl_->text_scale=percentage;
     const auto next=CreateFontW(-MulDiv(18*percentage,static_cast<int>(GetDpiForWindow(impl_->host)),96*100),0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,

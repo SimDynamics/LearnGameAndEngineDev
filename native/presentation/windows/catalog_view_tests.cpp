@@ -1,4 +1,5 @@
 #include "presentation/windows/catalog_view.hpp"
+#include "presentation/windows/card_list.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/catalog_loader.hpp"
 #include "platform/windows/state_store.hpp"
@@ -73,12 +74,12 @@ int main() {
         };
         auto view = create(); ShowWindow(host,SW_SHOWNOACTIVATE); pump();
         auto list = GetDlgItem(view,4105);
-        const auto home_list_bounds=relative_bounds(list,view);
         check(list && SendMessageW(list,LB_GETCOUNT,0,0) == 3,"Home must have two real routes and only the functional options action");
         check(!IsWindowVisible(GetDlgItem(view,4106)) && !IsWindowVisible(GetDlgItem(view,4107)) && !IsWindowVisible(GetDlgItem(view,4104)),"Mobile-style home gained a permanent Open/Info/language toolbar");
         {
             const auto title=GetDlgItem(view,4108),subtitle=GetDlgItem(view,4109),heading=GetDlgItem(view,4113);
             const auto title_bounds=relative_bounds(title,view),subtitle_bounds=relative_bounds(subtitle,view),heading_bounds=relative_bounds(heading,view),list_bounds=relative_bounds(list,view);
+            RECT first{};SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&first));
             LOGFONTW title_face{},heading_face{},subtitle_face{};GetObjectW(reinterpret_cast<HFONT>(SendMessageW(title,WM_GETFONT,0,0)),sizeof(title_face),&title_face);
             GetObjectW(reinterpret_cast<HFONT>(SendMessageW(heading,WM_GETFONT,0,0)),sizeof(heading_face),&heading_face);
             GetObjectW(reinterpret_cast<HFONT>(SendMessageW(subtitle,WM_GETFONT,0,0)),sizeof(subtitle_face),&subtitle_face);
@@ -88,14 +89,29 @@ int main() {
             check(subtitle_face.lfWeight==FW_NORMAL&&-subtitle_face.lfHeight==px(view,17),
                 "The Android17sp normal subtitle became an unwanted bold heading");
             check(title_bounds.top==px(view,54)&&subtitle_bounds.top==title_bounds.bottom+px(view,8)
-                &&heading_bounds.top==subtitle_bounds.bottom+px(view,36)&&list_bounds.top==heading_bounds.bottom+px(view,16)
-                &&title_bounds.bottom<=subtitle_bounds.top&&subtitle_bounds.bottom<=heading_bounds.top&&heading_bounds.bottom<list_bounds.top,
+                &&heading_bounds.top==subtitle_bounds.bottom+px(view,36)&&list_bounds.top+first.top==heading_bounds.bottom+px(view,16)
+                &&title_bounds.bottom<=subtitle_bounds.top&&subtitle_bounds.bottom<=heading_bounds.top&&heading_bounds.bottom<list_bounds.top+first.top,
                 "Home headings do not preserve the Android XML margins and measured text height");
             check(SendMessageW(list,LB_GETITEMHEIGHT,0,0)==px(view,118)&&SendMessageW(list,LB_GETITEMHEIGHT,2,0)==px(view,82),
                 "Home cards do not preserve Android's 100/64-DIP minimum height and 18-DIP separation");
         }
         {
             state::StateStore store(environment.paths.root); check(store.empty(),"Merely showing home made an empty profile nonempty");
+        }
+        {
+            MoveWindow(view,0,0,px(view,640),px(view,300),TRUE);pump();
+            const auto heading=GetDlgItem(view,4108);
+            const auto before=relative_bounds(heading,view);RECT first{};SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&first));
+            SendMessageW(heading,WM_MOUSEWHEEL,MAKEWPARAM(0,-WHEEL_DELTA),0);pump();
+            const auto shift=card_list_scroll_offset(list);const auto after=relative_bounds(heading,view);RECT shifted{};SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&shifted));
+            check(shift>0&&before.top-after.top==shift&&first.top-shifted.top==shift&&launches==0,
+                "The home heading and route cards did not share wheel scrolling exactly as Android");
+            set_card_list_scroll_offset(list,0);
+            SendMessageW(heading,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(30,10));
+            SendMessageW(list,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(30,0));
+            SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(30,0));pump();
+            check(card_list_scroll_offset(list)>0&&launches==0,"Dragging a catalog heading opened a course or failed to move its viewport");
+            set_card_list_scroll_offset(list,0);MoveWindow(view,0,0,px(view,980),px(view,800),TRUE);pump();
         }
         {
             const auto original=reader_theme::palette(view).accent;
@@ -119,8 +135,9 @@ int main() {
         SendMessageW(list,LB_SETCURSEL,2,0); SendMessageW(list,WM_KEYDOWN,VK_RETURN,1); pump();
         check(options == 1 && launches == 0,"Home tool action is decorative or opens curricular content");
         SendMessageW(list,LB_SETTOPINDEX,0,0);
-        SendMessageW(list,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(40,35));
-        SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(40,35)); pump();
+        RECT route_card{};SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&route_card));
+        SendMessageW(list,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(40,route_card.top+35));
+        SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(40,route_card.top+35)); pump();
         check(catalog_location(view).route == "programming" && catalog_location(view).course.empty(),"One ordinary click did not open its route card");
         navigate_catalog(view,{"es","programming",{},{}}); list = GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCOUNT,0,0) == 44,"Native catalog hid future indexed courses");
@@ -134,6 +151,14 @@ int main() {
         SendMessageW(list,LB_GETITEMRECT,1,reinterpret_cast<LPARAM>(&second_card));
         check(first_card.bottom==second_card.top && first_card.bottom-first_card.top==row_height,
             "Course cards overlap at the actual monitor DPI");
+        {
+            const auto title=GetDlgItem(view,4108);const auto before=relative_bounds(title,view);
+            SendMessageW(list,WM_MOUSEWHEEL,MAKEWPARAM(0,-WHEEL_DELTA),0);pump();
+            const auto after=relative_bounds(title,view);
+            check(card_list_scroll_offset(list)>0&&before.top==after.top,
+                "The Android course selector's fixed heading moved with its RecyclerView cards");
+            set_card_list_scroll_offset(list,0);
+        }
         {
             const auto courses=windows::load_catalog(root,{"es","programming"});
             const auto scope=windows::catalog_scope(root,{"es","programming",courses.entries.front().id});
@@ -178,24 +203,24 @@ int main() {
             MoveWindow(view,0,0,px(view,640),px(view,600),TRUE);pump();bool wrapped=false;
             for(std::size_t index=0;index<wide_heights.size();++index){const auto height=SendMessageW(list,LB_GETITEMHEIGHT,index,0);
                 check(height>=wide_heights[index],"Narrowing the catalog clipped a course title or metadata instead of measuring its height");wrapped=wrapped||height>wide_heights[index];}
+            SendMessageW(list,LB_SETTOPINDEX,0,0);
             const auto title=relative_bounds(GetDlgItem(view,4108),view),description=relative_bounds(GetDlgItem(view,4109),view),cards=relative_bounds(list,view);
-            check(wrapped&&title.bottom<=description.top&&description.bottom<cards.top&&cards.bottom>cards.top,
-                "The compact catalog does not grow wrapped titles while keeping header and scroll area separate");
+            RECT first{};SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&first));
+            check(wrapped&&title.bottom<=description.top&&description.bottom<cards.top+first.top&&cards.bottom>cards.top,
+                "The compact catalog does not measure wrapped headings and cards in their shared viewport");
             MoveWindow(view,0,0,px(view,980),px(view,800),TRUE);pump();
         }
         SendMessageW(list,LB_SETTOPINDEX,15,0); SendMessageW(list,LB_SETCURSEL,17,0);
+        set_card_list_scroll_offset(list,card_list_scroll_offset(list)+px(view,13));
+        const auto saved_pixels=card_list_scroll_offset(list);
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(4105,LBN_SELCHANGE),reinterpret_cast<LPARAM>(list));
         const auto top = SendMessageW(list,LB_GETTOPINDEX,0,0);
         {
             const auto dpi=static_cast<int>(GetDpiForWindow(view));const auto scale=[dpi](int value){return MulDiv(value,dpi,96);};
-            auto old_list=relative_bounds(list,view);
-            // Header heights now follow the measured title. Construct the same
-            // historical 24-DIP exposed band using the actual child window,
-            // rather than assuming that two particular titles place it there.
-            const auto previous_top=home_list_bounds.top-scale(24);
-            SetWindowPos(list,nullptr,old_list.left,previous_top,old_list.right-old_list.left,old_list.bottom-previous_top,
-                SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOCOPYBITS|SWP_NOREDRAW);pump();old_list=relative_bounds(list,view);
-            const auto sample=home_list_bounds.top-scale(12),sample_x=old_list.left+scale(8);
+            const auto old_list=relative_bounds(list,view);
+            // Repainting the shared viewport must remove old pixels, including
+            // its heading area, when returning from the scrolled course list.
+            const auto sample=old_list.top+scale(12),sample_x=old_list.right-scale(8);
             const auto dc=GetDCEx(list,nullptr,DCX_CACHE);check(dc!=nullptr,"Acquire the actual old-list drawing surface");
             RECT seed{0,0,old_list.right-old_list.left,scale(24)};
             FillRect(dc,&seed,reinterpret_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));ReleaseDC(list,dc);
@@ -203,13 +228,18 @@ int main() {
             check(seeded==RGB(255,255,255),"The repaint fixture did not create its real old-list damage");
             navigate_catalog_home(view);pump();
             const auto home_list=relative_bounds(GetDlgItem(view,4105),view),heading=relative_bounds(GetDlgItem(view,4113),view);
-            check(sample>=old_list.top&&sample<old_list.bottom&&sample>heading.bottom&&sample<home_list.top,
-                "The repaint fixture no longer samples actual exposed parent canvas");
-            const auto canvas=GetDC(view);const auto actual=GetPixel(canvas,sample_x,sample);ReleaseDC(view,canvas);
+            check(sample>=home_list.top&&sample<home_list.bottom,
+                "The repaint fixture no longer samples the home viewport replacing the old course list");
+            // Home's scrolling child now covers the full viewport. Use the same
+            // unclipped surface as the damage fixture; GetDC(view) excludes it.
+            const auto canvas=GetDCEx(view,nullptr,DCX_CACHE);check(canvas!=nullptr,"Acquire the repainted home drawing surface");
+            const auto actual=GetPixel(canvas,sample_x,sample);ReleaseDC(view,canvas);
+            check(actual!=CLR_INVALID,"The repaint fixture sampled a clipped or inaccessible pixel");
             check(actual==reader_theme::background(view),"Returning from courses left old list pixels in the exposed home canvas");
         }
         navigate_catalog(view,{"es","programming",{},{}}); list = GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCURSEL,0,0) == 17 && SendMessageW(list,LB_GETTOPINDEX,0,0) == top,"Returning lost list selection/scroll");
+        check(card_list_scroll_offset(list)==saved_pixels,"Returning discarded the partial pixel position of the shared catalog viewport");
         const auto before = catalog_location(view);
         SendMessageW(list,WM_MOUSEWHEEL,MAKEWPARAM(0,-WHEEL_DELTA),0); pump();
         check(catalog_location(view) == before && launches == 0,"Mouse wheel opened a selected course");

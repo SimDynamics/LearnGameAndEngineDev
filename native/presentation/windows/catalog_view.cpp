@@ -12,6 +12,8 @@
 #include <windowsx.h>
 #include <algorithm>
 #include <array>
+#include <climits>
+#include <cstdlib>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -27,6 +29,7 @@ constexpr int reset_id = 4112;
 constexpr int routes_heading_id = 4113;
 constexpr int scope_ordinal_id = 4114;
 constexpr UINT activate_message = WM_APP + 141;
+constexpr UINT scroll_message=WM_APP+142;
 struct CatalogView;
 LRESULT CALLBACK catalog_proc(HWND,UINT,WPARAM,LPARAM);
 struct CatalogView {
@@ -49,6 +52,23 @@ struct CatalogView {
     std::vector<CatalogScope> scopes;
     std::string ui_locale = "es";
     CatalogLocation menu_context;
+    struct HeaderPlacement{HWND item;int x,y,width,height;};
+    std::vector<HeaderPlacement> header;
+    void position_header(int offset){
+        for(const auto& item:header)SetWindowPos(item.item,nullptr,item.x,item.y-offset,item.width,item.height,
+            SWP_NOZORDER|SWP_NOACTIVATE|SWP_NOCOPYBITS);
+    }
+    static LRESULT CALLBACK header_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR context){
+        auto& self=*reinterpret_cast<CatalogView*>(context);
+        if(message==WM_NCDESTROY){RemoveWindowSubclass(item,header_proc,12);return DefSubclassProc(item,message,wp,lp);}
+        if(catalog_level(self.page.location)!=CatalogLevel::routes)return DefSubclassProc(item,message,wp,lp);
+        if(message==WM_MOUSEWHEEL)return SendMessageW(self.list,message,wp,lp);
+        if(message==WM_LBUTTONDOWN||message==WM_MOUSEMOVE||message==WM_LBUTTONUP){
+            POINT at{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};MapWindowPoints(item,self.list,&at,1);
+            return SendMessageW(self.list,message,wp,MAKELPARAM(at.x,at.y));
+        }
+        return DefSubclassProc(item,message,wp,lp);
+    }
 
     CatalogView(const WindowsEnvironment& env,std::filesystem::path content,
         std::function<void(const std::filesystem::path&)> callback,CatalogActionHandler action,CatalogActionAvailability availability,CatalogMathValidator math)
@@ -85,6 +105,7 @@ struct CatalogView {
         const auto selection = SendMessageW(list,LB_GETCURSEL,0,0), top = SendMessageW(list,LB_GETTOPINDEX,0,0);
         if (selection != LB_ERR) prefs[key + "/selection"] = static_cast<std::int64_t>(selection);
         if (top != LB_ERR) prefs[key + "/top"] = static_cast<std::int64_t>(top);
+        prefs[key+"/scroll"]=static_cast<std::int64_t>(card_list_scroll_offset(list));
         if (include_current) {
             prefs["catalog/locale"] = page.location.locale; prefs["catalog/route"] = page.location.route;
             prefs["catalog/course"] = page.location.course; prefs["catalog/unit"] = page.location.unit;
@@ -207,6 +228,9 @@ struct CatalogView {
         SendMessageW(language,CB_SETCURSEL,locale,0);
         EnableWindow(back,catalog_level(location) != CatalogLevel::routes);
         updating = false; update_selection(); resize();
+        const auto group=progress.preferences.find("native_windows");
+        if(group!=progress.preferences.end()&&group->second.contains(key+"/scroll"))
+            set_card_list_scroll_offset(list,static_cast<int>(std::clamp(state::integer_value(progress,"native_windows",key+"/scroll"),std::int64_t{0},std::int64_t{INT_MAX/2})));
         if (remember) write_position();
     }
     void initialize(HWND target) {
@@ -224,6 +248,8 @@ struct CatalogView {
         reader_theme::icon_button(home);reader_theme::icon_button(menu);
         list = create_card_list(window,list_id,activate_message);
         reader_theme::apply(list,reader_theme::Surface::screen);
+        for(const auto item:{title,status,routes_heading,scope_ordinal})
+            SetWindowSubclass(item,header_proc,12,reinterpret_cast<DWORD_PTR>(this));
         open_button = control(L"BUTTON",L"Abrir",WS_TABSTOP | BS_PUSHBUTTON,open_id); reader_theme::primary_button(open_button);
         info_button = control(L"BUTTON",L"Información",WS_TABSTOP | BS_PUSHBUTTON,info_id);
         ShowWindow(open_button,SW_HIDE); ShowWindow(info_button,SW_HIDE); ShowWindow(language,SW_HIDE);
@@ -281,23 +307,27 @@ struct CatalogView {
         ShowWindow(back,root_page ? SW_HIDE : SW_SHOW);ShowWindow(home,scoped?SW_SHOW:SW_HIDE);ShowWindow(menu,scoped?SW_SHOW:SW_HIDE);
         ShowWindow(scope_ordinal,scoped?SW_SHOW:SW_HIDE);
         ShowWindow(routes_heading,root_page ? SW_SHOW : SW_HIDE);
-        MoveWindow(back,margin,px(20),px(scoped?56:88),px(scoped?56:48),TRUE);
-        MoveWindow(home,static_cast<int>(area.right)-margin-px(112),px(20),px(56),px(56),TRUE);
-        MoveWindow(menu,static_cast<int>(area.right)-margin-px(56),px(20),px(56),px(56),TRUE);
+        header.clear();
+        header.push_back({back,margin,px(20),px(scoped?56:88),px(scoped?56:48)});
+        header.push_back({home,static_cast<int>(area.right)-margin-px(112),px(20),px(56),px(56)});
+        header.push_back({menu,static_cast<int>(area.right)-margin-px(56),px(20),px(56),px(56)});
         MoveWindow(language,static_cast<int>(area.right) - margin - px(225),px(18),px(130),px(180),TRUE);
         const int ordinal_top=px(96),ordinal_height=caption_height(scope_ordinal,scope_font,available);
-        MoveWindow(scope_ordinal,margin,ordinal_top,available,ordinal_height,TRUE);
+        header.push_back({scope_ordinal,margin,ordinal_top,available,ordinal_height});
         const int title_top=root_page?px(54):scoped?ordinal_top+ordinal_height+px(6):px(86),title_height=caption_height(title,heading_font,available);
         const int status_top=title_top+title_height+px(8),status_height=caption_height(status,subtitle_font,available);
         const int heading_top=status_top+status_height+px(36),heading_height=caption_height(routes_heading,section_font,available);
-        MoveWindow(title,margin,title_top,available,title_height,TRUE);MoveWindow(status,margin,status_top,available,status_height,TRUE);
-        MoveWindow(routes_heading,margin,heading_top,available,heading_height,TRUE);
+        header.push_back({title,margin,title_top,available,title_height});header.push_back({status,margin,status_top,available,status_height});
+        header.push_back({routes_heading,margin,heading_top,available,heading_height});
         const int list_top=root_page?heading_top+heading_height+px(16):status_top+status_height+px(24);
-        SetWindowPos(list,nullptr,margin,list_top,available,std::max(px(40),static_cast<int>(area.bottom) - list_top - px(24)),
-            SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW);
+        const auto viewport_top=root_page?0:list_top;
+        SetWindowPos(list,HWND_BOTTOM,margin,viewport_top,available,std::max(px(40),static_cast<int>(area.bottom)-viewport_top-px(24)),
+            SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW);
+        set_card_list_header(list,root_page?list_top:0,root_page?scroll_message:0);
         MoveWindow(open_button,margin,std::max(px(200),static_cast<int>(area.bottom) - px(56)),px(150),px(38),TRUE);
         MoveWindow(info_button,margin + px(162),std::max(px(200),static_cast<int>(area.bottom) - px(56)),px(150),px(38),TRUE);
         for (std::size_t index = 0; index < page.entries.size() + home_actions.size(); ++index) SendMessageW(list,LB_SETITEMHEIGHT,index,row_height(index));
+        position_header(root_page?card_list_scroll_offset(list):0);
         // Moving the list between course and home layouts exposes part of its
         // old client rectangle. Repaint that parent area as well as the rows.
         RedrawWindow(window,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
@@ -453,6 +483,8 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
         switch (message) {
         case WM_CREATE: self->initialize(window); return 0;
         case WM_SIZE: self->resize(); return 0;
+        case scroll_message:self->position_header(static_cast<int>(wparam));return 0;
+        case WM_MOUSEWHEEL:if(catalog_level(self->page.location)==CatalogLevel::routes)return SendMessageW(self->list,message,wparam,lparam);break;
         case WM_DPICHANGED_AFTERPARENT: self->update_font(); self->resize(); return 0;
         case WM_COMMAND: self->command(LOWORD(wparam),HIWORD(wparam)); return 0;
         case WM_KEYDOWN: if(wparam==VK_ESCAPE&&self->navigate_back())return 0;break;
@@ -472,7 +504,8 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
             }
             if(item.CtlID==home_id||item.CtlID==menu_id){
                 (void)reader_theme::draw_button(item);auto bounds=item.rcItem;InflateRect(&bounds,-self->px(14),-self->px(14));
-                draw_icon(item.hDC,bounds,item.CtlID==home_id?Icon::home:Icon::settings,reader_theme::palette(window).muted);return TRUE;
+                const auto colors=reader_theme::palette(window);
+                draw_icon(item.hDC,bounds,item.CtlID==home_id?Icon::home:Icon::settings,colors.high_contrast?colors.text:RGB(255,255,255));return TRUE;
             }
             if (reader_theme::draw_button(item)) return TRUE; break;
         }

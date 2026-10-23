@@ -112,6 +112,7 @@ struct BlockControls {
     HWND console = nullptr, compile = nullptr, status = nullptr;
     HWND simulated_code = nullptr;
     std::unique_ptr<CodeEditor> answer_editor, source_editor, input_editor;
+    std::unique_ptr<windows::CodeGutter> simulated_gutter;
     std::unique_ptr<CppFillView> fill;
     std::unique_ptr<MathPuzzleView> math;
     std::unique_ptr<OrderCodeView> order_view;
@@ -215,6 +216,7 @@ struct LessonView {
     std::vector<Row> rows;
     struct SimulatedCardSurface { RECT bounds; int header_bottom; };
     std::vector<SimulatedCardSurface> simulated_card_surfaces;
+    std::vector<RECT> math_card_surfaces;
     std::vector<RECT> toolbar_surfaces;
     std::vector<Action> actions;
     std::vector<BlockControls> controls;
@@ -233,6 +235,7 @@ struct LessonView {
     std::optional<std::size_t> selected_puzzle;
     bool enter_held=false;
     std::optional<std::size_t> fullscreen_block;
+    std::optional<int> fullscreen_lesson_scroll;
     bool fullscreen_output = false;
     std::map<HWND,int> zoomed;
     std::jthread worker;
@@ -427,10 +430,13 @@ struct LessonView {
             }
             end_drag(); drag.origin = item; drag.start = {GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};
             drag.down_keys = wparam; drag.down_point = lparam; drag.started = GetTickCount64();
-            drag.editor = editor || (rich_control && (own_scroll(item,SB_VERT) || own_scroll(item,SB_HORZ)));
+            drag.editor = editor || own_scroll(item,SB_VERT) || own_scroll(item,SB_HORZ);
             drag.text = rich_control && !choice_label && hits_text(item,drag.start);
             ClientToScreen(item,&drag.start); drag.last = drag.start;
-            if (drag.editor) SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&drag.editor_scroll));
+            if (drag.editor) {
+                if(rich_control)SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&drag.editor_scroll));
+                else {SCROLLINFO info{sizeof(info),SIF_POS};GetScrollInfo(item,SB_HORZ,&info);drag.editor_scroll.x=info.nPos;}
+            }
             SetCapture(item); return 0;
         }
         if (drag.origin != item) return {};
@@ -458,7 +464,9 @@ struct LessonView {
                 auto position = drag.editor_scroll;
                 if (drag.axis == DragAxis::editor_vertical) position.y = std::max<LONG>(0,position.y - dy);
                 else position.x = std::max<LONG>(0,position.x - dx);
-                SendMessageW(item,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+                const auto fill=std::ranges::find_if(controls,[&](const auto& vm){return vm.fill&&vm.fill->window()==item;});
+                if(fill!=controls.end())fill->fill->scroll_horizontal_to(position.x);
+                else SendMessageW(item,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
             }
             drag.last = point; return 0;
         }
@@ -509,11 +517,13 @@ struct LessonView {
     std::vector<LessonReadingRegion> reading_regions(bool legacy_programming=false) const {
         std::vector<LessonReadingRegion> result;
         if (import_open || !pane) return result;
-        if (const auto heading = GetDlgItem(pane,lesson_heading_id); heading && !fullscreen_block)
+        if (const auto heading = GetDlgItem(pane,lesson_heading_id); heading)
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + "/title",
                 lesson.title,heading,std::numeric_limits<std::size_t>::max(),false,false,false,true});
         const auto add = [&](std::size_t index,HWND target,std::string_view source,bool is_feedback = false) {
-            if (!target || source.empty() || !(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE)) return;
+            // Fullscreen only reparents/presents the existing page. Its hidden
+            // siblings remain part of the same narration script and bookmark.
+            if (!target || source.empty() || (!fullscreen_block&&!(GetWindowLongPtrW(target,GWL_STYLE) & WS_VISIBLE))) return;
             const auto& current = block(index); const auto& vm = controls[index];
             result.push_back({lesson.id + '/' + lesson.locale + '/' + lesson.pages[page].stable_id + '/'
                 + current.stable_id + '/' + std::to_string(GetDlgCtrlID(target)),std::string(source),target,index,
@@ -730,6 +740,7 @@ struct LessonView {
               std::span<const curriculum::Emphasis> emphasis = {}, bool editable = false,
               RichTextRole role = RichTextRole::body) {
         auto result = control(MSFTEDIT_CLASS, "", ES_MULTILINE | ES_AUTOVSCROLL | WS_TABSTOP
+            | (code&&!editable?WS_HSCROLL|ES_AUTOHSCROLL:0)
             | (editable ? WS_VSCROLL | WS_HSCROLL | ES_AUTOHSCROLL : ES_READONLY), id);
         reader_theme::apply(result,laboratory()?reader_theme::Surface::screen:editable ? reader_theme::Surface::field
             : code ? reader_theme::Surface::card : reader_theme::Surface::canvas);
@@ -776,21 +787,42 @@ struct LessonView {
             const auto reset=icon_button(ui("Reiniciar respuesta","Reset answer","Réinitialiser la réponse"),control_id(index,12),{0,ActionType::reset_answer,index},Icon::reset);
             const auto spacer=control(L"STATIC","",0,control_id(index,17));reader_theme::apply(spacer,reader_theme::Surface::card_header);
             const int caption_width=std::max(112,MulDiv(112,content_text_scale(),100));
-            if(current.type==BlockType::multiple_choice)rows.push_back({{caption,reset,spacer,copy},{caption_width,44,0,44},48});
-            else{
+            if(current.type==BlockType::multiple_choice||current.type==BlockType::fill_code||current.type==BlockType::output_prediction)
+                rows.push_back({{caption,reset,spacer,copy},{caption_width,44,0,44},48});
+            else if(current.type==BlockType::order_code){
                 const auto expand=icon_button(ui("Pantalla completa","Full screen","Plein écran"),control_id(index,13),{0,ActionType::fullscreen_source,index},Icon::expand);
-                const auto menu_button=icon_button(ui("Opciones del código","Code options","Options du code"),control_id(index,19),{0,ActionType::simulated_menu,index},Icon::settings);
-                rows.push_back({{caption,reset,spacer,copy,expand,menu_button},{caption_width,44,0,44,44,44},48});
+                rows.push_back({{caption,reset,spacer,copy,expand},{caption_width,44,0,44,44},48});
+            }else{
+                const auto wrap=wrap_button(index);
+                const auto expand=icon_button(ui("Pantalla completa","Full screen","Plein écran"),control_id(index,13),{0,ActionType::fullscreen_source,index},Icon::expand);
+                rows.push_back({{caption,reset,spacer,wrap,copy,expand},{caption_width,44,0,44,44,44},48});
             }
         }else{
+            const auto wrap=wrap_button(index);
             const auto expand=icon_button(ui("Pantalla completa","Full screen","Plein écran"),control_id(index,20),{0,ActionType::fullscreen_source,index},Icon::expand);
-            const auto menu_button=icon_button(ui("Opciones del código","Code options","Options du code"),control_id(index,19),{0,ActionType::simulated_menu,index},Icon::settings);
-            rows.push_back({{caption,copy,expand,menu_button},{0,44,44,44},48});
+            rows.push_back({{caption,wrap,copy,expand},{0,44,44,44},48});
         }
         rows.back().simulated_card=index;rows.back().card_header=true;
         for(const auto item:rows.back().cells)reader_theme::apply(item,reader_theme::Surface::card_header);
         toolbar_caption(caption,"</> "+code_language);
-        actions.push_back({control_id(index,35),ActionType::toggle_wrap,index});
+    }
+    HWND wrap_button(std::size_t index) {
+        return icon_button(code_wrap()?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé")
+            :ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"),
+            control_id(index,35),{0,ActionType::toggle_wrap,index},code_wrap()?Icon::wrap_on:Icon::wrap_off);
+    }
+    void refresh_wrap_buttons() {
+        for(std::size_t index=0;index<controls.size();++index)if(const auto toggle=GetDlgItem(pane,control_id(index,35))) {
+            icon_buttons[toggle]=code_wrap()?Icon::wrap_on:Icon::wrap_off;
+            label_radio(toggle,code_wrap()?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé")
+                :ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));
+            InvalidateRect(toggle,nullptr,FALSE);
+        }
+    }
+    void simulated_gutter(std::size_t index) {
+        auto& vm=controls.at(index);
+        vm.simulated_gutter=std::make_unique<windows::CodeGutter>(vm.simulated_code);
+        windows::set_code_gutter_appearance(vm.simulated_code,reader_theme::palette(window).card,RGB(111,119,130),3);
     }
     void copy_simulated(std::size_t index) {
         const auto& current=block(index);const auto& vm=controls[index];
@@ -824,9 +856,11 @@ struct LessonView {
         AppendMenuW(popup.menu,MF_STRING,control_id(index,18),wide(response?ui("Copiar ejercicio","Copy exercise","Copier l'exercice"):ui("Copiar código","Copy code","Copier le code")).c_str());
         if(response)AppendMenuW(popup.menu,MF_STRING|(IsWindowEnabled(GetDlgItem(pane,control_id(index,12)))?MF_ENABLED:MF_GRAYED),control_id(index,12),
             wide(ui("Reiniciar respuesta","Reset answer","Réinitialiser la réponse")).c_str());
-        AppendMenuW(popup.menu,MF_STRING,control_id(index,response?13:20),wide(ui("Pantalla completa","Full screen","Plein écran")).c_str());
-        AppendMenuW(popup.menu,MF_STRING|(code_wrap()?MF_CHECKED:0),control_id(index,35),wide(ui("Ajuste de línea","Line wrap","Retour à la ligne")).c_str());
-        const auto style=prepare_native_menu(popup.menu,window);RECT bounds{};GetWindowRect(GetDlgItem(pane,control_id(index,19)),&bounds);
+        if(GetDlgItem(pane,control_id(index,response?13:20)))
+            AppendMenuW(popup.menu,MF_STRING,control_id(index,response?13:20),wide(ui("Pantalla completa","Full screen","Plein écran")).c_str());
+        if(GetDlgItem(pane,control_id(index,35)))
+            AppendMenuW(popup.menu,MF_STRING|(code_wrap()?MF_CHECKED:0),control_id(index,35),wide(ui("Ajuste de línea","Line wrap","Retour à la ligne")).c_str());
+        const auto style=prepare_native_menu(popup.menu,window);RECT bounds{};GetWindowRect(controls[index].simulated_code,&bounds);
         const auto selected=TrackPopupMenuEx(popup.menu,TPM_RETURNCMD|TPM_RIGHTALIGN|TPM_TOPALIGN,bounds.right,bounds.bottom,window,nullptr);
         if(selected)command(static_cast<int>(selected),BN_CLICKED,nullptr);
     }
@@ -840,6 +874,12 @@ struct LessonView {
             const auto state=SaveDC(dc);ExtSelectClipRgn(dc,clip,RGN_AND);DeleteObject(clip);
             auto header=bounds;header.bottom=surface.header_bottom-scroll;FillRect(dc,&header,reader_theme::brush(reader_theme::Surface::card_header));RestoreDC(dc,state);
         }
+        const auto outline=CreateSolidBrush(reader_theme::palette(window).outline);
+        for(auto bounds:math_card_surfaces){OffsetRect(&bounds,0,-scroll);
+            const auto shape=CreateRoundRectRgn(bounds.left,bounds.top,bounds.right+1,bounds.bottom+1,px(20),px(20));
+            FillRgn(dc,shape,reader_theme::brush(reader_theme::Surface::card));FrameRgn(dc,shape,outline,px(1),px(1));DeleteObject(shape);
+        }
+        DeleteObject(outline);
         RestoreDC(dc,saved);
     }
     void copy_text(std::string_view text) {
@@ -882,12 +922,14 @@ struct LessonView {
     }
     void toggle_fullscreen(std::size_t index,bool output) {
         end_drag();
-        if (fullscreen_block == index && fullscreen_output == output) fullscreen_block.reset();
-        else { fullscreen_block = index; fullscreen_output = output; }
-        if(const auto simulated=controls[index].simulated_code){const auto style=GetWindowLongPtrW(simulated,GWL_STYLE);
-            SetWindowLongPtrW(simulated,GWL_STYLE,fullscreen_block?style|WS_VSCROLL:style&~static_cast<LONG_PTR>(WS_VSCROLL));apply_wrap(simulated);
+        if (fullscreen_block == index && fullscreen_output == output) {
+            fullscreen_block.reset();scroll=fullscreen_lesson_scroll.value_or(scroll);fullscreen_lesson_scroll.reset();
+        }else {
+            if(!fullscreen_block)fullscreen_lesson_scroll=scroll;
+            fullscreen_block = index; fullscreen_output = output;scroll=0;
         }
-        scroll = 0; resize(); notify_content();
+        if(const auto simulated=controls[index].simulated_code)apply_wrap(simulated);
+        resize();
         if (fullscreen_block && controls[index].source && !output) SetFocus(controls[index].source);
     }
     void code_menu(std::size_t index,bool output) {
@@ -914,7 +956,8 @@ struct LessonView {
             add(75,ui("Pantalla completa","Full screen","Plein écran"));
             add(35,ui("Ajuste de línea","Line wrap","Retour à la ligne"),MF_STRING|(code_wrap()?MF_CHECKED:0));
         }
-        RECT bounds{}; GetWindowRect(GetDlgItem(pane,control_id(index,output ? 31 : 19)),&bounds);
+        RECT bounds{};const auto anchor=GetDlgItem(pane,control_id(index,output?31:19));
+        GetWindowRect(anchor?anchor:controls[index].source,&bounds);
         const auto style = prepare_native_menu(popup,window);
         const auto selected = TrackPopupMenuEx(popup,TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_TOPALIGN,bounds.right,bounds.bottom,window,nullptr);
         DestroyMenu(popup);
@@ -963,7 +1006,7 @@ struct LessonView {
         reader = control(L"BUTTON",ui("Lector","Reader","Lecteur"),WS_TABSTOP | BS_PUSHBUTTON,reader_id,window);
         language = control(L"BUTTON",ui("Idioma","Language","Langue"),WS_TABSTOP | BS_PUSHBUTTON,language_id,window);
         attempts = control(L"BUTTON",ui("Intentos disponibles","Available attempts","Essais disponibles"),WS_TABSTOP | BS_PUSHBUTTON,attempts_id,window);
-        settings = control(L"BUTTON",ui("Ajustes y páginas","Settings and pages","Réglages et pages"),WS_TABSTOP | BS_PUSHBUTTON,menu_id,window);
+        settings = control(L"BUTTON",ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"),WS_TABSTOP | BS_PUSHBUTTON,menu_id,window);
         menu = settings;
         decorate_icon(back,Icon::back,ui("Volver","Back","Retour")); decorate_icon(reader,Icon::speaker,ui("Lector","Reader","Lecteur"));
         decorate_icon(language,Icon::language,ui("Idioma","Language","Langue"));
@@ -975,7 +1018,7 @@ struct LessonView {
             lgaed::attempts::initialize(data,route,now_ms());refresh_attempts();
             if(existing_reserve&&data!=before_attempt_migration)mark_dirty();
         }
-        decorate_icon(settings,Icon::settings,ui("Ajustes y páginas","Settings and pages","Réglages et pages"));
+        decorate_icon(settings,Icon::settings,ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"));
         fullscreen_close=control(L"BUTTON","",WS_TABSTOP|BS_PUSHBUTTON,fullscreen_close_id,window);
         decorate_icon(fullscreen_close,Icon::close,ui("Salir de pantalla completa","Exit full screen","Quitter le plein écran"));
         ShowWindow(fullscreen_close,SW_HIDE);
@@ -1009,7 +1052,7 @@ struct LessonView {
         label_radio(back,ui("Volver","Back","Retour")); label_radio(reader,ui("Lector","Reader","Lecteur"));
         label_radio(language,ui("Idioma","Language","Langue"));
         label_radio(attempts,ui("Intentos disponibles","Available attempts","Essais disponibles"));
-        label_radio(settings,ui("Ajustes y páginas","Settings and pages","Réglages et pages"));
+        label_radio(settings,ui("Ajustes de la lección","Lesson Settings","Paramètres de la leçon"));
         for (std::size_t index = 0; index < controls.size(); ++index) {
             auto& vm = controls[index]; const auto& current = block(index); if (!vm.rendered) continue;
             if(laboratory()){
@@ -1036,14 +1079,16 @@ struct LessonView {
                 const bool response=exercise(current.type);
                 label_radio(copy,response?ui("Copiar ejercicio","Copy exercise","Copier l'exercice"):ui("Copiar código","Copy code","Copier le code"));
                 if(response)label_radio(GetDlgItem(pane,control_id(index,12)),ui("Reiniciar respuesta","Reset answer","Réinitialiser la réponse"));
-                if(current.type!=BlockType::multiple_choice){label_radio(GetDlgItem(pane,control_id(index,response?13:20)),ui("Pantalla completa","Full screen","Plein écran"));
-                    label_radio(GetDlgItem(pane,control_id(index,19)),ui("Opciones del código","Code options","Options du code"));}
+                if(const auto expand=GetDlgItem(pane,control_id(index,response?13:20)))label_radio(expand,ui("Pantalla completa","Full screen","Plein écran"));
+                if(const auto wrap=GetDlgItem(pane,control_id(index,35)))label_radio(wrap,code_wrap()?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé")
+                    :ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));
             }
             if (vm.source) {
                 const auto name = [&](int part,std::string text) { label_radio(GetDlgItem(pane,control_id(index,part)),text); };
                 name(12,ui("Reiniciar código","Reset code","Réinitialiser le code"));
                 name(18,ui("Copiar código","Copy code","Copier le code")); name(20,ui("Pantalla completa","Full screen","Plein écran"));
-                name(19,ui("Opciones del editor","Editor options","Options de l'éditeur"));
+                name(35,code_wrap()?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé")
+                    :ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));
                 name(23,ui("Copiar salida","Copy output","Copier la sortie")); name(24,ui("Limpiar salida","Clear output","Effacer la sortie"));
                 name(25,ui("Ampliar consola","Expand console","Agrandir la console"));
                 name(31,ui("Opciones de la consola","Console options","Options de la console"));
@@ -1066,7 +1111,8 @@ struct LessonView {
     }
     void mark_dirty() { dirty = true; SetTimer(window, save_timer, 300, nullptr); }
     void remember_scroll() {
-        data.preferences["native_windows"][scroll_key()] = static_cast<std::int64_t>(MulDiv(scroll, 96, static_cast<int>(GetDpiForWindow(window))));
+        const auto lesson_scroll=fullscreen_block?fullscreen_lesson_scroll.value_or(scroll):scroll;
+        data.preferences["native_windows"][scroll_key()] = static_cast<std::int64_t>(MulDiv(lesson_scroll, 96, static_cast<int>(GetDpiForWindow(window))));
     }
     void capture_draft(std::size_t index) {
         auto& vm = controls.at(index);
@@ -1123,8 +1169,11 @@ struct LessonView {
         if (!item) return;
         const bool enabled = code_wrap();
         auto style = GetWindowLongPtrW(item,GWL_STYLE);
-        SetWindowLongPtrW(item,GWL_STYLE,enabled ? style & ~static_cast<LONG_PTR>(WS_HSCROLL | ES_AUTOHSCROLL)
-            : style | WS_HSCROLL | ES_AUTOHSCROLL);
+        // Readonly sources declare scrollbar support at creation; RichEdit
+        // then owns their automatic visibility. Forcing WS_HSCROLL afterwards
+        // creates an empty nonclient bar without a native scroll range.
+        const auto horizontal_flags=static_cast<LONG_PTR>((style&ES_READONLY)?ES_AUTOHSCROLL:WS_HSCROLL|ES_AUTOHSCROLL);
+        SetWindowLongPtrW(item,GWL_STYLE,enabled ? style & ~horizontal_flags : style | horizontal_flags);
         SendMessageW(item,EM_SETTARGETDEVICE,0,enabled ? 0 : 1);
         SetWindowPos(item,nullptr,0,0,0,0,SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
@@ -1190,7 +1239,9 @@ struct LessonView {
             apply_wrap(controls[index].simulated_code);
             if (block(index).type == BlockType::fill_code) apply_wrap(controls[index].answer);
             if(controls[index].order_view)controls[index].order_view->set_wrap(code_wrap());
+            if(controls[index].fill)controls[index].fill->set_wrap(code_wrap());
         }
+        refresh_wrap_buttons();
         if (shortcuts_changed && editing_bar) editing_bar->set_shortcuts(parse_state_shortcuts(data));
         if (interface_changed) refresh_interface_labels();
         update_fonts();
@@ -1282,6 +1333,7 @@ struct LessonView {
     }
     void composition_changed(std::size_t index){
         if(updating||index>=controls.size())return;
+        selected_puzzle=index;
         if(checking_math==index)cancel_math();
         verified_math.erase(key(index));
         auto& vm=controls[index];++vm.revision;capture_composition(index);
@@ -1483,7 +1535,9 @@ struct LessonView {
     void create_feedback(std::size_t index) {
         auto& vm = controls[index];
         vm.feedback = rich("", control_id(index, 4));
+        if(block(index).type==BlockType::math_puzzle)reader_theme::apply(vm.feedback,reader_theme::Surface::card);
         rows.push_back({{vm.feedback}, {0}, 0, true});
+        if(block(index).type==BlockType::math_puzzle)rows.back().horizontal_inset=8;
         rows.back().padding_before=12;rows.back().padding_after=24;
         if (vm.response.correct) {
             auto explanation = block(index).explanation;
@@ -1517,7 +1571,7 @@ struct LessonView {
         if (current.type == BlockType::note) text_row(ui("Nota","Note","Note"),control_id(index,19),false,{},RichTextRole::heading);
         if (current.type == BlockType::paragraph || current.type == BlockType::note) { text_row(current.text, control_id(index, 0), false, current.emphasis); return; }
         if (current.type == BlockType::code) {
-            simulated_header(index,false);vm.simulated_code=rich(current.code,control_id(index,1),true);apply_wrap(vm.simulated_code);
+            simulated_header(index,false);vm.simulated_code=rich(current.code,control_id(index,1),true);simulated_gutter(index);apply_wrap(vm.simulated_code);
             rows.push_back({{vm.simulated_code},{0},26,true});rows.back().simulated_card=index;rows.back().card_end=true;return;
         }
         if(current.type==BlockType::math_puzzle){
@@ -1548,7 +1602,7 @@ struct LessonView {
             SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
             rows.push_back({{vm.math->window()},{0},40,false});
             auto check=button(ui("Comprobar","Check","Vérifier"),control_id(index,3),{0,ActionType::check,index});
-            rows.push_back({{check},{0},48,false});create_feedback(index);return;
+            rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=8;create_feedback(index);return;
         }
         if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
         if(const auto instruction=secondary_instruction(current.type);!instruction.empty()){
@@ -1558,7 +1612,7 @@ struct LessonView {
         const bool simulated=exercise(current.type);
         if(simulated)simulated_header(index,true);
         if (!current.code.empty()){
-            if(simulated){vm.simulated_code=rich(current.code,control_id(index,1),true);apply_wrap(vm.simulated_code);
+            if(simulated){vm.simulated_code=rich(current.code,control_id(index,1),true);simulated_gutter(index);apply_wrap(vm.simulated_code);
                 rows.push_back({{vm.simulated_code},{0},26,true});rows.back().simulated_card=index;}
             else text_row(current.code,control_id(index,1),true);
         }
@@ -1574,14 +1628,13 @@ struct LessonView {
                 const auto wrap=icon_button(code_wrap()?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé"):ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"),control_id(index,35),{0,ActionType::toggle_wrap,index},code_wrap()?Icon::wrap_on:Icon::wrap_off);
                 rows.push_back({{caption,reset,compiler,spacer,wrap,copy,expand},{92,44,72,0,44,44,44},64,false});
             }else{
-                auto options = icon_button(ui("Opciones del editor","Editor options","Options de l'éditeur"),control_id(index,19),{0,ActionType::editor_menu,index},Icon::settings);
-                rows.push_back({{caption,reset,spacer,copy,expand,options},{std::max(112,MulDiv(112,content_text_scale(),100)),44,0,44,44,44},48,false});
+                const auto wrap=wrap_button(index);
+                rows.push_back({{caption,reset,spacer,wrap,copy,expand},{std::max(112,MulDiv(112,content_text_scale(),100)),44,0,44,44,44},48,false});
             }
             rows.back().toolbar=true;
             if(laboratory())rows.back().padding_after=0;
             for(const auto item:rows.back().cells)reader_theme::apply(item,laboratory()?reader_theme::Surface::compiler_header:reader_theme::Surface::card_header);
             toolbar_caption(caption,"</> C++");
-            if(!laboratory())actions.push_back({control_id(index,35),ActionType::toggle_wrap,index});
             const auto saved = state::get_draft(data, draft_key(index), current.initial_code, current.standard_input.value_or(""));
             auto document = saved.has_saved
                 ? windows::EditorDocument{saved.source, state::indentation_units(saved.source, saved.indentation_json), saved.selection_start, saved.selection_end}
@@ -1634,7 +1687,9 @@ struct LessonView {
         }
         if(current.type==BlockType::inline_fill_code||current.type==BlockType::drag_fill_code){
             vm.fill=std::make_unique<CppFillView>(pane,current,vm.response.raw_json,
-                [this,index]{composition_changed(index);},[this,index]{check_answer(index);});
+                [this,index]{composition_changed(index);},[this,index]{check_answer(index);},
+                [this](HWND origin,UINT message,WPARAM keys,LPARAM point){return drag_message(origin,message,keys,point);});
+            vm.fill->set_wrap(code_wrap());
             SetWindowLongPtrW(vm.fill->window(),GWLP_ID,control_id(index,5));
             rows.push_back({{vm.fill->window()},{0},80,false});
         } else if (current.type == BlockType::multiple_choice) {
@@ -1683,11 +1738,11 @@ struct LessonView {
     void render_page() {
         cancel_math();
         choice_labels.clear();selected_puzzle.reset();
-        end_drag(); fullscreen_block.reset();
+        end_drag(); fullscreen_block.reset();fullscreen_lesson_scroll.reset();
         updating = true;
         controls.clear();
         for (const auto& row : rows) for (auto item : row.cells) destroy_control(item);
-        rows.clear(); actions.clear();simulated_card_surfaces.clear();
+        rows.clear(); actions.clear();simulated_card_surfaces.clear();math_card_surfaces.clear();
         controls.resize(lesson.pages.at(page).blocks.size());
         if(page==0){
             text_row(laboratory()?laboratory_title():lesson.title,lesson_heading_id,false,{},RichTextRole::lesson_title);
@@ -1777,7 +1832,8 @@ struct LessonView {
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
         struct Placement { HWND item; int x, y, width, height; };
         std::vector<Placement> placements;
-        simulated_card_surfaces.clear();toolbar_surfaces.clear();std::map<std::size_t,std::size_t> card_surfaces;
+        std::map<HWND,POINT> readonly_positions;
+        simulated_card_surfaces.clear();math_card_surfaces.clear();toolbar_surfaces.clear();std::map<std::size_t,std::size_t> card_surfaces;
         // A RichEdit's requested height depends on its final width. Measure
         // without moving/painting provisional rectangles over adjacent rows.
         constexpr UINT placement_flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW;
@@ -1824,11 +1880,28 @@ struct LessonView {
             }
             int x = left+inset;
             int control_height=0;
+            int readonly_nonclient_height=0;
             const auto provisional = std::max(px(row.logical_height), row.requested_height);
             for (std::size_t i = 0; i < row.cells.size(); ++i) {
                 const int cell_width = row.widths[i] ? px(row.widths[i]) : remaining;
+                const bool readonly_source=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==row.cells[i];});
+                if(readonly_source){
+                    POINT position{};SendMessageW(row.cells[i],EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+                    readonly_positions.emplace(row.cells[i],position);
+                    // Embedded source is bottomless. Measure the full usable
+                    // width, rather than allowing an old fullscreen scrollbar
+                    // to narrow wrapped code and sustain its own overflow.
+                    if(GetWindowLongPtrW(row.cells[i],GWL_STYLE)&WS_VSCROLL)SendMessageW(row.cells[i],EM_SHOWSCROLLBAR,SB_VERT,FALSE);
+                }
                 SetWindowPos(row.cells[i], nullptr, 0, 0, cell_width, std::max(px(1), provisional),
                     placement_flags | SWP_NOMOVE);
+                if(readonly_source){
+                    RECT outer{},client{};GetWindowRect(row.cells[i],&outer);GetClientRect(row.cells[i],&client);
+                    // EN_REQUESTRESIZE measures the text viewport. A real
+                    // horizontal bar consumes additional nonclient height;
+                    // keep it below the final line instead of covering it.
+                    readonly_nonclient_height=std::max(0L,outer.bottom-outer.top-client.bottom);
+                }
                 if(laboratory()&&!controls.empty()&&(row.cells[i]==controls[0].source||row.cells[i]==controls[0].console)){
                     RECT content{};SendMessageW(row.cells[i],EM_GETRECT,0,reinterpret_cast<LPARAM>(&content));const bool output=row.cells[i]==controls[0].console;
                     content.left=output?px(18):std::max<LONG>(content.left,px(10));content.top=px(output?18:16);content.right=cell_width-px(output?18:16);content.bottom=std::max<LONG>(content.top+1,provisional-px(output?18:16));
@@ -1853,6 +1926,7 @@ struct LessonView {
                 x += cell_width + gap;
             }
             int height = row.size_to_text ? std::max(px(row.logical_height), row.requested_height) : px(row.logical_height);
+            height+=readonly_nonclient_height;
             height=std::max(height,control_height);
             if (row.max_logical_height) height = std::min(height,px(row.max_logical_height));
             if (fullscreen_block && GetDlgCtrlID(row.cells.front()) == control_id(*fullscreen_block,14) && fullscreen_output)
@@ -1910,12 +1984,37 @@ struct LessonView {
         }
         if (!deferred) for (const auto& item : placements)
             SetWindowPos(item.item,nullptr,item.x,item.y - scroll,item.width,item.height,placement_flags);
+        for(std::size_t index=0;index<controls.size();++index)if(const auto source=controls[index].simulated_code;source){
+            const auto placed=std::ranges::find(placements,source,&Placement::item);
+            if(placed==placements.end())continue;
+            const auto measured=std::ranges::find_if(rows,[source](const auto& row){return row.cells.size()==1&&row.cells[0]==source;});
+            RECT viewport{};GetClientRect(source,&viewport);
+            // A readonly source delegates vertical movement to the lesson in
+            // its normal autoheight card. Only a genuinely smaller fullscreen
+            // viewport needs its own vertical scrollbar; use RichEdit's actual
+            // requested document height, including the active text zoom.
+            const bool overflow=fullscreen_block==index&&measured!=rows.end()&&measured->requested_height>viewport.bottom;
+            if(!!(GetWindowLongPtrW(source,GWL_STYLE)&WS_VSCROLL)!=overflow)SendMessageW(source,EM_SHOWSCROLLBAR,SB_VERT,overflow);
+            if(const auto saved=readonly_positions.find(source);saved!=readonly_positions.end())
+                SendMessageW(source,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved->second));
+        }
         // Measuring a mathematical composition deliberately does not position
         // its children. Commit its own layout after the final lesson placement;
         // resizing only its host leaves every rich label/radio at its origin.
         for(auto& vm:controls)if(vm.math){
             const auto placed=std::ranges::find(placements,vm.math->window(),&Placement::item);
-            if(placed!=placements.end())vm.math->layout(placed->x,placed->y-scroll,placed->width);
+            if(placed!=placements.end()){
+                vm.math->layout(placed->x,placed->y-scroll,placed->width);
+                RECT bounds{placed->x,placed->y,placed->x+placed->width,placed->y+placed->height};
+                const auto feedback=std::ranges::find(placements,vm.feedback,&Placement::item);
+                if(feedback!=placements.end())bounds.bottom=feedback->y+feedback->height+(feedback->height?px(12):0);
+                math_card_surfaces.push_back(bounds);
+                // The host already pads its contents. Leave just the outer
+                // contour to the parent; inset check/feedback stay untouched.
+                const auto interior=CreateRoundRectRgn(px(1),px(1),bounds.right-bounds.left-px(1),
+                    bounds.bottom-bounds.top-px(1),px(18),px(18));
+                if(interior&&!SetWindowRgn(vm.math->window(),interior,FALSE))DeleteObject(interior);
+            }
         }
         SCROLLINFO info{sizeof(info), SIF_RANGE | SIF_PAGE | SIF_POS};
         info.nMin = 0; info.nMax = std::max(0, extent - 1); info.nPage = static_cast<UINT>(std::max<LONG>(0, area.bottom)); info.nPos = scroll;
@@ -1929,7 +2028,9 @@ struct LessonView {
         RECT area{}; GetClientRect(pane, &area);
         const int new_scroll = std::clamp(position, 0, std::max(0, extent - static_cast<int>(area.bottom)));
         if (new_scroll == scroll) return;
-        scroll = new_scroll; remember_scroll(); mark_dirty(); reflow();
+        scroll = new_scroll;
+        if(!fullscreen_block){remember_scroll();mark_dirty();}
+        reflow();
     }
     bool enter_key(const MSG& message){
         if(import_open)return false;
@@ -2369,9 +2470,8 @@ struct LessonView {
             if(laboratory())data.preferences["native_windows"]["cpp_laboratory_wrap"]=enabled;
             else if(const auto course=course_id();!course.empty())appearance::save_course_wrap(data,course,enabled);
             else appearance::save_global_wrap(data,enabled,{});
-            for(auto& item:controls){apply_wrap(item.source);apply_wrap(item.simulated_code);if(item.answer&&item.answer_editor)apply_wrap(item.answer);if(item.order_view)item.order_view->set_wrap(enabled);}
-            const auto toggle=GetDlgItem(pane,control_id(action.block,35));
-            if(toggle){icon_buttons[toggle]=enabled?Icon::wrap_on:Icon::wrap_off;label_radio(toggle,enabled?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé"):ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));InvalidateRect(toggle,nullptr,FALSE);}mark_dirty();reflow();break;}
+            for(auto& item:controls){apply_wrap(item.source);apply_wrap(item.simulated_code);if(item.answer&&item.answer_editor)apply_wrap(item.answer);if(item.order_view)item.order_view->set_wrap(enabled);if(item.fill)item.fill->set_wrap(enabled);}
+            refresh_wrap_buttons();mark_dirty();reflow();break;}
         case ActionType::compiler_info:{
             const auto popup=CreatePopupMenu();if(!popup)throw std::runtime_error("Cannot create the compiler information menu");
             AppendMenuW(popup,MF_STRING|MF_CHECKED,1,L"MSVC C++20 · x64");const auto style=prepare_native_menu(popup,window);RECT bounds{};GetWindowRect(GetDlgItem(pane,control_id(action.block,36)),&bounds);

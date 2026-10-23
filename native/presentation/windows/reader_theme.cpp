@@ -52,6 +52,7 @@ COLORREF color(const Palette& colors, Surface surface) {
     case Surface::popup: return colors.high_contrast ? colors.card : RGB(48,50,57);
     case Surface::compiler_header: return colors.high_contrast ? colors.header : RGB(37,40,46);
     case Surface::compiler_editor: return colors.high_contrast ? colors.field : RGB(28,31,36);
+    case Surface::settings_defaults: return colors.high_contrast ? colors.field : RGB(24,25,29);
     case Surface::compiler_output: return colors.high_contrast ? colors.field : RGB(5,6,7);
     }
     return colors.canvas;

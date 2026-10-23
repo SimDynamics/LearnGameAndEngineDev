@@ -128,6 +128,30 @@ class WindowsMathBridgeTest(unittest.TestCase):
         self.assertTrue(result["evaluable"])
         self.assertFalse(result["correct"])
 
+    def test_graph_coordinate_drafts_block_stale_points_and_recover(self):
+        block = next(block for block in self.sandbox if block.get("id") == "point_and_coordinate")
+        original = {response["id"]: known_answer(response["validator"])
+                    for response in block["responses"]}
+        self.assertTrue(self.evaluate(block, original)["correct"])
+        for language in ("es", "en-US", "en-GB", "fr"):
+            for partial in ("", "-", ".", "1e", "NaN", "Infinity"):
+                with self.subTest(language=language, partial=partial):
+                    answers = copy.deepcopy(original)
+                    answers["point"]["interactionDraft"] = {"coords": [{"x": partial, "y": "3"}]}
+                    before = copy.deepcopy(answers)
+                    result = self.evaluate(block, answers, language)
+                    self.assertFalse(result["evaluable"], result)
+                    self.assertFalse(result["correct"])
+                    self.assertEqual("error", result["feedbackKind"])
+                    self.assertEqual("math_ui_valid_coordinates", result["results"][0]["code"])
+                    self.assertEqual(before, answers)
+            recovered = copy.deepcopy(original)
+            recovered["point"]["interactionDraft"] = {"coords": [{"x": " 2,0 ", "y": "3e0"}]}
+            result = self.evaluate(block, recovered, language)
+            self.assertTrue(result["evaluable"], result)
+            self.assertTrue(result["correct"], result)
+        self.assertTrue(self.evaluate(block, original)["correct"])
+
     def test_05_algebra_domain_and_unsupported_expressions_are_not_false_successes(self):
         block = next(block for _, block in self.blocks if any(
             item.get("validator", {}).get("type") == "parametric_rational_expression"

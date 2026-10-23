@@ -190,7 +190,8 @@ LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){auto* self=r
         if(target->leaf>=0&&self->drag_anchor->leaf>=0)(void)self->command("textSelection",[&](JsonObject& request){request.Insert(L"path",path_json(target->path));request.Insert(L"startNode",JsonValue::CreateNumberValue(self->drag_anchor->offset));request.Insert(L"startLeaf",JsonValue::CreateNumberValue(self->drag_anchor->leaf));request.Insert(L"endNode",JsonValue::CreateNumberValue(target->offset));request.Insert(L"endLeaf",JsonValue::CreateNumberValue(target->leaf));});
         else(void)self->command("selection",[&](JsonObject& request){request.Insert(L"path",path_json(target->path));request.Insert(L"start",JsonValue::CreateNumberValue(self->drag_anchor->offset));request.Insert(L"end",JsonValue::CreateNumberValue(target->offset));});}}return 0;
     case WM_LBUTTONUP:self->dragging=false;self->drag_anchor.reset();if(GetCapture()==window)ReleaseCapture();return 0;
-    case WM_MOUSEWHEEL:self->scroll=std::clamp(self->scroll-static_cast<float>(GET_WHEEL_DELTA_WPARAM(wp))/WHEEL_DELTA*self->px(40),0.f,std::max(0.f,self->box.width));InvalidateRect(window,nullptr,FALSE);self->update_caret();return 0;
+    case WM_MOUSEWHEEL:{RECT viewport{};GetClientRect(window,&viewport);const auto overflow=std::max(0.f,self->box.width+self->px(16)-viewport.right);
+        self->scroll=std::clamp(self->scroll-static_cast<float>(GET_WHEEL_DELTA_WPARAM(wp))/WHEEL_DELTA*self->px(40),0.f,overflow);InvalidateRect(window,nullptr,FALSE);self->update_caret();return 0;}
     case WM_KEYDOWN:if((GetKeyState(VK_CONTROL)&0x8000)&&wp=='C'){self->clipboard(false);return 0;}if(self->read_only||!IsWindowEnabled(window))return 0;
         if(wp==VK_ESCAPE&&self->access.cancel){self->access.cancel();return 0;}
         if(wp==VK_RETURN){if(!(lp&(1LL<<30))&&self->access.submit)self->access.submit();return 0;}

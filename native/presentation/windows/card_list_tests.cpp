@@ -10,8 +10,9 @@
 
 namespace {
 constexpr UINT activated=WM_APP+601;
+constexpr UINT scrolled=WM_APP+602;
 constexpr int list_id=4105;
-struct Result { unsigned launches=0,changed=0,draws=0,measured=0;bool wrong_draw=false;HWND list=nullptr; };
+struct Result { unsigned launches=0,changed=0,draws=0,measured=0;int header_offset=-1;bool wrong_draw=false;HWND list=nullptr; };
 void check(bool value,const char* text){if(!value)throw std::runtime_error(text);}
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}}
 std::vector<HWND> buttons(HWND parent){std::vector<HWND> result;for(auto child=GetWindow(parent,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT))result.push_back(child);return result;}
@@ -21,6 +22,7 @@ LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
     if(message==WM_NCCREATE){result=static_cast<Result*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(result));}
     if(result){
         if(message==activated){++result->launches;return 0;}
+        if(message==scrolled){result->header_offset=static_cast<int>(wp);return 0;}
         if(message==WM_COMMAND&&LOWORD(wp)==list_id&&HIWORD(wp)==LBN_SELCHANGE){++result->changed;return 0;}
         if(message==WM_MEASUREITEM){auto& measure=*reinterpret_cast<MEASUREITEMSTRUCT*>(lp);
             if(measure.CtlID==list_id){++result->measured;measure.itemHeight=measure.itemID==1?800:500;return TRUE;}
@@ -83,6 +85,23 @@ int main(){
         const auto hit=SendMessageW(list,LB_ITEMFROMPOINT,0,MAKELPARAM(30,std::max(0L,second.top)+10));
         check(!HIWORD(hit)&&LOWORD(hit)==selected,"Visible hit testing lost original card ownership");
         SendMessageW(cards.front(),BM_CLICK,0,0);pump();check(result.launches==3,"Native accessibility button activation did not reach the catalog");
+        SendMessageW(list,LB_SETTOPINDEX,0,0);
+        lgaed::presentation::set_card_list_header(list,160,scrolled);
+        SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&first));
+        check(first.top==160&&result.header_offset==0,"A shared heading changed card identity or initial scroll position");
+        const auto header_hit=SendMessageW(list,LB_ITEMFROMPOINT,0,MAKELPARAM(30,20));
+        check(HIWORD(header_hit),"The catalog heading was hit-tested as an answer card");
+        SendMessageW(list,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(50,120));
+        SendMessageW(list,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(50,40));
+        SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(50,40));pump();
+        SendMessageW(list,LB_GETITEMRECT,0,reinterpret_cast<LPARAM>(&first));
+        check(offset(list)==80&&result.header_offset==80&&first.top==80&&result.launches==3,
+            "Dragging the heading did not share card pixel scrolling or activated a course");
+        lgaed::presentation::set_card_list_scroll_offset(list,45);
+        check(offset(list)==45&&result.header_offset==45,"Partial heading scroll could not be restored exactly");
+        lgaed::presentation::set_card_list_header(list,200,scrolled);
+        check(offset(list)==45,"Remeasuring the heading jumped a partially visible heading");
+        lgaed::presentation::set_card_list_header(list,0,0);
         SendMessageW(list,LB_RESETCONTENT,0,0);pump();check(SendMessageW(list,LB_GETCOUNT,0,0)==0&&SendMessageW(list,LB_GETCURSEL,0,0)==LB_ERR&&buttons(list).empty(),"Reset retained stale native controls or selection");
         DestroyWindow(host);host=nullptr;std::cout<<"PASS native BUTTON cards: 500/800px height, accessibility, pixel scrolling, selection, wheel/drag and keyboard\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);std::cerr<<"FAIL native card list: "<<error.what()<<'\n';return 1;}

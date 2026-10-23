@@ -90,6 +90,29 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
         {
+            auto lesson=model();curriculum::Block source;source.type=curriculum::BlockType::code;
+            source.stable_id="fullscreen_source";source.language="cpp";source.code="#include <iostream>\nint main() {}\n";
+            source.address={0,1,{},{}};lesson.pages[0].blocks.push_back(source);
+            Fixture f(backend,false,true,true,"es",std::move(lesson));f.reader->toggle();
+            wait([&]{const auto current=f.snapshot();return current.playing&&current.index==1&&current.offset>200;},"existing real Kokoro recording before fullscreen");
+            f.reader->pause();const auto paused=f.snapshot();const auto history=narration::read_history(read_lesson_state(f.view));
+            SendMessageW(child(f.view,1120),BM_CLICK,0,0);pump();f.reader->content_changed();pump();
+            const auto expanded=f.snapshot();
+            check(expanded.planned&&!expanded.playing&&!expanded.allocated&&expanded.key==paused.key&&expanded.index==paused.index&&expanded.offset==paused.offset&&
+                expanded.segments.size()==paused.segments.size(),"Readonly fullscreen or a later content notification discarded the existing plan/position");
+            SendMessageW(child(f.view,116),BM_CLICK,0,0);pump();f.reader->content_changed();pump();
+            const auto restored=f.snapshot();const auto after_history=narration::read_history(read_lesson_state(f.view));
+            check(restored.key==paused.key&&restored.index==paused.index&&restored.offset==paused.offset&&restored.heard_through==paused.heard_through&&
+                !restored.playing&&!restored.allocated&&history.entries.size()==after_history.entries.size(),
+                "Leaving readonly fullscreen reset playback, listening evidence or the bounded position history");
+            for(std::size_t i=0;i<paused.segments.size();++i)check(restored.segments[i].recording==paused.segments[i].recording,
+                "A presentation-only fullscreen transition replaced a valid Kokoro recording");
+            f.reader->toggle();const auto resuming=f.snapshot();
+            check(resuming.allocated&&resuming.index==paused.index&&std::abs(resuming.offset-paused.offset)<=1,
+                "Playback after fullscreen failed to resume the exact existing recording offset");f.reader->pause();
+            std::cout<<"PASS readonly fullscreen and later notifications preserve the real Kokoro script/key/recordings, exact released pause and resume\n";
+        }
+        {
             Fixture f(backend);
             {
                 const auto bar=f.reader->bar();RECT initial{},parent{};GetWindowRect(bar,&initial);GetClientRect(f.view,&parent);

@@ -18,9 +18,13 @@
 #include <stdexcept>
 #include <exception>
 #include <bit>
+#include <chrono>
+#include <tuple>
 
 namespace {
 void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
+void run_case(const char* name,void(*run)()){const auto start=std::chrono::steady_clock::now();run();std::cout<<"CASE "<<name<<" elapsed_ms="<<std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start).count()<<'\n';}
+std::wstring native_text(HWND window);
 void select(HWND view,int id,int value){SendDlgItemMessageW(view,id,CB_SETCURSEL,value,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));}
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}}
 void license_window_tests(HWND owner){
@@ -51,6 +55,20 @@ struct ScopedFixture{
     void click(int id){check(control(id)&&IsWindowEnabled(control(id)),"Missing/disabled scoped action");SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(control(id)));pump();}
     void scale(int value){check(control(5120)&&IsWindowEnabled(control(5120)),"Text-size slider is missing or disabled");SendMessageW(control(5120),TBM_SETPOS,TRUE,value);SendMessageW(view,WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,value),reinterpret_cast<LPARAM>(control(5120)));}
 };
+struct WrapResetAction{std::wstring title;bool accept=true,found=false;std::exception_ptr error;};
+WrapResetAction* wrap_reset_action=nullptr;
+void CALLBACK wrap_reset_timer(HWND,UINT,UINT_PTR timer,DWORD){
+    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{auto& result=*reinterpret_cast<HWND*>(raw);
+        if(GetDlgItem(candidate,IDYES)&&GetDlgItem(candidate,IDNO)&&wrap_reset_action&&native_text(candidate)==wrap_reset_action->title){result=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    if(!dialog||!wrap_reset_action)return;KillTimer(nullptr,timer);wrap_reset_action->found=true;
+    SendMessageW(dialog,WM_COMMAND,wrap_reset_action->accept?IDYES:IDNO,0);
+}
+void click_wrap_reset(ScopedFixture& fixture,int id,bool accept=true){
+    WrapResetAction action;action.title=native_text(fixture.control(id));action.accept=accept;wrap_reset_action=&action;
+    const auto timer=SetTimer(nullptr,0,20,wrap_reset_timer);check(timer!=0,"Cannot schedule the real wrap-reset confirmation");
+    fixture.click(id);KillTimer(nullptr,timer);wrap_reset_action=nullptr;
+    check(action.found,"Resetting all course wrap exceptions omitted the confirmation dialog");
+}
 void scoped_tests(){
     using namespace lgaed;using namespace presentation;
     state::StateData seed;seed.preferences["learning_progress"]["student_answer"]=std::string("immutable answer");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
@@ -97,7 +115,7 @@ void appearance_tests(){
         global.click(5123);check(reader_theme::appearance_accent(global.data)==RGB(41,42,43)&&reader_theme::appearance_accent(global.data,"programming")==RGB(1,2,3)&&reader_theme::appearance_accent(global.data,"math_physics")==RGB(61,62,63),"Colour transaction lost new protection or explicit route priority");
         check(!IsWindowEnabled(global.control(5123))&&!(GetWindowLongPtrW(global.control(5123),GWL_STYLE)&WS_VISIBLE),"Save remained visible after colour commit");
         check(global.data.preferences["learning_progress"]==progress&&global.data.preferences["cpp_lesson_drafts"]==drafts,"Appearance changed student data");seed=global.data;
-        global.click(5133);check(appearance::allows_global_wrap(global.data,"course_a")&&!appearance::allows_global_wrap(global.data,"outside_programming"),"Reset wrapping changed another scope");}
+        click_wrap_reset(global,5133);check(appearance::allows_global_wrap(global.data,"course_a")&&!appearance::allows_global_wrap(global.data,"outside_programming"),"Reset wrapping changed another scope");}
     {ScopedFixture lesson(SettingsScope::lesson,seed);lesson.has(5123,false);lesson.toggle(5122,true);check(!IsWindowEnabled(lesson.control(5120)),"Inherited course size stayed editable");
         lesson.toggle(5122,false);lesson.scale(135);lesson.toggle(5124,true);
         check(appearance::text_scale(lesson.data,"course_a")==135&&appearance::global_text_scale(lesson.data)==125&&appearance::allows_global_wrap(lesson.data,"course_a"),"Course appearance did not apply live in its own scope");
@@ -112,7 +130,8 @@ void math_wrap_reset_tests(){
         appearance::save_course_wrap(seed,course,true);appearance::save_wrap_overwrite(seed,course,false);}
     ScopedFixture global(SettingsScope::global,seed);global.has(5133,true);global.has(5137,true);
     check(global.data==seed&&global.updates==0,"Opening global route wrap controls wrote preferences");
-    global.click(5137);
+    click_wrap_reset(global,5137,false);check(global.data==seed&&global.updates==0,"Cancelling wrap reset modified course exceptions or protected user data");
+    click_wrap_reset(global,5137);
     auto expected=seed;
     for(const auto course:{std::string("math_a"),std::string("math_b")}){
         expected.preferences["code_wrap_settings"]["course_wrap_"+course]=false;
@@ -181,6 +200,39 @@ struct ComboMetrics{int selection=0,list=0,height=0,client=0,item=0,dpi=96,font_
 LOGFONTW control_font(HWND control){LOGFONTW value{};const auto font=reinterpret_cast<HFONT>(SendMessageW(control,WM_GETFONT,0,0));check(font&&GetObjectW(font,sizeof(value),&value),"Settings control has no measurable native font");return value;}
 HWND child_with_caption(HWND parent,std::wstring_view caption){for(auto child=GetWindow(parent,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT))if(native_text(child)==caption)return child;return nullptr;}
 RECT relative_rect(HWND child,HWND parent){RECT value{};GetWindowRect(child,&value);MapWindowPoints(nullptr,parent,reinterpret_cast<POINT*>(&value),2);return value;}
+int reveal_control(HWND view,HWND target){
+    // Position setup through the same native wheel path, without animating a
+    // journey through every preceding control in an unrelated visual test.
+    for(int count=0;count<8;++count){const auto control=relative_rect(target,view);RECT viewport{};GetClientRect(view,&viewport);
+        if(control.top>=0&&control.bottom<=viewport.bottom)return count;
+        const auto target_top=std::max<LONG>(0,(viewport.bottom-(control.bottom-control.top))/2);
+        int wheel_delta=std::clamp(-MulDiv(control.top-target_top,WHEEL_DELTA,MulDiv(48,GetDpiForWindow(view),96)),-32760,32760);
+        if(wheel_delta==0)wheel_delta=control.top>target_top?-1:1;
+        SendMessageW(view,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(static_cast<SHORT>(wheel_delta))),0);}
+    check(false,"The native wheel setup did not reveal the entire real Settings control");return 0;
+}
+LRESULT CALLBACK measurement_probe(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){
+    if(message==WM_GETTEXT||message==WM_GETTEXTLENGTH)++*reinterpret_cast<int*>(raw);return DefSubclassProc(window,message,wp,lp);
+}
+class ChildGeometryProbe{
+    struct Item{HWND window;RECT bounds;LONG_PTR style,extended_style;int id,position_changes=0;};
+    HWND parent_;std::vector<Item> items_;
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR raw){if(message==WM_WINDOWPOSCHANGED)++reinterpret_cast<Item*>(raw)->position_changes;return DefSubclassProc(window,message,wp,lp);}
+public:
+    explicit ChildGeometryProbe(HWND parent):parent_(parent){
+        for(auto child=GetWindow(parent,GW_CHILD);child;child=GetWindow(child,GW_HWNDNEXT))items_.push_back({child,relative_rect(child,parent),GetWindowLongPtrW(child,GWL_STYLE),GetWindowLongPtrW(child,GWL_EXSTYLE),GetDlgCtrlID(child)});
+        for(auto& item:items_)check(SetWindowSubclass(item.window,proc,2,reinterpret_cast<DWORD_PTR>(&item))!=FALSE,"Cannot observe the actual Settings child layout");
+    }
+    ~ChildGeometryProbe(){for(const auto& item:items_)if(IsWindow(item.window))RemoveWindowSubclass(item.window,proc,2);}
+    void verify_shift(LONG delta)const{auto child=GetWindow(parent_,GW_CHILD);int observed=0;
+        for(const auto& item:items_){check(child==item.window&&GetParent(child)==parent_&&GetDlgCtrlID(child)==item.id,"Scrolling changed a Settings HWND, identity or sibling order");child=GetWindow(child,GW_HWNDNEXT);
+            check(GetWindowLongPtrW(item.window,GWL_STYLE)==item.style&&GetWindowLongPtrW(item.window,GWL_EXSTYLE)==item.extended_style,"Scrolling changed a Settings control's styles");
+            if(!(item.style&WS_VISIBLE))continue;const auto bounds=relative_rect(item.window,parent_);
+            check(bounds.left==item.bounds.left&&bounds.right==item.bounds.right&&bounds.top==item.bounds.top+delta&&bounds.bottom==item.bounds.bottom+delta,"A grouped native scroll changed a control's measured size or relative placement");
+            check(item.position_changes==1,"A grouped scroll positioned the same unchanged Settings child more than once");++observed;}
+        check(!child&&observed>20,"The grouped layout fixture did not observe the complete real Settings controls");
+    }
+};
 void settings_presentation_tests(){
     using namespace lgaed;using namespace presentation;state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");
     ScopedFixture fixture(SettingsScope::global,seed);const int dpi=static_cast<int>(GetDpiForWindow(fixture.view));const auto px=[dpi](int value){return MulDiv(value,dpi,96);};
@@ -191,10 +243,14 @@ void settings_presentation_tests(){
         check(reader_theme::foreground(subtitle)==RGB(174,180,190),"Options subtitle lost its Android secondary ink");
         const auto section_description=child_with_caption(fixture.view,L"Selecciona el idioma de la aplicación, el contenido y la narración.");
         const auto card_description=child_with_caption(fixture.view,L"Comprobaciones ilimitadas, sin consumir corazones.");
-        const auto narration_label=child_with_caption(fixture.view,L"Motor de voz");
+        const auto narration_button=fixture.control(5104);
         check(section_description&&reader_theme::foreground(section_description)==RGB(174,180,190),"A section description uses the muted card-body ink");
         check(card_description&&reader_theme::foreground(card_description)==RGB(143,149,159),"A card description lost its Android muted ink");
-        check(narration_label&&reader_theme::foreground(narration_label)==RGB(210,214,220),"Narration fields lost their Android text ink");
+        check(narration_button&&native_text(narration_button)==L"Motor: Kokoro","The narration engine is not the original action with its effective selection");
+        RECT button_bounds{};GetClientRect(narration_button,&button_bounds);const auto source=GetDC(narration_button),memory=CreateCompatibleDC(source);const auto image=CreateCompatibleBitmap(source,button_bounds.right,button_bounds.bottom);ReleaseDC(narration_button,source);
+        check(memory&&image,"Cannot capture the real narration action");const auto previous=SelectObject(memory,image);DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=5104;draw.itemAction=ODA_DRAWENTIRE;draw.hwndItem=narration_button;draw.hDC=memory;draw.rcItem=button_bounds;
+        const auto painted=SendMessageW(fixture.view,WM_DRAWITEM,5104,reinterpret_cast<LPARAM>(&draw));const auto fill=GetPixel(memory,button_bounds.right/2,px(8));SelectObject(memory,previous);DeleteObject(image);DeleteDC(memory);
+        check(painted&&fill==reader_theme::palette(fixture.view).accent,"Narration selection lost Android's real accent-filled action style");
     }
     SetWindowTextW(title,L"Título del contenido con una segunda parte");
     const auto title_font=control_font(title),subtitle_font=control_font(subtitle),section_font=control_font(section),button_font=control_font(fixture.control(5123));
@@ -213,6 +269,15 @@ void settings_presentation_tests(){
         if(!IsWindowEnabled(fixture.control(5123)))fixture.toggle(5128,!fixture.checked(5128));const auto save=relative_rect(fixture.control(5123),fixture.view);check(save.bottom-save.top>=px(62),"Primary settings action is shorter than the reference62 DIP minimum");
     }
     check(narrow_title_height>wide_title_height,"The settings title did not grow naturally on the narrow viewport");
+    int measurement_reads=0;check(SetWindowSubclass(title,measurement_probe,1,reinterpret_cast<DWORD_PTR>(&measurement_reads))!=FALSE,"Cannot observe the real text measurement boundary");
+    SendMessageW(fixture.view,WM_SIZE,0,0);check(measurement_reads>0,"Settings size changes did not measure the current title");measurement_reads=0;
+    const auto old_title=relative_rect(title,fixture.view);{
+    ChildGeometryProbe children(fixture.view);SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);const auto scrolled_title=relative_rect(title,fixture.view);children.verify_shift(scrolled_title.top-old_title.top);
+    check(measurement_reads==0&&scrolled_title.top<old_title.top&&scrolled_title.bottom-scrolled_title.top==old_title.bottom-old_title.top,"A pure scroll remeasured every Settings row or changed its text geometry");
+    LONG previous_top=scrolled_title.top;for(int count=0;count<3;++count){SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);const auto current=relative_rect(title,fixture.view);check(current.top<previous_top&&current.bottom-current.top==old_title.bottom-old_title.top,"Repeated native line scrolling lost direction or stable text geometry");previous_top=current.top;}
+    for(int count=0;count<4;++count)SendMessageW(fixture.view,WM_VSCROLL,SB_LINEUP,0);
+    check(measurement_reads==0&&relative_rect(title,fixture.view).top==old_title.top,"Reverse native line scrolling lost its position or remeasured unchanged text");}
+    RemoveWindowSubclass(title,measurement_probe,1);
     MoveWindow(fixture.view,0,0,px(360),px(520),TRUE);pump();const auto combo=fixture.control(5101);
     for(int count=0;count<200;++count){const auto bounds=relative_rect(combo,fixture.view);RECT client{};GetClientRect(fixture.view,&client);if(bounds.top>=px(18)+1&&bounds.bottom<=client.bottom-px(18)-1)break;SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);}
     const auto bounds=relative_rect(combo,fixture.view);RECT client{};GetClientRect(fixture.view,&client);
@@ -252,6 +317,112 @@ void settings_presentation_tests(){
     check(fixture.data==seed&&fixture.updates==0,"Settings presentation changed preferences or student data");
     std::cout<<"PASS native settings presentation: reference font hierarchy, padded selector cards, minimum actions and responsive text growth\n";
 }
+void settings_dpi_notice_tests(){
+    using namespace lgaed;using namespace presentation;state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    ScopedFixture fixture(SettingsScope::global,seed);fixture.toggle(5128,false);fixture.scale(125);const auto before=fixture.data;
+    const auto title=child_with_caption(fixture.view,L"Título del contenido"),language=fixture.control(5101);const auto old_font=SendMessageW(title,WM_GETFONT,0,0);
+    SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);SCROLLINFO prior_scroll{sizeof(prior_scroll),SIF_POS};GetScrollInfo(fixture.view,SB_VERT,&prior_scroll);
+    SendMessageW(fixture.view,WM_DPICHANGED_AFTERPARENT,0,0);const auto face=control_font(title);SCROLLINFO after_scroll{sizeof(after_scroll),SIF_POS};GetScrollInfo(fixture.view,SB_VERT,&after_scroll);
+    check(SendMessageW(title,WM_GETFONT,0,0)!=old_font&&-face.lfHeight==MulDiv(32,GetDpiForWindow(fixture.view),96),"Settings kept the old font after a parent DPI notification");
+    check(fixture.control(5101)==language&&fixture.data==before&&prior_scroll.nPos==after_scroll.nPos&&!fixture.checked(5128)&&IsWindowEnabled(fixture.control(5123)),"DPI refresh replaced controls, lost buffered colours/scroll or modified preferences");
+    const auto popup_text=L"Aviso breve de prueba con tipografía escalada";show_settings_notice(fixture.host,"Aviso breve de prueba con tipografía escalada");HWND popup=nullptr;
+    EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{if(native_text(candidate)==L"Aviso breve de prueba con tipografía escalada"){*reinterpret_cast<HWND*>(raw)=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&popup));
+    check(popup&&native_text(popup)==popup_text,"The informational notice did not open its real transient window");const auto notice=control_font(popup);
+    check(_wcsicmp(notice.lfFaceName,L"Roboto")==0&&-notice.lfHeight==MulDiv(16,GetDpiForWindow(popup),96),"The brief notice still uses an unscaled Windows stock font");
+    check((GetWindowLongPtrW(popup,GWL_EXSTYLE)&WS_EX_NOACTIVATE)!=0,"Giving the notice a font made it take keyboard focus");DestroyWindow(popup);
+    const std::array<const char*,3> locales{"es","en","fr"};const std::array<const wchar_t*,3> messages{L"Excepciones de Programación restablecidas",L"Programming Exceptions Reset",L"Exceptions de programmation réinitialisées"};
+    for(std::size_t index=0;index<locales.size();++index){auto localized=seed;localized.preferences["native_windows"]["ui_language"]=std::string(locales[index]);ScopedFixture options(SettingsScope::global,localized);
+        click_wrap_reset(options,5133,false);check(options.data==localized,"Cancelling localized reset changed settings");click_wrap_reset(options,5133);HWND success=nullptr;
+        struct Search{std::wstring_view text;HWND* output;} search{messages[index],&success};EnumThreadWindows(GetCurrentThreadId(),[](HWND candidate,LPARAM raw)->BOOL{auto& query=*reinterpret_cast<Search*>(raw);if(native_text(candidate)==query.text){*query.output=candidate;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));
+        check(success!=nullptr,"Confirmed reset omitted its translated nonblocking success notice");DestroyWindow(success);}
+    std::cout<<"PASS Settings DPI notification/font recreation with retained handles/state/drafts/scroll and real scaled nonactivating notices; ES/EN/FR reset Cancel/confirm/success\n";
+}
+void rgb_options_tests(){
+    using namespace lgaed;using namespace presentation;
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");
+    seed.preferences["learning_progress"]["answer"]=std::string("conservar exactamente");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    seed.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("ef_santa");
+    auto& accents=seed.preferences["appearance_settings"];
+    const std::array<std::string,3> routes{"","programming","math_physics"};
+    const std::array<std::string,3> channels{"red","green","blue"};
+    const auto key=[](std::string_view route,std::string_view channel,bool defaults){
+        return defaults?(route.empty()?"default_global_accent_"+std::string(channel):"default_route_accent_"+std::string(channel)+"_"+std::string(route)):
+            route.empty()?"accent_"+std::string(channel):"route_accent_"+std::string(channel)+"_"+std::string(route);};
+    for(std::size_t index=0;index<routes.size();++index)for(std::size_t channel=0;channel<channels.size();++channel){
+        accents[key(routes[index],channels[channel],false)]=static_cast<std::int64_t>(10+index*30+channel*10);
+        accents[key(routes[index],channels[channel],true)]=static_cast<std::int64_t>(1+index*3+channel);}
+    accents["route_allow_global_accent_overwrite_programming"]=true;accents["route_allow_global_accent_overwrite_math_physics"]=true;
+    ScopedFixture fixture(SettingsScope::global,seed);const auto px=[dpi=static_cast<int>(GetDpiForWindow(fixture.view))](int value){return MulDiv(value,dpi,96);};
+    const auto edit=[&](int id,const wchar_t* text){check(fixture.control(id)!=nullptr,"A real RGB field is missing");SetWindowTextW(fixture.control(id),text);};
+    for(int index=0;index<9;++index){const auto slider=fixture.control(5700+index),field=fixture.control(5720+index),defaults=fixture.control(5760+index);
+        check(slider&&field&&defaults&&SendMessageW(slider,TBM_GETRANGEMIN,0,0)==0&&SendMessageW(slider,TBM_GETRANGEMAX,0,0)==255,"Options omitted an original RGB slider/manual/default field or changed its0–255 range");
+        check(native_text(field)==std::to_wstring(10+(index/3)*30+(index%3)*10)&&native_text(defaults)==std::to_wstring(1+index),"Opening RGB controls did not load the nine current values and nine independent defaults");
+        const auto bounds=relative_rect(field,fixture.view),default_bounds=relative_rect(defaults,fixture.view);
+        check(bounds.bottom-bounds.top==px(52)&&default_bounds.bottom-default_bounds.top==px(52),"RGB manual fields lost their Android52 DIP height");
+        if(index%3){const auto previous=relative_rect(fixture.control(5720+index-1),fixture.view),previous_default=relative_rect(fixture.control(5760+index-1),fixture.view);
+            check(bounds.top==previous.top&&bounds.left>=previous.right+px(8)&&default_bounds.top==previous_default.top&&default_bounds.left>=previous_default.right+px(8),"RGB fields are not three aligned nonoverlapping columns");}}
+    for(int index=0;index<3;++index){const auto preview=fixture.control(5125+index);wchar_t name[32]{};GetClassNameW(preview,name,32);
+        check(_wcsicmp(name,L"STATIC")==0&&(GetWindowLongPtrW(preview,GWL_STYLE)&SS_TYPEMASK)==SS_OWNERDRAW,"The inline RGB preview became an extra colour-picker button");
+        check(native_text(fixture.control(5130+index))==L"Cargar color predeterminado","The original Load Default Color action is missing");
+        if(!reader_theme::palette(fixture.view).high_contrast)check(reader_theme::background(fixture.control(5780+index))==RGB(24,25,29)&&reader_theme::background(fixture.control(5760+index*3))==RGB(24,25,29),"Default RGB values lost their nested Android card surface");}
+    check(fixture.data==seed&&fixture.updates==0,"Opening RGB controls applied colour drafts");
+    edit(5720,L"");for(const wchar_t digit:std::wstring_view(L"123"))SendMessageW(fixture.control(5720),WM_CHAR,digit,1);
+    DWORD selection_start=0,selection_end=0;SendMessageW(fixture.control(5720),EM_GETSEL,reinterpret_cast<WPARAM>(&selection_start),reinterpret_cast<LPARAM>(&selection_end));
+    check(native_text(fixture.control(5720))==L"123"&&selection_start==3&&selection_end==3&&SendMessageW(fixture.control(5700),TBM_GETPOS,0,0)==123&&native_text(fixture.control(5740))==L"Rojo · 123","Manual RGB input did not synchronize its slider/label or preserve the typing cursor");
+    edit(5721,L"999");check(native_text(fixture.control(5721))==L"255"&&SendMessageW(fixture.control(5701),TBM_GETPOS,0,0)==255,"Out-of-range RGB input did not clamp to255");
+    edit(5722,L"12x");check(native_text(fixture.control(5722))==L"12x"&&!IsWindowEnabled(fixture.control(5123))&&(GetWindowLongPtrW(fixture.control(5123),GWL_STYLE)&WS_VISIBLE),"An invalid RGB draft was silently erased or allowed Save");
+    SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(5123,BN_CLICKED),reinterpret_cast<LPARAM>(fixture.control(5123)));
+    check(fixture.data==seed&&fixture.updates==0,"A direct Save command persisted invalid RGB values");
+    SendMessageW(fixture.view,WM_DPICHANGED_AFTERPARENT,0,0);check(native_text(fixture.control(5722))==L"12x"&&fixture.data==seed,"DPI refresh discarded an unfinished RGB field or applied colour drafts");
+    edit(5722,L"42");edit(5723,L"227");edit(5724,L"87");edit(5725,L"99");edit(5760,L"200");fixture.toggle(5129,false);
+    check(fixture.data==seed&&fixture.updates==0,"RGB or default/protection edits were persisted before Save");
+    fixture.click(5123);auto expected=seed;
+    const std::array<COLORREF,3> expected_colors{RGB(123,255,42),RGB(227,87,99),RGB(70,80,90)};
+    for(std::size_t index=0;index<routes.size();++index){const auto color=expected_colors[index];const std::array<int,3> values{GetRValue(color),GetGValue(color),GetBValue(color)};
+        for(std::size_t channel=0;channel<channels.size();++channel)expected.preferences["appearance_settings"][key(routes[index],channels[channel],false)]=static_cast<std::int64_t>(values[channel]);}
+    expected.preferences["appearance_settings"]["route_allow_global_accent_overwrite_math_physics"]=false;
+    expected.preferences["appearance_settings"]["default_global_accent_red"]=std::int64_t{200};
+    check(fixture.updates==1&&fixture.changes==1&&fixture.data==expected,"RGB Save did not make one exact transaction with explicit route priority, protection and preserved student data");
+    for(int index=0;index<9;++index){const auto text=std::to_wstring(11+(index/3)*10+index%3);edit(5760+index,text.c_str());}
+    check(fixture.data==expected,"Editing default values immediately changed the application colours");fixture.click(5123);
+    for(std::size_t index=0;index<routes.size();++index)for(std::size_t channel=0;channel<channels.size();++channel)
+        expected.preferences["appearance_settings"][key(routes[index],channels[channel],true)]=static_cast<std::int64_t>(11+index*10+channel);
+    check(fixture.updates==2&&fixture.data==expected,"Saving all nine defaults changed the selected colours or unrelated state");
+    for(int index=0;index<3;++index)fixture.click(5130+index);
+    for(int index=0;index<9;++index)check(native_text(fixture.control(5720+index))==std::to_wstring(11+(index/3)*10+index%3)&&SendMessageW(fixture.control(5700+index),TBM_GETPOS,0,0)==11+(index/3)*10+index%3,"Load Default Color did not copy its three pending values into the manual fields and sliders");
+    check(fixture.data==expected&&fixture.updates==2,"Loading RGB defaults applied them before Save");
+    edit(5768,L"");fixture.data.preferences["native_windows"]["ui_language"]=std::string("fr");const auto localized=fixture.data;
+    refresh_settings_language(fixture.view);pump();
+    check(native_text(fixture.control(5768)).empty()&&!IsWindowEnabled(fixture.control(5123))&&native_text(fixture.control(5740))==L"Rouge · 11"&&native_text(fixture.control(5130))==L"Charger la couleur par défaut"&&fixture.data==localized,"Changing interface language lost RGB drafts, applied them or omitted original French labels");
+    fixture.click(5100);check(fixture.closed==1&&fixture.data==localized&&fixture.updates==2,"Leaving without Save committed an unfinished RGB/default draft");
+    {ScopedFixture reopened(SettingsScope::global,localized);check(native_text(reopened.control(5720))==L"123"&&native_text(reopened.control(5768))==L"33"&&!IsWindowEnabled(reopened.control(5123)),"Cancelled RGB defaults leaked into the reopened Settings window");}
+    std::cout<<"PASS inline RGB parity: nine sliders/current fields/defaults, aligned nested cards, typing cursor, invalid input, DPI/language-preserved drafts, one scoped Save, Load and Cancel\n";
+}
+void slider_pointer_tests(){
+    using namespace lgaed;using namespace presentation;state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");
+    seed.preferences["learning_progress"]["answer"]=std::string("respuesta intacta");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+    appearance::save_global_text_scale(seed,100);ScopedFixture fixture(SettingsScope::global,seed);
+    ShowWindow(fixture.host,SW_SHOW);SetForegroundWindow(fixture.host);pump();const auto slider=fixture.control(5120);reveal_control(fixture.view,slider);
+    const auto geometry=[](HWND target){RECT channel{},thumb{};SendMessageW(target,TBM_GETCHANNELRECT,0,reinterpret_cast<LPARAM>(&channel));SendMessageW(target,TBM_GETTHUMBRECT,0,reinterpret_cast<LPARAM>(&thumb));return std::pair{channel,(thumb.top+thumb.bottom)/2};};
+    const auto click=[&](HWND target,int x,int y){SendMessageW(target,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(x,y));check(GetFocus()==target&&GetCapture()==target,"A Settings pointer press did not preserve native slider focus and capture");SendMessageW(target,WM_LBUTTONUP,0,MAKELPARAM(x,y));pump();check(GetCapture()!=target,"A Settings pointer release retained the drag capture");};
+    auto [channel,y]=geometry(slider);check(channel.right>channel.left,"The real Settings slider has no measurable channel");
+    click(slider,channel.right,y);check(SendMessageW(slider,TBM_GETPOS,0,0)==150&&appearance::global_text_scale(fixture.data)==150&&fixture.changes>0,"Clicking the slider's right endpoint stepped by page size instead of selecting and saving150 percent");
+    click(slider,(channel.left+channel.right)/2,y);const auto middle=static_cast<int>(SendMessageW(slider,TBM_GETPOS,0,0));
+    check(middle>=112&&middle<=113&&appearance::global_text_scale(fixture.data)==middle,"Clicking the middle did not select its real range position and persist it live");
+    SendMessageW(slider,WM_KEYDOWN,VK_LEFT,0);SendMessageW(slider,WM_KEYUP,VK_LEFT,0);
+    check(SendMessageW(slider,TBM_GETPOS,0,0)==middle-1&&appearance::global_text_scale(fixture.data)==middle-1,"Pointer parity changed the slider's native one-step keyboard behavior");
+    SendMessageW(slider,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(channel.left,y));check(SendMessageW(slider,TBM_GETPOS,0,0)==75&&GetCapture()==slider,"Pressing the left endpoint did not start a native drag at75 percent");
+    SendMessageW(slider,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(channel.right,y));check(SendMessageW(slider,TBM_GETPOS,0,0)==150&&appearance::global_text_scale(fixture.data)==150,"Dragging a jumped thumb did not continue to its real pointer position");
+    SendMessageW(slider,WM_LBUTTONUP,0,MAKELPARAM(channel.right,y));check(GetCapture()!=slider,"Finishing the native Settings drag did not release capture");
+    const auto rgb=fixture.control(5700);reveal_control(fixture.view,rgb);std::tie(channel,y)=geometry(rgb);const auto before=fixture.data;
+    click(rgb,channel.right,y);check(SendMessageW(rgb,TBM_GETPOS,0,0)==255&&native_text(fixture.control(5720))==L"255"&&native_text(fixture.control(5740))==L"Rojo · 255"&&fixture.data==before&&IsWindowEnabled(fixture.control(5123)),"A real RGB pointer selection lost its manual/label mapping or escaped deferred Save");
+    fixture.click(5123);check(GetRValue(reader_theme::appearance_accent(fixture.data))==255,"Saving a pointer-selected RGB value did not persist the selected channel");
+    check(fixture.data.preferences["learning_progress"]==seed.preferences["learning_progress"]&&fixture.data.preferences["cpp_lesson_drafts"]==seed.preferences["cpp_lesson_drafts"],"Settings slider gestures changed protected student data or whitespace");
+    ScopedFixture inherited(SettingsScope::lesson,seed);const auto disabled=inherited.control(5120);check(!IsWindowEnabled(disabled),"The inherited course-size fixture is unexpectedly editable");
+    const auto disabled_value=SendMessageW(disabled,TBM_GETPOS,0,0);std::tie(channel,y)=geometry(disabled);SendMessageW(disabled,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(channel.right,y));
+    check(SendMessageW(disabled,TBM_GETPOS,0,0)==disabled_value&&inherited.data==seed&&GetCapture()!=disabled,"A raw pointer press bypassed a disabled inherited Settings control");
+    std::cout<<"PASS Settings real pointer endpoints/midpoint/native drag and keyboard; live scale callbacks, deferred RGB Save, disabled inheritance and protected data\n";
+}
 ComboMetrics combo_metrics(HWND combo,const char* phase){
     ComboMetrics value;RECT bounds{},client{};GetWindowRect(combo,&bounds);GetClientRect(combo,&client);
     COMBOBOXINFO info{sizeof(info)};check(GetComboBoxInfo(combo,&info)!=FALSE,"Cannot inspect native combo selection rectangle");
@@ -264,18 +435,36 @@ ComboMetrics combo_metrics(HWND combo,const char* phase){
         <<" window="<<value.height<<" client="<<value.client<<" item="<<value.item<<" font="<<value.font_height<<'\n';
     return value;
 }
+class PixelCapture{
+    HBITMAP bitmap_=nullptr;HGDIOBJ previous_=nullptr;std::uint32_t* pixels_=nullptr;int width_=0,height_=0;
+public:
+    HDC dc=nullptr;
+    PixelCapture(HDC source,int width,int height):width_(width),height_(height){
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=width;info.bmiHeader.biHeight=-height;
+        info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        void* pixels=nullptr;dc=CreateCompatibleDC(source);bitmap_=CreateDIBSection(source,&info,DIB_RGB_COLORS,&pixels,nullptr,0);pixels_=static_cast<std::uint32_t*>(pixels);
+        if(!dc||!bitmap_||!pixels_){if(bitmap_)DeleteObject(bitmap_);if(dc)DeleteDC(dc);throw std::runtime_error("Cannot create the exact Settings pixel snapshot");}
+        previous_=SelectObject(dc,bitmap_);
+    }
+    ~PixelCapture(){SelectObject(dc,previous_);DeleteObject(bitmap_);DeleteDC(dc);}
+    PixelCapture(const PixelCapture&)=delete;PixelCapture& operator=(const PixelCapture&)=delete;
+    COLORREF pixel(int x,int y)const{if(x<0||x>=width_||y<0||y>=height_)return CLR_INVALID;const auto pixel=pixels_[static_cast<std::size_t>(y)*width_+x];return RGB((pixel>>16)&255,(pixel>>8)&255,pixel&255);}
+};
 bool checkbox_metrics(HWND checkbox,const char* phase,bool painted=false){
     RECT bounds{};GetClientRect(checkbox,&bounds);const auto dpi=static_cast<int>(GetDpiForWindow(checkbox));
-    const auto screen=GetDC(checkbox);const auto dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,bounds.right,bounds.bottom);
-    ReleaseDC(checkbox,screen);check(dc&&bitmap,"Cannot capture native settings checkbox");const auto old=SelectObject(dc,bitmap);
+    const auto screen=GetDC(checkbox);PixelCapture capture(screen,bounds.right,bounds.bottom);ReleaseDC(checkbox,screen);const auto dc=capture.dc;
     const auto background=lgaed::presentation::reader_theme::background(checkbox);const auto fill=CreateSolidBrush(background);FillRect(dc,&bounds,fill);DeleteObject(fill);
     if(painted){const auto rendered=GetDC(checkbox);BitBlt(dc,0,0,bounds.right,bounds.bottom,rendered,0,0,SRCCOPY);ReleaseDC(checkbox,rendered);}
     else SendMessageW(checkbox,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
+    // Complete all GDI drawing once, then inspect the same complete capture in
+    // memory. Per-pixel GetPixel calls synchronize with the display driver and
+    // make these unchanged full-resolution glyph assertions unnecessarily slow.
+    GdiFlush();check(capture.pixel(0,0)==GetPixel(dc,0,0),"The Settings DIB snapshot does not match the native GDI pixel format");
     int min_x=bounds.right,min_y=bounds.bottom,max_x=-1,max_y=-1,pixels=0;
     const auto limit=std::min(static_cast<int>(bounds.right),MulDiv(16,dpi,96));
     const bool right=(GetWindowLongPtrW(checkbox,GWL_STYLE)&BS_RIGHTBUTTON)!=0;
     const int glyph_left=right?std::max(0,static_cast<int>(bounds.right)-limit):0,glyph_right=right?static_cast<int>(bounds.right):limit;
-    for(int y=0;y<bounds.bottom;++y)for(int x=glyph_left;x<glyph_right;++x){const auto color=GetPixel(dc,x,y);
+    for(int y=0;y<bounds.bottom;++y)for(int x=glyph_left;x<glyph_right;++x){const auto color=capture.pixel(x,y);
         const int contrast=std::max({std::abs(static_cast<int>(GetRValue(color))-GetRValue(background)),
             std::abs(static_cast<int>(GetGValue(color))-GetGValue(background)),std::abs(static_cast<int>(GetBValue(color))-GetBValue(background))});
         if(color!=CLR_INVALID&&contrast>=60){++pixels;min_x=std::min(min_x,x);max_x=std::max(max_x,x);min_y=std::min(min_y,y);max_y=std::max(max_y,y);}}
@@ -283,14 +472,15 @@ bool checkbox_metrics(HWND checkbox,const char* phase,bool painted=false){
     std::cout<<"METRIC settings checkbox "<<phase<<": dpi="<<dpi<<" control="<<bounds.right<<'x'<<bounds.bottom
         <<" type="<<(GetWindowLongPtrW(checkbox,GWL_STYLE)&BS_TYPEMASK)<<" check="<<SendMessageW(checkbox,BM_GETCHECK,0,0)
         <<" glyph-first16dip="<<glyph_width<<'x'<<glyph_height<<" legible-pixels="<<pixels<<'\n';
-    SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);
     return glyph_width>=MulDiv(8,dpi,96)&&glyph_height>=MulDiv(8,dpi,96);
 }
 void visual_metrics_tests(){
     ScopedFixture fixture(lgaed::presentation::SettingsScope::global);const auto combo=fixture.control(5101);
     const auto initial=combo_metrics(combo,"after-open");checkbox_metrics(fixture.control(5103),"hidden-print");
-    for(int count=0;count<200;++count){RECT control{},viewport{};GetWindowRect(fixture.control(5103),&control);MapWindowPoints(nullptr,fixture.view,reinterpret_cast<POINT*>(&control),2);GetClientRect(fixture.view,&viewport);
-        if(control.top>=0&&control.bottom<=viewport.bottom)break;SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);}
+    const auto scroll_count=reveal_control(fixture.view,fixture.control(5103));
+    const auto visible_checkbox=relative_rect(fixture.control(5103),fixture.view);RECT viewport{};GetClientRect(fixture.view,&viewport);
+    check(visible_checkbox.top>=0&&visible_checkbox.bottom<=viewport.bottom,"The native wheel setup did not reveal the entire real narration checkbox");
+    std::cout<<"METRIC visual_metrics setup_scroll_count="<<scroll_count<<'\n';
     SetWindowPos(fixture.host,HWND_TOP,0,0,1000,750,SWP_NOACTIVATE|SWP_SHOWWINDOW);pump();
     RedrawWindow(fixture.host,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN);
     checkbox_metrics(fixture.control(5103),"visible-print");const bool checked_legible=checkbox_metrics(fixture.control(5103),"visible-painted",true);
@@ -402,15 +592,16 @@ struct LanguageAction {int selected=0,choose=-1;bool found=false;std::wstring ti
 LanguageAction* language_action=nullptr;
 void CALLBACK language_timer(HWND,UINT,UINT_PTR timer,DWORD){
     HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND target,LPARAM context)->BOOL{
-        wchar_t name[40]{};GetClassNameW(target,name,40);if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,8350)){*reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+        wchar_t name[40]{};GetClassNameW(target,name,40);if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,8349)){*reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
     if(!dialog||!language_action)return;KillTimer(nullptr,timer);auto& action=*language_action;action.found=true;
     try{
         check(native_text(dialog)==action.title,"The header language chooser title does not match the selected UI language");
-        check(native_text(GetDlgItem(dialog,8350))==action.automatic,"The header omitted Android's automatic device-language choice");
-        for(int index=0;index<4;++index){const auto control=GetDlgItem(dialog,8350+index);check(control!=nullptr,"The header language chooser omitted one of its original choices");
+        const auto viewport=GetDlgItem(dialog,8349);check(viewport!=nullptr,"The reusable language chooser omitted its viewport");
+        check(native_text(GetDlgItem(viewport,8350))==action.automatic,"The header omitted Android's automatic device-language choice");
+        for(int index=0;index<4;++index){const auto control=GetDlgItem(viewport,8350+index);check(control!=nullptr,"The header language chooser omitted one of its original choices");
             check((SendMessageW(control,BM_GETCHECK,0,0)==BST_CHECKED)==(index==action.selected),"The header language chooser changed or lost the saved selection");}
-        check(GetDlgItem(dialog,8354)==nullptr,"The header language chooser invented another curriculum language");
-        if(action.choose>=0)SendMessageW(GetDlgItem(dialog,8350+action.choose),BM_CLICK,0,0);else SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);
+        check(GetDlgItem(viewport,8354)==nullptr,"The header language chooser invented another curriculum language");
+        if(action.choose>=0)SendMessageW(GetDlgItem(viewport,8350+action.choose),BM_CLICK,0,0);else SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);
     }catch(...){action.error=std::current_exception();SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);}
 }
 void header_language_tests(){
@@ -433,6 +624,73 @@ void header_language_tests(){
     }
     DestroyWindow(host);std::cout<<"PASS Android-compatible header language chooser: automatic/es/en/fr, ES/EN/FR titles, exact selection, Cancel and independent narration/content\n";
 }
+struct NarrationChoiceAction{int selected=0,choose=-1,count=4;bool found=false,revealed=false;std::wstring title;std::vector<std::wstring> labels;std::exception_ptr error;};
+NarrationChoiceAction* narration_choice_action=nullptr;
+void CALLBACK narration_choice_timer(HWND,UINT,UINT_PTR timer,DWORD){
+    HWND dialog=nullptr;EnumThreadWindows(GetCurrentThreadId(),[](HWND target,LPARAM context)->BOOL{wchar_t name[40]{};GetClassNameW(target,name,40);
+        if(std::wstring_view(name)==L"#32770"&&GetDlgItem(target,8349)){*reinterpret_cast<HWND*>(context)=target;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&dialog));
+    if(!dialog||!narration_choice_action)return;KillTimer(nullptr,timer);auto& action=*narration_choice_action;action.found=true;
+    try{check(native_text(dialog)==action.title,"Narration selector dialog omitted its Android title");const auto viewport=GetDlgItem(dialog,8349);
+        for(int index=0;index<action.count;++index){const auto choice=GetDlgItem(viewport,8350+index);check(choice!=nullptr,"Narration chooser omitted a valid original voice or language");
+            if(!action.labels.empty())check(static_cast<std::size_t>(index)<action.labels.size()&&native_text(choice)==action.labels[index],"The narration chooser changed an original voice name or stable identifier");
+            check((SendMessageW(choice,BM_GETCHECK,0,0)==BST_CHECKED)==(index==action.selected),"Narration chooser lost the effective saved choice");}
+        check(!GetDlgItem(viewport,8350+action.count),"Narration chooser added a fabricated voice or language");
+        const auto last=GetDlgItem(viewport,8350+action.count-1);SetFocus(last);const auto bounds=relative_rect(last,viewport);RECT area{};GetClientRect(viewport,&area);
+        std::cout<<"METRIC narration chooser count="<<action.count<<" selected="<<action.selected<<" choose="<<action.choose
+            <<" alive="<<IsWindow(dialog)<<" focus="<<GetDlgCtrlID(GetFocus())<<" last="<<GetDlgCtrlID(last)
+            <<" row="<<bounds.top<<','<<bounds.bottom<<" viewport="<<area.bottom<<" dpi="<<GetDpiForWindow(viewport)<<'\n';
+        check(IsWindow(dialog)&&SendMessageW(GetDlgItem(viewport,8350+action.selected),BM_GETCHECK,0,0)==BST_CHECKED,
+            "Giving a narration choice keyboard focus committed a false selection or closed the dialog");
+        action.revealed=GetFocus()==last&&bounds.top>=0&&bounds.bottom<=area.bottom;
+        if(action.count>8){SCROLLINFO scroll{sizeof(scroll),SIF_ALL};check(GetScrollInfo(viewport,SB_VERT,&scroll)&&scroll.nMax>=static_cast<int>(scroll.nPage),"Long voice list has no real scrolling range");}
+        if(action.choose<0)SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);else SendMessageW(GetDlgItem(viewport,8350+action.choose),BM_CLICK,0,0);
+    }catch(...){action.error=std::current_exception();SendMessageW(dialog,WM_COMMAND,IDCANCEL,0);}
+}
+void open_narration_choice(HWND view,int id,NarrationChoiceAction& action){
+    narration_choice_action=&action;const auto timer=SetTimer(nullptr,0,20,narration_choice_timer);check(timer!=0,"Cannot schedule actual narration selector QA");
+    const auto button=GetDlgItem(view,id);wchar_t kind[32]{};GetClassNameW(button,kind,32);check(button&&IsWindowEnabled(button)&&_wcsicmp(kind,L"BUTTON")==0,"Narration selector is not an enabled real action button");
+    SendMessageW(button,BM_CLICK,0,0);pump();KillTimer(nullptr,timer);narration_choice_action=nullptr;if(action.error)std::rethrow_exception(action.error);
+    check(action.found&&action.revealed,"Narration selection failed to open or reveal its last keyboard-focused option");
+}
+void open_narration_choice(ScopedFixture& fixture,int id,NarrationChoiceAction& action){open_narration_choice(fixture.view,id,action);}
+void scoped_options_parity_tests(){
+    using namespace lgaed;using namespace presentation;
+    const std::array<const char*,3> locales{"es","en","fr"};
+    const std::array<const wchar_t*,3> descriptions{
+        L"Si está activado, este curso utiliza automáticamente los ajustes generales de la aplicación.",L"When enabled, this course automatically uses the general app settings.",L"Lorsque cette option est activée, ce cours utilise automatiquement les paramètres généraux de l’application."};
+    const std::array<const wchar_t*,3> course_reset{L"Elimina el progreso y las respuestas de todas las unidades y lecciones de este curso.",L"Deletes progress and answers from all units and lessons in this course.",L"Supprime la progression et les réponses de toutes les unités et leçons de ce cours."};
+    const std::array<const wchar_t*,3> unit_reset{L"Elimina el progreso y las respuestas de todas las lecciones pertenecientes a esta unidad.",L"Deletes progress and answers from all lessons in this unit.",L"Supprime la progression et les réponses de toutes les leçons de cette unité."};
+    const std::array<const wchar_t*,3> lesson_reset{L"Elimina las respuestas, ejercicios completados, página guardada y estado de finalización de esta lección.",L"Deletes answers, completed exercises, the saved page, and completion status for this lesson.",L"Supprime les réponses, les exercices terminés, la page enregistrée et l’état d’achèvement de cette leçon."};
+    const std::array<const wchar_t*,3> lesson_languages{L"Idioma: Español",L"Language: Spanish",L"Langue : Espagnol"};
+    for(std::size_t locale=0;locale<locales.size();++locale){state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string(locales[locale]);
+        seed.preferences["lesson_narration_settings"]["language"]=std::string("es");seed.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("em_santa");
+        seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
+        {ScopedFixture course(SettingsScope::course,seed);check(child_with_caption(course.view,descriptions[locale])&&child_with_caption(course.view,course_reset[locale]),"Course settings omitted its Android inheritance or reset explanation");
+            const auto use=relative_rect(course.control(5116),course.view),description=relative_rect(child_with_caption(course.view,descriptions[locale]),course.view),next=relative_rect(course.control(5110),course.view);
+            check(use.bottom<=description.top&&description.bottom<=next.top,"Course inheritance explanation is not between the master and continuation switches");check(course.data==seed&&!course.control(5117),"Opening course settings wrote preferences or reintroduced deferred flow Save");}
+        {ScopedFixture unit(SettingsScope::unit,seed);check(child_with_caption(unit.view,unit_reset[locale])!=nullptr,"Unit settings uses a generic reset explanation");}
+        {ScopedFixture lesson(SettingsScope::lesson,seed);check(child_with_caption(lesson.view,lesson_reset[locale])!=nullptr,"Lesson settings uses a generic reset explanation");
+            wchar_t kind[32]{};GetClassNameW(lesson.control(5105),kind,32);check(_wcsicmp(kind,L"BUTTON")==0&&native_text(lesson.control(5105))==lesson_languages[locale],"Lesson speech language is still a separate label and combo");
+            check(native_text(lesson.control(5106)).find(L"em_santa")!=std::wstring::npos&&GetWindowTextLengthW(lesson.control(5147))>0,"Lesson voice lost its stable ID or global configuration hint");
+            LONG bottom=-1;for(const int id:{5122,5146,5143,5120,5121}){const auto bounds=relative_rect(lesson.control(id),lesson.view);check(bounds.top>=bottom,"Lesson size card differs from Android switch/separator/value/slider/preview order");bottom=bounds.bottom;}
+            const auto separator=relative_rect(lesson.control(5146),lesson.view);check(separator.bottom-separator.top==MulDiv(1,GetDpiForWindow(lesson.view),96),"Lesson size separator is not one DIP");
+            const auto palette=reader_theme::palette(lesson.view);const auto card=palette.high_contrast?palette.card:RGB(32,33,38);
+            check(reader_theme::background(lesson.control(5122))==card&&reader_theme::background(lesson.control(5143))==card,"Course size controls do not share one Android card");check(lesson.data==seed,"Opening lesson settings changed voices, answers or intentional whitespace");}
+    }
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["native_windows"]["content_language"]=std::string("fr");seed.preferences["lesson_narration_settings"]["language"]=std::string("es");
+    seed.preferences["lesson_narration_settings"]["kokoro_voice:es"]=std::string("em_santa");seed.preferences["lesson_narration_settings"]["kokoro_voice:en-US"]=std::string("am_santa");seed.preferences["lesson_narration_settings"]["rate"]=1.5;
+    seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");ScopedFixture lesson(SettingsScope::lesson,seed);
+    NarrationChoiceAction cancel;cancel.title=L"Idioma de lectura";open_narration_choice(lesson,5105,cancel);check(lesson.data==seed,"Cancelling a lesson language selection changed preferences");
+    NarrationChoiceAction english;english.title=L"Idioma de lectura";english.choose=1;open_narration_choice(lesson,5105,english);
+    check(state::string_value(lesson.data,"lesson_narration_settings","language")=="en-US"&&native_text(lesson.control(5106)).find(L"am_santa")!=std::wstring::npos,"Lesson language did not retain the selected voice belonging to the new language");
+    NarrationChoiceAction voice;voice.title=L"Voz instalada";voice.count=20;voice.selected=19;voice.choose=18;open_narration_choice(lesson,5106,voice);
+    check(state::string_value(lesson.data,"lesson_narration_settings","kokoro_voice:en-US")=="am_puck","The scrollable voice dialog did not save the chosen original voice ID");
+    NarrationChoiceAction spanish;spanish.title=L"Idioma de lectura";spanish.selected=1;spanish.choose=0;open_narration_choice(lesson,5105,spanish);
+    check(state::string_value(lesson.data,"lesson_narration_settings","kokoro_voice:es")=="em_santa"&&native_text(lesson.control(5106)).find(L"em_santa")!=std::wstring::npos,"Switching speech languages replaced another language’s voice");
+    auto expected=seed;expected.preferences["lesson_narration_settings"]["kokoro_voice:en-US"]=std::string("am_puck");expected.preferences["lesson_narration_settings"]["kokoro_voice"]=std::string("am_puck");
+    check(lesson.data==expected,"Lesson selectors changed UI/content language, rate, drafts or unrelated preferences");
+    std::cout<<"PASS scoped Android Options parity: complete ES/EN/FR explanations, single size card, real modal speech selectors, scrolling keyboard focus, cancellation and retained voice/dialect/state\n";
+}
 void global_migration_contract_tests(){
     using namespace lgaed;using namespace presentation;
     state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["learning_progress"]["answer"]=std::string("unchanged");
@@ -449,8 +707,10 @@ void global_migration_contract_tests(){
     const auto slider=GetDlgItem(view,5144);check(slider&&SendMessageW(slider,TBM_GETPOS,0,0)==8,"Storage slider does not display the existing effective limit");SendMessageW(slider,TBM_SETPOS,TRUE,3);SendMessageW(view,WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,3),reinterpret_cast<LPARAM>(slider));
     check(state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes")==3ll*512*1024*1024,"Storage slider did not persist its actual half-GiB budget");
     const auto warn=GetDlgItem(view,5142);check(warn&&GetRValue(reader_theme::foreground(warn))>GetGValue(reader_theme::foreground(warn)),"Deferred colours have no visible red Save notice");
-    select(view,5104,1);check(!(GetWindowLongPtrW(GetDlgItem(view,5144),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"System speech retained Kokoro-only storage or course controls");
-    select(view,5104,0);check((GetWindowLongPtrW(slider,GWL_STYLE)&WS_VISIBLE)&&(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"Returning to Kokoro failed to restore the existing controls");
+    NarrationChoiceAction system;system.title=L"Motor de voz";system.count=2;system.choose=1;system.labels={L"Kokoro neuronal",L"Windows TTS"};open_narration_choice(view,5104,system);
+    check(!(GetWindowLongPtrW(GetDlgItem(view,5144),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"System speech retained Kokoro-only storage or course controls");
+    NarrationChoiceAction neural;neural.title=L"Motor de voz";neural.count=2;neural.selected=1;neural.choose=0;open_narration_choice(view,5104,neural);
+    check((GetWindowLongPtrW(slider,GWL_STYLE)&WS_VISIBLE)&&(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"Returning to Kokoro failed to restore the existing controls");
     const auto before=data;SendMessageW(GetDlgItem(view,5128),BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(5128,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(view,5128)));SendMessageW(view,WM_APP+222,0,0);
     check(discarded==1&&closed==1&&data==before,"Leaving deferred colours blocked navigation, saved them or omitted the brief warning");DestroyWindow(view);
     SettingsAccess route;route.scope=SettingsScope::audio;route.route_id="math_physics";route.audio_courses={{"math_a","Curso A"},{"math_b","Curso B"}};route.read=[&]{return data;};route.update=[&](const auto& change){change(data);};
@@ -509,36 +769,40 @@ int main(){
         SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){change(data);};
         access.changed=[&]{++changes;};access.close=[&]{++closed;};
         view=create_settings_view(host,std::move(access));MoveWindow(view,0,0,960,700,TRUE);
-        check(SendDlgItemMessageW(view,5104,CB_GETCURSEL,0,0)==0,"Kokoro is not the absent-preference default engine");
-        check(SendDlgItemMessageW(view,5106,CB_GETCOUNT,0,0)==20,"The US selector omits original catalogue voices");
-        const auto selected=static_cast<int>(SendDlgItemMessageW(view,5106,CB_GETCURSEL,0,0));wchar_t value[100]{};
-        SendDlgItemMessageW(view,5106,CB_GETLBTEXT,selected,reinterpret_cast<LPARAM>(value));
-        check(std::wstring_view(value)==L"Santa"&&state::string_value(data,"lesson_narration_settings","kokoro_voice:en-US")=="am_santa",
-            "Opening options lost the original voice label or changed its concrete identifier");
-        select(view,5105,2);
-        check(SendDlgItemMessageW(view,5106,CB_GETCOUNT,0,0)==8,"The GB selector omits original catalogue voices");
+        check(native_text(GetDlgItem(view,5104))==L"Motor: Kokoro","Kokoro is not the absent-preference default engine action");
+        check(native_text(GetDlgItem(view,5106))==L"Voz Kokoro: am_santa"&&state::string_value(data,"lesson_narration_settings","kokoro_voice:en-US")=="am_santa",
+            "Opening options lost the original voice identifier or falsely claimed installed/hash-verified resources");
+        NarrationChoiceAction us;us.title=L"Voces Kokoro";us.count=20;us.selected=19;open_narration_choice(view,5106,us);
+        NarrationChoiceAction british;british.title=L"Idioma de lectura";british.selected=1;british.choose=2;open_narration_choice(view,5105,british);
+        NarrationChoiceAction gb;gb.title=L"Voces Kokoro";gb.count=8;open_narration_choice(view,5106,gb);
         check(state::string_value(data,"lesson_narration_settings","language")=="en-GB","Changing speech language was not persisted");
         check(state::string_value(data,"native_windows","content_language")=="fr"&&state::string_value(data,"native_windows","ui_language")=="es","Speech language changed the curriculum or menus");
-        select(view,5104,1);select(view,5105,0);
+        NarrationChoiceAction system;system.title=L"Motor de voz";system.count=2;system.choose=1;open_narration_choice(view,5104,system);
+        NarrationChoiceAction spanish_language;spanish_language.title=L"Idioma de lectura";spanish_language.selected=2;spanish_language.choose=0;open_narration_choice(view,5105,spanish_language);
         const auto actual=windows::system_voices();std::size_t spanish=0;for(const auto& voice:actual)if(windows::system_voice_matches(voice.language,"es"))++spanish;
-        check(SendDlgItemMessageW(view,5106,CB_GETCOUNT,0,0)==static_cast<LRESULT>(std::max<std::size_t>(1,spanish)),"Windows options do not reflect the real installed voice catalogue");
-        if(spanish){select(view,5106,0);check(!state::string_value(data,"lesson_narration_settings","windows_voice:es").empty(),"A selected system voice did not keep its concrete identifier");}
+        if(spanish){NarrationChoiceAction installed;installed.title=L"Voces de Windows";installed.count=static_cast<int>(spanish);installed.choose=spanish>1?1:-1;for(const auto& voice:actual)if(windows::system_voice_matches(voice.language,"es"))installed.labels.push_back(winrt::to_hstring(voice.name).c_str());
+            open_narration_choice(view,5106,installed);if(spanish>1)check(!state::string_value(data,"lesson_narration_settings","windows_voice:es").empty(),"A selected system voice did not keep its concrete identifier");}
+        else check(!IsWindowEnabled(GetDlgItem(view,5106))&&native_text(GetDlgItem(view,5106)).find(L"No hay voces disponibles")!=std::wstring::npos,"A missing Windows voice was presented as an installed working resource");
         check(data.preferences["learning_progress"]==progress,"Changing options modified student progress");
         SendMessageW(GetDlgItem(view,5100),BM_CLICK,0,0);MSG message{};
         while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){TranslateMessage(&message);DispatchMessageW(&message);}
         check(closed==1&&changes>=3,"Back or real option changes did not invoke the application hooks");
         DestroyWindow(view);view=nullptr;DestroyWindow(host);host=nullptr;
-        scoped_tests();
-        appearance_tests();
-        math_wrap_reset_tests();
-        shortcut_tests();
-        settings_presentation_tests();
-        visual_metrics_tests();
-        attempts_and_owned_settings_tests();
-        owned_settings_escape_tests();
-        header_language_tests();
-        immediate_settings_language_tests();
-        global_migration_contract_tests();
+        run_case("scopes",scoped_tests);
+        run_case("appearance",appearance_tests);
+        run_case("math_wrap_reset",math_wrap_reset_tests);
+        run_case("shortcuts",shortcut_tests);
+        run_case("presentation",settings_presentation_tests);
+        run_case("DPI_notice",settings_dpi_notice_tests);
+        run_case("RGB",rgb_options_tests);
+        run_case("slider_pointer",slider_pointer_tests);
+        run_case("visual_metrics",visual_metrics_tests);
+        run_case("attempts_owned",attempts_and_owned_settings_tests);
+        run_case("owned_Escape",owned_settings_escape_tests);
+        run_case("header_language",header_language_tests);
+        run_case("scoped_parity",scoped_options_parity_tests);
+        run_case("immediate_language",immediate_settings_language_tests);
+        run_case("global_contract",global_migration_contract_tests);
         std::cout<<"PASS native options: complete shared voices, real SAPI inventory, independent languages and preserved progress\n";return 0;
     }catch(const std::exception& e){if(view)DestroyWindow(view);if(host)DestroyWindow(host);std::cerr<<"FAIL native settings: "<<e.what()<<'\n';return 1;}
 }

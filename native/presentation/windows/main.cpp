@@ -271,7 +271,9 @@ void open_settings(HWND window,WindowState& state){
         if(access.scope==SettingsScope::course){target=parent.course;parent.course.clear();access.subtitle=tr("Ajustes del curso","Course settings","Réglages du cours");access.reset_label=tr("Reiniciar curso","Reset course","Réinitialiser le cours");}
         const auto page=lgaed::windows::load_catalog(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",parent);
         for(const auto& entry:page.entries)if(entry.id==target){access.title=entry.title;
-            access.eyebrow=(access.scope==SettingsScope::lesson?tr("Lección ","Lesson ","Leçon "):access.scope==SettingsScope::unit?tr("Unidad ","Unit ","Unité "):tr("Curso ","Course ","Cours "))+std::to_string(entry.number);break;}
+            access.eyebrow=(access.scope==SettingsScope::lesson?tr("Lección ","Lesson ","Leçon "):access.scope==SettingsScope::unit?tr("Unidad ","Unit ","Unité "):tr("Curso ","Course ","Cours "))+std::to_string(entry.number);
+            if(access.scope==SettingsScope::course)access.eyebrow+=tr(" de "," of "," sur ")+std::to_string(page.entries.size());
+            break;}
     }
     if(!context.route.empty()){
         const auto scope=lgaed::windows::catalog_scope(std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content",context);

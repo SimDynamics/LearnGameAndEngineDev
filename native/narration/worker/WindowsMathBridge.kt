@@ -293,7 +293,20 @@ internal object WindowsMathBridge {
         }
         val results = spec.responses.map { response ->
             val answer = answers[response.id]
-            response to if (answer == null) {
+            // The last valid plotted points remain visible while a coordinate
+            // is partial. Its exact editor draft is not an evaluable answer.
+            val coordinates = raw.optJSONObject(response.id)?.optJSONObject("interactionDraft")?.optJSONArray("coords")
+            val invalidCoordinates = response.type in setOf("math_coordinate_graph_builder", "math_geometry_builder") &&
+                coordinates != null && (coordinates.length() != (answer as? MathAnswer.Graph)?.points?.size ||
+                (0 until coordinates.length()).any { index ->
+                    val point = coordinates.optJSONObject(index)
+                    listOf("x", "y").any { key -> point?.optString(key)?.trim()?.replace(',', '.')
+                        ?.toDoubleOrNull()?.takeIf(Double::isFinite) == null }
+                })
+            response to if (invalidCoordinates) {
+                val message = MathUiMessage("math_ui_valid_coordinates")
+                MathValidationResult(false,message.diagnostic,evaluable=false,uiMessage=message)
+            } else if (answer == null) {
                 val message = MathUiMessage("math_ui_complete_answer")
                 MathValidationResult(false,message.diagnostic,evaluable=false,uiMessage=message)
             } else MathValidators.validate(response.validator,answer)

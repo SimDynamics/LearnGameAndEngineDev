@@ -54,6 +54,12 @@ double snapped(double value,double step,double low,double high) {
     if (step > 0) value = low + std::round((value - low) / step) * step;
     return std::clamp(value,low,high);
 }
+std::optional<double> coordinate(std::string value) {
+    const auto first=value.find_first_not_of(" \t\r\n\f\v"),last=value.find_last_not_of(" \t\r\n\f\v");if(first==value.npos)return {};
+    value=value.substr(first,last-first+1);std::replace(value.begin(),value.end(),',','.');
+    try{std::size_t end=0;const auto result=std::stod(value,&end);if(end==value.size()&&std::isfinite(result))return result;}catch(const std::exception&){}
+    return {};
+}
 std::string decimal(double value) {
     auto result = std::to_string(value); while (result.size() > 1 && result.back() == '0') result.pop_back();
     if (result.back() == '.') result.pop_back(); return result;
@@ -113,8 +119,17 @@ struct Canvas {
         if(type=="math_number_line"||type=="number_line")return 2.4;
         if(type=="euclidean_diagram")return 1.4;
         if(type=="geometry_3d_diagram"||type=="venn_diagram")return 1.2;
-        if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="graph")return std::clamp((xmax-xmin)/(ymax-ymin),.6,4.);
+        if(type=="math_coordinate_graph"||type=="coordinate_graph"||type=="graph"||(type=="sliders_visual"&&text(config,L"type")=="graph"))return std::clamp((xmax-xmin)/(ymax-ymin),.6,4.);
+        if(type=="sliders_visual")return 1.2;
         return 1.;
+    }
+    void update_slider_points(){
+        if(type!="sliders_visual"||text(config,L"type")!="graph")return;
+        const auto values=object(state,L"values");const auto parameters=array(config,L"parameters");
+        const auto default_id=[&](unsigned at){return at<parameters.Size()?text(parameters.GetObjectAt(at),L"id"):std::string{};};
+        const auto slope=number(values,winrt::to_hstring(text(config,L"slopeParameter",default_id(0))).c_str(),1);
+        const auto intercept=number(values,winrt::to_hstring(text(config,L"interceptParameter",default_id(1))).c_str(),0);
+        points.clear();PlotPoint first,second;first.y=intercept;second.x=1;second.y=intercept+slope;points.push_back(first);points.push_back(second);
     }
     void expanded_layout(){
         if(!fullscreen)return;RECT area{};GetClientRect(fullscreen,&area);const int row=px(48),available=std::max(1,static_cast<int>(area.bottom)-row);
@@ -203,6 +218,7 @@ struct Canvas {
             xmin = cx - span * .7; xmax = cx + span * .7; ymin = cy - span * .7; ymax = cy + span * .7;
         }
         if (xmax <= xmin) xmax = xmin + 1; if (ymax <= ymin) ymax = ymin + 1;
+        update_slider_points();
     }
     const PlotPoint* find(const std::string& id) const {
         const auto found = std::ranges::find(points,id,&PlotPoint::id); return found == points.end() ? nullptr : &*found;
@@ -312,15 +328,31 @@ struct Canvas {
             label(dc,{cx - r,cy - r},text(config,L"leftLabel","A"),0,-20); label(dc,{cx + r,cy - r},text(config,L"rightLabel","B"),0,-20);
             label(dc,{cx - r,cy},text(config,L"leftOnly"),0,0); label(dc,{cx,cy},text(config,L"intersection"),0,0);
             label(dc,{cx + r,cy},text(config,L"rightOnly"),0,0); label(dc,{rect.left,rect.bottom},text(config,L"outside"),0,-18);
-        } else if (type == "geometry_2d_diagram" || type == "geometry_3d_diagram" || type == "sliders_visual") {
+        } else if (type == "sliders_visual"&&text(config,L"type")!="graph") {
+            const auto values=object(state,L"values");const auto parameters=array(config,L"parameters");const auto scale_id=text(config,L"scaleParameter");
+            const auto dimension=[&](const wchar_t* key,unsigned at,double fallback){const auto default_id=at<parameters.Size()?text(parameters.GetObjectAt(at),L"id"):std::string{};
+                return number(values,winrt::to_hstring(text(config,key,default_id!=scale_id?default_id:std::string{})).c_str(),fallback);};
+            const auto scale=number(values,winrt::to_hstring(scale_id).c_str(),1);
+            const auto width_value=dimension(L"widthParameter",0,number(config,L"baseWidth",3))*scale;
+            const auto height_value=dimension(L"heightParameter",1,number(config,L"baseHeight",2))*scale;
+            double maximum=10,scale_maximum=1;if(parameters.Size())maximum=0;
+            for(const auto& value:parameters){const auto parameter=value.GetObject();maximum=std::max({maximum,std::abs(number(parameter,L"min")),std::abs(number(parameter,L"max"))});if(text(parameter,L"id")==scale_id)scale_maximum=number(parameter,L"max",1);}
+            const auto reference=std::max(1.,maximum*std::max(1.,scale_maximum)),unit=std::min(client.right*.72,client.bottom*.66)/reference;
+            const auto width=std::abs(width_value)*unit,height=std::abs(height_value)*unit;
+            const RECT box{static_cast<LONG>(std::lround((client.right-width)/2)),static_cast<LONG>(std::lround((client.bottom-height)/2)),
+                static_cast<LONG>(std::lround((client.right+width)/2)),static_cast<LONG>(std::lround((client.bottom+height)/2))};
+            const auto blend=[](BYTE foreground,BYTE background){return (foreground*85+background*170)/255;};
+            const auto fill=CreateSolidBrush(RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas))));
+            const auto old=SelectObject(dc,fill);Rectangle(dc,box.left,box.top,box.right,box.bottom);SelectObject(dc,old);DeleteObject(fill);
+            const auto caption=wide(decimal(width_value)+" × "+decimal(height_value));RECT label_bounds{0,client.bottom-px(35),client.right,client.bottom};
+            LOGFONTW label_font{};GetObjectW(font,sizeof(label_font),&label_font);label_font.lfHeight=MulDiv(label_font.lfHeight,15,18);
+            const auto caption_font=CreateFontIndirectW(&label_font);const auto before_font=SelectObject(dc,caption_font);
+            const auto before_ink=SetTextColor(dc,colors.high_contrast?colors.text:RGB(255,255,255));
+            DrawTextW(dc,caption.c_str(),static_cast<int>(caption.size()),&label_bounds,DT_CENTER|DT_SINGLELINE|DT_NOPREFIX|DT_VCENTER);
+            SetTextColor(dc,before_ink);SelectObject(dc,before_font);DeleteObject(caption_font);
+        } else if (type == "geometry_2d_diagram" || type == "geometry_3d_diagram") {
             const auto shape = text(config,L"shape",text(config,L"type","rectangle"));
             auto box = rect; InflateRect(&box,-(rect.right - rect.left) / 5,-px(8));
-            if (type == "sliders_visual") {
-                const auto values = object(state,L"values"); const auto w = number(values,winrt::to_hstring(text(config,L"widthParameter","width")).c_str(),2);
-                const auto h = number(values,winrt::to_hstring(text(config,L"heightParameter","height")).c_str(),2);
-                const auto scale = std::min((rect.right - rect.left) / std::max(1.0,w),(rect.bottom - rect.top) / std::max(1.0,h)) * .8;
-                box.right = box.left + static_cast<LONG>(w * scale); box.bottom = box.top + static_cast<LONG>(h * scale);
-            }
             if (shape == "circle" || shape == "sphere") Ellipse(dc,box.left,box.top,box.right,box.bottom);
             else if (shape == "triangle") { const POINT vertices[]{{box.left,box.bottom},{box.right,box.bottom},{(box.left + box.right) / 2,box.top}}; Polygon(dc,vertices,3); }
             else { Rectangle(dc,box.left,box.top,box.right,box.bottom);
@@ -346,7 +378,7 @@ struct Canvas {
             if (ymin <= 0 && ymax >= 0) line(dc,project(xmin,0),project(xmax,0),true);
             for (auto x = std::ceil(xmin); x <= xmax && xmax - xmin <= 30; ++x) label(dc,project(x,ymin),decimal(x),-4,8);
             for (auto y = std::ceil(ymin); y <= ymax && ymax - ymin <= 30; ++y) label(dc,project(xmin,y),decimal(y),-28,-8);
-            const auto mode = text(config,L"mode","point"); const auto saved = SaveDC(dc); IntersectClipRect(dc,rect.left,rect.top,rect.right,rect.bottom);
+            const auto mode = type=="sliders_visual"?"line":text(config,L"mode","point"); const auto saved = SaveDC(dc); IntersectClipRect(dc,rect.left,rect.top,rect.right,rect.bottom);
             if (mode == "line" && points.size() >= 2) {
                 const auto& first = points[0]; const auto& second = points[1];
                 if (std::abs(second.x - first.x) < 1e-10) line(dc,project(first.x,ymin),project(first.x,ymax));
@@ -364,7 +396,7 @@ struct Canvas {
             }
             RestoreDC(dc,saved);
         }
-        if (type == "euclidean_diagram" || type == "math_coordinate_graph" || type == "coordinate_graph" || type == "graph") {
+        if (type == "euclidean_diagram" || type == "math_coordinate_graph" || type == "coordinate_graph" || type == "graph" || (type=="sliders_visual"&&text(config,L"type")=="graph")) {
             const auto fill = CreateSolidBrush(colors.accent); SelectObject(dc,fill);
             for (const auto& point : points) {
                 const auto at = project(point.x,point.y); Ellipse(dc,at.x - px(4),at.y - px(4),at.x + px(4),at.y + px(4));
@@ -431,7 +463,7 @@ struct Canvas {
 
 struct MathPuzzleView::Impl {
     struct Cell { HWND window; int width = 0; bool text = false; };
-    struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; };
+    struct Row { std::vector<Cell> cells; int height = 42; int gap_after=8; int indent=0; };
     HWND host = nullptr,parent = nullptr;
     std::string locale; JsonObject block,answers,initial;
     MathPuzzleCallbacks callbacks;
@@ -521,7 +553,7 @@ struct MathPuzzleView::Impl {
             // Incomplete editing invalidates checking, not the last valid
             // marker displayed on the number line (Android preserves it).
             if(plot->type=="number_line"&&!next.HasKey(L"value")&&plot->state.HasKey(L"value"))next.SetNamedValue(L"value",plot->state.GetNamedValue(L"value"));
-            plot->state = next; InvalidateRect(plot->window,nullptr,FALSE);
+            plot->state = next;plot->update_slider_points();InvalidateRect(plot->window,nullptr,FALSE);
         }
         if (callbacks.changed) callbacks.changed();
     }
@@ -609,8 +641,10 @@ struct MathPuzzleView::Impl {
         else { canvas(config,type); add_text(text(config,L"description")); }
     }
     void option_content(const JsonObject& option) {
-        if (!visible_label(option).empty()) add_text(visible_label(option));
-        else for (const auto& value : array(option,L"content")) representation(value.GetObject());
+        const auto content=array(option,L"content");
+        if(content.Size())for(const auto& value:content)representation(value.GetObject());
+        else if(!visible_label(option).empty())add_text(visible_label(option));
+        add_text(text(option,L"explanation"));
     }
     void choose(const std::string& id,const std::string& selected,bool multiple,bool card_tap=false) {
         if(!cards_enabled)return;
@@ -716,6 +750,10 @@ struct MathPuzzleView::Impl {
             for(const auto& source:layout.sources)if(text(pairs,winrt::to_hstring(source).c_str())==target)rows[position++]=layout.source_rows.at(source);}
         arrange(current_width);if(!initializing&&callbacks.layout_changed)callbacks.layout_changed();
     }
+    void save_graph_draft(const std::string& id,Canvas* plot){
+        JsonArray coordinates;for(const auto& [x,y]:graph_fields[plot]){JsonObject point;point.SetNamedValue(L"x",string_value(edit_text(x)));point.SetNamedValue(L"y",string_value(edit_text(y)));coordinates.Append(point);}
+        auto current=response(id,"graph"),draft=object(current,L"interactionDraft");draft.SetNamedValue(L"coords",coordinates);current.SetNamedValue(L"interactionDraft",draft);answers.SetNamedValue(winrt::to_hstring(id),current);
+    }
     void response_controls(const JsonObject& spec) {
         const auto id = text(spec,L"id"),type = text(spec,L"type");
         std::string heading=text(spec,L"label");
@@ -738,12 +776,24 @@ struct MathPuzzleView::Impl {
                 SetWindowSubclass(toggle,choice_button_proc,16,reinterpret_cast<DWORD_PTR>(this));
                 if (accessibility) accessibility->SetHwndPropStr(toggle,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_NAME,wide(visible_label(option)).c_str());
                 for (const auto& chosen : selected) if (chosen.GetString() == winrt::to_hstring(option_id)) SendMessageW(toggle,BM_SETCHECK,BST_CHECKED,0);
-                const auto first=rows.size();const auto title = visible_label(option);
-                if (!title.empty()) rows.push_back({{{toggle,48},{label(title,id + "/option/" + option_id,RichTextRole::body,false),0,true}},48});
-                else { rows.push_back({{{toggle,48}},48}); option_content(option); }
+                const auto first=rows.size();option_content(option);
+                if(rows.size()==first)rows.push_back({{},48});
+                rows[first].cells.insert(rows[first].cells.begin(),{toggle,48});rows[first].height=std::max(48,rows[first].height);
+                // The radio and the original rich column share the first row;
+                // further formulas/tables/graphs keep that same content inset.
+                for(auto at=first+1;at<rows.size();++at)rows[at].indent=56;
+                unsigned readable=0;
                 for(auto at=first;at<rows.size();++at)for(const auto& cell:rows[at].cells){
                     choice_cards[toggle].push_back(cell.window);
-                    if(cell.text){choice_labels[cell.window]=toggle;SetWindowSubclass(cell.window,choice_proc,15,reinterpret_cast<DWORD_PTR>(this));}
+                    if(cell.text){
+                        // MathWidgetUi.text uses the platform's normal line
+                        // spacing; lesson prose's 1.25 multiplier does not
+                        // belong inside mathematical answer cards.
+                        PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
+                        SendMessageW(cell.window,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+                        for(auto& region:regions)if(region.target==cell.window){region.key=id+"/option/"+option_id+(readable?"/content/"+std::to_string(readable):"");break;}++readable;
+                        choice_labels[cell.window]=toggle;SetWindowSubclass(cell.window,choice_proc,15,reinterpret_cast<DWORD_PTR>(this));
+                    }
                 }
             }
         } else if (type == "math_numeric_input" || type == "math_expression_input") {
@@ -813,56 +863,66 @@ struct MathPuzzleView::Impl {
             auto current = response(id,"sliders"),values = object(current,L"values");
             for (const auto& value : array(spec,L"parameters")) {
                 const auto parameter = value.GetObject(); const auto key = text(parameter,L"id");
-                if (!values.HasKey(winrt::to_hstring(key))) values.SetNamedValue(winrt::to_hstring(key),JsonValue::CreateNumberValue(number(parameter,L"value",number(parameter,L"min"))));
+                const auto low=number(parameter,L"min"),high=number(parameter,L"max",10),step=number(parameter,L"step",1);
+                const auto starting_value=number(values,winrt::to_hstring(key).c_str(),number(parameter,L"value",low));
+                values.SetNamedValue(winrt::to_hstring(key),JsonValue::CreateNumberValue(snapped(starting_value,step,low,high)));
             }
             current.SetNamedValue(L"values",values); answers.SetNamedValue(winrt::to_hstring(id),current);
+            auto preview=JsonObject::Parse(object(spec,L"visual").Stringify());preview.SetNamedValue(L"parameters",array(spec,L"parameters"));
+            canvas(preview,"sliders_visual",current,{},id);
             for (const auto& value : array(spec,L"parameters")) {
                 const auto parameter = value.GetObject(); const auto key = text(parameter,L"id");
-                add_text(visible_label(parameter),id + "/parameter/" + key); const auto slider = make(TRACKBAR_CLASSW,"",WS_TABSTOP | TBS_AUTOTICKS);
+                const auto name=visible_label(parameter);const auto value_label=label(name+": "+decimal(number(values,winrt::to_hstring(key).c_str())),id+"/parameter/"+key);
+                rows.push_back({{{value_label,0,true}},26});const auto slider = make(TRACKBAR_CLASSW,"",WS_TABSTOP | TBS_AUTOTICKS);
                 const auto low = number(parameter,L"min"), high = number(parameter,L"max",10), step = number(parameter,L"step",1);
-                const auto steps = static_cast<int>(std::clamp(std::round((high - low) / step),1.0,100000.0));
+                const auto steps = static_cast<int>(std::clamp(std::ceil((high - low) / step),1.0,10000.0));
                 SendMessageW(slider,TBM_SETRANGEMAX,FALSE,steps); SendMessageW(slider,TBM_SETPOS,TRUE,static_cast<LPARAM>(std::lround((number(values,winrt::to_hstring(key).c_str(),low) - low) / step)));
-                const auto value_label = label(decimal(number(values,winrt::to_hstring(key).c_str(),low)),id + "/value/" + key);
-                commands[GetDlgCtrlID(slider)] = [this,id,key,slider,value_label,low,step](int) {
-                    const auto number_value = low + static_cast<double>(SendMessageW(slider,TBM_GETPOS,0,0)) * step;
+                commands[GetDlgCtrlID(slider)] = [this,id,key,name,slider,value_label,low,high,step](int) {
+                    const auto number_value = snapped(low + static_cast<double>(SendMessageW(slider,TBM_GETPOS,0,0)) * step,step,low,high);
                     auto current_answer = response(id,"sliders"),current_values = object(current_answer,L"values"); current_values.SetNamedValue(winrt::to_hstring(key),JsonValue::CreateNumberValue(number_value));
                     current_answer.SetNamedValue(L"values",current_values); answers.SetNamedValue(winrt::to_hstring(id),current_answer);
-                    const auto displayed = decimal(number_value); set_rich_text(value_label,displayed); for (auto& region : regions) if (region.target == value_label) region.source_text = displayed; change();
-                }; rows.push_back({{{slider,0},{value_label,80,true}},44});
+                    const auto displayed = name+": "+decimal(number_value); set_rich_text(value_label,displayed); for (auto& region : regions) if (region.target == value_label) region.source_text = displayed; change();
+                }; rows.push_back({{{slider}},48});
             }
-            if (spec.HasKey(L"visual")) canvas(object(spec,L"visual"),"sliders_visual",current,{},id);
         } else if (type == "math_coordinate_graph_builder" || type == "math_geometry_builder") {
             auto current = response(id,"graph"); if (!current.HasKey(L"points")) current.SetNamedValue(L"points",array(spec,L"points"));
             answers.SetNamedValue(winrt::to_hstring(id),current);
             auto config=JsonObject::Parse(spec.Stringify());if(type=="math_geometry_builder"&&!config.HasKey(L"mode"))config.SetNamedValue(L"mode",string_value("polygon"));
-            canvas(config,"graph",current,[this,id](JsonObject value) { answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
+            canvas(config,"graph",current,[this,id](JsonObject value) {
+                const auto previous=object(answers,winrt::to_hstring(id).c_str());if(previous.HasKey(L"interactionDraft"))value.SetNamedValue(L"interactionDraft",previous.GetNamedValue(L"interactionDraft"));
+                answers.SetNamedValue(winrt::to_hstring(id),value);
+            });
             auto* plot = canvases.back().get();
             JsonArray points;for(const auto& point:plot->points){JsonObject value;value.SetNamedValue(L"x",JsonValue::CreateNumberValue(point.x));value.SetNamedValue(L"y",JsonValue::CreateNumberValue(point.y));points.Append(value);}current.SetNamedValue(L"points",points);answers.SetNamedValue(winrt::to_hstring(id),current);
-            plot->sync_fields = [this,plot] {
+            plot->sync_fields = [this,id,plot] {
                 const auto previous = initializing; initializing = true;
                 for (std::size_t index = 0; index < graph_fields[plot].size(); ++index) {
-                    set_edit_text(graph_fields[plot][index].first,decimal(plot->points[index].x));
-                    set_edit_text(graph_fields[plot][index].second,decimal(plot->points[index].y));
+                    const auto [x,y]=graph_fields[plot][index];
+                    // A graph move must not erase another incomplete coordinate.
+                    if(coordinate(edit_text(x)))set_edit_text(x,decimal(plot->points[index].x));
+                    if(coordinate(edit_text(y)))set_edit_text(y,decimal(plot->points[index].y));
                 }
-                initializing = previous;
+                initializing = previous;save_graph_draft(id,plot);change();
             };
             add_text(tr("Edita las coordenadas o arrastra los puntos.","Edit the coordinates or drag the points.","Modifiez les coordonnées ou faites glisser les points."),id + "/coordinates-instruction");
             for (std::size_t index = 0; index < plot->points.size(); ++index) {
                 const auto editable = plot->points[index].draggable;
-                const auto x = make(MSFTEDIT_CLASS,decimal(plot->points[index].x),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
-                const auto y = make(MSFTEDIT_CLASS,decimal(plot->points[index].y),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
+                const auto restored_coordinates=array(object(current,L"interactionDraft"),L"coords");const auto draft=index<restored_coordinates.Size()?restored_coordinates.GetObjectAt(static_cast<unsigned>(index)):JsonObject{};
+                const auto x = make(MSFTEDIT_CLASS,text(draft,L"x",decimal(plot->points[index].x)),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
+                const auto y = make(MSFTEDIT_CLASS,text(draft,L"y",decimal(plot->points[index].y)),WS_TABSTOP | ES_AUTOHSCROLL | (editable ? 0 : ES_READONLY));
                 graph_fields[plot].push_back({x,y});
                 for (const auto item : {x,y}) { reader_theme::apply(item,reader_theme::Surface::field);keyboard_context(item,{}, {},false,"NUMERIC");SendMessageW(item,EM_SETEVENTMASK,0,ENM_CHANGE); SetWindowSubclass(item,field_proc,11,reinterpret_cast<DWORD_PTR>(this)); }
                 const auto sync = [this,id,plot,index,x,y](int notification) {
                     if (notification != EN_CHANGE || initializing) return;
-                    try { std::size_t endx = 0,endy = 0; const auto tx = edit_text(x),ty = edit_text(y); const auto xx = std::stod(tx,&endx),yy = std::stod(ty,&endy);
-                        if (endx != tx.size() || endy != ty.size() || !std::isfinite(xx) || !std::isfinite(yy)) return;
-                        auto& point = plot->points[index]; point.x = snapped(xx,number(plot->config,L"snap",1),plot->xmin,plot->xmax);
-                        point.y = snapped(yy,number(plot->config,L"snap",1),plot->ymin,plot->ymax);
+                    save_graph_draft(id,plot);const auto xx=coordinate(edit_text(x)),yy=coordinate(edit_text(y));
+                    if(xx&&yy){
+                        auto& point = plot->points[index]; point.x = snapped(*xx,number(plot->config,L"snap",1),plot->xmin,plot->xmax);
+                        point.y = snapped(*yy,number(plot->config,L"snap",1),plot->ymin,plot->ymax);
                         auto answer_value = response(id,"graph"); JsonArray points;
                         for (const auto& item : plot->points) { JsonObject coordinates; coordinates.SetNamedValue(L"x",JsonValue::CreateNumberValue(item.x)); coordinates.SetNamedValue(L"y",JsonValue::CreateNumberValue(item.y)); points.Append(coordinates); }
-                        answer_value.SetNamedValue(L"points",points); answers.SetNamedValue(winrt::to_hstring(id),answer_value); InvalidateRect(plot->window,nullptr,FALSE); change();
-                    } catch (const std::exception&) { /* An incomplete coordinate remains editable. */ }
+                        answer_value.SetNamedValue(L"points",points); answers.SetNamedValue(winrt::to_hstring(id),answer_value); InvalidateRect(plot->window,nullptr,FALSE);
+                    }
+                    change();
                 };
                 commands[GetDlgCtrlID(x)] = sync; commands[GetDlgCtrlID(y)] = sync;
                 rows.push_back({{{label("P" + std::to_string(index + 1)),48,true},{label("x",id + "/x/" + std::to_string(index)),20,true},{x,0},
@@ -923,10 +983,12 @@ struct MathPuzzleView::Impl {
     }
     int arrange(int width,bool move = true) {
         current_width = std::max(px(100),width); const auto gap = px(8); int y = px(8);
+        const auto format_coordinate=[](HWND item,int pixel){int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return numerator>0&&denominator>0?MulDiv(pixel,denominator,numerator):pixel;};
         for (const auto& row : rows) {
             int fixed = 0,flex = 0; for (const auto& cell : row.cells) if (cell.width) fixed += px(cell.width); else ++flex;
-            const auto flexible = std::max(px(30),(current_width - px(16) - fixed - gap * (static_cast<int>(row.cells.size()) - 1)) / std::max(1,flex));
-            int height = px(row.height),x = px(8);
+            const auto flexible = std::max(px(30),(current_width - px(16) - px(row.indent) - fixed - gap * (static_cast<int>(row.cells.size()) - 1)) / std::max(1,flex));
+            int height = px(row.height),x = px(8+row.indent);
             for(const auto& cell:row.cells)if(std::ranges::any_of(expression_editors,[&](const auto& value){return value->window==cell.window;}))height=std::max(height,math_expression_editor_height(cell.window));
             for(const auto& cell:row.cells)if(const auto canvas=std::ranges::find_if(canvases,[&](const auto& value){return value->window==cell.window;});canvas!=canvases.end())
                 height=std::max(height,static_cast<int>(std::lround((cell.width?px(cell.width):flexible)/(*canvas)->aspect_ratio())));
@@ -934,6 +996,7 @@ struct MathPuzzleView::Impl {
                 const auto cell_width = cell.width ? px(cell.width) : flexible;
                 if (cell.text) {
                     SetWindowPos(cell.window,nullptr,0,0,cell_width,std::max(1,height),SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOCOPYBITS);
+                    if(choice_labels.contains(cell.window)){RECT content{0,0,cell_width,std::max(1,height)};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));}
                     SendMessageW(cell.window,EM_REQUESTRESIZE,0,0);
                     if (const auto found = requested_heights.find(cell.window); found != requested_heights.end()) { height = std::max(height,found->second + px(4)); continue; }
                 }
@@ -944,7 +1007,20 @@ struct MathPuzzleView::Impl {
                 height = std::max(height,static_cast<int>(text_rect.bottom) + px(8)); SelectObject(dc,old); ReleaseDC(cell.window,dc);
             }
             if (move) for (const auto& cell : row.cells) { const auto cell_width = cell.width ? px(cell.width) : flexible;
-                if(GetParent(cell.window)==host)SetWindowPos(cell.window,nullptr,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS); x += cell_width + gap; }
+                if(GetParent(cell.window)==host){
+                    SetWindowPos(cell.window,nullptr,x,y,cell_width,height,SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS);
+                    if(choice_labels.contains(cell.window)){
+                        // The native radio centers its glyph in the row, while
+                        // RichEdit otherwise anchors text at the top. Center
+                        // the measured rich body, like Android's option row.
+                        const auto measured=requested_heights.find(cell.window);
+                        const auto inset=measured==requested_heights.end()?0:std::max(0,(height-measured->second)/2);
+                        // RichEdit scales the text origin, while the right and
+                        // bottom bounds still clip in client pixels. Convert
+                        // the inset alone so zoom cannot cut off the glyphs.
+                        RECT content{0,format_coordinate(cell.window,inset),cell_width,height};SendMessageW(cell.window,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+                    }
+                }x += cell_width + gap; }
             y += height + px(row.gap_after);
         }
         if (move) RedrawWindow(host,nullptr,nullptr,RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
@@ -1157,7 +1233,7 @@ void MathPuzzleView::set_text_scale(int percentage) {
     }
     if(impl_->font)DeleteObject(impl_->font);impl_->font=next;
     for(const auto& canvas:impl_->canvases)canvas->scale_text(percentage);
-    impl_->requested_heights.clear();impl_->arrange(impl_->current_width);
+    impl_->requested_heights.clear();if(impl_->current_width>0)impl_->arrange(impl_->current_width);
 }
 void MathPuzzleView::reset() { const auto width = impl_->current_width; impl_->clear(); impl_->answers = JsonObject{}; impl_->build(); impl_->arrange(width); if (impl_->callbacks.layout_changed) impl_->callbacks.layout_changed(); impl_->change(); }
 } // namespace lgaed::presentation

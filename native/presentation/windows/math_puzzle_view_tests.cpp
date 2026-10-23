@@ -191,10 +191,145 @@ std::uint64_t canvas_pixels(HWND canvas){
     RECT bounds{};GetClientRect(canvas,&bounds);const auto dc=GetDC(canvas),buffer=CreateCompatibleDC(dc);
     BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bounds.right;info.bmiHeader.biHeight=-bounds.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
     void* bits=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&bits,nullptr,0);require(bitmap&&bits&&buffer,"Cannot inspect the real mathematical viewport pixels");ReleaseDC(canvas,dc);
-    const auto old=SelectObject(buffer,bitmap);SendMessageW(canvas,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);
+    const auto old=SelectObject(buffer,bitmap);SendMessageW(canvas,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);GdiFlush();
     auto hash=std::uint64_t{1469598103934665603ULL};const auto* values=static_cast<const std::uint32_t*>(bits);
     for(std::size_t index=0;index<static_cast<std::size_t>(bounds.right)*bounds.bottom;++index){hash^=values[index]&0xFFFFFF;hash*=1099511628211ULL;}
     SelectObject(buffer,old);DeleteObject(bitmap);DeleteDC(buffer);return hash;
+}
+JsonObject authored_puzzle(std::string_view relative,unsigned page,std::string_view id){
+    const auto lesson=JsonObject::Parse(winrt::to_hstring(read(std::filesystem::path(lgaed::build::source_root)/relative)));
+    for(const auto& value:lesson.GetNamedArray(L"pages").GetObjectAt(page).GetNamedArray(L"blocks")){
+        const auto block=value.GetObject();if(block.GetNamedString(L"id",L"")==winrt::to_hstring(id))return block;
+    }
+    throw std::runtime_error("The authored mathematical regression location is absent");
+}
+std::vector<HWND> class_targets(HWND parent,std::wstring_view name){
+    auto result=descendants(parent);std::erase_if(result,[&](HWND item){wchar_t type[100]{};GetClassNameW(item,type,100);return _wcsicmp(type,std::wstring(name).c_str())!=0;});return result;
+}
+RECT visible_ink_bounds(HWND item){
+    RECT area{};GetClientRect(item,&area);const auto dc=GetDC(item),buffer=CreateCompatibleDC(dc);
+    BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=area.right;info.bmiHeader.biHeight=-area.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+    void* pixels=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(item,dc);require(bitmap&&buffer&&pixels,"Cannot inspect actual mathematical answer ink");const auto previous=SelectObject(buffer,bitmap);
+    const auto background=reader_theme::background(item);const auto fill=CreateSolidBrush(background);FillRect(buffer,&area,fill);DeleteObject(fill);SendMessageW(item,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);GdiFlush();
+    RECT ink{area.right,area.bottom,-1,-1};const auto values=static_cast<const std::uint32_t*>(pixels);
+    for(int y=0;y<area.bottom;++y)for(int x=0;x<area.right;++x){const auto pixel=values[static_cast<std::size_t>(y)*area.right+x];const auto difference=std::abs(static_cast<int>((pixel>>16)&255)-GetRValue(background))+std::abs(static_cast<int>((pixel>>8)&255)-GetGValue(background))+std::abs(static_cast<int>(pixel&255)-GetBValue(background));if(difference>=24){ink.left=std::min<LONG>(ink.left,x);ink.top=std::min<LONG>(ink.top,y);ink.right=std::max<LONG>(ink.right,x+1);ink.bottom=std::max<LONG>(ink.bottom,y+1);}}
+    SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);require(ink.bottom>ink.top,"The original mathematical answer produced no visible ink");return ink;
+}
+void initial_text_scale_layout_tests(HWND host){
+    const auto block=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/numeros_y_operaciones/lesson_magnitudes_y_numeracion.json",0,"contar_o_medir");
+    const auto source=winrt::to_string(block.Stringify());
+    for(const auto scale:{75,100,150})for(const auto width:{850,330}){
+        MathPuzzleView before(host,source,"es","");before.set_text_scale(scale);before.layout(0,0,width);
+        MathPuzzleView after(host,source,"es","");after.layout(0,0,width);after.set_text_scale(scale);after.layout(0,0,width);
+        RECT before_area{},after_area{};GetClientRect(before.window(),&before_area);GetClientRect(after.window(),&after_area);
+        require(EqualRect(&before_area,&after_area),"Applying initial mathematical text scale measured an artificial narrow layout and changed the puzzle height");
+        const auto original=before.reading_regions(),updated=after.reading_regions();require(original.size()==updated.size(),"Initial mathematical scaling changed the original reading regions");
+        for(std::size_t index=0;index<original.size();++index){RECT one{},two{};GetWindowRect(original[index].target,&one);GetWindowRect(updated[index].target,&two);
+            require(original[index].key==updated[index].key&&original[index].source_text==updated[index].source_text&&EqualRect(&one,&two),"Initial and subsequent mathematical scaling did not preserve the same text geometry");}
+        require(before.answers_json()==after.answers_json(),"Initial mathematical scaling changed a response");
+    }
+    std::cout<<"PASS initial mathematical scale before layout matches scaling after layout at75/100/150percent and both widths\n";
+}
+void choice_alignment_tests(HWND host){
+    const auto block=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/numeros_y_operaciones/lesson_magnitudes_y_numeracion.json",0,"contar_o_medir");
+    MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");const auto original=view.answers_json();
+    for(const auto scale:{75,100,150})for(const auto width:{850,330}){
+        view.set_text_scale(scale);view.layout(0,0,width);auto radios=class_targets(view.window(),L"BUTTON");std::erase_if(radios,[](HWND item){return (GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK)!=BS_RADIOBUTTON;});
+        std::ranges::sort(radios,[](HWND a,HWND b){RECT one{},two{};GetWindowRect(a,&one);GetWindowRect(b,&two);return one.top<two.top;});require(radios.size()==3,"The actual introductory choice lost its original radios");
+        const auto options=block.GetNamedArray(L"responses").GetObjectAt(0).GetNamedArray(L"options");
+        for(unsigned index=0;index<options.Size();++index){const auto body=region_target(view,"contar_o_medir__eleccion/option/"+winrt::to_string(options.GetObjectAt(index).GetNamedString(L"id")));require(body,"The actual introductory option is absent");
+            RECT radio{},label{};GetWindowRect(radios[index],&radio);GetWindowRect(body,&label);const auto ink=visible_ink_bounds(body);const auto tolerance=MulDiv(3,static_cast<int>(GetDpiForWindow(body)),96);
+            if(std::abs(2*label.top+ink.top+ink.bottom-radio.top-radio.bottom)>2*tolerance)
+                throw std::runtime_error("The visible mathematical option text is vertically misaligned with its radio glyph: scale="+std::to_string(scale)
+                    +" width="+std::to_string(width)+" option="+std::to_string(index)+" ink="+std::to_string(ink.top)+","+std::to_string(ink.bottom)
+                    +" labelY="+std::to_string(label.top)+","+std::to_string(label.bottom)+" radioY="+std::to_string(radio.top)+","+std::to_string(radio.bottom));
+        }
+        require(view.answers_json()==original,"Aligning mathematical choice text changed a response");
+    }
+    std::cout<<"PASS actual introductory mathematical option ink centers align with radios at75/100/150percent and wrapped widths without answer changes\n";
+}
+void rich_option_content_tests(HWND host){
+    const auto verify=[&](const JsonObject& block,std::string_view response_id,unsigned count,unsigned graphs){
+        MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");view.layout(0,0,850);
+        auto toggles=class_targets(view.window(),L"BUTTON");std::erase_if(toggles,[](HWND item){const auto type=GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK;return type!=BS_RADIOBUTTON&&type!=BS_CHECKBOX;});
+        std::ranges::sort(toggles,[](HWND a,HWND b){RECT one{},two{};GetWindowRect(a,&one);GetWindowRect(b,&two);return one.top<two.top;});require(toggles.size()==count,"A rich option lost its original radio/checkbox");
+        require(class_targets(view.window(),L"LearnGameAndEngineDev.MathCanvas").size()==graphs,"A labelled rich option discarded an authored graph or substituted a plain label");
+        JsonObject response;for(const auto& value:block.GetNamedArray(L"responses"))if(value.GetObject().GetNamedString(L"id")==winrt::to_hstring(response_id))response=value.GetObject();
+        require(response.HasKey(L"options"),"The real rich option response is absent");const auto options=response.GetNamedArray(L"options");
+        for(unsigned index=0;index<options.Size();++index){const auto option=options.GetObjectAt(index);const auto key=std::string(response_id)+"/option/"+winrt::to_string(option.GetNamedString(L"id"));const auto body=region_target(view,key);require(body,"A rich option lost its original narratable body");
+            RECT radio{},label{};GetWindowRect(toggles[index],&radio);GetWindowRect(body,&label);require(label.left>=radio.right&&label.top==radio.top&&label.bottom>radio.top,"A rich answer was placed below its radio instead of beside it");
+            for(const auto& region:view.reading_regions())if(region.target==body){ReadingShade shade(body,region.source_text);require(shade.matches(body,region.source_text),"A rich option lost its original-source word shading projection");shade.read_through(0);shade.read_through(wide(region.source_text).size());shade.restore();}
+            CHARRANGE selection{};SendMessageW(body,EM_SETSEL,0,0);click_card(body);SendMessageW(body,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+            const auto selected=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(winrt::to_hstring(response_id)).GetNamedArray(L"selected");
+            bool found=false;for(const auto& value:selected)found=found||value.GetString()==option.GetNamedString(L"id");require(found&&selection.cpMin==selection.cpMax,"A rich content click selected text instead of its answer");
+        }
+        const auto saved=view.answers_json();MathPuzzleView reopened(host,winrt::to_string(block.Stringify()),"es",saved);reopened.layout(0,0,850);require(reopened.answers_json()==saved,"Rich option rendering changed restored answers or the other fields of its compound puzzle");
+    };
+    const auto single=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json",1,"single_rich_option");verify(single,"choice",3,2);
+    const auto multiple=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json",2,"multi_rich_option");verify(multiple,"choices",4,0);
+    {MathPuzzleView table(host,winrt::to_string(multiple.Stringify()),"es","");table.layout(0,0,850);require(caption_target(table.window(),L"Parte")&&caption_target(table.window(),L"Total")&&!caption_target(table.window(),L"Proporción: 3 de 6"),"An option's accessibility label replaced its original visible table");}
+    const auto programming=authored_puzzle("app/src/main/assets/content/es/programming/cpp_fundamentals/repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json",4,"cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos__enumerar_y_justificar_el_tablero");verify(programming,"justificacion_del_recorrido",3,0);
+    std::cout<<"PASS seven authored labelled rich options retain formulas/tables/graphs and original shading; programming compound radios align with rich bodies, click and reopen without answer changes\n";
+}
+RECT rectangle_fill_bounds(HWND canvas){
+    RECT bounds{};GetClientRect(canvas,&bounds);const auto dc=GetDC(canvas),buffer=CreateCompatibleDC(dc);
+    BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=bounds.right;info.bmiHeader.biHeight=-bounds.bottom;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+    void* pixels=nullptr;const auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&pixels,nullptr,0);ReleaseDC(canvas,dc);
+    require(buffer&&bitmap&&pixels,"Cannot inspect the real slider preview rectangle");const auto previous=SelectObject(buffer,bitmap);SendMessageW(canvas,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);GdiFlush();
+    const auto colors=reader_theme::palette(canvas);const auto blend=[](BYTE foreground,BYTE background){return (foreground*85+background*170)/255;};
+    const auto fill=RGB(blend(GetRValue(colors.accent),GetRValue(colors.canvas)),blend(GetGValue(colors.accent),GetGValue(colors.canvas)),blend(GetBValue(colors.accent),GetBValue(colors.canvas)));
+    const auto expected=(static_cast<std::uint32_t>(GetRValue(fill))<<16)|(static_cast<std::uint32_t>(GetGValue(fill))<<8)|GetBValue(fill);const auto values=static_cast<const std::uint32_t*>(pixels);
+    RECT content{bounds.right,bounds.bottom,-1,-1};for(int y=0;y<bounds.bottom;++y)for(int x=0;x<bounds.right;++x)if((values[static_cast<std::size_t>(y)*bounds.right+x]&0xFFFFFF)==expected){content.left=std::min<LONG>(content.left,x);content.top=std::min<LONG>(content.top,y);content.right=std::max<LONG>(content.right,x+1);content.bottom=std::max<LONG>(content.bottom,y+1);}
+    SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);require(content.right>content.left&&content.bottom>content.top,"The parameter preview has no actual filled rectangle");return content;
+}
+void slider_and_coordinate_draft_tests(HWND host){
+    {
+        const auto block=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/porcentajes_escalas_modelos/lesson_escalas_y_dimensiones.json",4,"slider");
+        MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");view.layout(0,0,650);
+        const auto canvases=class_targets(view.window(),L"LearnGameAndEngineDev.MathCanvas"),sliders=class_targets(view.window(),TRACKBAR_CLASSW);
+        require(canvases.size()==1&&sliders.size()==1,"The actual uniform scale activity lost its preview or parameter");
+        RECT visual{},control{};GetWindowRect(canvases.front(),&visual);GetWindowRect(sliders.front(),&control);require(visual.bottom<=control.top,"The parameter preview is below its controls instead of the original Android order");
+        const auto initial_rectangle=rectangle_fill_bounds(canvases.front());SendMessageW(sliders.front(),TBM_SETPOS,TRUE,2);SendMessageW(view.window(),WM_HSCROLL,TB_THUMBPOSITION,reinterpret_cast<LPARAM>(sliders.front()));
+        const auto scaled_rectangle=rectangle_fill_bounds(canvases.front());
+        require(std::abs((scaled_rectangle.right-scaled_rectangle.left)-3*(initial_rectangle.right-initial_rectangle.left))<=4&&std::abs((scaled_rectangle.bottom-scaled_rectangle.top)-3*(initial_rectangle.bottom-initial_rectangle.top))<=4,
+            "The authored scaleParameter did not multiply both original base dimensions against a fixed preview scale");
+        require(caption_target(view.window(),L"Factor uniforme: 3"),"A parameter label did not retain Android's combined name and current value");
+        const auto saved=view.answers_json();MathPuzzleView reopened(host,winrt::to_string(block.Stringify()),"es",saved);reopened.layout(0,0,650);
+        require(reopened.answers_json()==saved,"Reopening a parameter activity changed its saved values");
+    }
+    {
+        const auto block=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/racionales_y_decimales/lesson_multiplicar_fracciones.json",2,"dimensiones_racionales");
+        MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");view.layout(0,0,650);auto sliders=class_targets(view.window(),TRACKBAR_CLASSW);
+        std::ranges::sort(sliders,[](HWND a,HWND b){RECT one{},two{};GetWindowRect(a,&one);GetWindowRect(b,&two);return one.top<two.top;});require(sliders.size()==2,"The real fractional dimension activity lost a parameter");
+        for(const auto [at,position]:{std::pair{0,2},std::pair{1,4}}){SendMessageW(sliders[at],TBM_SETPOS,TRUE,position);SendMessageW(view.window(),WM_HSCROLL,TB_THUMBPOSITION,reinterpret_cast<LPARAM>(sliders[at]));}
+        const auto box=rectangle_fill_bounds(class_targets(view.window(),L"LearnGameAndEngineDev.MathCanvas").front());
+        require(std::abs(static_cast<double>(box.right-box.left)/(box.bottom-box.top)-1.5/2.5)<.04,"The authored fractional width/height preview distorted its actual dimensions");
+    }
+    {
+        const auto block=simple_block(R"({"id":"line","type":"math_slider_interaction","parameters":[{"id":"m","label":"Pendiente","min":-2,"max":2,"step":1,"value":0},{"id":"b","label":"Ordenada","min":-2,"max":2,"step":1,"value":0}],"visual":{"type":"graph","slopeParameter":"m","interceptParameter":"b"}})");
+        MathPuzzleView view(host,winrt::to_string(block.Stringify()),"es","");view.layout(0,0,650);const auto canvas=class_targets(view.window(),L"LearnGameAndEngineDev.MathCanvas").front();const auto original=canvas_pixels(canvas);
+        auto sliders=class_targets(view.window(),TRACKBAR_CLASSW);std::ranges::sort(sliders,[](HWND a,HWND b){RECT one{},two{};GetWindowRect(a,&one);GetWindowRect(b,&two);return one.top<two.top;});
+        SendMessageW(sliders.front(),TBM_SETPOS,TRUE,4);SendMessageW(view.window(),WM_HSCROLL,TB_THUMBPOSITION,reinterpret_cast<LPARAM>(sliders.front()));
+        require(canvas_pixels(canvas)!=original,"A graph parameter changed its value but left the actual line preview unchanged");
+    }
+    {
+        const auto block=authored_puzzle("app/src/main/assets/content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json",10,"point_and_coordinate");
+        const auto raw=winrt::to_string(block.Stringify());MathPuzzleView view(host,raw,"es","");view.layout(0,0,650);
+        auto fields=edits(view.window());const auto position=[](HWND a,HWND b){RECT one{},two{};GetWindowRect(a,&one);GetWindowRect(b,&two);return one.top!=two.top?one.top<two.top:one.left<two.left;};std::ranges::sort(fields,position);
+        require(fields.size()==3,"The real graph-and-coordinate activity lost an original answer field");replace(fields[0]," 2,0 ");replace(fields[1],"3");replace(fields[2],"2");
+        lgaed::windows::NarrationWorker worker(std::filesystem::path(lgaed::build::source_root)/"out/narration/runtime.json");
+        const auto evaluate=[&](const MathPuzzleView& source){return JsonObject::Parse(winrt::to_hstring(worker.validate_math(raw,source.answers_json(),"es")));};
+        require(evaluate(view).GetNamedBoolean(L"correct"),"A complete original graph response rejected decimal-comma coordinate input");
+        const auto valid=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"point").GetNamedArray(L"points").Stringify();replace(fields[0],"-");
+        const auto invalid=view.answers_json();const auto saved=JsonObject::Parse(winrt::to_hstring(invalid)).GetNamedObject(L"point");
+        require(saved.GetNamedArray(L"points").Stringify()==valid&&saved.GetNamedObject(L"interactionDraft").GetNamedArray(L"coords").GetObjectAt(0).GetNamedString(L"x")==L"-",
+            "An incomplete coordinate erased its exact draft or the last valid plotted point");
+        require(!evaluate(view).GetNamedBoolean(L"evaluable"),"An incomplete coordinate incorrectly accepted the last valid plotted answer");
+        MathPuzzleView reopened(host,raw,"es",invalid);reopened.layout(0,0,650);auto restored=edits(reopened.window());std::ranges::sort(restored,position);
+        require(edit_text(restored[0])=="-"&&reopened.answers_json()==invalid&&!evaluate(reopened).GetNamedBoolean(L"evaluable"),"Reopening lost a partial graph draft or made its old point evaluable");
+        replace(restored[0],"2");require(evaluate(reopened).GetNamedBoolean(L"correct"),"Correcting a partial coordinate did not recover the original valid response");
+    }
+    std::cout<<"PASS authored slider preview order, fixed scale/base dimensions, fractional proportions, live graph parameters and exact graph drafts with real bridge rejection/recovery\n";
 }
 void canvas_viewport_tests(HWND host){
     auto raw=simple_block(R"json({"id":"plot","type":"math_coordinate_graph_builder","bounds":{"xMin":-5,"xMax":5,"yMin":-5,"yMax":5},"snap":1,"points":[{"x":0,"y":0,"draggable":true}]})json");
@@ -368,6 +503,10 @@ int main(int argc,char** argv) {
         structured_input_tests(host.window);
         android_control_parity_tests(host.window);
         calculator_field_tests(host.window);
+        initial_text_scale_layout_tests(host.window);
+        choice_alignment_tests(host.window);
+        rich_option_content_tests(host.window);
+        slider_and_coordinate_draft_tests(host.window);
         passive_mouse_tests(host.window);
         if (argc > 1 && std::string_view(argv[1]) == "--visual") {
             const auto module = LoadLibraryW(L"Msftedit.dll");

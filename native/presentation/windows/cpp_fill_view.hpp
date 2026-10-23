@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -13,7 +14,8 @@ namespace lgaed::presentation {
 class CppFillView {
 public:
     CppFillView(HWND parent,const curriculum::Block&,std::string_view saved_json,
-        std::function<void()> changed,std::function<void()> submit);
+        std::function<void()> changed,std::function<void()> submit,
+        std::function<std::optional<LRESULT>(HWND,UINT,WPARAM,LPARAM)> lesson_gesture = {});
     ~CppFillView();
     [[nodiscard]] HWND window() const;
     [[nodiscard]] int height_for_width(int width);
@@ -23,6 +25,8 @@ public:
     [[nodiscard]] windows::CodeEditor* editor(HWND focused);
     void set_enabled(bool);
     void set_text_scale(int percentage);
+    void set_wrap(bool);
+    void scroll_horizontal_to(int offset);
     void reset();
 private:
     struct Impl;std::unique_ptr<Impl> impl_;
