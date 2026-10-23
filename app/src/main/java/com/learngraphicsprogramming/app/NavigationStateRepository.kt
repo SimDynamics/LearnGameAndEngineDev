@@ -25,8 +25,7 @@ object NavigationStateRepository {
             routeId = state.routeId.takeIf { selected },
             courseId = state.courseId.takeIf { selected },
             lessonId = state.lessonId.takeIf { selected },
-            pageIndex = state.lessonId?.takeIf { selected }?.let { ProgressRepository.getCurrentPage(context, it) },
-            unitId = state.unitId.takeIf { selected }
+            pageIndex = state.lessonId?.takeIf { selected }?.let { ProgressRepository.getCurrentPage(context, it) }
         )
     }
 

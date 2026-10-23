@@ -101,8 +101,7 @@ internal object KokoroNarrationSessionMonitor {
     // SharedPreferences keeps listeners weakly; the application monitor owns this
     // one for its lifetime, including sessions with no visible activity.
     private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == "enabled" || key == "engine" || NarrationGenerationProfile.isPreference(key) ||
-            NarrationSettingsRepository.isCourseGenerationPreference(key) ||
+        if (key == "enabled" || key == "engine" ||
             key == NarrationSettingsRepository.KEY_ADVANCE_GENERATION) {
             val update = {
                 if (!NarrationSettingsRepository.advanceGenerationEnabled(application)) {

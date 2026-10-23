@@ -1080,7 +1080,12 @@ int main() {
             const auto glyph_character=SendMessageW(source_control,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&glyph_character_point));
             RECT glyph_control_bounds{},glyph_pane_bounds{};GetWindowRect(source_control,&glyph_control_bounds);GetWindowRect(GetParent(source_control),&glyph_pane_bounds);
             auto glyph_screen=glyph_probe;ClientToScreen(source_control,&glyph_screen);
-            const auto glyph_hit=WindowFromPoint(glyph_screen);
+            auto glyph_pane_point=glyph_screen;ScreenToClient(GetParent(source_control),&glyph_pane_point);
+            // Input below is sent to our own HWNDs. Check clipping and sibling
+            // occlusion in that same hierarchy, independent of other apps on
+            // the desktop (this QA host deliberately does not steal activation).
+            const auto glyph_hit=ChildWindowFromPointEx(GetParent(source_control),glyph_pane_point,
+                CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT);
             require(PtInRect(&glyph_pane_bounds,glyph_screen)&&glyph_hit==source_control,
                 "The large-text pointer fixture did not expose its real editor glyph inside the visible viewport");
             require(rich_text_hit_test(source_control,glyph_probe),
