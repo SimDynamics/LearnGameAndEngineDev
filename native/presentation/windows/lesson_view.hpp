@@ -53,7 +53,13 @@ inline constexpr UINT lesson_preferences_update_message = WM_APP + 186;
 // Back first dismisses the current transient surface, then uses the existing
 // catalog callback. It never changes page/reading history on its own.
 [[nodiscard]] bool navigate_lesson_back(HWND window);
+// Run before IsDialogMessage. Each physical Enter checks or advances once;
+// multiline editors keep their normal newline behavior.
+[[nodiscard]] bool dispatch_lesson_enter(MSG& message);
 [[nodiscard]] std::vector<LessonReadingRegion> lesson_reading_regions(HWND window);
+// Reconstructs only the previous Windows script for exact bookmark migration.
+// These regions are never used for playback or visual shading.
+[[nodiscard]] std::vector<LessonReadingRegion> legacy_lesson_reading_regions(HWND window);
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks);
 // The caller owns the reader bar. It must be a child of the lesson view; the
 // bar overlays the viewport, as on Android; it never reserves a footer.

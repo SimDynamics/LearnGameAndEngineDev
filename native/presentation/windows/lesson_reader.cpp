@@ -34,17 +34,25 @@ constexpr UINT tick_timer=901;
 constexpr UINT layout_message=WM_APP+0x172;
 constexpr int button_base=6500;
 constexpr int bar_width=344,bar_height=56;
+bool promoted_pointer_mouse(){
+    // Documented Win32 tablet signature: promoted pen/touch messages retain
+    // this origin, while native mouse messages have no tablet signature.
+    // https://learn.microsoft.com/windows/win32/tablet/system-events-and-mouse-messages
+    return (static_cast<ULONG_PTR>(GetMessageExtraInfo())&0xffffff00u)==0xff515700u;
+}
 std::string guid(){GUID id{};CoCreateGuid(&id);wchar_t value[40]{};StringFromGUID2(id,value,40);return utf8(value);}
 bool setting_bool(const state::StateData& data,const char* key,bool fallback){const auto value=state::find(data,"lesson_narration_settings",key);return value&&std::holds_alternative<bool>(*value)?std::get<bool>(*value):fallback;}
 }
 struct LessonReader::Impl {
     struct Part{LessonReadingRegion region;windows::NarrationSegment sentence;std::optional<windows::NarrationAudio> audio;std::size_t occurrence=0;};
-    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::string key,error,legacy_key;std::size_t index=0,omitted_prefix=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
+    struct LegacyPlan{std::string key;std::vector<Part> parts;};
+    struct Result{std::uint64_t epoch=0;std::vector<Part> parts;std::vector<LegacyPlan> legacy;std::string key,error;std::size_t index=0;std::optional<windows::NarrationAudio> audio;bool planned=false;};
     HWND view=nullptr,window=nullptr;WindowsEnvironment environment;std::shared_ptr<windows::NarrationWorker> backend;
     std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;
     std::vector<LessonReadingRegion> regions;std::vector<Part> parts;std::map<std::string,std::unique_ptr<ReadingShade>> shades;
     std::string page_id,resume_page_id,signature,key,owner,language="es",voice="ef_dora",engine="KOKORO",error,configuration_error,ui_locale="es";
     std::string previous_part,previous_key;std::vector<std::string> previously_heard;double previous_offset=0;std::optional<std::size_t> feedback_target;
+    std::vector<std::pair<std::string,double>> previous_positions;
     narration::Position position;windows::NarrationPlayer player;bool enabled=true,wanted=false,planning=false,has_plan=false,finished=false,waiting_gate=false,visible=true;
     double rate=1;std::uint64_t epoch=0;std::atomic<std::size_t> priority{0};std::jthread generation;
     std::atomic<bool> advance_generation{true};std::condition_variable generation_changed;std::mutex generation_mutex;
@@ -55,7 +63,7 @@ struct LessonReader::Impl {
     std::optional<bool> painted_playing;
     double painted_rate=-1;
     std::string status_text;
-    ULONGLONG drag_at=0;bool dragging=false,positioned=false;
+    ULONGLONG drag_at=0;bool dragging=false,drag_moved=false,drag_requires_hold=false,drag_rejected=false,positioned=false;HWND pressed_button=nullptr;
     Impl(HWND target,const WindowsEnvironment& env,std::shared_ptr<windows::NarrationWorker> worker,std::function<void()> action):view(target),environment(env),backend(std::move(worker)),settings(std::move(action)){}
     ~Impl(){stop();if(status&&IsWindow(status))DestroyWindow(status);if(window&&IsWindow(window))DestroyWindow(window);shades.clear();if(font)DeleteObject(font);}
     int px(int value)const{return MulDiv(value,static_cast<int>(GetDpiForWindow(view)),96);}
@@ -114,7 +122,7 @@ struct LessonReader::Impl {
         if(!window)throw std::runtime_error("No se pudo abrir la barra de lectura.");
         font=CreateFontW(-px(16),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
         static constexpr const wchar_t* labels[]{L"Retroceder 3 segundos",L"Retroceder 5 segundos",L"Adelantar 5 segundos",L"Adelantar 3 segundos",L"Reproducir o pausar",L"Velocidad de lectura",L"Reiniciar lectura"};
-        for(std::size_t i=0;i<buttons.size();++i){buttons[i]=CreateWindowExW(0,L"BUTTON",labels[i],WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW,0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(button_base+i)),cls.hInstance,nullptr);SendMessageW(buttons[i],WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);}
+        for(std::size_t i=0;i<buttons.size();++i){buttons[i]=CreateWindowExW(0,L"BUTTON",labels[i],WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW,0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(button_base+i)),cls.hInstance,nullptr);SendMessageW(buttons[i],WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);SetWindowSubclass(buttons[i],button_proc,1,reinterpret_cast<DWORD_PTR>(this));}
         status=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|SS_CENTER,0,0,0,0,view,nullptr,cls.hInstance,nullptr);SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);reader_theme::apply(status,reader_theme::Surface::card);
         SetTimer(window,tick_timer,30,nullptr);configure();changed();}
     void layout(){RECT area{};GetClientRect(window,&area);const int size=std::max(px(22),(static_cast<int>(area.right)-px(8))/7),width=size*7,left=std::max(0,(static_cast<int>(area.right)-width)/2);
@@ -145,14 +153,40 @@ struct LessonReader::Impl {
         if(label!=status_text){status_text=label;SetWindowTextW(status,wide(label).c_str());
             ShowWindow(status,enabled&&visible&&!label.empty()?SW_SHOWNOACTIVATE:SW_HIDE);}}
     void push(Result result){const std::lock_guard lock(result_mutex);results.push_back(std::move(result));}
+    static bool audio_file(const windows::NarrationAudio& audio){std::error_code file_status_error;return std::filesystem::is_regular_file(audio.wav,file_status_error);}
+    void prepare_audio(std::vector<Part> planned,std::uint64_t current_epoch,const std::string& lang,const std::string& selected_voice,
+            const std::string& selected_engine,std::stop_token stop,windows::NarrationPriorityLease page_priority){
+        std::vector<bool> ready;ready.reserve(planned.size());for(const auto& part:planned)ready.push_back(part.audio&&audio_file(*part.audio));
+        while(!stop.stop_requested()){const auto requested=std::min(priority.load(),planned.size()-1);auto index=requested;
+            if(ready[index]){const auto found=std::ranges::find(ready,false);if(found==ready.end())break;
+                if(!advance_generation.load()){page_priority={};std::unique_lock lock(generation_mutex);generation_changed.wait(lock,[&]{return stop.stop_requested()||advance_generation.load()||!ready[std::min(priority.load(),planned.size()-1)];});
+                    lock.unlock();if(!stop.stop_requested())page_priority=backend->current_page_lease(stop);continue;}
+                index=static_cast<std::size_t>(found-ready.begin());}
+            auto audio=selected_engine=="WINDOWS"||selected_engine=="ANDROID"?
+                windows::synthesize_system_speech(planned[index].sentence,lang,selected_voice,environment.paths.cache,stop):
+                backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",0,stop);ready[index]=true;
+            Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
+    }
+    void recover_audio(std::size_t at){
+        // Settings can delete a course's recordings while the released reader
+        // still has their metadata. Reuse its one preparation worker without
+        // rebuilding the script, changing its key or moving its bookmark.
+        parts[at].audio.reset();cancel_generation();const auto current_epoch=++epoch;prioritize(at);
+        const auto snapshot=parts;const auto lang=language,selected_voice=voice,selected_engine=engine;
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,selected_engine](std::stop_token stop){
+            try{prepare_audio(snapshot,current_epoch,lang,selected_voice,selected_engine,stop,backend->current_page_lease(stop));}
+            catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
+        });update_buttons();
+    }
     static std::string part_id(const Part& part){return part.region.key+'\0'+part.sentence.prepared+'\0'+std::to_string(part.occurrence);}
     void changed(){if(!IsWindow(view))return;const auto page=lesson_page_state(view);const auto next_page=page.lesson_id+'/'+page.locale+'/'+page.page_id;
         const auto next_regions=lesson_reading_regions(view);std::string next_signature=next_page;
         for(const auto& region:next_regions)next_signature+='\0'+region.key+'\0'+region.source_text;
         if(next_signature==signature){regions=next_regions;for(auto& part:parts)for(const auto& region:regions)if(region.key==part.region.key){part.region=region;break;}return;}
         if(has_plan&&static_cast<std::size_t>(position.segment)<parts.size()){previous_part=part_id(parts[static_cast<std::size_t>(position.segment)]);release_player();previous_offset=static_cast<double>(position.milliseconds);save(finished);previous_key=key;
+            previous_positions.clear();for(std::size_t i=0;i<=current();++i)previous_positions.emplace_back(part_id(parts[i]),i==current()?previous_offset:parts[i].audio?parts[i].audio->duration_ms:0.);
             previously_heard.clear();for(std::size_t i=0;i<parts.size()&&i<static_cast<std::size_t>(position.heard_through);++i)if(parts[i].region.feedback&&parts[i].region.correct)previously_heard.push_back(part_id(parts[i]));}
-        if(next_page!=page_id){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_offset=0;feedback_target.reset();listened.clear();}
+        if(next_page!=page_id){wanted=false;previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();previous_offset=0;feedback_target.reset();listened.clear();}
         cancel_generation();++epoch;signature=next_signature;page_id=next_page;resume_page_id=page.narration_page_identity.empty()?next_page:page.narration_page_identity;regions=next_regions;parts.clear();key.clear();owner.clear();position={};finished=false;waiting_gate=false;has_plan=false;error.clear();planning=false;
         std::erase_if(shades,[&](const auto& item){return std::ranges::none_of(regions,[&](const auto& region){return item.first==region.key&&item.second->matches(region.target,region.source_text);});});
         for(const auto& region:regions)if(!shades.contains(region.key))shades.emplace(region.key,std::make_unique<ReadingShade>(region.target,region.source_text));
@@ -163,47 +197,83 @@ struct LessonReader::Impl {
         if(regions.empty())return;planning=true;prioritize(0);const auto current_epoch=epoch;const auto snapshot=regions;const auto lang=language,selected_voice=voice;const auto current_page=resume_page_id;
         const auto selected_engine=engine;
         const auto history=narration::read_history(data());
-        const auto legacy_title=page.index>0&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.page==current_page;})?page.lesson_title:std::string{};
-        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title](std::stop_token stop){
+        const bool has_bookmark=std::ranges::any_of(history.entries,[&](const auto& entry){return entry.page==current_page;});
+        const auto legacy_title=page.index>0&&has_bookmark?page.lesson_title:std::string{};
+        const auto legacy_snapshot=has_bookmark?legacy_lesson_reading_regions(view):std::vector<LessonReadingRegion>{};
+        generation=std::jthread([this,current_epoch,snapshot,lang,selected_voice,current_page,selected_engine,legacy_title,legacy_snapshot,history](std::stop_token stop){
             try{auto page_priority=backend->current_page_lease(stop);
                 std::vector<Part> planned;std::vector<windows::NarrationSegment> sentences;
                 for(const auto& region:snapshot){std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
                     const auto occurrence=occurrences[sentence.prepared]++;sentences.push_back(sentence);planned.push_back({region,std::move(sentence),{},occurrence});} }
                 if(planned.empty())throw std::runtime_error("No hay texto narrable en esta página.");const auto resume_key=backend->identity(current_page,lang,selected_voice,sentences,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
                 Result plan;plan.epoch=current_epoch;plan.parts=planned;plan.key=resume_key;plan.planned=true;
-                // Older Windows builds incorrectly repeated the lesson title on
-                // every page. Only an exact old script-key match permits the
-                // removal of that prefix from an existing bounded bookmark.
-                if(!legacy_title.empty()){
-                    auto legacy=backend->plan(legacy_title,lang,stop);plan.omitted_prefix=legacy.size();legacy.insert(legacy.end(),sentences.begin(),sentences.end());
-                    plan.legacy_key=backend->identity(current_page,lang,selected_voice,legacy,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
+                if(std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==resume_key;})){
+                    const auto add_legacy=[&](std::vector<Part> old){
+                        std::vector<windows::NarrationSegment> script;for(const auto& part:old)script.push_back(part.sentence);
+                        const auto old_key=backend->identity(current_page,lang,selected_voice,script,stop,selected_engine=="WINDOWS"||selected_engine=="ANDROID"?"ANDROID":"KOKORO");
+                        if(old_key!=resume_key&&std::ranges::any_of(history.entries,[&](const auto& entry){return entry.key==old_key;}))plan.legacy.push_back({old_key,std::move(old)});
+                    };
+                    std::vector<Part> prefix;
+                    if(!legacy_title.empty()){
+                        LessonReadingRegion origin;origin.key=current_page+"/legacy-repeated-title";origin.source_text=legacy_title;
+                        std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(legacy_title,lang,stop)){
+                            const auto occurrence=occurrences[sentence.prepared]++;prefix.push_back({origin,std::move(sentence),{},occurrence});}
+                        auto old=prefix;old.insert(old.end(),planned.begin(),planned.end());add_legacy(std::move(old));
+                    }
+                    const bool old_programming=legacy_snapshot.size()!=snapshot.size()||!std::ranges::equal(legacy_snapshot,snapshot,[](const auto& a,const auto& b){return a.key==b.key&&a.source_text==b.source_text;});
+                    if(old_programming&&!legacy_snapshot.empty()){
+                        std::vector<Part> old;
+                        for(const auto& region:legacy_snapshot){
+                            const auto current=std::ranges::find_if(snapshot,[&](const auto& item){return item.key==region.key&&item.source_text==region.source_text;});
+                            if(current!=snapshot.end()){for(const auto& part:planned)if(part.region.key==region.key)old.push_back(part);}
+                            else{std::map<std::string,std::size_t> occurrences;for(auto sentence:backend->plan(region.source_text,lang,stop)){
+                                const auto occurrence=occurrences[sentence.prepared]++;old.push_back({region,std::move(sentence),{},occurrence});}}
+                        }
+                        add_legacy(old);if(!prefix.empty()){prefix.insert(prefix.end(),old.begin(),old.end());add_legacy(std::move(prefix));}
+                    }
                 }
                 push(std::move(plan));
-                std::vector<bool> ready(planned.size(),false);
-                while(!stop.stop_requested()){const auto requested=std::min(priority.load(),planned.size()-1);auto index=requested;
-                    if(ready[index]){const auto found=std::ranges::find(ready,false);if(found==ready.end())break;
-                        if(!advance_generation.load()){page_priority={};std::unique_lock lock(generation_mutex);generation_changed.wait(lock,[&]{return stop.stop_requested()||advance_generation.load()||!ready[std::min(priority.load(),planned.size()-1)];});
-                            lock.unlock();if(!stop.stop_requested())page_priority=backend->current_page_lease(stop);continue;}
-                        index=static_cast<std::size_t>(found-ready.begin());}
-                    auto audio=selected_engine=="WINDOWS"||selected_engine=="ANDROID"?
-                        windows::synthesize_system_speech(planned[index].sentence,lang,selected_voice,environment.paths.cache,stop):
-                        backend->prepare(planned[index].sentence,lang,selected_voice,environment.paths.cache/L"kokoro",0,stop);ready[index]=true;
-                    Result result;result.epoch=current_epoch;result.index=index;result.audio=std::move(audio);push(std::move(result));}
+                prepare_audio(std::move(planned),current_epoch,lang,selected_voice,selected_engine,stop,std::move(page_priority));
             }catch(const std::exception& failure){if(!stop.stop_requested()){Result result;result.epoch=current_epoch;result.error=failure.what();push(std::move(result));}}
         });update_buttons();}
     void receive(){std::vector<Result> pending;{const std::lock_guard lock(result_mutex);pending.swap(results);}if(pending.empty())return;for(auto& result:pending){if(result.epoch!=epoch)continue;
         if(!result.error.empty()){error=result.error;planning=false;wanted=false;(void)player.release();continue;}
         if(result.planned){parts=std::move(result.parts);key=result.key;has_plan=true;planning=false;position={};
             const auto history=narration::read_history(data());if(const auto saved=narration::restore(history,key,parts.size()))position=*saved;
-            else if(!result.legacy_key.empty())if(const auto legacy_saved=narration::restore(history,result.legacy_key,parts.size()+result.omitted_prefix)){
-                position=*legacy_saved;const auto removed=static_cast<std::int64_t>(result.omitted_prefix);
-                if(position.segment<removed){position.milliseconds=0;position.finished=false;}
-                position.segment=std::max<std::int64_t>(0,position.segment-removed);position.heard_through=std::max<std::int64_t>(0,position.heard_through-removed);
+            else for(const auto& legacy:result.legacy)if(const auto legacy_saved=narration::restore(history,legacy.key,legacy.parts.size())){
+                position=*legacy_saved;const auto old_at=static_cast<std::size_t>(legacy_saved->segment);bool found_position=false;
+                for(std::size_t previous=old_at+1;previous>0;--previous){const auto& old_part=legacy.parts[previous-1];
+                    const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==part_id(old_part);});if(found==parts.end())continue;
+                    const auto mapped=static_cast<std::size_t>(found-parts.begin());found_position=true;
+                    if(previous-1==old_at)position.segment=static_cast<std::int64_t>(mapped);
+                    else{position.segment=static_cast<std::int64_t>(std::min(mapped+1,parts.size()-1));position.milliseconds=0;position.finished=false;}
+                    break;
+                }
+                if(!found_position){position.segment=0;position.milliseconds=0;position.finished=false;}
+                position.heard_through=0;
+                for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.feedback&&parts[i].region.correct){
+                    const auto old=std::ranges::find_if(legacy.parts,[&](const auto& part){return part_id(part)==part_id(parts[i]);});
+                    if(old==legacy.parts.end()||old-legacy.parts.begin()>=legacy_saved->heard_through)break;
+                    position.heard_through=static_cast<std::int64_t>(i+1);
+                }
+                // Relabel the verified old entry in place. Its recency and the
+                // other two page slots are unchanged; no parallel history is kept.
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);
-                    for(auto& entry:old.entries)if(entry.key==result.legacy_key){entry.key=key;entry.position=position;}
-                    if(old.active_key==result.legacy_key)old.active_key=key;narration::write_history(preferences,old);});
+                    for(auto& entry:old.entries)if(entry.key==legacy.key){entry.key=key;entry.position=position;}
+                    if(old.active_key==legacy.key)old.active_key=key;narration::write_history(preferences,old);});break;
             }
-            if(!previous_part.empty()){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==previous_part;});if(found!=parts.end()){position.segment=found-parts.begin();position.milliseconds=static_cast<std::int64_t>(previous_offset);position.finished=false;}}
+            if(!previous_part.empty()){
+                // An edited answer removes its old feedback from the visible
+                // script. Restore the nearest surviving real segment rather
+                // than falling through to position zero and replaying a page.
+                for(auto candidate=previous_positions.rbegin();candidate!=previous_positions.rend();++candidate){
+                    const auto found=std::ranges::find_if(parts,[&](const auto& part){return part_id(part)==candidate->first;});
+                    if(found==parts.end())continue;
+                    position.segment=found-parts.begin();position.milliseconds=static_cast<std::int64_t>(candidate->second);position.finished=false;
+                    if(candidate->first!=previous_part&&!feedback_target)wanted=false;
+                    break;
+                }
+            }
             if(!previous_key.empty()&&previous_key!=key){
                 position.heard_through=0;for(std::size_t i=0;i<parts.size();++i)if(parts[i].region.feedback&&parts[i].region.correct){if(std::ranges::find(previously_heard,part_id(parts[i]))==previously_heard.end())break;position.heard_through=static_cast<std::int64_t>(i+1);}
                 mutate([&](state::StateData& preferences){auto old=narration::read_history(preferences);const auto existing=std::ranges::find(old.entries,key,&narration::Bookmark::key);
@@ -212,7 +282,7 @@ struct LessonReader::Impl {
                     if(old.active_key==previous_key)old.active_key=key;narration::write_history(preferences,old);});
             }
             if(feedback_target){const auto found=std::ranges::find_if(parts,[&](const auto& part){return part.region.feedback&&part.region.block_index==*feedback_target;});if(found!=parts.end()){position.segment=found-parts.begin();position.milliseconds=0;position.finished=false;}feedback_target.reset();}
-            previous_part.clear();previous_key.clear();previously_heard.clear();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
+            previous_part.clear();previous_key.clear();previously_heard.clear();previous_positions.clear();finished=position.finished;prioritize(static_cast<std::size_t>(position.segment));if(wanted&&!finished)acquire();
         }else if(result.audio&&result.index<parts.size())parts[result.index].audio=std::move(result.audio);
         }paint_progress();update_buttons();}
     std::size_t current()const{return parts.empty()?0:std::min(static_cast<std::size_t>(std::max<std::int64_t>(0,position.segment)),parts.size()-1);}
@@ -225,6 +295,7 @@ struct LessonReader::Impl {
         }return true;
     }
     void play_current(){if(!wanted||!has_plan||finished||parts.empty()||player.allocated())return;const auto at=current();prioritize(at);if(!parts[at].audio)return;
+        if(!audio_file(*parts[at].audio)){recover_audio(at);return;}
         last_played_offset=static_cast<double>(position.milliseconds);player.play(parts[at].audio->wav,last_played_offset,rate);update_buttons();}
     void heard_until(double end){if(parts.empty()||end<last_played_offset)return;auto& ranges=listened[part_id(parts[current()])];ranges.push_back({last_played_offset,end});std::ranges::sort(ranges);
         std::vector<std::pair<double,double>> merged;for(const auto& range:ranges){if(!merged.empty()&&range.first<=merged.back().second+1)merged.back().second=std::max(merged.back().second,range.second);else merged.push_back(range);}ranges=std::move(merged);last_played_offset=end;}
@@ -278,6 +349,13 @@ struct LessonReader::Impl {
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
         else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();listened.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
+    static LRESULT CALLBACK button_proc(HWND button,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR context){
+        auto& self=*reinterpret_cast<Impl*>(context);
+        if(message==WM_LBUTTONDOWN){POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};MapWindowPoints(button,self.window,&point,1);
+            SendMessageW(self.window,message,wp,MAKELPARAM(point.x,point.y));self.pressed_button=button;return 0;}
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(button,button_proc,1);
+        return DefSubclassProc(button,message,wp,lp);
+    }
     static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp){auto* self=reinterpret_cast<Impl*>(GetWindowLongPtrW(window,GWLP_USERDATA));
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));self->window=window;}
         if(!self)return DefWindowProcW(window,message,wp,lp);LRESULT themed{};if(reader_theme::control_color(message,wp,lp,themed))return themed;
@@ -296,12 +374,20 @@ struct LessonReader::Impl {
             if(index==5){const auto previous=SelectObject(item.hDC,self->font);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,reader_theme::accent_ink(window,palette.card));const auto caption=self->rate==.5?L"0.5X":self->rate==1?L"1X":self->rate==1.5?L"1.5X":L"2X";auto caption_bounds=item.rcItem;DrawTextW(item.hDC,caption,-1,&caption_bounds,DT_SINGLELINE|DT_CENTER|DT_VCENTER);SelectObject(item.hDC,previous);}
             else draw_icon(item.hDC,bounds,icons[index],index==4?(self->wanted?palette.accent:RGB(255,255,255)):index==6?RGB(170,174,183):RGB(255,255,255));
             if(item.itemState&ODS_FOCUS)reader_theme::paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,palette.muted);return TRUE;}
-        case WM_LBUTTONDOWN:{self->drag_start={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&self->drag_start);RECT rect{};GetWindowRect(window,&rect);self->bar_start={rect.left,rect.top};ScreenToClient(self->view,&self->bar_start);self->drag_at=GetTickCount64();self->dragging=true;SetCapture(window);return 0;}
-        case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)&&GetTickCount64()-self->drag_at>=90){POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&point);RECT bar{};GetWindowRect(window,&bar);const auto x=self->bar_start.x+point.x-self->drag_start.x,y=self->bar_start.y+point.y-self->drag_start.y;
+        case WM_LBUTTONDOWN:{self->drag_start={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&self->drag_start);RECT rect{};GetWindowRect(window,&rect);self->bar_start={rect.left,rect.top};ScreenToClient(self->view,&self->bar_start);self->drag_at=GetTickCount64();self->dragging=true;self->drag_moved=false;self->drag_rejected=false;self->drag_requires_hold=promoted_pointer_mouse();self->pressed_button=nullptr;SetCapture(window);return 0;}
+        case WM_MOUSEMOVE:if(self->dragging&&(wp&MK_LBUTTON)){
+            if(self->drag_rejected)return 0;
+            if(promoted_pointer_mouse()!=self->drag_requires_hold){self->drag_rejected=true;return 0;}
+            POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&point);
+            if(!self->drag_moved&&std::max(std::abs(point.x-self->drag_start.x),std::abs(point.y-self->drag_start.y))<self->px(6))return 0;
+            if(self->drag_requires_hold&&GetTickCount64()-self->drag_at<90){self->drag_rejected=true;return 0;}
+            self->drag_moved=true;RECT bar{};GetWindowRect(window,&bar);const auto x=self->bar_start.x+point.x-self->drag_start.x,y=self->bar_start.y+point.y-self->drag_start.y;
             const auto& area=self->floating_bounds;
             self->floating_position={std::clamp<LONG>(x,area.left,std::max<LONG>(area.left,area.right-(bar.right-bar.left))),std::clamp<LONG>(y,area.top,std::max<LONG>(area.top,area.bottom-(bar.bottom-bar.top)))};self->positioned=true;
             SetWindowPos(window,HWND_TOP,self->floating_position.x,self->floating_position.y,0,0,SWP_NOSIZE|SWP_NOACTIVATE|SWP_NOCOPYBITS);}return 0;
-        case WM_LBUTTONUP:case WM_CAPTURECHANGED:self->dragging=false;if(GetCapture()==window)ReleaseCapture();return 0;
+        case WM_LBUTTONUP:{const auto button=self->pressed_button;const bool click=self->dragging&&!self->drag_moved&&!self->drag_rejected&&button;self->dragging=false;self->pressed_button=nullptr;if(GetCapture()==window)ReleaseCapture();
+            if(click){POINT point{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(window,&point);RECT bounds{};GetWindowRect(button,&bounds);if(PtInRect(&bounds,point))SendMessageW(button,BM_CLICK,0,0);}return 0;}
+        case WM_CANCELMODE:case WM_CAPTURECHANGED:self->dragging=false;self->pressed_button=nullptr;if(GetCapture()==window)ReleaseCapture();return 0;
         case WM_NCDESTROY:KillTimer(window,tick_timer);self->window=nullptr;SetWindowLongPtrW(window,GWLP_USERDATA,0);break;
         default:break;}}
         catch(const std::exception& failure){self->error=failure.what();self->wanted=false;try{(void)self->player.release();}catch(...){}self->update_buttons();}
@@ -332,7 +418,7 @@ LessonReaderSnapshot LessonReader::snapshot()const{
         segment.region=part.region.key;segment.source=part.sentence.text;segment.spoken=part.sentence.spoken;segment.target=part.region.target;
         segment.block=part.region.block_index;segment.start=part.sentence.start;segment.end=part.sentence.end;
         segment.feedback=part.region.feedback;segment.correct=part.region.correct;segment.available=part.audio.has_value();
-        if(part.audio){segment.duration_ms=part.audio->duration_ms;segment.timings=part.audio->timings;}
+        if(part.audio){segment.duration_ms=part.audio->duration_ms;segment.timings=part.audio->timings;segment.recording=part.audio->wav;}
         value.segments.push_back(std::move(segment));
     }
     return value;

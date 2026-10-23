@@ -6,6 +6,9 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/catalog_view.hpp"
 #include "presentation/windows/settings_view.hpp"
+#include "presentation/windows/audio_course_view.hpp"
+#include "presentation/windows/narration_licenses.hpp"
+#include "platform/windows/narration_storage.hpp"
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/tools_view.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
@@ -27,6 +30,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -40,6 +44,7 @@ constexpr UINT_PTR audio_context_timer = 2;
 constexpr DWORD window_style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 constexpr UINT open_lesson_message=WM_APP+230,return_message=WM_APP+231,settings_message=WM_APP+232,close_settings_message=WM_APP+233,tool_message=WM_APP+234;
 constexpr UINT lesson_finished_message=WM_APP+235;
+constexpr UINT application_language_message=WM_APP+237;
 
 struct WindowState {
     lgaed::WindowsEnvironment environment;
@@ -81,6 +86,8 @@ void update_audio_context(WindowState& state,bool force){
     if(!force&&state.audio_location==where&&state.audio_page==page&&state.audio_graphics==state.graphics_active)return;
     state.audio_location=where;state.audio_page=page;state.audio_graphics=state.graphics_active;
     const auto data=preferences(state);
+    const auto raw_limit=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);
+    state.narrator->set_storage_budget(raw_limit<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw_limit));
     where.locale=lgaed::state::string_value(data,"native_windows","content_language",where.locale);
     auto selection=lgaed::windows::audio_generation_selection(data,std::move(where),page);
     if(state.graphics_active)selection.enabled=false;
@@ -171,12 +178,13 @@ void open_lesson(HWND window,WindowState& state,lgaed::curriculum::Lesson lesson
         if(current.lesson_id=="native_cpp_laboratory")state.context={current.locale};else state.context.lesson=current.lesson_id;PostMessageW(window,settings_message,0,0);};
     hooks.language_requested=[&state](HWND owner){
         using namespace lgaed::presentation;
-        const auto data=preferences(state);const auto selected=lgaed::state::string_value(data,"native_windows","ui_language","auto");
-        const auto locale=choose_interface_language(owner,data);if(!locale||*locale==selected)return;
-        // This shortcut changes only menu/control language. The original
-        // curriculum, narration language, editor and playback stay in place.
-        update_preferences(state,[&](auto& updated){updated.preferences["native_windows"]["ui_language"]=*locale;});
-        if(state.reader)state.reader->settings_changed();
+        const auto data=preferences(state);
+        const auto locale=choose_interface_language(owner,data);if(!locale)return;
+        auto candidate=data;apply_application_language(candidate,*locale);
+        if(candidate==data)return;
+        update_preferences(state,[&](auto& updated){apply_application_language(updated,*locale);});
+        if(state.reader)state.reader->pause();
+        PostMessageW(GetAncestor(owner,GA_ROOT),application_language_message,0,0);
         if(state.settings)refresh_settings_language(state.settings);
     };
     hooks.attempts_requested=[&state,route=context.route.empty()?std::string("programming"):context.route](HWND owner){
@@ -208,7 +216,29 @@ void open_settings(HWND window,WindowState& state){
     using namespace lgaed::presentation;if(state.settings&&IsWindow(state.settings)){ShowWindow(state.settings,SW_RESTORE);SetForegroundWindow(state.settings);return;}
     if(state.lesson&&!flush_lesson_view(state.lesson))return;
     SettingsAccess access;access.read=[&state]{return preferences(state);};access.update=[&state](const PreferencesMutation& change){update_preferences(state,change);};
-    access.changed=[&state]{update_audio_context(state);if(state.reader)state.reader->settings_changed();};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
+    access.changed=[window,&state]{update_audio_context(state,true);if(state.reader)state.reader->settings_changed();PostMessageW(window,application_language_message,0,0);};access.close=[window]{PostMessageW(window,close_settings_message,0,0);};
+    access.unsaved_discarded=[window](std::string_view message){show_settings_notice(window,message);};
+    access.storage_snapshot=[&state]{const auto data=preferences(state);const auto raw=lgaed::state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",-1);return lgaed::windows::narration_storage_snapshot(state.environment.paths.cache/L"kokoro",raw<0?std::numeric_limits<std::uint64_t>::max():static_cast<std::uint64_t>(raw));};
+    access.open_licenses=[window,&state]{(void)open_narration_licenses(state.settings?state.settings:window,interface_language(preferences(state)));};
+    access.open_audio=[window,&state](std::string_view route){
+        CourseAudioAccess audio;audio.worker=state.narrator;audio.content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";audio.cache=state.environment.paths.cache/L"kokoro";
+        audio.profile=[&state]{const auto data=preferences(state);CourseAudioProfile profile;profile.locale=lgaed::state::string_value(data,"native_windows","content_language",interface_language(data));
+            const auto selection=lgaed::windows::audio_generation_selection(data,{profile.locale});profile.language=selection.language;profile.ui_language=interface_language(data);profile.voices=selection.voices;profile.engine=lgaed::state::string_value(data,"lesson_narration_settings","engine","KOKORO");
+            const auto enabled=lgaed::state::find(data,"lesson_narration_settings","enabled");profile.enabled=!enabled||!std::holds_alternative<bool>(*enabled)||std::get<bool>(*enabled);return profile;};
+        audio.paused=[&state](const CourseAudioRef& course){const auto data=preferences(state);const auto value=lgaed::state::find(data,"lesson_narration_settings","kokoro_paused_course:"+course.route+":"+course.course);return value&&std::holds_alternative<bool>(*value)&&std::get<bool>(*value);};
+        audio.pause=[&state](const CourseAudioRef& course,bool pause){update_preferences(state,[&](auto& data){data.preferences["lesson_narration_settings"]["kokoro_paused_course:"+course.route+":"+course.course]=pause;});};
+        audio.idle_maintenance=[window,&state]()->std::shared_ptr<void>{
+            if(state.reader){const auto reading=state.reader->snapshot();if(reading.playing||reading.preparing||reading.allocated)return {};}
+            auto lease=state.narrator->try_idle_maintenance_lease();if(!lease)return {};
+            auto token=std::make_shared<lgaed::windows::NarrationPriorityLease>(std::move(*lease));
+            const auto lesson=state.lesson,settings=state.settings;const bool root_enabled=IsWindowEnabled(window)!=FALSE,lesson_enabled=lesson&&IsWindowEnabled(lesson),settings_enabled=settings&&IsWindowEnabled(settings);
+            EnableWindow(window,FALSE);if(lesson)EnableWindow(lesson,FALSE);if(settings)EnableWindow(settings,FALSE);
+            const auto identity=token.get();
+            return std::shared_ptr<void>(identity,[token=std::move(token),window,lesson,settings,root_enabled,lesson_enabled,settings_enabled](void*)mutable{
+                token.reset();if(IsWindow(window))EnableWindow(window,root_enabled);if(IsWindow(lesson))EnableWindow(lesson,lesson_enabled);if(IsWindow(settings))EnableWindow(settings,settings_enabled);});
+        };
+        (void)open_course_audio_window(state.settings?state.settings:window,std::string(route),std::move(audio));
+    };
     const auto context=state.context;
     access.course_id=context.course;access.route_id=context.route;access.programming=context.route=="programming";
     const auto locale=interface_language(preferences(state));
@@ -372,6 +402,26 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         }
         show_catalog(window,*state);return 0;
     }
+    case application_language_message:{
+        try{using namespace lgaed::presentation;const auto data=preferences(*state);const auto locale=lgaed::state::string_value(data,"native_windows","content_language",interface_language(data));
+            auto where=catalog_location(state->catalog);const auto prior_locale=where.locale;
+            if(state->lesson){const auto current=lesson_page_state(state->lesson);
+                if(current.locale==locale||where.locale==locale){refresh_catalog_view(state->catalog);return 0;}
+                if(current.lesson_id=="native_cpp_laboratory")return 0;
+                where.locale=locale;where.lesson.clear();
+                const auto content=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content";
+                const auto entries=lgaed::windows::load_catalog(content,where).entries;
+                const auto entry=std::ranges::find_if(entries,[&](const auto& candidate){return candidate.id==current.lesson_id;});
+                if(entry==entries.end()||!entry->available)throw std::runtime_error("The translated lesson is not available");
+                const auto relative=entry->asset.lexically_relative(content);
+                const auto asset_locale=relative.empty()?locale:relative.begin()->string();
+                auto lesson=lgaed::windows::load_lesson(entry->asset,asset_locale);if(state->reader)state->reader->pause();
+                navigate_catalog(state->catalog,where);open_lesson(window,*state,std::move(lesson));
+                const auto reopened=lesson_page_state(state->lesson);if(current.index<reopened.count&&current.index!=reopened.index)(void)navigate_lesson_view(state->lesson,current.index);
+            }else if(prior_locale!=locale){where.locale=locale;navigate_catalog(state->catalog,where);}else refresh_catalog_view(state->catalog);
+            update_audio_context(*state,true);
+        }catch(const std::exception& error){lgaed::presentation::show_settings_notice(window,error.what());}return 0;
+    }
     case settings_message:
         try{open_settings(window,*state);}catch(const std::exception& error){MessageBoxW(window,widen_error(error).c_str(),L"Opciones",MB_OK|MB_ICONERROR);}return 0;
     case close_settings_message:{if(state->settings){DestroyWindow(state->settings);state->settings=nullptr;}
@@ -525,8 +575,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
                 continue;
             }
             wchar_t target_class[128]{};if(target)GetClassNameW(target,target_class,128);
-            const bool auxiliary=target&&(target==state.settings||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CalculatorWindow");
+            const bool auxiliary=target&&(target==state.settings||std::wstring_view(target_class)==L"LearnGameAndEngineDev.SettingsWindow"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CourseAudio"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.NarrationLicenses"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CalculatorWindow");
             const auto dialog=auxiliary?target:target==window?window:nullptr;
+            if(lgaed::presentation::dispatch_lesson_enter(message))continue;
             if (!dialog||!IsDialogMessageW(dialog,&message)) {
                 TranslateMessage(&message);
                 DispatchMessageW(&message);

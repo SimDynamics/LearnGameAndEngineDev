@@ -1,11 +1,13 @@
 #pragma once
 #include "core/lesson_state.hpp"
+#include "platform/windows/narration_storage.hpp"
 #include <windows.h>
 #include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <utility>
 
 namespace lgaed::presentation {
 using PreferencesMutation = std::function<void(state::StateData&)>;
@@ -15,6 +17,11 @@ struct SettingsAccess {
     std::function<void(const PreferencesMutation&)> update;
     std::function<void()> changed, close, reset_scope;
     std::function<void(std::string_view)> reset_route;
+    std::function<void(std::string_view)> open_audio;
+    std::function<void()> open_licenses;
+    std::function<void(std::string_view)> unsaved_discarded;
+    std::function<windows::NarrationStorageSnapshot()> storage_snapshot;
+    std::vector<std::pair<std::string,std::string>> audio_courses;
     std::vector<std::string> programming_course_ids;
     std::vector<std::string> math_course_ids;
     std::string title, subtitle;
@@ -32,4 +39,6 @@ void refresh_settings_language(HWND settings_window);
 void toggle_attempt_details(HWND lesson,std::function<state::StateData()> read,std::string_view route);
 // Header shortcut to the same global UI language preference, including Auto.
 [[nodiscard]] std::optional<std::string> choose_interface_language(HWND owner,const state::StateData&);
+// Transient informational message: does not take focus or block navigation.
+void show_settings_notice(HWND owner,std::string_view text);
 }

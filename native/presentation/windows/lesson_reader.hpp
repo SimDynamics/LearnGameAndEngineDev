@@ -18,6 +18,7 @@ struct LessonReaderSegmentSnapshot {
     double duration_ms = 0;
     bool available = false,feedback = false,correct = false;
     std::vector<windows::NarrationTiming> timings;
+    std::filesystem::path recording;
 };
 struct LessonReaderSnapshot {
     bool playing = false,allocated = false,planned = false,preparing = false,finished = false,waiting_gate = false;

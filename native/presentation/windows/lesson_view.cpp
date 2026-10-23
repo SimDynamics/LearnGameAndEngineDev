@@ -12,6 +12,7 @@
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/native_math_text.hpp"
 #include "presentation/windows/lesson_reader.hpp"
+#include "presentation/windows/order_code_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/catalog.hpp"
 #include "core/view_preferences.hpp"
@@ -74,6 +75,7 @@ constexpr int finish_id=115;
 constexpr int fullscreen_close_id=116;
 constexpr int continue_id=117;
 constexpr UINT attempts_state_message=WM_APP+187;
+constexpr UINT enter_key_message=WM_APP+188;
 struct AttemptsState { int available=8, maximum=8; double progress=1; bool premium=false; };
 constexpr int pages_menu_base = 40000;
 constexpr int lesson_heading_id = 990;
@@ -112,6 +114,7 @@ struct BlockControls {
     std::unique_ptr<CodeEditor> answer_editor, source_editor, input_editor;
     std::unique_ptr<CppFillView> fill;
     std::unique_ptr<MathPuzzleView> math;
+    std::unique_ptr<OrderCodeView> order_view;
     std::vector<HWND> choices;
     state::Response response;
     std::vector<std::size_t> order;
@@ -226,6 +229,9 @@ struct LessonView {
     std::unique_ptr<EditingBar> editing_bar;
     Microsoft::WRL::ComPtr<IAccPropServices> accessibility;
     std::map<HWND,Icon> icon_buttons;
+    std::map<HWND,HWND> choice_labels;
+    std::optional<std::size_t> selected_puzzle;
+    bool enter_held=false;
     std::optional<std::size_t> fullscreen_block;
     bool fullscreen_output = false;
     std::map<HWND,int> zoomed;
@@ -304,6 +310,13 @@ struct LessonView {
         return ui("Revisa tu respuesta e inténtalo de nuevo.","Review your answer and try again.","Vérifie ta réponse et réessaie.");
     }
     std::string laboratory_title()const{return ui("Prototipo del motor C++","C++ Engine Prototype","Prototype du moteur C++");}
+    std::string secondary_instruction(BlockType type)const{
+        if(type==BlockType::order_code)return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
+            "Press and hold a block, then drag it to the correct position.","Maintenez le doigt sur un bloc, puis faites-le glisser jusqu’à la bonne position.");
+        if(type==BlockType::drag_fill_code)return ui("Mantén pulsado un bloque y arrástralo hacia un espacio vacío.",
+            "Press and hold a block, then drag it to an empty space.","Maintenez le doigt sur un bloc, puis faites-le glisser vers un emplacement vide.");
+        return {};
+    }
     std::string laboratory_description()const{return ui("Compilación local con MSVC y ejecución nativa x64, completamente offline.","Local compilation with MSVC and native x64 execution, completely offline.","Compilation locale avec MSVC et exécution native x64, entièrement hors ligne.");}
     void laboratory_text_style(HWND item,int sp,COLORREF ink,bool bold=false){
         const auto colors=reader_theme::palette(item);CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_SIZE|CFM_COLOR|CFM_BOLD;
@@ -402,10 +415,11 @@ struct LessonView {
             if (!IsWindowEnabled(item) || (wparam & (MK_SHIFT | MK_CONTROL))) return {};
             wchar_t gesture_class[64]{};GetClassNameW(item,gesture_class,64);
             const bool rich_control = std::wstring_view(gesture_class)==MSFTEDIT_CLASS;
+            const bool choice_label=choice_labels.contains(item);
             bool editor = false;
             if (rich_control) {
                 CHARRANGE selection{}; SendMessageW(item,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
-                if (selection.cpMin != selection.cpMax) return {};
+                if (!choice_label&&selection.cpMin != selection.cpMax) return {};
                 if (!(GetWindowLongPtrW(item,GWL_STYLE) & ES_READONLY)) {
                     editor = std::ranges::any_of(controls,[&](const auto& vm) { return vm.source == item && vm.source_editor; });
                     if (!editor || hits_text(item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)})) return {};
@@ -414,7 +428,7 @@ struct LessonView {
             end_drag(); drag.origin = item; drag.start = {GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)};
             drag.down_keys = wparam; drag.down_point = lparam; drag.started = GetTickCount64();
             drag.editor = editor || (rich_control && (own_scroll(item,SB_VERT) || own_scroll(item,SB_HORZ)));
-            drag.text = rich_control && hits_text(item,drag.start);
+            drag.text = rich_control && !choice_label && hits_text(item,drag.start);
             ClientToScreen(item,&drag.start); drag.last = drag.start;
             if (drag.editor) SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&drag.editor_scroll));
             SetCapture(item); return 0;
@@ -437,7 +451,7 @@ struct LessonView {
                 }else if (std::abs(dy) > px(16) && std::abs(dy) * 5 > std::abs(dx) * 6)
                     drag.axis = drag.editor && own_scroll(item,SB_VERT) ? DragAxis::editor_vertical : DragAxis::lesson_vertical;
                 else if (std::abs(dx) > px(16) && std::abs(dx) * 5 > std::abs(dy) * 6)
-                    drag.axis = drag.editor && own_scroll(item,SB_HORZ) ? DragAxis::editor_horizontal : DragAxis::page_horizontal;
+                    drag.axis = choice_labels.contains(item) || (drag.editor && own_scroll(item,SB_HORZ)) ? DragAxis::editor_horizontal : DragAxis::page_horizontal;
             }
             if (drag.axis == DragAxis::lesson_vertical) scroll_to(scroll - (point.y - drag.last.y));
             else if (drag.axis == DragAxis::editor_vertical || drag.axis == DragAxis::editor_horizontal) {
@@ -452,6 +466,11 @@ struct LessonView {
             const auto axis = drag.axis; const auto down_keys = drag.down_keys; const auto down_point = drag.down_point;
             end_drag();
             if (axis == DragAxis::pending) {
+                if(const auto label=choice_labels.find(item);label!=choice_labels.end()){
+                    const auto radio=label->second;
+                    if(IsWindowEnabled(radio)){SetFocus(radio);command(GetDlgCtrlID(radio),BN_CLICKED,radio);}
+                    return 0;
+                }
                 DefSubclassProc(item,WM_LBUTTONDOWN,down_keys,down_point);
                 return DefSubclassProc(item,message,wparam,lparam);
             }
@@ -474,8 +493,9 @@ struct LessonView {
         SetGestureConfig(item,0,1,&pan,sizeof(pan));
     }
     bool double_click_zoom(HWND item) {
+        if(choice_labels.contains(item))return true;
         const bool display=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
-        if(!display)return false;
+        if(!display||!fullscreen_block)return false;
         end_drag();
         if(const auto found=zoomed.find(item);found!=zoomed.end()){
             SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
@@ -486,7 +506,7 @@ struct LessonView {
         }
         reflow();return true;
     }
-    std::vector<LessonReadingRegion> reading_regions() const {
+    std::vector<LessonReadingRegion> reading_regions(bool legacy_programming=false) const {
         std::vector<LessonReadingRegion> result;
         if (import_open || !pane) return result;
         if (const auto heading = GetDlgItem(pane,lesson_heading_id); heading && !fullscreen_block)
@@ -508,8 +528,10 @@ struct LessonView {
             else add(index,GetDlgItem(pane,control_id(index,0)),current.question);
             for (std::size_t option = 0; option < current.options.size(); ++option)
                 add(index,GetDlgItem(pane,control_id(index,21 + static_cast<int>(option) * 2)),current.options[option]);
-            for (std::size_t position = 0; position < vm.order.size(); ++position)
-                add(index,GetDlgItem(pane,control_id(index,22 + static_cast<int>(position) * 3)),current.fragments.at(vm.order[position]));
+            if(legacy_programming){if(vm.order_view)for(const auto& [target,text]:vm.order_view->reading_regions())add(index,target,text);}
+            else add(index,GetDlgItem(pane,control_id(index,37)),secondary_instruction(current.type));
+            // Android narrates the prompt/instruction of a code-order puzzle,
+            // not its source fragments, templates or compiler/editor contents.
             if(vm.math) for(const auto& region:vm.math->reading_regions()) {
                 if(!region.target || region.source_text.empty()) continue;
                 result.push_back({lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+current.stable_id+'/'+region.key,
@@ -605,8 +627,8 @@ struct LessonView {
             const int side=px(34);const int x=(bounds.right-side)/2;
             const RECT glyph{x,bounds.bottom-side-px(12),x+side,bounds.bottom-px(12)};
             const auto route_icon=route=="math_physics"?Icon::attempt_math:Icon::terminal;
-            draw_icon(item.hDC,glyph,route_icon,colors.outline);
-            const auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.bottom-static_cast<int>(side*attempt_state.progress),glyph.right,glyph.bottom);
+            draw_icon(item.hDC,glyph,route_icon,colors.high_contrast?colors.text:RGB(255,255,255));
+            const auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,glyph.left+static_cast<int>(side*std::clamp(attempt_state.progress,0.,1.)),glyph.bottom);
             draw_icon(item.hDC,glyph,route_icon,ink);RestoreDC(item.hDC,clipped);
             const auto badge=CreateFontW(-px(12),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             const auto old=SelectObject(item.hDC,badge);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,ink);
@@ -753,11 +775,12 @@ struct LessonView {
         if(response){
             const auto reset=icon_button(ui("Reiniciar respuesta","Reset answer","Réinitialiser la réponse"),control_id(index,12),{0,ActionType::reset_answer,index},Icon::reset);
             const auto spacer=control(L"STATIC","",0,control_id(index,17));reader_theme::apply(spacer,reader_theme::Surface::card_header);
-            if(current.type==BlockType::multiple_choice)rows.push_back({{caption,reset,spacer,copy},{100,44,0,44},48});
+            const int caption_width=std::max(112,MulDiv(112,content_text_scale(),100));
+            if(current.type==BlockType::multiple_choice)rows.push_back({{caption,reset,spacer,copy},{caption_width,44,0,44},48});
             else{
                 const auto expand=icon_button(ui("Pantalla completa","Full screen","Plein écran"),control_id(index,13),{0,ActionType::fullscreen_source,index},Icon::expand);
                 const auto menu_button=icon_button(ui("Opciones del código","Code options","Options du code"),control_id(index,19),{0,ActionType::simulated_menu,index},Icon::settings);
-                rows.push_back({{caption,reset,spacer,copy,expand,menu_button},{100,44,0,44,44,44},48});
+                rows.push_back({{caption,reset,spacer,copy,expand,menu_button},{caption_width,44,0,44,44,44},48});
             }
         }else{
             const auto expand=icon_button(ui("Pantalla completa","Full screen","Plein écran"),control_id(index,20),{0,ActionType::fullscreen_source,index},Icon::expand);
@@ -767,6 +790,7 @@ struct LessonView {
         rows.back().simulated_card=index;rows.back().card_header=true;
         for(const auto item:rows.back().cells)reader_theme::apply(item,reader_theme::Surface::card_header);
         toolbar_caption(caption,"</> "+code_language);
+        actions.push_back({control_id(index,35),ActionType::toggle_wrap,index});
     }
     void copy_simulated(std::size_t index) {
         const auto& current=block(index);const auto& vm=controls[index];
@@ -801,6 +825,7 @@ struct LessonView {
         if(response)AppendMenuW(popup.menu,MF_STRING|(IsWindowEnabled(GetDlgItem(pane,control_id(index,12)))?MF_ENABLED:MF_GRAYED),control_id(index,12),
             wide(ui("Reiniciar respuesta","Reset answer","Réinitialiser la réponse")).c_str());
         AppendMenuW(popup.menu,MF_STRING,control_id(index,response?13:20),wide(ui("Pantalla completa","Full screen","Plein écran")).c_str());
+        AppendMenuW(popup.menu,MF_STRING|(code_wrap()?MF_CHECKED:0),control_id(index,35),wide(ui("Ajuste de línea","Line wrap","Retour à la ligne")).c_str());
         const auto style=prepare_native_menu(popup.menu,window);RECT bounds{};GetWindowRect(GetDlgItem(pane,control_id(index,19)),&bounds);
         const auto selected=TrackPopupMenuEx(popup.menu,TPM_RETURNCMD|TPM_RIGHTALIGN|TPM_TOPALIGN,bounds.right,bounds.bottom,window,nullptr);
         if(selected)command(static_cast<int>(selected),BN_CLICKED,nullptr);
@@ -887,6 +912,7 @@ struct LessonView {
             add(70,ui("Copiar código","Copy code","Copier le code"));
             add(12,ui("Reiniciar código","Reset code","Réinitialiser le code"));
             add(75,ui("Pantalla completa","Full screen","Plein écran"));
+            add(35,ui("Ajuste de línea","Line wrap","Retour à la ligne"),MF_STRING|(code_wrap()?MF_CHECKED:0));
         }
         RECT bounds{}; GetWindowRect(GetDlgItem(pane,control_id(index,output ? 31 : 19)),&bounds);
         const auto style = prepare_native_menu(popup,window);
@@ -911,7 +937,7 @@ struct LessonView {
             if (std::wstring_view(name) != MSFTEDIT_CLASS) SendMessageW(item, WM_SETFONT, reinterpret_cast<WPARAM>(compact_font&&GetDlgCtrlID(item)>=1000&&(GetDlgCtrlID(item)-1000)%100==36?compact_font:content_font), TRUE);
             else SendMessageW(item,EM_SETZOOM,content_text_scale(),100);
         }
-        for(auto& vm:controls){if(vm.math)vm.math->set_text_scale(content_text_scale());if(vm.fill)vm.fill->set_text_scale(content_text_scale());}
+        for(auto& vm:controls){if(vm.math)vm.math->set_text_scale(content_text_scale());if(vm.fill)vm.fill->set_text_scale(content_text_scale());if(vm.order_view)vm.order_view->set_text_scale(content_text_scale());}
         if (button_font) DeleteObject(button_font);
         if (content_button_font) DeleteObject(content_button_font);
         button_font = font;
@@ -1004,6 +1030,7 @@ struct LessonView {
                 const auto note = GetDlgItem(pane,control_id(index,19));
                 set_rich_text(note,ui("Nota","Note","Note"),{},false,RichTextRole::heading);
             }
+            if(const auto instruction=GetDlgItem(pane,control_id(index,37)))set_rich_text(instruction,secondary_instruction(current.type));
             if(vm.simulated_code||current.type==BlockType::multiple_choice||vm.fill||!vm.order.empty()||vm.answer){
                 const auto copy=GetDlgItem(pane,control_id(index,18));
                 const bool response=exercise(current.type);
@@ -1162,6 +1189,7 @@ struct LessonView {
             apply_wrap(controls[index].source);
             apply_wrap(controls[index].simulated_code);
             if (block(index).type == BlockType::fill_code) apply_wrap(controls[index].answer);
+            if(controls[index].order_view)controls[index].order_view->set_wrap(code_wrap());
         }
         if (shortcuts_changed && editing_bar) editing_bar->set_shortcuts(parse_state_shortcuts(data));
         if (interface_changed) refresh_interface_labels();
@@ -1249,6 +1277,7 @@ struct LessonView {
             raw.Insert(field,current.GetNamedArray(field));
         }
         if(vm.math)raw.Insert(L"responses",JsonObject::Parse(winrt::to_hstring(vm.math->answers_json())));
+        if(vm.order_view){vm.order=vm.order_view->order();vm.response.order.assign(vm.order.begin(),vm.order.end());}
         vm.response.raw_json=winrt::to_string(raw.Stringify());
     }
     void composition_changed(std::size_t index){
@@ -1323,6 +1352,28 @@ struct LessonView {
         reader_theme::set_text_color(controls.at(index).feedback,ink);
         set_rich_text(controls.at(index).feedback, text);
         (void)set_native_math_inline_text(controls.at(index).feedback,text);
+        // The canonical math feedback already owns its verdict and source
+        // line break. Keep those exact narration offsets and add the Android
+        // blank line through presentation-only paragraph spacing.
+        if(!generated_verdict&&block(index).type==BlockType::math_puzzle&&
+           formatted.starts_with(correct?"✓ ":"✗ ")) {
+            const auto boundary=formatted.find_first_of("\r\n");
+            auto body=boundary;
+            if(body!=std::string::npos) {
+                if(formatted[body]=='\r'&&body+1<formatted.size()&&formatted[body+1]=='\n')++body;
+                ++body;
+                if(body<formatted.size()&&formatted[body]!='\r'&&formatted[body]!='\n') {
+                    const auto target=controls.at(index).feedback;
+                    CHARRANGE previous{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+                    CHARRANGE heading{0,static_cast<LONG>(wide(std::string_view(formatted).substr(0,boundary)).size())};
+                    SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&heading));
+                    PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_SPACEAFTER;
+                    paragraph.dySpaceAfter=MulDiv(rich_text_height(),25,20);
+                    SendMessageW(target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+                    SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+                }
+            }
+        }
         updating = previous_update; update_navigation(); reflow(); notify_content();
     }
     bool can_advance(std::size_t index) const {
@@ -1409,6 +1460,7 @@ struct LessonView {
         if (vm.answer) EnableWindow(vm.answer, editable);
         if(vm.fill)vm.fill->set_enabled(editable);
         if(vm.math)vm.math->set_enabled(editable);
+        if(vm.order_view)vm.order_view->set_enabled(editable);
         for (auto choice : vm.choices) EnableWindow(choice, editable);
         bool changed=vm.response.correct||vm.response.selected>=0;
         if(vm.answer_editor)changed=changed||!vm.answer_editor->document().text.empty();
@@ -1419,20 +1471,12 @@ struct LessonView {
         }
         if(!vm.order.empty())changed=changed||!std::ranges::is_sorted(vm.order);
         if(const auto reset=GetDlgItem(pane,control_id(index,12)))EnableWindow(reset,changed);
-        for (std::size_t position = 0; position < vm.order.size(); ++position) {
-            EnableWindow(GetDlgItem(pane, control_id(index, 20 + static_cast<int>(position) * 3)), editable && position > 0);
-            EnableWindow(GetDlgItem(pane, control_id(index, 21 + static_cast<int>(position) * 3)), editable && position + 1 < vm.order.size());
-        }
         const auto check=GetDlgItem(pane,control_id(index,3));
         SetWindowTextW(check,wide(editable ? ui("Comprobar","Check","Vérifier") : ui("Correcto ✓","Correct ✓","Correct ✓")).c_str());
         EnableWindow(check,editable);
     }
     void refresh_order(std::size_t index) {
         const auto previous_update = updating; updating = true;
-        const auto& vm = controls.at(index);
-        for (std::size_t position = 0; position < vm.order.size(); ++position)
-            set_rich_text(GetDlgItem(pane, control_id(index, 22 + static_cast<int>(position) * 3)),
-                block(index).fragments.at(vm.order[position]), {}, true);
         updating = previous_update; sync_quiz_controls(index); reflow();
         notify_content();
     }
@@ -1496,6 +1540,10 @@ struct LessonView {
                         return drag_message(origin,message,keys,point);
                     },[this]{
                         (void)navigate_back();
+                    },[this,index]{
+                        toggle_fullscreen(index,false);
+                    },[this,index]{
+                        reset_answer(index);
                     }});
             SetWindowLongPtrW(vm.math->window(),GWLP_ID,control_id(index,5));
             rows.push_back({{vm.math->window()},{0},40,false});
@@ -1503,6 +1551,10 @@ struct LessonView {
             rows.push_back({{check},{0},48,false});create_feedback(index);return;
         }
         if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
+        if(const auto instruction=secondary_instruction(current.type);!instruction.empty()){
+            text_row(instruction,control_id(index,37));
+            reader_theme::set_text_color(GetDlgItem(pane,control_id(index,37)),reader_theme::palette(window).high_contrast?reader_theme::foreground(window):RGB(180,185,195));
+        }
         const bool simulated=exercise(current.type);
         if(simulated)simulated_header(index,true);
         if (!current.code.empty()){
@@ -1523,12 +1575,13 @@ struct LessonView {
                 rows.push_back({{caption,reset,compiler,spacer,wrap,copy,expand},{92,44,72,0,44,44,44},64,false});
             }else{
                 auto options = icon_button(ui("Opciones del editor","Editor options","Options de l'éditeur"),control_id(index,19),{0,ActionType::editor_menu,index},Icon::settings);
-                rows.push_back({{caption,reset,spacer,copy,expand,options},{100,44,0,44,44,44},48,false});
+                rows.push_back({{caption,reset,spacer,copy,expand,options},{std::max(112,MulDiv(112,content_text_scale(),100)),44,0,44,44,44},48,false});
             }
             rows.back().toolbar=true;
             if(laboratory())rows.back().padding_after=0;
             for(const auto item:rows.back().cells)reader_theme::apply(item,laboratory()?reader_theme::Surface::compiler_header:reader_theme::Surface::card_header);
             toolbar_caption(caption,"</> C++");
+            if(!laboratory())actions.push_back({control_id(index,35),ActionType::toggle_wrap,index});
             const auto saved = state::get_draft(data, draft_key(index), current.initial_code, current.standard_input.value_or(""));
             auto document = saved.has_saved
                 ? windows::EditorDocument{saved.source, state::indentation_units(saved.source, saved.indentation_json), saved.selection_start, saved.selection_end}
@@ -1593,6 +1646,7 @@ struct LessonView {
                 SendMessageW(radio, BM_SETCHECK, vm.response.selected == static_cast<std::int64_t>(option) ? BST_CHECKED : BST_UNCHECKED, 0);
                 vm.choices.push_back(radio);
                 auto label = rich(current.options[option], control_id(index, 21 + static_cast<int>(option) * 2));
+                choice_labels.emplace(label,radio);
                 reader_theme::apply(radio,reader_theme::Surface::card);reader_theme::apply(label,reader_theme::Surface::card);
                 rows.push_back({{radio, label}, {28, 0}, 28, true});
                 rows.back().simulated_card=index;rows.back().card_end=option+1==current.options.size();
@@ -1605,13 +1659,11 @@ struct LessonView {
                 for (std::size_t i = 0; i < candidate.size(); ++i) valid = valid && candidate[i] == static_cast<std::int64_t>(i);
                 if (valid) for (std::size_t i = 0; i < vm.order.size(); ++i) vm.order[i] = static_cast<std::size_t>(vm.response.order[i]);
             }
-            for (std::size_t position = 0; position < vm.order.size(); ++position) {
-                auto up = button("↑", control_id(index, 20 + static_cast<int>(position) * 3), {0, ActionType::move_up, index, position});
-                auto down = button("↓", control_id(index, 21 + static_cast<int>(position) * 3), {0, ActionType::move_down, index, position});
-                EnableWindow(up, position > 0); EnableWindow(down, position + 1 < vm.order.size());
-                auto fragment = rich(current.fragments.at(vm.order[position]), control_id(index, 22 + static_cast<int>(position) * 3), true);
-                rows.push_back({{up, down, fragment}, {40, 40, 0}, 32, true});
-            }
+            vm.order_view=std::make_unique<OrderCodeView>(pane,current.fragments,vm.order,[this,index]{selected_puzzle=index;composition_changed(index);});
+            SetWindowLongPtrW(vm.order_view->window(),GWLP_ID,control_id(index,5));
+            vm.order_view->set_text_scale(content_text_scale());
+            vm.order_view->set_wrap(code_wrap());
+            rows.push_back({{vm.order_view->window()},{0},40,false});
         } else {
             vm.answer = rich("", control_id(index, 2), false, {}, true);
             const bool multiline = !curriculum::uses_single_line_answer(current);
@@ -1630,6 +1682,7 @@ struct LessonView {
     }
     void render_page() {
         cancel_math();
+        choice_labels.clear();selected_puzzle.reset();
         end_drag(); fullscreen_block.reset();
         updating = true;
         controls.clear();
@@ -1747,6 +1800,9 @@ struct LessonView {
                 if (((GetWindowLongPtrW(item,GWL_STYLE) & WS_VISIBLE) != 0) != shown)
                     ShowWindow(item,shown ? SW_SHOWNOACTIVATE : SW_HIDE);
             if (!shown) continue;
+            if(!laboratory()&&(row.card_header||row.toolbar)&&!row.widths.empty()&&row.widths[0]>0
+                &&(GetDlgCtrlID(row.cells.front())-1000)%100==16)
+                row.widths[0]=std::max(112,MulDiv(112,content_text_scale(),100));
             if(row.padding_before&&(!row.size_to_text||GetWindowTextLengthW(row.cells.front())>0))top+=px(row.padding_before);
             const int inset=row.simulated_card?px(row.card_header?14:18):px(row.horizontal_inset),row_width=width-inset*2;
             int fixed = 0; for (auto value : row.widths) if (value) fixed += px(value);
@@ -1757,6 +1813,7 @@ struct LessonView {
                     auto& vm=controls[index];
                     if(vm.math&&row.cells[0]==vm.math->window())row.logical_height=MulDiv(vm.math->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                     if(vm.fill&&row.cells[0]==vm.fill->window())row.logical_height=MulDiv(vm.fill->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
+                    if(vm.order_view&&row.cells[0]==vm.order_view->window())row.logical_height=MulDiv(vm.order_view->height_for_width(remaining),96,static_cast<int>(GetDpiForWindow(window)));
                 }
             }
             if(laboratory()&&!controls.empty()&&row.cells.front()==controls[0].source&&!fullscreen_block){
@@ -1787,7 +1844,11 @@ struct LessonView {
                     control_height=std::max(control_height,static_cast<int>(measured.bottom)+px(12));SelectObject(dc,old);ReleaseDC(row.cells[i],dc);
                 }else if(_wcsnicmp(name,L"RichEdit",8)==0&&!row.size_to_text){
                     CHARFORMAT2W format{};format.cbSize=sizeof(format);SendMessageW(row.cells[i],EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&format));
-                    control_height=std::max(control_height,MulDiv(format.yHeight*content_text_scale(),static_cast<int>(GetDpiForWindow(window)),1440*100)+px(12));
+                    SCROLLBARINFO horizontal{sizeof(horizontal)};
+                    const bool horizontal_visible=GetScrollBarInfo(row.cells[i],OBJID_HSCROLL,&horizontal)
+                        &&!(horizontal.rgstate[0]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN));
+                    const auto scrollbar_height=horizontal_visible?GetSystemMetricsForDpi(SM_CYHSCROLL,GetDpiForWindow(window)):0;
+                    control_height=std::max(control_height,MulDiv(format.yHeight*content_text_scale(),static_cast<int>(GetDpiForWindow(window)),1440*100)+px(12)+scrollbar_height);
                 }
                 x += cell_width + gap;
             }
@@ -1804,7 +1865,18 @@ struct LessonView {
             if(row.toolbar)toolbar_surfaces.push_back({left,top,left+width,top+height});
             for (std::size_t i = 0; i < row.cells.size(); ++i) {
                 const int cell_width = row.widths[i] ? px(row.widths[i]) : remaining;
-                placements.push_back({row.cells[i],x,top,cell_width,std::max(0,height)});
+                int cell_height=height;
+                if(row.cells.size()==2&&choice_labels.contains(row.cells[1])&&i==0){
+                    // Android aligns the radio to the first text line, even
+                    // when the option wraps. The glyph must not drift toward
+                    // the middle of a multi-line paragraph.
+                    POINTL first{},next{};SendMessageW(row.cells[1],EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+                    const auto second=SendMessageW(row.cells[1],EM_LINEINDEX,1,0);
+                    if(second>=0)SendMessageW(row.cells[1],EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
+                    const auto line_height=second>=0?next.y-first.y:px(MulDiv(26,content_text_scale(),100));
+                    cell_height=std::min(height,std::max(px(28),static_cast<int>(line_height)));
+                }
+                placements.push_back({row.cells[i],x,top,cell_width,std::max(0,cell_height)});
                 const int part=(GetDlgCtrlID(row.cells[i])-1000)%100;
                 if((row.card_header||row.toolbar)&&(part==16||part==30)){
                     RECT content{laboratory()?px(14):0,px(laboratory()?20:12),cell_width,std::max(0,height)};
@@ -1838,6 +1910,13 @@ struct LessonView {
         }
         if (!deferred) for (const auto& item : placements)
             SetWindowPos(item.item,nullptr,item.x,item.y - scroll,item.width,item.height,placement_flags);
+        // Measuring a mathematical composition deliberately does not position
+        // its children. Commit its own layout after the final lesson placement;
+        // resizing only its host leaves every rich label/radio at its origin.
+        for(auto& vm:controls)if(vm.math){
+            const auto placed=std::ranges::find(placements,vm.math->window(),&Placement::item);
+            if(placed!=placements.end())vm.math->layout(placed->x,placed->y-scroll,placed->width);
+        }
         SCROLLINFO info{sizeof(info), SIF_RANGE | SIF_PAGE | SIF_POS};
         info.nMin = 0; info.nMax = std::max(0, extent - 1); info.nPage = static_cast<UINT>(std::max<LONG>(0, area.bottom)); info.nPos = scroll;
         SetScrollInfo(pane, SB_VERT, &info, TRUE);
@@ -1851,6 +1930,41 @@ struct LessonView {
         const int new_scroll = std::clamp(position, 0, std::max(0, extent - static_cast<int>(area.bottom)));
         if (new_scroll == scroll) return;
         scroll = new_scroll; remember_scroll(); mark_dirty(); reflow();
+    }
+    bool enter_key(const MSG& message){
+        if(import_open)return false;
+        if(message.message==WM_KEYUP){const bool handled=enter_held;enter_held=false;return handled;}
+        if(message.message!=WM_KEYDOWN)return false;
+        if(enter_held&&(message.lParam&(LPARAM{1}<<30)))return true;
+        const auto focused=GetFocus();
+        std::optional<std::size_t> focused_block;
+        bool editor_owns=false;
+        for(std::size_t i=0;focused&&i<controls.size();++i){const auto& vm=controls[i];
+            if(focused==vm.source||focused==vm.input){focused_block=i;editor_owns=true;break;}
+            if(focused==vm.answer){focused_block=i;editor_owns=!curriculum::uses_single_line_answer(block(i));break;}
+            if(vm.order_view&&(focused==vm.order_view->window()||IsChild(vm.order_view->window(),focused)))focused_block=i;
+            if((vm.math&&(focused==vm.math->window()||IsChild(vm.math->window(),focused)))
+                ||(vm.fill&&(focused==vm.fill->window()||IsChild(vm.fill->window(),focused)))){focused_block=i;
+                wchar_t name[96]{};GetClassNameW(focused,name,96);editor_owns=std::wstring_view(name)==L"LearnGameAndEngineDev.MathExpressionEditor";break;}
+            if(std::ranges::find(vm.choices,focused)!=vm.choices.end()||focused==GetDlgItem(pane,control_id(i,3)))focused_block=i;
+        }
+        const auto eligible=[&](std::size_t i){const auto check=GetDlgItem(pane,control_id(i,3));return check
+            &&(IsWindowVisible(check)||fullscreen_block==i)&&IsWindowEnabled(check)&&exercise(block(i).type);};
+        if(editor_owns)return false;
+        if(fullscreen_block&&block(*fullscreen_block).type==BlockType::cpp_compiler)return false;
+        // Windows key-repeat and UP belong to the initial DOWN even if checking
+        // disables its answer field or re-creates the next page's controls.
+        if(message.lParam&(LPARAM{1}<<30))return true;
+        enter_held=true;
+        if(!fullscreen_block&&can_advance(page)){
+            PostMessageW(window,WM_COMMAND,MAKEWPARAM(continue_id,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(pane,continue_id)));return true;
+        }
+        std::optional<std::size_t> chosen;
+        if(selected_puzzle&&eligible(*selected_puzzle))chosen=selected_puzzle;
+        else if(focused_block&&eligible(*focused_block))chosen=focused_block;
+        else for(std::size_t i=0;i<controls.size();++i)if(eligible(i)){if(chosen){chosen.reset();break;}chosen=i;}
+        if(chosen){selected_puzzle=chosen;check_answer(*chosen);}
+        return std::ranges::any_of(controls,[&](const auto& vm){return vm.rendered;});
     }
     bool finish_lesson(){
         if(!hooks.lesson_completed)return false;
@@ -1880,6 +1994,7 @@ struct LessonView {
             if (vm.answer_editor) vm.answer_editor->reset(windows::EditorDocument{});
             if(vm.fill)vm.fill->reset();
             if(vm.math)vm.math->reset();
+            if(vm.order_view)vm.order_view->reset();
             for (auto choice : vm.choices) SendMessageW(choice, BM_SETCHECK, BST_UNCHECKED, 0);
             if (!vm.order.empty()) std::iota(vm.order.begin(), vm.order.end(), 0);
             updating = false;
@@ -1909,6 +2024,7 @@ struct LessonView {
             result = curriculum::evaluate_text_answer(current, vm.response.answer);
         }
         vm.response.correct = result.correct;
+        if(!result.correct&&vm.order_view)vm.order_view->restart_tap_sequence();
         record_attempt(index,result.correct);
         state::mark_response_reviewed(vm.response, current);
         state::put_response(data, key(index), vm.response); mark_dirty(); flush();
@@ -1918,7 +2034,8 @@ struct LessonView {
         feedback(index, text, result.correct, true, !result.correct && result.feedback.empty());
         sync_quiz_controls(index);
         if (hooks.feedback_changed) hooks.feedback_changed(window,index,result.correct);
-        // Enter checks this activity only. Navigation always requires its own action.
+        // The page-level Enter gate decides before checking. This callback
+        // never advances a page that became complete in the same key press.
     }
     void edit_changed(HWND sender) {
         if (updating) return;
@@ -2200,6 +2317,8 @@ struct LessonView {
             return;
         }
         if (notification == EN_CHANGE) { edit_changed(sender); return; }
+        if(notification==EN_SETFOCUS)for(std::size_t i=0;i<controls.size();++i)
+            if(sender==controls[i].answer||sender==GetDlgItem(pane,control_id(i,3)))selected_puzzle=i;
         if ((notification == EN_SETFOCUS || notification == EN_KILLFOCUS) && editing_bar) editing_bar->refresh();
         if (notification == EN_KILLFOCUS) {
             for (std::size_t i = 0; i < controls.size(); ++i) if (sender == controls[i].source && !updating) { capture_draft(i); mark_dirty(); }
@@ -2224,6 +2343,8 @@ struct LessonView {
         auto found = std::ranges::find_if(actions, [id](const auto& action) { return action.control == id; });
         if (found == actions.end()) return;
         const auto action = *found; auto& vm = controls.at(action.block);
+        if(exercise(block(action.block).type)&&(action.type==ActionType::choose||action.type==ActionType::check
+            ||action.type==ActionType::move_up||action.type==ActionType::move_down))selected_puzzle=action.block;
         switch (action.type) {
         case ActionType::check: check_answer(action.block); break;
         case ActionType::choose:
@@ -2244,9 +2365,13 @@ struct LessonView {
         }
         case ActionType::run: run(action.block); break;
         case ActionType::toggle_wrap:{
-            const bool enabled=!code_wrap();data.preferences["native_windows"]["cpp_laboratory_wrap"]=enabled;apply_wrap(vm.source);
-            const auto toggle=GetDlgItem(pane,control_id(action.block,35));icon_buttons[toggle]=enabled?Icon::wrap_on:Icon::wrap_off;
-            label_radio(toggle,enabled?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé"):ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));InvalidateRect(toggle,nullptr,FALSE);mark_dirty();reflow();break;}
+            const bool enabled=!code_wrap();
+            if(laboratory())data.preferences["native_windows"]["cpp_laboratory_wrap"]=enabled;
+            else if(const auto course=course_id();!course.empty())appearance::save_course_wrap(data,course,enabled);
+            else appearance::save_global_wrap(data,enabled,{});
+            for(auto& item:controls){apply_wrap(item.source);apply_wrap(item.simulated_code);if(item.answer&&item.answer_editor)apply_wrap(item.answer);if(item.order_view)item.order_view->set_wrap(enabled);}
+            const auto toggle=GetDlgItem(pane,control_id(action.block,35));
+            if(toggle){icon_buttons[toggle]=enabled?Icon::wrap_on:Icon::wrap_off;label_radio(toggle,enabled?ui("Ajuste de línea activado","Line wrap enabled","Retour à la ligne activé"):ui("Ajuste de línea desactivado","Line wrap disabled","Retour à la ligne désactivé"));InvalidateRect(toggle,nullptr,FALSE);}mark_dirty();reflow();break;}
         case ActionType::compiler_info:{
             const auto popup=CreatePopupMenu();if(!popup)throw std::runtime_error("Cannot create the compiler information menu");
             AppendMenuW(popup,MF_STRING|MF_CHECKED,1,L"MSVC C++20 · x64");const auto style=prepare_native_menu(popup,window);RECT bounds{};GetWindowRect(GetDlgItem(pane,control_id(action.block,36)),&bounds);
@@ -2361,6 +2486,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         if (message == WM_DRAWITEM && view->draw_button(*reinterpret_cast<DRAWITEMSTRUCT*>(lparam))) return TRUE;
         switch (message) {
         case WM_KEYDOWN: if(wparam==VK_ESCAPE&&view->navigate_back())return 0;break;
+        case enter_key_message:return lparam&&view->enter_key(*reinterpret_cast<const MSG*>(lparam));
         case header_action_message: {
             std::function<void(HWND)> action;
             if (wparam == back_id) action = view->hooks.back_to_catalog;
@@ -2384,7 +2510,7 @@ LRESULT CALLBACK view_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             if (lparam) *reinterpret_cast<LessonPageState*>(lparam) = view->page_state(); return 1;
         case lesson_page_navigate_message: return !view->import_open && view->change_page(static_cast<std::size_t>(wparam));
         case lesson_reading_regions_message:
-            if (lparam) *reinterpret_cast<std::vector<LessonReadingRegion>*>(lparam) = view->reading_regions(); return 1;
+            if (lparam) *reinterpret_cast<std::vector<LessonReadingRegion>*>(lparam) = view->reading_regions(wparam!=0); return 1;
         case lesson_view_hooks_message:
             if (lparam) view->hooks = *reinterpret_cast<LessonViewHooks*>(lparam);
             view->verify_saved_math();
@@ -2498,9 +2624,26 @@ bool navigate_lesson_back(HWND window){
     if(!IsWindow(window))return false;wchar_t name[96]{};GetClassNameW(window,name,96);if(std::wstring_view(name)!=view_class)return false;
     const auto view=reinterpret_cast<LessonView*>(GetWindowLongPtrW(window,GWLP_USERDATA));return view&&view->navigate_back();
 }
+bool dispatch_lesson_enter(MSG& message){
+    if((message.message!=WM_KEYDOWN&&message.message!=WM_KEYUP)||message.wParam!=VK_RETURN
+        ||(GetKeyState(VK_CONTROL)&0x8000)||(GetKeyState(VK_MENU)&0x8000)||(GetKeyState(VK_SHIFT)&0x8000))return false;
+    auto item=message.hwnd;
+    for(;item;item=GetParent(item)){wchar_t name[96]{};GetClassNameW(item,name,96);
+        if(std::wstring_view(name)==view_class)return SendMessageW(item,enter_key_message,0,reinterpret_cast<LPARAM>(&message))!=0;}
+    // A solved native control can relinquish focus to the app window when it
+    // becomes disabled. The same visible lesson still owns the next Enter.
+    const auto root=GetAncestor(message.hwnd,GA_ROOT);HWND lesson=nullptr;
+    if(root)EnumChildWindows(root,[](HWND child,LPARAM result)->BOOL{wchar_t name[96]{};GetClassNameW(child,name,96);
+        if(IsWindowVisible(child)&&std::wstring_view(name)==view_class){*reinterpret_cast<HWND*>(result)=child;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&lesson));
+    return lesson&&SendMessageW(lesson,enter_key_message,0,reinterpret_cast<LPARAM>(&message))!=0;
+}
 std::vector<LessonReadingRegion> lesson_reading_regions(HWND window) {
     std::vector<LessonReadingRegion> result;
     if (window) SendMessageW(window,lesson_reading_regions_message,0,reinterpret_cast<LPARAM>(&result)); return result;
+}
+std::vector<LessonReadingRegion> legacy_lesson_reading_regions(HWND window){
+    std::vector<LessonReadingRegion> result;
+    if(window)SendMessageW(window,lesson_reading_regions_message,1,reinterpret_cast<LPARAM>(&result));return result;
 }
 void set_lesson_view_hooks(HWND window,LessonViewHooks hooks) {
     if (window) SendMessageW(window,lesson_view_hooks_message,0,reinterpret_cast<LPARAM>(&hooks));

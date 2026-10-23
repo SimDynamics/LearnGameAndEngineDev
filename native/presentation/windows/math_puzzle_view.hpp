@@ -24,6 +24,8 @@ struct MathPuzzleCallbacks {
     // coordinates and DefSubclassProc context. The host owns gesture policy.
     std::function<std::optional<LRESULT>(HWND,UINT,WPARAM,LPARAM)> passive_gesture;
     std::function<void()> back_requested;
+    std::function<void()> fullscreen_requested;
+    std::function<void()> reset_requested;
 };
 // The existing curricular input configuration used by the shared math keyboard.
 [[nodiscard]] std::string math_field_keyboard_context(HWND field);

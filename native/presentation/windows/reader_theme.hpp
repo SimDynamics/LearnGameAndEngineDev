@@ -9,7 +9,7 @@ namespace lgaed::state { struct StateData; }
 namespace lgaed::presentation::reader_theme {
 // These values mirror the Android XML surfaces; menu screens deliberately use
 // a different canvas and card from lesson pages.
-enum class Surface { canvas, header, card, field, screen, catalog_card, card_header, inset, low, note,
+enum class Surface { canvas, header, card, field, screen, catalog_card, card_header, inset, low, note, popup,
     compiler_header, compiler_editor, compiler_output };
 struct Palette {
     COLORREF canvas, header, card, field, text, muted, accent, outline;
@@ -56,6 +56,10 @@ void primary_button(HWND button, bool primary = true);
 // unchanged. Only the fill/frame are removed for Android-style icon actions.
 void icon_button(HWND button, bool icon = true);
 void premium_button(HWND button, bool premium = true);
+// Paint an existing checkbox as the Android Options switch. Its BUTTON role,
+// checked state, accessible name, notifications and keyboard remain native.
+// System high contrast retains the ordinary checkbox presentation.
+void switch_button(HWND button, bool is_switch = true);
 void set_text_color(HWND window,std::optional<COLORREF> color);
 // A mouse click must not leave a dotted Win32 selection rectangle. Keyboard
 // navigation still receives a restrained, solid focus outline.

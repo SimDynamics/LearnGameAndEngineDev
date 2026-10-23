@@ -1,8 +1,10 @@
 #pragma once
 #include "platform/windows/narration_cpu_policy.hpp"
 #include <filesystem>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stop_token>
 #include <stdexcept>
 #include <string>
@@ -56,6 +58,11 @@ public:
     // its preparation lease. In-flight inference acknowledges cancellation;
     // foreground preparation resumes automatically when this lease is released.
     [[nodiscard]] NarrationPriorityLease heavy_work_lease(std::stop_token={});
+    // Explicit cache maintenance can reserve an already idle worker. Unlike
+    // heavy work this never cancels or waits for an active reading operation.
+    [[nodiscard]] std::optional<NarrationPriorityLease> try_idle_maintenance_lease();
+    // Only cache misses are limited. Existing recordings remain reusable.
+    void set_storage_budget(std::uint64_t bytes);
     [[nodiscard]] std::vector<NarrationSegment> plan(std::string_view text,std::string_view language,std::stop_token={});
     [[nodiscard]] std::string curriculum_plan(std::string_view raw_lesson,std::size_t page,
         std::string_view language,std::string_view voice,std::string_view ui_language,std::stop_token={});

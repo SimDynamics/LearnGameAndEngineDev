@@ -13,7 +13,9 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <fstream>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 
 namespace {
@@ -34,6 +36,10 @@ COLORREF color(HWND target,LONG offset){CHARRANGE before{};SendMessageW(target,E
     CHARRANGE range{offset,offset+1};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));CHARFORMAT2W format{};format.cbSize=sizeof(format);
     SendMessageW(target,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&before));return format.crTextColor;
 }
+void pointer_message(HWND target,UINT message,WPARAM keys,LPARAM point,bool touch){
+    const auto previous=SetMessageExtraInfo(touch?static_cast<LPARAM>(0xff515780u):0);
+    SendMessageW(target,message,keys,point);SetMessageExtraInfo(previous);
+}
 curriculum::Lesson model(bool exercise=false,bool after=true,std::string_view language="es"){
     curriculum::Lesson lesson;lesson.id="qa_native_reader";lesson.title="Prueba.";lesson.locale="es";
     if(language!="es"){lesson.locale=language=="fr"?"fr":"en";lesson.title=language=="fr"?"Lecture.":"Reading.";}
@@ -53,13 +59,13 @@ curriculum::Lesson model(bool exercise=false,bool after=true,std::string_view la
 }
 struct Fixture{
     WindowsEnvironment environment;HWND host=nullptr,view=nullptr;std::unique_ptr<LessonReader> reader;
-    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es"):
+    Fixture(std::shared_ptr<windows::NarrationWorker> backend,bool exercise=false,bool after=true,bool advance=true,std::string_view language="es",std::optional<curriculum::Lesson> supplied={},bool private_audio=false):
         environment(resolve_windows_environment({ProfileId::Codex,L"native-reader-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})){
         check(!std::filesystem::exists(environment.paths.root),"QA profile already exists");
-        environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
+        if(!private_audio)environment.paths.cache=std::filesystem::path(build::source_root)/"out/qa/lesson-reader-audio";initialize_profile_directories(environment.paths);
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Native real Kokoro reader QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,
             40,40,1000,780,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create reader QA window");
-        view=create_lesson_view(host,environment,model(exercise,after,language));check(view!=nullptr,"Cannot create actual lesson view");MoveWindow(view,0,0,980,720,TRUE);
+        view=create_lesson_view(host,environment,supplied?std::move(*supplied):model(exercise,after,language));check(view!=nullptr,"Cannot create actual lesson view");MoveWindow(view,0,0,980,720,TRUE);
         update_lesson_preferences(view,[advance](state::StateData& data){auto& prefs=data.preferences["lesson_narration_settings"];
             prefs["engine"]=std::string("KOKORO");prefs["language"]=std::string("es");prefs["kokoro_voice:es"]=std::string("ef_dora");prefs["rate"]=2.;prefs["kokoro_advance_generation"]=advance;});
         LessonViewHooks hooks;hooks.before_page_change=[this](HWND){if(reader)reader->pause();};
@@ -91,7 +97,7 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                 const auto shape=CreateRectRgn(0,0,0,0);const auto kind=GetWindowRgn(bar,shape);
                 check(kind!=ERROR&&!PtInRegion(shape,0,0)&&PtInRegion(shape,(initial.right-initial.left)/2,(initial.bottom-initial.top)/2),
                     "The compact reader has no actual rounded floating outline");DeleteObject(shape);
-                const auto before=f.snapshot();const auto down=GetTickCount64();
+                const auto before=f.snapshot();
                 const auto pane=GetParent(before.segments.front().target);RECT pane_bounds{},view_bounds{};
                 GetWindowRect(pane,&pane_bounds);MapWindowPoints(nullptr,f.view,reinterpret_cast<POINT*>(&pane_bounds),2);GetClientRect(f.view,&view_bounds);
                 check(pane_bounds.bottom==view_bounds.bottom&&!(GetWindowLongPtrW(pane,GWL_STYLE)&WS_VSCROLL),
@@ -100,18 +106,32 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
                 SendMessageW(bar,WM_TIMER,901,0);
                 for(int id=6500;id<6507;++id)check(!GetUpdateRect(GetDlgItem(bar,id),nullptr,FALSE),
                     "An idle reader timer invalidated an unchanged icon");
-                SendMessageW(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,30));
-                SendMessageW(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10));
+                const auto early_down=GetTickCount64();pointer_message(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,30),true);
+                pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10),true);
                 RECT early{};GetWindowRect(bar,&early);check(EqualRect(&initial,&early),"Reader dragging ignored its 90ms distinction");
-                wait([&]{return GetTickCount64()-down>=95;},"reader drag threshold",1000);
-                SendMessageW(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10));SendMessageW(bar,WM_LBUTTONUP,0,MAKELPARAM(4,30));
+                wait([&]{return GetTickCount64()-early_down>=95;},"rejected touchscreen reader stream",1000);
+                pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10),true);pointer_message(bar,WM_LBUTTONUP,0,MAKELPARAM(4,30),true);
+                GetWindowRect(bar,&early);check(EqualRect(&initial,&early),"An early displaced touch stream armed a drag later instead of remaining rejected");
+                const auto held_down=GetTickCount64();pointer_message(bar,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,30),true);
+                wait([&]{return GetTickCount64()-held_down>=95;},"stationary touchscreen reader hold",1000);
+                pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(-76,-10),true);pointer_message(bar,WM_LBUTTONUP,0,MAKELPARAM(4,30),true);
                 RECT moved{};GetWindowRect(bar,&moved);check(moved.left<initial.left&&moved.top<initial.top,"The compact reader cannot move on both axes");
                 SetWindowPos(f.view,nullptr,0,0,960,700,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);pump();
                 RECT reflow{};GetWindowRect(bar,&reflow);check(EqualRect(&moved,&reflow),"Reflow or resizing reset a manually moved reader position");
                 SetWindowPos(f.view,nullptr,0,0,980,720,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);pump();
                 const auto after=f.snapshot();check(!after.allocated&&!after.playing&&before.index==after.index&&before.offset==after.offset&&before.key==after.key,
                     "Moving or laying out the reader changed playback state");
-                std::cout<<"PASS compact rounded reader, 90ms two-axis dragging and position preserved through reflow without media changes\n";
+                const auto play_button=GetDlgItem(bar,6504);RECT button_bounds{},button_drag_before{};GetWindowRect(play_button,&button_bounds);GetWindowRect(bar,&button_drag_before);
+                pointer_message(play_button,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(12,12),false);
+                check(GetCapture()==bar,"A reader icon retained a private button capture instead of the floating drag owner");
+                POINT start{12,12};MapWindowPoints(play_button,bar,&start,1);
+                pointer_message(bar,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(start.x-65,start.y-30),false);
+                pointer_message(bar,WM_LBUTTONUP,0,MAKELPARAM(start.x,start.y),false);RECT button_drag_after{};GetWindowRect(bar,&button_drag_after);
+                check(button_drag_after.left<button_drag_before.left&&button_drag_after.top<button_drag_before.top,
+                    "Dragging from a real reader icon did not move the whole floating bar");
+                check(!f.snapshot().playing&&!f.snapshot().allocated&&f.snapshot().index==before.index,
+                    "Dragging the playback icon also clicked it or changed the reading position");
+                std::cout<<"PASS compact reader: immediate real-mouse icon dragging, promoted-touch 90ms/rejected-wheel distinction and unchanged playback/reflow\n";
             }
             f.reader->toggle();
             wait([&]{const auto s=f.snapshot();return s.playing&&s.index==1&&s.offset>700&&s.offset<2500;},"paragraph real playback");
@@ -215,6 +235,46 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             std::cout<<"PASS exact legacy-title bookmark migration preserves offset, final state and the same three slots\n";
         }
         {
+            auto lesson=model(true,false);auto& puzzle=lesson.pages[0].blocks[1];puzzle.type=curriculum::BlockType::order_code;
+            puzzle.id=puzzle.stable_id="order";puzzle.answers.clear();puzzle.fragments={"return 0;","int main() {","}"};puzzle.correct_order={1,0,2};
+            Fixture f(backend,false,true,true,"es",std::move(lesson));
+            const auto card=child(f.view,1105),main_row=GetDlgItem(card,101);check(main_row!=nullptr,"Missing actual order row for legacy bookmark fixture");
+            SendMessageW(main_row,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);SendMessageW(child(f.view,1103),BM_CLICK,0,0);f.reader->pause();f.ready();
+            const auto current=f.snapshot();const auto page=lesson_page_state(f.view);const auto legacy_regions=legacy_lesson_reading_regions(f.view);
+            std::vector<windows::NarrationSegment> legacy;std::size_t paragraph=0,fragment=0;
+            for(const auto& region:legacy_regions){const auto source=backend->plan(region.source_text,"es");
+                if(region.block_index==0)paragraph=legacy.size();if(IsChild(card,region.target))fragment=legacy.size();
+                legacy.insert(legacy.end(),source.begin(),source.end());}
+            const auto old_key=backend->identity(page.narration_page_identity,"es","ef_dora",legacy);
+            check(old_key!=current.key&&paragraph>0&&fragment>paragraph,"The migration fixture failed to reconstruct the exact old code-fragment script");
+            for(int mode=0;mode<3;++mode){f.reader.reset();
+                narration::Position old{static_cast<std::int64_t>(mode==1?legacy.size()-1:mode==2?fragment:paragraph),321,mode==1?static_cast<std::int64_t>(legacy.size()):0,mode==1};
+                update_lesson_preferences(f.view,[&](state::StateData& data){
+                    auto history=narration::begin({},"other-paused","owner-a",{0,100,0,false},{},"other-page-a");
+                    history=narration::begin(std::move(history),"other-finished","owner-b",{0,200,1,false},{},"other-page-b");
+                    history=narration::checkpoint(std::move(history),"other-finished","owner-b",{0,200,1,true});
+                    history=narration::begin(std::move(history),old_key,"owner-c",old,{},page.narration_page_identity);
+                    if(old.finished)history=narration::checkpoint(std::move(history),old_key,"owner-c",old);
+                    narration::write_history(data,history);
+                });
+                f.reader=std::make_unique<LessonReader>(f.view,f.environment,backend,[]{});f.ready();const auto restored=f.snapshot();
+                check(restored.key==current.key&&!restored.playing&&!restored.allocated,"An exact legacy script migration started playback or failed to select the new script");
+                if(mode==0)check(restored.index==paragraph&&restored.offset==321&&!restored.finished,"An unchanged real segment lost its exact paused offset during instruction migration");
+                if(mode==1)check(restored.index+1==restored.segments.size()&&restored.offset==321&&restored.finished,
+                    "A finished page reset instead of retaining its real last segment and final bookmark");
+                if(mode==2)check(restored.offset==0&&!restored.finished&&restored.heard_through==0&&restored.index>0
+                    &&restored.segments[restored.index].source.starts_with("Mantén pulsado"),
+                    "An excluded old code fragment reset the page, invented timing or credited unheard feedback");
+                const auto history=narration::read_history(read_lesson_state(f.view));
+                check(history.entries.size()==3&&history.entries.front().key==current.key
+                    &&std::ranges::none_of(history.entries,[&](const auto& entry){return entry.key==old_key;})
+                    &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="other-paused"&&entry.position.milliseconds==100;})
+                    &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="other-finished"&&entry.position.finished;}),
+                    "Instruction migration created a parallel history, changed recency or discarded either other recent page");
+            }
+            std::cout<<"PASS exact old order-code script migration: real paused/final offsets, removed-fragment provenance and the same three page slots\n";
+        }
+        {
             Fixture f(backend,true);f.answer("<<");f.reader->toggle();
             std::size_t repeated_index=0;
             wait([&]{const auto s=f.snapshot();if(!s.playing||!s.segments[s.index].feedback||s.offset<120)return false;
@@ -237,6 +297,51 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             f.reader->seek_seconds(-3);f.reader->toggle();wait([&]{const auto s=f.snapshot();return s.playing&&s.segments[s.index].feedback;},"incorrect feedback replay after rewind");
             f.reader->pause();check(!f.snapshot().allocated,"Incorrect feedback pause retained MediaPlayer");
             std::cout<<"PASS incorrect feedback stops without finishing and replays after rewind\n";
+        }
+        {
+            Fixture f(backend,true,false);f.answer(">>");f.reader->toggle();
+            wait([&]{const auto s=f.snapshot();return s.playing&&s.segments[s.index].feedback;},"incorrect feedback before editing");
+            f.reader->pause();const auto old=f.snapshot();check(old.index>0,"The feedback fixture unexpectedly started at the page beginning");
+            const auto input=child(f.view,1102);CHARRANGE range{0,-1};SendMessageW(input,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+            SendMessageW(input,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));f.ready();
+            const auto editing=f.snapshot();check(!editing.playing&&!editing.allocated&&editing.index>0&&!editing.segments[editing.index].feedback,
+                "Removing stale incorrect feedback replayed the page beginning instead of preserving its surviving reading position");
+            SendMessageW(child(f.view,1103),BM_CLICK,0,0);f.reader->pause();f.ready();const auto corrected=f.snapshot();
+            check(corrected.index>0&&corrected.segments[corrected.index].feedback&&corrected.segments[corrected.index].correct&&corrected.offset==0,
+                "A corrected answer restarted the page instead of selecting its own new feedback");
+            check(narration::read_history(read_lesson_state(f.view)).entries.size()<=3,
+                "Replacing incorrect feedback created parallel unbounded reading history");
+            std::cout<<"PASS wrong-to-correct edits retain the nearest real segment and select only the new feedback, without page restart\n";
+        }
+        {
+            auto lesson=model();lesson.pages.resize(1);Fixture f(backend,false,true,true,"es",std::move(lesson),true);
+            update_lesson_preferences(f.view,[](state::StateData& data){
+                auto history=narration::begin({},"retained-paused","owner-a",{0,120,0,false},{},"retained-page-a");
+                history=narration::begin(std::move(history),"retained-finished","owner-b",{0,240,1,false},{},"retained-page-b");
+                history=narration::checkpoint(std::move(history),"retained-finished","owner-b",{0,240,1,true});narration::write_history(data,history);
+            });
+            f.reader->toggle();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==1&&value.offset>300;},"real playback before deleting one private QA recording");
+            f.reader->pause();const auto paused=f.snapshot();const auto missing=paused.segments[paused.index].recording;
+            const auto valid=paused.segments.front().recording;
+            const auto relative=missing.lexically_relative(f.environment.paths.cache);
+            check(!relative.empty()&&relative.begin()->native()!=L".."&&missing!=valid&&std::filesystem::is_regular_file(missing),
+                "Recording deletion regression is not confined to this test's independent audio cache");
+            const auto digest=[](const std::filesystem::path& path){std::ifstream stream(path,std::ios::binary);std::string bytes((std::istreambuf_iterator<char>(stream)),std::istreambuf_iterator<char>());check(!bytes.empty(),"Cannot inspect an independent cached recording");return state::sha256(bytes);};
+            const auto valid_digest=digest(valid);const auto valid_size=std::filesystem::file_size(valid);
+            check(std::filesystem::remove(missing),"Cannot remove the one private QA recording for the missing-file regression");
+            f.reader->toggle();const auto pending=f.snapshot();
+            check(pending.key==paused.key&&pending.index==paused.index&&pending.offset==paused.offset&&!pending.allocated,
+                "A missing recording rebuilt the script, reset its exact position or opened an absent file");
+            f.ready();wait([&]{const auto value=f.snapshot();return value.playing&&value.index==paused.index;},"regenerated missing recording resumes the real paused segment");
+            const auto resumed=f.snapshot();check(std::filesystem::is_regular_file(missing)&&resumed.key==paused.key&&resumed.offset>=paused.offset,
+                "Missing-file recovery failed to resume the same recording identity and offset");
+            f.reader->pause();check(!f.snapshot().allocated&&digest(valid)==valid_digest&&std::filesystem::file_size(valid)==valid_size,
+                "Missing-file recovery retained a paused player or changed another valid cached recording");
+            const auto history=narration::read_history(read_lesson_state(f.view));
+            check(history.entries.size()==3&&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-paused"&&entry.position.milliseconds==120;})
+                &&std::ranges::any_of(history.entries,[](const auto& entry){return entry.key=="retained-finished"&&entry.position.finished&&entry.position.milliseconds==240;}),
+                "Recovering a deleted audio file changed the other two recent page positions");
+            std::cout<<"PASS explicitly deleted private recording: existing worker recovers it at the same offset, preserves valid cache and all three page positions\n";
         }
         {
             Fixture f(backend,false,true,false);const auto before=f.snapshot();

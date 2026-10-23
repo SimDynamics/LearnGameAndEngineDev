@@ -89,6 +89,87 @@ MathPuzzleCallbacks canonical_callbacks(MathPuzzleCallbacks events={}){
     events.expression_request=[](std::string_view request){static lgaed::windows::NarrationWorker worker(std::filesystem::path(lgaed::build::source_root)/"out/narration/runtime.json");return worker.math_editor(request);};
     return events;
 }
+void click_card(HWND item){SendMessageW(item,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));SendMessageW(item,WM_LBUTTONUP,0,MAKELPARAM(4,4));}
+HWND region_target(const MathPuzzleView& view,std::string_view key){for(const auto& region:view.reading_regions())if(region.key==key)return region.target;return nullptr;}
+HWND caption_target(HWND parent,std::wstring_view caption){for(const auto item:descendants(parent)){wchar_t value[200]{};GetWindowTextW(item,value,200);if(std::wstring_view(value)==caption)return item;}return nullptr;}
+std::vector<COLORREF> painted_points(HWND window,const std::vector<POINT>& points){
+    RECT bounds{};GetClientRect(window,&bounds);const auto dc=GetDC(window),buffer=CreateCompatibleDC(dc);
+    const auto bitmap=CreateCompatibleBitmap(dc,bounds.right,bounds.bottom);ReleaseDC(window,dc);
+    require(buffer&&bitmap,"Cannot inspect mathematical choice card pixels");const auto previous=SelectObject(buffer,bitmap);
+    SendMessageW(window,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(buffer),PRF_CLIENT);
+    std::vector<COLORREF> result;for(const auto point:points)result.push_back(GetPixel(buffer,point.x,point.y));
+    SelectObject(buffer,previous);DeleteObject(bitmap);DeleteDC(buffer);return result;
+}
+void android_control_parity_tests(HWND host){
+    {
+        int expanded=0,resets=0;MathPuzzleCallbacks callbacks;callbacks.fullscreen_requested=[&]{++expanded;};callbacks.reset_requested=[&]{++resets;};
+        const auto raw=simple_block(R"({"id":"choice","type":"math_multiple_choice_single","options":[{"id":"first","label":"Una opción con \\(2 + 3 = 5\\)."},{"id":"second","label":"Otra opción"}]})");
+        MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","",std::move(callbacks));view.layout(0,0,650);
+        const auto expand=caption_target(view.window(),L"Pantalla completa"),reset=caption_target(view.window(),L"Reiniciar");
+        require(expand&&reset,"A mathematical card omitted its source fullscreen/reset toolbar actions");
+        SendMessageW(expand,BM_CLICK,0,0);SendMessageW(reset,BM_CLICK,0,0);require(expanded==1&&resets==1,"Mathematical toolbar actions bypassed the existing lesson controller");
+        const auto option=region_target(view,"choice/option/first");require(option,"The original rich answer is absent");
+        HWND radio=nullptr;for(const auto item:descendants(view.window())){wchar_t name[32]{};GetClassNameW(item,name,32);if(_wcsicmp(name,L"BUTTON")==0&&(GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK)==BS_RADIOBUTTON){radio=item;break;}}
+        require(radio,"The original single-choice control is absent");const auto original=view.answers_json();SetFocus(radio);
+        require(view.answers_json()==original&&SendMessageW(radio,BM_GETCHECK,0,0)==BST_UNCHECKED,"Merely focusing a mathematical option selected an answer");
+        RECT radio_bounds{},label_bounds{},card_bounds{};GetWindowRect(radio,&radio_bounds);GetWindowRect(option,&label_bounds);
+        MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&radio_bounds),2);MapWindowPoints(nullptr,view.window(),reinterpret_cast<POINT*>(&label_bounds),2);
+        UnionRect(&card_bounds,&radio_bounds,&label_bounds);const auto border_gap=MulDiv(3,static_cast<int>(GetDpiForWindow(view.window())),96);
+        const std::vector<POINT> card_pixels{{(card_bounds.left+card_bounds.right)/2,card_bounds.top-border_gap},
+            {card_bounds.left-border_gap,(card_bounds.top+card_bounds.bottom)/2},
+            {(label_bounds.left+label_bounds.right)/2,label_bounds.top}};
+        const auto normal_card=painted_points(view.window(),card_pixels);const auto colors=reader_theme::palette(view.window());
+        require(normal_card[0]==colors.outline&&normal_card[1]==colors.outline&&normal_card[2]==reader_theme::background(view.window()),
+            "A mathematical choice card failed to surround both radio and rich content, or retained an input-like label outline");
+        SendMessageW(option,EM_SETSEL,0,0);click_card(option);
+        const auto chosen=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"choice").GetNamedArray(L"selected");
+        CHARRANGE selection{};SendMessageW(option,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        require(chosen.Size()==1&&chosen.GetStringAt(0)==L"first","Clicking the rich mathematical option did not select its answer");
+        require(selection.cpMin==selection.cpMax,"Clicking the rich mathematical option selected its visible text");
+        const auto selected_card=painted_points(view.window(),card_pixels);
+        require(selected_card[0]==colors.accent&&selected_card[1]==colors.accent&&selected_card[2]==normal_card[2],
+            "Selecting a mathematical option did not accent its whole Android card or altered the rich text's background");
+        click_card(option);require(JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"choice").GetNamedArray(L"selected").Size()==0,"A second card click did not toggle the original Android single-choice state");
+        const auto before=view.answers_json();view.set_enabled(false);click_card(option);require(view.answers_json()==before&&IsWindowEnabled(expand)&&IsWindowEnabled(reset),"Freezing a choice left its rich body editable or disabled source view/reset actions");
+    }
+    {
+        const auto raw=simple_block(R"({"id":"order","type":"math_ordering_drag","items":[{"id":"a","label":"Uno"},{"id":"b","label":"Dos"},{"id":"c","label":"Tres"}],"initialOrder":["c","b","a"]})");
+        MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,650);
+        require(!caption_target(view.window(),L"↑")&&!caption_target(view.window(),L"↓"),"Mathematical cards introduced arrow controls absent from Android");
+        require(region_target(view,"order/label")&&caption_target(view.window(),L"Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado."),"The original ordering instruction was replaced by another interaction");
+        click_card(region_target(view,"order/item/a"));const auto saved=view.answers_json();
+        MathPuzzleView reopened(host,winrt::to_string(raw.Stringify()),"es",saved);reopened.layout(0,0,650);click_card(region_target(reopened,"order/item/b"));
+        auto values=JsonObject::Parse(winrt::to_hstring(reopened.answers_json())).GetNamedObject(L"order").GetNamedArray(L"ids");
+        require(values.GetStringAt(0)==L"a"&&values.GetStringAt(1)==L"b"&&values.GetStringAt(2)==L"c","Tap order or its original draft position was lost when reopened");
+        const auto identity=reopened.answer_identity_json();click_card(region_target(reopened,"order/item/c"));require(reopened.answer_identity_json()==identity,"Advancing the tap cursor manufactured a different answer identity");
+        const auto before=reopened.answers_json();const auto card=region_target(reopened,"order/item/c");SendMessageW(card,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(4,4));SendMessageW(card,WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(-WHEEL_DELTA)),0);SendMessageW(card,WM_LBUTTONUP,0,MAKELPARAM(4,4));require(reopened.answers_json()==before,"A wheel scroll executed a pending mathematical card tap");
+    }
+    {
+        const auto raw=simple_block(R"({"id":"pairs","type":"math_matching_drag","sources":[{"id":"a","label":"Uno"},{"id":"b","label":"Dos"}],"targets":[{"id":"x","label":"Primero"},{"id":"y","label":"Segundo"}]})");
+        MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,650);const auto a=region_target(view,"pairs/source/a"),b=region_target(view,"pairs/source/b"),x=region_target(view,"pairs/target/x");
+        click_card(a);click_card(x);RECT target{},source{};GetWindowRect(x,&target);GetWindowRect(a,&source);require(source.top>=target.bottom,"A matched source was cloned/linked instead of moving its same card under the target");
+        click_card(b);click_card(x);auto pairs=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"pairs").GetNamedObject(L"pairs");
+        require(pairs.Size()==1&&!pairs.HasKey(L"a")&&pairs.GetNamedString(L"b")==L"x","Matching failed to release the source displaced from an occupied target");
+        click_card(x);require(JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"pairs").GetNamedObject(L"pairs").Size()==0,"Clicking a target without a selected source failed to clear its assignment");
+        require(region_target(view,"pairs/source/a")==a&&region_target(view,"pairs/source/b")==b,"Matching replaced the native cards and lost their reading associations");
+    }
+    {
+        const auto raw=simple_block(R"({"id":"line","type":"math_number_line","min":-5,"max":5,"step":0.5,"value":1})");
+        MathPuzzleView view(host,winrt::to_string(raw.Stringify()),"es","");view.layout(0,0,650);const auto fields=edits(view.window());
+        require(fields.size()==1&&region_target(view,"line/position")&&region_target(view,"line/interval-direction"),"The interactive number line omitted its source position field or interval labels");
+        replace(fields.front(),"-2.5");auto value=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"line");
+        require(value.GetNamedNumber(L"value")==-2.5&&value.GetNamedBoolean(L"closed")&&value.GetNamedString(L"direction")==L"right","The position control/default endpoint did not match the Android number line");
+        replace(fields.front(),"-");value=JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"line");require(!value.HasKey(L"value"),"An incomplete position could silently check its stale previous numeric value");
+        MathPuzzleView reopened(host,winrt::to_string(raw.Stringify()),"es",view.answers_json());reopened.layout(0,0,650);require(edit_text(edits(reopened.window()).front())=="-"&&!JsonObject::Parse(winrt::to_hstring(reopened.answers_json())).GetNamedObject(L"line").HasKey(L"value"),"Reopening converted an incomplete position into a valid old answer");
+    }
+    {
+        MathPuzzleView legacy(host,R"({"type":"math_numeric_input","question":"Escribe el resultado.","validator":{"type":"numeric","expected":4}})","es","");legacy.layout(0,0,650);
+        require(edits(legacy.window()).size()==1&&JsonObject::Parse(winrt::to_hstring(legacy.answers_json())).HasKey(L"response"),"The Android standalone mathematical contract produced an empty Windows puzzle");
+        const auto raw=simple_block(R"({"id":"shape","type":"math_geometry_builder"})");MathPuzzleView geometry(host,winrt::to_string(raw.Stringify()),"es","");geometry.layout(0,0,650);
+        require(JsonObject::Parse(winrt::to_hstring(geometry.answers_json())).GetNamedObject(L"shape").GetNamedArray(L"points").Size()==3&&edits(geometry.window()).size()==6,"A geometry builder lost Android's default polygon and its editable vertices");
+    }
+    std::cout<<"PASS source mathematical toolbar, rich-card choice clicks, tap ordering drafts, unique movable matching, number-line controls/invalid drafts and standalone/geometry defaults\n";
+}
 void tom_probe(HWND parent) {
     const auto module = LoadLibraryW(L"Msftedit.dll"); require(module != nullptr,"Missing system RichEdit");
     const auto edit = CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD | ES_MULTILINE,0,0,500,200,parent,nullptr,GetModuleHandleW(nullptr),nullptr);
@@ -285,6 +366,7 @@ int main(int argc,char** argv) {
         require(host.window != nullptr,"Cannot create isolated QA host"); tom_probe(host.window);
         canvas_viewport_tests(host.window);
         structured_input_tests(host.window);
+        android_control_parity_tests(host.window);
         calculator_field_tests(host.window);
         passive_mouse_tests(host.window);
         if (argc > 1 && std::string_view(argv[1]) == "--visual") {
@@ -451,14 +533,13 @@ int main(int argc,char** argv) {
         {
             const auto raw = simple_block(R"({"id":"ordered","type":"math_ordering_drag","items":[{"id":"a","label":"Uno"},{"id":"b","label":"Dos"}],"initialOrder":["b","a"]})");
             MathPuzzleView view(host.window,winrt::to_string(raw.Stringify()),"es",""); view.layout(0,0,560);
-            auto regions = view.reading_regions(); HWND up = nullptr;
-            for (const auto item : descendants(view.window())) { wchar_t name[80]{}; GetWindowTextW(item,name,80); if (std::wstring_view(name) == L"↑") up = item; }
-            require(up != nullptr,"Ordering has no accessible move control");
+            auto regions = view.reading_regions();const auto first=region_target(view,"ordered/item/a");
+            require(first != nullptr,"Ordering has no original tappable card");
             const auto original_order = view.answers_json(); view.set_enabled(false);
             for (const auto& region : regions) if (region.key.find("/item/") != std::string::npos)
                 require(IsWindowEnabled(region.target),"Freezing an order disabled its narratable card labels");
-            SendMessageW(up,BM_CLICK,0,0); require(view.answers_json() == original_order,"A frozen order still accepted a move");
-            view.set_enabled(true); SendMessageW(up,BM_CLICK,0,0);
+            click_card(first);require(view.answers_json() == original_order,"A frozen order still accepted a move");
+            view.set_enabled(true);click_card(first);
             const auto order = JsonObject::Parse(winrt::to_hstring(view.answers_json())).GetNamedObject(L"ordered").GetNamedArray(L"ids");
             require(order.GetStringAt(0) == L"a" && order.GetStringAt(1) == L"b","The visible ordering operation did not change its own MathAnswerJson");
             const auto before = view.answers_json(); SendMessageW(view.window(),WM_MOUSEWHEEL,MAKEWPARAM(0,static_cast<WORD>(-WHEEL_DELTA)),0);

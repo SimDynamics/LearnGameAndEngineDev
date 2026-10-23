@@ -64,13 +64,65 @@ void paint_without_mutating_native_state(Field& value){
         "Scrollbar styling altered source whitespace, selection or native styles");
     check(equal(vertical,scroll(value.field,SB_VERT))&&equal(horizontal,scroll(value.field,SB_HORZ)),"Scrollbar styling introduced a parallel or changed scroll position");
 }
+void slider_colors_and_native_state(HWND host){
+    const auto slider=CreateWindowExW(0,TRACKBAR_CLASSW,L"Content size",WS_CHILD|WS_VISIBLE|WS_TABSTOP|TBS_NOTICKS,
+        10,10,360,48,host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(slider!=nullptr,"Cannot create the native slider fixture");reader_theme::apply(slider,reader_theme::Surface::card);
+    SendMessageW(slider,TBM_SETRANGE,TRUE,MAKELPARAM(0,100));SendMessageW(slider,TBM_SETPOS,TRUE,40);
+    const auto screen=GetDC(slider),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,360,48);ReleaseDC(slider,screen);
+    const auto old=SelectObject(dc,bitmap);SendMessageW(slider,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
+    RECT thumb{};SendMessageW(slider,TBM_GETTHUMBRECT,0,reinterpret_cast<LPARAM>(&thumb));
+    if(!reader_theme::palette(slider).high_contrast)check(GetPixel(dc,(thumb.left+thumb.right)/2,(thumb.top+thumb.bottom)/2)==reader_theme::palette(slider).accent,
+        "Slider thumb retained Windows blue instead of the route accent");
+    check(SendMessageW(slider,TBM_GETPOS,0,0)==40,"Slider styling changed the native value");
+    SendMessageW(slider,WM_KEYDOWN,VK_RIGHT,0);check(SendMessageW(slider,TBM_GETPOS,0,0)==41,"Slider styling consumed keyboard navigation");
+    SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);DestroyWindow(slider);
+}
+void switch_colors_and_native_state(HWND host){
+    const auto control=CreateWindowExW(0,L"BUTTON",L"Continuar",WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX|BS_RIGHTBUTTON,
+        10,70,360,48,host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(control!=nullptr,"Cannot create the native options switch fixture");reader_theme::apply(control,reader_theme::Surface::card);reader_theme::switch_button(control);
+    const auto original_style=GetWindowLongPtrW(control,GWL_STYLE);const auto original_text=text(control);const auto dpi=static_cast<int>(GetDpiForWindow(control));
+    const auto px=[dpi](int value){return std::max(1,MulDiv(value,dpi?dpi:96,96));};
+    const auto screen=GetDC(control),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,360,48);ReleaseDC(control,screen);const auto previous=SelectObject(dc,bitmap);
+    RECT client{};GetClientRect(control,&client);const int padding=px(3),width=std::min(px(36),static_cast<int>(client.right)-padding*2),height=std::min(px(20),static_cast<int>(client.bottom));
+    const int left=client.right-padding-width,cy=client.bottom/2;
+    const auto blend=[](COLORREF ink,COLORREF bg,unsigned alpha){const auto c=[alpha](unsigned a,unsigned b){return (a*alpha+b*(255-alpha)+127)/255;};return RGB(c(GetRValue(ink),GetRValue(bg)),c(GetGValue(ink),GetGValue(bg)),c(GetBValue(ink),GetBValue(bg)));};
+    SendMessageW(control,BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(control,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
+    if(!reader_theme::palette(control).high_contrast){
+        check(GetPixel(dc,left+height/2,cy)==RGB(145,148,158),"Unchecked switch thumb does not use Android's exact neutral tint");
+        check(GetPixel(dc,client.right-padding-px(4),cy)==blend(RGB(120,124,134),reader_theme::background(control),90),"Unchecked switch track does not composite Android's alpha-90 tint");
+    }
+    SendMessageW(control,BM_SETCHECK,BST_CHECKED,0);SendMessageW(control,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
+    if(!reader_theme::palette(control).high_contrast){
+        check(GetPixel(dc,client.right-padding-height/2,cy)==reader_theme::palette(control).accent,"Checked switch thumb did not move right with the configured accent");
+        check(GetPixel(dc,left+px(4),cy)==blend(reader_theme::palette(control).accent,reader_theme::background(control),135),"Checked switch track does not composite Android's alpha-135 tint");
+    }
+    check(SendMessageW(control,BM_GETCHECK,0,0)==BST_CHECKED&&GetWindowLongPtrW(control,GWL_STYLE)==original_style&&text(control)==original_text,
+        "Drawing a switch changed its native checkbox state, style or accessible caption");
+    SetFocus(control);SendMessageW(control,WM_KEYDOWN,VK_SPACE,1);SendMessageW(control,WM_KEYUP,VK_SPACE,1);
+    check(GetFocus()==control&&SendMessageW(control,BM_GETCHECK,0,0)==BST_UNCHECKED,"Switch styling consumed native Space toggling or moved keyboard focus");
+    const auto baseline=CreateWindowExW(0,L"BUTTON",L"Continuar",WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX|BS_RIGHTBUTTON,
+        10,130,360,48,host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(baseline!=nullptr,"Cannot create the unstyled checkbox baseline");
+    const auto disabled=SendMessageW(control,BM_GETCHECK,0,0);SendMessageW(baseline,BM_SETCHECK,disabled,0);EnableWindow(control,FALSE);EnableWindow(baseline,FALSE);
+    // BM_CLICK injects native button messages even into a disabled HWND; it is
+    // not OS hit-testing a user's click. Keep that programmatic native contract
+    // identical rather than adding a switch-only input policy to the painter.
+    SendMessageW(control,BM_CLICK,0,0);SendMessageW(baseline,BM_CLICK,0,0);const auto native_after=SendMessageW(baseline,BM_GETCHECK,0,0);
+    check(!IsWindowEnabled(control)&&!IsWindowEnabled(baseline)&&SendMessageW(control,BM_GETCHECK,0,0)==native_after,"Switch painting changed disabled checkbox behaviour relative to its actual native baseline");EnableWindow(control,TRUE);
+    reader_theme::switch_button(control,false);SendMessageW(control,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
+    check(GetWindowLongPtrW(control,GWL_STYLE)==original_style&&text(control)==original_text&&SendMessageW(control,BM_GETCHECK,0,0)==native_after,"Returning to ordinary checkbox presentation changed its native contract");
+    SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);DestroyWindow(baseline);DestroyWindow(control);
+    std::cout<<"PASS Android switches: exact checked/unchecked track and thumb tints, native checkbox state, Space, focus, disabled native baseline and reversible presentation\n";
+}
 }
 int main(){const auto module=LoadLibraryW(L"Msftedit.dll");if(!module)return 2;
     try{INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};check(InitCommonControlsEx(&common)!=FALSE,"Common controls v6 are required");
         SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         int baseline_wheel=0;
         {Field baseline(false);baseline_wheel=native_wheel_delta(baseline.field);}
-        Field value;std::cout<<"Actual scrollbar DPI="<<GetDpiForWindow(value.field)<<'\n';paint_without_mutating_native_state(value);
+        Field value;slider_colors_and_native_state(value.host);switch_colors_and_native_state(value.host);std::cout<<"Actual scrollbar DPI="<<GetDpiForWindow(value.field)<<'\n';paint_without_mutating_native_state(value);
         // A directly sent WM_MOUSEWHEEL can be ignored by RichEdit when this
         // isolated host is inactive. Compare the same actual unstyled control;
         // physical wheel routing is also exercised in the application UI QA.

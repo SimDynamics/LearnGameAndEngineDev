@@ -77,7 +77,7 @@ void pump(HWND host) {
     MSG message{};
     while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
         if (message.message == WM_QUIT) continue;
-        if (!IsDialogMessageW(host, &message)) { TranslateMessage(&message); DispatchMessageW(&message); }
+        if (!dispatch_lesson_enter(message)&&!IsDialogMessageW(host, &message)) { TranslateMessage(&message); DispatchMessageW(&message); }
     }
 }
 void wait_for(HWND host, const std::function<bool()>& completed, std::string_view message,
@@ -116,7 +116,7 @@ struct Fixture {
         if (initialize) initialize(initial_data,lesson);
         seed_store.save(initial_data);
         host = CreateWindowExW(WS_EX_CONTROLPARENT, L"LgaedLessonViewTests", L"Native lesson integration QA",
-            WS_OVERLAPPEDWINDOW, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+            WS_OVERLAPPEDWINDOW|WS_VISIBLE, 30, 30, 1100, 850, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
         require(host != nullptr, "Cannot create native QA host");
         open();
     }
@@ -158,9 +158,10 @@ struct Fixture {
     void enter(std::size_t block) {
         const auto field = control(block,2); SetFocus(field);
         MSG key{field, WM_KEYDOWN, VK_RETURN, 1};
-        if (!IsDialogMessageW(host, &key)) { TranslateMessage(&key); DispatchMessageW(&key); }
+        if (!dispatch_lesson_enter(key)&&!IsDialogMessageW(host, &key)) { TranslateMessage(&key); DispatchMessageW(&key); }
         pump(host);
-        SendMessageW(field, WM_KEYUP, VK_RETURN, 1); pump(host);
+        key={field,WM_KEYUP,VK_RETURN,LPARAM{1}<<31};
+        if(!dispatch_lesson_enter(key))SendMessageW(field, WM_KEYUP, VK_RETURN, 1);pump(host);
     }
     void next() {
         const auto previous = page(); require(navigate_lesson_view(view,previous + 1), "Next page was unexpectedly blocked"); pump(host); require(page() == previous + 1, "Next did not advance one page");
@@ -177,7 +178,9 @@ struct Fixture {
             std::vector<std::size_t> order(current.fragments.size()); std::iota(order.begin(), order.end(), 0);
             for (std::size_t position = 0; position < order.size(); ++position) {
                 auto found = static_cast<std::size_t>(std::ranges::find(order,current.correct_order[position]) - order.begin());
-                while (found > position) { click(block,20 + static_cast<int>(found) * 3); std::swap(order[found],order[found-1]); --found; }
+                const auto row=GetDlgItem(control(block,5),100+static_cast<int>(order[found]));
+                require(row!=nullptr,"The real order card is missing its stable code row");
+                while (found > position) { SendMessageW(row,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(host);std::swap(order[found],order[found-1]); --found; }
             }
             click(block,3);
         } else {
@@ -544,6 +547,58 @@ void back_navigation_tests(){
     }
     std::cout<<"PASS shared Back/Escape: import/fullscreen/math-keyboard priority, real canonical keyboard, retained editor/draft/selection and existing catalog destination\n";
 }
+void mathematical_feedback_paragraph_spacing() {
+    windows::NarrationWorker backend(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+    for(const auto locale:{"es","en","fr"}) {
+        Fixture fixture([&](state::StateData& state,const curriculum::Lesson&){
+            state.preferences["native_windows"]["ui_language"]=std::string(locale);
+        },[&](const curriculum::Lesson&){
+            auto lesson=windows::parse_lesson_json(R"({"id":"qa_math_feedback_spacing","title":"Feedback","pages":[{"blocks":[{"type":"math_puzzle","schemaVersion":1,"prompt":"Completa la medida.","responses":[{"id":"number","type":"math_numeric_input","label":"Medida","validator":{"type":"numeric","expected":6}}],"feedback":{"correct":"6 × 100 = 600. Explicación intacta.","incorrect":"Revisa la medida."}}]}]})");
+            lesson.locale=locale;return lesson;
+        });
+        std::string canonical_feedback;
+        bool completed=false;
+        LessonViewHooks hooks;
+        hooks.validate_math=[&](std::string_view block,std::string_view answers,std::string_view language,std::stop_token stop){
+            auto result=backend.validate_math(block,answers,language,stop);
+            canonical_feedback=winrt::to_string(winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(result)).GetNamedString(L"feedback"));
+            return result;
+        };
+        hooks.feedback_changed=[&](HWND,std::size_t,bool){completed=true;};
+        set_lesson_view_hooks(fixture.view,std::move(hooks));
+        HWND field=nullptr;EnumChildWindows(fixture.view,[](HWND candidate,LPARAM output)->BOOL{
+            if(!math_field_keyboard_context(candidate).empty()){*reinterpret_cast<HWND*>(output)=candidate;return FALSE;}return TRUE;
+        },reinterpret_cast<LPARAM>(&field));
+        require(field,"The real mathematical answer field is missing from feedback spacing regression");
+        const auto original_json=fixture.lesson.raw_json;
+        for(const auto answer:{L"5",L"6"}) {
+            CHARRANGE all{0,-1};SendMessageW(field,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&all));
+            SendMessageW(field,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(answer));pump(fixture.host);
+            completed=false;
+            fixture.click(0,3);
+            wait_for(fixture.host,[&]{return completed;},
+                "Canonical mathematical feedback did not finish its real validation");
+            const auto target=fixture.control(0,4);
+            require(fixture.text(0,4)==canonical_feedback&&canonical_feedback.find('\n')!=std::string::npos,
+                "Math verdict spacing changed the canonical feedback characters");
+            const auto regions=lesson_reading_regions(fixture.view);
+            require(std::ranges::any_of(regions,[&](const auto& region){return region.feedback&&region.target==target&&region.source_text==canonical_feedback;}),
+                "Math verdict spacing changed the original narration source or offsets");
+            CHARRANGE previous{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            CHARRANGE heading{0,0};SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&heading));
+            PARAFORMAT2 format{};format.cbSize=sizeof(format);SendMessageW(target,EM_GETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));
+            require(format.dySpaceAfter==MulDiv(rich_text_height(),25,20),
+                "Math verdict and explanation are not separated by one presentation-only blank line");
+            CHARRANGE body{static_cast<LONG>(wide(canonical_feedback.substr(0,canonical_feedback.find('\n'))).size()+1),-1};
+            SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&body));
+            format={};format.cbSize=sizeof(format);SendMessageW(target,EM_GETPARAFORMAT,0,reinterpret_cast<LPARAM>(&format));
+            require(format.dySpaceAfter==0,"Math verdict spacing leaked into the authored explanation paragraphs");
+            SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            require(fixture.lesson.raw_json==original_json,"Math verdict spacing changed the curriculum");
+        }
+    }
+    std::cout<<"PASS ES/EN/FR real mathematical verdicts: presentation-only blank line, unchanged canonical text, narration source and expressions\n";
+}
 void native_page_progress_theme() {
     Fixture fixture;const auto progress=fixture.control(106);
     wchar_t class_name[64]{};GetClassNameW(progress,class_name,64);
@@ -617,9 +672,13 @@ void simulated_exercise_code_cards() {
     require(std::ranges::none_of(regions,[&](const auto& region){
         return region.target==output_code||region.target==fixture.control(0,16)||region.target==fixture.control(1,16);
     }),"A decorative simulated header started narrating excluded console code or buttons");
+    const auto order_surface=fixture.control(2,5);
+    require(std::ranges::none_of(regions,[&](const auto& region){return IsChild(order_surface,region.target);})&&
+        std::ranges::any_of(regions,[&](const auto& region){return region.target==fixture.control(2,37)&&region.source_text=="Mantén pulsado un bloque y arrástralo hasta la posición correcta.";}),
+        "Code ordering narrated source fragments or omitted the original visible Android instruction");
     {
         PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
-        require(popup.captions==std::vector<std::string>{"Copiar ejercicio","Reiniciar respuesta","Pantalla completa"},
+        require(popup.captions==std::vector<std::string>{"Copiar ejercicio","Reiniciar respuesta","Pantalla completa","Ajuste de línea"},
             "The simulated response menu does not expose its real copy/reset/fullscreen operations");
     }
     fixture.replace(0,2,"Respuesta personal");fixture.replace(1,2,"<<");
@@ -635,8 +694,13 @@ void simulated_exercise_code_cards() {
         "Resetting a response modified immutable code, another answer or its HWND");
     fixture.enter(1);require(fixture.text(1,4).starts_with("✓ Correcto")&&fixture.page()==0,"The decorated fill no longer checks with Enter without navigation");
     fixture.click(1,12);require(fixture.text(1,2).empty()&&fixture.text(1,4).empty(),"The fill header did not reuse the existing correct-answer reset");
-    fixture.click(2,21);require(fixture.text(2,22)=="int main() {"&&IsWindowEnabled(fixture.control(2,12)),"The order header collided with the actual first movement control");
-    fixture.click(2,12);require(fixture.text(2,22)=="return 0;"&&!IsWindowEnabled(fixture.control(2,12)),"Resetting order did not restore its original unsolved presentation");
+    const auto order_host=fixture.control(2,5),first_fragment=GetDlgItem(order_host,100),main_fragment=GetDlgItem(order_host,101);
+    require(first_fragment&&main_fragment&&!descendant(fixture.view,id(2,20)),"The order card still uses artificial up/down buttons instead of its actual code rows");
+    SendMessageW(main_fragment,WM_SYSKEYDOWN,VK_UP,LPARAM{1}<<29);pump(fixture.host);
+    auto ordered=state::get_response(read_lesson_state(fixture.view),curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[2]));
+    require(ordered&&ordered->order==std::vector<std::int64_t>{1,0,2}&&IsWindowEnabled(fixture.control(2,12)),"The actual order card did not persist its reordered fragments");
+    fixture.click(2,12);ordered=state::get_response(read_lesson_state(fixture.view),curriculum::exercise_key(fixture.lesson,fixture.lesson.pages[0].blocks[2]));
+    require(ordered&&ordered->order.empty()&&!IsWindowEnabled(fixture.control(2,12))&&fixture.control(2,5)==order_host&&edit_text(first_fragment)=="return 0;","Resetting order did not restore its original unsolved presentation and row identity");
     SendMessageW(inline_answer,EM_SETSEL,0,-1);SendMessageW(inline_answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L"<<"));pump(fixture.host);
     fixture.click(3,13);require(fixture.control(3,5)==inline_host&&GetDlgItem(inline_host,100)==inline_answer&&edit_text(inline_answer)=="<<",
         "Inline fullscreen recreated the existing hole/editor or discarded its draft");
@@ -686,7 +750,7 @@ void simulated_code_and_choice_cards() {
     }
     {
         PopupCapture popup(fixture.view);fixture.click(0,19);popup.verified();
-        require(popup.captions==std::vector<std::string>{"Copiar código","Pantalla completa"},
+        require(popup.captions==std::vector<std::string>{"Copiar código","Pantalla completa","Ajuste de línea"},
                 "The immutable code menu exposed editing actions or lost its original copy/fullscreen actions");
     }
     fixture.click(0,20);
@@ -708,7 +772,12 @@ void simulated_code_and_choice_cards() {
     require(fixture.control(0,1)==code&&fixture.control(1,20)==first&&(GetWindowLongPtrW(first,GWL_STYLE)&WS_VISIBLE),
             "Leaving simulated-code fullscreen replaced controls or lost the exercise");
     const auto source=fixture.text(2,10);fixture.replace(2,10,source+"// borrador que debe conservarse\n");const auto draft=fixture.text(2,10);
-    fixture.click(1,20);require(IsWindowEnabled(fixture.control(1,12)),"Selecting an option did not enable its header reset");
+    const auto choice_text=fixture.control(1,21);
+    SendMessageW(choice_text,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(45,12));SendMessageW(choice_text,WM_LBUTTONUP,0,MAKELPARAM(45,12));pump(fixture.host);
+    CHARRANGE choice_selection{};SendMessageW(choice_text,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&choice_selection));
+    require(SendMessageW(first,BM_GETCHECK,0,0)==BST_CHECKED&&choice_selection.cpMin==choice_selection.cpMax&&GetFocus()==first,
+        "Clicking the actual option text selected text instead of choosing its radio and preserving keyboard focus");
+    require(IsWindowEnabled(fixture.control(1,12)),"Selecting an option did not enable its header reset");
     fixture.click(1,3);require(fixture.text(1,4).starts_with("✗ Incorrecto"),"The real incorrect-choice path did not execute");
     const auto after_wrong=read_lesson_state(fixture.view);
     require(state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming")&&std::get<double>(*state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming"))<8.,"An evaluated wrong puzzle did not consume a route attempt");
@@ -727,6 +796,53 @@ void simulated_code_and_choice_cards() {
             "Reopening simulated cards changed curriculum, restored a stale attempt or fabricated a resettable immutable program");
     std::cout<<"PASS Simulated code/choice cards, native popup, exact text/reading targets, fullscreen, wrong/correct reset and independent editor history\n";
 }
+void physical_enter_and_attempt_fill(){
+    Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_physical_enter_parity","title":"Entrada y comprobación","pages":[{"blocks":[
+        {"type":"multiple_choice","question":"Selecciona una opción.","options":["Una respuesta que debe ocupar varias líneas en una ventana estrecha sin desplazar el círculo hacia el centro de todo el párrafo.","La otra respuesta."],"correctIndex":0},
+        {"type":"fill_code","question":"Completa el operador.","answers":["<<"]},
+        {"type":"cpp_compiler","initialCode":"int main() { return 0; }\n","initialStandardInput":"dato\n"}
+        ]},{"blocks":[{"type":"paragraph","text":"Página siguiente."}]}]})json");});
+    const auto raw=f.lesson.raw_json;
+    const auto physical=[&](HWND target,bool repeat=false){MSG down{target,WM_KEYDOWN,VK_RETURN,repeat?(LPARAM{1}<<30):1};return dispatch_lesson_enter(down);};
+    const auto up=[&](HWND target){MSG message{target,WM_KEYUP,VK_RETURN,LPARAM{1}<<31};return dispatch_lesson_enter(message);};
+    const auto editor=f.control(2,10),input=f.control(2,15);SetFocus(editor);
+    require(GetFocus()==editor&&!physical(editor),"The global Enter gate took a newline away from the actual C++ editor");
+    SetFocus(input);require(GetFocus()==input&&!physical(input),"The global Enter gate submitted stdin instead of preserving its multiline editing");
+    const auto label=f.control(0,21),radio=f.control(0,20);
+    SendMessageW(label,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(40,12));SendMessageW(label,WM_LBUTTONUP,0,MAKELPARAM(40,12));pump(f.host);
+    const auto newline=[&](HWND target){SetFocus(target);const auto before=edit_text(target);SendMessageW(target,EM_SETSEL,static_cast<WPARAM>(-1),-1);
+        require(!physical(target),"A stale selected puzzle stole Enter after an explicit click/focus in a multiline editor");
+        SendMessageW(target,WM_KEYDOWN,VK_RETURN,1);SendMessageW(target,WM_CHAR,L'\r',1);SendMessageW(target,WM_KEYUP,VK_RETURN,1);pump(f.host);
+        require(edit_text(target)==before+'\n'&&f.text(0,4).empty()&&f.page()==0&&GetFocus()==target,
+            "Enter after selecting another puzzle failed to insert exactly one newline, moved focus, checked or navigated");};
+    newline(editor);newline(input);
+    SendMessageW(label,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(40,12));SendMessageW(label,WM_LBUTTONUP,0,MAKELPARAM(40,12));pump(f.host);
+    require(GetFocus()==radio&&physical(radio),"A selected actual choice did not own physical Enter");pump(f.host);
+    require(f.text(0,4).starts_with("✓ Correcto")&&f.page()==0,"Enter did not check the deliberately selected choice exactly once");
+    SetFocus(nullptr); // Disabling a solved native answer can release focus.
+    require(physical(f.view,true)&&up(f.view)&&f.page()==0,"Held Enter or its UP checked or advanced another activity");
+    f.replace(1,2,"<<");f.enter(1);require(f.page()==0&&lesson_page_state(f.view).can_next,"The last answer's first Enter advanced instead of only checking");
+    SetFocus(f.view);require(physical(f.view),"A later Enter did not accept the already enabled Continue action");pump(f.host);
+    require(f.page()==1&&up(f.view)&&f.lesson.raw_json==raw,"The next physical Enter failed to advance once or changed authored content");
+    // Render the actual life icon independently of desktop occlusion. Only
+    // glyph pixels are inspected; labels/counts do not affect the assertion.
+    const auto button=f.control(113);RECT bounds{};GetClientRect(button,&bounds);
+    const auto screen=GetDC(button),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,bounds.right,bounds.bottom);ReleaseDC(button,screen);
+    const auto previous=SelectObject(dc,bitmap);DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=113;draw.hwndItem=button;draw.hDC=dc;draw.rcItem=bounds;
+    set_lesson_attempts_state(f.view,4,8,.5,false);SendMessageW(f.view,WM_DRAWITEM,113,reinterpret_cast<LPARAM>(&draw));GdiFlush();
+    const auto colors=reader_theme::palette(button);if(!colors.high_contrast){
+        const auto scale=[&](int n){return MulDiv(n,static_cast<int>(GetDpiForWindow(button)),96);};
+        const int side=scale(34),left=(bounds.right-side)/2,top=bounds.bottom-side-scale(12),middle=left+side/2;
+        int left_accent=0,right_white=0,right_accent=0;
+        for(int y=top;y<top+side;++y)for(int x=left;x<left+side;++x){const auto ink=GetPixel(dc,x,y);
+            if(x<middle&&ink==colors.accent)++left_accent;
+            if(x>=middle&&ink==RGB(255,255,255))++right_white;
+            if(x>=middle&&ink==colors.accent)++right_accent;}
+        require(left_accent>0&&right_white>0&&right_accent==0,"Life refill does not paint left-to-right with a white unfilled console");
+    }
+    SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);
+    std::cout<<"PASS real physical Enter: editor/stdin exclusions, selected puzzle, held-key suppression, separate advance, and horizontal white-empty life icon\n";
+}
 }
 
 int main() {
@@ -738,9 +854,11 @@ int main() {
         native_page_progress_theme();
         simulated_exercise_code_cards();
         simulated_code_and_choice_cards();
+        physical_enter_and_attempt_fill();
         lesson_interface_languages();
         laboratory_interface_parity();
         back_navigation_tests();
+        mathematical_feedback_paragraph_spacing();
         Fixture view;
         require(view.page() == 0 && !lesson_page_state(view.view).can_next, "A fresh profile bypassed initial page exercises");
         view.close();

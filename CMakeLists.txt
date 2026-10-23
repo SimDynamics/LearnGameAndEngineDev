@@ -62,6 +62,7 @@ target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 
 add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/lesson_view.cpp
     native/presentation/windows/cpp_fill_view.cpp
+    native/presentation/windows/order_code_view.cpp
     native/presentation/windows/math_puzzle_view.cpp
     native/presentation/windows/math_expression_editor.cpp
     native/presentation/windows/native_math_text.cpp
@@ -69,6 +70,8 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/card_list.cpp
     native/presentation/windows/tools_view.cpp
     native/presentation/windows/settings_view.cpp
+    native/presentation/windows/audio_course_view.cpp
+    native/presentation/windows/narration_licenses.cpp
     native/presentation/windows/reading_shade.cpp
     native/presentation/windows/lesson_reader.cpp
     native/presentation/windows/icons.cpp
@@ -146,6 +149,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_code_gutter_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.code_gutter COMMAND lgaed_code_gutter_tests)
     set_tests_properties(native.code_gutter PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_audio_course_view_tests native/presentation/windows/audio_course_view_tests.cpp)
+    target_link_libraries(lgaed_audio_course_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.audio_course_view COMMAND lgaed_audio_course_view_tests "${CMAKE_SOURCE_DIR}/out/qa")
+    set_tests_properties(native.audio_course_view PROPERTIES TIMEOUT 40)
     add_executable(lgaed_settings_view_tests native/presentation/windows/settings_view_tests.cpp)
     target_link_libraries(lgaed_settings_view_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_settings_view_tests lgaed_narration_runtime)
@@ -160,6 +167,10 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_cpp_fill_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.cpp_fill_view COMMAND lgaed_cpp_fill_view_tests)
     set_tests_properties(native.cpp_fill_view PROPERTIES TIMEOUT 40)
+    add_executable(lgaed_order_code_view_tests native/presentation/windows/order_code_view_tests.cpp)
+    target_link_libraries(lgaed_order_code_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.order_code_view COMMAND lgaed_order_code_view_tests)
+    set_tests_properties(native.order_code_view PROPERTIES TIMEOUT 40)
     add_executable(lgaed_lesson_reader_tests native/presentation/windows/lesson_reader_tests.cpp)
     target_link_libraries(lgaed_lesson_reader_tests PRIVATE lgaed_presentation_windows)
     add_dependencies(lgaed_lesson_reader_tests lgaed_narration_runtime)

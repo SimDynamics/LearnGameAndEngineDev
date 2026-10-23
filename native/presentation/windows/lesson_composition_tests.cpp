@@ -10,6 +10,7 @@
 #include <richedit.h>
 #include <winrt/Windows.Data.Json.h>
 #include <functional>
+#include <array>
 #include <iostream>
 #include <stdexcept>
 
@@ -114,6 +115,37 @@ int main(){
         check(structured_after.draft_json==structured_before.draft_json&&structured_after.cursor_json==structured_before.cursor_json,"Escape from the structured field altered its expression or navigation state");
         SendMessageW(structured,WM_KEYDOWN,VK_ESCAPE,0);check(backs==0,"Structured Escape synchronously destroyed its owning editor callback");pump();
         check(backs==1,"The next structured Escape did not reuse the normal lesson Back action");
-        close();DestroyWindow(host);host=nullptr;std::cout<<"PASS real LessonView math validation/fingerprint/reopen/unit narration, passive gestures, structured Escape and inline/drag state/navigation\n";return 0;
+        close();
+        lesson=windows::load_lesson(std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/math_physics/math_course_01/numeros_y_operaciones/lesson_magnitudes_y_numeracion.json");
+        check(lesson.pages[0].blocks.size()>5&&lesson.pages[0].blocks[4].type==curriculum::BlockType::math_puzzle&&lesson.pages[0].blocks[5].type==curriculum::BlockType::math_puzzle,"The real consecutive mathematical QA location changed");
+        open();
+        const auto verify_math_geometry=[&]{
+            std::array<RECT,2> cards{};unsigned card_index=0;
+            for(const auto index:{4,5}){
+                const auto card=child(view,1000+index*100+5);RECT client{};GetClientRect(card,&client);check(IsWindowVisible(card)&&client.right>0&&client.bottom>0,"A real mathematical composition is hidden or has no viewport");
+                std::vector<RECT> children;unsigned radios=0,labels=0,actions=0;
+                for(auto item=GetWindow(card,GW_CHILD);item;item=GetWindow(item,GW_HWNDNEXT)){
+                    wchar_t name[80]{};GetClassNameW(item,name,80);const bool button=_wcsicmp(name,L"BUTTON")==0;
+                    const bool rich=_wcsnicmp(name,L"RichEdit",8)==0;
+                    if(!button&&(!rich||GetWindowTextLengthW(item)==0))continue;
+                    RECT bounds{};GetWindowRect(item,&bounds);MapWindowPoints(nullptr,card,reinterpret_cast<POINT*>(&bounds),2);
+                    check(IsWindowVisible(item)&&bounds.left>=0&&bounds.top>0&&bounds.right>bounds.left&&bounds.bottom>bounds.top&&bounds.right<=client.right&&bounds.bottom<=client.bottom,
+                        "A real mathematical label, radio or toolbar action remained unarranged/clipped inside its host");
+                    for(const auto& previous:children){RECT overlap{};check(!IntersectRect(&overlap,&previous,&bounds),"Consecutive mathematical controls overlap after lesson layout");}
+                    children.push_back(bounds);
+                    if(button){const auto style=GetWindowLongPtrW(item,GWL_STYLE)&BS_TYPEMASK;if(style==BS_RADIOBUTTON||style==BS_AUTORADIOBUTTON)++radios;else ++actions;}
+                    else ++labels;
+                }
+                check(radios==3&&labels>=5&&actions==2,"A real mathematical choice lost its prompt, instruction, options or fullscreen/reset actions");
+                GetWindowRect(card,&cards[card_index++]);
+            }
+            check(cards[1].top>=cards[0].bottom,"Two consecutive mathematical compositions occupy overlapping lesson rows");
+        };
+        for(const int width:{960,640,1120}){
+            MoveWindow(view,0,0,width,690,TRUE);pump();verify_math_geometry();
+            SendMessageW(view,WM_VSCROLL,SB_BOTTOM,0);pump();verify_math_geometry();
+            SendMessageW(view,WM_VSCROLL,SB_TOP,0);pump();verify_math_geometry();
+        }
+        close();DestroyWindow(host);host=nullptr;std::cout<<"PASS real LessonView math validation/fingerprint/reopen/unit narration, passive gestures, structured Escape, consecutive authored math geometry/visibility/resize/scroll and inline/drag state/navigation\n";return 0;
     }catch(const std::exception& e){if(view)DestroyWindow(view);if(host)DestroyWindow(host);std::cerr<<"FAIL lesson compositions: "<<e.what()<<'\n';return 1;}
 }

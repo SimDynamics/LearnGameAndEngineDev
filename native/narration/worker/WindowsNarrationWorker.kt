@@ -28,6 +28,21 @@ private fun sha256(file: File): String {
 }
 private fun language(request: JSONObject): NarrationLanguage =
     NarrationLanguage.fromTag(request.getString("language")) ?: error("Unsupported narration language")
+// Mirrors Android NarrationStorageBudget without evicting valid audio. This
+// runs only for a cache miss; a reduced limit cannot prevent cached playback.
+private fun requireAudioSpace(cache: File, request: JSONObject, nextBytes: Long) {
+    val used = cache.listFiles().orEmpty().asSequence()
+        .filter { it.isFile && (it.extension == "wav" || it.extension == "ogg") }
+        .sumOf { it.length() }
+    val reserve = 1_073_741_824L
+    val free = cache.usableSpace
+    val maximum = (if (Long.MAX_VALUE - used < free) Long.MAX_VALUE else used + free)
+        .minus(reserve).coerceAtLeast(0)
+    val limit = request.optLong("audioBudgetBytes", maximum).coerceAtLeast(0).coerceAtMost(maximum)
+    check(free > reserve && nextBytes.coerceAtLeast(0) <= limit - used && limit > used) {
+        "Narration audio storage limit reached; existing recordings have been preserved"
+    }
+}
 private data class Segment(val source: String, val prepared: String, val spoken: List<ReadingTextRange>,
                            val displayed: List<ReadingTextRange>)
 private class Request(val id: String) {
@@ -266,6 +281,7 @@ private class Backend(private val resources: File, private val englishResources:
             var origin = reuse(audio,key,job)
             val cacheHit = origin != null
             current(job)
+            if (!cacheHit) requireAudioSpace(cache, request, 4L * 1024 * 1024)
             val sidecar = File(cache,"$key-${sha256(source.toByteArray(Charsets.UTF_8))}.timings.json")
             val cachedSamples = if (cacheHit) sampleCount(audio) else null
             val cachedAudioHash = if (cacheHit) sha256(audio) else null
@@ -292,6 +308,7 @@ private class Backend(private val resources: File, private val englishResources:
                 }
                 val generated = chunks.map { chunk -> current(job); engine!!.synthesizePhonemes(chunk,voice,1f) { job.cancelled.get() } }
                 current(job)
+                requireAudioSpace(cache, request, 44L + generated.sumOf { it.size.toLong() } * 2L)
                 val partial = File(cache,".$key-${job.id.hashCode()}.part")
                 try {
                     NarrationWavWriter.writeChunks(partial,generated)

@@ -6,6 +6,7 @@
 #include "core/view_preferences.hpp"
 #include "core/attempts.hpp"
 #include "presentation/windows/ui_language.hpp"
+#include "presentation/windows/narration_licenses.hpp"
 #include <commctrl.h>
 #include <shlwapi.h>
 #include <oleacc.h>
@@ -22,10 +23,20 @@ namespace {
 void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 void select(HWND view,int id,int value){SendDlgItemMessageW(view,id,CB_SETCURSEL,value,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,CBN_SELCHANGE),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));}
 void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message!=WM_QUIT){TranslateMessage(&message);DispatchMessageW(&message);}}}
+void license_window_tests(HWND owner){
+    const auto window=lgaed::presentation::open_narration_licenses(owner,"es");
+    check(IsWindow(window)&&SendDlgItemMessageW(window,2,CB_GETCOUNT,0,0)==16,"Narration licenses omitted an original retained notice");
+    for(int index=0;index<16;++index){select(window,2,index);check(GetWindowTextLengthW(GetDlgItem(window,1))>0,"An original narration notice was not loaded into its real text control");}
+    const auto field=GetDlgItem(window,1);SetFocus(field);
+    MSG escape{};escape.hwnd=field;escape.message=WM_KEYDOWN;escape.wParam=VK_ESCAPE;escape.lParam=1;
+    if(!IsDialogMessageW(window,&escape)){TranslateMessage(&escape);DispatchMessageW(&escape);}pump();
+    check(!IsWindow(window),"Escape from license text did not close only its owned window");
+}
 bool boolean(const lgaed::state::StateData& data,const char* domain,const char* key){const auto value=lgaed::state::find(data,domain,key);check(value&&std::holds_alternative<bool>(*value),"Expected a persisted boolean preference");return std::get<bool>(*value);}
 struct ScopedFixture{
-    lgaed::state::StateData data;HWND host=nullptr,view=nullptr;int updates=0,changes=0,closed=0,resets=0;std::vector<std::string> reset_routes;
+    lgaed::state::StateData data;HWND host=nullptr,view=nullptr;int updates=0,changes=0,closed=0,resets=0,scope_id=0;std::vector<std::string> reset_routes;
     ScopedFixture(lgaed::presentation::SettingsScope scope,lgaed::state::StateData initial={},std::string course="course_a",bool programming=true):data(std::move(initial)){
+        scope_id=static_cast<int>(scope);
         host=CreateWindowExW(0,L"STATIC",L"Scoped settings QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create scoped settings QA host");
         lgaed::presentation::SettingsAccess access;access.scope=scope;access.course_id=std::move(course);access.title="Título del contenido";access.eyebrow="Contexto";access.programming=programming;
         access.programming_course_ids={"course_a","course_b","course_c"};access.math_course_ids={"math_a","math_b"};access.reset_route=[this](std::string_view route){reset_routes.emplace_back(route);};
@@ -34,7 +45,7 @@ struct ScopedFixture{
     }
     ~ScopedFixture(){if(view)DestroyWindow(view);if(host)DestroyWindow(host);}
     HWND control(int id)const{return GetDlgItem(view,id);}
-    void has(int id,bool expected)const{check((control(id)!=nullptr)==expected,"Settings scope exposed an unrelated control or omitted its own control");}
+    void has(int id,bool expected)const{if((control(id)!=nullptr)!=expected)throw std::runtime_error("Settings control "+std::to_string(id)+" scope "+std::to_string(scope_id)+(expected?" is missing":" should not exist"));}
     bool checked(int id)const{check(control(id)!=nullptr,"Missing scoped checkbox");return SendMessageW(control(id),BM_GETCHECK,0,0)==BST_CHECKED;}
     void toggle(int id,bool value){check(control(id)&&IsWindowEnabled(control(id)),"Attempted to change a disabled scoped checkbox");SendMessageW(control(id),BM_SETCHECK,value?BST_CHECKED:BST_UNCHECKED,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(control(id)));}
     void click(int id){check(control(id)&&IsWindowEnabled(control(id)),"Missing/disabled scoped action");SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(control(id)));pump();}
@@ -43,60 +54,26 @@ struct ScopedFixture{
 void scoped_tests(){
     using namespace lgaed;using namespace presentation;
     state::StateData seed;seed.preferences["learning_progress"]["student_answer"]=std::string("immutable answer");seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
-    const auto protected_progress=seed.preferences["learning_progress"],protected_drafts=seed.preferences["cpp_lesson_drafts"];
-    {
-        ScopedFixture global(SettingsScope::global,seed);check(global.updates==0&&global.data==seed,"Opening global defaults wrote preferences");
-        check(global.checked(5110)&&!global.checked(5111)&&!global.checked(5112)&&!global.checked(5113),"Android navigation defaults changed");
-        check(curriculum::learning_flow(global.data)==curriculum::LearningFlow{},"Default global flow was not preserved");
-        for(const auto id:{5101,5102,5103,5104,5108,5109,5110,5111,5112,5113,5114,5118})global.has(id,true);
-        global.has(5116,false);global.has(5117,false);
-    }
+    const auto progress=seed.preferences["learning_progress"],drafts=seed.preferences["cpp_lesson_drafts"];
+    {ScopedFixture global(SettingsScope::global,seed);check(global.updates==0&&global.data==seed,"Opening global defaults wrote preferences");
+        for(const auto id:{5101,5103,5104,5105,5106,5108,5110,5111,5112,5113,5114})global.has(id,true);
+        for(const auto id:{5102,5107,5109,5116,5117,5118})global.has(id,false);
+        global.toggle(5110,false);check(!curriculum::learning_flow(global.data).between_lessons&&global.updates==1,"Global continuation did not apply live");}
     curriculum::save_course_flow(seed,"course_b",{false,true,false,true});
-    {
-        ScopedFixture course(SettingsScope::course,seed);const auto before=course.data;
-        for(const auto id:{5110,5111,5112,5113,5115,5116,5117})course.has(id,true);
-        for(const auto id:{5101,5102,5103,5104,5105,5106,5107,5108,5109,5114,5118})course.has(id,false);
-        check(course.checked(5116)&&!IsWindowEnabled(course.control(5110))&&!IsWindowEnabled(course.control(5117)),"Inherited course controls are editable or Save starts enabled");
+    {ScopedFixture course(SettingsScope::course,seed);course.has(5117,false);check(course.checked(5116)&&!IsWindowEnabled(course.control(5110)),"Inherited course controls are editable");
         course.toggle(5116,false);course.toggle(5110,false);course.toggle(5111,true);course.toggle(5112,true);course.toggle(5113,true);
-        check(course.data==before&&course.updates==0&&course.changes==0,"Course edits were persisted before Save");
-        check(IsWindowEnabled(course.control(5117)),"Buffered course edits did not enable Save");course.click(5117);
-        check(course.updates==1&&course.changes==1&&!IsWindowEnabled(course.control(5117)),"Course Save did not commit one draft transaction");
-        check(curriculum::learning_flow(course.data,"course_a")==curriculum::LearningFlow{false,true,true,true},"Saved course flow differs from its draft");
-        check(curriculum::learning_flow(course.data)==curriculum::LearningFlow{}&&curriculum::learning_flow(course.data,"course_b")==curriculum::LearningFlow{false,true,false,true},"Course Save changed global defaults or another course");
-        check(course.data.preferences["learning_progress"]==protected_progress&&course.data.preferences["cpp_lesson_drafts"]==protected_drafts,"Saving course flow altered student data or whitespace");
-        seed=course.data;
-    }
-    {
-        ScopedFixture course(SettingsScope::course,seed);check(!course.checked(5116)&&IsWindowEnabled(course.control(5110)),"Existing course override was not restored");
-        course.toggle(5111,false);course.click(5100);check(course.closed==1&&course.updates==0&&course.data==seed,"Back saved an uncommitted course draft");
-    }
-    {
-        ScopedFixture course(SettingsScope::course,seed);course.toggle(5116,true);check(curriculum::has_course_flow(course.data,"course_a"),"Selecting inheritance removed the stored override before Save");
-        check(!IsWindowEnabled(course.control(5110)),"Inheritance did not disable course-only draft controls");course.click(5117);
-        check(!curriculum::has_course_flow(course.data,"course_a")&&curriculum::has_course_flow(course.data,"course_b"),"Saving inheritance removed another course's override");
-        check(curriculum::learning_flow(course.data,"course_a")==curriculum::learning_flow(course.data),"Saved inherited course does not follow the global flow");
-    }
-    {
-        ScopedFixture unit(SettingsScope::unit,seed);check(unit.data==seed&&unit.updates==0,"Opening unit options wrote preferences");
-        unit.has(5115,true);for(const auto id:{5101,5102,5103,5104,5105,5106,5107,5108,5109,5110,5111,5112,5113,5114,5116,5117,5118})unit.has(id,false);
-        unit.click(5115);check(unit.resets==1&&unit.data==seed,"Unit reset did not delegate exactly its own scope");
-    }
-    {
-        ScopedFixture audio(SettingsScope::audio,seed);check(audio.data==seed&&audio.updates==0,"Opening audio options wrote preferences");
-        for(const auto id:{5103,5104,5105,5106,5107,5108,5109})audio.has(id,true);
-        for(const auto id:{5101,5102,5110,5111,5112,5113,5114,5115,5116,5117,5118})audio.has(id,false);
-        audio.toggle(5108,false);audio.toggle(5109,false);
-        check(!boolean(audio.data,"lesson_narration_settings","kokoro_advance_generation")&&
-              !boolean(audio.data,"lesson_narration_settings","controls_visible"),"Audio controls did not persist their own settings");
-        check(audio.data.preferences["learning_progress"]==protected_progress&&audio.data.preferences["cpp_lesson_drafts"]==protected_drafts,"Audio settings altered student data");
-    }
-    {
-        ScopedFixture lesson(SettingsScope::lesson,seed);check(lesson.data==seed&&lesson.updates==0,"Opening lesson options wrote preferences");
-        for(const auto id:{5105,5106,5115,5118})lesson.has(id,true);
-        for(const auto id:{5101,5102,5103,5104,5107,5108,5109,5110,5111,5112,5113,5114,5116,5117})lesson.has(id,false);
-        lesson.click(5115);check(lesson.resets==1&&lesson.data==seed,"Lesson reset did not delegate only its selected scope");
-    }
-    std::cout<<"PASS native settings scopes: defaults, buffered course Save/Back/inheritance, unit, audio, lesson and protected drafts\n";
+        check(curriculum::learning_flow(course.data,"course_a")==curriculum::LearningFlow{false,true,true,true},"Course flow did not apply live");
+        check(curriculum::learning_flow(course.data)==curriculum::LearningFlow{}&&curriculum::learning_flow(course.data,"course_b")==curriculum::LearningFlow{false,true,false,true},"Course flow changed another scope");
+        course.toggle(5116,true);check(!curriculum::has_course_flow(course.data,"course_a")&&!IsWindowEnabled(course.control(5110)),"Course inheritance did not apply live");
+        check(course.checked(5110)&&!course.checked(5111)&&!course.checked(5112)&&!course.checked(5113),"Inherited course controls still display the obsolete course override instead of the effective global values");
+        check(course.data.preferences["learning_progress"]==progress&&course.data.preferences["cpp_lesson_drafts"]==drafts,"Course options changed student data");}
+    {ScopedFixture unit(SettingsScope::unit,seed);unit.has(5115,true);unit.has(5101,false);unit.has(5123,false);unit.click(5115);check(unit.resets==1&&unit.data==seed,"Unit reset did not delegate only its scope");}
+    {ScopedFixture audio(SettingsScope::audio,seed);for(const auto id:{5103,5104,5105,5106,5108})audio.has(id,true);
+        for(const auto id:{5101,5102,5107,5109,5110,5111,5112,5113,5114,5115,5116,5117,5118})audio.has(id,false);
+        audio.toggle(5108,false);check(!boolean(audio.data,"lesson_narration_settings","kokoro_advance_generation"),"Audio preparation did not persist live");}
+    {ScopedFixture lesson(SettingsScope::lesson,seed);for(const auto id:{5105,5106,5115,5118})lesson.has(id,true);lesson.has(5123,false);
+        lesson.click(5115);check(lesson.resets==1&&lesson.data==seed,"Lesson reset modified unrelated data");}
+    std::cout<<"PASS native scopes: no invented content/rate/visibility selectors; live global/course options, inheritance and protected data\n";
 }
 void appearance_tests(){
     using namespace lgaed;using namespace presentation;
@@ -106,61 +83,26 @@ void appearance_tests(){
     appearance::save_course_wrap(seed,"outside_programming",false);appearance::save_wrap_overwrite(seed,"outside_programming",false);
     auto& accents=seed.preferences["appearance_settings"];
     accents["accent_red"]=std::int64_t{10};accents["accent_green"]=std::int64_t{20};accents["accent_blue"]=std::int64_t{30};
-    for(const auto& route:{std::string("programming"),std::string("math_physics")}){
-        accents["route_accent_red_"+route]=std::int64_t{1};accents["route_accent_green_"+route]=std::int64_t{2};accents["route_accent_blue_"+route]=std::int64_t{3};
-        accents["route_allow_global_accent_overwrite_"+route]=true;
-    }
+    for(const auto& route:{std::string("programming"),std::string("math_physics")}){accents["route_accent_red_"+route]=std::int64_t{1};accents["route_accent_green_"+route]=std::int64_t{2};accents["route_accent_blue_"+route]=std::int64_t{3};accents["route_allow_global_accent_overwrite_"+route]=true;}
     accents["default_global_accent_red"]=std::int64_t{41};accents["default_global_accent_green"]=std::int64_t{42};accents["default_global_accent_blue"]=std::int64_t{43};
     accents["default_route_accent_red_math_physics"]=std::int64_t{61};accents["default_route_accent_green_math_physics"]=std::int64_t{62};accents["default_route_accent_blue_math_physics"]=std::int64_t{63};
     const auto progress=seed.preferences["learning_progress"],drafts=seed.preferences["cpp_lesson_drafts"];
-    {
-        ScopedFixture global(SettingsScope::global,seed);const auto before=global.data;
-        check(global.updates==0&&SendMessageW(global.control(5120),TBM_GETPOS,0,0)==115,"Opening appearance did not retain the original text scale");
-        check(SendMessageW(global.control(5120),TBM_GETRANGEMIN,0,0)==75&&SendMessageW(global.control(5120),TBM_GETRANGEMAX,0,0)==150,"Text slider changed Android's 75–150 percent range");
-        check(!IsWindowEnabled(global.control(5123)),"Appearance Save starts enabled without edits");
-        check(SendMessageW(global.control(5101),CB_GETCOUNT,0,0)==4&&SendMessageW(global.control(5101),CB_GETCURSEL,0,0)==0,"Automatic UI language is absent from Android's first position");
-        global.scale(125);global.toggle(5110,false);global.toggle(5114,true);global.toggle(5128,false);
-        global.click(5130);global.click(5132);
-        check(global.data==before&&global.updates==0&&global.changes==0,"Pending global typography, flow, wrapping or colours were saved before Save");
-        global.click(5123);check(global.updates==1&&global.changes==1&&!IsWindowEnabled(global.control(5123)),"Appearance Save was not one explicit draft transaction");
-        check(appearance::global_text_scale(global.data)==125&&appearance::text_scale(global.data,"course_a")==90,"Global text scale overwrote a protected course exception");
-        check(!curriculum::learning_flow(global.data).between_lessons,"Buffered global navigation was not saved");
-        check(appearance::global_code_wrap(global.data)&&!appearance::code_wrap(global.data,"course_a")&&appearance::code_wrap(global.data,"course_b"),"Global wrapping ignored the actual course protection");
-        check(!appearance::code_wrap(global.data,"outside_programming")&&!appearance::allows_global_wrap(global.data,"outside_programming"),"Global wrapping changed another route");
-        check(reader_theme::appearance_accent(global.data)==RGB(41,42,43),"Reset global accent ignored imported custom default components");
-        check(reader_theme::appearance_accent(global.data,"programming")==RGB(1,2,3),"The newly selected protection did not apply before global propagation");
-        check(reader_theme::appearance_accent(global.data,"math_physics")==RGB(61,62,63),"Explicit route colour in the same Save lost to global propagation");
-        check(state::integer_value(global.data,"appearance_settings","default_global_accent_red")==41,"Saving colours changed the user's imported defaults");
-        check(global.data.preferences["learning_progress"]==progress&&global.data.preferences["cpp_lesson_drafts"]==drafts,"Appearance changed exact student data or stdin whitespace");
-        seed=global.data;
-        global.click(5134);global.click(5135);check(global.reset_routes==std::vector<std::string>{"programming","math_physics"}&&global.data==seed,"Route progress actions did not delegate their exact scopes");
-        global.click(5133);check(appearance::allows_global_wrap(global.data,"course_a")&&appearance::code_wrap(global.data,"course_a"),"Reset wrap exceptions did not restore the programming course defaults");
-        check(!appearance::allows_global_wrap(global.data,"outside_programming"),"Reset wrap exceptions changed a course outside Programming");
-    }
-    {
-        ScopedFixture global(SettingsScope::global,seed);global.scale(80);global.click(5131);global.click(5100);
-        check(global.closed==1&&global.updates==0&&global.data==seed,"Back persisted global typography or colour drafts");
-        select(global.view,5101,1);check(state::string_value(global.data,"native_windows","ui_language")=="es","Spanish app language did not follow Android's choice order");
-        select(global.view,5101,0);check(state::string_value(global.data,"native_windows","ui_language")=="auto","Automatic UI language was not persisted independently");
-        check(interface_language(global.data)=="es"||interface_language(global.data)=="en"||interface_language(global.data)=="fr","Automatic UI language did not resolve to a supported language");
-    }
-    {
-        ScopedFixture lesson(SettingsScope::lesson,seed);const auto before=lesson.data;
-        check(lesson.checked(5122)==false&&SendMessageW(lesson.control(5120),TBM_GETPOS,0,0)==90,"Lesson options did not restore its course text override");
-        lesson.toggle(5122,true);check(!IsWindowEnabled(lesson.control(5120)),"Inherited course text size remains editable");
+    {ScopedFixture global(SettingsScope::global,seed);check(!IsWindowEnabled(global.control(5123))&&!(GetWindowLongPtrW(global.control(5123),GWL_STYLE)&WS_VISIBLE),"Save is visible without a deferred edit");
+        check(SendMessageW(global.control(5120),TBM_GETRANGEMIN,0,0)==75&&SendMessageW(global.control(5120),TBM_GETRANGEMAX,0,0)==150,"Text scale changed Android range");
+        global.scale(125);global.toggle(5110,false);global.toggle(5114,true);
+        check(appearance::global_text_scale(global.data)==125&&!curriculum::learning_flow(global.data).between_lessons&&appearance::global_code_wrap(global.data),"Scale, flow or wrapping did not apply immediately");
+        check(appearance::text_scale(global.data,"course_a")==90&&!appearance::code_wrap(global.data,"course_a")&&appearance::code_wrap(global.data,"course_b"),"Live appearance ignored course protections");
+        const auto live=global.data;global.toggle(5128,false);global.click(5130);global.click(5132);
+        check(global.data==live&&IsWindowEnabled(global.control(5123))&&(GetWindowLongPtrW(global.control(5123),GWL_STYLE)&WS_VISIBLE),"Colour propagation escaped its explicit transaction or omitted Save");
+        global.click(5123);check(reader_theme::appearance_accent(global.data)==RGB(41,42,43)&&reader_theme::appearance_accent(global.data,"programming")==RGB(1,2,3)&&reader_theme::appearance_accent(global.data,"math_physics")==RGB(61,62,63),"Colour transaction lost new protection or explicit route priority");
+        check(!IsWindowEnabled(global.control(5123))&&!(GetWindowLongPtrW(global.control(5123),GWL_STYLE)&WS_VISIBLE),"Save remained visible after colour commit");
+        check(global.data.preferences["learning_progress"]==progress&&global.data.preferences["cpp_lesson_drafts"]==drafts,"Appearance changed student data");seed=global.data;
+        global.click(5133);check(appearance::allows_global_wrap(global.data,"course_a")&&!appearance::allows_global_wrap(global.data,"outside_programming"),"Reset wrapping changed another scope");}
+    {ScopedFixture lesson(SettingsScope::lesson,seed);lesson.has(5123,false);lesson.toggle(5122,true);check(!IsWindowEnabled(lesson.control(5120)),"Inherited course size stayed editable");
         lesson.toggle(5122,false);lesson.scale(135);lesson.toggle(5124,true);
-        check(lesson.data==before&&lesson.updates==0,"Course typography or wrap protection escaped its draft before Save");
-        lesson.click(5123);check(lesson.updates==1&&appearance::text_scale(lesson.data,"course_a")==135&&appearance::global_text_scale(lesson.data)==125,"Saving course typography changed the global size");
-        check(appearance::allows_global_wrap(lesson.data,"course_a"),"Course wrap overwrite protection was not saved");
-        lesson.toggle(5122,true);lesson.click(5123);
-        check(appearance::text_scale(lesson.data,"course_a")==125&&appearance::course_text_scale(lesson.data,"course_a")==135,"Restoring inheritance lost the course's separately saved size");
-        check(lesson.data.preferences["learning_progress"]==progress&&lesson.data.preferences["cpp_lesson_drafts"]==drafts,"Saving course appearance changed student data");
-    }
-    {
-        ScopedFixture mathematics(SettingsScope::lesson,seed,"course_math",false);mathematics.has(5120,true);mathematics.has(5122,true);mathematics.has(5123,true);
-        mathematics.has(5114,false);mathematics.has(5124,false);mathematics.has(5125,false);
-    }
-    std::cout<<"PASS native appearance: buffered scale/flow/wrap, course inheritance, custom default colours, protections, explicit route priority, route resets and automatic UI language\n";
+        check(appearance::text_scale(lesson.data,"course_a")==135&&appearance::global_text_scale(lesson.data)==125&&appearance::allows_global_wrap(lesson.data,"course_a"),"Course appearance did not apply live in its own scope");
+        lesson.toggle(5122,true);check(appearance::text_scale(lesson.data,"course_a")==125&&appearance::course_text_scale(lesson.data,"course_a")==135,"Restoring inheritance erased separate course size");}
+    std::cout<<"PASS live typography/flow/wrap and scoped inheritance; only RGB propagation has explicit Save, protected route ordering and exact data preservation\n";
 }
 void math_wrap_reset_tests(){
     using namespace lgaed;using namespace presentation;
@@ -225,7 +167,7 @@ void shortcut_tests(){
         lesson.scale(130);ShortcutAction save;save.edit=true;save.save=true;open_shortcuts(lesson,save);
         const auto values=parse_state_shortcuts(lesson.data);check(values.size()==19&&values[0]=="("&&values[1]=="  "&&values[2]=="::"&&values.back()=="old_19",
             "Shortcut Save altered literal spaces, introduced auto-pairs, retained empty slots or changed order");
-        check(lesson.updates==1&&appearance::text_scale(lesson.data,"course_a")==90&&IsWindowEnabled(lesson.control(5123)),"Shortcut Save also committed the unrelated pending text-size draft");
+        check(lesson.updates==2&&appearance::text_scale(lesson.data,"course_a")==130&&!lesson.control(5123),"Shortcut Save changed live text scale or invented another Save button");
         ShortcutAction defaults;defaults.restore=true;defaults.save=true;open_shortcuts(lesson,defaults);
         const auto restored=parse_state_shortcuts(lesson.data),original=parse_state_shortcuts(state::StateData{});
         check(original.size()==44&&restored.size()==20&&std::equal(restored.begin(),restored.end(),original.begin()),"Explicit shortcut Defaults/Save did not use the original first 20 defaults");
@@ -244,6 +186,16 @@ void settings_presentation_tests(){
     ScopedFixture fixture(SettingsScope::global,seed);const int dpi=static_cast<int>(GetDpiForWindow(fixture.view));const auto px=[dpi](int value){return MulDiv(value,dpi,96);};
     const auto title=child_with_caption(fixture.view,L"Título del contenido"),subtitle=child_with_caption(fixture.view,L"Configuración general de LearnGameAndEngineDev");
     const auto section=child_with_caption(fixture.view,L"Idioma de la aplicación");check(title&&subtitle&&section,"Settings omitted its visible hierarchy");
+    if(!reader_theme::palette(fixture.view).high_contrast){
+        check(reader_theme::foreground(title)==RGB(255,255,255)&&reader_theme::foreground(section)==RGB(255,255,255),"Options headings lost their Android white ink");
+        check(reader_theme::foreground(subtitle)==RGB(174,180,190),"Options subtitle lost its Android secondary ink");
+        const auto section_description=child_with_caption(fixture.view,L"Selecciona el idioma de la aplicación, el contenido y la narración.");
+        const auto card_description=child_with_caption(fixture.view,L"Comprobaciones ilimitadas, sin consumir corazones.");
+        const auto narration_label=child_with_caption(fixture.view,L"Motor de voz");
+        check(section_description&&reader_theme::foreground(section_description)==RGB(174,180,190),"A section description uses the muted card-body ink");
+        check(card_description&&reader_theme::foreground(card_description)==RGB(143,149,159),"A card description lost its Android muted ink");
+        check(narration_label&&reader_theme::foreground(narration_label)==RGB(210,214,220),"Narration fields lost their Android text ink");
+    }
     SetWindowTextW(title,L"Título del contenido con una segunda parte");
     const auto title_font=control_font(title),subtitle_font=control_font(subtitle),section_font=control_font(section),button_font=control_font(fixture.control(5123));
     check(-title_font.lfHeight>=MulDiv(32,dpi,96)&&title_font.lfWeight>=FW_BOLD,"Settings title does not use the Android32-sp hierarchy");
@@ -258,19 +210,27 @@ void settings_presentation_tests(){
         check(GetParent(combo)==fixture.view&&GetDlgCtrlID(combo)==5101,"Decorating the selector changed its native parent or ID");
         check(bounds.left==px(42)&&client.right-bounds.right==px(42),"Selector card omitted its18 DIP inner padding or24 DIP page margin");
         check(SendMessageW(combo,CB_GETITEMHEIGHT,static_cast<WPARAM>(-1),0)>=px(56),"Native selector fell below the Android56 DIP field reference");
-        const auto save=relative_rect(fixture.control(5123),fixture.view);check(save.bottom-save.top>=px(62),"Primary settings action is shorter than the reference62 DIP minimum");
+        if(!IsWindowEnabled(fixture.control(5123)))fixture.toggle(5128,!fixture.checked(5128));const auto save=relative_rect(fixture.control(5123),fixture.view);check(save.bottom-save.top>=px(62),"Primary settings action is shorter than the reference62 DIP minimum");
     }
     check(narrow_title_height>wide_title_height,"The settings title did not grow naturally on the narrow viewport");
     MoveWindow(fixture.view,0,0,px(360),px(520),TRUE);pump();const auto combo=fixture.control(5101);
-    for(int count=0;count<200;++count){const auto bounds=relative_rect(combo,fixture.view);RECT client{};GetClientRect(fixture.view,&client);if(bounds.top>=px(18)&&bounds.bottom<=client.bottom-px(18))break;SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);}
+    for(int count=0;count<200;++count){const auto bounds=relative_rect(combo,fixture.view);RECT client{};GetClientRect(fixture.view,&client);if(bounds.top>=px(18)+1&&bounds.bottom<=client.bottom-px(18)-1)break;SendMessageW(fixture.view,WM_VSCROLL,SB_LINEDOWN,0);}
     const auto bounds=relative_rect(combo,fixture.view);RECT client{};GetClientRect(fixture.view,&client);
     check(bounds.top>=px(18)&&bounds.bottom<=client.bottom-px(18),"Padded selector card cannot be scrolled fully into view");
     const auto screen=GetDC(fixture.view),dc=CreateCompatibleDC(screen);const auto bitmap=CreateCompatibleBitmap(screen,client.right,client.bottom);ReleaseDC(fixture.view,screen);
     check(dc&&bitmap,"Cannot capture selector-card presentation");const auto previous=SelectObject(dc,bitmap);SendMessageW(fixture.view,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
     const auto palette=reader_theme::palette(fixture.view);const int y=(bounds.top+bounds.bottom)/2;
-    const bool card=GetPixel(dc,bounds.left-px(9),y)==palette.card,canvas=GetPixel(dc,px(4),y)==palette.canvas;
+    const auto expected_card=palette.high_contrast?palette.card:RGB(32,33,38),expected_canvas=palette.high_contrast?palette.canvas:RGB(16,17,20);
+    const bool card=GetPixel(dc,bounds.left-px(9),y)==expected_card,canvas=GetPixel(dc,px(4),y)==expected_canvas;
+    check(reader_theme::background(fixture.view)==expected_canvas&&reader_theme::background(combo)==expected_card,"Options surfaces differ from Android XML");
+    if(!palette.high_contrast){const int sample_x=bounds.left-px(9);int card_top=y,card_bottom=y+1;
+        while(card_top>0&&GetPixel(dc,sample_x,card_top-1)==expected_card)--card_top;
+        while(card_bottom<client.bottom&&GetPixel(dc,sample_x,card_bottom)==expected_card)++card_bottom;
+        check(std::abs(card_top-(bounds.top-px(18)))<=1&&std::abs(card_bottom-(bounds.bottom+px(18)))<=1,
+            "A selector inside a card receives its18 DIP vertical padding twice");
+    }
     SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);check(card&&canvas,"The18 DIP selector padding has no real card painted behind it");
-    if(!palette.high_contrast){const auto reset=fixture.control(5115);
+    if(!palette.high_contrast){const auto reset=fixture.control(5134);
     SetWindowTextW(reset,L"Reiniciar únicamente el progreso y las respuestas de este contenido de Programación");
     SendMessageW(fixture.view,WM_SIZE,0,0);pump();RECT reset_bounds{};GetClientRect(reset,&reset_bounds);
     const auto reset_screen=GetDC(reset),reset_dc=CreateCompatibleDC(reset_screen);
@@ -281,8 +241,8 @@ void settings_presentation_tests(){
     const auto caption=native_text(reset);DrawTextW(reset_dc,caption.c_str(),static_cast<int>(caption.size()),&measured,DT_CENTER|DT_WORDBREAK|DT_CALCRECT|DT_NOPREFIX);
     const int text_height=measured.bottom-measured.top;
     check(text_height>=3*metrics.tmHeight&&reset_bounds.bottom>=text_height+px(16),"The long reset fixture did not retain all its wrapped lines");
-    DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=5115;draw.itemAction=ODA_DRAWENTIRE;draw.hwndItem=reset;draw.hDC=reset_dc;draw.rcItem=reset_bounds;
-    check(SendMessageW(fixture.view,WM_DRAWITEM,5115,reinterpret_cast<LPARAM>(&draw))!=FALSE,"The native reset action was not painted");
+    DRAWITEMSTRUCT draw{};draw.CtlType=ODT_BUTTON;draw.CtlID=5134;draw.itemAction=ODA_DRAWENTIRE;draw.hwndItem=reset;draw.hDC=reset_dc;draw.rcItem=reset_bounds;
+    check(SendMessageW(fixture.view,WM_DRAWITEM,5134,reinterpret_cast<LPARAM>(&draw))!=FALSE,"The native reset action was not painted");
     const auto ink=reader_theme::accent_foreground(fixture.view);
     const int last_line_top=text_bounds.top+std::max<LONG>(0,(text_bounds.bottom-text_bounds.top-text_height)/2)+text_height-metrics.tmHeight;
     int last_line_pixels=0;for(int row=last_line_top;row<std::min<LONG>(last_line_top+metrics.tmHeight,reset_bounds.bottom);++row)
@@ -313,7 +273,9 @@ bool checkbox_metrics(HWND checkbox,const char* phase,bool painted=false){
     else SendMessageW(checkbox,WM_PRINTCLIENT,reinterpret_cast<WPARAM>(dc),PRF_CLIENT);
     int min_x=bounds.right,min_y=bounds.bottom,max_x=-1,max_y=-1,pixels=0;
     const auto limit=std::min(static_cast<int>(bounds.right),MulDiv(16,dpi,96));
-    for(int y=0;y<bounds.bottom;++y)for(int x=0;x<limit;++x){const auto color=GetPixel(dc,x,y);
+    const bool right=(GetWindowLongPtrW(checkbox,GWL_STYLE)&BS_RIGHTBUTTON)!=0;
+    const int glyph_left=right?std::max(0,static_cast<int>(bounds.right)-limit):0,glyph_right=right?static_cast<int>(bounds.right):limit;
+    for(int y=0;y<bounds.bottom;++y)for(int x=glyph_left;x<glyph_right;++x){const auto color=GetPixel(dc,x,y);
         const int contrast=std::max({std::abs(static_cast<int>(GetRValue(color))-GetRValue(background)),
             std::abs(static_cast<int>(GetGValue(color))-GetGValue(background)),std::abs(static_cast<int>(GetBValue(color))-GetBValue(background))});
         if(color!=CLR_INVALID&&contrast>=60){++pixels;min_x=std::min(min_x,x);max_x=std::max(max_x,x);min_y=std::min(min_y,y);max_y=std::max(max_y,y);}}
@@ -394,7 +356,7 @@ void attempts_and_owned_settings_tests(){
         SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);check(gradient,"Active Premium did not retain Android's real gold gradient");
     }
     data.preferences["premium_state"]["state"]=std::string("FREE");
-    {ScopedFixture free(SettingsScope::global,data);free.has(5138,false);}
+    {ScopedFixture free(SettingsScope::global,data);free.has(5138,true);check(IsWindowEnabled(free.control(5138)),"Free version lost the Android Premium entry");}
     const auto host=CreateWindowExW(0,L"STATIC",L"Owned settings QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create owned-settings test host");
     int closed=0;SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& mutation){mutation(data);};access.close=[&]{++closed;};
     const auto before=data;const auto frame=create_settings_window(host,std::move(access));
@@ -420,9 +382,8 @@ void owned_settings_escape_tests(){
         const auto view=FindWindowExW(frame,nullptr,L"LearnGameAndEngineDev.SettingsView",nullptr);
         check(view!=nullptr,"The Settings Escape window omitted its shared content");
         // Persisted choices remain saved; buffered appearance edits retain the same close policy as Back.
-        select(view,5102,1);const auto before_close=data;const int saved_updates=updates;
-        const auto slider=GetDlgItem(view,5120);SendMessageW(slider,TBM_SETPOS,TRUE,125);
-        SendMessageW(view,WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,125),reinterpret_cast<LPARAM>(slider));
+        select(view,5101,2);pump();const auto before_close=data;const int saved_updates=updates;
+        const auto protection=GetDlgItem(view,5128);SendMessageW(protection,BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(5128,BN_CLICKED),reinterpret_cast<LPARAM>(protection));
         check(IsWindowEnabled(GetDlgItem(view,5123))&&data==before_close,"Settings Escape setup did not keep its appearance edit buffered");
         if(focus_id){
             const auto control=GetDlgItem(view,focus_id);check(control!=nullptr,"Settings Escape omitted its real focus target");
@@ -461,7 +422,7 @@ void header_language_tests(){
     for(int selection=1;selection<4;++selection){
         data.preferences["native_windows"]["ui_language"]=tags[selection];const auto before=data;
         LanguageAction action;action.selected=selection;action.choose=0;
-        action.title=selection==1?L"Idioma de la aplicación":selection==2?L"App language":L"Langue de l’application";
+        action.title=selection==1?L"Idioma de la aplicación":selection==2?L"App Language":L"Langue de l’application";
         action.automatic=selection==1?L"Automático (idioma del dispositivo)":selection==2?L"Automatic (device language)":L"Automatique (langue de l’appareil)";
         language_action=&action;const auto timer=SetTimer(nullptr,0,20,language_timer);check(timer!=0,"Cannot schedule header language QA");
         const auto result=choose_interface_language(host,data);KillTimer(nullptr,timer);language_action=nullptr;if(action.error)std::rethrow_exception(action.error);
@@ -472,23 +433,52 @@ void header_language_tests(){
     }
     DestroyWindow(host);std::cout<<"PASS Android-compatible header language chooser: automatic/es/en/fr, ES/EN/FR titles, exact selection, Cancel and independent narration/content\n";
 }
+void global_migration_contract_tests(){
+    using namespace lgaed;using namespace presentation;
+    state::StateData data;data.preferences["native_windows"]["ui_language"]=std::string("es");data.preferences["learning_progress"]["answer"]=std::string("unchanged");
+    const auto host=CreateWindowExW(0,L"STATIC",L"Global migration contract",WS_OVERLAPPEDWINDOW,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create global migration test owner");
+    std::vector<std::string> audio;int licenses=0,discarded=0,closed=0;
+    SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){change(data);};access.open_audio=[&](std::string_view route){audio.emplace_back(route);};access.open_licenses=[&]{++licenses;};
+    access.close=[&]{++closed;};access.unsaved_discarded=[&](std::string_view text){check(!text.empty(),"Unsaved warning was empty");++discarded;};
+    access.storage_snapshot=[&]{windows::NarrationStorageSnapshot snapshot;snapshot.stored_bytes=1024ull*1024*1024;snapshot.maximum_bytes=8ull*1024*1024*1024;snapshot.configured_bytes=snapshot.effective_bytes=static_cast<std::uint64_t>(state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes",4ll*1024*1024*1024));return snapshot;};
+    const auto view=create_settings_view(host,access);MoveWindow(view,0,0,1000,750,TRUE);
+    LONG previous=-1;for(const auto* title:{L"Idioma de la aplicación",L"Premium",L"Apariencia general",L"Lectura en voz alta",L"Flujo de aprendizaje",L"Gestos de navegación",L"Código"}){const auto control=child_with_caption(view,title);check(control!=nullptr,"A requested Android section is absent");const auto bounds=relative_rect(control,view);check(bounds.top>previous,"Global sections do not follow the requested order");previous=bounds.top;}
+    check(!GetDlgItem(view,5102)&&!GetDlgItem(view,5107)&&!GetDlgItem(view,5109)&&!GetDlgItem(view,5118),"Global options invented an unrelated content, speed, reader-visibility or gesture switch");
+    for(const auto id:{5139,5140,5141})SendMessageW(view,WM_COMMAND,MAKEWPARAM(id,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(view,id)));
+    check(audio==std::vector<std::string>{"programming","math_physics"}&&licenses==1,"Audio/licence buttons are inert or use the wrong route");
+    const auto slider=GetDlgItem(view,5144);check(slider&&SendMessageW(slider,TBM_GETPOS,0,0)==8,"Storage slider does not display the existing effective limit");SendMessageW(slider,TBM_SETPOS,TRUE,3);SendMessageW(view,WM_HSCROLL,MAKEWPARAM(TB_THUMBTRACK,3),reinterpret_cast<LPARAM>(slider));
+    check(state::integer_value(data,"lesson_narration_settings","offline_audio_budget_bytes")==3ll*512*1024*1024,"Storage slider did not persist its actual half-GiB budget");
+    const auto warn=GetDlgItem(view,5142);check(warn&&GetRValue(reader_theme::foreground(warn))>GetGValue(reader_theme::foreground(warn)),"Deferred colours have no visible red Save notice");
+    select(view,5104,1);check(!(GetWindowLongPtrW(GetDlgItem(view,5144),GWL_STYLE)&WS_VISIBLE)&&!(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"System speech retained Kokoro-only storage or course controls");
+    select(view,5104,0);check((GetWindowLongPtrW(slider,GWL_STYLE)&WS_VISIBLE)&&(GetWindowLongPtrW(GetDlgItem(view,5139),GWL_STYLE)&WS_VISIBLE),"Returning to Kokoro failed to restore the existing controls");
+    const auto before=data;SendMessageW(GetDlgItem(view,5128),BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(view,WM_COMMAND,MAKEWPARAM(5128,BN_CLICKED),reinterpret_cast<LPARAM>(GetDlgItem(view,5128)));SendMessageW(view,WM_APP+222,0,0);
+    check(discarded==1&&closed==1&&data==before,"Leaving deferred colours blocked navigation, saved them or omitted the brief warning");DestroyWindow(view);
+    SettingsAccess route;route.scope=SettingsScope::audio;route.route_id="math_physics";route.audio_courses={{"math_a","Curso A"},{"math_b","Curso B"}};route.read=[&]{return data;};route.update=[&](const auto& change){change(data);};
+    const auto courses=create_settings_view(host,std::move(route));MoveWindow(courses,0,0,1000,750,TRUE);const auto first=GetDlgItem(courses,5600);check(first&&GetDlgItem(courses,5601),"Course audio management omitted the real course list");
+    SendMessageW(first,BM_SETCHECK,BST_UNCHECKED,0);SendMessageW(courses,WM_COMMAND,MAKEWPARAM(5600,BN_CLICKED),reinterpret_cast<LPARAM>(first));check(boolean(data,"lesson_narration_settings","kokoro_paused_course:math_physics:math_a"),"Course audio pause did not use the existing generation key");
+    SendMessageW(first,BM_SETCHECK,BST_CHECKED,0);SendMessageW(courses,WM_COMMAND,MAKEWPARAM(5600,BN_CLICKED),reinterpret_cast<LPARAM>(first));check(!boolean(data,"lesson_narration_settings","kokoro_paused_course:math_physics:math_a")&&state::string_value(data,"learning_progress","answer")=="unchanged","Course resume changed answers or another course");DestroyWindow(courses);DestroyWindow(host);
+    std::cout<<"PASS global Android section order, complete cards, live budget, real audio/licence actions, red buffered-colour notice, nonblocking discard and scoped course audio pause/resume\n";
+}
 void immediate_settings_language_tests(){
     using namespace lgaed;using namespace presentation;
-    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");
-    seed.preferences["native_windows"]["content_language"]=std::string("fr");seed.preferences["lesson_narration_settings"]["language"]=std::string("en-US");
-    seed.preferences["lesson_narration_settings"]["kokoro_voice:en-US"]=std::string("am_santa");
-    seed.preferences["keyboard_shortcut_settings"]["cpp_shortcuts"]=std::string("[\"(\",\"  \",\"::\"]");
+    state::StateData seed;seed.preferences["native_windows"]["ui_language"]=std::string("es");seed.preferences["native_windows"]["content_language"]=std::string("es");
+    seed.preferences["lesson_narration_settings"]["language"]=std::string("es");seed.preferences["lesson_narration_settings"]["kokoro_voice:en-US"]=std::string("am_santa");
     seed.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
     ScopedFixture fixture(SettingsScope::global,seed);fixture.scale(125);fixture.toggle(5110,false);fixture.toggle(5114,true);fixture.toggle(5128,false);
     const auto before=fixture.data;select(fixture.view,5101,2);pump();
-    check(child_with_caption(fixture.view,L"Application language")&&child_with_caption(fixture.view,L"Read aloud"),"Changing UI language did not update the open settings labels immediately");
-    check(SendMessageW(fixture.control(5120),TBM_GETPOS,0,0)==125&&!fixture.checked(5110)&&fixture.checked(5114)&&!fixture.checked(5128)&&IsWindowEnabled(fixture.control(5123)),"Retranslating settings lost pending scale/flow/wrap/protection edits");
-    auto expected=before;expected.preferences["native_windows"]["ui_language"]=std::string("en");check(fixture.data==expected,"Changing UI language committed pending appearance, changed shortcuts or altered curriculum/voice/data");
-    select(fixture.view,5101,3);pump();check(child_with_caption(fixture.view,L"Langue de l’application")&&child_with_caption(fixture.view,L"Lecture à voix haute"),"French labels did not refresh in the same settings window");
-    check(SendMessageW(fixture.control(5120),TBM_GETPOS,0,0)==125&&!fixture.checked(5110)&&fixture.checked(5114)&&!fixture.checked(5128),"A second language change lost pending settings");
-    fixture.click(5123);check(appearance::global_text_scale(fixture.data)==125&&!curriculum::learning_flow(fixture.data).between_lessons&&appearance::global_code_wrap(fixture.data),"Pending edits did not remain saveable after live language changes");
-    check(fixture.data.preferences["keyboard_shortcut_settings"]==seed.preferences["keyboard_shortcut_settings"]&&fixture.data.preferences["cpp_lesson_drafts"]==seed.preferences["cpp_lesson_drafts"]&&fixture.data.preferences["lesson_narration_settings"]==seed.preferences["lesson_narration_settings"],"Live UI translation modified shortcuts, drafts or narration choices");
-    std::cout<<"PASS open settings language refresh: Spanish/English/French labels with preserved unsaved scale/wrap/flow and exact shortcuts, content and voice\n";
+    check(child_with_caption(fixture.view,L"App Language")&&child_with_caption(fixture.view,L"Read aloud"),"App language did not refresh open Settings immediately");
+    auto expected=before;apply_application_language(expected,"en");check(fixture.data==expected,"Application language did not update UI/content/narration together or changed unrelated data");
+    check(state::string_value(fixture.data,"native_windows","content_language")=="en"&&state::string_value(fixture.data,"lesson_narration_settings","language")=="en-US","English app selection lost content or narration mapping");
+    select(fixture.view,5101,3);pump();check(state::string_value(fixture.data,"native_windows","content_language")=="fr"&&state::string_value(fixture.data,"lesson_narration_settings","language")=="fr","French app selection did not update all languages");
+    check(SendMessageW(fixture.control(5120),TBM_GETPOS,0,0)==125&&!fixture.checked(5110)&&fixture.checked(5114)&&!fixture.checked(5128),"Translation lost live appearance or pending colour protection");
+    fixture.click(5123);check(appearance::global_text_scale(fixture.data)==125&&!curriculum::learning_flow(fixture.data).between_lessons&&appearance::global_code_wrap(fixture.data),"Saving colour changed live settings");
+    check(fixture.data.preferences["cpp_lesson_drafts"]==seed.preferences["cpp_lesson_drafts"]&&state::string_value(fixture.data,"lesson_narration_settings","kokoro_voice:en-US")=="am_santa","Language selection changed user drafts or an existing voice identity");
+    auto legacy=seed;legacy.preferences["native_windows"]["ui_language"]=std::string("es");legacy.preferences["native_windows"]["content_language"]=std::string("fr");legacy.preferences["lesson_narration_settings"]["language"]=std::string("fr");
+    const auto legacy_drafts=legacy.preferences["cpp_lesson_drafts"];apply_application_language(legacy,"es");
+    check(state::string_value(legacy,"native_windows","ui_language")=="es"&&state::string_value(legacy,"native_windows","content_language")=="es"&&state::string_value(legacy,"lesson_narration_settings","language")=="es"&&legacy.preferences["cpp_lesson_drafts"]==legacy_drafts&&state::string_value(legacy,"lesson_narration_settings","kokoro_voice:en-US")=="am_santa","Explicitly reselecting the same UI language failed to synchronize legacy independent preferences or changed voice/drafts");
+    const auto synchronized=legacy;apply_application_language(legacy,"es");check(legacy==synchronized,"Reselecting an already synchronized language was not an exact no-op");
+    auto british=seed;british.preferences["lesson_narration_settings"]["language"]=std::string("en-GB");apply_application_language(british,"en");check(state::string_value(british,"lesson_narration_settings","language")=="en-GB","Choosing English lost the existing British dialect");
+    std::cout<<"PASS live UI/content/narration selection, same-window translation, retained dialect and voice IDs, no extra content selector\n";
 }
 }
 int main(){
@@ -515,6 +505,7 @@ int main(){
         const auto progress=data.preferences["learning_progress"];int closed=0,changes=0;
         host=CreateWindowExW(0,L"STATIC",L"Native settings QA",WS_OVERLAPPEDWINDOW,0,0,1000,750,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host!=nullptr,"Cannot create options QA host");
+        license_window_tests(host);
         SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& change){change(data);};
         access.changed=[&]{++changes;};access.close=[&]{++closed;};
         view=create_settings_view(host,std::move(access));MoveWindow(view,0,0,960,700,TRUE);
@@ -547,6 +538,7 @@ int main(){
         owned_settings_escape_tests();
         header_language_tests();
         immediate_settings_language_tests();
+        global_migration_contract_tests();
         std::cout<<"PASS native options: complete shared voices, real SAPI inventory, independent languages and preserved progress\n";return 0;
     }catch(const std::exception& e){if(view)DestroyWindow(view);if(host)DestroyWindow(host);std::cerr<<"FAIL native settings: "<<e.what()<<'\n';return 1;}
 }

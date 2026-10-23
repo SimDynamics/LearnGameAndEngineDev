@@ -10,6 +10,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <map>
+#include <limits>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
@@ -91,6 +92,7 @@ struct NarrationWorker::Impl {
     // lightweight editor lane can exchange replies without waiting for ONNX.
     std::mutex request_mutex,write_mutex,start_mutex,response_mutex;
     std::atomic<std::uint64_t> serial{0};std::string buffered,failure;
+    std::atomic<std::uint64_t> storage_budget{std::numeric_limits<std::uint64_t>::max()};
     struct Pending { std::string command,reply; bool lightweight=false; };
     std::map<std::string,std::shared_ptr<Pending>> pending;
     std::condition_variable responses;
@@ -208,8 +210,15 @@ struct NarrationWorker::Impl {
 };
 NarrationWorker::NarrationWorker(std::filesystem::path runtime):impl_(std::make_unique<Impl>(std::move(runtime))){}
 NarrationWorker::~NarrationWorker()=default;
+void NarrationWorker::set_storage_budget(std::uint64_t bytes){impl_->storage_budget.store(bytes);}
 NarrationPriorityLease NarrationWorker::current_page_lease(std::stop_token stop){return NarrationPriorityLease(take_current(impl_->priority,stop));}
 NarrationPriorityLease NarrationWorker::heavy_work_lease(std::stop_token stop){return NarrationPriorityLease(take_heavy(impl_->priority,stop));}
+std::optional<NarrationPriorityLease> NarrationWorker::try_idle_maintenance_lease(){
+    const auto state=impl_->priority;const std::lock_guard lock(state->mutex);
+    if(state->current||state->heavy||state->background||state->inference)return {};
+    ++state->heavy;
+    return NarrationPriorityLease([state]{const std::lock_guard release(state->mutex);--state->heavy;state->changed.notify_all();});
+}
 std::vector<NarrationSegment> NarrationWorker::plan(std::string_view text,std::string_view language,std::stop_token stop){ensure_winrt_apartment();JsonObject request;put(request,L"command","plan");put(request,L"text",text);put(request,L"language",language);const auto reply=impl_->call(request,stop);std::vector<NarrationSegment> result;
     for(const auto& item:reply.GetNamedArray(L"segments")){const auto object=item.GetObject();NarrationSegment segment{string(object,L"text"),string(object,L"preparedText"),index(object,L"sourceStart"),index(object,L"sourceEnd")};
         segment.spoken=string(object,L"spokenText");
@@ -226,7 +235,12 @@ NarrationAudio NarrationWorker::prepare(const NarrationSegment& segment,std::str
     if(work==NarrationCpuClass::background)request.Insert(L"audioOnly",JsonValue::CreateBooleanValue(true));
     put(request,L"outputDirectory",winrt::to_string(output.native()));request.Insert(L"threads",JsonValue::CreateNumberValue(threads));
     JsonObject reply;
-    for(;;)try{reply=impl_->call(request,stop,nullptr,false,work,true);break;}
+    for(;;)try{
+        const auto budget=impl_->storage_budget.load();
+        if(budget!=std::numeric_limits<std::uint64_t>::max())
+            request.Insert(L"audioBudgetBytes",JsonValue::CreateNumberValue(static_cast<double>(budget)));
+        else if(request.HasKey(L"audioBudgetBytes"))request.Remove(L"audioBudgetBytes");
+        reply=impl_->call(request,stop,nullptr,false,work,true);break;}
         catch(const NarrationPreempted&){if(work==NarrationCpuClass::background)throw;}
     NarrationAudio audio;audio.key=string(reply,L"key");audio.source=string(reply,L"sourceText");audio.spoken=string(reply,L"spokenText");audio.provider=string(reply,L"provider");audio.wav=std::filesystem::path(reply.GetNamedString(L"wav").c_str());audio.duration_ms=reply.GetNamedNumber(L"durationMs");audio.cache_hit=reply.GetNamedBoolean(L"cacheHit",false);
     for(const auto& item:reply.GetNamedArray(L"timings")){const auto timing=item.GetObject();audio.timings.push_back({index(timing,L"start"),index(timing,L"end"),timing.GetNamedNumber(L"startMs"),timing.GetNamedNumber(L"endMs")});}

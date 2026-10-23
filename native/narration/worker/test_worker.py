@@ -208,6 +208,22 @@ class WindowsNarrationWorkerTest(unittest.TestCase):
         self.assertIn("error", failure)
         self.assertFalse((CACHE / "cancelled" / (segment["key"] + ".wav")).exists())
         self.assertEqual([], list((CACHE / "cancelled").glob("*.part")))
+
+    def test_audio_budget_stops_only_new_audio_and_preserves_cached_recordings(self):
+        segment, recorded = self.prepare("¿Qué es la programación?", "es", "ef_dora", CACHE / "budget")
+        path = Path(recorded["wav"])
+        original = (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest())
+        reused = self.worker.ask("prepare", text=segment["text"], preparedText=segment["preparedText"],
+            language="es", voice="ef_dora", threads=2, outputDirectory=str(CACHE / "budget"), audioBudgetBytes=0)
+        self.assertTrue(reused["cacheHit"])
+        self.assertEqual(original, (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest()))
+        fresh = self.worker.ask("plan", text="La reserva privada no borra grabaciones ya verificadas.", language="es")["segments"][0]
+        self.worker.send("prepare", text=fresh["text"], preparedText=fresh["preparedText"], language="es",
+            voice="ef_dora", threads=2, outputDirectory=str(CACHE / "budget"), audioBudgetBytes=0)
+        rejected = self.worker.receive()
+        self.assertIn("storage limit reached", rejected.get("error", ""))
+        self.assertFalse((CACHE / "budget" / (fresh["key"] + ".wav")).exists())
+        self.assertEqual(original, (path.stat().st_mtime_ns, hashlib.sha256(path.read_bytes()).hexdigest()))
         self.assertIn("segments", self.worker.ask("plan", text="La lectura continúa.", language="es"))
 
     def test_07_verdict_icons_reuse_spoken_audio_and_follow_first_word(self):

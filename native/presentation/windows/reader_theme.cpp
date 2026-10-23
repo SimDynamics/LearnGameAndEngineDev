@@ -22,6 +22,7 @@ constexpr wchar_t surface_property[] = L"LGAED.ReaderSurface";
 constexpr wchar_t primary_property[] = L"LGAED.ReaderPrimaryButton";
 constexpr wchar_t icon_property[] = L"LGAED.ReaderIconButton";
 constexpr wchar_t premium_property[] = L"LGAED.ReaderPremiumButton";
+constexpr wchar_t switch_property[] = L"LGAED.ReaderSwitchButton";
 constexpr wchar_t accent_property[] = L"LGAED.ReaderAccent";
 constexpr wchar_t text_property[] = L"LGAED.ReaderTextColor";
 constexpr UINT_PTR radio_subclass_id = 0x4C475244;
@@ -29,6 +30,7 @@ constexpr UINT_PTR combo_subclass_id = 0x4C47434F;
 constexpr UINT_PTR scroll_subclass_id = 0x4C475342;
 constexpr UINT_PTR progress_subclass_id = 0x4C475052;
 constexpr UINT_PTR focus_subclass_id = 0x4C474643;
+constexpr UINT_PTR slider_subclass_id = 0x4C47534C;
 thread_local bool keyboard_focus = false;
 constexpr std::size_t surface_count=static_cast<std::size_t>(Surface::compiler_output)+1;
 unsigned surface_index(HWND window) {
@@ -47,6 +49,7 @@ COLORREF color(const Palette& colors, Surface surface) {
     case Surface::inset: return colors.high_contrast ? colors.field : RGB(20,20,20);
     case Surface::low: return colors.high_contrast ? colors.field : RGB(25,25,25);
     case Surface::note: return colors.high_contrast ? colors.card : RGB(30,30,30);
+    case Surface::popup: return colors.high_contrast ? colors.card : RGB(48,50,57);
     case Surface::compiler_header: return colors.high_contrast ? colors.header : RGB(37,40,46);
     case Surface::compiler_editor: return colors.high_contrast ? colors.field : RGB(28,31,36);
     case Surface::compiler_output: return colors.high_contrast ? colors.field : RGB(5,6,7);
@@ -56,7 +59,7 @@ COLORREF color(const Palette& colors, Surface surface) {
 LRESULT CALLBACK focus_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR) {
     if(message==WM_NCDESTROY){
         RemoveWindowSubclass(window,focus_subclass,focus_subclass_id);
-        RemovePropW(window,icon_property);RemovePropW(window,premium_property);
+        RemovePropW(window,icon_property);RemovePropW(window,premium_property);RemovePropW(window,switch_property);
         return DefSubclassProc(window,message,wp,lp);
     }
     if(message==WM_LBUTTONDOWN||message==WM_RBUTTONDOWN||message==WM_POINTERDOWN)keyboard_focus=false;
@@ -81,6 +84,42 @@ bool rich_edit(HWND window) {
 bool progress_bar(HWND window) {
     wchar_t name[64]{};GetClassNameW(window,name,static_cast<int>(std::size(name)));
     return _wcsicmp(name,PROGRESS_CLASSW)==0;
+}
+bool trackbar(HWND window){wchar_t name[64]{};GetClassNameW(window,name,64);return _wcsicmp(name,TRACKBAR_CLASSW)==0;}
+void paint_slider(HWND window,HDC dc){
+    if(!dc)return;
+    RECT bounds{},channel{},thumb{};GetClientRect(window,&bounds);
+    const auto colors=palette(window);const auto bg=CreateSolidBrush(background(window));FillRect(dc,&bounds,bg);DeleteObject(bg);
+    SendMessageW(window,TBM_GETCHANNELRECT,0,reinterpret_cast<LPARAM>(&channel));
+    SendMessageW(window,TBM_GETTHUMBRECT,0,reinterpret_cast<LPARAM>(&thumb));
+    const auto dpi=static_cast<int>(GetDpiForWindow(window));const auto px=[&](int n){return std::max(1,MulDiv(n,dpi,96));};
+    const bool vertical=(GetWindowLongPtrW(window,GWL_STYLE)&TBS_VERT)!=0;
+    const int center=vertical?(thumb.top+thumb.bottom)/2:(thumb.left+thumb.right)/2;
+    RECT track=channel;
+    if(vertical){const int x=(thumb.left+thumb.right)/2;track.left=x-px(1);track.right=x+px(1);}
+    else{const int y=(thumb.top+thumb.bottom)/2;track.top=y-px(1);track.bottom=y+px(1);}
+    const auto fill=[&](const RECT& area,COLORREF color){const auto brush=CreateSolidBrush(color);FillRect(dc,&area,brush);DeleteObject(brush);};
+    fill(track,colors.outline);auto completed=track;
+    if(vertical)completed.top=center;else completed.right=center;
+    const auto ink=IsWindowEnabled(window)?colors.accent:colors.muted;fill(completed,ink);
+    if(!(GetWindowLongPtrW(window,GWL_STYLE)&TBS_NOTHUMB)){
+        const int radius=px(6),x=(thumb.left+thumb.right)/2,y=(thumb.top+thumb.bottom)/2;
+        const auto previous=SelectObject(dc,GetStockObject(NULL_PEN));const auto brush=CreateSolidBrush(ink);const auto old=SelectObject(dc,brush);
+        Ellipse(dc,x-radius,y-radius,x+radius,y+radius);SelectObject(dc,old);SelectObject(dc,previous);DeleteObject(brush);
+    }
+    paint_keyboard_focus(window,dc,bounds,colors.muted);
+}
+LRESULT CALLBACK slider_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
+    if(message==WM_NCDESTROY){RemoveWindowSubclass(window,slider_subclass,slider_subclass_id);return DefSubclassProc(window,message,wp,lp);}
+    if(palette(window).high_contrast)return DefSubclassProc(window,message,wp,lp);
+    if(message==WM_PAINT){PAINTSTRUCT paint{};const auto dc=BeginPaint(window,&paint);paint_slider(window,dc);EndPaint(window,&paint);return 0;}
+    if(message==WM_PRINTCLIENT){paint_slider(window,reinterpret_cast<HDC>(wp));return 0;}
+    if(message==WM_ERASEBKGND)return 1;
+    const auto result=DefSubclassProc(window,message,wp,lp);
+    if(message==TBM_SETPOS||message==TBM_SETRANGE||message==TBM_SETRANGEMAX||message==TBM_SETRANGEMIN||message==WM_ENABLE
+        ||message==WM_SIZE||message==WM_SETFOCUS||message==WM_KILLFOCUS||message==WM_MOUSEMOVE||message==WM_KEYDOWN||message==WM_LBUTTONUP)
+        InvalidateRect(window,nullptr,FALSE);
+    return result;
 }
 void paint_progress(HWND window,HDC dc) {
     if(!dc)return;
@@ -143,9 +182,9 @@ LRESULT CALLBACK combo_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UIN
     if(message==WM_MOUSEWHEEL&&!SendMessageW(window,CB_GETDROPPEDSTATE,0,0))return SendMessageW(GetParent(window),message,wp,lp);
     if(message==WM_ERASEBKGND)return 1;
     if(message==WM_PAINT||message==WM_PRINTCLIENT){PAINTSTRUCT paint{};const auto dc=message==WM_PAINT?BeginPaint(window,&paint):reinterpret_cast<HDC>(wp);const auto saved=SaveDC(dc);
-        RECT bounds{};GetClientRect(window,&bounds);FillRect(dc,&bounds,brush(Surface::card));const auto colors=palette(window);const auto dpi=GetDpiForWindow(window);const int inset=MulDiv(18,static_cast<int>(dpi),96);
+        RECT bounds{};GetClientRect(window,&bounds);FillRect(dc,&bounds,brush(static_cast<Surface>(surface_index(window))));const auto colors=palette(window);const auto dpi=GetDpiForWindow(window);const int inset=MulDiv(18,static_cast<int>(dpi),96);
         auto text_area=bounds;text_area.left+=inset;text_area.right-=inset*3;
-        const auto font=reinterpret_cast<HFONT>(SendMessageW(window,WM_GETFONT,0,0));SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));SetBkMode(dc,TRANSPARENT);SetTextColor(dc,IsWindowEnabled(window)?colors.text:colors.muted);
+        const auto font=reinterpret_cast<HFONT>(SendMessageW(window,WM_GETFONT,0,0));SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));SetBkMode(dc,TRANSPARENT);SetTextColor(dc,IsWindowEnabled(window)?foreground(window):colors.muted);
         std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');text.resize(static_cast<std::size_t>(GetWindowTextW(window,text.data(),static_cast<int>(text.size()))));
         auto measured=text_area;DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&measured,DT_CALCRECT|DT_WORDBREAK|DT_NOPREFIX);text_area.top+=(bounds.bottom-(measured.bottom-measured.top))/2;
         DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&text_area,DT_WORDBREAK|DT_NOPREFIX);
@@ -160,8 +199,49 @@ LRESULT CALLBACK combo_subclass(HWND window,UINT message,WPARAM wp,LPARAM lp,UIN
         paint_keyboard_focus(window,dc,bounds,colors.muted);RestoreDC(dc,saved);if(message==WM_PAINT)EndPaint(window,&paint);return 0;}
     const auto result=DefSubclassProc(window,message,wp,lp);if(message==WM_SETFOCUS||message==WM_KILLFOCUS||message==CB_SETCURSEL||message==WM_ENABLE||message==WM_SETTEXT)InvalidateRect(window,nullptr,FALSE);return result;
 }
+bool paint_switch(HWND window,HDC dc){
+    if(!dc)return false;
+    const auto colors=palette(window);if(colors.high_contrast)return false;
+    RECT client{};GetClientRect(window,&client);const int dpi=static_cast<int>(GetDpiForWindow(window));
+    const auto px=[&](int value){return std::max(1,MulDiv(value,dpi?dpi:96,96));};
+    const int padding=px(3),width=std::min(px(36),static_cast<int>(client.right)-padding*2),height=std::min(px(20),static_cast<int>(client.bottom));
+    if(width<height||height<1)return false;
+    const RECT glyph{client.right-padding-width,(client.bottom-height)/2,client.right-padding,(client.bottom+height)/2};
+    constexpr int samples=4;const auto memory=CreateCompatibleDC(dc);
+    BITMAPINFO format{};format.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);format.bmiHeader.biWidth=width*samples;format.bmiHeader.biHeight=-height*samples;
+    format.bmiHeader.biPlanes=1;format.bmiHeader.biBitCount=32;format.bmiHeader.biCompression=BI_RGB;
+    void* pixels=nullptr;const auto bitmap=CreateDIBSection(dc,&format,DIB_RGB_COLORS,&pixels,nullptr,0);
+    if(!memory||!bitmap||!pixels){if(bitmap)DeleteObject(bitmap);if(memory)DeleteDC(memory);return false;}
+    const auto saved=SaveDC(dc);FillRect(dc,&client,brush(static_cast<Surface>(surface_index(window))));
+    const auto previous_bitmap=SelectObject(memory,bitmap);const RECT sample{0,0,width*samples,height*samples};
+    FillRect(memory,&sample,brush(static_cast<Surface>(surface_index(window))));
+    const bool checked=SendMessageW(window,BM_GETCHECK,0,0)==BST_CHECKED;
+    const auto blend=[](COLORREF ink,COLORREF bg,unsigned alpha){const auto c=[alpha](unsigned a,unsigned b){return (a*alpha+b*(255-alpha)+127)/255;};return RGB(c(GetRValue(ink),GetRValue(bg)),c(GetGValue(ink),GetGValue(bg)),c(GetBValue(ink),GetBValue(bg)));};
+    // Exact AppearanceUi.applySwitch state colours: disabled checked controls
+    // retain their checked tint because the Android list keys on checked only.
+    const auto thumb_ink=checked?colors.accent:RGB(145,148,158);
+    const auto track_ink=blend(checked?colors.accent:RGB(120,124,134),background(window),checked?135:90);
+    const auto pen=SelectObject(memory,GetStockObject(NULL_PEN));const int track_height=std::min(height,px(14))*samples;
+    const int top=(height*samples-track_height)/2;const auto track=CreateSolidBrush(track_ink),thumb=CreateSolidBrush(thumb_ink);
+    const auto previous_brush=SelectObject(memory,track);RoundRect(memory,0,top,width*samples,top+track_height,track_height,track_height);
+    SelectObject(memory,thumb);const int x=checked?(width-height)*samples:0;Ellipse(memory,x,0,x+height*samples,height*samples);
+    SelectObject(memory,previous_brush);SelectObject(memory,pen);DeleteObject(track);DeleteObject(thumb);GdiFlush();
+    const auto* source=static_cast<const std::uint32_t*>(pixels);std::vector<std::uint32_t> reduced(static_cast<std::size_t>(width)*height);
+    constexpr unsigned count=samples*samples;
+    for(int y=0;y<height;++y)for(int x=0;x<width;++x){unsigned red=0,green=0,blue=0;
+        for(int yy=0;yy<samples;++yy)for(int xx=0;xx<samples;++xx){const auto value=source[(y*samples+yy)*width*samples+x*samples+xx];red+=(value>>16)&255;green+=(value>>8)&255;blue+=value&255;}
+        reduced[static_cast<std::size_t>(y)*width+x]=((red+count/2)/count<<16)|((green+count/2)/count<<8)|(blue+count/2)/count;}
+    format.bmiHeader.biWidth=width;format.bmiHeader.biHeight=-height;SetDIBitsToDevice(dc,glyph.left,glyph.top,width,height,0,0,0,height,reduced.data(),&format,DIB_RGB_COLORS);
+    SelectObject(memory,previous_bitmap);DeleteObject(bitmap);DeleteDC(memory);
+    const auto font=reinterpret_cast<HFONT>(SendMessageW(window,WM_GETFONT,0,0));SelectObject(dc,font?font:GetStockObject(DEFAULT_GUI_FONT));SetBkMode(dc,TRANSPARENT);
+    SetTextColor(dc,IsWindowEnabled(window)?foreground(window):colors.muted);std::wstring text(static_cast<std::size_t>(GetWindowTextLengthW(window))+1,L'\0');text.resize(GetWindowTextW(window,text.data(),static_cast<int>(text.size())));
+    auto label=client;label.left+=padding;label.right=glyph.left-px(8);const auto ui=SendMessageW(window,WM_QUERYUISTATE,0,0);UINT flags=DT_LEFT|((ui&UISF_HIDEACCEL)?DT_HIDEPREFIX:0);
+    if(GetWindowLongPtrW(window,GWL_STYLE)&BS_MULTILINE){auto measured=label;DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&measured,flags|DT_CALCRECT|DT_WORDBREAK);label.top+=std::max<LONG>(0,(label.bottom-label.top-(measured.bottom-measured.top))/2);flags|=DT_WORDBREAK;}else flags|=DT_SINGLELINE|DT_VCENTER;
+    DrawTextW(dc,text.c_str(),static_cast<int>(text.size()),&label,flags);if(!(ui&UISF_HIDEFOCUS))paint_keyboard_focus(window,dc,client,colors.muted);RestoreDC(dc,saved);return true;
+}
 void paint_radio(HWND window, HDC dc) {
     if (!dc) return;
+    if(checkbox_button(window)&&GetPropW(window,switch_property)&&paint_switch(window,dc))return;
     const auto saved = SaveDC(dc);
     RECT client{}; GetClientRect(window, &client);
     FillRect(dc, &client, brush(static_cast<Surface>(surface_index(window))));
@@ -170,7 +250,7 @@ void paint_radio(HWND window, HDC dc) {
     const auto state = SendMessageW(window,BM_GETCHECK,0,0);
     const bool checked = state == BST_CHECKED;
     const bool checkbox = checkbox_button(window);
-    const auto ink = disabled ? (colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted) : colors.text;
+    const auto ink = disabled ? (colors.high_contrast ? GetSysColor(COLOR_GRAYTEXT) : colors.muted) : foreground(window);
     // Android AppearanceUi keys the tint on checked state, not enabled state.
     // A solved, disabled choice therefore keeps the route's red/green circle.
     const auto unchecked = colors.high_contrast ? colors.muted : checkbox ? colors.accent : RGB(120,124,134);
@@ -470,6 +550,7 @@ void apply(HWND window, Surface surface) {
     SetPropW(window, surface_property, reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(surface) + 1));
     SetWindowSubclass(window,focus_subclass,focus_subclass_id,0);
     if(progress_bar(window))SetWindowSubclass(window,progress_subclass,progress_subclass_id,0);
+    if(trackbar(window))SetWindowSubclass(window,slider_subclass,slider_subclass_id,0);
     if((GetWindowLongPtrW(window,GWL_STYLE)&(WS_VSCROLL|WS_HSCROLL))||rich_edit(window))
         SetWindowSubclass(window,scroll_subclass,scroll_subclass_id,0);
     if (rich_edit(window)) SendMessageW(window, EM_SETBKGNDCOLOR, 0, background(window));
@@ -478,7 +559,7 @@ void apply(HWND window, Surface surface) {
         SetWindowLongPtrW(window, GWL_STYLE, (original & ~static_cast<LONG_PTR>(BS_TYPEMASK)) | BS_OWNERDRAW);
     }
     if (radio_button(window) || checkbox_button(window)) SetWindowSubclass(window,radio_subclass,radio_subclass_id,0);
-    if (combo_box(window)) {SetWindowSubclass(window,combo_subclass,combo_subclass_id,0);COMBOBOXINFO info{sizeof(info)};if(GetComboBoxInfo(window,&info)&&info.hwndList){SetPropW(info.hwndList,surface_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(Surface::card)+1));SetWindowSubclass(info.hwndList,scroll_subclass,scroll_subclass_id,0);}}
+    if (combo_box(window)) {SetWindowSubclass(window,combo_subclass,combo_subclass_id,0);COMBOBOXINFO info{sizeof(info)};if(GetComboBoxInfo(window,&info)&&info.hwndList){const auto popup=surface==Surface::catalog_card?Surface::popup:Surface::card;SetPropW(info.hwndList,surface_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(popup)+1));SetWindowSubclass(info.hwndList,scroll_subclass,scroll_subclass_id,0);}}
     InvalidateRect(window, nullptr, TRUE);
 }
 void primary_button(HWND button, bool primary) {
@@ -496,6 +577,12 @@ void premium_button(HWND button,bool premium) {
     if(!IsWindow(button))return;
     if(premium)SetPropW(button,premium_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));
     else RemovePropW(button,premium_property);
+    InvalidateRect(button,nullptr,FALSE);
+}
+void switch_button(HWND button,bool is_switch){
+    if(!IsWindow(button))return;
+    if(is_switch&&checkbox_button(button)){SetPropW(button,switch_property,reinterpret_cast<HANDLE>(static_cast<ULONG_PTR>(1)));SetWindowSubclass(button,radio_subclass,radio_subclass_id,0);}
+    else RemovePropW(button,switch_property);
     InvalidateRect(button,nullptr,FALSE);
 }
 void set_text_color(HWND window,std::optional<COLORREF> color) {

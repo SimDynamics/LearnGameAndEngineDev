@@ -53,6 +53,9 @@ void cancelled_inflight_protocol(const std::filesystem::path& root,const std::fi
 void priority_protocol(const std::filesystem::path& build_directory) {
     using namespace lgaed::windows;
     NarrationWorker worker(build_directory/L"narration-protocol-fixture-runtime.json");
+    auto maintenance=worker.try_idle_maintenance_lease();
+    check(maintenance.has_value()&&!worker.try_idle_maintenance_lease(),"Idle cache maintenance did not own the existing exclusion atomically");
+    maintenance.reset();
     const auto name=L"Local\\LGAED-Narration-Priority-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64());
     struct Event{HANDLE value;~Event(){if(value)CloseHandle(value);}} observed{CreateEventW(nullptr,TRUE,FALSE,name.c_str())};
     check(observed.value!=nullptr,"Cannot create the controlled inference observation event");
@@ -64,11 +67,14 @@ void priority_protocol(const std::filesystem::path& build_directory) {
         }catch(const std::exception& error){return std::string_view(error.what())=="Lectura cancelada";}});
     };
     auto page=worker.current_page_lease();
+    check(!worker.try_idle_maintenance_lease(),"Maintenance acquired a worker while a current page owned preparation");
     auto background=generate();
     check(json(worker.math_editor(R"({"action":"echo","marker":"current-page-owned"})")).GetNamedString(L"marker")==L"current-page-owned", "Current page reservation blocked the independent mathematical channel");
     check(WaitForSingleObject(observed.value,0)==WAIT_TIMEOUT,"Background inference ran while a current page reservation was held");
     page={};
     check(WaitForSingleObject(observed.value,5000)==WAIT_OBJECT_0,"Background inference did not resume after page preparation released priority");
+    check(!worker.try_idle_maintenance_lease()&&background.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready,
+        "An idle-only maintenance request interrupted active inference");
     page=worker.current_page_lease();
     check(background.wait_for(std::chrono::seconds(1))==std::future_status::ready&&background.get(),"Current page preemption did not cancel and acknowledge the actual background request");
     check(json(worker.math_editor(R"({"action":"echo","marker":"after-current-preemption"})")).GetNamedString(L"marker")==L"after-current-preemption", "Background cancellation corrupted the following foreground request");

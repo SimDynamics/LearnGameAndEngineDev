@@ -182,6 +182,13 @@ struct Canvas {
             for (const auto& label : array(item,L"labels")) if (label.ValueType() == JsonValueType::String) point.labels.push_back(winrt::to_string(label.GetString()));
             points.push_back(std::move(point));
         }
+        if(points.empty()&&changed&&type=="graph"){
+            const auto mode=text(config,L"mode","point");
+            const std::vector<std::pair<double,double>> defaults=mode=="line"||mode=="parabola"?std::vector<std::pair<double,double>>{{0,0},{1,1}}:
+                mode=="polygon"?std::vector<std::pair<double,double>>{{-2,-1},{2,-1},{0,2}}:
+                mode=="scatter"?std::vector<std::pair<double,double>>{{-2,0},{0,1},{2,2}}:std::vector<std::pair<double,double>>{{0,0}};
+            for(const auto [x,y]:defaults){PlotPoint point;point.x=snapped(x,number(config,L"snap",1),xmin,xmax);point.y=snapped(y,number(config,L"snap",1),ymin,ymax);point.draggable=true;points.push_back(point);}
+        }
         if (type == "euclidean_diagram" && !points.empty()) {
             xmin = xmax = points.front().x; ymin = ymax = points.front().y;
             for (const auto& point : points) { xmin = std::min(xmin,point.x); xmax = std::max(xmax,point.x); ymin = std::min(ymin,point.y); ymax = std::max(ymax,point.y); }
@@ -374,7 +381,7 @@ struct Canvas {
         if (type == "number_line") {
             const auto low = number(config,L"min",-5),high = number(config,L"max",5);
             const auto value = snapped(low + static_cast<double>(at.x - rect.left) / std::max<LONG>(1,rect.right - rect.left) * (high - low),number(config,L"step",1),low,high);
-            state.SetNamedValue(L"value",JsonValue::CreateNumberValue(value)); changed(state); InvalidateRect(window,nullptr,FALSE); return;
+            state.SetNamedValue(L"value",JsonValue::CreateNumberValue(value)); changed(state);if(sync_fields)sync_fields();InvalidateRect(window,nullptr,FALSE); return;
         }
         if (!dragging || *dragging >= points.size()) return;
         auto& point = points[*dragging]; const auto snap = number(config,L"snap",1);
@@ -445,6 +452,17 @@ struct MathPuzzleView::Impl {
     std::map<std::string,std::string> selected_sources;
     std::map<std::string,std::vector<HWND>> choice_buttons;
     std::map<HWND,std::string> choice_options;
+    std::map<HWND,HWND> choice_labels;
+    std::map<HWND,std::vector<HWND>> choice_cards;
+    std::map<std::string,std::size_t> next_tap_positions;
+    struct MatchLayout {
+        std::size_t first = 0;
+        Row available_heading,target_heading;
+        std::vector<std::string> sources,targets;
+        std::map<std::string,Row> source_rows,target_rows;
+    };
+    std::map<std::string,MatchLayout> matching_layouts;
+    HWND expand_button = nullptr,reset_button = nullptr;
     std::map<std::string,std::vector<Canvas*>> live_visuals;
     std::map<Canvas*,std::vector<std::pair<HWND,HWND>>> graph_fields;
     std::map<HWND,int> requested_heights;
@@ -455,6 +473,12 @@ struct MathPuzzleView::Impl {
     Impl(HWND owner,std::string raw,std::string lang,std::string saved,MathPuzzleCallbacks events)
         : parent(owner),locale(std::move(lang)),callbacks(std::move(events)) {
         windows::ensure_winrt_apartment(); block = JsonObject::Parse(winrt::to_hstring(raw));
+        // MathPuzzleParser gives legacy standalone interactions the same stable
+        // response ID. Normalize presentation only; never rewrite the lesson.
+        if(text(block,L"type")!="math_puzzle") {
+            auto response=JsonObject::Parse(block.Stringify());response.SetNamedValue(L"id",string_value("response"));
+            JsonArray responses;responses.Append(response);block.SetNamedValue(L"responses",responses);
+        }
         if (!saved.empty()) { JsonObject restored; if (JsonObject::TryParse(winrt::to_hstring(saved),restored)) answers = restored.HasKey(L"answers") ? object(restored,L"answers") : restored; }
         rich = LoadLibraryW(L"Msftedit.dll"); if (!rich) throw std::runtime_error("RichEdit is unavailable");
         (void)CoCreateInstance(CLSID_AccPropServices,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(accessibility.GetAddressOf()));
@@ -479,7 +503,7 @@ struct MathPuzzleView::Impl {
     }
     void add_text(std::string value,std::string key = {},RichTextRole role = RichTextRole::body) { if (!value.empty()) rows.push_back({{{label(std::move(value),std::move(key),role),0,true}},26}); }
     HWND button(std::string value,std::function<void()> action,DWORD style = BS_PUSHBUTTON) {
-        const auto item = make(L"BUTTON",value,WS_TABSTOP | style); commands[GetDlgCtrlID(item)] = [action = std::move(action)](int notification) { if (notification == BN_CLICKED) action(); }; return item;
+        const auto item = make(L"BUTTON",value,WS_TABSTOP | style); commands[GetDlgCtrlID(item)] = [this,action = std::move(action)](int notification) { if (!initializing&&notification == BN_CLICKED) action(); }; return item;
     }
     JsonObject response(const std::string& id,std::string_view type) {
         const auto value = answers.TryLookup(winrt::to_hstring(id));
@@ -493,7 +517,11 @@ struct MathPuzzleView::Impl {
     void change() {
         if (initializing) return;
         for (const auto& [id,plots] : live_visuals) for (const auto plot : plots) {
-            plot->state = object(answers,winrt::to_hstring(id).c_str()); InvalidateRect(plot->window,nullptr,FALSE);
+            auto next=object(answers,winrt::to_hstring(id).c_str());
+            // Incomplete editing invalidates checking, not the last valid
+            // marker displayed on the number line (Android preserves it).
+            if(plot->type=="number_line"&&!next.HasKey(L"value")&&plot->state.HasKey(L"value"))next.SetNamedValue(L"value",plot->state.GetNamedValue(L"value"));
+            plot->state = next; InvalidateRect(plot->window,nullptr,FALSE);
         }
         if (callbacks.changed) callbacks.changed();
     }
@@ -584,15 +612,50 @@ struct MathPuzzleView::Impl {
         if (!visible_label(option).empty()) add_text(visible_label(option));
         else for (const auto& value : array(option,L"content")) representation(value.GetObject());
     }
-    void choose(const std::string& id,const std::string& selected,bool multiple) {
+    void choose(const std::string& id,const std::string& selected,bool multiple,bool card_tap=false) {
+        if(!cards_enabled)return;
         auto current = response(id,"choice"); auto values = array(current,L"selected"); std::vector<std::string> ids;
         for (const auto& value : values) ids.push_back(winrt::to_string(value.GetString()));
-        if (!multiple) ids = {selected};
+        if (!multiple) {if(card_tap&&ids.size()==1&&ids.front()==selected)ids.clear();else ids={selected};}
         else if (const auto found = std::ranges::find(ids,selected); found == ids.end()) ids.push_back(selected); else ids.erase(found);
         JsonArray chosen; for (const auto& value : ids) chosen.Append(string_value(value)); current.SetNamedValue(L"selected",chosen); answers.SetNamedValue(winrt::to_hstring(id),current);
         for (const auto item : choice_buttons[id])
             SendMessageW(item,BM_SETCHECK,std::ranges::find(ids,choice_options.at(item)) != ids.end() ? BST_CHECKED : BST_UNCHECKED,0);
+        for(const auto& [label,toggle]:choice_labels)if(std::ranges::find(choice_buttons[id],toggle)!=choice_buttons[id].end())InvalidateRect(label,nullptr,FALSE);
+        InvalidateRect(host,nullptr,FALSE);
         change();
+    }
+    void restore_choice_checks()const{
+        for(const auto& [id,buttons]:choice_buttons){const auto selected=array(object(answers,winrt::to_hstring(id).c_str()),L"selected");
+            for(const auto item:buttons){bool checked=false;for(const auto& value:selected)if(value.ValueType()==JsonValueType::String&&value.GetString()==winrt::to_hstring(choice_options.at(item))){checked=true;break;}
+                SendMessageW(item,BM_SETCHECK,checked?BST_CHECKED:BST_UNCHECKED,0);}}
+    }
+    void card_border(HWND item,bool selected)const{
+        const auto dc=GetDC(item);if(!dc)return;RECT area{};GetClientRect(item,&area);const auto colors=reader_theme::palette(item);
+        const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),selected?colors.accent:colors.outline);const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+        RoundRect(dc,area.left,area.top,area.right,area.bottom,px(10),px(10));SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);ReleaseDC(item,dc);
+    }
+    void paint_choice_cards(HDC dc)const{
+        const auto colors=reader_theme::palette(host);
+        for(const auto& [toggle,content]:choice_cards){
+            RECT bounds{};bool present=false;
+            for(const auto item:content)if(GetParent(item)==host&&(GetWindowLongPtrW(item,GWL_STYLE)&WS_VISIBLE)){
+                RECT item_bounds{};GetWindowRect(item,&item_bounds);MapWindowPoints(nullptr,host,reinterpret_cast<POINT*>(&item_bounds),2);
+                if(present)UnionRect(&bounds,&bounds,&item_bounds);else{bounds=item_bounds;present=true;}
+            }
+            if(!present)continue;
+            // Android's MathTouchCard surrounds the radio and its complete
+            // rich body. Keep the stroke outside their existing child bounds,
+            // rather than making a read-only label look like an input field.
+            InflateRect(&bounds,px(3),px(3));
+            const auto pen=CreatePen(PS_SOLID,std::max(1,px(1)),SendMessageW(toggle,BM_GETCHECK,0,0)==BST_CHECKED?colors.accent:colors.outline);
+            const auto old_pen=SelectObject(dc,pen),old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+            RoundRect(dc,bounds.left,bounds.top,bounds.right,bounds.bottom,px(20),px(20));
+            SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);
+        }
+    }
+    void paint(HDC dc)const{
+        RECT area{};GetClientRect(host,&area);FillRect(dc,&area,reader_theme::brush(reader_theme::Surface::card));paint_choice_cards(dc);
     }
     HWND dropdown(const std::string& id,const std::string& field,const JsonArray& choices,JsonObject current,bool matching = false) {
         const auto values = object(current,matching ? L"pairs" : L"values"); const auto selection = text(values,winrt::to_hstring(field).c_str());
@@ -632,33 +695,56 @@ struct MathPuzzleView::Impl {
     void match(const std::string& id,const std::string& source,const std::string& target) {
         if (!cards_enabled) return;
         auto current = response(id,"matching"); auto pairs = object(current,L"pairs");
+        std::vector<winrt::hstring> displaced;
+        for(const auto& pair:pairs)if(pair.Value().ValueType()==JsonValueType::String&&pair.Value().GetString()==winrt::to_hstring(target)&&pair.Key()!=winrt::to_hstring(source))displaced.push_back(pair.Key());
+        for(const auto& key:displaced)pairs.Remove(key);
         pairs.SetNamedValue(winrt::to_hstring(source),string_value(target)); current.SetNamedValue(L"pairs",pairs);
-        answers.SetNamedValue(winrt::to_hstring(id),current); selected_sources.erase(id); InvalidateRect(host,nullptr,FALSE); change();
+        answers.SetNamedValue(winrt::to_hstring(id),current); selected_sources.erase(id);refresh_matching(id);change();
     }
-    void paint_matches(HDC dc) const {
-        const auto pen = CreatePen(PS_SOLID,px(2),reader_theme::accent_ink(host,reader_theme::palette(host).card)); const auto previous = SelectObject(dc,pen);
-        for (const auto& [source_window,source] : match_cards) if (source.source) {
-            const auto state = object(answers,winrt::to_hstring(source.response).c_str()); const auto target = text(object(state,L"pairs"),winrt::to_hstring(source.id).c_str());
-            for (const auto& [target_window,card] : match_cards) if (!card.source && card.response == source.response && card.id == target) {
-                RECT a{},b{}; GetWindowRect(source_window,&a); GetWindowRect(target_window,&b);
-                POINT from{a.right,(a.top + a.bottom) / 2},to{b.left,(b.top + b.bottom) / 2}; ScreenToClient(host,&from); ScreenToClient(host,&to);
-                MoveToEx(dc,from.x,from.y,nullptr); LineTo(dc,to.x,to.y);
-            }
-        }
-        SelectObject(dc,previous); DeleteObject(pen);
+    void unmatch(const std::string& id,const std::string& target) {
+        auto current=response(id,"matching"),pairs=object(current,L"pairs");std::optional<winrt::hstring> source;
+        for(const auto& pair:pairs)if(pair.Value().ValueType()==JsonValueType::String&&pair.Value().GetString()==winrt::to_hstring(target)){source=pair.Key();break;}
+        if(!source)return;pairs.Remove(*source);current.SetNamedValue(L"pairs",pairs);answers.SetNamedValue(winrt::to_hstring(id),current);selected_sources.erase(id);refresh_matching(id);change();
+    }
+    void refresh_matching(const std::string& id) {
+        const auto found=matching_layouts.find(id);if(found==matching_layouts.end())return;auto& layout=found->second;
+        const auto pairs=object(object(answers,winrt::to_hstring(id).c_str()),L"pairs");auto position=layout.first;
+        rows[position++]=layout.available_heading;
+        for(const auto& source:layout.sources)if(!pairs.HasKey(winrt::to_hstring(source)))rows[position++]=layout.source_rows.at(source);
+        rows[position++]=layout.target_heading;
+        for(const auto& target:layout.targets){rows[position++]=layout.target_rows.at(target);
+            for(const auto& source:layout.sources)if(text(pairs,winrt::to_hstring(source).c_str())==target)rows[position++]=layout.source_rows.at(source);}
+        arrange(current_width);if(!initializing&&callbacks.layout_changed)callbacks.layout_changed();
     }
     void response_controls(const JsonObject& spec) {
-        const auto id = text(spec,L"id"),type = text(spec,L"type"); add_text(text(spec,L"label"),id + "/label");
+        const auto id = text(spec,L"id"),type = text(spec,L"type");
+        std::string heading=text(spec,L"label");
+        if(!spec.HasKey(L"label")) {
+            if(type=="math_multiple_choice_single")heading=tr("Selecciona una respuesta.","Select an answer.","Sélectionnez une réponse.");
+            else if(type=="math_multiple_choice_multi")heading=tr("Selecciona todas las respuestas correctas.","Select all correct answers.","Sélectionnez toutes les bonnes réponses.");
+            else if(type=="math_ordering_drag")heading=tr("Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado.","Drag a card directly or tap the cards in the desired order.","Faites glisser une carte ou touchez les cartes dans l’ordre souhaité.");
+            else if(type=="math_matching_drag")heading=tr("Arrastra una ficha a su destino, o toca primero la ficha y después el destino. Toca un destino sin ficha seleccionada para vaciarlo.","Drag a tile to its target, or tap the tile and then the target. Tap a target with no tile selected to clear it.","Faites glisser une fiche vers sa destination, ou touchez la fiche puis la destination. Touchez une destination sans fiche sélectionnée pour la vider.");
+        }
+        add_text(heading,id+"/label");
         if (type == "math_multiple_choice_single" || type == "math_multiple_choice_multi") {
             const bool multiple = type == "math_multiple_choice_multi"; auto current = response(id,"choice"); const auto selected = array(current,L"selected");
             for (const auto& value : array(spec,L"options")) {
                 const auto option = value.GetObject(); const auto option_id = text(option,L"id");
-                const auto toggle = button("",[this,id,option_id,multiple] { choose(id,option_id,multiple); },multiple ? BS_AUTOCHECKBOX : BS_AUTORADIOBUTTON);
+                // The answer model already owns checked state. Native automatic
+                // radios also select on focus, which would turn a card click
+                // into two answer changes and make keyboard focus answer it.
+                const auto toggle = button("",[this,id,option_id,multiple] { choose(id,option_id,multiple); },multiple ? BS_CHECKBOX : BS_RADIOBUTTON);
                 choice_options[toggle] = option_id; choice_buttons[id].push_back(toggle);
+                SetWindowSubclass(toggle,choice_button_proc,16,reinterpret_cast<DWORD_PTR>(this));
                 if (accessibility) accessibility->SetHwndPropStr(toggle,static_cast<DWORD>(OBJID_CLIENT),CHILDID_SELF,PROPID_ACC_NAME,wide(visible_label(option)).c_str());
                 for (const auto& chosen : selected) if (chosen.GetString() == winrt::to_hstring(option_id)) SendMessageW(toggle,BM_SETCHECK,BST_CHECKED,0);
-                const auto title = visible_label(option); if (!title.empty()) rows.push_back({{{toggle,28},{label(title,id + "/option/" + option_id),0,true}},38});
-                else { rows.push_back({{{toggle,28}},28}); option_content(option); }
+                const auto first=rows.size();const auto title = visible_label(option);
+                if (!title.empty()) rows.push_back({{{toggle,48},{label(title,id + "/option/" + option_id,RichTextRole::body,false),0,true}},48});
+                else { rows.push_back({{{toggle,48}},48}); option_content(option); }
+                for(auto at=first;at<rows.size();++at)for(const auto& cell:rows[at].cells){
+                    choice_cards[toggle].push_back(cell.window);
+                    if(cell.text){choice_labels[cell.window]=toggle;SetWindowSubclass(cell.window,choice_proc,15,reinterpret_cast<DWORD_PTR>(this));}
+                }
             }
         } else if (type == "math_numeric_input" || type == "math_expression_input") {
             if (array(spec,L"fields").Size()) fields(spec,id);
@@ -668,20 +754,25 @@ struct MathPuzzleView::Impl {
         } else if (type == "math_multi_input" || type == "math_structured_answer" || type == "math_equation_fill_blanks") fields(spec,id);
         else if (type == "math_matching_drag") {
             (void)response(id,"matching"); const auto sources = array(spec,L"sources"),targets = array(spec,L"targets");
-            add_text(tr("Arrastra una tarjeta hacia su pareja o selecciona las dos tarjetas.","Drag a card to its partner or select both cards.","Faites glisser une carte vers sa correspondante ou sélectionnez les deux cartes."),id + "/instruction");
-            for (std::uint32_t index = 0; index < std::max(sources.Size(),targets.Size()); ++index) {
-                Row row;
-                for (const auto source : {true,false}) {
-                    const auto& items = source ? sources : targets;
-                    if (index >= items.Size()) { row.cells.push_back({label(""),0,true}); continue; }
-                    const auto item = items.GetObjectAt(index); const auto key = text(item,L"id");
+            auto restored=response(id,"matching");const auto old_pairs=object(restored,L"pairs");JsonObject valid_pairs;std::vector<std::string> used_targets;
+            for(const auto& source:sources){const auto key=text(source.GetObject(),L"id"),target=text(old_pairs,winrt::to_hstring(key).c_str());
+                const bool known=std::ranges::any_of(targets,[&](const auto& value){return text(value.GetObject(),L"id")==target;});
+                if(known&&std::ranges::find(used_targets,target)==used_targets.end()){valid_pairs.SetNamedValue(winrt::to_hstring(key),string_value(target));used_targets.push_back(target);}}
+            restored.SetNamedValue(L"pairs",valid_pairs);answers.SetNamedValue(winrt::to_hstring(id),restored);
+            auto& layout=matching_layouts[id];layout.first=rows.size();
+            for (const auto source : {true,false}) {
+                add_text(source?tr("Fichas disponibles","Available tiles","Fiches disponibles"):tr("Destinos","Targets","Destinations"),id+(source?"/tiles":"/targets"),RichTextRole::prompt);
+                (source?layout.available_heading:layout.target_heading)=rows.back();
+                for(const auto& value:(source?sources:targets)) {
+                    const auto item=value.GetObject();const auto key=text(item,L"id");
                     auto visible = visible_label(item); if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
                     const auto card = label(visible,id + (source ? "/source/" : "/target/") + key,RichTextRole::body,false);
                     match_cards[card] = {id,key,source}; SetWindowSubclass(card,match_proc,13,reinterpret_cast<DWORD_PTR>(this));
-                    row.cells.push_back({card,0,true});
+                    rows.push_back({{{card,0,true}},48});
+                    (source?layout.sources:layout.targets).push_back(key);(source?layout.source_rows:layout.target_rows)[key]=rows.back();
                 }
-                rows.push_back(std::move(row));
             }
+            refresh_matching(id);
         } else if (type == "math_ordering_drag") {
             const auto current = response(id,"order"); auto values = array(current,L"ids"); if (!values.Size()) values = array(spec,L"initialOrder");
             const auto items = array(spec,L"items"); std::map<std::string,JsonObject> cards;
@@ -689,25 +780,35 @@ struct MathPuzzleView::Impl {
             auto& ids = orders[id]; for (const auto& value : values) if (cards.contains(winrt::to_string(value.GetString()))) ids.push_back(winrt::to_string(value.GetString()));
             for (const auto& value : items) { const auto key = text(value.GetObject(),L"id"); if (std::ranges::find(ids,key) == ids.end()) ids.push_back(key); }
             JsonArray initial_ids; for (const auto& key : ids) initial_ids.Append(string_value(key)); current.SetNamedValue(L"ids",initial_ids); answers.SetNamedValue(winrt::to_hstring(id),current);
-            add_text(tr("Arrastra las tarjetas o utiliza las flechas para ordenarlas.","Drag the cards or use the arrows to order them.","Faites glisser les cartes ou utilisez les flèches pour les ordonner."),id + "/instruction");
+            next_tap_positions[id]=static_cast<std::size_t>(std::clamp(number(object(current,L"interactionDraft"),L"nextTapPosition"),0.,static_cast<double>(ids.size())));
             for (const auto& key : ids) {
                 const auto item = cards.at(key); auto visible = visible_label(item);
                 if (visible.empty()) for (const auto& content : array(item,L"content")) visible += text(content.GetObject(),L"text") + ' ';
                 const auto card = label(visible,id + "/item/" + key,RichTextRole::body,false); order_cards[card] = {id,key}; SetWindowSubclass(card,card_proc,12,reinterpret_cast<DWORD_PTR>(this));
-                const auto move = [this,id,key](int delta) { const auto& current_ids = orders[id]; const auto at = static_cast<std::size_t>(std::ranges::find(current_ids,key) - current_ids.begin());
-                    if ((delta < 0 && at) || (delta > 0 && at + 1 < current_ids.size())) reorder(id,at,static_cast<std::size_t>(static_cast<std::ptrdiff_t>(at) + delta)); };
-                order_rows[id].push_back(rows.size()); rows.push_back({{{card,0,true},{button("↑",[move] { move(-1); }),34},{button("↓",[move] { move(1); }),34}},48});
+                order_rows[id].push_back(rows.size()); rows.push_back({{{card,0,true}},48});
             }
         } else if (type == "math_number_line") {
-            auto current = response(id,"number_line"); if (!current.HasKey(L"value")) {
-                current.SetNamedValue(L"value",JsonValue::CreateNumberValue(number(spec,L"value"))); current.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(flag(spec,L"closed")));
-                current.SetNamedValue(L"direction",string_value(text(spec,L"direction","none"))); answers.SetNamedValue(winrt::to_hstring(id),current);
+            auto current = response(id,"number_line"); if (!current.HasKey(L"value")&&!current.HasKey(L"interactionDraft")) {
+                current.SetNamedValue(L"value",JsonValue::CreateNumberValue(snapped(number(spec,L"value"),number(spec,L"step",1),number(spec,L"min",-10),number(spec,L"max",10)))); current.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(flag(spec,L"closed",true)));
+                current.SetNamedValue(L"direction",string_value(text(spec,L"direction","right"))); answers.SetNamedValue(winrt::to_hstring(id),current);
             }
-            canvas(spec,"number_line",current,[this,id](JsonObject value) { answers.SetNamedValue(winrt::to_hstring(id),value); change(); },id);
-            const auto closed = button(tr("Extremo abierto/cerrado","Open/closed endpoint","Extrémité ouverte/fermée"),[this,id] { auto value = response(id,"number_line"); value.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(!flag(value,L"closed"))); answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
-            const auto left = button("←",[this,id] { auto value = response(id,"number_line"); value.SetNamedValue(L"direction",string_value("left")); answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
-            const auto right = button("→",[this,id] { auto value = response(id,"number_line"); value.SetNamedValue(L"direction",string_value("right")); answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
-            rows.push_back({{{closed,0},{left,50},{right,50}},42});
+            auto config=JsonObject::Parse(spec.Stringify());if(!config.HasKey(L"min"))config.SetNamedValue(L"min",JsonValue::CreateNumberValue(-10));if(!config.HasKey(L"max"))config.SetNamedValue(L"max",JsonValue::CreateNumberValue(10));
+            auto displayed=JsonObject::Parse(current.Stringify());if(!displayed.HasKey(L"value")&&object(current,L"interactionDraft").HasKey(L"lastValidValue"))displayed.SetNamedValue(L"value",object(current,L"interactionDraft").GetNamedValue(L"lastValidValue"));
+            canvas(config,"number_line",displayed,[this,id](JsonObject value) { value.Remove(L"interactionDraft");answers.SetNamedValue(winrt::to_hstring(id),value); change(); },id);auto* plot=canvases.back().get();
+            add_text(tr("Posición","Position","Position"),id+"/position");
+            const auto position=make(MSFTEDIT_CLASS,"",WS_TABSTOP|ES_AUTOHSCROLL);reader_theme::apply(position,reader_theme::Surface::field);
+            set_edit_text(position,text(object(current,L"interactionDraft"),L"position",decimal(number(current,L"value"))));keyboard_context(position,spec,object(spec,L"validator"),false,"NUMERIC");
+            SendMessageW(position,EM_SETEVENTMASK,0,ENM_CHANGE);SetWindowSubclass(position,field_proc,11,reinterpret_cast<DWORD_PTR>(this));rows.push_back({{{position}},48});
+            const auto update_position=[this,id,position,config](int notification){if(notification!=EN_CHANGE||initializing)return;auto value=response(id,"number_line");const auto input=edit_text(position);JsonObject draft;draft.SetNamedValue(L"position",string_value(input));
+                if(value.HasKey(L"value"))draft.SetNamedValue(L"lastValidValue",value.GetNamedValue(L"value"));else if(object(value,L"interactionDraft").HasKey(L"lastValidValue"))draft.SetNamedValue(L"lastValidValue",object(value,L"interactionDraft").GetNamedValue(L"lastValidValue"));value.SetNamedValue(L"interactionDraft",draft);
+                try{std::size_t end=0;const auto parsed=std::stod(input,&end);if(end!=input.size()||!std::isfinite(parsed))throw std::invalid_argument("Incomplete position");value.SetNamedValue(L"value",JsonValue::CreateNumberValue(snapped(parsed,number(config,L"step",1),number(config,L"min",-10),number(config,L"max",10))));}catch(const std::exception&){value.Remove(L"value");}
+                answers.SetNamedValue(winrt::to_hstring(id),value);change();};commands[GetDlgCtrlID(position)]=update_position;
+            const auto closed=button(tr("Punto cerrado (incluye el extremo)","Closed point (includes the endpoint)","Point fermé (extrémité incluse)"),[this,id]{auto value=response(id,"number_line");value.SetNamedValue(L"closed",JsonValue::CreateBooleanValue(!flag(value,L"closed")));answers.SetNamedValue(winrt::to_hstring(id),value);change();},BS_AUTOCHECKBOX);
+            SendMessageW(closed,BM_SETCHECK,flag(current,L"closed")?BST_CHECKED:BST_UNCHECKED,0);rows.push_back({{{closed}},48});
+            add_text(tr("Dirección del intervalo","Interval direction","Direction de l’intervalle"),id+"/interval-direction");
+            const auto direction=button(tr(text(current,L"direction")=="left"?"Izquierda":"Derecha",text(current,L"direction")=="left"?"Left":"Right",text(current,L"direction")=="left"?"Gauche":"Droite"),[]{});
+            commands[GetDlgCtrlID(direction)]=[this,id,direction](int notification){if(notification!=BN_CLICKED)return;const auto menu=CreatePopupMenu();AppendMenuW(menu,MF_STRING,1,wide(tr("Izquierda","Left","Gauche")).c_str());AppendMenuW(menu,MF_STRING,2,wide(tr("Derecha","Right","Droite")).c_str());const auto style=prepare_native_menu(menu,host);RECT area{};GetWindowRect(direction,&area);const auto selected=TrackPopupMenuEx(menu,TPM_RETURNCMD|TPM_LEFTALIGN,area.left,area.bottom,host,nullptr);DestroyMenu(menu);if(selected!=1&&selected!=2)return;auto value=response(id,"number_line");value.SetNamedValue(L"direction",string_value(selected==1?"left":"right"));answers.SetNamedValue(winrt::to_hstring(id),value);SetWindowTextW(direction,wide(selected==1?tr("Izquierda","Left","Gauche"):tr("Derecha","Right","Droite")).c_str());change();};rows.push_back({{{direction}},48});
+            plot->sync_fields=[this,id,position,closed,direction]{const auto value=object(answers,winrt::to_hstring(id).c_str());const bool previous=initializing;initializing=true;set_edit_text(position,decimal(number(value,L"value")));initializing=previous;SendMessageW(closed,BM_SETCHECK,flag(value,L"closed")?BST_CHECKED:BST_UNCHECKED,0);SetWindowTextW(direction,wide(text(value,L"direction")=="left"?tr("Izquierda","Left","Gauche"):tr("Derecha","Right","Droite")).c_str());};
         } else if (type == "math_slider_interaction") {
             auto current = response(id,"sliders"),values = object(current,L"values");
             for (const auto& value : array(spec,L"parameters")) {
@@ -733,8 +834,10 @@ struct MathPuzzleView::Impl {
         } else if (type == "math_coordinate_graph_builder" || type == "math_geometry_builder") {
             auto current = response(id,"graph"); if (!current.HasKey(L"points")) current.SetNamedValue(L"points",array(spec,L"points"));
             answers.SetNamedValue(winrt::to_hstring(id),current);
-            canvas(spec,"graph",current,[this,id](JsonObject value) { answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
+            auto config=JsonObject::Parse(spec.Stringify());if(type=="math_geometry_builder"&&!config.HasKey(L"mode"))config.SetNamedValue(L"mode",string_value("polygon"));
+            canvas(config,"graph",current,[this,id](JsonObject value) { answers.SetNamedValue(winrt::to_hstring(id),value); change(); });
             auto* plot = canvases.back().get();
+            JsonArray points;for(const auto& point:plot->points){JsonObject value;value.SetNamedValue(L"x",JsonValue::CreateNumberValue(point.x));value.SetNamedValue(L"y",JsonValue::CreateNumberValue(point.y));points.Append(value);}current.SetNamedValue(L"points",points);answers.SetNamedValue(winrt::to_hstring(id),current);
             plot->sync_fields = [this,plot] {
                 const auto previous = initializing; initializing = true;
                 for (std::size_t index = 0; index < graph_fields[plot].size(); ++index) {
@@ -803,6 +906,13 @@ struct MathPuzzleView::Impl {
         }
     }
     void build() {
+        // Match MathPuzzleRenderer's card actions. The lesson owns reset and
+        // fullscreen, so feedback, progress and the existing reader stay joined.
+        const auto spacer=make(L"STATIC","");
+        expand_button=button(tr("Pantalla completa","Full screen","Plein écran"),[this]{if(callbacks.fullscreen_requested)callbacks.fullscreen_requested();});
+        reset_button=button(tr("Reiniciar","Restart","Recommencer"),[this]{if(callbacks.reset_requested)callbacks.reset_requested();});
+        reader_theme::icon_button(expand_button);reader_theme::icon_button(reset_button);
+        rows.push_back({{{spacer},{expand_button,48},{reset_button,48}},48});
         // Weight is selected BEFORE native math is built and aligned: TOM
         // may encode bold numerals with supplementary mathematical digits.
         add_text(text(block,L"prompt",text(block,L"question")),"prompt",RichTextRole::prompt);
@@ -858,8 +968,34 @@ struct MathPuzzleView::Impl {
         if (message == WM_NCDESTROY) {self->calculator_buttons.erase(item);RemoveWindowSubclass(item,field_proc,11);}
         return DefSubclassProc(item,message,wparam,lparam);
     }
+    static LRESULT CALLBACK choice_button_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value){
+        auto* self=reinterpret_cast<Impl*>(value);
+        if(message==WM_SETFOCUS){
+            // Win32 can emit BN_CLICKED even for a manual radio while giving
+            // it focus. Reuse the restoration guard: focus is not an answer.
+            const bool previous=self->initializing;self->initializing=true;const auto result=DefSubclassProc(item,message,wparam,lparam);self->initializing=previous;self->restore_choice_checks();return result;
+        }
+        if(message==WM_NCDESTROY)RemoveWindowSubclass(item,choice_button_proc,16);
+        return DefSubclassProc(item,message,wparam,lparam);
+    }
+    static LRESULT CALLBACK choice_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
+        auto* self=reinterpret_cast<Impl*>(value);
+        if(message==WM_MOUSEWHEEL){if(self->drag.window==item){self->drag={};if(GetCapture()==item)ReleaseCapture();}return SendMessageW(GetParent(self->host),message,wparam,lparam);}
+        if(message==WM_LBUTTONDOWN){if(self->cards_enabled){self->drag={item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},GetTickCount64(),false};SetCapture(item);}return 0;}
+        if(message==WM_MOUSEMOVE&&self->drag.window==item&&(wparam&MK_LBUTTON)){
+            if(std::abs(GET_X_LPARAM(lparam)-self->drag.start.x)>self->px(8)||std::abs(GET_Y_LPARAM(lparam)-self->drag.start.y)>self->px(8))self->drag.moved=true;return 0;}
+        if(message==WM_LBUTTONUP&&self->drag.window==item){const bool activate=!self->drag.moved&&self->cards_enabled;self->drag={};if(GetCapture()==item)ReleaseCapture();
+            if(activate){const auto toggle=self->choice_labels.at(item);if(IsWindowEnabled(toggle)){SetFocus(toggle);
+                for(const auto& [id,buttons]:self->choice_buttons)if(std::ranges::find(buttons,toggle)!=buttons.end()){
+                    self->choose(id,self->choice_options.at(toggle),(GetWindowLongPtrW(toggle,GWL_STYLE)&BS_TYPEMASK)==BS_CHECKBOX,true);break;}}}return 0;}
+        if(message==WM_LBUTTONDBLCLK)return 0;
+        if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){if(self->drag.window==item)self->drag={};return 0;}
+        if(message==WM_NCDESTROY){self->choice_labels.erase(item);RemoveWindowSubclass(item,choice_proc,15);}
+        return DefSubclassProc(item,message,wparam,lparam);
+    }
     static LRESULT CALLBACK card_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
+        if(message==WM_PAINT){const auto result=DefSubclassProc(item,message,wparam,lparam);self->card_border(item,false);return result;}
         if (message == WM_LBUTTONDOWN && self->cards_enabled && IsWindowEnabled(item)) { self->drag = {item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},GetTickCount64(),false}; ClientToScreen(item,&self->drag.start); SetCapture(item); return 0; }
         if (message == WM_MOUSEMOVE && self->drag.window == item && (wparam & MK_LBUTTON) && GetTickCount64() - self->drag.since >= 20) {
             POINT at{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}; ClientToScreen(item,&at);
@@ -870,16 +1006,29 @@ struct MathPuzzleView::Impl {
                     if (at.y >= rect.top && at.y < rect.bottom) { self->reorder(id,from,to); break; } }
             } return 0;
         }
-        if (message == WM_LBUTTONUP && self->drag.window == item) { self->drag = {}; if (GetCapture() == item) ReleaseCapture(); return 0; }
-        if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(self->host),message,wparam,lparam);
+        if (message == WM_LBUTTONUP && self->drag.window == item) {
+            const bool tap=!self->drag.moved;self->drag = {}; if (GetCapture() == item) ReleaseCapture();
+            if(tap&&self->cards_enabled){const auto [id,key]=self->order_cards.at(item);auto& next=self->next_tap_positions[id];const auto& ids=self->orders.at(id);
+                if(next<ids.size()){const auto from=static_cast<std::size_t>(std::ranges::find(ids,key)-ids.begin());const auto to=next++;self->reorder(id,from,to);
+                    auto current=self->response(id,"order");JsonObject draft;draft.SetNamedValue(L"nextTapPosition",JsonValue::CreateNumberValue(static_cast<double>(next)));current.SetNamedValue(L"interactionDraft",draft);self->answers.SetNamedValue(winrt::to_hstring(id),current);self->change();}}
+            return 0;
+        }
+        if(message==WM_LBUTTONDBLCLK)return 0;
+        if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){if(self->drag.window==item)self->drag={};return 0;}
+        if(message==WM_MOUSEWHEEL){if(self->drag.window==item){self->drag={};if(GetCapture()==item)ReleaseCapture();}return SendMessageW(GetParent(self->host),message,wparam,lparam);}
         if (message == WM_NCDESTROY) { if (self->drag.window == item) self->drag = {}; RemoveWindowSubclass(item,card_proc,12); }
         return DefSubclassProc(item,message,wparam,lparam);
     }
     static LRESULT CALLBACK match_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam,UINT_PTR,DWORD_PTR value) {
         auto* self = reinterpret_cast<Impl*>(value);
+        if(message==WM_PAINT){const auto result=DefSubclassProc(item,message,wparam,lparam);const auto& card=self->match_cards.at(item);bool selected=false;
+            if(card.source){const auto at=self->selected_sources.find(card.response);selected=at!=self->selected_sources.end()&&at->second==card.id;}
+            else for(const auto& pair:object(object(self->answers,winrt::to_hstring(card.response).c_str()),L"pairs"))if(pair.Value().ValueType()==JsonValueType::String&&pair.Value().GetString()==winrt::to_hstring(card.id)){selected=true;break;}
+            self->card_border(item,selected);return result;}
         if (message == WM_LBUTTONDOWN && self->cards_enabled && IsWindowEnabled(item)) {
             const auto& card = self->match_cards.at(item);
-            if (card.source) self->selected_sources[card.response] = card.id;
+            if(card.source){const auto selected=self->selected_sources.find(card.response);if(selected!=self->selected_sources.end()&&selected->second==card.id)self->selected_sources.erase(selected);else self->selected_sources[card.response]=card.id;
+                for(const auto& [window,candidate]:self->match_cards)if(candidate.response==card.response)InvalidateRect(window,nullptr,FALSE);}
             self->drag = {item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)},GetTickCount64(),false}; ClientToScreen(item,&self->drag.start); SetCapture(item); return 0;
         }
         if (message == WM_MOUSEMOVE && self->drag.window == item && (wparam & MK_LBUTTON)) {
@@ -893,11 +1042,15 @@ struct MathPuzzleView::Impl {
             self->drag = {}; if (GetCapture() == item) ReleaseCapture();
             if (can_drop) for (const auto& [target,card] : self->match_cards) {
                 if (card.source || card.response != origin.response) continue; RECT rectangle{}; GetWindowRect(target,&rectangle);
-                if (PtInRect(&rectangle,at) && self->selected_sources.contains(card.response)) { self->match(card.response,self->selected_sources.at(card.response),card.id); break; }
+                if(PtInRect(&rectangle,at)){
+                    if(self->selected_sources.contains(card.response))self->match(card.response,self->selected_sources.at(card.response),card.id);
+                    else if(!origin.source)self->unmatch(card.response,card.id);break;}
             }
             return 0;
         }
-        if (message == WM_MOUSEWHEEL) return SendMessageW(GetParent(self->host),message,wparam,lparam);
+        if(message==WM_MOUSEWHEEL){if(self->drag.window==item){self->drag={};if(GetCapture()==item)ReleaseCapture();}return SendMessageW(GetParent(self->host),message,wparam,lparam);}
+        if(message==WM_LBUTTONDBLCLK)return 0;
+        if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){if(self->drag.window==item)self->drag={};return 0;}
         if (message == WM_NCDESTROY) { if (self->drag.window == item) self->drag = {}; RemoveWindowSubclass(item,match_proc,13); }
         return DefSubclassProc(item,message,wparam,lparam);
     }
@@ -918,11 +1071,13 @@ struct MathPuzzleView::Impl {
         if (message == WM_NCCREATE) { self = static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lparam)->lpCreateParams); self->host = window; SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self)); }
         if (!self) return DefWindowProcW(window,message,wparam,lparam);
         LRESULT themed{}; if (reader_theme::control_color(message,wparam,lparam,themed)) return themed;
-        if (message == WM_PAINT) { PAINTSTRUCT paint{}; const auto dc = BeginPaint(window,&paint); self->paint_matches(dc); EndPaint(window,&paint); return 0; }
+        if (message == WM_PAINT) { PAINTSTRUCT paint{};const auto dc=BeginPaint(window,&paint);self->paint(dc);EndPaint(window,&paint);return 0; }
+        if (message == WM_PRINTCLIENT) { self->paint(reinterpret_cast<HDC>(wparam));return 0; }
         if (message == WM_ERASEBKGND) { RECT rect{}; GetClientRect(window,&rect); FillRect(reinterpret_cast<HDC>(wparam),&rect,reader_theme::brush(reader_theme::Surface::card)); return TRUE; }
         try {
             if (message == WM_MEASUREITEM && measure_native_menu(*reinterpret_cast<MEASUREITEMSTRUCT*>(lparam))) return TRUE;
             if (message == WM_DRAWITEM){const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lparam);
+                if(item.hwndItem==self->expand_button||item.hwndItem==self->reset_button){(void)reader_theme::draw_button(item);auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));const auto colors=reader_theme::palette(window);draw_icon(item.hDC,icon,item.hwndItem==self->expand_button?Icon::expand:Icon::reset,IsWindowEnabled(item.hwndItem)?(item.hwndItem==self->expand_button?colors.text:colors.accent):colors.muted);return TRUE;}
                 for(const auto& canvas:self->canvases)if(canvas->expand_button==item.hwndItem){(void)reader_theme::draw_button(item);auto icon=item.rcItem;InflateRect(&icon,-self->px(12),-self->px(12));draw_icon(item.hDC,icon,Icon::expand,reader_theme::palette(window).high_contrast?GetSysColor(COLOR_WINDOWTEXT):RGB(190,195,205));return TRUE;}
                 if(draw_native_menu(item)||reader_theme::draw_button(item))return TRUE;}
             if (message == WM_MENUCHAR) {
@@ -944,7 +1099,7 @@ struct MathPuzzleView::Impl {
         initializing = true;
         for(const auto& canvas:canvases)canvas->close_expanded();
         for (auto item = GetWindow(host,GW_CHILD); item;) { const auto next = GetWindow(item,GW_HWNDNEXT); DestroyWindow(item); item = next; }
-        canvases.clear(); rows.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear(); live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
+        canvases.clear(); rows.clear(); regions.clear(); commands.clear(); editors.clear();expression_editors.clear();keyboard_contexts.clear();calculator_buttons.clear(); orders.clear(); order_rows.clear(); order_cards.clear(); match_cards.clear(); selected_sources.clear(); choice_buttons.clear(); choice_options.clear();choice_labels.clear();choice_cards.clear();next_tap_positions.clear();matching_layouts.clear();expand_button=reset_button=nullptr;live_visuals.clear(); graph_fields.clear(); requested_heights.clear(); next_id = 100;
     }
 };
 
@@ -966,7 +1121,7 @@ void MathPuzzleView::layout(int x,int y,int width) { const auto height = impl_->
 std::string MathPuzzleView::answers_json() const { impl_->capture_expressions();return stringify(impl_->answers); }
 std::string MathPuzzleView::answer_identity_json() const {
     impl_->capture_expressions();auto values=JsonObject::Parse(impl_->answers.Stringify());
-    for(const auto& response:values)if(response.Value().ValueType()==JsonValueType::Object){auto value=response.Value().GetObject();value.Remove(L"editorDraft");value.Remove(L"editorDrafts");}
+    for(const auto& response:values)if(response.Value().ValueType()==JsonValueType::Object){auto value=response.Value().GetObject();value.Remove(L"editorDraft");value.Remove(L"editorDrafts");value.Remove(L"interactionDraft");}
     return stringify(values);
 }
 std::vector<MathReadingRegion> MathPuzzleView::reading_regions() const {
@@ -982,7 +1137,7 @@ void MathPuzzleView::set_enabled(bool enabled) {
         impl_->drag = {}; impl_->selected_sources.clear();
     }
     for (auto item = GetWindow(impl_->host,GW_CHILD); item; item = GetWindow(item,GW_HWNDNEXT)) {
-        const bool view_control=std::ranges::any_of(impl_->canvases,[item](const auto& canvas){return canvas->expand_button==item;});
+        const bool view_control=item==impl_->expand_button||item==impl_->reset_button||std::ranges::any_of(impl_->canvases,[item](const auto& canvas){return canvas->expand_button==item;});
         const bool expression=std::ranges::any_of(impl_->expression_editors,[item](const auto& value){return value->window==item;});
         const bool interactive = impl_->editors.contains(item) || expression || (impl_->commands.contains(GetDlgCtrlID(item))&&!view_control)
             || std::ranges::any_of(impl_->canvases,[item](const auto& canvas) { return canvas->window == item && canvas->changed; });
