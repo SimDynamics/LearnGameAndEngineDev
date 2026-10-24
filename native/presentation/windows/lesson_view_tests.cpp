@@ -979,33 +979,39 @@ void native_answer_overflow_bars(){
     Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"({"id":"qa_answer_native_overflow","title":"Barras reales","pages":[{"blocks":[
         {"type":"fill_code","question":"Completa el operador.","code":"std::cout [] 1;","answers":["<<"]},
         {"type":"output_prediction","question":"Escribe las líneas.","code":"std::cout << \"primera\\nsegunda\";","answers":["primera\nsegunda"]}]}]})");});
-    const auto visible=[](HWND item,int axis){SCROLLBARINFO info{};info.cbSize=sizeof(info);return GetScrollBarInfo(item,axis==SB_HORZ?OBJID_HSCROLL:OBJID_VSCROLL,&info)&&
-        !(info.rgstate[0]&(STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN));};
-    const auto horizontal=fixture.control(0,2),vertical=fixture.control(1,2);
-    for(const auto item:{horizontal,vertical})require(!visible(item,SB_HORZ)&&!visible(item,SB_VERT),"An empty answer reserves a native scrollbar without overflow");
+    const auto bars=[](HWND item){return GetWindowLongPtrW(item,GWL_STYLE)&(WS_HSCROLL|WS_VSCROLL);};
+    const auto height=[](HWND item){RECT bounds{};GetWindowRect(item,&bounds);return bounds.bottom-bounds.top;};
+    const auto horizontal=fixture.control(0,2),multiline=fixture.control(1,2);
+    const auto empty_height=height(multiline);
+    for(const auto item:{horizontal,multiline})require(!bars(item),"An empty answer reserves a native scrollbar without overflow");
     fixture.replace(0,2,std::string(400,'x'));
     SCROLLINFO range{sizeof(range),SIF_RANGE|SIF_PAGE};GetScrollInfo(horizontal,SB_HORZ,&range);
-    require(visible(horizontal,SB_HORZ)&&range.nPage>0&&range.nMax-range.nMin+1>static_cast<int>(range.nPage),
+    require((bars(horizontal)&WS_HSCROLL)&&range.nPage>0&&range.nMax-range.nMin+1>static_cast<int>(range.nPage),
         "A genuinely long single-line answer did not regain its native horizontal scrollbar");
+    fixture.replace(1,2,"Entrada\nSalida");
+    const auto two_line_height=height(multiline);
+    require(two_line_height>empty_height&&!bars(multiline)&&fixture.control(1,2)==multiline,
+        "A two-line answer did not grow with its content or recreated its original editor");
     std::string lines;for(int row=0;row<40;++row)lines+="Línea conservada\n";fixture.replace(1,2,lines);
-    range={sizeof(range),SIF_RANGE|SIF_PAGE};GetScrollInfo(vertical,SB_VERT,&range);
-    require(visible(vertical,SB_VERT)&&range.nPage>0&&range.nMax-range.nMin+1>static_cast<int>(range.nPage),
-        "A genuinely long multiline answer did not regain its native vertical scrollbar");
-    SendMessageW(horizontal,WM_HSCROLL,SB_RIGHT,0);SendMessageW(vertical,WM_VSCROLL,SB_BOTTOM,0);
-    SendMessageW(horizontal,EM_SETSEL,100,110);SendMessageW(vertical,EM_SETSEL,3,9);
-    POINT horizontal_before{},vertical_before{};SendMessageW(horizontal,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&horizontal_before));SendMessageW(vertical,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&vertical_before));
-    require(horizontal_before.x>0&&vertical_before.y>0,"The overflow regression did not reach actual native horizontal/vertical scroll positions");
+    require(height(multiline)>two_line_height&&!(bars(multiline)&WS_VSCROLL),
+        "An uncapped answer did not grow to its contents and hand vertical scrolling to the lesson");
+    SendMessageW(horizontal,WM_HSCROLL,SB_RIGHT,0);
+    SendMessageW(horizontal,EM_SETSEL,100,110);SendMessageW(multiline,EM_SETSEL,3,9);
+    POINT before{},after{};SendMessageW(horizontal,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+    require(before.x>0,"The overflow regression did not reach a real horizontal scroll position");
     SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,0);pump(fixture.host);
-    POINT horizontal_after{},vertical_after{};CHARRANGE horizontal_selection{},vertical_selection{};
-    SendMessageW(horizontal,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&horizontal_after));SendMessageW(vertical,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&vertical_after));
-    SendMessageW(horizontal,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&horizontal_selection));SendMessageW(vertical,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&vertical_selection));
-    require(horizontal_before.x==horizontal_after.x&&vertical_before.y==vertical_after.y&&horizontal_selection.cpMin==100&&horizontal_selection.cpMax==110&&vertical_selection.cpMin==3&&vertical_selection.cpMax==9,
-        "Recomputing real overflow moved a native answer scroll position or changed its existing selection");
+    CHARRANGE selected{};SendMessageW(horizontal,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+    SendMessageW(multiline,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selected));
+    require(before.x==after.x&&selected.cpMin==3&&selected.cpMax==9&&fixture.text(1,2)==lines,
+        "Reflow changed a native scroll position, selection or multiline answer");
     fixture.replace(0,2,"");fixture.replace(1,2,"");
-    for(const auto item:{horizontal,vertical})require(!visible(item,SB_HORZ)&&!visible(item,SB_VERT),"Clearing an answer retained an empty native scrollbar");
-    SendMessageW(vertical,WM_UNDO,0,0);pump(fixture.host);
-    require(fixture.text(1,2)==lines&&visible(vertical,SB_VERT),"Undo did not restore the original multiline text and real overflow");
-    std::cout<<"PASS answer native scrollbars: empty/clear hidden, genuine horizontal and vertical overflow, unchanged text and Undo\n";
+    for(const auto item:{horizontal,multiline}){POINT offset{};SendMessageW(item,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+        require(!bars(item)&&offset.x==0&&offset.y==0,"Clearing an answer retained bars or hidden scrolling");}
+    require(height(multiline)==empty_height,"Clearing a multiline answer did not restore its content-sized height");
+    SendMessageW(multiline,WM_UNDO,0,0);pump(fixture.host);
+    require(fixture.text(1,2)==lines&&height(multiline)>two_line_height&&!(bars(multiline)&WS_VSCROLL),
+        "Undo lost the original multiline text or its content-sized geometry");
+    std::cout<<"PASS answer automatic height, horizontal overflow, unchanged native controls/selections and Undo\n";
 }
 void native_solved_answer_style(){
     Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_solved_answer_surface","title":"Respuestas legibles","pages":[{"blocks":[
@@ -1051,6 +1057,40 @@ void native_solved_answer_style(){
         require(fixture.text(index,2)=="Personal()","Unlocking a completed answer lost its original code-pair assistance");legible(field);
     }
     std::cout<<"PASS actual output-prediction/fill rasters: dark readable completed/reopened answers, real disabled/readonly protection, preserved Undo and editable reset\n";
+}
+void native_compiler_editor_overflow_bars(){
+    for(const bool laboratory:{false,true}){
+        Fixture fixture({},[laboratory](const curriculum::Lesson&){
+            auto model=windows::parse_lesson_json(R"json({"id":"qa_compiler_editor_overflow","title":"Editor real","pages":[{"blocks":[
+                {"type":"cpp_compiler","initialCode":"int main() {}","initialStandardInput":""}]}]})json");
+            if(laboratory)model.id="native_cpp_laboratory";
+            return model;
+        });
+        const auto source=fixture.control(0,10),input=fixture.control(0,15);
+        const auto bars=[](HWND item){return GetWindowLongPtrW(item,GWL_STYLE)&(WS_HSCROLL|WS_VSCROLL);};
+        require(!bars(source)&&!bars(input),"A short compiler editor or empty stdin kept unnecessary native bars");
+        std::string large;for(int row=0;row<40;++row)large+=std::string(400,'x')+'\n';
+        fixture.replace(0,10,large);
+        require(bars(source)==(WS_HSCROLL|WS_VSCROLL),"An overflowing compiler editor did not enable both native axes");
+        SendMessageW(source,WM_HSCROLL,SB_RIGHT,0);SendMessageW(source,WM_VSCROLL,SB_BOTTOM,0);
+        POINT before{},after{};SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before));
+        SendMessageW(source,EM_SETSEL,3,9);SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,0);pump(fixture.host);
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));CHARRANGE selection{};SendMessageW(source,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        require(before.x>0&&before.y>0&&after.x==before.x&&after.y==before.y&&selection.cpMin==3&&selection.cpMax==9,
+            "Compiler reflow lost a genuine scroll position or the original selection");
+        fixture.click(0,35);
+        require(!(bars(source)&WS_HSCROLL)&&(bars(source)&WS_VSCROLL),"Wrapped compiler code retained horizontal scrolling");
+        fixture.replace(0,10,"int main() {}");
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after));
+        require(!bars(source)&&after.x==0&&after.y==0&&fixture.control(0,10)==source,
+            "Shortening wrapped source retained old bars, offsets or recreated the editor");
+        fixture.replace(0,15,large);require(bars(input)==(WS_HSCROLL|WS_VSCROLL),"Long stdin did not acquire real scrolling");
+        fixture.replace(0,15,"");require(!bars(input),"Clearing stdin did not remove its scrollbars");
+        SendMessageW(source,WM_UNDO,0,0);pump(fixture.host);
+        require(fixture.text(0,10)==large&&(bars(source)&WS_VSCROLL)&&!(bars(source)&WS_HSCROLL),
+            "Undo lost the source or failed to restore its wrapped vertical overflow");
+    }
+    std::cout<<"PASS compiler editor/stdin native overflow in lessons and Laboratory, wrap, shrinking, offsets and Undo\n";
 }
 void native_compiler_output_overflow_bars(){
     Fixture fixture({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({"id":"qa_compiler_console_overflow","title":"Salida real","pages":[{"blocks":[
@@ -1105,14 +1145,16 @@ void simulated_exercise_code_cards(bool caret_only=false) {
     for(const auto index:{std::size_t{0},std::size_t{1}}) {
         RECT source{},answer_header{},answer{};GetWindowRect(fixture.control(index,1),&source);
         GetWindowRect(fixture.control(index,38),&answer_header);GetWindowRect(fixture.control(index,2),&answer);
-        require(answer_header.top>source.bottom&&answer.top>answer_header.bottom,
-            "The source and answer were merged into one header/card rather than Android's two separate cards");
+        RECT check{};GetWindowRect(fixture.control(index,3),&check);
+        require(answer_header.top-source.bottom==MulDiv(48,dpi,96)&&answer.top>answer_header.bottom&&check.top-answer.bottom==MulDiv(18,dpi,96),
+            "Separate source/answer surfaces lost their outer margins or added another internal answer bottom padding");
         require(!windows::code_gutter_snapshot(fixture.control(index,2)).active,
             "A plain answer field gained the source console's line-number margin");
     }
     if(caret_only){
     RECT normal_answer{};GetWindowRect(fill_answer,&normal_answer);
-    require(normal_answer.bottom-normal_answer.top==MulDiv(56,dpi,96),"Fixing first-focus geometry changed Android's existing 100-percent minimum answer height");
+    require(normal_answer.bottom-normal_answer.top>MulDiv(32,dpi,96)&&normal_answer.bottom-normal_answer.top<MulDiv(82,dpi,96),
+        "An empty answer did not fit one native text line plus Android's vertical padding");
     update_lesson_preferences(fixture.view,[](state::StateData& state){state.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};});
     for(const auto index:{0u,1u}){
         const auto answer=fixture.control(index,2);
@@ -1663,6 +1705,7 @@ int main(int argc,char* argv[]) {
         physical_enter_and_attempt_fill();
         premium_attempt_indicator();
         native_solved_answer_style();
+        native_compiler_editor_overflow_bars();
         native_compiler_output_overflow_bars();
         lesson_interface_languages();
         laboratory_interface_parity();

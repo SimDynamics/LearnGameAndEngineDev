@@ -946,37 +946,58 @@ struct LessonView {
         if(GetFocus()!=snapshot.editor)SetFocus(snapshot.editor);
         if(selection&&snapshot.native_selection)SendMessageW(snapshot.editor,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&snapshot.selection));
     }
-    bool update_answer_scrollbars(HWND answer) {
+    int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
+                                 bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
         const auto style=GetWindowLongPtrW(answer,GWL_STYLE);
-        // An offscreen answer still reserves its native nonclient bars. The
-        // accessibility OFFSCREEN flag describes placement, not that space.
-        const bool old_horizontal=(style&WS_HSCROLL)!=0,old_vertical=(style&WS_VSCROLL)!=0;
-        bool horizontal=false,vertical=false;
+        POINT saved{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        if(restored_offset)saved=*restored_offset;
+        RECT format{};SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        const auto left=left_padding<0?format.left:px(left_padding);
+        int numerator=0,denominator=0;SendMessageW(answer,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        // Measure the full width first. An old vertical bar must not narrow
+        // wrapped text enough to keep itself alive after content shrinks.
+        if(style&WS_HSCROLL)SendMessageW(answer,EM_SHOWSCROLLBAR,SB_HORZ,FALSE);
+        if(style&WS_VSCROLL)SendMessageW(answer,EM_SHOWSCROLLBAR,SB_VERT,FALSE);
+        const auto set_padding=[&]{
+            RECT content{};GetClientRect(answer,&content);
+            content.left=left;
+            content.top=numerator>0&&denominator>0?MulDiv(px(top_padding),denominator,numerator):px(top_padding);
+            content.right=std::max(content.left+1,content.right-px(right_padding));
+            content.bottom=std::max(content.top+1,content.bottom-px(bottom_padding));
+            SendMessageW(answer,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
+        };
+        set_padding();
+        RECT client{};GetClientRect(answer,&client);
         POINT offset{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
-        if(GetWindowTextLengthW(answer)>0){
-            RECT client{};GetClientRect(answer,&client);POINTL document_extent{};
-            // Read the actual native display-line positions: tabs, wrapping,
-            // font metrics and zoom remain RichEdit's responsibility. Its
-            // default 0..100/page=0 range is not a document measurement.
-            const auto lines=SendMessageW(answer,EM_GETLINECOUNT,0,0);
-            for(LRESULT line=0;line<lines;++line){
-                const auto start=SendMessageW(answer,EM_LINEINDEX,static_cast<WPARAM>(line),0);
-                const auto length=SendMessageW(answer,EM_LINELENGTH,static_cast<WPARAM>(start),0);
-                POINTL end{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),start+length);
-                document_extent.x=std::max(document_extent.x,end.x+offset.x);document_extent.y=std::max(document_extent.y,end.y+offset.y);
-            }
-            const auto dpi=GetDpiForWindow(answer);
-            const int bar_width=GetSystemMetricsForDpi(SM_CXVSCROLL,dpi),bar_height=GetSystemMetricsForDpi(SM_CYHSCROLL,dpi);
-            const auto full_width=client.right+(old_vertical?bar_width:0),full_height=client.bottom+(old_horizontal?bar_height:0);
-            const auto bottom=document_extent.y+edit_line_height(answer,content_text_scale())+px(16);
-            horizontal=(style&ES_AUTOHSCROLL)&&document_extent.x>full_width;
-            vertical=bottom>full_height-(horizontal?bar_height:0);
-            if(vertical&&(style&ES_AUTOHSCROLL))horizontal=document_extent.x>full_width-bar_width;
+        POINTL document_extent{};
+        // RichEdit owns tabs, Unicode glyph widths, zoom and display wrapping.
+        // Its default 0..100/page=0 range is not a document measurement.
+        const bool has_text=GetWindowTextLengthW(answer)>0;
+        const auto lines=has_text?SendMessageW(answer,EM_GETLINECOUNT,0,0):0;
+        for(LRESULT line=0;line<lines;++line){
+            const auto start=SendMessageW(answer,EM_LINEINDEX,static_cast<WPARAM>(line),0);
+            if(start<0)continue;
+            const auto length=SendMessageW(answer,EM_LINELENGTH,static_cast<WPARAM>(start),0);
+            POINTL end{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&end),start+length);
+            document_extent.x=std::max(document_extent.x,end.x+offset.x);
+            document_extent.y=std::max(document_extent.y,end.y+offset.y);
         }
-        if(old_horizontal!=horizontal)SendMessageW(answer,EM_SHOWSCROLLBAR,SB_HORZ,horizontal);
-        if(old_vertical!=vertical)SendMessageW(answer,EM_SHOWSCROLLBAR,SB_VERT,vertical);
-        if(old_horizontal!=horizontal||old_vertical!=vertical){SendMessageW(answer,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));return true;}
-        return false;
+        const auto dpi=GetDpiForWindow(answer);
+        const int bar_width=GetSystemMetricsForDpi(SM_CXVSCROLL,dpi),bar_height=GetSystemMetricsForDpi(SM_CYHSCROLL,dpi);
+        const auto bottom=std::max<LONG>(px(top_padding),document_extent.y)+edit_line_height(answer,content_text_scale())+px(bottom_padding);
+        const auto right=document_extent.x+px(right_padding);
+        bool horizontal=has_text&&(style&ES_AUTOHSCROLL)&&right>client.right;
+        const bool vertical=!fit_height&&has_text&&bottom>client.bottom-(horizontal?bar_height:0)+px(1);
+        if(vertical&&(style&ES_AUTOHSCROLL))horizontal=has_text&&right>client.right-bar_width;
+        SendMessageW(answer,EM_SHOWSCROLLBAR,SB_HORZ,horizontal);
+        SendMessageW(answer,EM_SHOWSCROLLBAR,SB_VERT,vertical);
+        set_padding();
+        // Hiding a bar alone can retain a native offset. Preserve real scroll
+        // positions, but return a direction with no overflow to its origin.
+        if(!horizontal)saved.x=0;
+        if(!vertical)saved.y=0;
+        SendMessageW(answer,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        return static_cast<int>(bottom)+(horizontal?bar_height:0);
     }
     void toolbar_caption(HWND target,std::string_view caption) {
         set_rich_text(target,caption,{},false,RichTextRole::prompt);
@@ -1715,7 +1736,7 @@ struct LessonView {
             PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
             paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
             SendMessageW(target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
-            if(block(index).type==BlockType::fill_code){
+            if(block(index).type==BlockType::fill_code&&!native_math_text_mapping(target,text).has_value()){
                 CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=16*15;
                 SendMessageW(target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
             }
@@ -2053,6 +2074,7 @@ struct LessonView {
                 rows.back().horizontal_inset=24;rows.back().padding_after=20;reader_theme::primary_button(vm.compile);
                 vm.status=rich("",control_id(index,34));rows.push_back({{vm.status},{0},20,true});rows.back().horizontal_inset=24;rows.back().padding_after=10;
                 vm.console=rich("",control_id(index,14),true);reader_theme::apply(vm.console,reader_theme::Surface::compiler_output);
+                SetWindowLongPtrW(vm.console,GWL_STYLE,GetWindowLongPtrW(vm.console,GWL_STYLE)&~static_cast<LONG_PTR>(ES_AUTOHSCROLL));
                 SendMessageW(vm.console,EM_SETTARGETDEVICE,0,0);rows.push_back({{vm.console},{0},120,true});rows.back().horizontal_inset=24;
                 laboratory_text_style(vm.console,18,RGB(121,226,157));refresh_laboratory_status();return;
             }
@@ -2122,7 +2144,7 @@ struct LessonView {
                 ?ui("Escribe el código faltante","Enter the Missing Code","Saisissez le code manquant")
                 :ui("Escribe la salida","Enter the Output","Saisissez la sortie"));
             if (current.type == BlockType::fill_code) apply_wrap(vm.answer);
-            rows.push_back({{vm.answer}, {0}, multiline ? 82 : 56, false});
+            rows.push_back({{vm.answer}, {0}, 1, false});
         }
         if(simulated){
             const auto first=std::ranges::find_if(rows,[index](const auto& row){return row.simulated_card==index*2+1&&row.card_header;});
@@ -2268,7 +2290,7 @@ struct LessonView {
         const int left = std::max(margin, (static_cast<int>(area.right) - width) / 2);
         struct Placement { HWND item; int x, y, width, height; bool fixed=false; HWND parent=nullptr;int origin=0; };
         std::vector<Placement> placements;
-        std::map<HWND,POINT> readonly_positions;
+        std::map<HWND,POINT> editor_positions;
         simulated_card_surfaces.clear();math_card_surfaces.clear();toolbar_surfaces.clear();console_surfaces.clear();std::map<std::size_t,std::size_t> card_surfaces;
         // A RichEdit's requested height depends on its final width. Measure
         // without moving/painting provisional rectangles over adjacent rows.
@@ -2310,7 +2332,8 @@ struct LessonView {
             const auto block_index=row_block(row);
             const bool order_body=block_index<controls.size()&&controls[block_index].order_view&&row.cells.size()==1
                 &&row.cells.front()==controls[block_index].order_view->window();
-            const int inset=row.simulated_card?px(row.card_header?14:order_body?0:18):px(row.horizontal_inset),row_width=width-inset*2;
+            const bool readonly_body=block_index<controls.size()&&row.cells.front()==controls[block_index].simulated_code;
+            const int inset=row.simulated_card?px(row.card_header?14:order_body||readonly_body?0:18):px(row.horizontal_inset),row_width=width-inset*2;
             int fixed_width = 0; for (auto value : row.widths) if (value) fixed_width += px(value);
             const int remaining = std::max(px(30), row_width - fixed_width - gap * (static_cast<int>(row.cells.size()) - 1));
             if(row.cells.size()==1){
@@ -2341,9 +2364,12 @@ struct LessonView {
                 const int cell_width = row.widths[i] ? px(row.widths[i]) : remaining;
                 const bool answer=std::ranges::any_of(controls,[&](const auto& vm){return vm.answer==row.cells[i];});
                 const bool readonly_source=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==row.cells[i];});
-                if(readonly_source){
+                if(answer||readonly_source||(block_index<controls.size()&&(row.cells[i]==controls[block_index].source
+                    ||row.cells[i]==controls[block_index].input||row.cells[i]==controls[block_index].console))){
                     POINT position{};SendMessageW(row.cells[i],EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
-                    readonly_positions.emplace(row.cells[i],position);
+                    editor_positions.emplace(row.cells[i],position);
+                }
+                if(readonly_source){
                     // Embedded source is bottomless. Measure the full usable
                     // width, rather than allowing an old fullscreen scrollbar
                     // to narrow wrapped code and sustain its own overflow.
@@ -2353,18 +2379,18 @@ struct LessonView {
                 const auto measured_height=answer?std::max(provisional,edit_line_height(row.cells[i],content_text_scale())+px(32)+answer_bar):provisional;
                 SetWindowPos(row.cells[i], nullptr, 0, 0, cell_width, std::max(px(1), measured_height),
                     placement_flags | SWP_NOMOVE);
-                if(answer)(void)update_answer_scrollbars(row.cells[i]);
+                if(answer)control_height=std::max(control_height,update_answer_scrollbars(row.cells[i],16,0,16,true));
+                else if(block_index<controls.size()&&row.cells[i]==controls[block_index].source){
+                    const auto fitted=update_answer_scrollbars(row.cells[i],16,16,16,true);
+                    if(row.size_to_text)control_height=std::max(control_height,fitted);
+                }else if(block_index<controls.size()&&row.cells[i]==controls[block_index].console)
+                    control_height=std::max(control_height,update_answer_scrollbars(row.cells[i],laboratory()?18:12,laboratory()?18:0,laboratory()?18:16,true,laboratory()?18:-1));
                 if(readonly_source){
                     RECT outer{},client{};GetWindowRect(row.cells[i],&outer);GetClientRect(row.cells[i],&client);
                     // EN_REQUESTRESIZE measures the text viewport. A real
                     // horizontal bar consumes additional nonclient height;
                     // keep it below the final line instead of covering it.
                     readonly_nonclient_height=std::max(0L,outer.bottom-outer.top-client.bottom);
-                }
-                if(laboratory()&&!controls.empty()&&(row.cells[i]==controls[0].source||row.cells[i]==controls[0].console)){
-                    RECT content{};SendMessageW(row.cells[i],EM_GETRECT,0,reinterpret_cast<LPARAM>(&content));const bool output=row.cells[i]==controls[0].console;
-                    content.left=output?px(18):std::max<LONG>(content.left,px(10));content.top=px(output?18:16);content.right=cell_width-px(output?18:16);content.bottom=std::max<LONG>(content.top+1,provisional-px(output?18:16));
-                    SendMessageW(row.cells[i],EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
                 }
                 if (row.size_to_text) SendMessageW(row.cells[i], EM_REQUESTRESIZE, 0, 0);
                 wchar_t name[32]{};GetClassNameW(row.cells[i],name,32);
@@ -2424,14 +2450,19 @@ struct LessonView {
                 }
                 x += cell_width + gap;
             }
+            const bool separate_response=block_index<controls.size()&&
+                (block(block_index).type==BlockType::fill_code||block(block_index).type==BlockType::output_prediction);
+            const bool answer_body=separate_response&&row.cells.front()==controls[block_index].answer;
+            const int card_bottom=row.card_end?(answer_body?0:16):0;
+            const int card_margin=row.card_end&&separate_response?(answer_body?18:readonly_body?32:0):0;
             if(row.simulated_card&&!fixed){
                 if(row.card_header){card_surfaces[*row.simulated_card]=simulated_card_surfaces.size();
                     simulated_card_surfaces.push_back({{left,top,left+width,top+height},top+height});}
                 if(const auto found=card_surfaces.find(*row.simulated_card);found!=card_surfaces.end())
-                    simulated_card_surfaces[found->second].bounds.bottom=top+height+(row.card_end?px(16):0);
+                    simulated_card_surfaces[found->second].bounds.bottom=top+height+px(card_bottom);
             }
             if(fixed)top=body_top;
-            else top += height + (height ? px(row.simulated_card?(row.card_end?16:row.card_header?8:8):row.padding_after) : px(row.empty_padding_after));
+            else top += height + (height ? px(row.simulated_card?(row.card_end?card_bottom+card_margin:8):row.padding_after) : px(row.empty_padding_after));
         }
         const auto math_keyboard=math_keyboard_window(GetAncestor(window,GA_ROOT));RECT keyboard_area{};
         if(math_keyboard&&IsWindowVisible(math_keyboard))GetWindowRect(math_keyboard,&keyboard_area);
@@ -2501,24 +2532,17 @@ struct LessonView {
             if(!deferred)for(const auto* item:items)SetWindowPos(item->item,nullptr,item->x,
                 item->y-(item->fixed?0:item->origin?item->origin:scroll),item->width,item->height,placement_flags);
         }
-        for(const auto& vm:controls)if(vm.answer&&std::ranges::find(placements,vm.answer,&Placement::item)!=placements.end()){
-            RECT content{};GetClientRect(vm.answer,&content);
-            int numerator=0,denominator=0;SendMessageW(vm.answer,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-            // RichEdit scales the formatting origin with its text zoom, while
-            // the clipping bottom remains a client-pixel coordinate. Keep
-            // Android's visible padding instead of scaling that origin twice.
-            content.top=numerator>0&&denominator>0?MulDiv(px(16),denominator,numerator):px(16);
-            content.bottom=std::max(content.top+1,content.bottom-px(16));
-            SendMessageW(vm.answer,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
-            (void)update_answer_scrollbars(vm.answer);
-        }
-        if(!laboratory())for(const auto& vm:controls)if(vm.console&&std::ranges::find(placements,vm.console,&Placement::item)!=placements.end()){
-            RECT content{};GetClientRect(vm.console,&content);
-            int numerator=0,denominator=0;SendMessageW(vm.console,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-            content.top=numerator>0&&denominator>0?MulDiv(px(12),denominator,numerator):px(12);
-            content.bottom=std::max(content.top+1,content.bottom-px(16));
-            SendMessageW(vm.console,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
-            (void)update_answer_scrollbars(vm.console);
+        for(const auto& vm:controls){
+            const auto sync=[&](HWND item,int top_padding,int right_padding,int bottom_padding,int left_padding=-1){
+                if(!item||std::ranges::find(placements,item,&Placement::item)==placements.end())return;
+                const auto saved=editor_positions.find(item);
+                (void)update_answer_scrollbars(item,top_padding,right_padding,bottom_padding,false,left_padding,
+                    saved==editor_positions.end()?nullptr:&saved->second);
+            };
+            sync(vm.answer,16,0,16);
+            sync(vm.source,16,16,16);
+            sync(vm.input,0,0,0);
+            sync(vm.console,laboratory()?18:12,laboratory()?18:0,laboratory()?18:16,laboratory()?18:-1);
         }
         for(std::size_t index=0;index<controls.size();++index)if(const auto source=controls[index].simulated_code;source){
             const auto placed=std::ranges::find(placements,source,&Placement::item);
@@ -2531,7 +2555,7 @@ struct LessonView {
             // requested document height, including the active text zoom.
             const bool overflow=fullscreen_block==index&&measured!=rows.end()&&measured->requested_height>viewport.bottom;
             if(!!(GetWindowLongPtrW(source,GWL_STYLE)&WS_VSCROLL)!=overflow)SendMessageW(source,EM_SHOWSCROLLBAR,SB_VERT,overflow);
-            if(const auto saved=readonly_positions.find(source);saved!=readonly_positions.end())
+            if(const auto saved=editor_positions.find(source);saved!=editor_positions.end())
                 SendMessageW(source,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved->second));
         }
         // Measuring a mathematical composition deliberately does not position
@@ -2721,7 +2745,7 @@ struct LessonView {
                 updating = true; set_rich_text(vm.console,ui("El programa cambió. Ejecuta de nuevo para obtener una salida actual.",
                     "The program changed. Run it again to obtain current output.","Le programme a changé. Exécute-le à nouveau pour obtenir une sortie actuelle."));
                 if (sender == vm.source) style_cpp(vm.source);
-                updating = false; mark_dirty(); return;
+                updating = false; mark_dirty(); reflow(); return;
             }
         }
     }
