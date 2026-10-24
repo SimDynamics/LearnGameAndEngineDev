@@ -52,7 +52,7 @@ struct LessonReader::Impl {
     struct AnswerPriority{std::size_t block=0,allowed_through=0;};
     struct PriorityBoundary{std::size_t block=0;std::string part;bool after=false;};
     HWND view=nullptr,window=nullptr;WindowsEnvironment environment;std::shared_ptr<windows::NarrationWorker> backend;
-    std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;
+    std::function<void()> settings;std::array<HWND,7> buttons{};HWND status=nullptr;HFONT font=nullptr;UINT font_dpi=0;
     std::vector<LessonReadingRegion> regions;std::vector<Part> parts;std::map<std::string,std::unique_ptr<ReadingShade>> shades;
     std::map<std::string,std::size_t> shaded_ends;
     std::string shaded_part;std::int64_t shaded_offset=0;
@@ -125,15 +125,25 @@ struct LessonReader::Impl {
         if(!show){dragging=false;if(GetCapture()==window)ReleaseCapture();}
         if(window){ShowWindow(window,show?SW_SHOWNOACTIVATE:SW_HIDE);attach_lesson_reader_bar(view,window,show?bar_height:0);}
     }
+    void update_font(){
+        const auto dpi=GetDpiForWindow(view);if(font&&font_dpi==dpi)return;
+        // Android's rate label is 16sp bold. Keep its DPI-scaled size when the
+        // window moves monitors, just as the existing icons and bar already do.
+        const auto next=CreateFontW(-MulDiv(16,static_cast<int>(dpi),96),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        if(!next)return;const auto previous=font;font=next;font_dpi=dpi;
+        for(const auto button:buttons)if(button)SendMessageW(button,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);
+        if(status)SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(font),TRUE);
+        if(previous)DeleteObject(previous);
+    }
     void initialize(){WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=proc;cls.hInstance=GetModuleHandleW(nullptr);cls.lpszClassName=bar_class;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);RegisterClassExW(&cls);
         window=CreateWindowExW(0,bar_class,L"Controles de lectura",WS_CHILD|WS_VISIBLE|WS_CLIPCHILDREN|WS_CLIPSIBLINGS,0,0,0,0,view,nullptr,cls.hInstance,this);
         if(!window)throw std::runtime_error("No se pudo abrir la barra de lectura.");
-        font=CreateFontW(-px(16),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
+        update_font();
         static constexpr const wchar_t* labels[]{L"Retroceder 3 segundos",L"Retroceder 5 segundos",L"Adelantar 5 segundos",L"Adelantar 3 segundos",L"Reproducir o pausar",L"Velocidad de lectura",L"Reiniciar lectura"};
         for(std::size_t i=0;i<buttons.size();++i){buttons[i]=CreateWindowExW(0,L"BUTTON",labels[i],WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW,0,0,0,0,window,reinterpret_cast<HMENU>(static_cast<INT_PTR>(button_base+i)),cls.hInstance,nullptr);SendMessageW(buttons[i],WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);SetWindowSubclass(buttons[i],button_proc,1,reinterpret_cast<DWORD_PTR>(this));}
         status=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|SS_CENTER,0,0,0,0,view,nullptr,cls.hInstance,nullptr);SendMessageW(status,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);reader_theme::apply(status,reader_theme::Surface::card);
         SetTimer(window,tick_timer,30,nullptr);configure();changed();}
-    void layout(){RECT area{};GetClientRect(window,&area);const int size=std::max(px(22),(static_cast<int>(area.right)-px(8))/7),width=size*7,left=std::max(0,(static_cast<int>(area.right)-width)/2);
+    void layout(){update_font();RECT area{};GetClientRect(window,&area);const int size=std::max(px(22),(static_cast<int>(area.right)-px(8))/7),width=size*7,left=std::max(0,(static_cast<int>(area.right)-width)/2);
         for(std::size_t i=0;i<buttons.size();++i)MoveWindow(buttons[i],left+static_cast<int>(i)*size,px(4),size,std::max(1,static_cast<int>(area.bottom)-px(8)),TRUE);
         const auto shape=CreateRoundRectRgn(0,0,area.right+1,area.bottom+1,area.bottom,area.bottom);
         if(shape&&!SetWindowRgn(window,shape,TRUE))DeleteObject(shape);}
@@ -431,6 +441,26 @@ struct LessonReader::Impl {
         if(!enabled){pause();cancel_generation();for(auto& [id,shade]:shades)shade->restore();}
         else if(language!=old_language||voice!=old_voice||engine!=old_engine||!old_enabled){pause();cancel_generation();has_plan=false;parts.clear();previous_key.clear();previous_part.clear();previously_heard.clear();answer_priority.reset();previous_priority.reset();listened.clear();signature.clear();changed();}
         else if(player.allocated())player.set_rate(rate);update_buttons();}
+    bool dispatch_shortcut(const MSG& message){
+        if(message.message!=WM_KEYDOWN)return false;
+        std::size_t index=0;switch(message.wParam){
+        case VK_F1:index=4;break;case VK_F2:index=6;break;
+        case VK_F5:index=0;break;case VK_F6:index=1;break;
+        case VK_F7:index=2;break;case VK_F8:index=3;break;
+        default:return false;
+        }
+        for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN})
+            if(GetKeyState(modifier)&0x8000)return false;
+        const auto root=GetAncestor(view,GA_ROOT);
+        if(!enabled||!visible||!IsWindowVisible(view)||!IsWindowVisible(window)||
+            !IsWindowEnabled(root)||!IsWindowEnabled(view)||!IsWindowEnabled(window)||
+            !message.hwnd||(message.hwnd!=root&&message.hwnd!=view&&!IsChild(view,message.hwnd)))return false;
+        // Bit 30 distinguishes autorepeat from a new press. Consume repeats so
+        // F1 cannot alternate play/pause or fall through to native Help handling.
+        if(!(message.lParam&(1LL<<30))&&IsWindowEnabled(buttons[index]))
+            SendMessageW(buttons[index],BM_CLICK,0,0);
+        return true;
+    }
     static LRESULT CALLBACK button_proc(HWND button,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR context){
         auto& self=*reinterpret_cast<Impl*>(context);
         if(message==BM_CLICK){
@@ -450,7 +480,7 @@ struct LessonReader::Impl {
         if(message==WM_NCCREATE){self=static_cast<Impl*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));self->window=window;}
         if(!self)return DefWindowProcW(window,message,wp,lp);LRESULT themed{};if(reader_theme::control_color(message,wp,lp,themed))return themed;
         try{switch(message){
-        case WM_SIZE:self->layout();return 0;
+        case WM_SIZE:case WM_DPICHANGED_AFTERPARENT:self->layout();return 0;
         case layout_message:if(lp)self->place(*reinterpret_cast<const RECT*>(lp));return 0;
         case WM_TIMER:if(wp==tick_timer)self->tick();return 0;
         case WM_ERASEBKGND:return 1;
@@ -497,6 +527,7 @@ bool LessonReader::controls_visible()const{return impl_->enabled&&impl_->visible
 void LessonReader::settings_changed(){impl_->settings_changed();}
 void LessonReader::seek_seconds(int seconds){impl_->seek(seconds);}
 void LessonReader::restart(){impl_->restart();}
+bool LessonReader::dispatch_shortcut(const MSG& message){return impl_->dispatch_shortcut(message);}
 HWND LessonReader::bar()const{return impl_->window;}
 LessonReaderSnapshot LessonReader::snapshot()const{
     const auto& self=*impl_;LessonReaderSnapshot value;

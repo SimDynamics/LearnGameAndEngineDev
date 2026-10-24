@@ -15,6 +15,7 @@
 #include <richedit.h>
 #include <winrt/Windows.Data.Json.h>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <functional>
 #include <fstream>
@@ -44,6 +45,23 @@ void pointer_message(HWND target,UINT message,WPARAM keys,LPARAM point,bool touc
     const auto previous=SetMessageExtraInfo(touch?static_cast<LPARAM>(0xff515780u):0);
     SendMessageW(target,message,keys,point);SetMessageExtraInfo(previous);
 }
+struct KeyboardStateScope {
+    std::array<BYTE,256> original{},clear{};
+    KeyboardStateScope(){check(GetKeyboardState(original.data())!=FALSE,"Cannot retain QA keyboard state");
+        check(SetKeyboardState(clear.data())!=FALSE,"Cannot initialize QA thread keyboard state");}
+    ~KeyboardStateScope(){SetKeyboardState(original.data());}
+};
+struct ReaderCommandProbe {
+    HWND bar;std::vector<int> commands;
+    explicit ReaderCommandProbe(HWND target):bar(target){
+        check(SetWindowSubclass(bar,proc,82,reinterpret_cast<DWORD_PTR>(this))!=FALSE,"Cannot observe actual reader button activation");}
+    ~ReaderCommandProbe(){RemoveWindowSubclass(bar,proc,82);}
+    static LRESULT CALLBACK proc(HWND window,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR context){
+        if(message==WM_COMMAND&&HIWORD(wp)==BN_CLICKED)
+            reinterpret_cast<ReaderCommandProbe*>(context)->commands.push_back(LOWORD(wp));
+        return DefSubclassProc(window,message,wp,lp);
+    }
+};
 curriculum::Lesson model(bool exercise=false,bool after=true,std::string_view language="es"){
     curriculum::Lesson lesson;lesson.id="qa_native_reader";lesson.title="Prueba.";lesson.locale="es";
     if(language!="es"){lesson.locale=language=="fr"?"fr":"en";lesson.title=language=="fr"?"Lecture.":"Reading.";}
@@ -114,6 +132,50 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
     try{
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
         auto backend=std::make_shared<windows::NarrationWorker>(std::filesystem::path(build::source_root)/"out/narration/runtime.json");
+        {
+            Fixture f(backend,true);KeyboardStateScope keyboard;ReaderCommandProbe probe(f.reader->bar());
+            const auto edit=child(f.view,1102),play=GetDlgItem(f.reader->bar(),6504);SetFocus(edit);
+            const auto press=[&](UINT key,HWND target,LPARAM flags=1,UINT kind=WM_KEYDOWN){
+                MSG message{};message.hwnd=target;message.message=kind;message.wParam=key;message.lParam=flags;
+                return f.reader->dispatch_shortcut(message);
+            };
+            check(press(VK_F1,edit)&&probe.commands==std::vector<int>{6504}&&f.snapshot().allocated&&GetFocus()==edit,
+                "F1 from the real answer editor did not activate the existing play button without stealing focus");
+            check(press(VK_F1,edit,1LL|(1LL<<30))&&probe.commands.size()==1&&f.snapshot().allocated,
+                "Holding F1 toggled playback more than once");
+            check(press(VK_F1,edit)&&probe.commands.size()==2&&!f.snapshot().allocated,
+                "A second F1 press did not release playback through the existing pause button");
+            const std::array<std::pair<UINT,int>,5> mappings{{{VK_F2,6506},{VK_F5,6500},{VK_F6,6501},{VK_F7,6502},{VK_F8,6503}}};
+            for(const auto& [key,button]:mappings){
+                const auto count=probe.commands.size();SetFocus(play);
+                check(press(key,play)&&probe.commands.size()==count+1&&probe.commands.back()==button,
+                    "A reader shortcut did not activate its corresponding existing button");
+                check(press(key,play,1LL|(1LL<<30))&&probe.commands.size()==count+1,
+                    "A held reader shortcut activated its button more than once");f.reader->pause();
+            }
+            const auto count=probe.commands.size();
+            for(const auto modifier:{VK_SHIFT,VK_CONTROL,VK_MENU,VK_LWIN,VK_RWIN}){
+                auto state=keyboard.clear;state[modifier]=0x80;check(SetKeyboardState(state.data())!=FALSE,"Cannot set QA modifier");
+                check(!press(VK_F1,edit)&&probe.commands.size()==count,"A modified function key activated narration");
+                check(SetKeyboardState(keyboard.clear.data())!=FALSE,"Cannot clear QA modifier");
+            }
+            check(!press(VK_F1,edit,1,WM_SYSKEYDOWN)&&!press(VK_F1,edit,1,WM_KEYUP)&&!press(VK_F3,edit),
+                "The reader consumed system, release or unassigned keys");
+            EnableWindow(play,FALSE);check(press(VK_F1,edit)&&probe.commands.size()==count,
+                "A shortcut bypassed its disabled reader button");EnableWindow(play,TRUE);
+            EnableWindow(f.host,FALSE);const auto disabled=press(VK_F1,edit);EnableWindow(f.host,TRUE);
+            check(!disabled&&probe.commands.size()==count,"A shortcut bypassed the disabled lesson owner");
+            const auto auxiliary=CreateWindowExW(0,L"STATIC",L"QA auxiliary",WS_OVERLAPPEDWINDOW,
+                0,0,100,100,f.host,nullptr,GetModuleHandleW(nullptr),nullptr);
+            check(auxiliary!=nullptr,"Cannot create an independent owned QA window");
+            const auto external=press(VK_F1,auxiliary);DestroyWindow(auxiliary);
+            check(!external&&probe.commands.size()==count,"An auxiliary window controlled the lesson reader");
+            f.reader->set_controls_visible(false);check(!press(VK_F1,edit)&&probe.commands.size()==count,
+                "A shortcut activated hidden reader controls");f.reader->set_controls_visible(true);
+            check(edit_text(edit).empty()&&!f.snapshot().allocated,
+                "Reader shortcuts changed the puzzle answer or resumed hidden playback");
+            std::cout<<"PASS F1/F2/F5-F8 activate existing reader buttons from editor/bar focus once, preserve answers and respect modifiers, disabled controls and auxiliary windows\n";
+        }
         {
             auto lesson=windows::parse_lesson_json(R"({"id":"qa_reader_math_keyboard","title":"Prueba.","pages":[{"blocks":[{"type":"math_puzzle","prompt":"Escribe un número.","responses":[{"id":"value","type":"math_numeric_input"}]}]}]})");
             Fixture f(backend,false,true,true,"es",std::move(lesson));

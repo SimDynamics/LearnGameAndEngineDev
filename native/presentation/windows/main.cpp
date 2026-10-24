@@ -581,6 +581,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
             wchar_t target_class[128]{};if(target)GetClassNameW(target,target_class,128);
             const bool auxiliary=target&&(target==state.settings||std::wstring_view(target_class)==L"LearnGameAndEngineDev.SettingsWindow"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CourseAudio"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.NarrationLicenses"||std::wstring_view(target_class)==L"LearnGameAndEngineDev.CalculatorWindow");
             const auto dialog=auxiliary?target:target==window?window:nullptr;
+            if(target==window&&!auxiliary&&state.reader&&state.reader->dispatch_shortcut(message))continue;
             if(lgaed::presentation::dispatch_lesson_enter(message))continue;
             if (!dialog||!IsDialogMessageW(dialog,&message)) {
                 TranslateMessage(&message);

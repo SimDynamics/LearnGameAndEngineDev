@@ -44,6 +44,9 @@ public:
     void settings_changed();
     void seek_seconds(int);
     void restart();
+    // Called before dialog dispatch so focused RichEdit controls cannot swallow
+    // the unmodified reader keys. Activates the existing buttons once per press.
+    [[nodiscard]] bool dispatch_shortcut(const MSG&);
     [[nodiscard]] HWND bar()const;
     // Observes UI-thread state only. Does not tick media, advance reading or save.
     [[nodiscard]] LessonReaderSnapshot snapshot()const;
