@@ -1,0 +1,22 @@
+// Perfil nativo ordinario: todos los números están escritos en base doce.
+// 10 vale doce; # vale diez; ~ vale once. No se aplican reglas especiales.
+// La figura y sus estados se calculan dentro del programa GPU compilado.
+vertice(-1, -1, 0);
+vertice(1, -1, 0);
+vertice(0, 1, 0);
+cara(0, 1, 2);
+
+estado posicion = 10;
+estado velocidad = #;
+estado pasos = 0;
+
+al_actualizar {
+    posicion = posicion + velocidad * dt;
+    pasos = pasos + 1;
+}
+
+al_dibujar {
+    rotacion(0, 0, 0);
+    color(0, 1, 1);
+    dibujar();
+}

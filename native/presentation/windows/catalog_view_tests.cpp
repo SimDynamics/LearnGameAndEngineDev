@@ -77,10 +77,10 @@ int main() {
         const auto host = CreateWindowExW(0,type.lpszClassName,L"Catalog QA",WS_OVERLAPPEDWINDOW,0,0,1000,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host != nullptr,"Create catalog QA host");
         MoveWindow(host,0,0,px(host,1000),px(host,850),TRUE);
-        std::filesystem::path opened; unsigned launches = 0, options = 0;bool all_actions=false;
+        std::filesystem::path opened; unsigned launches = 0, options = 0,smo_launches=0;bool all_actions=false;
         auto create = [&] {
             auto view = create_catalog_view(host,environment,root,[&](const auto& path) { opened = path; ++launches; },
-                [&](CatalogAction action,const CatalogLocation&) { if (action == CatalogAction::settings) ++options; },
+                [&](CatalogAction action,const CatalogLocation&) { if (action == CatalogAction::settings) ++options;if(action==CatalogAction::smo)++smo_launches; },
                 [&](CatalogAction action,const CatalogLocation&) { return all_actions||action == CatalogAction::settings; });
             MoveWindow(view,0,0,px(view,980),px(view,800),TRUE); return view;
         };
@@ -168,8 +168,11 @@ int main() {
                 const auto compiler=std::string_view(locale)=="fr"?L"Ouvrir le prototype C++":std::string_view(locale)=="en"?L"Open C++ Prototype":L"Abrir prototipo C++";
                 const auto subtitle=std::string_view(locale)=="fr"?L"Apprenez la programmation, l’informatique graphique, les moteurs, les mathématiques et la physique depuis leurs fondements.":
                     std::string_view(locale)=="en"?L"Learn programming, graphics, engines, mathematics, and physics from the ground up.":L"Aprende programación, gráficos, motores, matemáticas y física desde sus fundamentos.";
-                check(SendMessageW(list,LB_GETCOUNT,0,0)==6&&row_caption(list,5)==compiler&&caption(GetDlgItem(view,4109))==subtitle,
+                const auto smo=std::string_view(locale)=="fr"?L"Laboratoire SMO":std::string_view(locale)=="en"?L"SMO Laboratory":L"Laboratorio SMO";
+                check(SendMessageW(list,LB_GETCOUNT,0,0)==7&&row_caption(list,5)==compiler&&row_caption(list,6)==smo&&caption(GetDlgItem(view,4109))==subtitle,
                     "Home paraphrased original Android text or omitted a functional original action");
+                const auto before_smo=smo_launches,before_lessons=launches;SendMessageW(list,LB_SETCURSEL,6,0);SendMessageW(list,WM_KEYDOWN,VK_RETURN,1);pump();
+                check(smo_launches==before_smo+1&&launches==before_lessons,"The new SMO action did not reach its actual tool callback");
                 all_actions=false;
                 navigate_catalog(view,location);const auto courses=windows::load_catalog(root,location);
                 const auto future=std::ranges::find_if(courses.entries,[](const auto& entry){return !entry.available;});

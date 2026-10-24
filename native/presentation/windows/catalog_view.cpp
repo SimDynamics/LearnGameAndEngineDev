@@ -86,6 +86,7 @@ struct CatalogView {
         case CatalogAction::calculator: return ui("Abrir calculadora científica","Open Scientific Calculator","Ouvrir la calculatrice scientifique");
         case CatalogAction::compiler: return ui("Abrir prototipo C++","Open C++ Prototype","Ouvrir le prototype C++");
         case CatalogAction::graphics: return ui("Motor gráfico","Graphics engine","Moteur graphique");
+        case CatalogAction::smo: return ui("Laboratorio SMO","SMO Laboratory","Laboratoire SMO");
         }
         return {};
     }
@@ -183,7 +184,7 @@ struct CatalogView {
                 })); scopes.push_back(std::move(scope));
         }
         if (catalog_level(location) == CatalogLevel::routes) for (const auto action :
-            {CatalogAction::settings,CatalogAction::calculator,CatalogAction::graphics,CatalogAction::compiler})
+            {CatalogAction::settings,CatalogAction::calculator,CatalogAction::graphics,CatalogAction::compiler,CatalogAction::smo})
             if (action_available(action)) home_actions.push_back(action);
         SetWindowTextW(back,wide(ui("Volver","Back","Retour")).c_str()); SetWindowTextW(home,wide(ui("Inicio","Home","Accueil")).c_str());
         SetWindowTextW(menu,wide(ui("Menú","Menu","Menu")).c_str()); SetWindowTextW(info_button,wide(ui("Información","Information","Informations")).c_str());

@@ -11,6 +11,7 @@
 #include "platform/windows/narration_storage.hpp"
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/tools_view.hpp"
+#include "presentation/windows/smo_view.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "presentation/windows/ui_language.hpp"
@@ -431,7 +432,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
         layout_controls(window,*state);return 0;}
     case tool_message:
         try{using lgaed::presentation::CatalogAction;
-            state->graphics_active=state->pending_action==CatalogAction::graphics;
+            state->graphics_active=state->pending_action==CatalogAction::graphics||state->pending_action==CatalogAction::smo;
             update_audio_context(*state);
             if(state->tool){DestroyWindow(state->tool);state->tool=nullptr;}
             if(state->pending_action==CatalogAction::compiler){lgaed::curriculum::Lesson lab;lab.id="native_cpp_laboratory";
@@ -441,10 +442,13 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                 lab.source_path=std::filesystem::path(lgaed::build::source_root)/L"app/src/main/assets/content"/lab.locale/L"programming";
                 lgaed::curriculum::Block compiler;compiler.type=lgaed::curriculum::BlockType::cpp_compiler;compiler.stable_id="native_lab_editor";compiler.initial_code="#include <iostream>\n\nusing namespace std;\n\nint main()\n{\n    \n}";
                 lgaed::curriculum::Page page;page.stable_id="native_lab";page.blocks.push_back(std::move(compiler));lab.pages.push_back(std::move(page));open_lesson(window,*state,std::move(lab));}
+            else if(state->pending_action==CatalogAction::smo){ShowWindow(state->catalog,SW_HIDE);
+                state->tool=lgaed::presentation::create_smo_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}
             else{ShowWindow(state->catalog,SW_HIDE);state->tool=state->pending_action==CatalogAction::calculator?
                     lgaed::presentation::create_calculator_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);},state->narrator):
                     lgaed::presentation::create_graphics_view(window,state->environment,[window]{PostMessageW(window,return_message,0,0);});layout_controls(window,*state);}}
-        catch(const std::exception& error){MessageBoxW(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
+        catch(const std::exception& error){if(state->pending_action==lgaed::presentation::CatalogAction::smo){show_catalog(window,*state);update_audio_context(*state);}
+            MessageBoxW(window,widen_error(error).c_str(),L"Herramientas",MB_OK|MB_ICONERROR);}return 0;
     case WM_SIZE:
         layout_controls(window, *state);
         return 0;

@@ -7,7 +7,7 @@
 #include <optional>
 
 namespace lgaed::presentation {
-enum class CatalogAction { settings, audio, calculator, compiler, graphics };
+enum class CatalogAction { settings, audio, calculator, compiler, graphics, smo };
 using CatalogActionHandler = std::function<void(CatalogAction,const curriculum::CatalogLocation&)>;
 using CatalogActionAvailability = std::function<bool(CatalogAction,const curriculum::CatalogLocation&)>;
 using CatalogMathValidator = std::function<std::optional<bool>(const curriculum::Block&,const state::Response&,std::string_view)>;

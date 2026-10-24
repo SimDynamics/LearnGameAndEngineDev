@@ -5,6 +5,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/ui_language.hpp"
 #include "platform/windows/state_store.hpp"
+#include "core/smo.hpp"
 #include "../../../app/src/main/cpp/physics-scene.h"
 #include <commctrl.h>
 #include <windowsx.h>
@@ -19,6 +20,9 @@
 #include <deque>
 #include <future>
 #include <iomanip>
+#include <cmath>
+#include <cstring>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -38,6 +42,7 @@ void require_hr(HRESULT result,const char* action){if(FAILED(result))throw std::
 struct Command {enum class Kind{down,move,up,cancel,reset};Kind kind;float u=0,v=0,vx=0,vy=0;};
 struct Readback {bool pixels;std::promise<GraphicsLabSnapshot> reply;};
 struct Parameters {float transform[4],material[4],frame[4];};
+struct SmoVertex {float position[3],normal[3];};
 constexpr unsigned sphere_vertices=16*12*6;
 
 // The procedural mesh, lighting, floor and benchmark transform reproduce the
@@ -69,14 +74,40 @@ float4 PSMain(Pixel value):SV_TARGET{
     else if(value.kind==2)shaded+=float3(0.25,0.22,0.06);return float4(shaded,1);
 })";
 
+// SMO owns the mesh, angles and draw request. This conventional projection,
+// normal calculation and trigonometry belong only to the graphics bridge;
+// they are not implementations or proofs of SMO's arithmetic laws.
+constexpr char smo_shader[]=R"(
+cbuffer Object : register(b0) {float4 angles;float4 material;float4 projection;};
+struct Input {float3 position:POSITION;float3 normal:NORMAL;};
+struct Pixel {float4 position:SV_POSITION;float3 normal:NORMAL;};
+float3 rotate(float3 p) {
+    float sx,cx,sy,cy,sz,cz;sincos(angles.x,sx,cx);sincos(angles.y,sy,cy);sincos(angles.z,sz,cz);
+    p=float3(p.x,cx*p.y-sx*p.z,sx*p.y+cx*p.z);
+    p=float3(cy*p.x+sy*p.z,p.y,-sy*p.x+cy*p.z);
+    return float3(cz*p.x-sz*p.y,sz*p.x+cz*p.y,p.z);
+}
+Pixel VSMain(Input input) {
+    Pixel result;float3 p=rotate(input.position);p.z-=5;
+    result.position=float4(1.8*p.x/max(projection.x,0.2),1.8*p.y,-1.001001*p.z-0.1001001,-p.z);
+    result.normal=rotate(input.normal);return result;
+}
+float4 PSMain(Pixel value):SV_TARGET {
+    float light=0.35+0.65*abs(dot(normalize(value.normal),normalize(float3(-0.55,0.9,0.75))));
+    return float4(material.rgb*light,1);
+})";
+
 struct Gpu {
     ComPtr<ID3D11Device> device;ComPtr<ID3D11DeviceContext> context;ComPtr<IDXGISwapChain> chain;
     ComPtr<ID3D11RenderTargetView> target;ComPtr<ID3D11DepthStencilView> depth;
     ComPtr<ID3D11VertexShader> vs;ComPtr<ID3D11PixelShader> ps;ComPtr<ID3D11Buffer> constants;
     ComPtr<ID3D11RasterizerState> raster;ComPtr<ID3D11DepthStencilState> depth_state;
+    ComPtr<ID3D11VertexShader> smo_vs;ComPtr<ID3D11PixelShader> smo_ps;
+    ComPtr<ID3D11InputLayout> smo_layout;ComPtr<ID3D11Buffer> smo_vertices;
+    unsigned smo_capacity=0;
     unsigned width=0,height=0;bool software=false;std::string description;
     ~Gpu(){if(context){context->ClearState();context->Flush();}}
-    void initialize(HWND surface,GraphicsBackend preference){
+    void initialize(HWND surface,GraphicsBackend preference,bool sphere_pipeline=true){
         DXGI_SWAP_CHAIN_DESC swap{};swap.BufferDesc.Width=1;swap.BufferDesc.Height=1;swap.BufferDesc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
         swap.SampleDesc.Count=1;swap.BufferUsage=DXGI_USAGE_RENDER_TARGET_OUTPUT;swap.BufferCount=2;swap.OutputWindow=surface;swap.Windowed=TRUE;swap.SwapEffect=DXGI_SWAP_EFFECT_DISCARD;
         constexpr D3D_FEATURE_LEVEL levels[]{D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0};D3D_FEATURE_LEVEL level{};
@@ -85,11 +116,11 @@ struct Gpu {
         if(FAILED(result)&&preference==GraphicsBackend::automatic){software=true;result=create(D3D_DRIVER_TYPE_WARP);}require_hr(result,"Create Direct3D 11 device");
         ComPtr<IDXGIDevice> dxgi;require_hr(device.As(&dxgi),"Read DXGI device");ComPtr<IDXGIAdapter> adapter;require_hr(dxgi->GetAdapter(adapter.GetAddressOf()),"Read graphics adapter");DXGI_ADAPTER_DESC info{};require_hr(adapter->GetDesc(&info),"Read graphics adapter name");
         description="Direct3D 11 · "+utf8(info.Description)+(software?" · WARP (software)":" · hardware");
-        ComPtr<ID3DBlob> vertex,pixel,errors;auto compiled=D3DCompile(shader,sizeof(shader),nullptr,nullptr,nullptr,"VSMain","vs_4_0",D3DCOMPILE_ENABLE_STRICTNESS,0,vertex.GetAddressOf(),errors.GetAddressOf());
+        if(sphere_pipeline){ComPtr<ID3DBlob> vertex,pixel,errors;auto compiled=D3DCompile(shader,sizeof(shader),nullptr,nullptr,nullptr,"VSMain","vs_4_0",D3DCOMPILE_ENABLE_STRICTNESS,0,vertex.GetAddressOf(),errors.GetAddressOf());
         if(FAILED(compiled)&&errors)throw std::runtime_error(std::string(static_cast<const char*>(errors->GetBufferPointer()),errors->GetBufferSize()));require_hr(compiled,"Compile original sphere vertex shader");
         compiled=D3DCompile(shader,sizeof(shader),nullptr,nullptr,nullptr,"PSMain","ps_4_0",D3DCOMPILE_ENABLE_STRICTNESS,0,pixel.GetAddressOf(),errors.ReleaseAndGetAddressOf());
         if(FAILED(compiled)&&errors)throw std::runtime_error(std::string(static_cast<const char*>(errors->GetBufferPointer()),errors->GetBufferSize()));require_hr(compiled,"Compile original sphere pixel shader");
-        require_hr(device->CreateVertexShader(vertex->GetBufferPointer(),vertex->GetBufferSize(),nullptr,vs.GetAddressOf()),"Create sphere vertex shader");require_hr(device->CreatePixelShader(pixel->GetBufferPointer(),pixel->GetBufferSize(),nullptr,ps.GetAddressOf()),"Create sphere pixel shader");
+        require_hr(device->CreateVertexShader(vertex->GetBufferPointer(),vertex->GetBufferSize(),nullptr,vs.GetAddressOf()),"Create sphere vertex shader");require_hr(device->CreatePixelShader(pixel->GetBufferPointer(),pixel->GetBufferSize(),nullptr,ps.GetAddressOf()),"Create sphere pixel shader");}
         D3D11_BUFFER_DESC buffer{};buffer.ByteWidth=sizeof(Parameters);buffer.Usage=D3D11_USAGE_DEFAULT;buffer.BindFlags=D3D11_BIND_CONSTANT_BUFFER;require_hr(device->CreateBuffer(&buffer,nullptr,constants.GetAddressOf()),"Create sphere parameters");
         D3D11_RASTERIZER_DESC state{};state.FillMode=D3D11_FILL_SOLID;state.CullMode=D3D11_CULL_NONE;state.DepthClipEnable=TRUE;require_hr(device->CreateRasterizerState(&state,raster.GetAddressOf()),"Create sphere rasterizer");
         D3D11_DEPTH_STENCIL_DESC z{};z.DepthEnable=TRUE;z.DepthWriteMask=D3D11_DEPTH_WRITE_MASK_ALL;z.DepthFunc=D3D11_COMPARISON_LESS;require_hr(device->CreateDepthStencilState(&z,depth_state.GetAddressOf()),"Create sphere depth test");
@@ -114,14 +145,145 @@ struct Gpu {
                 parameters.material[0]=body.color.x;parameters.material[1]=body.color.y;parameters.material[2]=body.color.z;parameters.material[3]=scene.selected_index()==static_cast<int>(index)?2.0f:0.0f;object(parameters,sphere_vertices);}}
         if(present)require_hr(chain->Present(1,0),"Present graphics frame");
     }
-    std::size_t read_pixels(){
+    void prepare_smo(){
+        if(smo_vs)return;
+        ComPtr<ID3DBlob> vertex,pixel,errors;
+        const auto compile=[&](const char* entry,const char* profile,ComPtr<ID3DBlob>& code){
+            const auto result=D3DCompile(smo_shader,sizeof(smo_shader),nullptr,nullptr,nullptr,entry,profile,D3DCOMPILE_ENABLE_STRICTNESS,0,code.GetAddressOf(),errors.ReleaseAndGetAddressOf());
+            if(FAILED(result)&&errors)throw std::runtime_error(std::string(static_cast<const char*>(errors->GetBufferPointer()),errors->GetBufferSize()));
+            require_hr(result,"Compile SMO graphics bridge shader");
+        };
+        compile("VSMain","vs_4_0",vertex);compile("PSMain","ps_4_0",pixel);
+        ComPtr<ID3D11VertexShader> vertex_shader;ComPtr<ID3D11PixelShader> pixel_shader;ComPtr<ID3D11InputLayout> layout;
+        require_hr(device->CreateVertexShader(vertex->GetBufferPointer(),vertex->GetBufferSize(),nullptr,vertex_shader.GetAddressOf()),"Create SMO mesh vertex shader");
+        require_hr(device->CreatePixelShader(pixel->GetBufferPointer(),pixel->GetBufferSize(),nullptr,pixel_shader.GetAddressOf()),"Create SMO mesh pixel shader");
+        constexpr D3D11_INPUT_ELEMENT_DESC input[]{
+            {"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0},
+            {"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D11_INPUT_PER_VERTEX_DATA,0}};
+        require_hr(device->CreateInputLayout(input,2,vertex->GetBufferPointer(),vertex->GetBufferSize(),layout.GetAddressOf()),"Create SMO mesh vertex layout");
+        smo_vs=std::move(vertex_shader);smo_ps=std::move(pixel_shader);smo_layout=std::move(layout);
+    }
+    void draw_smo(const smo::Frame& frame,bool present){
+        if(frame.vertices.size()>65536||frame.faces.size()>32768)throw std::invalid_argument("SMO graphics mesh exceeds prototype budget");
+        const auto coordinate=[](double value){
+            if(!std::isfinite(value)||std::abs(value)>static_cast<double>(std::numeric_limits<float>::max())/8)
+                throw std::invalid_argument("SMO coordinate cannot be represented by the graphics support");
+            return static_cast<float>(value);
+        };
+        const auto angle=[](double value){if(!std::isfinite(value))throw std::invalid_argument("SMO rotation must be finite");
+            return static_cast<float>(std::remainder(value,6.2831853071795864769));};
+        const auto channel=[](double value){if(!std::isfinite(value)||value<0||value>1)throw std::invalid_argument("SMO drawing color must be between zero and one");return static_cast<float>(value);};
+        Parameters parameters{{angle(frame.rotation.x),angle(frame.rotation.y),angle(frame.rotation.z),0},
+            {channel(frame.color.x),channel(frame.color.y),channel(frame.color.z),1},{static_cast<float>(width)/height,0,0,0}};
+        std::vector<SmoVertex> vertices;
+        if(frame.draw_requested){
+            vertices.reserve(frame.faces.size()*3);
+            for(const auto& face:frame.faces){
+                for(const auto index:face)if(index>=frame.vertices.size())throw std::invalid_argument("SMO face references a missing vertex");
+                const auto& a=frame.vertices[face[0]];const auto& b=frame.vertices[face[1]];const auto& c=frame.vertices[face[2]];
+                // Geometric normals are adapter calculations, not SMO products.
+                const double ux=b.x-a.x,uy=b.y-a.y,uz=b.z-a.z,vx=c.x-a.x,vy=c.y-a.y,vz=c.z-a.z;
+                const double nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+                const double magnitude=std::hypot(nx,ny,nz);
+                if(!std::isfinite(magnitude))throw std::invalid_argument("SMO face normal exceeds the graphics support range");
+                const float normal[]{magnitude>0?static_cast<float>(nx/magnitude):0,
+                    magnitude>0?static_cast<float>(ny/magnitude):0,magnitude>0?static_cast<float>(nz/magnitude):1};
+                for(const auto index:face){const auto& point=frame.vertices[index];vertices.push_back({{coordinate(point.x),coordinate(point.y),coordinate(point.z)},{normal[0],normal[1],normal[2]}});}
+            }
+        }
+        constexpr float blue[]{0.055f,0.105f,0.19f,1};context->ClearRenderTargetView(target.Get(),blue);context->ClearDepthStencilView(depth.Get(),D3D11_CLEAR_DEPTH,1,0);
+        auto* color=target.Get();context->OMSetRenderTargets(1,&color,depth.Get());context->OMSetDepthStencilState(depth_state.Get(),0);
+        const D3D11_VIEWPORT viewport{0,0,static_cast<float>(width),static_cast<float>(height),0,1};context->RSSetViewports(1,&viewport);context->RSSetState(raster.Get());
+        if(!vertices.empty()){
+            prepare_smo();const auto count=static_cast<unsigned>(vertices.size());
+            if(count>smo_capacity){D3D11_BUFFER_DESC buffer{};buffer.ByteWidth=static_cast<UINT>(count*sizeof(SmoVertex));buffer.Usage=D3D11_USAGE_DYNAMIC;
+                buffer.BindFlags=D3D11_BIND_VERTEX_BUFFER;buffer.CPUAccessFlags=D3D11_CPU_ACCESS_WRITE;
+                require_hr(device->CreateBuffer(&buffer,nullptr,smo_vertices.ReleaseAndGetAddressOf()),"Create SMO mesh vertex buffer");smo_capacity=count;}
+            D3D11_MAPPED_SUBRESOURCE mapped{};require_hr(context->Map(smo_vertices.Get(),0,D3D11_MAP_WRITE_DISCARD,0,&mapped),"Upload SMO mesh vertices");
+            std::memcpy(mapped.pData,vertices.data(),vertices.size()*sizeof(SmoVertex));context->Unmap(smo_vertices.Get(),0);
+            auto* source=smo_vertices.Get();constexpr UINT stride=sizeof(SmoVertex),offset=0;
+            context->IASetInputLayout(smo_layout.Get());context->IASetVertexBuffers(0,1,&source,&stride,&offset);context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            context->VSSetShader(smo_vs.Get(),nullptr,0);context->PSSetShader(smo_ps.Get(),nullptr,0);
+            context->UpdateSubresource(constants.Get(),0,nullptr,&parameters,0,0);auto* buffer=constants.Get();context->VSSetConstantBuffers(0,1,&buffer);context->PSSetConstantBuffers(0,1,&buffer);
+            context->Draw(count,0);
+        }
+        if(present)require_hr(chain->Present(1,0),"Present SMO graphics frame");
+    }
+    std::size_t read_pixels(std::uint64_t* hash=nullptr){
         ComPtr<ID3D11Texture2D> source;require_hr(chain->GetBuffer(0,IID_PPV_ARGS(source.GetAddressOf())),"Read actual graphics frame");D3D11_TEXTURE2D_DESC shape{};source->GetDesc(&shape);
         shape.Usage=D3D11_USAGE_STAGING;shape.BindFlags=0;shape.CPUAccessFlags=D3D11_CPU_ACCESS_READ;shape.MiscFlags=0;ComPtr<ID3D11Texture2D> copy;require_hr(device->CreateTexture2D(&shape,nullptr,copy.GetAddressOf()),"Create graphics readback");context->CopyResource(copy.Get(),source.Get());
         D3D11_MAPPED_SUBRESOURCE pixels{};require_hr(context->Map(copy.Get(),0,D3D11_MAP_READ,0,&pixels),"Read GPU pixels");std::size_t colored=0;
         for(unsigned row=0;row<height;++row){const auto* at=static_cast<const unsigned char*>(pixels.pData)+row*pixels.RowPitch;for(unsigned column=0;column<width;++column){const auto* pixel=at+column*4;if(pixel[0]>64||pixel[1]>64||pixel[2]>64)++colored;}}
+        if(hash){std::uint64_t value=14695981039346656037ull;
+            for(unsigned row=0;row<height;++row){const auto* at=static_cast<const unsigned char*>(pixels.pData)+row*pixels.RowPitch;
+                for(unsigned column=0;column<width*4;++column){value^=at[column];value*=1099511628211ull;}}
+            *hash=value;}
         context->Unmap(copy.Get(),0);return colored;
     }
 };
+
+constexpr wchar_t smo_surface_class[]=L"LearnGameAndEngineDev.SmoSurface";
+struct SmoSurface {
+    HWND window=nullptr;GraphicsBackend preference=GraphicsBackend::automatic;
+    std::unique_ptr<Gpu> gpu;std::optional<smo::Frame> frame;
+    std::uint64_t frames=0;std::string error;bool owned=false,drawing=false;
+    explicit SmoSurface(GraphicsBackend requested):preference(requested){}
+    void initialize(HWND target){
+        window=target;auto created=std::make_unique<Gpu>();created->initialize(window,preference,false);
+        RECT area{};GetClientRect(window,&area);created->resize(static_cast<unsigned>(std::max(1L,area.right)),static_cast<unsigned>(std::max(1L,area.bottom)));
+        gpu=std::move(created);redraw();
+    }
+    void redraw(){
+        if(!gpu||drawing)return;
+        struct Drawing {bool& value;explicit Drawing(bool& field):value(field){value=true;}~Drawing(){value=false;}} guard(drawing);
+        const auto show=IsWindowVisible(window)&&!IsIconic(GetAncestor(window,GA_ROOT));
+        gpu->draw_smo(frame.value_or(smo::Frame{}),show);
+    }
+    void resize(){
+        if(!gpu||drawing)return;
+        RECT area{};GetClientRect(window,&area);
+        gpu->resize(static_cast<unsigned>(std::max(1L,area.right)),static_cast<unsigned>(std::max(1L,area.bottom)));redraw();
+    }
+    void submit(const smo::Frame& next){
+        if(!gpu)throw std::runtime_error("SMO graphics surface is unavailable");
+        if(drawing)throw std::runtime_error("SMO graphics surface is already drawing");
+        struct Drawing {bool& value;explicit Drawing(bool& field):value(field){value=true;}~Drawing(){value=false;}} guard(drawing);
+        // A synchronous DXGI message may resize its HWND while presentation is
+        // guarded. Reconcile the real client before the next submitted frame.
+        RECT area{};GetClientRect(window,&area);gpu->resize(static_cast<unsigned>(std::max(1L,area.right)),static_cast<unsigned>(std::max(1L,area.bottom)));
+        gpu->draw_smo(next,IsWindowVisible(window)&&!IsIconic(GetAncestor(window,GA_ROOT)));
+        frame=next;++frames;error.clear();
+    }
+    SmoSurfaceSnapshot inspect(bool pixels){
+        SmoSurfaceSnapshot value;value.frames=frames;value.error=error;
+        if(gpu){value.width=gpu->width;value.height=gpu->height;value.backend=gpu->description;value.software=gpu->software;
+            if(pixels){
+                if(drawing)throw std::runtime_error("SMO graphics readback is already drawing");
+                struct Drawing {bool& value;explicit Drawing(bool& field):value(field){value=true;}~Drawing(){value=false;}} guard(drawing);
+                // DISCARD swap chains need a redraw before readback. Reuse the
+                // exact last submitted SMO frame; never evaluate or advance it.
+                gpu->draw_smo(frame.value_or(smo::Frame{}),false);
+                value.colored_pixels=gpu->read_pixels(&value.pixel_hash);
+            }}
+        return value;
+    }
+};
+SmoSurface* smo_surface(HWND window){return reinterpret_cast<SmoSurface*>(GetWindowLongPtrW(window,GWLP_USERDATA));}
+LRESULT CALLBACK smo_surface_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
+    auto* self=smo_surface(window);
+    if(message==WM_NCCREATE){self=static_cast<SmoSurface*>(reinterpret_cast<CREATESTRUCTW*>(lp)->lpCreateParams);SetWindowLongPtrW(window,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(self));}
+    if(!self)return DefWindowProcW(window,message,wp,lp);
+    try{
+        switch(message){
+        case WM_CREATE:self->initialize(window);return 0;
+        case WM_SIZE:self->resize();return 0;
+        case WM_ERASEBKGND:return 1;
+        case WM_PAINT:{PAINTSTRUCT paint{};BeginPaint(window,&paint);EndPaint(window,&paint);self->redraw();return 0;}
+        case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);if(self->owned)delete self;return DefWindowProcW(window,message,wp,lp);
+        }
+    }catch(const std::exception& failure){self->error=failure.what();if(message==WM_CREATE){OutputDebugStringW(wide(self->error).c_str());return -1;}return 0;}
+    return DefWindowProcW(window,message,wp,lp);
+}
 
 struct Lab {
     HWND window=nullptr,canvas=nullptr,title=nullptr,status=nullptr,instructions=nullptr,back=nullptr,next=nullptr,load=nullptr,reset=nullptr;
@@ -265,4 +427,22 @@ HWND create_physics_graphics_view(HWND parent,std::optional<WindowsEnvironment> 
 }
 GraphicsLabSnapshot inspect_graphics_lab(HWND window,bool pixels){wchar_t name[100]{};GetClassNameW(window,name,100);if(std::wstring_view(name)!=lab_class||!lab(window))throw std::invalid_argument("Not a live graphics laboratory");return lab(window)->take(pixels);}
 GraphicsFrame inspect_physics_graphics_frame(HWND window){const auto frame=inspect_graphics_lab(window);return {frame.presented_frames,frame.colored_pixels,frame.simulation_time,false,frame.backend};}
+HWND create_smo_surface(HWND parent,GraphicsBackend initial){
+    static const bool registered=[](){WNDCLASSW type{};type.lpfnWndProc=smo_surface_proc;type.hInstance=GetModuleHandleW(nullptr);type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.lpszClassName=smo_surface_class;
+        return RegisterClassW(&type)!=0||GetLastError()==ERROR_CLASS_ALREADY_EXISTS;}();
+    if(!registered)throw std::runtime_error("Register SMO graphics surface");
+    auto data=std::make_unique<SmoSurface>(initial);
+    const auto window=CreateWindowExW(0,smo_surface_class,L"SMO",WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS,0,0,1,1,parent,nullptr,GetModuleHandleW(nullptr),data.get());
+    if(!window)throw std::runtime_error("Create SMO graphics surface");data->owned=true;data.release();return window;
+}
+void draw_smo_surface(HWND window,const smo::Frame& frame){
+    wchar_t name[100]{};GetClassNameW(window,name,100);auto* self=smo_surface(window);
+    if(std::wstring_view(name)!=smo_surface_class||!self)throw std::invalid_argument("Not a live SMO graphics surface");
+    try{self->submit(frame);}catch(const std::exception& failure){self->error=failure.what();throw;}
+}
+SmoSurfaceSnapshot inspect_smo_surface(HWND window,bool pixels){
+    wchar_t name[100]{};GetClassNameW(window,name,100);auto* self=smo_surface(window);
+    if(std::wstring_view(name)!=smo_surface_class||!self)throw std::invalid_argument("Not a live SMO graphics surface");
+    try{return self->inspect(pixels);}catch(const std::exception& failure){self->error=failure.what();return self->inspect(false);}
+}
 }

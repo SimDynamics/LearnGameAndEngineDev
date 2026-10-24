@@ -1,0 +1,20 @@
+// SMO experimental: números posicionales en base doce.
+// 0 es cero; # es diez; ~ es once; 10 es doce (@ es su alias aislado).
+// Cambia velocidad de 1 a 2 y pulsa Ejecutar SMO para comparar el movimiento.
+vertice(-1, -1, 0);
+vertice(1, -1, 0);
+vertice(0, 1, 0);
+cara(0, 1, 2);
+
+estado giro = 0;
+estado velocidad = 1;
+
+al_actualizar {
+    giro = giro + velocidad * dt;
+}
+
+al_dibujar {
+    rotacion(0, 0, giro);
+    color(1, .6, .2);
+    dibujar();
+}

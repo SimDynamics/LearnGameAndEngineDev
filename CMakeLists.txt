@@ -43,9 +43,26 @@ add_executable(lgaed_cpp_tool_host native/platform/windows/cpp_tool_host.cpp)
 target_link_libraries(lgaed_cpp_tool_host PRIVATE lgaed_host_options user32)
 set_target_properties(lgaed_cpp_tool_host PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
+# Author-time shader compiler: deliberately independent of presentation, which
+# consumes its outputs. Shader optimization/IEEE flags are identical in every
+# host build configuration; Debug does not turn these kernels into /Od shaders.
+add_executable(lgaed_smo_shader_compile native/tools/smo_shader_compile.cpp)
+target_link_libraries(lgaed_smo_shader_compile PRIVATE lgaed_host_options d3dcompiler bcrypt)
+set_target_properties(lgaed_smo_shader_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+set_property(GLOBAL APPEND PROPERTY JOB_POOLS smo_hlsl_compile=2)
+
 add_library(lgaed_core STATIC native/core/profile.cpp native/core/lesson.cpp native/core/lesson_state.cpp native/core/cpp_project.cpp
-    native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp)
+    native/core/catalog.cpp native/core/audio_schedule.cpp native/core/learning_flow.cpp native/core/view_preferences.cpp native/core/narration_state.cpp native/core/scientific_calculator.cpp native/core/smo.cpp native/core/smo_native.cpp)
 target_link_libraries(lgaed_core PUBLIC lgaed_host_options)
+
+# Pure numerical references can be verified without preparing graphics assets
+# or creating a GPU device. The application links these same implementations.
+add_library(lgaed_smo_arithmetic STATIC
+    native/presentation/windows/smo_rule_contract.cpp
+    native/presentation/windows/smo_duodecimal.cpp
+    native/presentation/windows/smo_float12.cpp
+    native/presentation/windows/smo_numeric_scene_reference.cpp)
+target_link_libraries(lgaed_smo_arithmetic PUBLIC lgaed_core lgaed_host_options)
 
 add_library(lgaed_platform_windows STATIC
     native/platform/windows/environment.cpp
@@ -77,6 +94,24 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/card_list.cpp
     native/presentation/windows/tools_view.cpp
     native/presentation/windows/graphics_view.cpp
+    native/presentation/windows/smo_view.cpp
+    native/presentation/windows/smo_benchmark.cpp
+    native/presentation/windows/smo_compute_d3d11.cpp
+    native/presentation/windows/smo_compute_d3d12.cpp
+    native/presentation/windows/smo_compute_vulkan.cpp
+    native/presentation/windows/smo_compute_opengl.cpp
+    native/presentation/windows/smo_scene.cpp
+    native/presentation/windows/smo_scene_reference.cpp
+    native/presentation/windows/smo_rule_gpu.cpp
+    native/presentation/windows/smo_duodecimal_scene.cpp
+    native/presentation/windows/smo_duodecimal_gpu.cpp
+    native/presentation/windows/smo_program_gpu.cpp
+    native/presentation/windows/smo_native_gpu.cpp
+    native/presentation/windows/smo_native_render.cpp
+    native/presentation/windows/smo_program_render.cpp
+    native/presentation/windows/smo_program_shaders.cpp
+    native/presentation/windows/smo_program_session.cpp
+    native/presentation/windows/smo_radix_ablation.cpp
     native/presentation/windows/settings_view.cpp
     native/presentation/windows/audio_course_view.cpp
     native/presentation/windows/narration_licenses.cpp
@@ -90,7 +125,12 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/code_gutter.cpp
     native/presentation/windows/code_editor.cpp)
 target_link_libraries(lgaed_presentation_windows PUBLIC
-    lgaed_platform_windows lgaed_host_options user32 gdi32 gdiplus d3d11 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid)
+    lgaed_platform_windows lgaed_smo_arithmetic lgaed_host_options user32 gdi32 gdiplus d3d11 d3d12 dxgi d3dcompiler shell32 ole32 oleacc advapi32 comctl32 comdlg32 uuid)
+add_executable(lgaed_smo_compile native/tools/smo_compile.cpp)
+target_link_libraries(lgaed_smo_compile PRIVATE lgaed_presentation_windows)
+set_target_properties(lgaed_smo_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+include(cmake/SmoSceneShaders.cmake)
+lgaed_prepare_smo_shaders(lgaed_presentation_windows)
 # Standard controls and trackbars require the official v6 activation context.
 # Propagate it to every consumer, including the actual UI regression hosts.
 target_link_options(lgaed_presentation_windows INTERFACE
@@ -113,6 +153,8 @@ set_target_properties(LearnGameAndEngineDev PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 include(CTest)
+option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
+    "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
     add_executable(lgaed_audio_schedule_tests native/core/audio_schedule_tests.cpp)
     target_link_libraries(lgaed_audio_schedule_tests PRIVATE lgaed_core)
@@ -220,6 +262,92 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_graphics_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.graphics_view COMMAND lgaed_graphics_view_tests)
     set_tests_properties(native.graphics_view PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_smo_tests native/core/smo_tests.cpp)
+    target_link_libraries(lgaed_smo_tests PRIVATE lgaed_core)
+    add_test(NAME native.smo COMMAND lgaed_smo_tests)
+    add_executable(lgaed_smo_native_tests native/core/smo_native_tests.cpp)
+    target_link_libraries(lgaed_smo_native_tests PRIVATE lgaed_core)
+    add_test(NAME native.smo_native_compiler COMMAND lgaed_smo_native_tests)
+    set_tests_properties(native.smo_native_compiler PROPERTIES TIMEOUT 30)
+    add_test(NAME native.smo_compiler_cli COMMAND lgaed_smo_compile "${CMAKE_SOURCE_DIR}/native/smo_native_integer.smo")
+    add_test(NAME native.smo_compiler_graphics_cli COMMAND lgaed_smo_compile "${CMAKE_SOURCE_DIR}/native/smo_triangle.smo" --profile graphics)
+    set_tests_properties(native.smo_compiler_cli PROPERTIES TIMEOUT 30)
+    set_tests_properties(native.smo_compiler_graphics_cli PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_smo_native_gpu_tests native/presentation/windows/smo_native_gpu_tests.cpp)
+    target_link_libraries(lgaed_smo_native_gpu_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_native_gpu COMMAND lgaed_smo_native_gpu_tests)
+    set_tests_properties(native.smo_native_gpu PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_smo_native_real_tests native/core/smo_native_real_tests.cpp)
+    target_link_libraries(lgaed_smo_native_real_tests PRIVATE lgaed_core)
+    add_test(NAME native.smo_native_real COMMAND lgaed_smo_native_real_tests)
+    set_tests_properties(native.smo_native_real PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_smo_native_real_gpu_tests native/presentation/windows/smo_native_real_gpu_tests.cpp)
+    target_link_libraries(lgaed_smo_native_real_gpu_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_native_real_gpu COMMAND lgaed_smo_native_real_gpu_tests)
+    set_tests_properties(native.smo_native_real_gpu PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_smo_native_performance_tests native/presentation/windows/smo_native_performance_tests.cpp)
+    target_link_libraries(lgaed_smo_native_performance_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_native_performance COMMAND lgaed_smo_native_performance_tests)
+    set_tests_properties(native.smo_native_performance PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_smo_native_render_performance_tests EXCLUDE_FROM_ALL native/presentation/windows/smo_native_render_performance_tests.cpp)
+    target_link_libraries(lgaed_smo_native_render_performance_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_smo_native_render_performance_tests smo_native_render_dxbc_reference)
+    if(TARGET smo_native_render_spirv_reference)
+        add_dependencies(lgaed_smo_native_render_performance_tests smo_native_render_spirv_reference)
+    endif()
+    add_executable(lgaed_smo_f12_render_performance_tests EXCLUDE_FROM_ALL native/presentation/windows/smo_f12_render_performance_tests.cpp)
+    target_link_libraries(lgaed_smo_f12_render_performance_tests PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_smo_f12_render_performance_tests smo_program_render_dxbc_reference)
+    if(TARGET smo_program_render_spirv_reference)
+        add_dependencies(lgaed_smo_f12_render_performance_tests smo_program_render_spirv_reference)
+    endif()
+    if(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS)
+        set_target_properties(lgaed_smo_native_render_performance_tests lgaed_smo_f12_render_performance_tests
+            PROPERTIES EXCLUDE_FROM_ALL FALSE)
+        add_test(NAME native.smo_native_render_performance COMMAND lgaed_smo_native_render_performance_tests)
+        add_test(NAME native.smo_f12_render_performance COMMAND lgaed_smo_f12_render_performance_tests)
+        set_tests_properties(native.smo_native_render_performance native.smo_f12_render_performance PROPERTIES TIMEOUT 90)
+    endif()
+    add_custom_target(lgaed_smo_performance_tests DEPENDS
+        lgaed_smo_native_performance_tests lgaed_smo_native_render_performance_tests lgaed_smo_f12_render_performance_tests)
+    add_executable(lgaed_smo_view_tests native/presentation/windows/smo_view_tests.cpp)
+    target_link_libraries(lgaed_smo_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_triangle COMMAND lgaed_smo_view_tests triangle)
+    add_test(NAME native.smo_cube COMMAND lgaed_smo_view_tests cube)
+    add_test(NAME native.smo_triangle_f12 COMMAND lgaed_smo_view_tests triangle f12)
+    add_test(NAME native.smo_cube_f12 COMMAND lgaed_smo_view_tests cube f12)
+    set_tests_properties(native.smo native.smo_triangle native.smo_cube PROPERTIES TIMEOUT 60)
+    set_tests_properties(native.smo_triangle_f12 native.smo_cube_f12 PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_smo_benchmark_tests native/presentation/windows/smo_benchmark_tests.cpp)
+    target_link_libraries(lgaed_smo_benchmark_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_benchmark COMMAND lgaed_smo_benchmark_tests)
+    set_tests_properties(native.smo_benchmark PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_smo_sustained_tests native/presentation/windows/smo_sustained_tests.cpp)
+    target_link_libraries(lgaed_smo_sustained_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_sustained COMMAND lgaed_smo_sustained_tests)
+    set_tests_properties(native.smo_sustained PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_smo_rule_gpu_tests native/presentation/windows/smo_rule_gpu_tests.cpp)
+    target_link_libraries(lgaed_smo_rule_gpu_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_rules_gpu COMMAND lgaed_smo_rule_gpu_tests)
+    set_tests_properties(native.smo_rules_gpu PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_smo_duodecimal_tests native/presentation/windows/smo_duodecimal_gpu_tests.cpp)
+    target_link_libraries(lgaed_smo_duodecimal_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_duodecimal COMMAND lgaed_smo_duodecimal_tests)
+    set_tests_properties(native.smo_duodecimal PROPERTIES TIMEOUT 60)
+    add_executable(lgaed_smo_float12_cpu_tests native/presentation/windows/smo_float12_cpu_tests.cpp)
+    target_link_libraries(lgaed_smo_float12_cpu_tests PRIVATE lgaed_smo_arithmetic)
+    add_test(NAME native.smo_float12_cpu COMMAND lgaed_smo_float12_cpu_tests)
+    set_tests_properties(native.smo_float12_cpu PROPERTIES TIMEOUT 30)
+    add_test(NAME native.smo_float12_gpu COMMAND lgaed_smo_duodecimal_tests float12)
+    add_executable(lgaed_smo_program_gpu_tests native/presentation/windows/smo_program_gpu_tests.cpp)
+    target_link_libraries(lgaed_smo_program_gpu_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_program_gpu COMMAND lgaed_smo_program_gpu_tests)
+    set_tests_properties(native.smo_program_gpu PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_smo_radix_ablation_tests native/presentation/windows/smo_radix_ablation_tests.cpp)
+    target_link_libraries(lgaed_smo_radix_ablation_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_radix_ablation COMMAND lgaed_smo_radix_ablation_tests)
+    set_tests_properties(native.smo_radix_ablation PROPERTIES TIMEOUT 90)
+    set_tests_properties(native.smo_float12_gpu PROPERTIES TIMEOUT 60)
     add_dependencies(lgaed_tools_view_tests lgaed_narration_runtime)
     add_test(NAME native.tools_view COMMAND lgaed_tools_view_tests)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)

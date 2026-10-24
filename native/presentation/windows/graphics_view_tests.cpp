@@ -39,7 +39,14 @@ void exercise(HWND host,GraphicsBackend backend){unsigned returned=0;Window view
     Sleep(20);const auto moved_x=x+(x>area.right/2?-px(view.value,30):px(view.value,30));
     SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(moved_x,y-px(view.value,12)));
     const auto moved=until(view.value,[&](const auto& frame){return frame.selected==selected&&std::abs(frame.bodies[static_cast<std::size_t>(selected)].x-old_x)>0.01f;},"Dragging did not move the selected original physics body");
-    (void)moved;Sleep(20);SendMessageW(canvas,WM_LBUTTONUP,0,MAKELPARAM(moved_x,y-px(view.value,12)));
+    // Waiting for the asynchronous renderer above can exceed the real
+    // 120-ms velocity history. A release at the same old position then
+    // correctly represents a stopped hand. Model a fresh final stroke,
+    // rather than requiring momentum from an arbitrarily old movement.
+    (void)moved;Sleep(160);SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(moved_x,y-px(view.value,12)));Sleep(20);
+    const auto release_x=moved_x+(x>area.right/2?-px(view.value,10):px(view.value,10));
+    SendMessageW(canvas,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(release_x,y-px(view.value,12)));
+    SendMessageW(canvas,WM_LBUTTONUP,0,MAKELPARAM(release_x,y-px(view.value,12)));
     const auto released=until(view.value,[](const auto& frame){return frame.selected==-1;},"Mouse release retained sphere capture");
     check(std::abs(released.bodies[static_cast<std::size_t>(selected)].velocity_x)>0.01f&&GetCapture()!=canvas,"Measured mouse velocity did not launch the body or release capture");
     click(view.value,5263);auto benchmark=until(view.value,[](const auto& frame){return frame.benchmark&&frame.objects==64;},"The original GPU benchmark did not replace physics");

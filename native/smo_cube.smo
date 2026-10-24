@@ -1,0 +1,35 @@
+// El cubo tiene ocho vértices y 10 caras triangulares (doce en decimal).
+// La figura, el estado, su actualización y la orden de dibujo son SMO.
+vertice(-1, -1, -1);
+vertice(1, -1, -1);
+vertice(1, 1, -1);
+vertice(-1, 1, -1);
+vertice(-1, -1, 1);
+vertice(1, -1, 1);
+vertice(1, 1, 1);
+vertice(-1, 1, 1);
+cara(0, 2, 1);
+cara(0, 3, 2);
+cara(4, 5, 6);
+cara(4, 6, 7);
+cara(0, 1, 5);
+cara(0, 5, 4);
+cara(3, 7, 6);
+cara(3, 6, 2);
+cara(0, 4, 7);
+cara(0, 7, 3);
+cara(1, 2, 6);
+cara(1, 6, 5);
+
+estado giro = 0;
+estado velocidad = .6;
+
+al_actualizar {
+    giro = giro + velocidad * dt;
+}
+
+al_dibujar {
+    rotacion(giro / 2, giro, 0);
+    color(.2, .8, 1);
+    dibujar();
+}
