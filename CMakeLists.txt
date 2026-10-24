@@ -112,6 +112,8 @@ add_library(lgaed_presentation_windows STATIC
     native/presentation/windows/smo_program_shaders.cpp
     native/presentation/windows/smo_program_session.cpp
     native/presentation/windows/smo_radix_ablation.cpp
+    native/presentation/windows/smo_lazy_task.cpp
+    native/presentation/windows/smo_subdivision_task.cpp
     native/presentation/windows/settings_view.cpp
     native/presentation/windows/audio_course_view.cpp
     native/presentation/windows/narration_licenses.cpp
@@ -131,6 +133,19 @@ target_link_libraries(lgaed_smo_compile PRIVATE lgaed_presentation_windows)
 set_target_properties(lgaed_smo_compile PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 include(cmake/SmoSceneShaders.cmake)
 lgaed_prepare_smo_shaders(lgaed_presentation_windows)
+# Integrated laboratory tasks use the same existing compute backends and
+# author-time shader verification as the rest of the SMO laboratory.
+lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_lazy_task SMO_LAZY_MODE lazy_mode 5 LGAED_SMO_LAZY_HLSL_SHADER_ROOT
+    SHARED_CS50 smo_lazy_task.inc)
+lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 6 LGAED_SMO_SUBDIVISION_HLSL_SHADER_ROOT
+    SHARED_CS50 smo_float12.inc smo_subdivision_task.inc)
+get_target_property(_lgaed_task_glslc lgaed_presentation_windows LGAED_SMO_GLSLC)
+if(_lgaed_task_glslc)
+    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_lazy_task SMO_LAZY_MODE lazy_mode 5 LGAED_SMO_LAZY_SHADER_ROOT
+        smo_lazy_task.inc)
+    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 6 LGAED_SMO_SUBDIVISION_SHADER_ROOT
+        smo_float12.inc smo_subdivision_task.inc)
+endif()
 # Standard controls and trackbars require the official v6 activation context.
 # Propagate it to every consumer, including the actual UI regression hosts.
 target_link_options(lgaed_presentation_windows INTERFACE
@@ -156,6 +171,18 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    add_executable(lgaed_smo_lazy_task_tests native/presentation/windows/smo_lazy_task_tests.cpp)
+    target_link_libraries(lgaed_smo_lazy_task_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_lazy_task COMMAND lgaed_smo_lazy_task_tests)
+    add_executable(lgaed_smo_subdivision_task_tests native/presentation/windows/smo_subdivision_task_tests.cpp)
+    target_link_libraries(lgaed_smo_subdivision_task_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_subdivision_task COMMAND lgaed_smo_subdivision_task_tests)
+    set_tests_properties(native.smo_lazy_task native.smo_subdivision_task PROPERTIES TIMEOUT 90)
+    add_executable(lgaed_smo_task_view_tests native/presentation/windows/smo_task_view_tests.cpp)
+    target_link_libraries(lgaed_smo_task_view_tests PRIVATE lgaed_presentation_windows)
+    add_test(NAME native.smo_integrated_task_view COMMAND lgaed_smo_task_view_tests)
+    set_tests_properties(native.smo_integrated_task_view PROPERTIES TIMEOUT 60)
+    add_custom_target(lgaed_smo_integrated_tasks DEPENDS lgaed_smo_lazy_task_tests lgaed_smo_subdivision_task_tests lgaed_smo_task_view_tests lgaed_smo_view_tests)
     add_executable(lgaed_audio_schedule_tests native/core/audio_schedule_tests.cpp)
     target_link_libraries(lgaed_audio_schedule_tests PRIVATE lgaed_core)
     add_test(NAME native.audio_schedule COMMAND lgaed_audio_schedule_tests)

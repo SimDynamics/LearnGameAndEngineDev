@@ -4,6 +4,8 @@
 #include "presentation/windows/smo_rule_gpu.hpp"
 #include "presentation/windows/smo_duodecimal_gpu.hpp"
 #include "presentation/windows/smo_program_session.hpp"
+#include "presentation/windows/smo_lazy_task.hpp"
+#include "presentation/windows/smo_subdivision_task.hpp"
 #include "presentation/windows/native_menu.hpp"
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/icons.hpp"
@@ -25,17 +27,20 @@
 #include <stdexcept>
 #include <thread>
 #include <iomanip>
+#include <cmath>
 
 namespace lgaed::presentation {
 namespace {
 constexpr wchar_t lab_class[]=L"LearnGameAndEngineDev.SmoLab";
 constexpr int back_id=7100,run_id=7101,pause_id=7102,triangle_id=7103,cube_id=7104,
     rules_id=7105,benchmark_id=7106,particles_id=7107,sustained_id=7108,source_id=7110,status_id=7111,canvas_id=7112,title_id=7113,preview_id=7114,api_first_id=7120,
-    gpu_rules_id=7140,d12_id=7141,rules_api_id=7150,d12_api_id=7160;
+    gpu_rules_id=7140,d12_id=7141,tasks_id=7142,rules_api_id=7150,d12_api_id=7160,
+    lazy_first_id=7200,subdivision_first_id=7240;
 constexpr UINT_PTR frame_timer=1,save_timer=2;
 constexpr UINT benchmark_complete=WM_APP+71;
 constexpr UINT scene_progress=WM_APP+72;
 constexpr UINT program_progress=WM_APP+73;
+constexpr UINT task_progress=WM_APP+74;
 constexpr std::uint32_t blank_bgra=0xff0e1b30u;
 using Clock=std::chrono::steady_clock;
 LRESULT CALLBACK rules_text_proc(HWND item,UINT message,WPARAM wp,LPARAM lp,UINT_PTR,DWORD_PTR){
@@ -58,6 +63,7 @@ std::string rules_text(){return
     "La extensión a otras bases positivas es provisional: pdir(b,n) replica la magnitud b para n positivo y la niega para n negativo; pinv(b,n) usa b para |n|=1 y subdivide como 1/(b elevado a |n|-2) para |n|>=2. El caso cero es especial. Bases no positivas y exponentes no enteros aún no están definidos en este prototipo y producen un diagnóstico.\n\n"
     "Signos experimentales: si algún factor o divisor no nulo es negativo, el producto o cociente es negativo; también negativo por negativo. Suma y resta se interpretan como balance firmado de bloques. La regla de signos puede revisarse, no es una ley definitiva del usuario.\n\n"
     "Límites comprobados de la regla provisional de signos: no hay distributividad general: (-2)*(1-1)=0, pero (-2)*1+(-2)*(-1)=-4. Tampoco cancelación general: (-2)*1=(-2)*(-1), aunque 1 y -1 son distintos. En las potencias, pdir(2,1+0)=2 pero pdir(2,1)*pdir(2,0)=0. Con exponentes negativos: pdir(2,1)*pdir(2,-1)=-4 y pdir(2,0)=0. La recurrencia invertida tampoco cruza cero: pinv(2,0)/2=0, mientras pinv(2,1)=2. Estas pruebas no demuestran coherencia de todo SMO.\n\n"
+    "Identidad de composición experimental: en el perfil con cero como identidad del producto y potencia cero primaria 0, sea P_b(0)=0 y P_b(n)=b^n para b>0 y n entero positivo. Para n,m>=0 se cumple P_b(n+m)=P_b(n) ⊙ P_b(m): si algún índice es cero, actúa la identidad 0; si ambos son positivos, se aplica el producto positivo habitual. Es una demostración por casos del valor primario ideal. Las pruebas acotadas usan b=2 y n,m de 0 a 8 con resultados exactos. Para ejecutarla, los índices y sus sumas deben caber en el intervalo admitido [-64,64] y los valores deben ser representables sin redondeo. No incluye alternativas observables, redondeos, exponentes negativos ni la variante que cambia el exponente uno. Para Q_b(n)=b^(2-n), n,m>=2, la identidad interior es Q_b(n) ⊙ Q_b(m)=Q_b(n+m-2); no se extiende automáticamente por cero o ±1.\n\n"
     "Programa mínimo: vertice(x,y,z), cara(a,b,c), estado nombre=valor, al_actualizar { ... } y al_dibujar { rotacion(x,y,z); color(r,g,b); dibujar(); }. Las caras usan índices desde cero. // inicia comentarios; # y ~ siguen siendo cifras. Se admiten + - * /, pdir, pinv y alternativa. No hay bucles, archivos ni red.\n\n"
     "El host entrega dt como segundos reales transcurridos y ejecuta el bloque de actualización; el programa decide el nuevo estado y solicita el dibujo. Pausar omite por completo ese bloque, sin suponer que todos los programas se detienen al recibir dt=0. En los ejemplos, velocidad=0 sí mantiene el giro porque el producto predeterminado por cero es cero.\n\n"
     "Frontera gráfica del ensayo: los vértices, caras, colores y ángulos proceden del programa SMO. Rotación, seno/coseno aproximados, perspectiva, intersecciones y profundidad se calculan en la GPU con el formato base 12. Son extensiones geométricas explícitas, no una demostración de derivar la geometría de las reglas experimentales. Los ángulos son radianes y el envolvente gráfico permanece acotado; excederlo produce un diagnóstico. La ventana sólo presenta los píxeles ya calculados.\n\n"
@@ -76,11 +82,13 @@ LRESULT CALLBACK rules_proc(HWND window,UINT message,WPARAM wp,LPARAM lp){
 struct Lab {
     WindowsEnvironment environment;std::function<void()> on_back;GraphicsBackend backend;SmoProgramBackend program_backend;
     HWND window=nullptr,source=nullptr,canvas=nullptr,status=nullptr,title=nullptr,rules=nullptr,results=nullptr,preview=nullptr;
-    std::array<HWND,11> buttons{};HFONT font=nullptr,code_font=nullptr;HMODULE rich_edit_module=nullptr;std::unique_ptr<windows::CodeEditor> editor;
+    std::array<HWND,12> buttons{};HFONT font=nullptr,code_font=nullptr;HMODULE rich_edit_module=nullptr;std::unique_ptr<windows::CodeEditor> editor;
     std::unique_ptr<SmoProgramSession> program_session;bool program=false;
     std::optional<SmoProgramUpdate> program_image;std::uint32_t latest_vertices=0,latest_faces=0;std::string sample="triangle",locale="es",error,status_text;
     std::jthread benchmark;std::mutex benchmark_mutex;std::optional<SmoBenchmarkReport> benchmark_report;std::optional<SmoParticleReport> particle_report;std::optional<SmoSustainedReport> scene_report;std::optional<SmoSceneProgress> pending_progress;SmoSceneProgress displayed_progress;std::string benchmark_error;
     std::optional<SmoRuleGpuReport> rule_report;std::optional<SmoD12SceneReport> d12_report,d12_control_report;std::optional<SmoD12Validation> d12_validation;
+    std::optional<SmoLazyTaskReport> lazy_report;std::optional<SmoSubdivisionReport> subdivision_report;
+    std::string pending_task_status;
     std::function<void()> deferred_benchmark;
     enum class PreviewMode{none,program,benchmark};PreviewMode preview_mode=PreviewMode::none;
     bool benchmarking=false;
@@ -143,6 +151,58 @@ struct Lab {
         for(int i=1;i<=4;++i)EnableWindow(buttons[static_cast<std::size_t>(i)],TRUE);
         const std::array<std::string,5> captions{tr("Prueba GPU","GPU test","Test GPU"),tr("Partículas","Particles","Particules"),tr("1 min · APIs","1 min · APIs","1 min · API"),tr("Reglas GPU","GPU rules","Règles GPU"),tr("Motor base 12","Base-12 engine","Moteur base 12")};
         for(std::size_t i=0;i<captions.size();++i)SetWindowTextW(buttons[i+6],wide(captions[i]).c_str());
+        SetWindowTextW(buttons[11],wide(tr("Aplicaciones GPU","GPU applications","Applications GPU")).c_str());
+    }
+    void choose_tasks(){if(benchmarking){cancel_benchmark();return;}
+        const auto menu=CreatePopupMenu();if(!menu)throw std::runtime_error("Cannot create SMO task menu");
+        const auto lazy=CreatePopupMenu(),subdivision=CreatePopupMenu();
+        const std::array<const wchar_t*,4> names{L"DirectX 11",L"DirectX 12",L"Vulkan",L"OpenGL"};
+        for(unsigned api=0;api<4;++api){const auto arrangements=CreatePopupMenu();
+            for(unsigned layout=0;layout<2;++layout){const auto ratios=CreatePopupMenu();
+                for(unsigned ratio=0;ratio<5;++ratio){const auto caption=std::to_wstring(ratio*25)+L" % "+wide(tr("activos","active","actifs"));
+                    AppendMenuW(ratios,MF_STRING,lazy_first_id+api*10+layout*5+ratio,caption.c_str());}
+                AppendMenuW(arrangements,MF_POPUP,reinterpret_cast<UINT_PTR>(ratios),wide(layout==0?tr("Agrupados","Grouped","Groupés"):tr("Mezclados","Mixed","Mélangés")).c_str());}
+            AppendMenuW(lazy,MF_POPUP,reinterpret_cast<UINT_PTR>(arrangements),names[api]);
+            AppendMenuW(subdivision,MF_STRING,subdivision_first_id+api,names[api]);}
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(lazy),wide(tr("Omisión anticipada · tres variantes","Early omission · three variants","Omission anticipée · trois variantes")).c_str());
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(subdivision),wide(tr("Subdivisiones exactas F12 · tres variantes","Exact F12 subdivisions · three variants","Subdivisions exactes F12 · trois variantes")).c_str());
+        RECT area{};GetWindowRect(buttons[11],&area);UINT choice=0;{auto style=prepare_native_menu(menu,window);choice=TrackPopupMenuEx(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,area.left,area.bottom,window,nullptr);DestroyMenu(menu);}
+        if(choice>=lazy_first_id&&choice<lazy_first_id+40){const auto key=choice-lazy_first_id;start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5);}
+        else if(choice>=subdivision_first_id&&choice<subdivision_first_id+4)start_task(static_cast<SmoComputeApi>(choice-subdivision_first_id),true,0,true);
+    }
+    void start_task(SmoComputeApi api,bool subdivision,unsigned active,bool grouped){
+        if(benchmarking){cancel_benchmark();return;}if(!save()||!prepare_benchmark([this,api,subdivision,active,grouped]{start_task(api,subdivision,active,grouped);}))return;
+        benchmarking=true;error.clear();hide_preview();for(unsigned i=1;i<=4;++i)EnableWindow(buttons[i],FALSE);
+        for(unsigned i=6;i<buttons.size();++i)SetWindowTextW(buttons[i],wide(tr("Cancelar prueba","Cancel test","Annuler le test")).c_str());
+        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();lazy_report.reset();subdivision_report.reset();pending_progress.reset();benchmark_error.clear();}
+        label(tr("Preparando aplicación SMO y tres controles sobre el mismo estado…","Preparing SMO application and three variants from the same state…","Préparation de l’application SMO et des trois variantes depuis le même état…"));
+        benchmark=std::jthread([this,target=window,api,subdivision,active,grouped](std::stop_token stop){try{
+            SmoComputeOptions device;device.software=backend==GraphicsBackend::warp&&api==SmoComputeApi::direct3d11;
+            const auto progress=[this,target](std::string_view value){{std::lock_guard lock(benchmark_mutex);pending_task_status=std::string(value);}PostMessageW(target,task_progress,0,0);};
+            if(subdivision){SmoSubdivisionOptions options;options.api=api;options.device=device;options.items=device.software?65:4096;options.steps=device.software?2:4;options.rounds=device.software?3:21;options.warmups=device.software?1:3;
+                auto report=run_smo_subdivision_task(options,stop,progress);std::lock_guard lock(benchmark_mutex);subdivision_report=std::move(report);}
+            else{SmoLazyTaskOptions options;options.api=api;options.device=device;options.items=device.software?129:16384;options.active_percent=active;options.grouped=grouped;options.frames=device.software?2:4;options.rounds=device.software?3:21;options.warmups=device.software?1:3;
+                auto report=run_smo_lazy_task(options,stop,[&](unsigned percent){progress("Omisión de canales · "+std::to_string(percent)+" %");});std::lock_guard lock(benchmark_mutex);lazy_report=std::move(report);}
+        }catch(const std::exception& e){std::lock_guard lock(benchmark_mutex);benchmark_error=e.what();}PostMessageW(target,benchmark_complete,0,0);});
+    }
+    std::string task_text()const{std::ostringstream out;out<<std::fixed<<std::setprecision(5);
+        out<<"Aplicaciones SMO · comparación sobre el mismo estado inicial\n\n";
+        const auto spread=[&](const std::vector<double>& samples){if(samples.empty())return;auto ordered=samples;std::sort(ordered.begin(),ordered.end());
+            out<<"Muestras GPU: "<<samples.size()<<" · mínimo / P95 / máximo ms: "<<ordered.front()<<" / "<<ordered[static_cast<std::size_t>((ordered.size()-1)*.95)]<<" / "<<ordered.back()<<"\n";};
+        if(lazy_report){const auto& r=*lazy_report;out<<r.device.api<<" · "<<r.device.adapter<<"\n"<<r.contract<<"\n\nObjetos: "<<r.items<<" · activos: "<<r.active_items<<" · "<<(r.grouped?"agrupados":"mezclados")<<" · pasos por muestra: "<<r.frames<<"\n";
+            out<<"Preparación total / compilación SMO / shaders / subida ms: "<<r.preparation_ms<<" / "<<r.source_compile_ms<<" / "<<r.shader_prepare_ms<<" / "<<r.upload_ms<<"\nBytes solicitados para buffers GPU: "<<r.buffer_bytes<<" · pico RAM del proceso bytes: "<<r.process_peak_working_set<<" (no es VRAM)\nPalabras verificadas: "<<r.verified_words<<"\n\n";
+            out<<"Validación previa / calentamiento ms: "<<r.validation_ms<<" / "<<r.warmup_ms<<"\n\n";
+            for(const auto& v:r.variants){out<<v.name<<"\nGPU tarea / fotograma GPU / fotograma con lectura / lectura de píxeles / conversión CPU ms: "<<v.gpu_ms<<" / "<<v.frame_gpu_ms<<" / "<<v.frame_ms<<" / "<<v.readback_ms<<" / "<<v.conversion_ms<<"\nOperaciones IR lógicas: "<<v.executed_instructions<<" · escrituras de estado: "<<v.writes<<" · hash: "<<v.output_hash<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.gpu_samples);out<<"\n";}
+            out<<"SMO fuente → parser compartido → tablas de instrucciones por sentencia → GPU. El control convencional está especializado para este mismo programa. La omisión es un contrato experimental explícito de canal; no sustituye globalmente multiplicar por cero.\n\nCódigo SMO ejecutado:\n"<<r.source<<"\nIdentidad: "<<r.source_hash;
+        }else if(subdivision_report){const auto& r=*subdivision_report;out<<r.device.api<<" · "<<r.device.adapter<<"\n"<<r.contract<<"\n\nPuntos: "<<r.items<<" · pasos: "<<r.steps<<" · retícula exacta: "<<r.grid_scale<<"\nPreparación / compilación SMO / subida ms: "<<r.preparation_ms<<" / "<<r.source_compile_ms<<" / "<<r.upload_ms<<"\nLectura / validación ms: "<<r.readback_ms<<" / "<<r.validation_ms<<"\nBytes solicitados para buffers GPU: "<<r.gpu_buffer_bytes<<" · pico RAM proceso bytes: "<<r.process_peak_working_set<<" (no es VRAM)\nValores verificados: "<<r.verified_values<<"\n\n";
+            const std::array<const char*,3> names{"F12 general","F12 con escalado por exponente","Control convencional de retícula exacta"};
+            out<<"Shaders / comprobación previa / calentamiento ms: "<<r.shader_prepare_ms<<" / "<<r.preflight_ms<<" / "<<r.warmup_ms<<"\nLa conversión medida incluye el dibujo de puntos en la GPU.\n\n";
+            for(unsigned i=0;i<3;++i){const auto& v=r.variants[i];out<<names[i]<<"\nGPU tarea / conversión / fotograma GPU / fotograma con lectura ms: "<<v.task_median_ms<<" / "<<v.conversion_median_ms<<" / "<<v.frame_median_ms<<" / "<<v.wall_median_ms<<"\nHash puntos / imagen: "<<v.point_hash<<" / "<<v.image_hash<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.frame_gpu_ms);out<<"\n";}
+            out<<"SMO fuente → parser compartido → instrucciones F12 y prueba afín → GPU. General y especializado conservan F12 internamente mediante una máquina de instrucciones. El control convencional simplifica toda la actualización afín y usa la misma retícula y precisión exacta en el dominio aceptado. Por tanto, su diferencia de coste incluye la máquina de instrucciones, la representación y la simplificación, no sólo la base numérica.\n\nCódigo SMO ejecutado:\n"<<r.source;
+        }
+        out<<"\n\nLas medianas pequeñas o cercanas al 1 % no bastan para atribuir una ventaja. Se muestran las muestras y su dispersión; no son FPS de toda la aplicación. El fotograma medido incluye la tarea y su frontera de presentación declarada; el repintado de esta ventana ocurre después. Las variantes tienen la misma salida verificada: la vista muestra ese resultado común.\n";
+        if((lazy_report&&lazy_report->device.software)||(subdivision_report&&subdivision_report->device.software))out<<"WARP: verificación funcional; no es rendimiento físico.\n";
+        return out.str();
     }
     void cancel_benchmark(){if(deferred_benchmark){deferred_benchmark={};benchmarking=false;restore_execution_controls();label(tr("Prueba cancelada; código y borradores conservados.","Test cancelled; source and drafts preserved.","Test annulé ; code et brouillons conservés."));}
         else if(benchmark.joinable())benchmark.request_stop();}
@@ -157,7 +217,7 @@ struct Lab {
         for(int i=6;i<=8;++i)SetWindowTextW(buttons[static_cast<std::size_t>(i)],wide(tr("Cancelar prueba","Cancel test","Annuler le test")).c_str());
         if(program)SetWindowTextW(buttons[2],wide(tr("Reanudar","Resume","Reprendre")).c_str());
         label(tr("Preparando un minuto de escena dinámica…","Preparing a minute of dynamic scene work…","Préparation d’une minute de scène dynamique…"));
-        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();pending_progress.reset();benchmark_error.clear();}
+        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();lazy_report.reset();subdivision_report.reset();pending_progress.reset();benchmark_error.clear();}
         benchmark=std::jthread([this,target=window,api](std::stop_token stop){try{SmoSustainedOptions options;options.api=api;
             if(backend==GraphicsBackend::warp&&api==SmoComputeApi::direct3d11){options.device.software=true;options.seconds=.08;options.warmup_seconds=.02;options.calibrate=false;options.workload={64,36,16,4};}
             auto report=run_smo_sustained(options,[this,target](SmoSceneProgress update){{std::lock_guard lock(benchmark_mutex);pending_progress=std::move(update);}PostMessageW(target,scene_progress,0,0);},stop);
@@ -175,7 +235,7 @@ struct Lab {
     void start_math(SmoComputeApi api,bool duodecimal){if(benchmarking){cancel_benchmark();return;}if(!save()||!prepare_benchmark([this,api,duodecimal]{start_math(api,duodecimal);}))return;benchmarking=true;error.clear();hide_preview();
         for(int i=1;i<=4;++i)EnableWindow(buttons[static_cast<std::size_t>(i)],FALSE);for(std::size_t i=6;i<buttons.size();++i)SetWindowTextW(buttons[i],wide(tr("Cancelar prueba","Cancel test","Annuler le test")).c_str());
         label(duodecimal?tr("Motor experimental: formato duodecimal adaptable en la GPU…","Experimental engine: adaptive radix-12 format on the GPU…","Moteur expérimental : format duodécimal adaptatif sur le GPU…"):tr("Comprobando todas las reglas y variantes en la GPU…","Checking all rules and variants on the GPU…","Vérification de toutes les règles et variantes sur le GPU…"));
-        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();pending_progress.reset();benchmark_error.clear();}
+        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();lazy_report.reset();subdivision_report.reset();pending_progress.reset();benchmark_error.clear();}
         benchmark=std::jthread([this,target=window,api,duodecimal](std::stop_token stop){try{
             SmoComputeOptions device;device.software=backend==GraphicsBackend::warp&&api==SmoComputeApi::direct3d11;
             if(duodecimal){auto validation=validate_smo_duodecimal(api,device,!device.software,stop,{},true);if(!validation.failures.empty()){
@@ -210,7 +270,10 @@ struct Lab {
     HWND details(std::string_view heading,const std::string& body){
         WNDCLASSW cls{};cls.lpfnWndProc=rules_proc;cls.hInstance=GetModuleHandleW(nullptr);cls.lpszClassName=L"LearnGameAndEngineDev.SmoRules";cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);
         WNDCLASSW existing{};if(!GetClassInfoW(cls.hInstance,cls.lpszClassName,&existing))RegisterClassW(&cls);
-        return CreateWindowExW(WS_EX_TOOLWINDOW,cls.lpszClassName,wide(heading).c_str(),WS_OVERLAPPEDWINDOW|WS_VISIBLE,80,80,900,720,GetAncestor(window,GA_ROOT),nullptr,cls.hInstance,const_cast<std::string*>(&body));
+        MONITORINFO monitor{};monitor.cbSize=sizeof(monitor);if(!GetMonitorInfoW(MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST),&monitor))throw std::runtime_error("Cannot size SMO result window");
+        const auto width=std::min(px(900),static_cast<int>(monitor.rcWork.right-monitor.rcWork.left)-px(32));const auto height=std::min(px(720),static_cast<int>(monitor.rcWork.bottom-monitor.rcWork.top)-px(32));
+        const auto x=monitor.rcWork.left+(monitor.rcWork.right-monitor.rcWork.left-width)/2,y=monitor.rcWork.top+(monitor.rcWork.bottom-monitor.rcWork.top-height)/2;
+        return CreateWindowExW(WS_EX_TOOLWINDOW,cls.lpszClassName,wide(heading).c_str(),WS_OVERLAPPEDWINDOW|WS_VISIBLE,x,y,width,height,GetAncestor(window,GA_ROOT),nullptr,cls.hInstance,const_cast<std::string*>(&body));
     }
     std::string benchmark_text(const SmoBenchmarkReport& report)const{
         std::ostringstream out;out<<tr("Prueba de estrés GPU · resultados experimentales\n\n","GPU stress test · experimental results\n\n","Test de charge GPU · résultats expérimentaux\n\n")
@@ -271,22 +334,27 @@ struct Lab {
         SetWindowTextW(buttons[8],wide(tr("Cancelar prueba","Cancel test","Annuler le test")).c_str());
         if(program)SetWindowTextW(buttons[2],wide(tr("Reanudar","Resume","Reprendre")).c_str());
         label(tr("Prueba GPU real en curso; el editor sigue disponible. No se mide el intérprete ni la animación.","Real GPU test running; the editor remains available. The interpreter/animation is not being timed.","Test GPU réel en cours ; l’éditeur reste disponible. L’interpréteur et l’animation ne sont pas mesurés."));
-        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();pending_progress.reset();benchmark_error.clear();}
+        {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();lazy_report.reset();subdivision_report.reset();pending_progress.reset();benchmark_error.clear();}
         benchmark=std::jthread([this,target=window,particles](std::stop_token stop){try{
             if(particles){auto report=run_smo_particle_benchmark(backend,true,stop);std::lock_guard lock(benchmark_mutex);particle_report=std::move(report);}
             else{auto report=run_smo_benchmark(backend,65536,9,stop);std::lock_guard lock(benchmark_mutex);benchmark_report=std::move(report);}}
             catch(const std::exception& e){std::lock_guard lock(benchmark_mutex);benchmark_error=e.what();}PostMessageW(target,benchmark_complete,0,0);});
     }
     void benchmark_finished(){const bool cancelled=benchmark.get_stop_token().stop_requested();if(benchmark.joinable())benchmark.join();benchmarking=false;
+        restore_execution_controls();
         for(int i=1;i<=4;++i)EnableWindow(buttons[static_cast<std::size_t>(i)],TRUE);SetWindowTextW(buttons[6],wide(tr("Prueba GPU","GPU test","Test GPU")).c_str());SetWindowTextW(buttons[7],wide(tr("Partículas","Particles","Particules")).c_str());
         SetWindowTextW(buttons[8],wide(tr("1 min · APIs","1 min · APIs","1 min · API")).c_str());
         SetWindowTextW(buttons[9],wide(tr("Reglas GPU","GPU rules","Règles GPU")).c_str());SetWindowTextW(buttons[10],wide(tr("Motor base 12","Base-12 engine","Moteur base 12")).c_str());
         std::lock_guard lock(benchmark_mutex);if(cancelled){label(tr("Prueba cancelada; código y borradores conservados.","Test cancelled; source and drafts preserved.","Test annulé ; code et brouillons conservés."));return;}
-        if(!benchmark_report&&!particle_report&&!scene_report&&!rule_report&&!d12_validation){error=benchmark_error;label(error,true);return;}
+        if(!benchmark_report&&!particle_report&&!scene_report&&!rule_report&&!d12_validation&&!lazy_report&&!subdivision_report){error=benchmark_error;label(error,true);return;}
         const bool math_failed=(d12_validation&&!d12_validation->failures.empty())||(d12_report&&!d12_report->failures.empty())||(d12_control_report&&!d12_control_report->failures.empty())||
-            (rule_report&&!rule_report->equivalent);
+            (rule_report&&!rule_report->equivalent)||(lazy_report&&!lazy_report->equivalent)||(subdivision_report&&!subdivision_report->equivalent);
         label(math_failed?tr("La comprobación detectó fallos. Consulta sus diagnósticos; los tiempos no acreditan una mejora válida.","Validation found failures. See diagnostics; timings do not establish a valid improvement.","La vérification a détecté des erreurs. Consultez les diagnostics ; les temps ne prouvent pas une amélioration valide."):tr("Prueba terminada. Consulta equivalencia y tiempos en la ventana de resultados.","Test finished. See equivalence and timings in the results window.","Test terminé. Consultez l’équivalence et les temps dans la fenêtre de résultats."),math_failed);
-        if(results&&IsWindow(results))DestroyWindow(results);results=details(tr("SMO · Prueba de estrés GPU","SMO · GPU stress test","SMO · Test de charge GPU"),(rule_report||d12_validation)?math_text():scene_report?scene_text(*scene_report):particle_report?particle_text(*particle_report):benchmark_text(*benchmark_report));
+        if(lazy_report||subdivision_report){displayed_progress={};
+            if(subdivision_report){displayed_progress.width=subdivision_report->width;displayed_progress.height=subdivision_report->height;displayed_progress.preview_bgra=subdivision_report->preview_bgra;}
+            else{displayed_progress.width=lazy_report->width;displayed_progress.height=lazy_report->height;displayed_progress.preview_bgra=lazy_report->preview_bgra;}
+            preview_mode=PreviewMode::benchmark;ShowWindow(canvas,SW_HIDE);ShowWindow(preview,SW_SHOW);InvalidateRect(preview,nullptr,FALSE);}
+        if(results&&IsWindow(results))DestroyWindow(results);const auto heading=(lazy_report||subdivision_report)?tr("SMO · Aplicaciones GPU","SMO · GPU applications","SMO · Applications GPU"):tr("SMO · Prueba de estrés GPU","SMO · GPU stress test","SMO · Test de charge GPU");results=details(heading,(lazy_report||subdivision_report)?task_text():(rule_report||d12_validation)?math_text():scene_report?scene_text(*scene_report):particle_report?particle_text(*particle_report):benchmark_text(*benchmark_report));
     }
     bool save(){if(!editor)return true;try{const auto document=editor->document();
         if(!dirty&&document.selection_start==saved_selection_start&&document.selection_end==saved_selection_end)return true;
@@ -333,6 +401,7 @@ struct Lab {
         buttons[8]=control(L"BUTTON",tr("1 min · APIs","1 min · APIs","1 min · API"),sustained_id,WS_TABSTOP|BS_PUSHBUTTON);
         buttons[9]=control(L"BUTTON",tr("Reglas GPU","GPU rules","Règles GPU"),gpu_rules_id,WS_TABSTOP|BS_PUSHBUTTON);
         buttons[10]=control(L"BUTTON",tr("Motor base 12","Base-12 engine","Moteur base 12"),d12_id,WS_TABSTOP|BS_PUSHBUTTON);
+        buttons[11]=control(L"BUTTON",tr("Aplicaciones GPU","GPU applications","Applications GPU"),tasks_id,WS_TABSTOP|BS_PUSHBUTTON);
         for(std::size_t i=1;i<buttons.size();++i)reader_theme::primary_button(buttons[i]);
         title=control(L"STATIC",tr("Laboratorio SMO · Sistema Matemático Objetivo","SMO laboratory · Objective Mathematical System","Laboratoire SMO · Système mathématique objectif"),title_id);
         source=control(MSFTEDIT_CLASS,"",source_id,WS_TABSTOP|ES_MULTILINE|ES_WANTRETURN|ES_AUTOHSCROLL|WS_HSCROLL|WS_VSCROLL);
@@ -355,7 +424,7 @@ struct Lab {
         select(sample);layout();SetTimer(window,frame_timer,16,nullptr);}
     void layout(){if(!canvas)return;RECT area{};GetClientRect(window,&area);const auto width=static_cast<int>(area.right),height=static_cast<int>(area.bottom);const auto margin=px(12),gap=px(8),row=px(42);
         MoveWindow(buttons[0],margin,margin,row,row,TRUE);MoveWindow(title,margin+row+gap,margin,std::max(1,width-margin*2-row-gap),row,TRUE);
-        const int y=margin+row+gap,columns=width>=px(1400)?10:width>=px(900)?5:4,rows=(10+columns-1)/columns;for(int i=1;i<11;++i){const auto column=(i-1)%columns,level=(i-1)/columns;
+        const int y=margin+row+gap,columns=width>=px(1400)?11:width>=px(900)?6:4,rows=(11+columns-1)/columns;for(int i=1;i<12;++i){const auto column=(i-1)%columns,level=(i-1)/columns;
             const auto x=margin+(width-margin*2)*column/columns;MoveWindow(buttons[static_cast<std::size_t>(i)],x,y+level*(row+gap),std::max(1,(width-margin*2)/columns-gap),row,TRUE);}
         const int top=y+rows*(row+gap),bottom=std::max(top+1,height-px(66)-margin),usable=std::max(1,bottom-top);
         if(width>=px(760)){const auto left=(width-margin*2-gap)/2;MoveWindow(source,margin,top,left,usable,TRUE);MoveWindow(canvas,margin+left+gap,top,std::max(1,width-margin*2-left-gap),usable,TRUE);}
@@ -365,6 +434,9 @@ struct Lab {
     void changed(){if(loading||!editor)return;editor->capture_change();dirty=true;clear_program();hide_preview();
         error.clear();label(tr("Código modificado. Ejecuta de nuevo para aplicarlo.","Source changed. Run again to apply it.","Code modifié. Exécutez-le de nouveau pour l’appliquer."));SetTimer(window,save_timer,400,nullptr);}
     void command(int id){if(id==back_id){if(save()){const auto callback=on_back;if(callback)callback();}return;}
+        if(id==tasks_id){choose_tasks();return;}
+        if(id>=lazy_first_id&&id<lazy_first_id+40){const auto key=static_cast<unsigned>(id-lazy_first_id);start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5);return;}
+        if(id>=subdivision_first_id&&id<subdivision_first_id+4){start_task(static_cast<SmoComputeApi>(id-subdivision_first_id),true,0,true);return;}
         if(id==gpu_rules_id||id==d12_id){choose_math(id==d12_id);return;}
         if(id>=rules_api_id&&id<rules_api_id+4){start_math(static_cast<SmoComputeApi>(id-rules_api_id),false);return;}
         if(id>=d12_api_id&&id<d12_api_id+4){start_math(static_cast<SmoComputeApi>(id-d12_api_id),true);return;}
@@ -385,6 +457,7 @@ LRESULT CALLBACK procedure(HWND window,UINT message,WPARAM wp,LPARAM lp){auto* s
         case benchmark_complete:self->benchmark_finished();return 0;
         case scene_progress:self->update_scene_progress();return 0;
         case program_progress:self->update_program();return 0;
+        case task_progress:{std::string text;{std::lock_guard lock(self->benchmark_mutex);text=self->pending_task_status;}if(self->benchmarking)self->label(text);return 0;}
         case WM_MEASUREITEM:if(measure_native_menu(*reinterpret_cast<MEASUREITEMSTRUCT*>(lp)))return TRUE;break;
         case WM_MENUCHAR:{LRESULT result=0;if(native_menu_character(reinterpret_cast<HMENU>(lp),LOWORD(wp),result))return result;break;}
         case WM_DRAWITEM:{const auto& item=*reinterpret_cast<DRAWITEMSTRUCT*>(lp);if(draw_native_menu(item))return TRUE;if(item.CtlID==preview_id){self->draw_preview(item);return TRUE;}
