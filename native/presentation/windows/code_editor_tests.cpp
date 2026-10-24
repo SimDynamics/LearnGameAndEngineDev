@@ -245,6 +245,79 @@ int main() {
         require(submitted == 1, "Multiline editor does not submit");
     });
 
+    test("Physical Enter without ES_WANTRETURN inserts one plain newline without autoindent", [] {
+        for (const bool assistance : {false, true}) {
+            unsigned submitted = 0;
+            ChangeProbe probe;
+            Fixture field({"    {", {}, 5, 5}, true, [&] { ++submitted; }, assistance, &probe, false, false);
+            // Lesson answers use a multiline RichEdit without ES_WANTRETURN.
+            SetWindowLongPtrW(field.edit, GWL_STYLE, GetWindowLongPtrW(field.edit, GWL_STYLE) & ~ES_WANTRETURN);
+            SetFocus(field.edit);
+            require(GetFocus() == field.edit, "Focus the real output prediction editor");
+            MSG key{field.edit, WM_KEYDOWN, VK_RETURN, 1};
+            if (!IsDialogMessageW(field.host, &key)) {
+                TranslateMessage(&key);
+                DispatchMessageW(&key);
+            }
+            MSG character{};
+            while (PeekMessageW(&character, field.edit, WM_CHAR, WM_CHAR, PM_REMOVE)) DispatchMessageW(&character);
+            SendMessageW(field.edit, WM_KEYUP, VK_RETURN, 1);
+            const auto result = field.adapter->document();
+            require(result.text == "    {\n" && result.selection_start == 6 && result.selection_end == 6,
+                "Physical Enter failed to insert exactly one LF without copying indentation");
+            require(submitted == 0 && GetFocus() == field.edit && probe.notifications == 1 &&
+                probe.notifications_during_stream == 0 && !probe.callback_failed,
+                "Enter submitted, moved focus or notified before the completed edit");
+            field.adapter->undo();
+            require(field.adapter->document().text == "    {" && field.adapter->document().selection_start == 5,
+                "One Undo did not restore the text and caret before plain Enter");
+            field.adapter->redo();
+            require(field.adapter->document().text == result.text && field.adapter->document().selection_start == 6,
+                "One Redo did not restore the same plain newline");
+        }
+    });
+
+    test("Standalone Enter characters replace selections without requiring autoindent", [] {
+        for (const auto character : {L'\r', L'\n'}) {
+            unsigned submitted = 0;
+            Fixture field({"EntradaSalida", {}, 7, 13}, true, [&] { ++submitted; }, true, nullptr, false, false);
+            field.character(character);
+            const auto result = field.adapter->document();
+            require(result.text == "Entrada\n" && result.selection_start == 8 && result.selection_end == 8 && submitted == 0,
+                "A direct Enter character failed to replace the exact selection with one LF");
+            field.adapter->undo();
+            const auto original = field.adapter->document();
+            require(original.text == "EntradaSalida" && original.selection_start == 7 && original.selection_end == 13,
+                "Undo did not restore the selected output characters");
+        }
+    });
+
+    test("Single-line answers still submit once when autoindent is disabled", [] {
+        for (const bool assistance : {false, true}) {
+            unsigned submitted = 0;
+            Fixture field({"<<", {}, 2, 2}, false, [&] { ++submitted; }, assistance, nullptr, false, false);
+            field.key(VK_RETURN, L'\r');
+            require(submitted == 1 && field.adapter->document().text == "<<",
+                "A single-line key press inserted a newline or submitted twice");
+            field.character(L'\n');
+            require(submitted == 2 && field.adapter->document().text == "<<" && !SendMessageW(field.edit, EM_CANUNDO, 0, 0),
+                "Standalone single-line Enter edited the answer or lost its submit action");
+        }
+    });
+
+    test("Enter cannot modify or submit disabled and read-only answers", [] {
+        for (const bool multiline : {false, true}) for (const bool readonly : {false, true}) {
+            unsigned submitted = 0;
+            Fixture field({"answer", {}, 6, 6}, multiline, [&] { ++submitted; }, true, nullptr, false, false);
+            if (readonly) SendMessageW(field.edit, EM_SETREADONLY, TRUE, 0);
+            else EnableWindow(field.edit, FALSE);
+            field.key(VK_RETURN, L'\r');
+            field.character(L'\n');
+            require(field.adapter->document().text == "answer" && submitted == 0 && !SendMessageW(field.edit, EM_CANUNDO, 0, 0),
+                "A locked answer accepted a newline or submitted through the custom editor");
+        }
+    });
+
     test("Single-line and multiline code inputs share pairs and exact cursor placement", [] {
         for (const auto multiline : {false, true}) {
             Fixture field({}, multiline);

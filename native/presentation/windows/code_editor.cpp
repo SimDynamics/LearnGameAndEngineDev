@@ -419,9 +419,15 @@ struct CodeEditor::Impl {
     }
 
     bool newline() {
-        if (!multiline || !code_assistance || !auto_indent) return false;
+        if (!multiline) return false;
         const auto range=selection(window);
         const auto start=static_cast<std::size_t>(range.cpMin),end=static_cast<std::size_t>(range.cpMax);
+        // Output predictions and plain input still own Enter when programming
+        // indentation is disabled. Use the same complete undo transaction.
+        if (!code_assistance || !auto_indent) {
+            replace(start,end,L"\n",start+1,start+1);
+            return true;
+        }
         const auto previous= start ? now().text.rfind(L'\n',start-1) : std::wstring::npos;
         const auto line_start=previous==std::wstring::npos?0:previous+1;
         auto indent_end=line_start;
@@ -533,9 +539,16 @@ struct CodeEditor::Impl {
                 const auto key = lparam ? reinterpret_cast<MSG*>(lparam)->wParam : wparam;
                 if (self.code_assistance) result |= DLGC_WANTTAB;
                 else if (key == VK_TAB) result &= ~(DLGC_WANTTAB | DLGC_WANTALLKEYS);
-                if (!self.multiline && (wparam == VK_RETURN ||
-                        (lparam && reinterpret_cast<MSG*>(lparam)->wParam == VK_RETURN))) result |= DLGC_WANTALLKEYS;
+                if (key == VK_RETURN) result |= DLGC_WANTALLKEYS;
                 return result;
+            }
+            // Programmatic key delivery must respect the same lock as the
+            // native editor; custom newline insertion bypasses RichEdit's edit path.
+            if (((message == WM_KEYDOWN && wparam == VK_RETURN) ||
+                    (message == WM_CHAR && (wparam == L'\r' || wparam == L'\n'))) &&
+                    (!IsWindowEnabled(window) || (GetWindowLongPtrW(window,GWL_STYLE) & ES_READONLY))) {
+                self.suppress_enter_char = false;
+                return 0;
             }
             if (message == WM_UNDO || message == EM_UNDO) { self.undo(); return TRUE; }
             if (message == EM_REDO) { self.redo(); return TRUE; }
@@ -581,7 +594,7 @@ struct CodeEditor::Impl {
                     if (!std::exchange(self.suppress_enter_char, false) && self.submit) self.submit();
                     return 0;
                 }
-                if ((wparam == L'\r' || wparam == L'\n') && self.multiline && self.code_assistance && self.auto_indent) {
+                if ((wparam == L'\r' || wparam == L'\n') && self.multiline) {
                     if(!std::exchange(self.suppress_enter_char,false))self.newline();return 0;
                 }
                 if (self.code_assistance && wparam >= L' ' && wparam <= 0xFFFF &&
