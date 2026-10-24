@@ -1,13 +1,26 @@
 #pragma once
 #include "core/smo_native.hpp"
 #include "presentation/windows/smo_compute.hpp"
+#include <functional>
 
 namespace lgaed::presentation {
+enum class SmoNativePreparationStage {source_generation,kernel_creation};
+struct SmoNativePreparationEvent {
+    smo::NativeAction action=smo::NativeAction::reset;
+    SmoNativePreparationStage stage=SmoNativePreparationStage::source_generation;
+    bool beginning=true;
+    // Host wall time of the operation only, valid on its completion event.
+    // The observer's own time is excluded; this is never a GPU timestamp.
+    double wall_ms=0;
+};
 struct SmoNativeGpuOptions {
     SmoComputeApi api=SmoComputeApi::direct3d11;
     SmoComputeOptions device{true,{}};
     std::uint32_t items=1;
     smo::NativeScalarProfile scalar_profile=smo::NativeScalarProfile::ordinary_i32;
+    // Optional initialization observer. Empty by default: no preparation
+    // clocks, events or extra kernel compilation occur on the normal path.
+    std::function<void(const SmoNativePreparationEvent&)> preparation;
 };
 struct SmoNativeGpuExecution {
     smo::NativeAction action=smo::NativeAction::reset;

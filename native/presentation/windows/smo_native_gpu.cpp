@@ -219,7 +219,13 @@ struct SmoNativeGpuProgram::Impl {
     smo::NativeProgram compiled;std::unique_ptr<SmoCompute> gpu;std::array<SmoKernel,3> kernels{};std::array<SmoBuffer,8> buffers{};std::array<std::size_t,7> sizes{};
     U items=0,bank=0;std::uint64_t revision=0;std::stop_token stop;
     Impl(smo::NativeProgram program,const SmoNativeGpuOptions& options,std::stop_token token):compiled(std::move(program)),items(options.items),stop(token){validate(compiled);if(!items||items>1048576u)throw std::invalid_argument("El lote nativo admite1..1048576 instancias.");
-        canceled(stop);gpu=create(options,stop);for(unsigned action=0;action<3;++action){canceled(stop);kernels[action]=gpu->kernel(smo_native_kernel(compiled,static_cast<Action>(action)));}
+        canceled(stop);gpu=create(options,stop);
+        if(!options.preparation){for(unsigned action=0;action<3;++action){canceled(stop);kernels[action]=gpu->kernel(smo_native_kernel(compiled,static_cast<Action>(action)));}}
+        else for(unsigned index=0;index<3;++index){canceled(stop);const auto action=static_cast<Action>(index);
+            options.preparation({action,SmoNativePreparationStage::source_generation,true,0});const auto source_begin=std::chrono::steady_clock::now();
+            auto source=smo_native_kernel(compiled,action);const auto source_ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-source_begin).count();options.preparation({action,SmoNativePreparationStage::source_generation,false,source_ms});
+            options.preparation({action,SmoNativePreparationStage::kernel_creation,true,0});const auto kernel_begin=std::chrono::steady_clock::now();
+            kernels[index]=gpu->kernel(source);const auto kernel_ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-kernel_begin).count();options.preparation({action,SmoNativePreparationStage::kernel_creation,false,kernel_ms});}
         const auto twice=static_cast<std::uint64_t>(items)*2u;sizes={buffer_words(twice*compiled.ir.states.size()),buffer_words(twice*compiled.ir.vertices*3u),buffer_words(twice*compiled.ir.faces*3u),buffer_words(twice*smo::native_frame_words),buffer_words(static_cast<std::uint64_t>(items)*smo::native_status_words),buffer_words(items),buffer_words(compiled.scalarProfile==smo::NativeScalarProfile::ordinary_binary32?twice:0)};
         for(unsigned i=0;i<sizes.size();++i){const std::vector<U> zero(sizes[i],0);buffers[i]=gpu->buffer(sizes[i]*4u,bytes(std::span(zero)));}
     }

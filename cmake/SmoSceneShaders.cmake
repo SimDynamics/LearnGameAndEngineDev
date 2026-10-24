@@ -251,6 +251,9 @@ function(lgaed_prepare_smo_shaders target)
     target_include_directories("${target}" PRIVATE "${_cached_headers}")
     file(TO_CMAKE_PATH "${_root}" _root_definition)
     target_compile_definitions("${target}" PRIVATE LGAED_HAS_VULKAN=1 "LGAED_SMO_SHADER_ROOT=\"${_root_definition}\"")
+    # Isolated QA families reuse the selected installed compiler without
+    # preparing their extra shaders as dependencies of the application.
+    set_property(TARGET "${target}" PROPERTY LGAED_SMO_GLSLC "${_glslc}")
     message(STATUS "SMO Vulkan: ${_glslc}; Vulkan headers cached from ${_vulkan_headers}; 18 shared-body SPIR-V shaders.")
     lgaed_compile_smo_family("${target}" "${_glslc}" smo_rules MODE rule_mode 3 LGAED_SMO_RULE_SHADER_ROOT
         smo_arithmetic.inc smo_rules_common.inc)

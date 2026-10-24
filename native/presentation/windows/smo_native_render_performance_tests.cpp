@@ -1,5 +1,7 @@
 #include "presentation/windows/smo_native_render.hpp"
 #include "presentation/windows/smo_scene.hpp"
+#include <windows.h>
+#include <psapi.h>
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -13,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -21,6 +24,13 @@ using U=std::uint32_t;
 using Clock=std::chrono::steady_clock;
 std::size_t checks=0;
 void check(bool condition,std::string_view message){++checks;if(!condition)throw std::runtime_error(std::string(message));}
+// Windows reports these peaks over the PROCESS lifetime, not an invented
+// per-phase maximum or GPU VRAM estimate. PSAPI_VERSION2 resolves to Kernel32.
+void preparation_memory(std::string_view phase){PROCESS_MEMORY_COUNTERS_EX counters{};counters.cb=static_cast<DWORD>(sizeof(counters));
+    if(!GetProcessMemoryInfo(GetCurrentProcess(),reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),counters.cb))throw std::runtime_error("GetProcessMemoryInfo failed: "+std::to_string(GetLastError()));
+    std::cout<<"Preparation memory phase="<<phase<<" process_id="<<GetCurrentProcessId()<<" scope=process_lifetime peak_working_set_bytes="<<counters.PeakWorkingSetSize<<" current_working_set_bytes="<<counters.WorkingSetSize<<" peak_private_commit_bytes="<<counters.PeakPagefileUsage<<" current_private_commit_bytes="<<counters.PrivateUsage<<" GPU_VRAM_not_measured=true\n";}
+Clock::time_point preparation_begin(std::string_view phase){std::cout<<"Preparation begin="<<phase<<'\n';return Clock::now();}
+void preparation_end(std::string_view phase,Clock::time_point begin){const auto elapsed=std::chrono::duration<double,std::milli>(Clock::now()-begin).count();std::cout<<"Preparation phase="<<phase<<" wall_ms="<<elapsed<<'\n';preparation_memory(phase);}
 std::string numeral(U value){constexpr std::string_view digits="0123456789#~";std::string text;do{text.push_back(digits[value%12u]);value/=12u;}while(value);std::ranges::reverse(text);return text;}
 std::string eighth(int value){const bool negative=value<0;const auto magnitude=static_cast<unsigned>(negative?-value:value);check(magnitude<=8,"The authored benchmark coordinate left its exact eighth-unit fixture.");
     constexpr std::array<std::string_view,9> numbers{"0",".16",".3",".46",".6",".76",".9",".#6","1"};return (negative?"-":"")+std::string(numbers[magnitude]);}
@@ -58,14 +68,27 @@ void print_samples(std::string_view name,const Samples& samples){std::cout<<name
     <<" gpu_median_ms="<<quantile(samples.gpu,.5)<<" gpu_p95_ms="<<quantile(samples.gpu,.95)<<" wall_median_ms="<<quantile(samples.wall,.5)<<" readback_median_ms="<<quantile(samples.readback,.5)
     <<" measured_gpu_seconds="<<samples.gpu_sum/1000.0<<'\n';}
 struct Result {lgaed::smo::NativeRealFrame32 initial;SmoNativeImage initial_image;std::uint64_t pairs=0;bool timing_valid=false;};
-Result run(SmoNativeGpuOptions options,bool sustained,bool dense){const bool physical=!options.device.software;const U width=physical?512u:128u,height=physical?288u:72u,faces=dense?1536u:(physical?192u:12u),vertices=dense?1024u:(physical?128u:8u);
+Result run(SmoNativeGpuOptions options,bool sustained,bool dense,bool prepare){const auto preparation_start=Clock::now();preparation_memory("before_source");const bool physical=!options.device.software;const U width=physical?512u:128u,height=physical?288u:72u,faces=dense?1536u:(physical?192u:12u),vertices=dense?1024u:(physical?128u:8u);
+    const auto source_begin=preparation_begin("source_generation");
     const auto authored=authored_scene(physical,dense);check(authored.size()<=64u*1024u,"The dense fixture exceeded the existing64KiB source limit; no limits were changed.");
-    auto program=SmoNativeGpuProgram::compile(authored,options);SmoNativeRenderer renderer(program.compute(),width,height);const auto trace=pose_trace();
+    preparation_end("source_generation",source_begin);const auto frontend_begin=preparation_begin("SMO_frontend_to_SSA");auto compiled=lgaed::smo::native_compile(authored,{},options.scalar_profile);preparation_end("SMO_frontend_to_SSA",frontend_begin);
+    std::cout<<"Preparation graph source_bytes="<<authored.size()<<" reset_SSA_nodes="<<compiled.actions[0].instructions.size()<<" frame_SSA_nodes="<<compiled.actions[1].instructions.size()<<" step_SSA_nodes="<<compiled.actions[2].instructions.size()<<'\n';
+    options.preparation=[](const SmoNativePreparationEvent& event){const auto action=event.action==lgaed::smo::NativeAction::reset?"reset":event.action==lgaed::smo::NativeAction::frame?"frame":"step";
+        const auto stage=event.stage==SmoNativePreparationStage::source_generation?"native_artifact_generation":"GPU_kernel_creation";std::cout<<"Preparation action="<<action<<" stage="<<stage<<" event="<<(event.beginning?"begin":"complete");if(!event.beginning)std::cout<<" operation_wall_ms="<<event.wall_ms;std::cout<<'\n';
+        preparation_memory(std::string(action)+"/"+stage+(event.beginning?"/begin":"/complete"));};
+    const auto program_begin=preparation_begin("device_action_kernels_buffers_initial_reset");auto program=SmoNativeGpuProgram::from_program(std::move(compiled),options);preparation_end("device_action_kernels_buffers_initial_reset",program_begin);
+    std::cout<<"Preparation boundary: observer separates artifact generation and GPU kernel creation for each action; operation times exclude observer overhead. Outer from_program also includes device creation, buffers, initial reset and observer overhead. Runtime compiled bytecode is private to SmoCompute, so no instruction/loop counts are inferred from SSA.\n";
+    const auto renderer_begin=preparation_begin("renderer_cached_kernels_and_buffers");SmoNativeRenderer renderer(program.compute(),width,height);preparation_end("renderer_cached_kernels_and_buffers",renderer_begin);const auto trace=pose_trace();
+    const auto first_image_begin=preparation_begin("first_cached_image");const auto fixed_cached=renderer.render(program.frame_view());preparation_end("first_cached_image",first_image_begin);
+    std::cout<<"Preparation first_cached_pipeline_wall_ms="<<std::chrono::duration<double,std::milli>(Clock::now()-preparation_start).count()<<" includes_instrumentation=true excludes_additional_reset_and_uncached_QA=true\n";
+    if(prepare){const auto reset_begin=preparation_begin("additional_explicit_reset_QA");success(program.reset(false));preparation_end("additional_explicit_reset_QA",reset_begin);}
     const auto initial=program.inspect_binary32().items.at(0);check(initial.vertices.size()==vertices&&initial.faces.size()==faces,"The authored source did not supply the declared polygon count.");
-    const auto fixed_cached=renderer.render(program.frame_view()),fixed_uncached=renderer.render(program.frame_view(),false,SmoNativeRenderMode::reference_uncached);exact(fixed_cached,fixed_uncached,0,0);
+    const auto control_begin=preparation_begin("first_uncached_image_and_lazy_QA_kernel");const auto fixed_uncached=renderer.render(program.frame_view(),false,SmoNativeRenderMode::reference_uncached);preparation_end("first_uncached_image_and_lazy_QA_kernel",control_begin);exact(fixed_cached,fixed_uncached,0,0);
     check(std::isnan(fixed_cached.gpu_ms)&&std::isnan(fixed_cached.wall_ms)&&std::isnan(fixed_cached.readback_ms),"Normal UI rendering unexpectedly enabled benchmark profiling.");
     std::cout<<"Render cache experiment api="<<program.info().api<<" adapter="<<std::quoted(program.info().adapter)<<" software="<<program.info().software<<" resolution="<<width<<'x'<<height
         <<" dense="<<dense<<" cubes="<<faces/12u<<" vertices="<<vertices<<" triangles="<<faces<<" source_bytes="<<authored.size()<<" source_identity="<<program.program().identity<<" fixed_pose_hash="<<fixed_cached.pixel_hash<<'\n';
+    std::cout<<"Preparation total_through_exact_image_QA_wall_ms="<<std::chrono::duration<double,std::milli>(Clock::now()-preparation_start).count()<<" prepare_only="<<prepare<<" initial_all_BGRA_exact=true\n";preparation_memory("exact_initial_images_verified");
+    if(prepare){std::cout<<"Preparation-only mode: no warmups, no timed rendering pairs, no sustained minute and no render performance claim.\n";return {initial,fixed_cached,0,false};}
     std::cout<<"Contract: same hardware binary32/scalar tree/finite-normal guards/scene/pose for each pair. Cached5-dispatch batch includes face prepass; uncached4-dispatch batch has no unused prepass. No radix or polygon-count reduction is being measured.\n";
     for(unsigned warmup=0;warmup<2;++warmup){const std::array<U,1> time{trace[warmup+1u]};success(program.step_binary32(time,false));const auto view=program.frame_view();SmoNativeImage a,b;
         if(warmup%2u){b=renderer.render(view,false,SmoNativeRenderMode::reference_uncached);a=renderer.render(view);}else{a=renderer.render(view);b=renderer.render(view,false,SmoNativeRenderMode::reference_uncached);}exact(a,b,warmup,time[0]);}
@@ -82,18 +105,19 @@ Result run(SmoNativeGpuOptions options,bool sustained,bool dense){const bool phy
     if(timing_valid)std::cout<<"Measured uncached/cached median_GPU ratio="<<quantile(uncached.gpu,.5)/quantile(cached.gpu,.5)<<" median_wall_ratio="<<quantile(uncached.wall,.5)/quantile(cached.wall,.5)<<"; component timings, NOT application FPS or an assumed50% gain.\n";
     else std::cout<<"No performance ratio: GPU timestamps or retained samples are incomplete. Correctness evidence is separate.\n";
     if(sustained)check(elapsed>=60.0,"The requested real minute did not execute.");check(timing_valid||!physical,"Physical performance measurement has no valid GPU-clock evidence.");
-    return {initial,fixed_cached,pairs,timing_valid};}
+    preparation_memory("render_measurement_completed");return {initial,fixed_cached,pairs,timing_valid};}
 } //namespace
 
-int main(int argc,char** argv){try{std::cout<<std::unitbuf;bool hardware=false,sustained=false,dense=false;std::string selector="d3d11";bool selected=false;
-    for(int i=1;i<argc;++i){const std::string_view value=argv[i];if(value=="hardware")hardware=true;else if(value=="sustained")sustained=true;else if(value=="dense")dense=true;else if(value=="all"||value=="d3d11"||value=="d3d12"||value=="vulkan"||value=="opengl"){check(!selected,"Choose one API selector.");selector=value;selected=true;}else throw std::invalid_argument("Usage: smo_native_render_performance_tests [hardware] [d3d11|d3d12|vulkan|opengl|all] [sustained] [dense]");}
+int main(int argc,char** argv){try{std::cout<<std::unitbuf;bool hardware=false,sustained=false,dense=false,prepare=false;std::string selector="d3d11";bool selected=false;
+    for(int i=1;i<argc;++i){const std::string_view value=argv[i];if(value=="hardware")hardware=true;else if(value=="sustained")sustained=true;else if(value=="dense")dense=true;else if(value=="prepare")prepare=true;else if(value=="all"||value=="d3d11"||value=="d3d12"||value=="vulkan"||value=="opengl"){check(!selected,"Choose one API selector.");selector=value;selected=true;}else throw std::invalid_argument("Usage: smo_native_render_performance_tests [hardware] [d3d11|d3d12|vulkan|opengl|all] [sustained] [dense] [prepare]");}
+    check(!(prepare&&sustained),"Preparation-only mode cannot also request a sustained rendering minute.");
     check(!dense||hardware,"The optional1024-vertex/1536-triangle dense fixture requires explicit hardware selection.");
     check(!sustained||hardware,"Sustained512x288/192-triangle measurements require explicit hardware selection; quick WARP is separate.");if(hardware&&!selected)selector="all";
     std::optional<Result> baseline;std::string adapter;unsigned exercised=0;
     for(const auto api:{SmoComputeApi::direct3d11,SmoComputeApi::direct3d12,SmoComputeApi::vulkan,SmoComputeApi::opengl}){if(selector!="all"&&api!=smo_compute_api(selector))continue;
         SmoNativeGpuOptions options;options.api=api;options.device.software=!hardware;options.device.adapter_name=adapter;options.scalar_profile=lgaed::smo::NativeScalarProfile::ordinary_binary32;
-        auto probe=create_smo_compute(api,options.device);if(hardware){check(!probe->info().software,"Hardware rendering silently selected software.");if(adapter.empty())adapter=probe->info().adapter;options.device.adapter_name=adapter;}probe.reset();
-        auto result=run(options,sustained,dense);if(baseline){check(result.initial==baseline->initial,"Cross-API source/reset quantities or polygon metadata changed raw words.");check(result.initial_image.pixels.size()==baseline->initial_image.pixels.size(),"Cross-API fixed-pose dimensions differ.");
+        const auto probe_begin=preparation_begin("separate_QA_adapter_selection_probe");auto probe=create_smo_compute(api,options.device);if(hardware){check(!probe->info().software,"Hardware rendering silently selected software.");if(adapter.empty())adapter=probe->info().adapter;options.device.adapter_name=adapter;}probe.reset();preparation_end("separate_QA_adapter_selection_probe",probe_begin);
+        auto result=run(options,sustained,dense,prepare);if(baseline){check(result.initial==baseline->initial,"Cross-API source/reset quantities or polygon metadata changed raw words.");check(result.initial_image.pixels.size()==baseline->initial_image.pixels.size(),"Cross-API fixed-pose dimensions differ.");
             std::size_t differences=0;for(std::size_t pixel=0;pixel<result.initial_image.pixels.size();++pixel)if(result.initial_image.pixels[pixel]!=baseline->initial_image.pixels[pixel])++differences;
             std::cout<<"Cross-API fixed-pose hash="<<result.initial_image.pixel_hash<<" baseline_hash="<<baseline->initial_image.pixel_hash<<" actual_BGRA_differences="<<differences
                 <<" (reported separately: rotating native FDiv/trig does not promise universal cross-API pixel identity).\n";

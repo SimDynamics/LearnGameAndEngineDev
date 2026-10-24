@@ -148,9 +148,46 @@ std::optional<std::uint32_t> constant_real_index(std::uint32_t bits,std::uint32_
     if(exponent>=23)value=significand<<static_cast<unsigned>(exponent-23);
     else{const auto shift=static_cast<unsigned>(23-exponent);if(significand&((1u<<shift)-1u))return std::nullopt;value=significand>>shift;}
     return value<limit?std::optional(value):std::nullopt;}
+std::array<bool,3> reset_buffer_coverage(const NativeGraph& graph,const std::array<std::uint32_t,3>& elements){
+    // These are the existing validated-program bounds, not new restrictions.
+    // For an unvalidated descriptor, conservatively retain every fill.
+    if(elements[0]>65536u||elements[1]>1024u||elements[2]>2048u)return {};
+    std::array<std::vector<bool>,3> written{std::vector<bool>(elements[0]),std::vector<bool>(elements[1]),std::vector<bool>(elements[2])};
+    std::array<std::uint32_t,3> covered{};
+    for(const auto& node:graph.instructions){unsigned buffer=0;
+        switch(node.opcode){case NativeOpcode::store_state:buffer=0;break;case NativeOpcode::vertex:buffer=1;break;case NativeOpcode::face:buffer=2;break;default:continue;}
+        if(node.immediate>=elements[buffer])return {};
+        if(!written[buffer][node.immediate]){written[buffer][node.immediate]=true;++covered[buffer];}}
+    return {covered[0]==elements[0],covered[1]==elements[1],covered[2]==elements[2]};}
+struct ConstantGeometryTable {std::vector<std::array<std::uint32_t,4>> rows;std::array<std::uint32_t,2> counts{};};
+ConstantGeometryTable constant_geometry_table(const NativeGraph& graph,bool real,std::uint32_t vertices,std::uint32_t faces){
+    constexpr std::uint32_t minimum_rows=64,maximum_rows=4096;
+    std::vector<std::optional<std::uint32_t>> known(graph.value_count);std::array<bool,2> valid{true,true};
+    std::array<std::uint32_t,2> counts{};std::array<std::vector<std::array<std::uint32_t,4>>,2> rows;
+    for(const auto& node:graph.instructions){if(node.opcode==NativeOpcode::constant){if(!real||real_encoding(node.immediate)==NativeError::none)known.at(node.result)=node.immediate;}
+        else if(node.opcode==NativeOpcode::positive)known.at(node.result)=known.at(node.arguments[0]);
+        if(node.opcode!=NativeOpcode::vertex&&node.opcode!=NativeOpcode::face)continue;
+        const unsigned buffer=node.opcode==NativeOpcode::vertex?0u:1u;++counts[buffer];
+        if(node.immediate>=(buffer==0?vertices:faces)){valid[buffer]=false;continue;}
+        std::array<std::uint32_t,4> row{node.immediate*3u,0,0,0};bool proved=true;
+        for(unsigned axis=0;axis<3;++axis){const auto bits=known.at(node.arguments[axis]);if(!bits){proved=false;break;}
+            if(buffer==0)row[axis+1]=*bits;
+            else{const auto index=real?constant_real_index(*bits,vertices):(*bits<vertices?std::optional(*bits):std::nullopt);
+                if(!index){proved=false;break;}row[axis+1]=*index;}}
+        valid[buffer]=valid[buffer]&&proved;
+        if(proved&&rows[buffer].size()<maximum_rows)rows[buffer].push_back(row);}
+    ConstantGeometryTable result;const auto total=(valid[0]?counts[0]:0u)+(valid[1]?counts[1]:0u);
+    // One ICB holds at most4096uint4. Exceeding this optimization budget falls
+    // back to ordinary stores; it never restricts the accepted program graph.
+    // https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm
+    if(total<minimum_rows||total>maximum_rows)return result;
+    result.rows.reserve(total);for(unsigned buffer=0;buffer<2;++buffer)if(valid[buffer]){result.counts[buffer]=counts[buffer];
+        result.rows.insert(result.rows.end(),rows[buffer].begin(),rows[buffer].end());}return result;}
 std::string shaders(const NativeProgram& program,NativeAction action,bool glsl){if(static_cast<unsigned>(action)>2)throw std::invalid_argument("Acción nativa inexistente.");
     if(program.scalarProfile!=NativeScalarProfile::ordinary_i32&&program.scalarProfile!=NativeScalarProfile::ordinary_binary32)throw std::invalid_argument("Perfil escalar nativo desconocido.");
     const bool real=program.scalarProfile==NativeScalarProfile::ordinary_binary32;
+    const auto& graph=program.actions[static_cast<unsigned>(action)];
+    const auto geometry=glsl?ConstantGeometryTable{}:constant_geometry_table(graph,real,program.ir.vertices,program.ir.faces);
     std::ostringstream out;if(glsl)out<<R"(#version 430
 #define NI(x) int(x)
 #define NU(x) uint(x)
@@ -214,8 +251,11 @@ else{uint upperShift=shift-32u;significand=high>>upperShift;guard=(high>>(upperS
 if(guard!=0u&&(sticky!=0u||(significand&1u)!=0u))++significand;if(significand==0x1000000u){significand>>=1u;++top;}}
 result=((top+127u)<<23u)|(significand&0x7fffffu);}return result;}
 )";
+    if(!geometry.rows.empty()){out<<"static const uint4 nativeGeometry["<<geometry.rows.size()<<"]={\n";
+        for(std::size_t i=0;i<geometry.rows.size();++i){if(i)out<<",\n";const auto& row=geometry.rows[i];out<<"uint4("<<hex(row[0])<<","<<hex(row[1])<<","<<hex(row[2])<<","<<hex(row[3])<<")";}out<<"\n};\n";}
     out<<(glsl?"layout(local_size_x=64,local_size_y=1,local_size_z=1)in;void main(){uint index=gl_GlobalInvocationID.x;\n":"[numthreads(64,1,1)]void CSMain(uint3 thread:SV_DispatchThreadID){uint index=thread.x;\n");
     const auto states=static_cast<std::uint32_t>(program.ir.states.size()),vertices=program.ir.vertices,faces=program.ir.faces;
+    const auto overwritten=action==NativeAction::reset?reset_buffer_coverage(graph,{states,vertices,faces}):std::array<bool,3>{};
     out<<"uint count=parameters[0].x;if(index>=count)return;uint bank=parameters[0].y,old=parameters[0].z,s=index*4u;NDIAG diagnostic=NDIAG(0u,0u,0u,0u);\n";
     out<<"uint state=(bank*count+index)*"<<hex(states)<<",oldState=(old*count+index)*"<<hex(states)<<";uint vertex=(bank*count+index)*"<<hex(vertices*3)<<",oldVertex=(old*count+index)*"<<hex(vertices*3)<<";\n";
     out<<"uint face=(bank*count+index)*"<<hex(faces*3)<<",oldFace=(old*count+index)*"<<hex(faces*3)<<",frame=(bank*count+index)*10u;\n";
@@ -224,7 +264,12 @@ result=((top+127u)<<23u)|(significand&0x7fffffu);}return result;}
         "else nativeDt=nload(r5(index),diagnostic,0u,0u,0u);if(diagnostic.x!=0u){commit_error(s,diagnostic);return;}if(nativeDt<NF(0u)){bad(diagnostic,8u,0u,0u,0u);commit_error(s,diagnostic);return;}\n";}
     else if(action==NativeAction::step)out<<"if(NI(r5(index))<0){bad(diagnostic,8u,0u,0u,0u);commit_error(s,diagnostic);return;}\n";
     for(unsigned buffer=0;buffer<3;++buffer){const auto length=buffer==0?states:buffer==1?vertices*3:faces*3;const std::array<const char*,3> base{"state","vertex","face"},prior{"oldState","oldVertex","oldFace"};
-        if(length==0)continue;const auto counter="copy"+std::to_string(buffer);
+        // RESET terminals always write their fixed slot. No expression reads
+        // the work bank: load_state reads the separate immutable old bank.
+        // A full mask proves this fill dead even when an operation fails,
+        // because the runner never commits a bank with a nonzero diagnostic.
+        // Partial/manual graphs and every nonreset copy retain their fill.
+        if(length==0||overwritten[buffer])continue;const auto counter="copy"+std::to_string(buffer);
         out<<"for(uint "<<counter<<"=0u;"<<counter<<"<"<<hex(length)<<";++"<<counter<<")w"<<buffer<<"("<<base[buffer]<<"+"<<counter<<","<<(action==NativeAction::reset?"0u":"r"+std::to_string(buffer)+"("+prior[buffer]+"+"+counter+")")<<");\n";}
     const auto one=real?"0x3f800000u":"1u";
     // The header is not consumed during an action. Keep its final raw values
@@ -232,7 +277,7 @@ result=((top+127u)<<23u)|(significand&0x7fffffu);}return result;}
     // This also avoids overlapping byte-address stores during DXBC lowering.
     out<<"uint nativeRotation0=0u,nativeRotation1=0u,nativeRotation2=0u,nativeColor0="<<one<<",nativeColor1="<<one<<",nativeColor2="<<one<<",nativeDraw=0u;\n";
     const auto type=real?"precise float ":"int ",from=real?"NF":"NI",to=real?"NB":"NU";
-    const auto& graph=program.actions[static_cast<unsigned>(action)];std::vector<std::optional<std::uint32_t>> known(graph.value_count);
+    std::vector<std::optional<std::uint32_t>> known(graph.value_count);
     const auto raw_value=[&](std::uint32_t value){return known.at(value)?hex(*known.at(value)):std::string(to)+"("+id(value)+")";};
     for(std::size_t at=0;at<graph.instructions.size();++at){const auto& node=graph.instructions[at];const auto a=id(node.arguments[0]),b=id(node.arguments[1]);
         const auto location=",diagnostic,"+hex(node.line)+","+hex(node.column)+","+hex(static_cast<std::uint32_t>(at));
@@ -251,7 +296,11 @@ result=((top+127u)<<23u)|(significand&0x7fffffu);}return result;}
         case NativeOpcode::add:case NativeOpcode::subtract:case NativeOpcode::multiply:case NativeOpcode::divide:case NativeOpcode::power:{const char* name=node.opcode==NativeOpcode::add?"nadd":node.opcode==NativeOpcode::subtract?"nsub":node.opcode==NativeOpcode::multiply?"nmul":node.opcode==NativeOpcode::divide?"ndiv":"npow";
             out<<type<<id(node.result)<<"="<<name<<"("<<a<<","<<b<<location<<");\n";break;}
         case NativeOpcode::store_state:out<<"w0(state+"<<hex(node.immediate)<<","<<raw_value(node.arguments[0])<<");\n";break;
-        case NativeOpcode::vertex:case NativeOpcode::face:case NativeOpcode::rotation:case NativeOpcode::color:{std::array<std::string,3> indices;std::array<std::uint32_t,3> fixed_indices{};
+        case NativeOpcode::vertex:case NativeOpcode::face:case NativeOpcode::rotation:case NativeOpcode::color:{
+            // Only this store moves. Every graph node retains its ordinal and
+            // every literal/arithmetic diagnostic is still emitted in place.
+            if((node.opcode==NativeOpcode::vertex&&geometry.counts[0])||(node.opcode==NativeOpcode::face&&geometry.counts[1]))break;
+            std::array<std::string,3> indices;std::array<std::uint32_t,3> fixed_indices{};
             bool fixed_valid=node.opcode==NativeOpcode::face||node.opcode==NativeOpcode::color;
             for(unsigned axis=0;fixed_valid&&axis<3;++axis){const auto bits=known.at(node.arguments[axis]);if(!bits){fixed_valid=false;break;}
                 if(node.opcode==NativeOpcode::face){const auto index=real?constant_real_index(*bits,vertices):(*bits<vertices?std::optional(*bits):std::nullopt);
@@ -271,10 +320,22 @@ result=((top+127u)<<23u)|(significand&0x7fffffu);}return result;}
             if(node.opcode==NativeOpcode::rotation||node.opcode==NativeOpcode::color){const auto local=node.opcode==NativeOpcode::rotation?"nativeRotation":"nativeColor";
                 for(unsigned axis=0;axis<3;++axis)out<<local<<axis<<"="<<raw_value(node.arguments[axis])<<";\n";
             }else{const auto buffer=node.opcode==NativeOpcode::vertex?1:2;const auto start=(node.opcode==NativeOpcode::vertex?"vertex+":"face+")+hex(node.immediate*3);
-                for(unsigned axis=0;axis<3;++axis){out<<"w"<<buffer<<"("<<start<<"+"<<axis<<"u,";
-                    if(node.opcode==NativeOpcode::face&&fixed_valid)out<<hex(fixed_indices[axis]);else if(real&&node.opcode==NativeOpcode::face)out<<indices[axis];else out<<raw_value(node.arguments[axis]);out<<");\n";}}break;}
+                std::array<std::string,3> words;for(unsigned axis=0;axis<3;++axis){
+                    if(node.opcode==NativeOpcode::face&&fixed_valid)words[axis]=hex(fixed_indices[axis]);else if(real&&node.opcode==NativeOpcode::face)words[axis]=indices[axis];else words[axis]=raw_value(node.arguments[axis]);}
+                // Store3 requires only four-byte alignment, including for a
+                // three-word stride. The preceding terminal checks and the
+                // three raw payload words are unchanged; the header stays
+                // on its separate final scalar-store path.
+                // https://learn.microsoft.com/windows/win32/direct3dhlsl/sm5-object-rwbyteaddressbuffer-store3
+                if(!glsl)out<<"B"<<buffer<<".Store3(("<<start<<")*4u,uint3("<<words[0]<<","<<words[1]<<","<<words[2]<<"));\n";
+                else for(unsigned axis=0;axis<3;++axis)out<<"w"<<buffer<<"("<<start<<"+"<<axis<<"u,"<<words[axis]<<");\n";}break;}
         case NativeOpcode::draw:if(vertices<3||faces==0)out<<"bad(diagnostic,7u,"<<hex(node.line)<<","<<hex(node.column)<<","<<hex(static_cast<std::uint32_t>(at))<<");\n";else out<<"nativeDraw=1u;\n";break;}
     }
+    // Geometry is never read from scratch within an action. Constant stores
+    // may therefore be delayed, preserving duplicate order within each buffer.
+    // The normal ABI assigns the two geometry buffers separate allocations.
+    if(geometry.counts[0])out<<"[loop]for(uint nativeVertexRow=0u;nativeVertexRow<"<<hex(geometry.counts[0])<<";++nativeVertexRow){uint4 nativeVertexData=nativeGeometry[nativeVertexRow];B1.Store3((vertex+nativeVertexData.x)*4u,nativeVertexData.yzw);}\n";
+    if(geometry.counts[1])out<<"[loop]for(uint nativeFaceRow="<<hex(geometry.counts[0])<<";nativeFaceRow<"<<hex(static_cast<std::uint32_t>(geometry.rows.size()))<<";++nativeFaceRow){uint4 nativeFaceData=nativeGeometry[nativeFaceRow];B2.Store3((face+nativeFaceData.x)*4u,nativeFaceData.yzw);}\n";
     // Numeric helpers sanitize their outputs; addresses come from validated
     // static IR metadata. Continue straight-line work after a local fault,
     // retaining its first location, instead of creating a return CFG per node.

@@ -293,6 +293,37 @@ void repeated_frame_setters(SmoNativeGpuOptions options){options.items=17;const 
     exact_frames(program.inspect_binary32().items,before.items,"An overwritten invalid color changed the committed source frame.");exact_frames(control.inspect_binary32().items,manual_before.items,"An overwritten invalid color changed the committed manual frame.");
 }
 
+// Store counts alone do NOT establish complete reset coverage. Duplicate
+// authored slots must not allow reset's zero fill to be eliminated for holes.
+// Two full frame transactions first dirty BOTH banks, avoiding an initial-zero
+// false positive, then two resets exercise each dirty destination bank.
+void partial_reset_duplicate_slots(SmoNativeGpuOptions options){options.items=3;NativeProgram manual;manual.scalarProfile=real_profile;manual.identity="manual-native-partial-reset-duplicate-slots-v1";
+    constexpr std::uint32_t vertex_count=70u,face_count=65u;manual.ir.states={"written","omitted"};manual.ir.vertices=vertex_count;manual.ir.faces=face_count;
+    const auto tuple=[](Builder& builder,const std::array<std::uint32_t,3>& raw){return std::array{builder.constant(raw[0]),builder.constant(raw[1]),builder.constant(raw[2])};};
+    Builder reset(2);reset.store(0,reset.constant(0x3f800000u));reset.store(0,reset.constant(0x40000000u));
+    for(std::uint32_t vertex=0;vertex+1u<vertex_count;++vertex){std::array<std::uint32_t,3> raw{bits(static_cast<float>(vertex+1u)),bits(static_cast<float>(vertex+2u)),bits(static_cast<float>(vertex+3u))};if(vertex==1u)raw[0]=0x80000000u;reset.terminal(NativeOpcode::vertex,tuple(reset,raw),vertex);}
+    reset.terminal(NativeOpcode::vertex,tuple(reset,{0x40800000u,0x40a00000u,0x40c00000u}),0);
+    for(std::uint32_t face=0;face+1u<face_count;++face)reset.terminal(NativeOpcode::face,tuple(reset,{0x3f800000u,0x40000000u,0x40400000u}),face);
+    reset.terminal(NativeOpcode::face,tuple(reset,{0x40400000u,0x40000000u,0x3f800000u}),0);manual.actions[0]=std::move(reset.graph);
+    Builder frame(2);frame.store(0,frame.constant(0x40e00000u));frame.store(1,frame.constant(0x41000000u));
+    for(std::uint32_t vertex=0;vertex<vertex_count;++vertex)frame.terminal(NativeOpcode::vertex,tuple(frame,{bits(static_cast<float>(vertex+1u)),bits(static_cast<float>(vertex+4u)),bits(static_cast<float>(vertex+7u))}),vertex);
+    for(std::uint32_t face=0;face<face_count;++face)frame.terminal(NativeOpcode::face,tuple(frame,{0x3f800000u,0x40000000u,0x40400000u}),face);
+    frame.terminal(NativeOpcode::rotation,tuple(frame,{0x3f800000u,0x40000000u,0x40400000u}));
+    frame.terminal(NativeOpcode::color,tuple(frame,{0x3e800000u,0x3f000000u,0x3f400000u}));frame.terminal(NativeOpcode::draw);manual.actions[1]=std::move(frame.graph);
+    for(const auto& [opcode,count]:std::array<std::pair<NativeOpcode,std::size_t>,3>{{{NativeOpcode::store_state,2u},{NativeOpcode::vertex,vertex_count},{NativeOpcode::face,face_count}}})
+        check(static_cast<std::size_t>(std::ranges::count_if(manual.actions[0].instructions,[&](const auto& node){return node.opcode==opcode;}))==count,"The duplicate reset regression no longer matches the misleading store counts.");
+    check(native_hlsl(manual,NativeAction::reset).find("static const uint4 nativeGeometry[")!=std::string::npos&&native_hlsl(manual,NativeAction::frame).find("static const uint4 nativeGeometry[")!=std::string::npos,"The large partial-reset fixture did not exercise the actual HLSL constant-geometry table.");
+    auto program=SmoNativeGpuProgram::from_program(manual,options);auto expected=native_reference_real(manual,NativeAction::reset);check(expected.diagnostic.code==NativeError::none,"The independent partial-reset oracle rejected the manual graph.");
+    for(unsigned pass=0;pass<2u;++pass){const auto before=program.revision();expected=native_reference_real(manual,NativeAction::frame,expected.frame);check(expected.diagnostic.code==NativeError::none,"The bank-dirtying CPU frame was not valid.");
+        success(program.frame(false),options.items);check(program.revision()==before+1u,"A successful dirtying frame did not commit its own transaction.");const auto actual=program.inspect_binary32();exact_frames(actual.items,std::vector<NativeRealFrame32>(options.items,expected.frame),"Dirtying both banks differs from the independent CPU frame.");
+        for(const auto& item:actual.items)check(item.states[1]!=0u&&std::ranges::all_of(item.vertices.back(),[](auto word){return word!=0u;})&&std::ranges::all_of(item.faces.back(),[](auto index){return index!=0u;}),"The omitted reset slots were not actually nonzero before testing their clearing.");}
+    for(unsigned pass=0;pass<2u;++pass){const auto before=program.revision();expected=native_reference_real(manual,NativeAction::reset,expected.frame);check(expected.diagnostic.code==NativeError::none,"The CPU reset of dirty data failed.");success(program.reset(false),options.items);
+        check(program.revision()==before+1u,"A successful partial reset did not commit exactly once.");const auto actual=program.inspect_binary32();exact_frames(actual.items,std::vector<NativeRealFrame32>(options.items,expected.frame),"Partial reset retained dirty state/vertex/face slots despite duplicate store counts.");
+        for(const auto& item:actual.items)check(item.states[0]==0x40000000u&&item.states[1]==0u&&item.vertices.back()==std::array<std::uint32_t,3>{}&&item.faces.back()==std::array<std::uint32_t,3>{}&&item.vertices[0]==std::array<std::uint32_t,3>{0x40800000u,0x40a00000u,0x40c00000u}&&item.vertices[1][0]==0x80000000u&&item.faces[0]==std::array<std::uint32_t,3>{3u,2u,1u}&&item.rotation==std::array<std::uint32_t,3>{}&&item.color==std::array<std::uint32_t,3>{0x3f800000u,0x3f800000u,0x3f800000u}&&!item.draw_requested,
+            "Reset lost duplicate last-write semantics, negative-zero bits, zero holes, or the default frame header.");}
+    std::cout<<"PASS partial reset with duplicate slots api="<<program.info().api<<" items="<<options.items<<" vertices="<<vertex_count<<" faces="<<face_count<<" HLSL_table_generation_checked=true both_banks_dirtied=true two_full_CPU_exact_resets=true\n";
+}
+
 void invalid_inputs(SmoNativeGpuOptions options){options.items=2;auto program=SmoNativeGpuProgram::compile("estado a=1;estado r=0;al_actualizar{r=a+1;}al_dibujar{}",options);
     const std::array<std::uint32_t,2> dt{};
     for(const auto invalid:{0x7fc01234u,0x7f800000u,0xff800000u,0x00000001u,0x807fffffu}){
@@ -411,7 +442,7 @@ int main(int argc,char** argv){try{std::cout<<std::unitbuf;const bool hardware=a
     for(const auto api:{SmoComputeApi::direct3d11,SmoComputeApi::direct3d12,SmoComputeApi::vulkan,SmoComputeApi::opengl}){
         if(!all&&api!=smo_compute_api(selector))continue;SmoNativeGpuOptions options;options.api=api;options.scalar_profile=real_profile;options.device.software=!hardware;options.device.adapter_name=adapter;
         {auto probe=create_smo_compute(api,options.device);if(hardware){check(!probe->info().software,"A real GPU request used a software adapter.");if(adapter.empty())adapter=probe->info().adapter;options.device.adapter_name=adapter;}}
-        dynamic_rules(options);invalid_inputs(options);first_error_order(options);repeated_frame_setters(options);stable_raster(options);const auto batch=independent_batch(options);if(batch_baseline)exact_frames(batch,*batch_baseline,"Exactly dyadic source batches changed raw words across native APIs.");else batch_baseline=batch;
+        dynamic_rules(options);invalid_inputs(options);first_error_order(options);repeated_frame_setters(options);partial_reset_duplicate_slots(options);stable_raster(options);const auto batch=independent_batch(options);if(batch_baseline)exact_frames(batch,*batch_baseline,"Exactly dyadic source batches changed raw words across native APIs.");else batch_baseline=batch;
         const auto samples=samples_and_render(options);if(sample_baseline){check(samples.size()==sample_baseline->size(),"Cross-API authored sample coverage changed.");for(std::size_t i=0;i<samples.size();++i){
             approximate_frame(samples[i].frame,(*sample_baseline)[i].frame,smo_compute_api_name(api)+" crossAPI sample_index="+std::to_string(i)+" "+samples[i].name);check(samples[i].transformed.size()==(*sample_baseline)[i].transformed.size(),"Cross-API transformed geometry count changed.");
             for(std::size_t vertex=0;vertex<samples[i].transformed.size();++vertex)for(unsigned axis=0;axis<3;++axis)approximate_word(samples[i].transformed[vertex][axis],(*sample_baseline)[i].transformed[vertex][axis],
