@@ -135,15 +135,15 @@ include(cmake/SmoSceneShaders.cmake)
 lgaed_prepare_smo_shaders(lgaed_presentation_windows)
 # Integrated laboratory tasks use the same existing compute backends and
 # author-time shader verification as the rest of the SMO laboratory.
-lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_lazy_task SMO_LAZY_MODE lazy_mode 5 LGAED_SMO_LAZY_HLSL_SHADER_ROOT
+lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_lazy_task SMO_LAZY_MODE lazy_mode 11 LGAED_SMO_LAZY_HLSL_SHADER_ROOT
     SHARED_CS50 smo_lazy_task.inc)
-lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 6 LGAED_SMO_SUBDIVISION_HLSL_SHADER_ROOT
+lgaed_compile_smo_hlsl_family(lgaed_presentation_windows smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 7 LGAED_SMO_SUBDIVISION_HLSL_SHADER_ROOT
     SHARED_CS50 smo_float12.inc smo_subdivision_task.inc)
 get_target_property(_lgaed_task_glslc lgaed_presentation_windows LGAED_SMO_GLSLC)
 if(_lgaed_task_glslc)
-    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_lazy_task SMO_LAZY_MODE lazy_mode 5 LGAED_SMO_LAZY_SHADER_ROOT
+    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_lazy_task SMO_LAZY_MODE lazy_mode 11 LGAED_SMO_LAZY_SHADER_ROOT
         smo_lazy_task.inc)
-    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 6 LGAED_SMO_SUBDIVISION_SHADER_ROOT
+    lgaed_compile_smo_family(lgaed_presentation_windows "${_lgaed_task_glslc}" smo_subdivision_task SMO_SUBDIVISION_STAGE subdivision_stage 7 LGAED_SMO_SUBDIVISION_SHADER_ROOT
         smo_float12.inc smo_subdivision_task.inc)
 endif()
 # Standard controls and trackbars require the official v6 activation context.

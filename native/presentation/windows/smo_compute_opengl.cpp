@@ -137,9 +137,17 @@ class OpenGlCompute final:public SmoCompute {
     struct Program {GLuint name=0;std::vector<GLuint> subroutines;};
     Api gl_;HWND window_=nullptr;HDC dc_=nullptr;HGLRC context_=nullptr;std::wstring class_name_;
     bool registered_=false,poisoned_=false;DWORD owner_=GetCurrentThreadId();std::stop_token stop_;
+    std::function<void(const SmoComputePreparationEvent&)> preparation_;
     SmoComputeInfo info_;std::vector<Buffer> buffers_;std::vector<Program> programs_{{0,{}}};
     GLuint parameters_=0;std::array<GLuint,2> queries_{};std::array<GLuint,3> max_groups_{};
     std::size_t max_buffer_=0;GLint clock_bits_=0;
+
+    template<class F>void prepare(SmoComputePreparationStage stage,std::string_view name,std::size_t bytes,F&& operation){
+        if(!preparation_){operation();return;}
+        const auto begin=Clock::now();operation();
+        const auto wall_ms=std::chrono::duration<double,std::milli>(Clock::now()-begin).count();
+        preparation_({stage,std::string(name),bytes,wall_ms});
+    }
 
     struct Current {
         OpenGlCompute& self;HGLRC previous=nullptr;HDC dc=nullptr;bool switched=false;
@@ -279,9 +287,11 @@ class OpenGlCompute final:public SmoCompute {
         }
     }
 public:
-    OpenGlCompute(const SmoComputeOptions& options,std::stop_token stop):stop_(stop){
+    OpenGlCompute(const SmoComputeOptions& options,std::stop_token stop):stop_(stop),preparation_(options.preparation){
         cancelled(stop_);HGLRC previous=nullptr;HDC previous_dc=nullptr;
-        try{gl_.system();previous=gl_.GetCurrentContext();previous_dc=gl_.GetCurrentDC();create_context();configure();
+        try{gl_.system();previous=gl_.GetCurrentContext();previous_dc=gl_.GetCurrentDC();
+            prepare(SmoComputePreparationStage::context_creation,{},0,[&]{create_context();});
+            prepare(SmoComputePreparationStage::device_configuration,{},0,[&]{configure();});
             require(!options.software||info_.software,"OpenGL del controlador actual no ofrece el adaptador software solicitado; WARP sólo pertenece a Direct3D.");
             cancelled(stop_);require(gl_.MakeCurrent(previous_dc,previous)!=FALSE,"No se pudo restaurar el contexto OpenGL anterior.");
         }catch(...){release(previous,previous_dc);throw;}
@@ -302,11 +312,14 @@ public:
             // A non-debug context uses the installed GPU compiler's normal
             // optimization. OpenGL exposes no portable /O3 switch. The exact
             // source, including its precise qualifiers, is not rewritten.
-            gl_.CompileShader(shader);GLint compiled=0;gl_.GetShaderiv(shader,compile_status,&compiled);
-            require(compiled!=GL_FALSE,"Compilar GLSL "+source.name+": "+shader_log(shader,false));cancelled(stop_);
-            program=gl_.CreateProgram();require(program!=0,"No se pudo crear el programa GPU OpenGL.");gl_.AttachShader(program,shader);gl_.LinkProgram(program);
-            GLint linked=0;gl_.GetProgramiv(program,link_status,&linked);require(linked!=GL_FALSE,"Enlazar GLSL "+source.name+": "+shader_log(program,true));
-            gl_.check("Compilar y enlazar compute shader OpenGL");auto subroutines=subroutine_bindings(program,source.gl_subroutines);
+            prepare(SmoComputePreparationStage::shader_compilation,source.name,source.glsl.size(),[&]{
+                gl_.CompileShader(shader);GLint compiled=0;gl_.GetShaderiv(shader,compile_status,&compiled);
+                require(compiled!=GL_FALSE,"Compilar GLSL "+source.name+": "+shader_log(shader,false));});cancelled(stop_);
+            prepare(SmoComputePreparationStage::program_linking,source.name,source.glsl.size(),[&]{
+                program=gl_.CreateProgram();require(program!=0,"No se pudo crear el programa GPU OpenGL.");gl_.AttachShader(program,shader);gl_.LinkProgram(program);
+                GLint linked=0;gl_.GetProgramiv(program,link_status,&linked);require(linked!=GL_FALSE,"Enlazar GLSL "+source.name+": "+shader_log(program,true));});
+            gl_.check("Compilar y enlazar compute shader OpenGL");std::vector<GLuint> subroutines;
+            prepare(SmoComputePreparationStage::subroutine_bindings,source.name,source.glsl.size(),[&]{subroutines=subroutine_bindings(program,source.gl_subroutines);});
             cancelled(stop_);programs_.push_back({program,std::move(subroutines)});gl_.DeleteShader(shader);
             return static_cast<SmoKernel>(programs_.size()-1);
         }catch(...){if(program)gl_.DeleteProgram(program);gl_.DeleteShader(shader);throw;}

@@ -35,7 +35,7 @@ constexpr wchar_t lab_class[]=L"LearnGameAndEngineDev.SmoLab";
 constexpr int back_id=7100,run_id=7101,pause_id=7102,triangle_id=7103,cube_id=7104,
     rules_id=7105,benchmark_id=7106,particles_id=7107,sustained_id=7108,source_id=7110,status_id=7111,canvas_id=7112,title_id=7113,preview_id=7114,api_first_id=7120,
     gpu_rules_id=7140,d12_id=7141,tasks_id=7142,rules_api_id=7150,d12_api_id=7160,
-    lazy_first_id=7200,subdivision_first_id=7240;
+    lazy_first_id=7200,subdivision_first_id=7240,lazy_change_first_id=7300,lazy_slow_change_first_id=7400;
 constexpr UINT_PTR frame_timer=1,save_timer=2;
 constexpr UINT benchmark_complete=WM_APP+71;
 constexpr UINT scene_progress=WM_APP+72;
@@ -155,33 +155,36 @@ struct Lab {
     }
     void choose_tasks(){if(benchmarking){cancel_benchmark();return;}
         const auto menu=CreatePopupMenu();if(!menu)throw std::runtime_error("Cannot create SMO task menu");
-        const auto lazy=CreatePopupMenu(),subdivision=CreatePopupMenu();
+        const auto lazy=CreatePopupMenu(),changing=CreatePopupMenu(),slow_changing=CreatePopupMenu(),subdivision=CreatePopupMenu();
         const std::array<const wchar_t*,4> names{L"DirectX 11",L"DirectX 12",L"Vulkan",L"OpenGL"};
-        for(unsigned api=0;api<4;++api){const auto arrangements=CreatePopupMenu();
+        for(unsigned cadence=0;cadence<3;++cadence)for(unsigned api=0;api<4;++api){const auto arrangements=CreatePopupMenu();
             for(unsigned layout=0;layout<2;++layout){const auto ratios=CreatePopupMenu();
                 for(unsigned ratio=0;ratio<5;++ratio){const auto caption=std::to_wstring(ratio*25)+L" % "+wide(tr("activos","active","actifs"));
-                    AppendMenuW(ratios,MF_STRING,lazy_first_id+api*10+layout*5+ratio,caption.c_str());}
+                    AppendMenuW(ratios,MF_STRING,(cadence==0?lazy_first_id:cadence==1?lazy_change_first_id:lazy_slow_change_first_id)+api*10+layout*5+ratio,caption.c_str());}
                 AppendMenuW(arrangements,MF_POPUP,reinterpret_cast<UINT_PTR>(ratios),wide(layout==0?tr("Agrupados","Grouped","Groupés"):tr("Mezclados","Mixed","Mélangés")).c_str());}
-            AppendMenuW(lazy,MF_POPUP,reinterpret_cast<UINT_PTR>(arrangements),names[api]);
-            AppendMenuW(subdivision,MF_STRING,subdivision_first_id+api,names[api]);}
-        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(lazy),wide(tr("Omisión anticipada · tres variantes","Early omission · three variants","Omission anticipée · trois variantes")).c_str());
-        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(subdivision),wide(tr("Subdivisiones exactas F12 · tres variantes","Exact F12 subdivisions · three variants","Subdivisions exactes F12 · trois variantes")).c_str());
+            AppendMenuW(cadence==0?lazy:cadence==1?changing:slow_changing,MF_POPUP,reinterpret_cast<UINT_PTR>(arrangements),names[api]);
+            if(cadence==0)AppendMenuW(subdivision,MF_STRING,subdivision_first_id+api,names[api]);}
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(lazy),wide(tr("Canales estables · cinco variantes","Stable channels · five variants","Canaux stables · cinq variantes")).c_str());
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(changing),wide(tr("Cambiar canales en cada fotograma","Change channels every frame","Changer les canaux à chaque image")).c_str());
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(slow_changing),wide(tr("Cambiar canales cada cuatro fotogramas","Change channels every four frames","Changer les canaux toutes les quatre images")).c_str());
+        AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(subdivision),wide(tr("Subdivisiones exactas F12 · cuatro variantes","Exact F12 subdivisions · four variants","Subdivisions exactes F12 · quatre variantes")).c_str());
         RECT area{};GetWindowRect(buttons[11],&area);UINT choice=0;{auto style=prepare_native_menu(menu,window);choice=TrackPopupMenuEx(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,area.left,area.bottom,window,nullptr);DestroyMenu(menu);}
         if(choice>=lazy_first_id&&choice<lazy_first_id+40){const auto key=choice-lazy_first_id;start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5);}
         else if(choice>=subdivision_first_id&&choice<subdivision_first_id+4)start_task(static_cast<SmoComputeApi>(choice-subdivision_first_id),true,0,true);
+        else if((choice>=lazy_change_first_id&&choice<lazy_change_first_id+40)||(choice>=lazy_slow_change_first_id&&choice<lazy_slow_change_first_id+40)){const bool slow=choice>=lazy_slow_change_first_id;const auto key=choice-(slow?lazy_slow_change_first_id:lazy_change_first_id);start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5,slow?4u:1u);}
     }
-    void start_task(SmoComputeApi api,bool subdivision,unsigned active,bool grouped){
-        if(benchmarking){cancel_benchmark();return;}if(!save()||!prepare_benchmark([this,api,subdivision,active,grouped]{start_task(api,subdivision,active,grouped);}))return;
+    void start_task(SmoComputeApi api,bool subdivision,unsigned active,bool grouped,unsigned change_every=0){
+        if(benchmarking){cancel_benchmark();return;}if(!save()||!prepare_benchmark([this,api,subdivision,active,grouped,change_every]{start_task(api,subdivision,active,grouped,change_every);}))return;
         benchmarking=true;error.clear();hide_preview();for(unsigned i=1;i<=4;++i)EnableWindow(buttons[i],FALSE);
         for(unsigned i=6;i<buttons.size();++i)SetWindowTextW(buttons[i],wide(tr("Cancelar prueba","Cancel test","Annuler le test")).c_str());
         {std::lock_guard lock(benchmark_mutex);benchmark_report.reset();particle_report.reset();scene_report.reset();rule_report.reset();d12_report.reset();d12_control_report.reset();d12_validation.reset();lazy_report.reset();subdivision_report.reset();pending_progress.reset();benchmark_error.clear();}
-        label(tr("Preparando aplicación SMO y tres controles sobre el mismo estado…","Preparing SMO application and three variants from the same state…","Préparation de l’application SMO et des trois variantes depuis le même état…"));
-        benchmark=std::jthread([this,target=window,api,subdivision,active,grouped](std::stop_token stop){try{
+        label(tr("Preparando variantes sobre el mismo estado inicial…","Preparing variants from the same initial state…","Préparation des variantes depuis le même état initial…"));
+        benchmark=std::jthread([this,target=window,api,subdivision,active,grouped,change_every](std::stop_token stop){try{
             SmoComputeOptions device;device.software=backend==GraphicsBackend::warp&&api==SmoComputeApi::direct3d11;
             const auto progress=[this,target](std::string_view value){{std::lock_guard lock(benchmark_mutex);pending_task_status=std::string(value);}PostMessageW(target,task_progress,0,0);};
             if(subdivision){SmoSubdivisionOptions options;options.api=api;options.device=device;options.items=device.software?65:4096;options.steps=device.software?2:4;options.rounds=device.software?3:21;options.warmups=device.software?1:3;
                 auto report=run_smo_subdivision_task(options,stop,progress);std::lock_guard lock(benchmark_mutex);subdivision_report=std::move(report);}
-            else{SmoLazyTaskOptions options;options.api=api;options.device=device;options.items=device.software?129:16384;options.active_percent=active;options.grouped=grouped;options.frames=device.software?2:4;options.rounds=device.software?3:21;options.warmups=device.software?1:3;
+            else{SmoLazyTaskOptions options;options.api=api;options.device=device;options.items=device.software?129:16384;options.active_percent=active;options.grouped=grouped;options.change_every=change_every;options.frames=device.software?5:8;options.rounds=device.software?3:21;options.warmups=device.software?1:3;
                 auto report=run_smo_lazy_task(options,stop,[&](unsigned percent){progress("Omisión de canales · "+std::to_string(percent)+" %");});std::lock_guard lock(benchmark_mutex);lazy_report=std::move(report);}
         }catch(const std::exception& e){std::lock_guard lock(benchmark_mutex);benchmark_error=e.what();}PostMessageW(target,benchmark_complete,0,0);});
     }
@@ -190,15 +193,23 @@ struct Lab {
         const auto spread=[&](const std::vector<double>& samples){if(samples.empty())return;auto ordered=samples;std::sort(ordered.begin(),ordered.end());
             out<<"Muestras GPU: "<<samples.size()<<" · mínimo / P95 / máximo ms: "<<ordered.front()<<" / "<<ordered[static_cast<std::size_t>((ordered.size()-1)*.95)]<<" / "<<ordered.back()<<"\n";};
         if(lazy_report){const auto& r=*lazy_report;out<<r.device.api<<" · "<<r.device.adapter<<"\n"<<r.contract<<"\n\nObjetos: "<<r.items<<" · activos: "<<r.active_items<<" · "<<(r.grouped?"agrupados":"mezclados")<<" · pasos por muestra: "<<r.frames<<"\n";
+            out<<"Cambio de máscara cada N fotogramas (0=estable): "<<r.change_every<<"\nReinicio de ensayos independientes, fuera del fotograma (ms acumulados): "<<r.trial_reset_ms<<"\n";
+            out<<"Memoria adicional de agrupación por variante, índices y prefijos (bytes): "<<r.group_extra_buffer_bytes<<"\n";
             out<<"Preparación total / compilación SMO / shaders / subida ms: "<<r.preparation_ms<<" / "<<r.source_compile_ms<<" / "<<r.shader_prepare_ms<<" / "<<r.upload_ms<<"\nBytes solicitados para buffers GPU: "<<r.buffer_bytes<<" · pico RAM del proceso bytes: "<<r.process_peak_working_set<<" (no es VRAM)\nPalabras verificadas: "<<r.verified_words<<"\n\n";
             out<<"Validación previa / calentamiento ms: "<<r.validation_ms<<" / "<<r.warmup_ms<<"\n\n";
-            for(const auto& v:r.variants){out<<v.name<<"\nGPU tarea / fotograma GPU / fotograma con lectura / lectura de píxeles / conversión CPU ms: "<<v.gpu_ms<<" / "<<v.frame_gpu_ms<<" / "<<v.frame_ms<<" / "<<v.readback_ms<<" / "<<v.conversion_ms<<"\nOperaciones IR lógicas: "<<v.executed_instructions<<" · escrituras de estado: "<<v.writes<<" · hash: "<<v.output_hash<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.gpu_samples);out<<"\n";}
+            out<<"Las sondas aisladas de reagrupar se toman en caliente después de validar. El coste necesario ya está incluido en el fotograma: no se suma otra vez. La asignación por variante incluye el scratch compartido; el total de memoria lo cuenta una sola vez.\n\n";
+            for(const auto& v:r.variants){out<<v.name<<"\nGPU tarea / fotograma GPU / fotograma con lectura / lectura de píxeles / conversión CPU ms: "<<v.gpu_ms<<" / "<<v.frame_gpu_ms<<" / "<<v.frame_ms<<" / "<<v.readback_ms<<" / "<<v.conversion_ms<<"\nOperaciones IR lógicas: "<<v.executed_instructions<<" · escrituras de estado: "<<v.writes<<" · hash: "<<v.output_hash<<"\nAgrupación inicial GPU ms / sonda aislada de reagrupar ms / reconstrucciones medidas: "<<v.initial_group_gpu_ms<<" / "<<v.group_gpu_ms<<" / "<<v.group_rebuilds<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.gpu_samples);out<<"\n";}
+            for(unsigned i:{3u,4u}){const auto& grouped=r.variants[i];const auto& baseline=r.variants[i==3?1:2];const double saving=baseline.frame_gpu_ms-grouped.frame_gpu_ms;
+                out<<"Coste inicial de agrupar GPU / vuelta host / asignación adicional (ms): "<<grouped.initial_group_gpu_ms<<" / "<<grouped.initial_group_wall_ms<<" / "<<grouped.group_allocation_ms<<"\n";
+                out<<"Amortización GPU de "<<grouped.name<<": ";if(!r.change_every&&saving>0&&std::isfinite(grouped.initial_group_gpu_ms)&&grouped.initial_group_gpu_ms>=0&&grouped.timing_valid&&baseline.timing_valid)out<<std::ceil(grouped.initial_group_gpu_ms/saving)<<" fotogramas estimados, sólo GPU; no es amortización de toda la app.\n";else out<<"sin amortización estática acreditada; comparar el coste completo de cada cambio.\n";}
             out<<"SMO fuente → parser compartido → tablas de instrucciones por sentencia → GPU. El control convencional está especializado para este mismo programa. La omisión es un contrato experimental explícito de canal; no sustituye globalmente multiplicar por cero.\n\nCódigo SMO ejecutado:\n"<<r.source<<"\nIdentidad: "<<r.source_hash;
         }else if(subdivision_report){const auto& r=*subdivision_report;out<<r.device.api<<" · "<<r.device.adapter<<"\n"<<r.contract<<"\n\nPuntos: "<<r.items<<" · pasos: "<<r.steps<<" · retícula exacta: "<<r.grid_scale<<"\nPreparación / compilación SMO / subida ms: "<<r.preparation_ms<<" / "<<r.source_compile_ms<<" / "<<r.upload_ms<<"\nLectura / validación ms: "<<r.readback_ms<<" / "<<r.validation_ms<<"\nBytes solicitados para buffers GPU: "<<r.gpu_buffer_bytes<<" · pico RAM proceso bytes: "<<r.process_peak_working_set<<" (no es VRAM)\nValores verificados: "<<r.verified_values<<"\n\n";
-            const std::array<const char*,3> names{"F12 general","F12 con escalado por exponente","Control convencional de retícula exacta"};
+            const std::array<const char*,4> names{"F12 general","F12 con escalado por exponente","Control convencional de retícula exacta",r.direct_f12?"F12 directo sin máquina de instrucciones":"F12 por instrucciones: fuente no canónica"};
             out<<"Shaders / comprobación previa / calentamiento ms: "<<r.shader_prepare_ms<<" / "<<r.preflight_ms<<" / "<<r.warmup_ms<<"\nLa conversión medida incluye el dibujo de puntos en la GPU.\n\n";
-            for(unsigned i=0;i<3;++i){const auto& v=r.variants[i];out<<names[i]<<"\nGPU tarea / conversión / fotograma GPU / fotograma con lectura ms: "<<v.task_median_ms<<" / "<<v.conversion_median_ms<<" / "<<v.frame_median_ms<<" / "<<v.wall_median_ms<<"\nHash puntos / imagen: "<<v.point_hash<<" / "<<v.image_hash<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.frame_gpu_ms);out<<"\n";}
-            out<<"SMO fuente → parser compartido → instrucciones F12 y prueba afín → GPU. General y especializado conservan F12 internamente mediante una máquina de instrucciones. El control convencional simplifica toda la actualización afín y usa la misma retícula y precisión exacta en el dominio aceptado. Por tanto, su diferencia de coste incluye la máquina de instrucciones, la representación y la simplificación, no sólo la base numérica.\n\nCódigo SMO ejecutado:\n"<<r.source;
+            for(unsigned i=0;i<r.variants.size();++i){const auto& v=r.variants[i];out<<names[i]<<"\nGPU tarea / conversión / fotograma GPU / fotograma con lectura ms: "<<v.task_median_ms<<" / "<<v.conversion_median_ms<<" / "<<v.frame_median_ms<<" / "<<v.wall_median_ms<<"\nHash puntos / imagen: "<<v.point_hash<<" / "<<v.image_hash<<"\nReloj GPU válido: "<<(v.timing_valid?"sí":"NO; no acredita rendimiento")<<"\n";spread(v.frame_gpu_ms);out<<"\n";}
+            out<<"Preparación por etapa: recursos/verificación / creación del kernel (ms)\n";for(unsigned i=0;i<smo_subdivision_stages;++i)out<<i<<": "<<r.shader_asset_ms[i]<<" / "<<r.shader_creation_ms[i]<<"\n";
+            const std::array<const char*,5> phase_names{"Contexto","Configuración","Compilación GLSL","Enlace GL","Subrutinas"};for(const auto& event:r.preparation_events)out<<phase_names[static_cast<unsigned>(event.stage)]<<" · "<<event.kernel_name<<" · "<<event.wall_ms<<" ms\n";
+            out<<"SMO fuente → parser compartido → instrucciones F12 y prueba afín → GPU. Las dos primeras variantes conservan F12 mediante una máquina de instrucciones. La cuarta elimina esa máquina sólo para el flujo completo validado, conservando F12, el orden de operaciones y sus redondeos; una fuente distinta utiliza el retorno explícito por instrucciones. El control convencional simplifica toda la actualización afín y usa la misma retícula y precisión exacta en el dominio aceptado. Por tanto, la diferencia de coste incluye representación, conversión y simplificación, además de la máquina de instrucciones; no demuestra un efecto exclusivo de la base numérica.\n\nCódigo SMO ejecutado:\n"<<r.source;
         }
         out<<"\n\nLas medianas pequeñas o cercanas al 1 % no bastan para atribuir una ventaja. Se muestran las muestras y su dispersión; no son FPS de toda la aplicación. El fotograma medido incluye la tarea y su frontera de presentación declarada; el repintado de esta ventana ocurre después. Las variantes tienen la misma salida verificada: la vista muestra ese resultado común.\n";
         if((lazy_report&&lazy_report->device.software)||(subdivision_report&&subdivision_report->device.software))out<<"WARP: verificación funcional; no es rendimiento físico.\n";
@@ -437,6 +448,7 @@ struct Lab {
         if(id==tasks_id){choose_tasks();return;}
         if(id>=lazy_first_id&&id<lazy_first_id+40){const auto key=static_cast<unsigned>(id-lazy_first_id);start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5);return;}
         if(id>=subdivision_first_id&&id<subdivision_first_id+4){start_task(static_cast<SmoComputeApi>(id-subdivision_first_id),true,0,true);return;}
+        if((id>=lazy_change_first_id&&id<lazy_change_first_id+40)||(id>=lazy_slow_change_first_id&&id<lazy_slow_change_first_id+40)){const bool slow=id>=lazy_slow_change_first_id;const auto key=static_cast<unsigned>(id-(slow?lazy_slow_change_first_id:lazy_change_first_id));start_task(static_cast<SmoComputeApi>(key/10),false,(key%5)*25,(key%10)<5,slow?4u:1u);return;}
         if(id==gpu_rules_id||id==d12_id){choose_math(id==d12_id);return;}
         if(id>=rules_api_id&&id<rules_api_id+4){start_math(static_cast<SmoComputeApi>(id-rules_api_id),false);return;}
         if(id>=d12_api_id&&id<d12_api_id+4){start_math(static_cast<SmoComputeApi>(id-d12_api_id),true);return;}

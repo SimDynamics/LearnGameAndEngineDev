@@ -5,8 +5,42 @@
 // Mode2 independently specializes the canonical source without a VM.
 bool lazy_valid(float value){uint bits=BITS(value);return (bits&0x7f800000u)!=0x7f800000u&&((bits&0x7f800000u)!=0u||(bits&0x7fffffu)==0u);}
 float lazy_mul(float a,float b){precise float result=a*b;if(a<0.0&&b<0.0)result=-result;return result;}
+#if SMO_LAZY_MODE==7 || SMO_LAZY_MODE==8 || SMO_LAZY_MODE==9
+SHARED uint lazy_scan[64];
+#endif
 void lazy_main(uint item){
-#if SMO_LAZY_MODE==3
+#if SMO_LAZY_MODE==10
+    uint count=parameters[0].x;if(item>=count)return;
+    uint rank=(item+parameters[3].y)%count,active_count=parameters[3].x;
+    bool enabled=active_count==count;
+    if(active_count<count)enabled=parameters[3].z==0u?rank<active_count:((rank+1u)*active_count/count!=rank*active_count/count);
+    put(2u,item*6u,enabled?BITS(1.0):BITS(0.0));
+#elif SMO_LAZY_MODE==8
+    // One workgroup scans at most1024 count records in64 bounded chunks.
+    // Avoid a serial1024-record UAV loop in one lane; every lane owns its
+    // chunk and the common prefix uses only workgroup memory/barriers.
+    uint count=parameters[0].x,groups=(count+63u)/64u,lane=item%64u;
+    uint chunk=(groups+63u)/64u,begin=lane*chunk,end=min(groups,begin+chunk),sum=0u;
+    for(uint group=begin;group<end;++group)sum+=word(6u,group*4u);
+    lazy_scan[lane]=sum;SYNC;
+    for(uint offset=1u;offset<64u;offset*=2u){uint addend=0u;if(lane>=offset)addend=lazy_scan[lane-offset];SYNC;lazy_scan[lane]+=addend;SYNC;}
+    uint active_before=0u;if(lane!=0u)active_before=lazy_scan[lane-1u];
+    for(uint output_group=begin;output_group<end;++output_group){uint n=word(6u,output_group*4u);put(6u,output_group*4u+1u,active_before);put(6u,output_group*4u+2u,output_group*64u-active_before);active_before+=n;}
+    if(lane==0u)put(6u,groups*4u,lazy_scan[63]);
+#elif SMO_LAZY_MODE==7 || SMO_LAZY_MODE==9
+    uint count=parameters[0].x,lane=item%64u,group=item/64u;
+    uint enabled=0u;if(item<count)enabled=REAL(word(2u,item*6u))!=0.0?1u:0u;
+    lazy_scan[lane]=enabled;SYNC;
+    for(uint offset=1u;offset<64u;offset*=2u){uint addend=0u;if(lane>=offset)addend=lazy_scan[lane-offset];SYNC;lazy_scan[lane]+=addend;SYNC;}
+#if SMO_LAZY_MODE==7
+    if(lane==63u)put(6u,group*4u,lazy_scan[lane]);
+#else
+    if(item<count){uint active_rank=lazy_scan[lane],target=0u;
+        if(enabled!=0u)target=word(6u,group*4u+1u)+active_rank-1u;
+        else target=word(6u,((count+63u)/64u)*4u)+word(6u,group*4u+2u)+lane-active_rank;
+        put(5u,target,item);}
+#endif
+#elif SMO_LAZY_MODE==3
     // Real frame target clear. It is included in the full pipeline timestamp.
     if(item<parameters[2].z*parameters[2].w)put(7u,item,0xff1d1d1du);
     return;
@@ -23,16 +57,19 @@ void lazy_main(uint item){
     return;
 #else
     uint count=parameters[0].x;if(item>=count)return;
+#if SMO_LAZY_MODE==5 || SMO_LAZY_MODE==6
+    item=word(5u,item);
+#endif
     uint pc_count=parameters[0].y,guard_begin=parameters[0].z,guard_end=parameters[0].w;
     uint frame_index=parameters[2].x,base=item*6u,out_base=item*8u;
-    precise float values[6];for(uint slot=0u;slot<6u;++slot)values[slot]=REAL(word(frame_index==0u?1u:2u,base+slot));
+    precise float values[6];for(uint slot=0u;slot<6u;++slot)values[slot]=REAL(word(slot!=0u&&frame_index==0u?1u:2u,base+slot));
     uint diagnostic=0u,operations=frame_index==0u?0u:word(3u,out_base+4u);
     uint writes=frame_index==0u?0u:word(3u,out_base+5u),version=frame_index==0u?0u:word(3u,out_base+2u);
     uint prior_writes=writes,prior_version=version;
     if(!lazy_valid(values[0]))diagnostic=1u;
     bool channel_active=values[0]!=0.0;
     if(diagnostic==0u){
-#if SMO_LAZY_MODE==2
+#if SMO_LAZY_MODE==2 || SMO_LAZY_MODE==6
         // Same explicit deferred contract as mode1: the conventional control
         // skips the optional expression before evaluating any of its inputs.
         precise float delta=lazy_mul(values[2],REAL(parameters[1].w));
@@ -60,7 +97,7 @@ void lazy_main(uint item){
         [loop]
 #endif
         for(uint pc=0u;pc<pc_count;++pc){
-#if SMO_LAZY_MODE==1
+#if SMO_LAZY_MODE==1 || SMO_LAZY_MODE==5
             // This jump is ahead of every exclusively optional expression
             // instruction, including VM variable evaluation and arithmetic.
             // Initial state reads remain necessary for retained observations;

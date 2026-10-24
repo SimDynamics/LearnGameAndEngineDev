@@ -5,9 +5,11 @@
 #include <bit>
 #include <cmath>
 #include <cctype>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
@@ -36,6 +38,92 @@ bool same_adapter(const SmoComputeInfo& a,const SmoComputeInfo& b){if(a.software
     if(a.device_id&&b.device_id&&a.device_id!=b.device_id)return false;
     const auto left=adapter_key(a.adapter),right=adapter_key(b.adapter);
     return left.size()>4&&right.size()>4&&(left.find(right)!=left.npos||right.find(left)!=right.npos);
+}
+// Bounded independent FP32 operation oracle. Every calculation below is on
+// integer significands/exponents, not host/GPU division, sqrt or long double.
+// The first-contact inputs are normal finite floats; unsupported domains fail
+// explicitly instead of borrowing an approximate floating-point reference.
+struct Binary32 {std::uint64_t significand;int exponent;bool negative;};
+Binary32 normal_binary32(std::uint32_t bits){const auto exponent=(bits>>23)&255u;
+    if(!exponent||exponent==255)throw std::invalid_argument("Exact FP32 oracle requires finite nonzero normal operands");
+    return {(bits&0x7fffffu)|0x800000u,static_cast<int>(exponent)-150,(bits>>31)!=0};
+}
+std::uint32_t encode_binary32(std::uint64_t significand,int unit,bool negative){
+    check(significand>=0x800000u&&significand<=0x1000000u,"Exact FP32 oracle significand exceeded its normal domain");
+    if(significand==0x1000000u){significand>>=1;++unit;}
+    const int exponent=unit+150;check(exponent>0&&exponent<255,"Exact FP32 oracle rounded outside its normal domain");
+    return (negative?0x80000000u:0u)|(static_cast<std::uint32_t>(exponent)<<23)|static_cast<std::uint32_t>(significand&0x7fffffu);
+}
+struct DivisionOracle {std::uint32_t rounded;std::int64_t numerator;std::uint64_t denominator;bool within_one,within_two_and_half;};
+DivisionOracle exact_division(std::uint32_t numerator,std::uint32_t denominator,std::uint32_t observed){
+    const auto a=normal_binary32(numerator),b=normal_binary32(denominator),y=normal_binary32(observed);
+    const int ideal_exponent=a.exponent-b.exponent-(a.significand<b.significand?1:0),unit=ideal_exponent-23;
+    const int shift=a.exponent-b.exponent-unit;check(shift==23||shift==24,"Exact quotient normalization failed");
+    const auto n=a.significand<<shift,d=b.significand;auto rounded=n/d;const auto remainder=n%d;
+    if(remainder*2>d||(remainder*2==d&&(rounded&1)))++rounded;
+    const bool negative=a.negative!=b.negative;const auto expected=encode_binary32(rounded,unit,negative);
+    const int observed_shift=y.exponent-unit;
+    check(observed_shift>=-6&&observed_shift<=6,"Observed division is outside the bounded exact oracle");
+    const auto extra=static_cast<unsigned>(std::max(-observed_shift,0));
+    const auto actual_units=(y.significand<<std::max(observed_shift,0))*d;
+    const auto ideal_units=n<<extra;const auto divisor=d<<extra;
+    const auto actual_signed=y.negative?-static_cast<std::int64_t>(actual_units):static_cast<std::int64_t>(actual_units);
+    const auto ideal_signed=negative?-static_cast<std::int64_t>(ideal_units):static_cast<std::int64_t>(ideal_units);
+    const auto error=actual_signed-ideal_signed;const auto magnitude=static_cast<std::uint64_t>(error<0?-error:error);
+    const auto common=std::gcd(magnitude,divisor);
+    return {expected,error/static_cast<std::int64_t>(common),divisor/common,magnitude<=divisor,magnitude*2<=divisor*5};
+}
+std::uint64_t integer_sqrt(std::uint64_t value){std::uint64_t root=0,bit=std::uint64_t{1}<<62;
+    while(bit>value)bit>>=2;
+    while(bit){if(value>=root+bit){value-=root+bit;root=(root>>1)+bit;}else root>>=1;bit>>=2;}return root;
+}
+struct SqrtOracle {std::uint32_t rounded;std::int64_t error_lower_64,error_upper_64;bool within_one;};
+SqrtOracle exact_sqrt(std::uint32_t argument,std::uint32_t observed){const auto x=normal_binary32(argument),y=normal_binary32(observed);
+    check(!x.negative&&!y.negative,"Exact square root oracle requires positive normal input/output");
+    const int power=x.exponent+23;
+    const int ideal_exponent=power>=0?power/2:-((-power+1)/2),unit=ideal_exponent-23;
+    const int shift=x.exponent-2*unit;check(shift==23||shift==24,"Exact square root normalization failed");
+    const auto squared=x.significand<<shift;const auto lower=integer_sqrt(squared);auto rounded=lower;
+    const auto midpoint=2*lower+1,left=squared*4,right=midpoint*midpoint;
+    if(left>right||(left==right&&(lower&1)))++rounded;
+    const int observed_shift=y.exponent-unit;check(observed_shift>=-6&&observed_shift<=6,"Observed square root is outside the bounded exact oracle");
+    constexpr unsigned fractional_bits=6;const auto scaled_square=squared<<(2*fractional_bits);
+    const auto scaled_root=integer_sqrt(scaled_square),scaled_actual=y.significand<<(observed_shift+fractional_bits);
+    const auto upper_error=static_cast<std::int64_t>(scaled_actual)-static_cast<std::int64_t>(scaled_root);
+    const auto lower_error=upper_error-(scaled_root*scaled_root==scaled_square?0:1);
+    // This exact squared interval test also handles an observed value across a
+    // power-of-two boundary. The ULP is always that of the ideal result's binade.
+    const auto extra=static_cast<unsigned>(std::max(-observed_shift,0));
+    const auto actual_units=y.significand<<std::max(observed_shift,0),one=std::uint64_t{1}<<extra;
+    const auto low=actual_units>one?actual_units-one:0,high=actual_units+one,ideal_square=squared<<(2*extra);
+    return {encode_binary32(rounded,unit,false),lower_error,upper_error,low*low<=ideal_square&&ideal_square<=high*high};
+}
+void exact_operation_regressions(){
+    const auto third=exact_division(0x3f800000u,0x40400000u,0x3eaaaaabu);
+    check(third.rounded==0x3eaaaaabu&&third.numerator==1&&third.denominator==3&&third.within_one,"Exact division 1/3 oracle failed");
+    const auto below=exact_division(0x3f800000u,0x40400000u,0x3eaaaaaau);
+    check(below.rounded==third.rounded&&below.numerator==-2&&below.denominator==3,"Exact lower neighbor division oracle failed");
+    const auto negative=exact_division(0xbf800000u,0x40400000u,0xbeaaaaabu);
+    check(negative.rounded==0xbeaaaaabu&&negative.numerator==-1&&negative.denominator==3,"Signed exact division oracle failed");
+    const auto half=exact_division(0x3f800000u,0x40000000u,0x3f000000u);
+    check(half.rounded==0x3f000000u&&half.numerator==0&&half.denominator==1,"Exact dyadic division oracle failed");
+    const auto boundary=exact_division(0x3f800000u,0x3f800000u,0x3f7fffffu);
+    check(boundary.rounded==0x3f800000u&&boundary.numerator==-1&&boundary.denominator==2,"Division binade-boundary ULP changed");
+    for(const auto bits:{0x00800000u,0x7f7fffffu}){const auto unchanged=exact_division(bits,0x3f800000u,bits);
+        check(unchanged.rounded==bits&&unchanged.numerator==0,"Exact division normal exponent boundary failed");}
+    const auto root=exact_sqrt(0x40000000u,0x3fb504f3u),root_far=exact_sqrt(0x40000000u,0x3fb504f5u);
+    check(root.rounded==0x3fb504f3u&&root.within_one&&!root_far.within_one&&root.error_upper_64-root.error_lower_64==1,
+        "Independent integer square root oracle failed");
+    const auto exact=exact_sqrt(0x40800000u,0x40000000u),root_boundary=exact_sqrt(0x40800000u,0x3fffffffu);
+    check(exact.rounded==0x40000000u&&exact.error_lower_64==0&&exact.error_upper_64==0&&root_boundary.error_lower_64==-32&&
+        root_boundary.error_upper_64==-32&&root_boundary.within_one,"Square root exact/boundary oracle failed");
+    const auto fraction_root=exact_sqrt(0x3e800000u,0x3f000000u),minimum_root=exact_sqrt(0x00800000u,0x20000000u);
+    check(fraction_root.rounded==0x3f000000u&&fraction_root.error_lower_64==0&&minimum_root.rounded==0x20000000u&&
+        minimum_root.error_lower_64==0,"Exact square root negative-exponent normalization failed");
+    check(integer_sqrt(0)==0&&integer_sqrt(1)==1&&integer_sqrt(15)==3&&integer_sqrt(16)==4&&
+        integer_sqrt(std::numeric_limits<std::uint64_t>::max())==0xffffffffu,"Integer square root bounds failed");
+    rejects([]{(void)exact_division(0,0x3f800000u,0x3f800000u);},"Exact oracle silently accepted an unsupported zero operand");
+    rejects([]{(void)exact_sqrt(0x7f800000u,0x3f800000u);},"Exact oracle silently accepted infinity");
 }
 void reference_regressions(){
     const auto initial=smo_scene_initial(16),again=smo_scene_initial(16);
@@ -144,6 +232,57 @@ SmoComputeApi api_argument(std::string_view name){
 }
 SmoSustainedOptions quick_options(){SmoSustainedOptions result;result.seconds=.08;result.warmup_seconds=.02;
     result.calibrate=false;result.workload={64,36,16,4};return result;}
+int precision_witness(std::string_view selector){
+    std::vector<SmoComputeApi> selected;if(selector=="all")selected.assign(apis.begin(),apis.end());
+    else {selected={SmoComputeApi::direct3d11};const auto other=api_argument(selector);if(other!=selected.front())selected.push_back(other);}
+    const SmoSceneWorkload work{64,36,64,16};const auto initial=smo_scene_initial(work.bodies);
+    const auto initial_bytes=std::as_bytes(std::span(initial));
+    // The trace shader shares this exact ABI and operation tree with Stage2.
+    // These are the existing first-frame constants, not an alternative solver.
+    std::array<std::uint32_t,16> parameters{};parameters[0]=work.bodies;parameters[1]=work.group_size;
+    parameters[2]=(work.bodies+work.group_size-1)/work.group_size;parameters[3]=work.width;parameters[4]=work.height;parameters[5]=1;
+    parameters[8]=std::bit_cast<std::uint32_t>(1.f/120.f);parameters[9]=std::bit_cast<std::uint32_t>(-1.6f);
+    parameters[10]=std::bit_cast<std::uint32_t>(.65f);parameters[12]=std::bit_cast<std::uint32_t>(2e-4f);
+    std::vector<SmoComputeInfo> devices;std::vector<std::vector<std::uint32_t>> traces;std::vector<std::byte> canonical;
+    for(const auto api:selected){SmoComputeOptions options;if(!devices.empty())options.adapter_name=devices.front().adapter;
+        auto gpu=create_smo_compute(api,options);const auto device=gpu->info();
+        if(!devices.empty())check(same_adapter(devices.front(),device),"Precision witness requires the same physical adapter");devices.push_back(device);
+        const auto current=gpu->buffer(initial_bytes.size(),initial_bytes),integrated=gpu->buffer(initial_bytes.size()),next=gpu->buffer(initial_bytes.size());
+        if(canonical.empty()){const auto kernel=gpu->kernel(smo_scene_kernel(0,0));SmoDispatch call{kernel,{current,integrated},parameters,{1,1,1}};
+            (void)gpu->execute(std::span(&call,1),false);canonical=gpu->read(integrated);check(canonical.size()==initial_bytes.size(),"Truncated canonical precision input");}
+        // Upload identical integration bytes; evaluate each API against its own
+        // captured local d2/delta/d, so earlier rounding is not attributed to div.
+        gpu->write(integrated,canonical);std::vector<std::uint32_t> trace((static_cast<std::size_t>(work.bodies)+1)*24);
+        const auto output=gpu->buffer(trace.size()*4,std::as_bytes(std::span(trace)));auto trace_parameters=parameters;trace_parameters[15]=1;
+        const auto kernel=gpu->kernel(smo_scene_kernel(5,0));SmoDispatch call{kernel,{current,integrated,0,next,output},trace_parameters,{1,1,1}};
+        (void)gpu->execute(std::span(&call,1),false);const auto raw=gpu->read(output);check(raw.size()==trace.size()*4,"Truncated precision trace");
+        std::memcpy(trace.data(),raw.data(),raw.size());traces.push_back(std::move(trace));
+    }
+    std::optional<std::size_t> witness;
+    for(std::size_t neighbor=0;neighbor<work.bodies&&!witness;++neighbor){const auto offset=neighbor*24;
+        if(!traces.front()[offset+19])continue;
+        for(std::size_t api=1;api<traces.size()&&!witness;++api){if(!traces[api][offset+19])continue;
+            for(const auto component:{6,7,8,9})if(traces.front()[offset+component]!=traces[api][offset+component]){witness=neighbor;break;}}}
+    if(!witness){std::cout<<"NO_LOCAL_PRECISION_WITNESS first_frame_body0_normal_or_sqrt selected_apis="<<devices.size()<<'\n';return 0;}
+    const auto offset=*witness*24;
+    const auto bits=[](std::uint32_t value){std::cout<<"0x"<<std::hex<<std::setw(8)<<std::setfill('0')<<value<<std::dec<<std::setfill(' ');};
+    std::cout<<"EXACT_PRECISION_WITNESS frame=1 body=0 neighbor="<<*witness<<" ideal_binade_ulp=1 operation_inputs=captured_raw_float32"
+        <<" division_oracle=integer_rational sqrt_oracle=integer_squared_interval no_floating_sqrt_or_division=1\n";
+    for(std::size_t api=0;api<devices.size();++api){std::cout<<"precision_api="<<std::quoted(devices[api].api)<<" adapter="<<std::quoted(devices[api].adapter)
+            <<" driver="<<std::quoted(devices[api].driver)<<" software="<<devices[api].software<<'\n';
+        const auto& trace=traces[api];const auto root=exact_sqrt(trace[offset+3],trace[offset+6]);
+        std::cout<<"PRECISION_SQRT api="<<std::quoted(devices[api].api)<<" input_bits=";bits(trace[offset+3]);std::cout<<" observed_bits=";bits(trace[offset+6]);
+        std::cout<<" ideal_RNE_bits=";bits(root.rounded);std::cout<<" exact_error_ULP_enclosure=["<<root.error_lower_64<<"/64,"<<root.error_upper_64<<"/64]"
+            <<" numerical_within_1_ULP="<<root.within_one<<'\n';
+        for(std::size_t component=0;component<3;++component){const auto quotient=exact_division(trace[offset+component],trace[offset+6],trace[offset+7+component]);
+            std::cout<<"PRECISION_DIVIDE api="<<std::quoted(devices[api].api)<<" component="<<"xyz"[component]<<" numerator_bits=";bits(trace[offset+component]);
+            std::cout<<" denominator_bits=";bits(trace[offset+6]);std::cout<<" observed_bits=";bits(trace[offset+7+component]);std::cout<<" ideal_RNE_bits=";bits(quotient.rounded);
+            std::cout<<" exact_signed_error_ULP="<<quotient.numerator<<'/'<<quotient.denominator<<" numerical_within_1_ULP="<<quotient.within_one
+                <<" numerical_within_2.5_ULP="<<quotient.within_two_and_half<<'\n';}
+    }
+    std::cout<<"These are exact local-operation errors, not normative API certification or global trajectory acceptance. The unchanged diagnose action retains its failures/tolerance.\n";
+    return 0;
+}
 int diagnostic(int argc,char** argv){
     check(argc<=7,"Uso: lgaed_smo_sustained_tests diagnose [all|API [pasos [cuerpos [ancho [alto]]]]]");
     const auto number=[](const char* value){std::size_t consumed=0;const auto parsed=std::stoull(value,&consumed);
@@ -206,9 +345,12 @@ int hardware(bool sustained,std::string_view selector){
 }
 
 int main(int argc,char** argv){try{
+    exact_operation_regressions();
     reference_regressions();
     if(argc==1){warp_test();return 0;}
-    const std::string_view action=argv[1];if(action=="diagnose")return diagnostic(argc,argv);check(argc<=3&&(action=="probe"||action=="sustained"),
-        "Uso: lgaed_smo_sustained_tests [probe|sustained [d3d11|d3d12|vulkan|opengl|all]]");
+    const std::string_view action=argv[1];if(action=="oracle"){check(argc==2,"Uso: lgaed_smo_sustained_tests oracle");std::cout<<"PASS: independent integer/rational FP32 operation oracle CPU regressions; no GPU execution.\n";return 0;}
+    if(action=="precision"){check(argc<=3,"Uso: lgaed_smo_sustained_tests precision [d3d11|d3d12|vulkan|opengl|all]");return precision_witness(argc==3?std::string_view(argv[2]):std::string_view("all"));}
+    if(action=="diagnose")return diagnostic(argc,argv);check(argc<=3&&(action=="probe"||action=="sustained"),
+        "Uso: lgaed_smo_sustained_tests [oracle|precision [API|all]|diagnose [all|API [pasos [cuerpos [ancho [alto]]]]]|probe|sustained [API|all]]");
     return hardware(action=="sustained",argc==3?std::string_view(argv[2]):std::string_view("all"));
 }catch(const std::exception& error){std::cerr<<"SMO dynamic scene failure: "<<error.what()<<'\n';return 1;}}

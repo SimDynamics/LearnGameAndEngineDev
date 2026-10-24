@@ -78,8 +78,7 @@ void verify(std::span<const Item> states,std::span<const Observation> result,con
     require(states.size()==expected.states.size()&&result.size()==expected.output.size(),"El canal SMO perdió elementos.");
     for(std::size_t i=0;i<states.size();++i){require(states[i]==expected.states[i],"Estado/trajectoria de canales GPU distinto al oráculo exacto.");const auto& o=result[i];const auto& e=expected.output[i];
         for(U part:{0u,1u,2u,3u,5u,6u,7u})require(o[part]==e[part],"La omisión perdió resultados, diagnóstico, destino o contador de escrituras.");
-        const U extra=mode==0u&&real(states[i][0])==0.f?(frame+1u)*(c.end-c.begin):0u;
-        require(o[4]==e[4]+extra,"La instrumentación no acredita las instrucciones realmente evitadas.");checked+=14;
+        require(o[4]==(mode==0u?(frame+1u)*c.end:e[4]),"La instrumentación no acredita las instrucciones realmente evitadas.");checked+=14;
     }
 }
 std::vector<U> project(std::span<const Item> states,U width,U height){std::vector<U> pixels(static_cast<std::size_t>(width)*height,0xff1d1d1du);
@@ -98,7 +97,7 @@ std::string smo_lazy_task_source(){std::string expression="opcional";for(unsigne
         "al_actualizar {\n    compartido = posicion + velocidad * dt;\n    requerido = compartido * .6 + .3;\n    posicion = compartido;\n    opcional = "+expression+";\n}\nal_dibujar {}\n";
 }
 
-SmoKernelSource smo_lazy_task_kernel(unsigned mode){require(mode<5,"Variante diferida inexistente.");const auto hlsl=source_file("smo_shader_hlsl.inc"),glsl=source_file("smo_shader_glsl.inc"),body=source_file("smo_lazy_task.inc");const auto define="#define SMO_LAZY_MODE "+std::to_string(mode)+"\n";
+SmoKernelSource smo_lazy_task_kernel(unsigned mode){require(mode<11,"Variante diferida inexistente.");const auto hlsl=source_file("smo_shader_hlsl.inc"),glsl=source_file("smo_shader_glsl.inc"),body=source_file("smo_lazy_task.inc");const auto define="#define SMO_LAZY_MODE "+std::to_string(mode)+"\n";
     SmoKernelSource k;k.name="lazy_mode"+std::to_string(mode);k.hlsl=define+hlsl+body;k.glsl="#version 430\n"+define+glsl+body;
 #ifdef LGAED_SMO_LAZY_HLSL_SHADER_ROOT
     load_smo_dxbc_assets(k,std::filesystem::path(LGAED_SMO_LAZY_HLSL_SHADER_ROOT),hlsl+body,true);
@@ -122,73 +121,64 @@ std::size_t smo_lazy_task_contract_checks(){const auto c=compile(smo_lazy_task_s
 }
 
 SmoLazyTaskReport run_smo_lazy_task(const SmoLazyTaskOptions& options,std::stop_token stop,std::function<void(unsigned)> progress){
-    require(options.items>0&&options.items<=65536&&options.active_percent<=100&&options.rounds>0&&options.rounds<=100&&options.frames>0&&options.frames<=32&&options.warmups<=10,"Opciones de canales fuera de su dominio acotado.");
+    require(options.items>0&&options.items<=65536&&options.active_percent<=100&&options.rounds>0&&options.rounds<=100&&options.frames>0&&options.frames<=32&&options.warmups<=10&&options.change_every<=32,"Opciones de canales fuera de su dominio acotado.");
     stopped(stop);const auto start=Clock::now();SmoLazyTaskReport r;r.source=options.source.empty()?smo_lazy_task_source():options.source;
-    const auto compile_start=Clock::now();const auto c=compile(r.source);const auto canonical=compile(smo_lazy_task_source());require(same_program(c,canonical),"El control convencional especializado corresponde sólo al programa de muestra. Se rechaza una comparación distinta, sin inventar equivalencia.");r.source_compile_ms=elapsed(compile_start);
-    r.source_hash=state::sha256(r.source);r.contract="Canal diferido explícito, primaria binary32: activo=0 omite evaluación, valor, alternativa, diagnóstico privado y escritura de opcional. Los productores compartidos y salidas requeridas siguen evaluándose. No cambia las reglas globales de cero. Control estático independiente, mismo contrato y árbol de operaciones.";
-    r.items=options.items;r.active_items=static_cast<U>(static_cast<std::uint64_t>(options.items)*options.active_percent/100u);r.frames=options.frames;r.grouped=options.grouped;r.optional_instructions=c.end-c.begin;r.required_instructions=c.begin;
-    const auto initial=inputs(c,options.items,options.active_percent,options.grouped);std::vector<Expected> expected;expected.reserve(options.frames);auto prev=initial;std::vector<Observation> last;
-    for(U frame=0;frame<options.frames;++frame){expected.push_back(reference(prev,last,c,frame));prev=expected.back().states;last=expected.back().output;}
-    std::vector<std::vector<U>> expected_pixels;for(const auto& frame:expected)expected_pixels.push_back(project(frame.states,r.width,r.height));
-    const auto shader_start=Clock::now();auto gpu=create_smo_compute(options.api,options.device,stop);r.device=gpu->info();std::array<SmoKernel,5> kernels{};for(U mode=0;mode<5;++mode)kernels[mode]=gpu->kernel(smo_lazy_task_kernel(mode));r.shader_prepare_ms=elapsed(shader_start);
-    const auto upload_start=Clock::now();const auto instructions=gpu->buffer(c.instructions.size()*4,bytes(c.instructions)),input=gpu->buffer(initial.size()*sizeof(Item),bytes(initial)),literals=gpu->buffer(c.literals.size()*4,bytes(c.literals));
-    const std::vector<Observation> empty_output(initial.size());
-    std::array<SmoBuffer,3> states{},outputs{};for(U mode=0;mode<3;++mode){states[mode]=gpu->buffer(initial.size()*sizeof(Item),bytes(initial));outputs[mode]=gpu->buffer(initial.size()*sizeof(Observation),bytes(empty_output));}
-    const auto image=gpu->buffer(static_cast<std::size_t>(r.width)*r.height*4);
-    r.buffer_bytes=c.instructions.size()*4+c.literals.size()*4+initial.size()*(sizeof(Item)*4+sizeof(Observation)*3)+static_cast<std::uint64_t>(r.width)*r.height*4;r.upload_ms=elapsed(upload_start);r.preparation_ms=elapsed(start);
-    r.variants[0].name="SMO: cálculo completo y omisión final";r.variants[1].name="SMO: omisión antes de productores exclusivos";r.variants[2].name="Control convencional estático: omisión anticipada";
-    auto calls=[&](U mode,U frame){SmoDispatch update{kernels[mode],{instructions,input,states[mode],outputs[mode],literals,0,0,image},{options.items,static_cast<U>(c.ir.update.size()),c.begin,c.end,6u,5u,0u,bits(.0625f),frame,c.begin,r.width,r.height},{(options.items+63)/64,1,1}};
-        auto clear=update;clear.kernel=kernels[3];clear.groups={(r.width*r.height+63)/64,1,1};auto render=update;render.kernel=kernels[4];return std::array<SmoDispatch,3>{clear,update,render};};
-    auto dispatch=[&](U mode,U frame,bool timed){const auto pipeline=calls(mode,frame);return gpu->execute(std::span(&pipeline[1],1),timed);};
-    const auto validation_start=Clock::now();
-    // The sentinels distinguish inactive private invalid operands from invalid
-    // required/shared producers. No test silently removes an observable error.
-    std::vector<Item> probes(4,c.initial);for(auto& item:probes){item[0]=0;item[1]=bits(.25f);item[2]=bits(.015625f);item[5]=bits(.125f);}
-    probes[0][5]=0x7fc00000u; //private NaN is not observed by an inactive channel
-    probes[1][0]=bits(1.f);probes[1][5]=0x7fc00000u; //active NaN remains an error
-    probes[2][1]=0x7fc00000u; //required shared producer is ALWAYS observed
-    probes[3][0]=0x7fc00000u; //the gate itself may never be skipped
-    const std::vector<Observation> empty_probes(probes.size());
-    const auto probe_input=gpu->buffer(probes.size()*sizeof(Item),bytes(probes)),probe_state=gpu->buffer(probes.size()*sizeof(Item),bytes(probes)),probe_output=gpu->buffer(probes.size()*sizeof(Observation),bytes(empty_probes));
-    for(U mode=0;mode<3;++mode){stopped(stop);gpu->write(probe_state,bytes(probes));SmoDispatch call{kernels[mode],{instructions,probe_input,probe_state,probe_output,literals},{4u,static_cast<U>(c.ir.update.size()),c.begin,c.end,6u,5u,0u,bits(.0625f),0u,c.begin},{1,1,1}};
-        (void)gpu->execute(std::span(&call,1),false);const auto observed=read<Observation>(*gpu,probe_output,4);const auto committed=read<Item>(*gpu,probe_state,4);
-        require(observed[0][3]==0&&observed[0][2]==0&&committed[0][5]==probes[0][5],"Un canal inactivo evaluó un diagnóstico privado observable o sobrescribió su destino.");
-        for(U item=1;item<4;++item)require(observed[item][3]==1&&observed[item][2]==0&&observed[item][5]==0&&committed[item]==probes[item],"La omisión ocultó un error requerido o publicó una transacción fallida.");
-        const U expected_ops=mode==0?c.end:c.begin;require(observed[0][4]==expected_ops,"La guarda no evitó los productores exclusivos antes de la evaluación.");r.verified_words+=4u*14u;
-    }
-    r.buffer_bytes+=probes.size()*(2*sizeof(Item)+sizeof(Observation));
-    // Exact checks precede performance.
-    for(U mode=0;mode<3;++mode){const auto pipeline=calls(mode,0);(void)gpu->execute(pipeline,false);const auto actual=read<Item>(*gpu,states[mode],options.items);const auto out=read<Observation>(*gpu,outputs[mode],options.items);verify(actual,out,expected[0],c,0,mode,r.verified_words);
-        const auto pixels=read<U>(*gpu,image,static_cast<std::size_t>(r.width)*r.height);require(pixels==expected_pixels[0],"La proyección GPU de canales difiere de la referencia exacta.");r.verified_words+=pixels.size();}
-    r.validation_ms=elapsed(validation_start);r.preparation_ms=elapsed(start);
-    const auto warmup_start=Clock::now();
-    for(U warm=0;warm<options.warmups;++warm)for(U mode=0;mode<3;++mode){stopped(stop);for(U frame=0;frame<options.frames;++frame){const auto pipeline=calls(mode,frame);(void)gpu->execute(pipeline,false);}}
-    r.warmup_ms=elapsed(warmup_start);
-    for(U round=0;round<options.rounds;++round){stopped(stop);for(U order=0;order<3;++order){const U mode=(round+order)%3;auto& v=r.variants[mode];double gpu_total=0,frame_gpu_total=0,wall_total=0,read_total=0,conversion_total=0;
-            // These are two independent trajectories from exactly the same
-            // inputs: task-only timestamps, then a full clear/update/project
-            // timestamp. The state is never advanced twice in one trajectory.
-            for(U pass=0;pass<2;++pass)for(U frame=0;frame<options.frames;++frame){stopped(stop);const auto frame_start=Clock::now();const auto pipeline=calls(mode,frame);const double gpu_ms=pass==0?dispatch(mode,frame,true):gpu->execute(pipeline,true);
-                const auto read_start=Clock::now();std::vector<U> pixels;
-                if(pass==1)pixels=read<U>(*gpu,image,static_cast<std::size_t>(r.width)*r.height);const auto read_ms=elapsed(read_start);
-                const auto wall_ms=elapsed(frame_start);
-                // Presentation consumes the GPU image, not the state dump.
-                // State/counter readback and comparison are QA-only costs and
-                // must not inflate a frame which does not need those reads.
-                const auto validating=Clock::now();const auto actual=read<Item>(*gpu,states[mode],options.items);const auto out=read<Observation>(*gpu,outputs[mode],options.items);
-                // Every state, diagnostic, logical operation count, write
-                // counter and pixel is checked outside both timing intervals.
-                verify(actual,out,expected[frame],c,frame,mode,r.verified_words);
-                if(pass==0)gpu_total+=gpu_ms;else{require(pixels==expected_pixels[frame],"La imagen completa de canales GPU no coincide.");r.verified_words+=pixels.size();frame_gpu_total+=gpu_ms;wall_total+=wall_ms;read_total+=read_ms;}
-                r.validation_ms+=elapsed(validating);
-                if(pass==1&&frame+1==options.frames){v.output_hash=hash(bytes(actual));v.image_hash=hash(bytes(pixels));v.executed_instructions=0;v.writes=0;for(const auto& item:out){v.executed_instructions+=item[4];v.writes+=item[5];}if(mode==1)r.preview_bgra=std::move(pixels);}
-            }
-            v.gpu_samples.push_back(gpu_total/options.frames);v.frame_gpu_samples.push_back(frame_gpu_total/options.frames);v.frame_samples.push_back(wall_total/options.frames);v.readback_ms+=read_total/(options.frames*options.rounds);v.conversion_ms+=conversion_total/(options.frames*options.rounds);
-        }if(progress)progress((round+1)*100/options.rounds);}
-    for(auto& v:r.variants){v.gpu_ms=median(v.gpu_samples);v.frame_gpu_ms=median(v.frame_gpu_samples);v.frame_ms=median(v.frame_samples);v.verified=true;v.timing_valid=std::ranges::all_of(v.gpu_samples,[](double value){return std::isfinite(value)&&value>0;})&&std::ranges::all_of(v.frame_gpu_samples,[](double value){return std::isfinite(value)&&value>0;});}
-    require(r.variants[0].output_hash==r.variants[1].output_hash&&r.variants[1].output_hash==r.variants[2].output_hash,"Las trayectorias finales de canales no coinciden.");r.equivalent=true;
-    require(r.variants[0].image_hash==r.variants[1].image_hash&&r.variants[1].image_hash==r.variants[2].image_hash,"Las imágenes finales de canales no coinciden.");
-    PROCESS_MEMORY_COUNTERS_EX memory{};memory.cb=sizeof(memory);if(K32GetProcessMemoryInfo(GetCurrentProcess(),reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&memory),sizeof(memory)))r.process_peak_working_set=memory.PeakWorkingSetSize;
-    return r;
+    const auto compiling=Clock::now();const auto c=compile(r.source);require(same_program(c,compile(smo_lazy_task_source())),"El control convencional especializado exige el programa de muestra validado.");r.source_compile_ms=elapsed(compiling);
+    r.source_hash=state::sha256(r.source);r.contract="Canal diferido explícito, primaria binary32. Sólo se omiten productores exclusivos y escritura de opcional; los compartidos y errores necesarios se conservan. La agrupación GPU produce una permutación estable de índices, sin mover estados. Las revisiones de la máscara son entradas conocidas del escenario; no se afirma detectar gratis cambios arbitrarios en la GPU. Los relojes incluyen generar máscaras, contar, prefijar, dispersar índices, sincronizar, actualizar y dibujar cuando cada fase es necesaria. La validación se hace fuera de esos relojes; no son FPS de presentación de Windows.";
+    r.items=options.items;r.active_items=static_cast<U>(static_cast<std::uint64_t>(options.items)*options.active_percent/100u);r.frames=options.frames;r.grouped=options.grouped;r.change_every=options.change_every;r.optional_instructions=c.end-c.begin;r.required_instructions=c.begin;
+    const auto initial=inputs(c,options.items,options.active_percent,options.grouped);
+    U mask_stride=(r.items/3u)|1u;while(std::gcd(mask_stride,r.items)!=1u)mask_stride+=2u;
+    const auto phase=[&](U frame){if(!options.change_every||r.active_items==0||r.active_items==r.items)return 0u;return static_cast<U>((static_cast<std::uint64_t>(frame/options.change_every)*mask_stride)%r.items);};
+    const auto apply_mask=[&](std::vector<Item>& state,U frame){const U shift=phase(frame);for(U i=0;i<r.items;++i){const U rank=(i+shift)%r.items;const bool on=options.grouped?rank<r.active_items:(static_cast<std::uint64_t>(rank+1)*r.active_items/r.items!=static_cast<std::uint64_t>(rank)*r.active_items/r.items);state[i][0]=bits(on?1.f:0.f);}};
+    std::vector<Expected> expected;std::vector<std::vector<U>> expected_pixels,maps;auto previous=initial;std::vector<Observation> prior;
+    for(U frame=0;frame<options.frames;++frame){apply_mask(previous,frame);expected.push_back(reference(previous,prior,c,frame));previous=expected.back().states;prior=expected.back().output;expected_pixels.push_back(project(previous,r.width,r.height));
+        std::vector<U> order;order.reserve(r.items);for(U i=0;i<r.items;++i)if(real(previous[i][0])!=0.f)order.push_back(i);for(U i=0;i<r.items;++i)if(real(previous[i][0])==0.f)order.push_back(i);maps.push_back(std::move(order));}
+    const auto preparing=Clock::now();auto gpu=create_smo_compute(options.api,options.device,stop);r.device=gpu->info();std::array<SmoKernel,11> kernels{};for(U i=0;i<kernels.size();++i){stopped(stop);kernels[i]=gpu->kernel(smo_lazy_task_kernel(i));}r.shader_prepare_ms=elapsed(preparing);
+    const auto uploading=Clock::now();const auto instructions=gpu->buffer(c.instructions.size()*4,bytes(c.instructions)),input=gpu->buffer(initial.size()*sizeof(Item),bytes(initial)),literals=gpu->buffer(c.literals.size()*4,bytes(c.literals));
+    constexpr U variants=5;const U groups=(r.items+63u)/64u;std::array<SmoBuffer,variants> states{},outputs{},indices{};const std::vector<Observation> empty(r.items);
+    for(U v=0;v<variants;++v){states[v]=gpu->buffer(initial.size()*sizeof(Item),bytes(initial));outputs[v]=gpu->buffer(empty.size()*sizeof(Observation),bytes(empty));if(v>=3){const auto allocation=Clock::now();indices[v]=gpu->buffer(r.items*4u);r.variants[v].group_allocation_ms=elapsed(allocation);}}
+    const auto allocating_scratch=Clock::now();const auto scratch=gpu->buffer((groups*4u+1u)*4u);const double scratch_ms=elapsed(allocating_scratch);for(U v=3;v<variants;++v)r.variants[v].group_allocation_ms+=scratch_ms;r.group_extra_buffer_bytes=r.items*4u+(groups*4u+1u)*4u;const auto image=gpu->buffer(static_cast<std::size_t>(r.width)*r.height*4u);
+    r.buffer_bytes=c.instructions.size()*4+c.literals.size()*4+initial.size()*(sizeof(Item)*(variants+1)+sizeof(Observation)*variants)+r.items*4u*2u+(groups*4u+1u)*4u+static_cast<std::uint64_t>(r.width)*r.height*4u;
+    r.upload_ms=elapsed(uploading);
+    r.variants[0].name="SMO: cálculo completo y omisión final";r.variants[1].name="SMO: omisión anticipada, orden original";r.variants[2].name="Control convencional estático, orden original";r.variants[3].name="SMO: omisión anticipada + agrupación GPU";r.variants[4].name="Control convencional estático + agrupación GPU";
+    const std::array<U,variants> update_mode{0,1,2,5,6};std::array<U,variants> mask_revision{},map_revision{};map_revision.fill(0xffffffffu);
+    const auto command=[&](U kernel,U v,U frame){SmoDispatch call{kernels[kernel],{instructions,input,states[v],outputs[v],literals,indices[v],scratch,image},
+        {r.items,static_cast<U>(c.ir.update.size()),c.begin,c.end,6u,5u,0u,bits(.0625f),frame,c.begin,r.width,r.height,r.active_items,phase(frame),options.grouped?0u:1u,0u},{groups,1,1}};
+        if(kernel==8)call.groups={1,1,1};if(kernel==3)call.groups={(r.width*r.height+63u)/64u,1,1};return call;};
+    const auto grouping=[&](U v,U frame){return std::array<SmoDispatch,3>{command(7,v,frame),command(8,v,frame),command(9,v,frame)};};
+    const auto reset=[&](U v){const auto begin=Clock::now();gpu->write(states[v],bytes(initial));gpu->write(outputs[v],bytes(empty));mask_revision[v]=0u;r.trial_reset_ms+=elapsed(begin);};
+    const auto verify_frame=[&](U v,U frame,const std::vector<U>* pixels,bool verify_map){const auto begin=Clock::now();const auto state=read<Item>(*gpu,states[v],r.items);const auto observed=read<Observation>(*gpu,outputs[v],r.items);verify(state,observed,expected[frame],c,frame,v,r.verified_words);
+        if(verify_map){const auto order=read<U>(*gpu,indices[v],r.items);require(order==maps[frame],"La agrupación GPU no es una permutación estable de todos los objetos.");r.verified_words+=order.size();}
+        if(pixels){require(*pixels==expected_pixels[frame],"La imagen completa de canales GPU no coincide.");r.verified_words+=pixels->size();}
+        if(frame+1==options.frames){auto& result=r.variants[v];result.output_hash=hash(bytes(state));if(pixels)result.image_hash=hash(bytes(*pixels));result.executed_instructions=0;result.writes=0;for(const auto& o:observed){result.executed_instructions+=o[4];result.writes+=o[5];}}
+        r.validation_ms+=elapsed(begin);};
+    // Mandatory error probes retain the original deferred-contract coverage.
+    // Mapped variants build their actual GPU list even with an invalid gate:
+    // sorting must never filter out an object whose error is observable.
+    std::vector<Item> probes(4,c.initial);for(auto& item:probes){item[0]=0;item[1]=bits(.25f);item[2]=bits(.015625f);item[5]=bits(.125f);}probes[0][5]=0x7fc00000u;probes[1][0]=bits(1.f);probes[1][5]=0x7fc00000u;probes[2][1]=0x7fc00000u;probes[3][0]=0x7fc00000u;
+    const std::vector<Observation> zero_probes(4);const std::vector<U> probe_order{0,1,2,3};const auto probe_input=gpu->buffer(probes.size()*sizeof(Item),bytes(probes)),probe_state=gpu->buffer(probes.size()*sizeof(Item),bytes(probes)),probe_output=gpu->buffer(zero_probes.size()*sizeof(Observation),bytes(zero_probes)),probe_map=gpu->buffer(16,bytes(probe_order));r.buffer_bytes+=probes.size()*(2*sizeof(Item)+sizeof(Observation))+16;
+    for(U v=0;v<variants;++v){stopped(stop);gpu->write(probe_state,bytes(probes));gpu->write(probe_output,bytes(zero_probes));SmoDispatch call{kernels[update_mode[v]],{instructions,probe_input,probe_state,probe_output,literals,probe_map,scratch},{4u,static_cast<U>(c.ir.update.size()),c.begin,c.end,6u,5u,0u,bits(.0625f),0u,c.begin},{1,1,1}};
+        if(v>=3){std::array<SmoDispatch,3> prepare{call,call,call};for(U k=0;k<3;++k)prepare[k].kernel=kernels[7u+k];(void)gpu->execute(prepare,false);}
+        (void)gpu->execute(std::span(&call,1),false);
+        const auto observed=read<Observation>(*gpu,probe_output,4);const auto committed=read<Item>(*gpu,probe_state,4);require(observed[0][3]==0&&observed[0][2]==0&&committed[0][5]==probes[0][5],"La omisión observó un productor privado o escribió el destino inactivo.");for(U i=1;i<4;++i)require(observed[i][3]==1&&observed[i][2]==0&&observed[i][5]==0&&committed[i]==probes[i],"La omisión/agrupación ocultó un error o publicó una transacción fallida.");require(observed[0][4]==(v==0?c.end:c.begin),"La guarda no evitó productores exclusivos.");r.verified_words+=56;}
+    for(U v=0;v<variants;++v){reset(v);if(v>=3){const auto group_start=Clock::now();const auto prep=grouping(v,0);r.variants[v].initial_group_gpu_ms=gpu->execute(prep,true);r.variants[v].initial_group_wall_ms=elapsed(group_start);map_revision[v]=0;}
+        const auto update=command(update_mode[v],v,0),clear=command(3,v,0),draw=command(4,v,0);const std::array<SmoDispatch,3> pipeline{clear,update,draw};(void)gpu->execute(pipeline,false);const auto pixels=read<U>(*gpu,image,static_cast<std::size_t>(r.width)*r.height);verify_frame(v,0,&pixels,v>=3);}
+    r.preparation_ms=elapsed(start);
+    const auto warm_start=Clock::now();for(U warm=0;warm<options.warmups;++warm)for(U v=0;v<variants;++v){reset(v);for(U frame=0;frame<r.frames;++frame){std::vector<SmoDispatch> pipeline;const U revision=phase(frame);if(mask_revision[v]!=revision){pipeline.push_back(command(10,v,frame));mask_revision[v]=revision;}if(v>=3&&map_revision[v]!=revision){const auto build=grouping(v,frame);pipeline.insert(pipeline.end(),build.begin(),build.end());map_revision[v]=revision;}pipeline.push_back(command(update_mode[v],v,frame));(void)gpu->execute(pipeline,false);}}
+    r.warmup_ms=elapsed(warm_start);
+    for(U round=0;round<options.rounds;++round){for(U order=0;order<variants;++order){const U v=(round+order)%variants;auto& result=r.variants[v];double task_total=0,frame_gpu_total=0,wall_total=0,read_total=0;
+        for(U pass=0;pass<2;++pass){reset(v);for(U frame=0;frame<r.frames;++frame){stopped(stop);const auto begin=Clock::now();const U revision=phase(frame);std::vector<SmoDispatch> preparation;
+            if(mask_revision[v]!=revision){preparation.push_back(command(10,v,frame));mask_revision[v]=revision;}
+            const bool rebuilt=v>=3&&map_revision[v]!=revision;if(rebuilt){const auto build=grouping(v,frame);preparation.insert(preparation.end(),build.begin(),build.end());map_revision[v]=revision;}
+            std::vector<SmoDispatch> pipeline=preparation;if(pass==1)pipeline.push_back(command(3,v,frame));pipeline.push_back(command(update_mode[v],v,frame));if(pass==1)pipeline.push_back(command(4,v,frame));
+            const double gpu_ms=gpu->execute(pipeline,true);const auto reading=Clock::now();std::vector<U> pixels;if(pass==1)pixels=read<U>(*gpu,image,static_cast<std::size_t>(r.width)*r.height);const double read_ms=elapsed(reading),wall_ms=elapsed(begin);
+            verify_frame(v,frame,pass==1?&pixels:nullptr,rebuilt);
+            if(pass==0)task_total+=gpu_ms;else{frame_gpu_total+=gpu_ms;wall_total+=wall_ms;read_total+=read_ms;result.frame_latencies_gpu.push_back(gpu_ms);if(rebuilt){++result.group_rebuilds;const auto build=grouping(v,frame);result.grouping_samples.push_back(gpu->execute(build,true));}if(v==3&&frame+1==r.frames)r.preview_bgra=std::move(pixels);}
+        }}
+        result.gpu_samples.push_back(task_total/r.frames);result.frame_gpu_samples.push_back(frame_gpu_total/r.frames);result.frame_samples.push_back(wall_total/r.frames);result.readback_ms+=read_total/(r.frames*options.rounds);
+    }if(progress)progress((round+1)*100/options.rounds);}
+    for(auto& result:r.variants){result.gpu_ms=median(result.gpu_samples);result.frame_gpu_ms=median(result.frame_gpu_samples);result.frame_ms=median(result.frame_samples);result.group_gpu_ms=median(result.grouping_samples);result.verified=true;result.timing_valid=std::ranges::all_of(result.gpu_samples,[](double n){return std::isfinite(n)&&n>0;})&&std::ranges::all_of(result.frame_gpu_samples,[](double n){return std::isfinite(n)&&n>0;});}
+    for(U v=1;v<variants;++v)require(r.variants[v].output_hash==r.variants[0].output_hash&&r.variants[v].image_hash==r.variants[0].image_hash,"Las trayectorias/imágenes de agrupación no coinciden exactamente.");r.equivalent=true;
+    PROCESS_MEMORY_COUNTERS_EX memory{};memory.cb=sizeof(memory);if(K32GetProcessMemoryInfo(GetCurrentProcess(),reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&memory),sizeof(memory)))r.process_peak_working_set=memory.PeakWorkingSetSize;return r;
 }
 } //namespace lgaed::presentation

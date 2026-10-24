@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
 #include <stop_token>
@@ -10,9 +11,24 @@
 
 namespace lgaed::presentation {
 enum class SmoComputeApi { direct3d11, direct3d12, vulkan, opengl };
+enum class SmoComputePreparationStage {
+    context_creation,device_configuration,shader_compilation,program_linking,subroutine_bindings
+};
+struct SmoComputePreparationEvent {
+    SmoComputePreparationStage stage=SmoComputePreparationStage::context_creation;
+    std::string kernel_name;
+    std::size_t source_bytes=0;
+    // Host wall time of the named preparation phase, never a GPU timestamp.
+    // The observer is called synchronously after successful completion; its
+    // own duration is excluded. Empty observers do not add clocks/events.
+    double wall_ms=0;
+};
 struct SmoComputeOptions {
     bool software=false;
     std::string adapter_name;
+    // Optional OpenGL cold/warm preparation evidence. It does not alter source,
+    // optimization flags or driver caches; other backends retain their path.
+    std::function<void(const SmoComputePreparationEvent&)> preparation;
 };
 struct SmoComputeInfo {
     std::string api,adapter,driver;

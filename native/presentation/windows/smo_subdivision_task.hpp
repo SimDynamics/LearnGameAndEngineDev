@@ -7,7 +7,7 @@
 namespace lgaed::presentation {
 // A bounded, exact affine-subdivision application. The ordinary control uses
 // the SAME rational grid/domain, not a lower precision FP32 approximation.
-inline constexpr unsigned smo_subdivision_stages=6;
+inline constexpr unsigned smo_subdivision_stages=7,smo_subdivision_variants=4;
 struct SmoSubdivisionProgram {
     std::string source;
     smo::ProgramIr ir;
@@ -34,7 +34,13 @@ struct SmoSubdivisionReport {
     SmoComputeInfo device;
     std::string source,contract;
     std::uint32_t items=0,steps=0,grid_scale=0,width=256,height=192,operation_count=0;
-    std::array<SmoSubdivisionTiming,3> variants;
+    // The fourth path removes the VM only after matching the complete parsed
+    // instruction/literal stream. Other valid affine sources explicitly use
+    // the existing exponent-VM fallback; they are never run as a fixed sample.
+    bool direct_f12=false;
+    std::array<SmoSubdivisionTiming,smo_subdivision_variants> variants;
+    std::array<double,smo_subdivision_stages> shader_asset_ms{},shader_creation_ms{};
+    std::vector<SmoComputePreparationEvent> preparation_events;
     double preparation_ms=0,source_compile_ms=0,shader_prepare_ms=0,upload_ms=0;
     double preflight_ms=0,warmup_ms=0,readback_ms=0,validation_ms=0;
     std::uint64_t gpu_buffer_bytes=0,verified_values=0,process_peak_working_set=0;

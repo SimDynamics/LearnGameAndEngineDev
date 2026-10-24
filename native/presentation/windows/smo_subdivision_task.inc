@@ -42,7 +42,22 @@ void subdivision_task(uint id){
     if(id<parameters[1].x*parameters[1].y)put(7u,id,0xff1e1e1eu);
 #else
     if(id>=count)return;
-#if SMO_SUBDIVISION_STAGE==0 || SMO_SUBDIVISION_STAGE==1
+#if SMO_SUBDIVISION_STAGE==6
+    // Static lowering of the canonical, HOST-VERIFIED parsed instruction
+    // stream. This is exactly the authored operation order, with F12 packets
+    // throughout. No affine fusion, alternate representation or removed
+    // rounding point is used; only VM dispatch/stack traffic is eliminated.
+    SmoD12 x=smo_d12_uint(word(0u,id*2u)),y=smo_d12_uint(word(0u,id*2u+1u));
+    SmoD12 fraction_half=smo_d12_load(4u,parameters[1].z*6u),third=smo_d12_load(4u,parameters[1].w*6u);
+    SmoD12 sixth=smo_d12_load(4u,parameters[2].x*6u),twelve=smo_d12_load(4u,parameters[2].y*6u);
+    F12_LOOP for(uint step=0u;step<steps;++step){
+        x=smo_d12_mul(x,fraction_half);x=smo_d12_add(x,third);
+        x=subdivision_scale(x,twelve,false);x=subdivision_scale(x,twelve,true);
+        y=smo_d12_mul(y,third);y=smo_d12_add(y,sixth);
+        y=subdivision_scale(y,twelve,false);y=subdivision_scale(y,twelve,true);
+    }
+    smo_d12_store(1u,id*12u,x);smo_d12_store(1u,id*12u+6u,y);
+#elif SMO_SUBDIVISION_STAGE==0 || SMO_SUBDIVISION_STAGE==1
     SmoD12 states[2];states[0]=smo_d12_uint(word(0u,id*2u));states[1]=smo_d12_uint(word(0u,id*2u+1u));
     SmoD12 stack[8];F12_LOOP for(uint initialize=0u;initialize<8u;++initialize)stack[initialize]=smo_d12_zero();
     F12_LOOP for(uint step=0u;step<steps;++step){uint top=0u;
