@@ -164,6 +164,30 @@ bool push_button(HWND window) {
     const auto type = GetWindowLongPtrW(window, GWL_STYLE) & BS_TYPEMASK;
     return type == BS_PUSHBUTTON || type == BS_DEFPUSHBUTTON || type == BS_OWNERDRAW;
 }
+bool draw_success_label(HDC dc,const std::wstring& text,RECT bounds,COLORREF ink) {
+    if(!text.ends_with(L" \u2713")||text.find_first_of(L"\r\n&")!=std::wstring::npos)return false;
+    // The caption remains "Correcto \u2713" for accessibility. Paint only its
+    // terminal mark as geometry so a missing glyph in the selected UI font
+    // cannot hide the solved state or consume the separating space.
+    const auto label=text.substr(0,text.size()-2);
+    TEXTMETRICW metrics{};SIZE label_size{},space{};
+    if(!GetTextMetricsW(dc,&metrics)||!GetTextExtentPoint32W(dc,label.c_str(),static_cast<int>(label.size()),&label_size)
+        ||!GetTextExtentPoint32W(dc,L" ",1,&space))return false;
+    const int side=std::max(1L,metrics.tmAscent*3/4),gap=std::max(1L,space.cx);
+    const int room=std::max(0L,bounds.right-bounds.left);
+    if(room<=side+gap||bounds.bottom<=bounds.top)return false;
+    const int label_width=std::min(static_cast<int>(label_size.cx),room-side-gap);
+    const int left=bounds.left+(room-label_width-gap-side)/2;
+    const int text_top=bounds.top+(bounds.bottom-bounds.top-metrics.tmHeight)/2;
+    const auto pen=CreatePen(PS_SOLID,std::max(1L,metrics.tmHeight/10),ink);
+    if(!pen)return false;
+    RECT label_bounds{left,bounds.top,left+label_width,bounds.bottom};
+    DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&label_bounds,DT_LEFT|DT_SINGLELINE|DT_VCENTER|DT_END_ELLIPSIS|DT_NOPREFIX);
+    const int x=left+label_width+gap,y=text_top+(metrics.tmAscent-side)/2;
+    const POINT points[]{{x,y+side/2},{x+side/3,y+side*4/5},{x+side,y+side/8}};
+    const auto previous=SelectObject(dc,pen);Polyline(dc,points,3);SelectObject(dc,previous);DeleteObject(pen);
+    return true;
+}
 bool radio_button(HWND window) {
     wchar_t name[64]{}; GetClassNameW(window, name, static_cast<int>(std::size(name)));
     if (_wcsicmp(name, L"BUTTON") != 0) return false;
@@ -689,12 +713,14 @@ bool draw_button(const DRAWITEMSTRUCT& item) {
     text.resize(static_cast<std::size_t>(GetWindowTextW(item.hwndItem, text.data(), static_cast<int>(text.size()))));
     auto bounds = item.rcItem; InflateRect(&bounds, -7, -3);
     if (pressed) OffsetRect(&bounds, 1, 1);
-    UINT text_flags=DT_CENTER | ((item.itemState & ODS_NOACCEL) ? DT_HIDEPREFIX : 0);
-    if(GetWindowLongPtrW(item.hwndItem,GWL_STYLE)&BS_MULTILINE){
-        auto measured=bounds;DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&measured,text_flags | DT_WORDBREAK | DT_CALCRECT);
-        bounds.top+=std::max<LONG>(0,(bounds.bottom-bounds.top-(measured.bottom-measured.top))/2);text_flags|=DT_WORDBREAK;
-    }else text_flags|=DT_VCENTER | DT_SINGLELINE;
-    if(!icon)DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&bounds,text_flags);
+    if(!icon&&!draw_success_label(item.hDC,text,bounds,ink)){
+        UINT text_flags=DT_CENTER | ((item.itemState & ODS_NOACCEL) ? DT_HIDEPREFIX : 0);
+        if(GetWindowLongPtrW(item.hwndItem,GWL_STYLE)&BS_MULTILINE){
+            auto measured=bounds;DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&measured,text_flags | DT_WORDBREAK | DT_CALCRECT);
+            bounds.top+=std::max<LONG>(0,(bounds.bottom-bounds.top-(measured.bottom-measured.top))/2);text_flags|=DT_WORDBREAK;
+        }else text_flags|=DT_VCENTER | DT_SINGLELINE;
+        DrawTextW(item.hDC,text.c_str(),static_cast<int>(text.size()),&bounds,text_flags);
+    }
     if((item.itemState&ODS_FOCUS)&&(item.itemState&ODS_NOFOCUSRECT)==0)
         paint_keyboard_focus(item.hwndItem,item.hDC,item.rcItem,ink);
     RestoreDC(item.hDC, saved);

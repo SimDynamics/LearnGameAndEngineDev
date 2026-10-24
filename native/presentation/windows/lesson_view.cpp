@@ -748,12 +748,16 @@ struct LessonView {
         auto bounds = item.rcItem;
         if(item.hwndItem==attempts) {
             const auto ink=colors.accent;
-            const int side=px(34);const int x=(bounds.right-side)/2;
-            const RECT glyph{x,bounds.bottom-side-px(12),x+side,bounds.bottom-px(12)};
+            const int side=MulDiv(px(43),4,5);const int x=bounds.left+(bounds.right-bounds.left-side)/2;
+            const RECT glyph{x,bounds.top+px(12),x+side,bounds.top+px(12)+side};
             const auto route_icon=route=="math_physics"?Icon::attempt_math:Icon::terminal;
-            draw_icon(item.hDC,glyph,route_icon,colors.high_contrast?colors.text:RGB(255,255,255));
             const auto progress=attempt_state.premium?1.:std::clamp(attempt_state.progress,0.,1.);
-            const auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,glyph.left+static_cast<int>(side*progress),glyph.bottom);
+            const auto split=glyph.left+static_cast<int>(std::round(side*progress));
+            // Complementary clips use the same geometry. Painting the accent
+            // over a complete white icon leaves a pale antialiasing fringe.
+            auto clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,split,glyph.top,glyph.right,glyph.bottom);
+            draw_icon(item.hDC,glyph,route_icon,colors.high_contrast?colors.text:RGB(255,255,255));RestoreDC(item.hDC,clipped);
+            clipped=SaveDC(item.hDC);IntersectClipRect(item.hDC,glyph.left,glyph.top,split,glyph.bottom);
             draw_icon(item.hDC,glyph,route_icon,ink);RestoreDC(item.hDC,clipped);
             if(attempt_state.premium){
                 // The original 30x26dp ImageView sits at (8,-1) inside the
@@ -765,12 +769,12 @@ struct LessonView {
             }
             const auto badge=CreateFontW(-px(12),0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Roboto");
             const auto old=SelectObject(item.hDC,badge);SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,ink);
-            auto left=bounds;left.right=bounds.right/2;left.bottom=left.top+px(15);
+            auto left=bounds;left.left+=MulDiv(px(12),4,5);left.right=left.left+MulDiv(px(22),4,5);left.bottom=left.top+px(15);
             const auto count=std::to_wstring(attempt_state.available);
             DrawTextW(item.hDC,count.c_str(),-1,&left,DT_CENTER|DT_SINGLELINE);
-            auto right=bounds;right.left=bounds.right/2;right.bottom=right.top+px(15);
+            auto right=bounds;right.right-=MulDiv(px(4),4,5);right.bottom=right.top+px(15);
             const auto percent=std::to_wstring(static_cast<int>(std::round(attempt_state.progress*100)))+L"%";
-            DrawTextW(item.hDC,percent.c_str(),-1,&right,DT_CENTER|DT_SINGLELINE);
+            DrawTextW(item.hDC,percent.c_str(),-1,&right,DT_RIGHT|DT_SINGLELINE);
             auto remaining=bounds;remaining.top=remaining.bottom-px(13);
             const auto time=wide(lgaed::attempts::recovery_label(attempt_state.maximum,attempt_state.maximum*attempt_state.progress,attempt_state.premium));
             DrawTextW(item.hDC,time.c_str(),-1,&remaining,DT_CENTER|DT_SINGLELINE);
@@ -779,9 +783,16 @@ struct LessonView {
         const bool header=GetParent(item.hwndItem)==window;
         const int inset=header?(item.hwndItem==reader?9:item.hwndItem==language?5:4):10;
         InflateRect(&bounds,-px(inset),-px(inset));
-        const auto ink=colors.high_contrast?colors.text:item.hwndItem==reader?colors.accent:
+        auto ink=colors.high_contrast?colors.text:item.hwndItem==reader?colors.accent:
             item.hwndItem==back?RGB(255,255,255):RGB(170,174,183);
-        draw_icon(item.hDC,bounds,icon->second,(item.itemState&ODS_DISABLED)?colors.muted:ink);
+        if(item.itemState&ODS_DISABLED){
+            if(icon->second==Icon::reset&&!colors.high_contrast){
+                const auto bg=reader_theme::background(item.hwndItem);
+                ink=RGB((GetRValue(ink)*35+GetRValue(bg)*65)/100,(GetGValue(ink)*35+GetGValue(bg)*65)/100,
+                    (GetBValue(ink)*35+GetBValue(bg)*65)/100);
+            }else ink=colors.muted;
+        }
+        draw_icon(item.hDC,bounds,icon->second,ink);
         return true;
     }
     void clear_accessible_names() {
@@ -1033,7 +1044,7 @@ struct LessonView {
     void simulated_gutter(std::size_t index) {
         auto& vm=controls.at(index);
         vm.simulated_gutter=std::make_unique<windows::CodeGutter>(vm.simulated_code);
-        windows::set_code_gutter_appearance(vm.simulated_code,reader_theme::palette(window).card,RGB(111,119,130),3);
+        windows::set_code_gutter_appearance(vm.simulated_code,RGB(20,20,20),RGB(111,119,130),3,3);
     }
     void copy_simulated(std::size_t index) {
         const auto& current=block(index);const auto& vm=controls[index];
@@ -1695,6 +1706,29 @@ struct LessonView {
         set_rich_text(controls.at(index).feedback, text);
         if(route=="math_physics")(void)set_original_math_text(controls.at(index).feedback,text,math_mode(index),hooks.math_editor_request);
         else (void)set_native_math_inline_text(controls.at(index).feedback,text);
+        if(block(index).type!=BlockType::math_puzzle){
+            const auto target=controls.at(index).feedback;
+            CHARRANGE previous{};SendMessageW(target,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            SendMessageW(target,EM_SETSEL,0,-1);
+            // Android feedback keeps native single spacing, unlike lesson
+            // paragraphs (1.25). Preserve its exact text and narration offsets.
+            PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
+            paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
+            SendMessageW(target,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
+            if(block(index).type==BlockType::fill_code){
+                CHARFORMAT2W size{};size.cbSize=sizeof(size);size.dwMask=CFM_SIZE;size.yHeight=16*15;
+                SendMessageW(target,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&size));
+            }
+            if(formatted.starts_with("✓ ")||formatted.starts_with("✗ ")){
+                // Bind the verdict glyph and its literal space to a font
+                // that supplies both, without substituting source characters.
+                SendMessageW(target,EM_SETSEL,0,2);
+                CHARFORMAT2W symbol{};symbol.cbSize=sizeof(symbol);symbol.dwMask=CFM_FACE;
+                wcscpy_s(symbol.szFaceName,L"Segoe UI Symbol");
+                SendMessageW(target,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&symbol));
+            }
+            SendMessageW(target,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+        }
         // The canonical math feedback already owns its verdict and source
         // line break. Keep those exact narration offsets and add the Android
         // blank line through presentation-only paragraph spacing.
@@ -1759,6 +1793,10 @@ struct LessonView {
             }
             const auto caption = label + "  " + std::to_string(page + 1) + ui(" de "," of "," sur ") + std::to_string(lesson.pages.size());
             set_rich_text(title,caption);
+            SendMessageW(title,EM_SETSEL,0,-1);
+            PARAFORMAT2 paragraph{};paragraph.cbSize=sizeof(paragraph);paragraph.dwMask=PFM_LINESPACING;
+            paragraph.bLineSpacingRule=5;paragraph.dyLineSpacing=20;
+            SendMessageW(title,EM_SETPARAFORMAT,0,reinterpret_cast<LPARAM>(&paragraph));
             CHARFORMAT2W format{};format.cbSize=sizeof(format);format.dwMask=CFM_BOLD|CFM_COLOR|CFM_SIZE;
             const auto colors=reader_theme::palette(title);
             format.dwEffects=CFE_BOLD;format.yHeight=18*15;format.crTextColor=colors.high_contrast?colors.text:RGB(255,255,255);
@@ -1974,7 +2012,7 @@ struct LessonView {
                 SetWindowLongPtrW(vm.project->window(),GWLP_ID,control_id(index,5));
                 rows.push_back({{vm.project->window()},{0},48,false});rows.back().padding_after=0;
             }
-            if(laboratory())windows::set_code_gutter_appearance(vm.source,RGB(24,26,31),RGB(111,119,130),3);
+            windows::set_code_gutter_appearance(vm.source,laboratory()?RGB(24,26,31):RGB(20,20,20),RGB(111,119,130),3);
             apply_wrap(vm.source);
             if(laboratory()){reader_theme::apply(vm.source,reader_theme::Surface::compiler_editor);reader_theme::set_text_color(vm.source,RGB(230,237,243));}
             style_cpp(vm.source);
@@ -2149,7 +2187,10 @@ struct LessonView {
             header_right-=width-px(48);
             MoveWindow(item,header_right,px(4),width,item==attempts?px(64):px(56),TRUE); header_right -= px(48);
         }
-        MoveWindow(title,margin + px(58),px(10),std::max(px(60),header_right - margin - px(54)),px(56),TRUE);
+        MoveWindow(title,margin + px(58),px(4),std::max(px(60),header_right - margin - px(54)),px(64),TRUE);
+        RECT title_content{};GetClientRect(title,&title_content);
+        title_content.top=std::max(0L,(title_content.bottom-edit_line_height(title,100))/2);
+        SendMessageW(title,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&title_content));
         MoveWindow(page_status,0,px(72),static_cast<int>(area.right),px(5),TRUE);
         auto fixed_header=fixed_header_row();
         int fixed_header_height=0;
@@ -2378,7 +2419,7 @@ struct LessonView {
                 placements.push_back({row.cells[i],x,top,cell_width,std::max(0,cell_height),fixed});
                 const int part=(GetDlgCtrlID(row.cells[i])-1000)%100;
                 if((row.card_header||row.toolbar)&&(part==16||part==30||part==38)){
-                    RECT content{laboratory()?px(14):0,px(laboratory()?20:12),cell_width,std::max(0,height)};
+                    RECT content{laboratory()?px(14):0,laboratory()?px(20):std::max(0,(height-edit_line_height(row.cells[i],content_text_scale()))/2),cell_width,std::max(0,height)};
                     SendMessageW(row.cells[i],EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&content));
                 }
                 x += cell_width + gap;

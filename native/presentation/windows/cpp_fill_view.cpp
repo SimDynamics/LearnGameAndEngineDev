@@ -198,7 +198,7 @@ struct CppFillView::Impl {
         if(laying_out)return;laying_out=true;
         struct Guard{bool& value;~Guard(){value=false;}} guard{laying_out};
         const auto count=1+static_cast<std::size_t>(std::ranges::count(block.code_template,'\n'));
-        gutter_width=std::max(px(20),measure(std::string(std::to_string(count).size(),'0'))+px(16));
+        gutter_width=std::max(px(18),measure(std::string(std::to_string(count).size(),'0'))+px(3)+1);
         const int start=gutter_width+px(10),right=std::max(start+px(12),width-px(10));
         const int available=std::max(px(12),right-start),line=drag()?std::max(px(22),text_height()):MulDiv(px(40),text_scale,100);
         struct Placement{HWND item;int x,y,width,height;};std::vector<Placement> placements;
@@ -246,10 +246,10 @@ struct CppFillView::Impl {
         if(!dc)return;const auto saved=SaveDC(dc);RECT bounds{};GetClientRect(host,&bounds);bounds.right=gutter_width;
         if(!numbered_lines.empty())bounds.bottom=std::min(bounds.bottom,numbered_lines.back().bottom);
         const auto colors=reader_theme::palette(host);
-        const auto fill=CreateSolidBrush(reader_theme::background(host));FillRect(dc,&bounds,fill);DeleteObject(fill);
+        const auto fill=CreateSolidBrush(colors.high_contrast?reader_theme::background(host):RGB(20,20,20));FillRect(dc,&bounds,fill);DeleteObject(fill);
         IntersectClipRect(dc,0,0,gutter_width,bounds.bottom);SetBkMode(dc,TRANSPARENT);
         SetTextColor(dc,colors.high_contrast?colors.text:RGB(111,119,130));SelectObject(dc,font);
-        for(std::size_t i=0;i<numbered_lines.size();++i){auto rect=numbered_lines[i];rect.left=px(3);rect.right-=px(3);
+        for(std::size_t i=0;i<numbered_lines.size();++i){auto rect=numbered_lines[i];rect.left=0;rect.right-=px(3);
             const auto label=std::to_wstring(i+1);DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&rect,
                 DT_RIGHT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
         RestoreDC(dc,saved);

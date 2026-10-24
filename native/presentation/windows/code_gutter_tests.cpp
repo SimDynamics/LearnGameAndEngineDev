@@ -55,7 +55,9 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
         const auto text=source(130);field.editor->reset(predefined_code_document(text));const auto gutter=code_gutter_snapshot(field.edit);
         check(gutter.logical_lines==130&&gutter.width>initial.width,"Three-digit numbers did not receive a wider native margin");
         check(field.editor->document().text==text,"Margin update changed source characters");aligned(field.edit,gutter);
-        RECT format{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));check(format.left>=gutter.width,"Native text was not kept outside the gutter");});
+        RECT format{};SendMessageW(field.edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        const auto text_gap=MulDiv(10,static_cast<int>(GetDpiForWindow(field.edit)),96);
+        check(format.left>=gutter.width+text_gap,"Native text lost the Android gap after the number column");});
     test("Actual paragraph starts remain aligned through vertical scrolling",[]{Fixture field(source(130));SendMessageW(field.edit,EM_LINESCROLL,0,95);
         aligned(field.edit,code_gutter_snapshot(field.edit));
         check(SendMessageW(field.edit,EM_GETFIRSTVISIBLELINE,0,0)>0,"Native relative scrolling did not move the editor");
@@ -78,7 +80,10 @@ int main(){std::cout<<std::unitbuf;const auto rich=LoadLibraryW(L"Msftedit.dll")
             for(int x=0;x<gutter.width;++x)if(GetPixel(pixels.dc,x,y)!=background)++ink;
         check(ink>10,"Three-digit line number was not drawn in its real text row");
         const auto old=SelectObject(pixels.dc,field.font);RECT measured{0,0,0,0};DrawTextW(pixels.dc,L"130",3,&measured,DT_CALCRECT|DT_SINGLELINE|DT_NOPREFIX);SelectObject(pixels.dc,old);
-        check(measured.right+12<=gutter.width,"Three-digit number can be clipped or split in the reserved margin");});
+        // Android reserves 8dp inside the editor number column, plus one
+        // pixel against fractional glyph clipping. The text gap is separate.
+        const auto number_padding=MulDiv(8,static_cast<int>(GetDpiForWindow(field.edit)),96)+1;
+        check(measured.right+number_padding<=gutter.width,"Three-digit number can be clipped or split in the reserved margin");});
     test("Soft wrapping numbers each source paragraph exactly once",[]{Fixture field("// "+std::string(72,'x')+"\nint value = 2;",true,true,180,true);
         check(SendMessageW(field.edit,EM_GETLINECOUNT,0,0)>2,"Native fixture did not actually soft-wrap");
         auto gutter=code_gutter_snapshot(field.edit);check(gutter.logical_lines==2,"Soft wrap was mistaken for source lines");aligned(field.edit,gutter);

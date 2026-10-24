@@ -28,7 +28,7 @@ struct CodeGutter::Impl {
     HWND window=nullptr;HFONT font=nullptr;int width=0,line_height=1,original_margin=0;
     bool updating=false;
     std::optional<COLORREF> background_color,foreground_color;
-    int right_padding=8;
+    int right_padding=3,horizontal_padding=8;
     std::vector<LONG> starts{0};
     explicit Impl(HWND target):window(target){RECT format{};SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));original_margin=format.left;}
     ~Impl(){if(window&&IsWindow(window)){RemoveWindowSubclass(window,subclass,subclass_id);RemovePropW(window,property);
@@ -56,8 +56,13 @@ struct CodeGutter::Impl {
             int digit_width=1;for(wchar_t digit=L'0';digit<=L'9';++digit){SIZE size{};GetTextExtentPoint32W(dc,&digit,1,&size);digit_width=std::max(digit_width,static_cast<int>(size.cx));}
             const auto measured=static_cast<int>(std::to_wstring(starts.size()).size())*digit_width;
             if(previous)SelectObject(dc,previous);ReleaseDC(window,dc);
-            const int next=std::min(65535,std::max(px(20),measured+px(16)));
-            if(next!=width){width=next;SendMessageW(window,EM_SETMARGINS,EC_LEFTMARGIN,MAKELPARAM(width,0));}
+            // Match the Android number column rather than folding its text
+            // gap into the painted band. The extra pixel protects fractional
+            // glyph extents when the font/DPI/zoom changes.
+            const int next=std::min(65535-px(10),std::max(px(18),measured+px(std::max(horizontal_padding,right_padding))+1));
+            const auto margins=static_cast<DWORD>(SendMessageW(window,EM_GETMARGINS,0,0));
+            width=next;
+            if(LOWORD(margins)!=width+px(10))SendMessageW(window,EM_SETMARGINS,EC_LEFTMARGIN,MAKELPARAM(width+px(10),0));
             updating=false;invalidate();
         }catch(...){updating=false;throw;}
     }
@@ -82,7 +87,7 @@ struct CodeGutter::Impl {
         SetTextColor(dc,colors.high_contrast?GetSysColor(COLOR_WINDOWTEXT):foreground_color.value_or(
             presentation::reader_theme::applied(window)?colors.muted:GetSysColor(COLOR_GRAYTEXT)));SetBkMode(dc,TRANSPARENT);
         if(font)SelectObject(dc,font);
-        for(const auto& line:snapshot().visible){const auto label=std::to_wstring(line.number);RECT bounds{px(3),line.text_position.y,width-px(right_padding),line.text_position.y+line_height};
+        for(const auto& line:snapshot().visible){const auto label=std::to_wstring(line.number);RECT bounds{0,line.text_position.y,width-px(right_padding),line.text_position.y+line_height};
             DrawTextW(dc,label.c_str(),static_cast<int>(label.size()),&bounds,DT_RIGHT|DT_TOP|DT_SINGLELINE|DT_NOPREFIX|DT_NOCLIP);}
         RestoreDC(dc,saved);
     }
@@ -112,7 +117,11 @@ CodeGutter::CodeGutter(HWND window){
 }
 CodeGutter::~CodeGutter()=default;
 CodeGutterSnapshot CodeGutter::snapshot()const{return impl_->snapshot();}
-void CodeGutter::set_appearance(COLORREF background,COLORREF foreground,int right_padding){impl_->background_color=background;impl_->foreground_color=foreground;impl_->right_padding=std::clamp(right_padding,0,32);impl_->invalidate();}
+void CodeGutter::set_appearance(COLORREF background,COLORREF foreground,int right_padding,int horizontal_padding){
+    impl_->background_color=background;impl_->foreground_color=foreground;
+    impl_->right_padding=std::clamp(right_padding,0,32);impl_->horizontal_padding=std::clamp(horizontal_padding,0,64);
+    impl_->refresh(false,false);
+}
 CodeGutterSnapshot code_gutter_snapshot(HWND window){const auto gutter=reinterpret_cast<const CodeGutter*>(GetPropW(window,property));return gutter?gutter->snapshot():CodeGutterSnapshot{};}
-void set_code_gutter_appearance(HWND window,COLORREF background,COLORREF foreground,int right_padding){if(const auto gutter=reinterpret_cast<CodeGutter*>(GetPropW(window,property)))gutter->set_appearance(background,foreground,right_padding);}
+void set_code_gutter_appearance(HWND window,COLORREF background,COLORREF foreground,int right_padding,int horizontal_padding){if(const auto gutter=reinterpret_cast<CodeGutter*>(GetPropW(window,property)))gutter->set_appearance(background,foreground,right_padding,horizontal_padding);}
 }
