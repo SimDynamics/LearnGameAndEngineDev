@@ -341,9 +341,24 @@ int main() {
             const std::string isolated=R"text(Los símbolos \" y \\ son escapes técnicos; se leen por separado.)text";
             set_rich_text(editor.value,isolated);
             check(edit_text(editor.value)==isolated,"Isolated escaped symbols changed the original narration text");
-            check_range(LR"(\")",0,2,identifier_ink);
-            check_range(LR"(\\)",0,2,identifier_ink);
+            check_range(LR"(\")",0,2,string_ink);
+            check_range(LR"(\\)",0,2,string_ink);
             check_range(L" son escapes técnicos",0,std::wstring_view(L" son escapes técnicos").size(),base);
+            // This sentence occurs on page 3 of the authored Spanish lesson.
+            // The escape pairs are green even when explained outside a code
+            // block; all adjacent Spanish prose stays the ordinary text color.
+            const std::string authored_escape_prose=R"text(Para incluir una comilla en el mensaje, escribimos \" dentro del literal. De manera semejante, \\ representa una sola barra inversa.)text";
+            set_rich_text(editor.value,authored_escape_prose);
+            check(edit_text(editor.value)==authored_escape_prose,"String escape highlighting changed authored lesson text");
+            check_range(LR"(\")",0,2,string_ink);
+            check_range(LR"(\\)",0,2,string_ink);
+            check_range(L" dentro del literal.",0,std::wstring_view(L" dentro del literal.").size(),base);
+            check_range(L" representa una sola barra inversa.",0,std::wstring_view(L" representa una sola barra inversa.").size(),base);
+            // Complete C++ quoted literals retain their existing green ink.
+            const std::string quoted_cpp=R"code(std::cout << "Nombre: \"Luna\"" << "Nivel\\Uno";)code";
+            set_rich_text(editor.value,quoted_cpp,{},true);
+            check_range(LR"("Nombre: \"Luna\"")",0,std::wstring_view(LR"("Nombre: \"Luna\"")").size(),string_ink);
+            check_range(LR"("Nivel\\Uno")",0,std::wstring_view(LR"("Nivel\\Uno")").size(),string_ink);
             const std::string ordinary_quotes=R"text(En la ruta C:\\carpeta y en "una cita" no hay símbolos escapados aislados.)text";
             set_rich_text(editor.value,ordinary_quotes);
             check_range(wide(ordinary_quotes),0,wide(ordinary_quotes).size(),base);

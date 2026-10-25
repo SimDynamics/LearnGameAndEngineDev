@@ -317,8 +317,8 @@ bool technical_mention_boundary(wchar_t value) {
 std::vector<std::pair<std::size_t,std::size_t>> inline_character_mentions(std::wstring_view text) {
     std::vector<std::pair<std::size_t,std::size_t>> result;
     // These are the escape seeds used by Android's SpanishTechnicalSpeech.
-    // Apply the existing lexer to the exact token: the letter is identifier
-    // ink, while a surrounding C++ string keeps its complete string ink.
+    // Named letters and control escapes retain identifier ink; standalone
+    // escaped quotes/backslashes use string ink, like their C++ literal role.
     for(std::size_t index=0;index+1<text.size();++index){
         if(text[index]!=L'\\'||(std::wstring_view(L"ntr0abfv").find(text[index+1])==std::wstring_view::npos &&
             text[index+1]!=L'\\'&&text[index+1]!=L'"'))continue;
@@ -596,11 +596,12 @@ void set_rich_text(HWND edit, std::string_view text, std::span<const curriculum:
             }
         }
         for(const auto& [start,end]:inline_character_mentions(source)) {
-            // Standalone escaped quotes/backslashes are single technical
-            // symbols. Color both characters, not just a dangling quote.
+            // A standalone escaped quote or backslash is a C++ string escape,
+            // not an identifier. Color its full pair with string literal ink,
+            // without coloring the surrounding explanatory prose.
             const bool symbol_escape=end-start==2&&source[start]==L'\\'&&
                 (source[start+1]==L'"'||source[start+1]==L'\\');
-            if(symbol_escape)format(edit,start,end,accessible(edit,RGB(171,141,227)));
+            if(symbol_escape)format(edit,start,end,accessible(edit,RGB(122,195,141)));
             else apply_cpp(edit,std::wstring_view(source).substr(start,end-start),start);
         }
         // Apply complete fragments after individual technical mentions so a
