@@ -52,8 +52,8 @@ def main():
         jar = folder / 'symbol-speech.jar'
         command = [args.kotlinc, '-jvm-target', '17', '-include-runtime', '-d', str(jar),
                    *map(str, dependencies), str(semicolon), str(fixture)]
-        subprocess.run(command, check=True, cwd=ROOT)
-        subprocess.run([args.java, '-jar', str(jar)], check=True, cwd=ROOT)
+        subprocess.run(command, check=True, cwd=ROOT, timeout=120)
+        subprocess.run([args.java, '-jar', str(jar)], check=True, cwd=ROOT, timeout=60)
 
 
 if __name__ == '__main__':
