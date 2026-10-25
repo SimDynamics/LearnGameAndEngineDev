@@ -1,0 +1,78 @@
+name: One-time hidden lesson scrollbar fix
+on:
+  push:
+    branches: [Codex]
+    paths: [.github/workflows/one-time-hidden-scrollbar-fix.yml]
+permissions:
+  contents: write
+jobs:
+  apply-scoped-fix:
+    if: github.repository == 'SimDynamics/LearnGameAndEngineDev' && github.ref == 'refs/heads/Codex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Apply two redraw flags, verify the diff, and remove this temporary workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          repo = 'SimDynamics/LearnGameAndEngineDev'
+          branch = 'Codex'
+          source_path = 'native/presentation/windows/lesson_view.cpp'
+          workflow_path = '.github/workflows/one-time-hidden-scrollbar-fix.yml'
+          api = 'https://api.github.com/repos/' + repo
+
+          def request(path, data=None, method=None):
+              encoded = None if data is None else json.dumps(data).encode('utf-8')
+              req = urllib.request.Request(api + path, data=encoded, method=method,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json',
+                           'X-GitHub-Api-Version': '2022-11-28',
+                           'Content-Type': 'application/json'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.load(response)
+
+          expected = os.environ['GITHUB_SHA']
+          head = request('/git/ref/heads/' + branch)['object']['sha']
+          if head != expected:
+              raise RuntimeError('Branch advanced; leave all files unchanged and review the new head.')
+          metadata = request('/git/commits/' + head)
+          entry = request('/contents/' + source_path + '?ref=' + head)
+          before = base64.b64decode(entry['content']).decode('utf-8')
+          pattern = r'SetScrollInfo\(pane,\s*SB_VERT,\s*&info,\s*TRUE\)'
+          after, count = re.subn(pattern, lambda match: match.group(0).replace('TRUE', 'FALSE'), before)
+          if count != 2:
+              raise RuntimeError('Expected exactly two hidden lesson-pane redraw calls; found ' + str(count))
+          # Keep all other tree entries. Remove this one-time task in the same
+          # commit as the source fix, without running any repository code.
+          tree = request('/git/trees', {
+              'base_tree': metadata['tree']['sha'],
+              'tree': [{'path': source_path, 'mode': '100644', 'type': 'blob', 'content': after},
+                       {'path': workflow_path, 'mode': '100644', 'type': 'blob', 'sha': None}]}, 'POST')
+          commit = request('/git/commits', {
+              'message': 'fix(windows): update hidden lesson scroll state without painting native bars',
+              'tree': tree['sha'], 'parents': [head]}, 'POST')
+          comparison = request('/compare/' + head + '...' + commit['sha'])
+          files = {item['filename']: item for item in comparison['files']}
+          if set(files) != {source_path, workflow_path} or files[workflow_path]['status'] != 'removed':
+              raise RuntimeError('Unexpected files in candidate commit; branch was not updated.')
+          if files[source_path]['additions'] != 2 or files[source_path]['deletions'] != 2:
+              raise RuntimeError('Source diff must contain exactly two line replacements.')
+          if request('/git/ref/heads/' + branch)['object']['sha'] != head:
+              raise RuntimeError('Branch advanced during verification; do not overwrite it.')
+          request('/git/refs/heads/' + branch, {'sha': commit['sha'], 'force': False}, 'PATCH')
+          print('Published two-line hidden scrollbar fix:', commit['sha'])
+          print(files[source_path].get('patch', ''))
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text(
+              'Applied exactly two redraw-flag replacements in `' + source_path + '`.\n\n'
+              'The temporary workflow was removed in the same commit. Native Windows runtime tests were not run.\n\n'
+              'Commit: `' + commit['sha'] + '`\n', encoding='utf-8')
+          PY
