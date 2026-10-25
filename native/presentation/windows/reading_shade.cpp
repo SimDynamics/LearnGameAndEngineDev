@@ -13,12 +13,34 @@ std::wstring native_text(HWND edit){GETTEXTLENGTHEX length{GTL_NUMCHARS|GTL_PREC
     std::wstring text(static_cast<std::size_t>(std::max<LRESULT>(0,size))+1,L'\0');GETTEXTEX request{static_cast<DWORD>(text.size()*sizeof(wchar_t)),GT_RAWTEXT,1200,nullptr,nullptr};
     text.resize(static_cast<std::size_t>(SendMessageW(edit,EM_GETTEXTEX,reinterpret_cast<WPARAM>(&request),reinterpret_cast<LPARAM>(text.data()))));return text;}
 struct Transaction {
-    HWND window;CHARRANGE selection{};POINT scroll{};LRESULT events=0,modified=0;ITextDocument* document=nullptr;bool suspend=false,redraw=false;
-    explicit Transaction(HWND edit):window(edit){SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));events=SendMessageW(window,EM_GETEVENTMASK,0,0);modified=SendMessageW(window,EM_GETMODIFY,0,0);
-        SendMessageW(window,EM_SETEVENTMASK,0,0);redraw=(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)!=0;if(redraw)SendMessageW(window,WM_SETREDRAW,FALSE,0);IRichEditOle* rich=nullptr;SendMessageW(window,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(&rich));
-        if(rich){rich->QueryInterface(__uuidof(ITextDocument),reinterpret_cast<void**>(&document));rich->Release();if(document){long count=0;suspend=SUCCEEDED(document->Undo(tomSuspend,&count));}}}
-    ~Transaction(){SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));SendMessageW(window,EM_SETMODIFY,modified,0);
-        if(document){if(suspend){long count=0;document->Undo(tomResume,&count);}document->Release();}SendMessageW(window,EM_SETEVENTMASK,0,events);if(redraw)SendMessageW(window,WM_SETREDRAW,TRUE,0);InvalidateRect(window,nullptr,FALSE);}
+    HWND window;CHARRANGE selection{};POINT scroll{};LRESULT events=0,modified=0;
+    ITextDocument* document=nullptr;bool suspend=false,frozen=false,redraw=false;
+    explicit Transaction(HWND edit):window(edit){
+        SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        events=SendMessageW(window,EM_GETEVENTMASK,0,0);modified=SendMessageW(window,EM_GETMODIFY,0,0);
+        SendMessageW(window,EM_SETEVENTMASK,0,0);
+        IRichEditOle* rich=nullptr;SendMessageW(window,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(&rich));
+        if(rich){rich->QueryInterface(__uuidof(ITextDocument),reinterpret_cast<void**>(&document));rich->Release();}
+        if(document){long count=0;frozen=SUCCEEDED(document->Freeze(&count));suspend=SUCCEEDED(document->Undo(tomSuspend,&count));}
+        // Keep WS_VISIBLE stable during word ticks. Native TOM batches both
+        // formatting and selection painting without hiding the child window.
+        // The legacy path is retained only for controls without usable TOM.
+        if(!frozen){redraw=(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)!=0;if(redraw)SendMessageW(window,WM_SETREDRAW,FALSE,0);}
+    }
+    ~Transaction(){
+        CHARRANGE current{};SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
+        if(current.cpMin!=selection.cpMin||current.cpMax!=selection.cpMax)
+            SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        POINT offset{};SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset));
+        if(offset.x!=scroll.x||offset.y!=scroll.y)SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        SendMessageW(window,EM_SETMODIFY,modified,0);
+        if(document){long count=0;if(suspend)document->Undo(tomResume,&count);if(frozen)document->Unfreeze(&count);document->Release();}
+        if(redraw){SendMessageW(window,WM_SETREDRAW,TRUE,0);InvalidateRect(window,nullptr,FALSE);}
+        // No whole-control invalidation on TOM: only changed ranges are dirty.
+        // Suppress selection/scroll notifications until the batch is complete.
+        SendMessageW(window,EM_SETEVENTMASK,0,events);
+    }
 };
 void color(HWND edit,ITextDocument* document,long start,long end,COLORREF color,bool automatic=false){
     if(end<=start)return;
@@ -50,10 +72,27 @@ ReadingShade::~ReadingShade(){restore();}
 bool ReadingShade::matches(HWND window,std::string_view source)const{return valid_&&window==window_&&IsWindow(window_)&&wide(source)==source_&&native_text(window_)==displayed_;}
 void ReadingShade::read_through(std::size_t source){
     if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;const auto boundary=static_cast<long>(map_[std::min(source,map_.size()-1)]);if(boundary==boundary_)return;
-    Transaction transaction(window_);boundary_=boundary;
-    for(const auto& ink:ink_)color(window_,transaction.document,ink.start,std::min(ink.end,boundary),ink.color,ink.automatic);
+    Transaction transaction(window_);
     const auto gray=reader_theme::unread_color(reader_theme::background(window_));
-    color(window_,transaction.document,boundary,static_cast<long>(displayed_.size()),gray);
+    if(boundary_<0){
+        // On first use the prefix already has its original syntax colors.
+        color(window_,transaction.document,boundary,static_cast<long>(displayed_.size()),gray);
+    }else if(boundary>boundary_){
+        // Restore only the newly read characters, never the unchanged prefix
+        // or unread lines below the current word.
+        for(const auto& ink:ink_)if(ink.end>boundary_&&ink.start<boundary)
+            color(window_,transaction.document,std::max(ink.start,boundary_),std::min(ink.end,boundary),ink.color,ink.automatic);
+    }else{
+        // Seeking backward dims only the interval that became unread again.
+        color(window_,transaction.document,boundary,boundary_,gray);
+    }
+    boundary_=boundary;
 }
-void ReadingShade::restore(){if(!valid_||!IsWindow(window_)||native_text(window_)!=displayed_)return;Transaction transaction(window_);for(const auto& ink:ink_)color(window_,transaction.document,ink.start,ink.end,ink.color,ink.automatic);boundary_=-1;}
+void ReadingShade::restore(){
+    if(!valid_||boundary_<0||!IsWindow(window_)||native_text(window_)!=displayed_)return;
+    Transaction transaction(window_);
+    for(const auto& ink:ink_)if(ink.end>boundary_)
+        color(window_,transaction.document,std::max(ink.start,boundary_),ink.end,ink.color,ink.automatic);
+    boundary_=-1;
+}
 }
