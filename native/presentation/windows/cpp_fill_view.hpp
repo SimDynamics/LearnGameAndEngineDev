@@ -29,6 +29,7 @@ public:
     void set_palette_host(HWND parent = nullptr);
     [[nodiscard]] int palette_height_for_width(int width);
     void set_enabled(bool);
+    void set_completed(bool);
     void set_text_scale(int percentage);
     void set_wrap(bool);
     void scroll_horizontal_to(int offset);

@@ -508,3 +508,10 @@ install(FILES native/assets/fonts/NotoSerif-Regular.ttf native/assets/fonts/Noto
     native/assets/fonts/NOTICE.txt native/assets/fonts/DroidSansMono.ttf
     native/assets/fonts/DroidSansMono-NOTICE.txt DESTINATION bin/fonts)
 message(STATUS "Development profile: ${LGAED_DEFAULT_PROFILE}; build and install trees belong to this checkout.")
+
+if(BUILD_TESTING)
+    add_executable(lgaed_inline_presentation_tests native/presentation/windows/inline_presentation_tests.cpp)
+    target_link_libraries(lgaed_inline_presentation_tests PRIVATE lgaed_presentation_windows)
+    set_target_properties(lgaed_inline_presentation_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+    add_test(NAME native.inline_presentation COMMAND lgaed_inline_presentation_tests)
+endif()

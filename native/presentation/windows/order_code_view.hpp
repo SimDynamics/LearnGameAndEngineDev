@@ -17,6 +17,7 @@ public:
     [[nodiscard]] std::vector<std::size_t> order()const;
     [[nodiscard]] std::vector<std::pair<HWND,std::string>> reading_regions()const;
     void set_enabled(bool);
+    void set_completed(bool);
     void set_text_scale(int percentage);
     void set_wrap(bool);
     void restart_tap_sequence();

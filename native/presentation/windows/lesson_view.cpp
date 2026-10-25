@@ -1769,6 +1769,8 @@ struct LessonView {
         }
         text=formatted;
         controls.at(index).feedback_source = std::string(text); controls.at(index).feedback_correct = correct;
+        if(controls.at(index).compile&&block(index).output_check)
+            reader_theme::completed_control(controls.at(index).compile,correct&&!text.empty());
         controls.at(index).feedback_generated_verdict = generated_verdict;
         controls.at(index).feedback_default_review = uses_default_review;
         const auto colors = reader_theme::palette(window);
@@ -1920,9 +1922,11 @@ struct LessonView {
             (vm.fill&&IsChild(vm.fill->window(),focused))||(vm.math&&IsChild(vm.math->window(),focused))||
             (vm.order_view&&IsChild(vm.order_view->window(),focused))||std::ranges::find(vm.choices,focused)!=vm.choices.end());
         if (vm.answer) EnableWindow(vm.answer, editable);
-        if(vm.fill)vm.fill->set_enabled(editable);
+        reader_theme::completed_control(check,vm.response.correct);
+        if(vm.answer)reader_theme::completed_control(vm.answer,vm.response.correct);
+        if(vm.fill){vm.fill->set_enabled(editable);vm.fill->set_completed(vm.response.correct);}
         if(vm.math)vm.math->set_enabled(editable);
-        if(vm.order_view)vm.order_view->set_enabled(editable);
+        if(vm.order_view){vm.order_view->set_enabled(editable);vm.order_view->set_completed(vm.response.correct);}
         for (auto choice : vm.choices) EnableWindow(choice, editable);
         bool changed=vm.response.correct||vm.response.selected>=0;
         if(vm.answer_editor)changed=changed||!vm.answer_editor->document().text.empty();
@@ -2030,7 +2034,8 @@ struct LessonView {
             rows.push_back({{vm.math->window()},{0},40,false});
             rows.back().padding_after=0;
             auto check=button(ui("Comprobar","Check","Vérifier"),control_id(index,3),{0,ActionType::check,index});
-            rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=6;rows.back().padding_after=0;create_feedback(index);return;
+            rows.push_back({{check},{0},48,false});rows.back().horizontal_inset=6;rows.back().padding_before=12;
+            rows.back().padding_after=0;reader_theme::primary_button(check);create_feedback(index);return;
         }
         if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
         if(const auto instruction=secondary_instruction(current.type);!instruction.empty()){
@@ -2110,7 +2115,8 @@ struct LessonView {
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                 : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter"), control_id(index, 11), {0, ActionType::run, index});
             rows.push_back({{vm.compile}, {0}, 48, false});
-            if(!laboratory()){rows.back().padding_before=8;rows.back().padding_after=0;}
+            reader_theme::primary_button(vm.compile);
+            if(!laboratory()){rows.back().padding_before=12;rows.back().padding_after=4;rows.back().horizontal_inset=4;}
             if(!laboratory()&&!vm.status){
                 vm.status=rich("",control_id(index,34));rows.push_back({{vm.status},{0},0,true});
                 rows.back().padding_before=8;rows.back().padding_after=8;
@@ -2208,7 +2214,9 @@ struct LessonView {
             rows.back().card_end=true;
         }
         auto check = button(ui("Comprobar","Check","Vérifier"), control_id(index, 3), {0, ActionType::check, index});
-        rows.push_back({{check}, {0}, 48, false}); create_feedback(index);
+        rows.push_back({{check}, {0}, 48, false});
+        rows.back().padding_before=12;rows.back().horizontal_inset=4;
+        reader_theme::primary_button(check);create_feedback(index);
     }
     void render_page() {
         cancel_math();

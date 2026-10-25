@@ -201,9 +201,13 @@ HWND OrderCodeView::window()const{return impl_->host;}
 int OrderCodeView::height_for_width(int width){impl_->layout(width);return impl_->height;}
 std::vector<std::size_t> OrderCodeView::order()const{return impl_->ordered;}
 std::vector<std::pair<HWND,std::string>> OrderCodeView::reading_regions()const{std::vector<std::pair<HWND,std::string>> result;for(const auto i:impl_->ordered)result.emplace_back(impl_->rows[i],impl_->fragments[i]);return result;}
+void OrderCodeView::set_completed(bool value){
+    for(const auto row:impl_->rows)reader_theme::completed_control(row,value);
+    InvalidateRect(impl_->host,nullptr,FALSE);
+}
 void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_->release();}
 void OrderCodeView::set_text_scale(int value){impl_->percentage=std::clamp(value,25,400);for(const auto row:impl_->rows)SendMessageW(row,EM_SETZOOM,impl_->percentage,100);impl_->layout(impl_->width);}
 void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:impl_->rows)SendMessageW(row,EM_SETTARGETDEVICE,0,value?0:1);impl_->layout(impl_->width);}
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
-void OrderCodeView::reset(){impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
+void OrderCodeView::reset(){set_completed(false);impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
 }
