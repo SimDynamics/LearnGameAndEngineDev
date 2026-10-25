@@ -60,6 +60,9 @@ jobs:
           target_link_libraries(inline_previous PRIVATE qa_ui)
           add_executable(order_previous "@ROOT@/native/presentation/windows/order_code_view_tests.cpp")
           target_link_libraries(order_previous PRIVATE qa_ui)
+          foreach(target text_display inline_previous order_previous)
+            target_sources(${target} PRIVATE "@ROOT@/native/presentation/windows/app.manifest")
+          endforeach()
           enable_testing()
           add_test(NAME native.lesson_text_color COMMAND text_display color)
           add_test(NAME native.order_text_bounds COMMAND text_display geometry)
@@ -84,6 +87,7 @@ jobs:
           "Baseline geometry exit: $LASTEXITCODE"
           exit 0
       - name: Apply guarded source fixes
+        id: patch
         shell: pwsh
         run: |
           python scripts/maintenance/repair_lesson_text_details.py
@@ -102,6 +106,7 @@ jobs:
           cmd /d /s /c $command
           if ($LASTEXITCODE -ne 0) { throw 'Native verification failed; changes not published.' }
       - name: Compile and execute the real Windows-generated speech frontend
+        if: ${{ !cancelled() && steps.patch.outcome == 'success' }}
         shell: pwsh
         run: |
           $folder = Join-Path $env:RUNNER_TEMP 'kotlin-2.2.10'
