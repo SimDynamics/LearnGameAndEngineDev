@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import subprocess
 
 ROOT = Path.cwd()
@@ -21,6 +22,12 @@ def replace(text, old, new):
 def save(name, text):
     (ROOT / name).write_text(text,encoding='utf-8',newline='\n')
     changed.append(name)
+
+# Record the older raster regression before changing production code as well.
+probe = Path(os.environ.get('RUNNER_TEMP', '.')) / 'lesson-text-qa/build/order_previous.exe'
+if probe.is_file():
+    print('Baseline existing order regression:', flush=True)
+    print('Baseline existing order exit:', subprocess.run([str(probe)]).returncode, flush=True)
 
 name = 'native/presentation/windows/rich_text.cpp'
 s = load(name)
@@ -109,6 +116,16 @@ s = replace(s,'''            SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=tex
 ''','''            POINT origin{};SendMessageW(row,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
             SendMessageW(row,EM_REQUESTRESIZE,0,0);sizes[i]=text_size(row,line);
 ''')
+s = replace(s,'''        const auto color=[](COLORREF value){return Gdiplus::Color(255,GetRValue(value),GetGValue(value),GetBValue(value));};
+        Gdiplus::Graphics graphics(dc);''','''        const auto color=[](COLORREF value){return Gdiplus::Color(255,GetRValue(value),GetGValue(value),GetBValue(value));};
+        // Finish the clipped GDI+ card pass before the GDI gutter pass uses
+        // the same HDC; its glyphs are deliberately outside the card clip.
+        {
+        Gdiplus::Graphics graphics(dc);''')
+s = replace(s,'''        for(const auto i:ordered)draw_card(graphics,cards[i],outline,&fill);
+        SetBkMode''','''        for(const auto i:ordered)draw_card(graphics,cards[i],outline,&fill);
+        }
+        SetBkMode''')
 save(name,s)
 
 name = 'native/narration/worker/build_worker.py'
@@ -136,6 +153,14 @@ addition = '        # Windows-only labels; retain canonical parsing and source o
 addition += ''.join(f'        code = exact(code, {old!r}, {new!r})\n' for old,new in adaptations)
 s = replace(s,needle,needle+addition)
 save(name,s)
+
+# Add diagnostics in the disposable runner only; all old assertions stay intact.
+probe_test=ROOT/'native/presentation/windows/order_code_view_tests.cpp'
+if probe.is_file():
+    s=probe_test.read_text(encoding='utf-8')
+    s=replace(s,'"The original18sp line number is absent or no longer centered beside its fragment");',
+        '(std::string("The original18sp line number is absent or no longer centered beside its fragment: ")+std::to_string(normal_number_ink_height)+" ink top/bottom="+std::to_string(top)+","+std::to_string(bottom)+" card top/bottom="+std::to_string(first_rect.top)+","+std::to_string(first_rect.bottom)).c_str());')
+    probe_test.write_text(s,encoding='utf-8',newline='\n')
 
 name='CMakeLists.txt'
 s=load(name)
